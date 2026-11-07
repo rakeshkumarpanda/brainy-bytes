@@ -6820,6 +6820,51 @@ function pyCoreModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-c2", title: "Control flow", emoji: "2", step: 2, part: "core", level: "Beginner", blurb: "Choose with if, elif, else and match, and repeat with while and for loops.", topics: [
+      { id: "py-conditions", title: "Making decisions: if, elif, else and match", emoji: "2.1", page: "content/python/py-conditions.html",
+        summary: "if, elif, else, truthiness, combining conditions, conditional expression, walrus, match and case, De Morgan.",
+        keywords: ["if", "elif", "else", "conditions", "truthy", "falsy", "ternary", "walrus", "match", "case", "pattern matching", "De Morgan", "PCEP"],
+        minutes: 45, counts: {"lessons": 10, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Programs that choose", emoji: "", group: "Lesson", keywords: ["if", "else", "condition", "block", "decision", "branch"] },
+        { id: "chain", title: "if, elif and else chains", emoji: "", group: "Lesson", keywords: ["elif", "else", "chain", "order of conditions", "nested if", "separate if"] },
+        { id: "truthy", title: "Truthy and falsy values", emoji: "", group: "Lesson", keywords: ["truthy", "falsy", "bool()", "empty collection", "None check", "is None"] },
+        { id: "combine", title: "Combining conditions", emoji: "", group: "Lesson", keywords: ["and", "or", "not", "chained comparison", "in tuple", "common bug or"] },
+        { id: "ternary", title: "One line choices: the conditional expression and the walrus", emoji: "", group: "Lesson", keywords: ["conditional expression", "ternary operator", "walrus operator", ":=", "assignment expression", "PEP 572"] },
+        { id: "match", title: "match and case: pattern matching", emoji: "", group: "Lesson", keywords: ["match", "case", "pattern matching", "structural pattern matching", "capture pattern", "wildcard", "guard", "sequence pattern", "mapping pattern", "PEP 634"] },
+        { id: "maths", title: "The maths: boolean algebra", emoji: "", group: "Lesson", keywords: ["boolean algebra", "De Morgan", "truth table", "number of paths", "test cases"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "branch coverage", "MC/DC", "branch prediction"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "capitalize the title", "angle between hands of a clock"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-loops", title: "Loops: while, for, range, break and continue", emoji: "2.2", page: "content/python/py-loops.html",
+        summary: "while, for, range, break, continue, pass, loop else, loop patterns, nested loops, enumerate and zip, loop maths.",
+        keywords: ["loops", "while", "for", "range", "break", "continue", "pass", "for else", "nested loops", "enumerate", "zip", "iteration", "PCEP"],
+        minutes: 50, counts: {"lessons": 11, "problems": 10, "quiz": 12, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Why we need loops", emoji: "", group: "Lesson", keywords: ["loop", "iteration", "while", "for", "repeat", "infinite loop"] },
+        { id: "range", title: "for loops and range()", emoji: "", group: "Lesson", keywords: ["for", "range", "start stop step", "stop excluded", "counting down", "lazy range"] },
+        { id: "control", title: "break, continue, pass and else", emoji: "", group: "Lesson", keywords: ["break", "continue", "pass", "loop else", "for else", "while else", "search"] },
+        { id: "patterns", title: "Loop patterns every programmer uses", emoji: "", group: "Lesson", keywords: ["accumulator", "counter", "running maximum", "search", "sentinel", "sum", "max", "loop patterns"] },
+        { id: "nested", title: "Loops inside loops", emoji: "", group: "Lesson", keywords: ["nested loops", "multiplication table", "pattern printing", "triangular number", "break inner loop"] },
+        { id: "pythonic", title: "enumerate, zip, reversed and sorted", emoji: "", group: "Lesson", keywords: ["enumerate", "zip", "reversed", "sorted", "pythonic loops", "strict zip"] },
+        { id: "whileuse", title: "When to use while", emoji: "", group: "Lesson", keywords: ["while", "unknown number of turns", "digits", "Collatz", "while True", "Ctrl+C"] },
+        { id: "maths", title: "The maths of loops", emoji: "", group: "Lesson", keywords: ["range length", "arithmetic sequence", "Gauss sum", "logarithm", "loop counting"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "iterator protocol", "loop invariant", "big O"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "running sum", "palindrome number", "reverse integer", "happy number"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

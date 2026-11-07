@@ -955,3 +955,192 @@ const PYZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Core 2.1  if, elif, else: which branch runs
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, D, tag, esc, consoleBox, codeView } = PYZ;
+  trace('pyif', {
+    title: 'if, elif and else: Python checks the conditions from the top',
+    sub: 'Type a score and pick how the program is written. Watch which conditions are checked and which are skipped.',
+    W: 600, H: 320,
+    params: [
+      { k: 'score', label: 'score', type: 'range', v: 82, min: 0, max: 100 },
+      { k: 'style', label: 'How the program is written', type: 'select', v: 'elif', opts: [['elif', 'if / elif / elif / else (correct)'], ['ifs', 'four separate if statements (a common bug)'], ['order', 'elif chain in the wrong order'], ['nested', 'nested if inside if']] }
+    ],
+    tips: [
+      { t: 'Score 95 with the elif chain: only "A" is printed. Once a branch runs, the rest of the chain is skipped.', set: { score: 95, style: 'elif' }, play: true },
+      { t: 'Score 95 with separate ifs: A, B and C are all printed, because every if is checked on its own.', set: { score: 95, style: 'ifs' }, play: true },
+      { t: 'Wrong order: score >= 50 is checked first, so 95 gets a C. Put the strictest test first.', set: { score: 95, style: 'order' }, play: true }
+    ],
+    frames(p) {
+      const s = p.score, fr = [];
+      const P = {
+        elif: [['if score >= 90:', s >= 90, 'A'], ['elif score >= 75:', s >= 75, 'B'], ['elif score >= 50:', s >= 50, 'C'], ['else:', true, 'F']],
+        order: [['if score >= 50:', s >= 50, 'C'], ['elif score >= 75:', s >= 75, 'B'], ['elif score >= 90:', s >= 90, 'A'], ['else:', true, 'F']],
+        ifs: [['if score >= 90:', s >= 90, 'A'], ['if score >= 75:', s >= 75, 'B'], ['if score >= 50:', s >= 50, 'C'], ['if score < 50:', s < 50, 'F']]
+      };
+      if (p.style === 'nested') {
+        const lines = ['if score >= 50:', '    if score >= 75:', '        print("B or better")', '    else:', '        print("C")', 'else:', '    print("F")'];
+        let out = '';
+        fr.push({ lines, cur: 0, out, say: `score is ${s}. The outer if checks score >= 50: <b>${s >= 50}</b>.` });
+        if (s >= 50) {
+          fr.push({ lines, cur: 1, out, say: `Inside the outer block, the inner if checks score >= 75: <b>${s >= 75}</b>. The inner if is only reached because the outer one was True.` });
+          if (s >= 75) { out = 'B or better'; fr.push({ lines, cur: 2, out, say: 'The inner condition is True, so its block prints "B or better". The inner else is skipped.' }); }
+          else { out = 'C'; fr.push({ lines, cur: 4, out, say: 'The inner condition is False, so the inner else runs and prints "C".' }); }
+          fr.push({ lines, cur: -1, out, say: 'The outer else is skipped because the outer if was True. Nesting reads like a decision tree, but deep nesting gets hard to read. An elif chain is usually flatter and clearer.' });
+        } else {
+          out = 'F'; fr.push({ lines, cur: 6, out, say: 'The outer condition is False, so Python jumps straight to the outer else and prints "F". The inner if is never looked at.' });
+        }
+        return fr;
+      }
+      const rows = P[p.style];
+      const lines = [];
+      rows.forEach(r => { lines.push(r[0]); lines.push(`    print("${r[2]}")`); });
+      let out = '', done = false;
+      fr.push({ lines, cur: -1, out, say: `score is ${s}. Python starts at the top of the ${p.style === 'ifs' ? 'four separate if statements' : 'chain'}.` });
+      rows.forEach((r, i) => {
+        if (done && p.style !== 'ifs') { fr.push({ lines, cur: i * 2, out, skip: true, say: `<code>${r[0]}</code> is <b>skipped</b> without being checked: a branch of this chain already ran.` }); return; }
+        if (r[0] === 'else:') { out += (out ? '\n' : '') + r[2]; done = true; fr.push({ lines, cur: i * 2 + 1, out, say: 'No condition above was True, so the else block runs and prints "F". else has no condition of its own.' }); return; }
+        fr.push({ lines, cur: i * 2, out, say: `Check <code>${r[0].replace(':', '')}</code>: ${s} ${r[0].match(/[<>]=?/)[0]} ${r[0].match(/\d+/)[0]} is <b>${r[1] ? 'True' : 'False'}</b>.${r[1] ? '' : ' Its block is skipped.'}` });
+        if (r[1]) { out += (out ? '\n' : '') + r[2]; done = true; fr.push({ lines, cur: i * 2 + 1, out, say: `True, so its block runs and prints "${r[2]}".${p.style === 'ifs' ? ' These are separate if statements, so Python carries on checking the next one too.' : ' The rest of the chain will now be skipped.'}` }); }
+      });
+      const n = out.split('\n').filter(Boolean).length;
+      fr.push({ lines, cur: -1, out, say: p.style === 'ifs' && n > 1 ? `Done. ${n} grades were printed for one score. Separate ifs are right when several things can be true together, but a grade needs exactly one branch: use elif.` : p.style === 'order' && s >= 75 ? 'Done. The answer is wrong because the weakest test (>= 50) came first and caught the score. In an elif chain, put the strictest test first.' : 'Done. Exactly one branch of the chain ran.' });
+      return fr;
+    },
+    paint(z, f) {
+      head(z, 'Program', 16, 18);
+      codeView(z, f.lines, f.cur, 16, 26, 340, { s: 12.5, lh: 19 });
+      PYZ.box(z, 390, 26, 190, 40, 'score = ' + z.p.score, { mono: true, b: true, stroke: z.col.cv });
+      consoleBox(z, f.out, 390, 90, 190, 150);
+    }
+  });
+
+  /* =====================================================================================================
+     Core 2.1  match and case: structural pattern matching on a command
+     ===================================================================================================== */
+  trace('pymatch', {
+    title: 'match and case: Python tries each pattern from the top',
+    sub: 'Type a command for a small text game. The command is split into words, then each case pattern is tried until one fits.',
+    W: 600, H: 320,
+    params: [
+      { k: 'cmd', label: 'Command', type: 'text', v: 'go north' }
+    ],
+    tips: [
+      { t: '"go north" fits case ["go", direction], and the name direction captures "north".', set: { cmd: 'go north' }, play: true },
+      { t: '"drop sword shield lamp" fits case ["drop", *things]. The star collects every remaining word into a list.', set: { cmd: 'drop sword shield lamp' }, play: true },
+      { t: '"go up" fits the guard: case ["go", direction] if direction in ("up", "down") comes first and catches it.', set: { cmd: 'go up' }, play: true },
+      { t: '"dance" fits nothing, so case _ (the wildcard) catches it, like else.', set: { cmd: 'dance' }, play: true }
+    ],
+    frames(p) {
+      const words = String(p.cmd).trim().split(/\s+/).filter(Boolean);
+      const cases = [
+        { pat: 'case ["quit"] | ["exit"]:', test: w => w.length === 1 && (w[0] === 'quit' || w[0] === 'exit'), out: () => 'Goodbye!', bind: () => '' },
+        { pat: 'case ["go", direction] if direction in ("up", "down"):', test: w => w.length === 2 && w[0] === 'go' && ['up', 'down'].includes(w[1]), out: w => `You climb ${w[1]}.`, bind: w => `direction = "${w[1]}"` },
+        { pat: 'case ["go", direction]:', test: w => w.length === 2 && w[0] === 'go', out: w => `You walk ${w[1]}.`, bind: w => `direction = "${w[1]}"` },
+        { pat: 'case ["drop", *things]:', test: w => w.length >= 1 && w[0] === 'drop', out: w => `You drop ${w.length - 1} thing(s).`, bind: w => `things = [${w.slice(1).map(x => '"' + x + '"').join(', ')}]` },
+        { pat: 'case _:', test: () => true, out: w => `I do not understand "${w.join(' ')}".`, bind: () => '' }
+      ];
+      const lines = ['match command.split():'].concat(cases.flatMap(c => ['    ' + c.pat, '        print(...)']));
+      const fr = [];
+      fr.push({ lines, cur: 0, words, say: `command.split() turns the text into a list of words: <code>[${words.map(w => '"' + esc(w) + '"').join(', ')}]</code>. match will compare this list with each case, from the top.` });
+      for (let i = 0; i < cases.length; i++) {
+        const c = cases[i], ok = c.test(words);
+        let why = '';
+        if (i === 0) why = ok ? 'The list has exactly one word and it is "quit" or "exit". The | means "or".' : 'This needs exactly one word, "quit" or "exit".';
+        if (i === 1) why = words.length === 2 && words[0] === 'go' ? (ok ? `The shape fits (two words, the first is "go"), and the guard <code>if direction in ("up", "down")</code> is True.` : `The shape fits, but the guard is False for "${esc(words[1])}", so this case is rejected and matching goes on.`) : 'This needs exactly two words, the first one "go".';
+        if (i === 2) why = ok ? 'Two words and the first is "go". A plain name in a pattern captures the value.' : 'This needs exactly two words starting with "go".';
+        if (i === 3) why = ok ? 'The first word is "drop". *things collects the rest, even zero words.' : 'This needs "drop" as the first word.';
+        if (i === 4) why = 'The wildcard _ matches anything and binds nothing. It is the last resort.';
+        fr.push({ lines, cur: 1 + i * 2, words, tried: i, say: `Try <code>${esc(c.pat)}</code>: ${ok ? '<b>it fits</b>.' : '<b>no</b>.'} ${why}` });
+        if (ok) {
+          const b = c.bind(words);
+          fr.push({ lines, cur: 2 + i * 2, words, tried: i, bind: b, out: c.out(words), say: `${b ? `The capture sets <code>${esc(b)}</code>. ` : ''}The block runs and prints <code>${esc(c.out(words))}</code> Only the first case that fits runs, so matching stops here.` });
+          break;
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      head(z, 'Program', 16, 18);
+      codeView(z, f.lines, f.cur, 16, 26, 410, { s: 11.5, lh: 21 });
+      head(z, 'Words', 440, 18);
+      f.words.slice(0, 6).forEach((w, i) => PYZ.box(z, 440, 26 + i * 30, 140, 26, `[${i}] "${w}"`, { mono: true, s: 12 }));
+      if (f.bind) { head(z, 'Captured', 440, 222); PYZ.box(z, 440, 230, 140, 30, f.bind, { mono: true, s: 11, stroke: z.col.green }); }
+      if (f.out) consoleBox(z, f.out, 440, 268, 140, 46, { title: 'Output' });
+    }
+  });
+
+  /* =====================================================================================================
+     Core 2.2  loops: for over range(), while, break, continue and else
+     ===================================================================================================== */
+  trace('pyloop', {
+    title: 'A loop, one turn at a time',
+    sub: 'Pick a range, and optional break and continue rules. Each step is one check or one turn of the loop.',
+    W: 600, H: 320,
+    params: [
+      { k: 'kind', label: 'Loop', type: 'select', v: 'for', opts: [['for', 'for i in range(start, stop, step)'], ['while', 'i = start, then while i < stop (i += step)']] },
+      { k: 'start', label: 'start', type: 'range', v: 1, min: -5, max: 10 },
+      { k: 'stop', label: 'stop', type: 'range', v: 10, min: -5, max: 20 },
+      { k: 'step', label: 'step', type: 'range', v: 2, min: -3, max: 4, help: 'step 0 is not allowed. A negative step counts down.' },
+      { k: 'cont', label: 'continue when i % 3 == 0', type: 'check', v: false },
+      { k: 'brk', label: 'break when i > 6', type: 'check', v: false },
+      { k: 'els', label: 'add an else block after the loop', type: 'check', v: true }
+    ],
+    tips: [
+      { t: 'range(1, 10, 2) gives 1, 3, 5, 7, 9. The stop value 10 is never reached: stop is excluded.', set: { kind: 'for', start: 1, stop: 10, step: 2, cont: false, brk: false }, play: true },
+      { t: 'Tick break. The loop leaves early at 7, and the else block does NOT run. else only runs when the loop ends normally.', set: { brk: true, cont: false, els: true }, play: true },
+      { t: 'Tick continue with step 1. Multiples of 3 skip the rest of their turn, but the loop goes on.', set: { start: 1, stop: 10, step: 1, cont: true, brk: false }, play: true },
+      { t: 'Count down: start 10, stop 0, step -3 gives 10, 7, 4, 1.', set: { start: 10, stop: 0, step: -3, cont: false, brk: false }, play: true }
+    ],
+    frames(p) {
+      const { start, stop, step } = p, fr = [];
+      if (step === 0) throw new Error('ValueError: range() arg 3 must not be zero');
+      const W = p.kind === 'while';
+      const lines = W ? [`i = ${start}`, `while i ${step > 0 ? '<' : '>'} ${stop}:`] : [`for i in range(${start}, ${stop}, ${step}):`];
+      const bodyAt = lines.length;
+      if (p.cont) lines.push('    if i % 3 == 0:', '        ' + (W ? 'i += ' + step + '; continue' : 'continue'));
+      if (p.brk) lines.push('    if i > 6:', '        break');
+      lines.push('    print(i)');
+      if (W) lines.push(`    i += ${step}`);
+      if (p.els) lines.push('else:', '    print("loop finished")');
+      lines.push('print("after the loop")');
+      const L = s => lines.findIndex(x => x.trim().startsWith(s));
+      const seq = [];
+      for (let i = start; step > 0 ? i < stop : i > stop; i += step) seq.push(i);
+      let out = [];
+      const head0 = W ? 1 : 0;
+      fr.push({ lines, cur: 0, seq, out: '', say: W ? `i starts at ${start}. A while loop repeats while its condition is True, and you must change i yourself, or it never stops.` : `range(${start}, ${stop}, ${step}) gives the numbers ${seq.length ? seq.join(', ') : '(none at all)'}. It starts at ${start}, adds ${step} each time, and stops <b>before</b> reaching ${stop}.` });
+      let broke = false, turns = 0;
+      for (const i of seq) {
+        turns++;
+        if (turns > 40) break;
+        fr.push({ lines, cur: head0, seq, i, out: out.join('\n'), say: W ? `Check i ${step > 0 ? '<' : '>'} ${stop}: ${i} ${step > 0 ? '<' : '>'} ${stop} is <b>True</b>, so the body runs with i = ${i}.` : `Next number: i = <b>${i}</b>. The body runs.` });
+        if (p.cont && i % 3 === 0) { fr.push({ lines, cur: L('if i % 3'), seq, i, out: out.join('\n'), say: `${i} % 3 == 0 is True, so <b>continue</b> skips the rest of this turn and goes straight to the next one. Nothing is printed for ${i}.` }); continue; }
+        if (p.brk && i > 6) { broke = true; fr.push({ lines, cur: L('break'), seq, i, out: out.join('\n'), say: `${i} > 6 is True, so <b>break</b> leaves the loop at once. No more turns${p.els ? ', and the else block is skipped' : ''}.` }); break; }
+        out.push(String(i));
+        fr.push({ lines, cur: L('print(i)'), seq, i, out: out.join('\n'), say: `print(i) shows ${i}.` });
+      }
+      if (!broke) {
+        const last = seq.length ? seq[seq.length - 1] + step : start;
+        fr.push({ lines, cur: head0, seq, out: out.join('\n'), say: W ? `Check i ${step > 0 ? '<' : '>'} ${stop}: ${last} ${step > 0 ? '<' : '>'} ${stop} is <b>False</b>, so the loop ends.` : 'range has no more numbers, so the loop ends normally.' });
+        if (p.els) { out.push('loop finished'); fr.push({ lines, cur: L('print("loop finished")'), seq, out: out.join('\n'), say: 'The loop ended normally (no break), so its <b>else</b> block runs. Think of it as "if no break".' }); }
+      }
+      out.push('after the loop');
+      fr.push({ lines, cur: L('print("after the loop")'), seq, out: out.join('\n'), say: `Python carries on after the loop. The body ran ${out.filter(x => /^-?\d+$/.test(x)).length} time${out.filter(x => /^-?\d+$/.test(x)).length === 1 ? '' : 's'} with print.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Program', 16, 18);
+      codeView(z, f.lines, f.cur, 16, 26, 330, { s: 12, lh: 19 });
+      head(z, 'Values of i', 370, 18);
+      const n = Math.min(f.seq.length, 12), w = Math.min(40, 214 / Math.max(1, n));
+      f.seq.slice(0, 12).forEach((v, k) => box(z, 370 + k * w, 26, w - 3, 26, String(v), { mono: true, s: Math.min(12, w * 0.45), fill: v === f.i ? c.cv : c.surf, stroke: v === f.i ? c.cv : c.line, c: v === f.i ? '#fff' : c.ink }));
+      if (f.seq.length > 12) D.text(z.g, `+${f.seq.length - 12} more`, 370, 68, { s: 11, c: c.ink2 });
+      consoleBox(z, f.out, 370, 80, 214, 230);
+    }
+  });
+})();
