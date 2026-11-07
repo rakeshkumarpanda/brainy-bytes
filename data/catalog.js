@@ -6874,6 +6874,27 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-context", title: "Context managers and the with statement", emoji: "2.3", page: "content/python/py-context.html",
+        summary: "with, __enter__ and __exit__, suppressing errors, @contextmanager, standard managers, exit order, ExitStack.",
+        keywords: ["context manager", "with", "__enter__", "__exit__", "contextmanager", "suppress", "ExitStack", "redirect_stdout", "Lock", "TemporaryDirectory", "PCPP"],
+        minutes: 70, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Context managers and the with statement", emoji: "", group: "Lesson", keywords: ["context manager", "with", "open", "close", "clean up", "try finally", "resource"] },
+        { id: "protocol", title: "Writing a context manager class", emoji: "", group: "Lesson", keywords: ["__enter__", "__exit__", "as", "exception arguments", "traceback", "try finally"] },
+        { id: "suppress", title: "Suppressing exceptions", emoji: "", group: "Lesson", keywords: ["suppress", "return True", "swallow exception", "KeyError", "FileNotFoundError"] },
+        { id: "generator", title: "contextmanager: a context manager from a generator", emoji: "", group: "Lesson", keywords: ["contextmanager", "yield", "try finally", "decorator", "ContextDecorator", "temporary setting"] },
+        { id: "stdlib", title: "Context managers in the standard library", emoji: "", group: "Lesson", keywords: ["threading.Lock", "TemporaryDirectory", "chdir", "redirect_stdout", "localcontext", "closing", "nullcontext", "sqlite3", "mock.patch"] },
+        { id: "many", title: "Several managers and ExitStack", emoji: "", group: "Lesson", keywords: ["multiple managers", "exit order", "LIFO", "ExitStack", "enter_context", "callback", "async with", "__aenter__"] },
+        { id: "maths", title: "The maths: leaks, failures and exit order", emoji: "", group: "Lesson", keywords: ["exit order", "failure probability", "resource leak", "file descriptor limit", "elapsed time"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "PEP 343", "exception triple"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "stack", "parentheses", "nested", "exclusive time", "simplify path"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

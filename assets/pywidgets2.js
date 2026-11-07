@@ -457,3 +457,72 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 2.3  what a with statement really does: __enter__, the body, __exit__ and the exception
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D, box } = PYZ;
+  function code(path) {
+    return ['class Door:', '    def __enter__(self):', '        print("open")', '        return "room"', '    def __exit__(self, kind, err, tb):', '        print("close")',
+      path === 'swallow' ? '        return kind is ZeroDivisionError' : '        return False', '', 'with Door() as place:', '    print("inside", place)',
+      path === 'normal' ? '    print("done inside")' : '    print(1 / 0)', 'print("after")'];
+  }
+  function frames(path) {
+    const E = 'ZeroDivisionError';
+    const f = [
+      [8, '', '', '', '', 'Python evaluates Door(). The new object is the <b>context manager</b>: the thing that knows how to set up and clean up.'],
+      [2, '', '', '', 'open', 'Python calls its __enter__ method. It runs the set up work, here printing open.'],
+      [3, '"room"', '', '', 'open', '__enter__ returns "room". Because of <b>as place</b>, that return value (not the Door) is stored in place.'],
+      [9, '"room"', '', '', 'open\ninside room', 'Now the body of the with block runs.']
+    ];
+    let out = 'open\ninside room';
+    if (path === 'normal') {
+      out += '\ndone inside';
+      f.push([10, '"room"', '', '', out, 'The body finishes with no error.']);
+      f.push([4, '"room"', 'None, None, None', '', out, 'Leaving the block calls __exit__. No error happened, so all three arguments are None.']);
+      out += '\nclose';
+      f.push([5, '"room"', 'None, None, None', '', out, 'The clean up runs: close is printed.']);
+      out += '\nafter';
+      f.push([11, '"room"', 'None, None, None', '', out, 'The program goes on after the with block. The clean up ran exactly once.']);
+      return f;
+    }
+    f.push([10, '"room"', '', E, out, '1 / 0 raises ZeroDivisionError. The rest of the body is skipped at once, but Python does NOT leave yet.']);
+    f.push([4, '"room"', E + ', err, tb', E, out, 'Python calls __exit__ with the error type (kind), the error object (err) and its traceback (tb). This happens for any error, so clean up is never skipped.']);
+    out += '\nclose';
+    f.push([5, '"room"', E + ', err, tb', E, out, 'The clean up runs: close is printed, even though the body failed.']);
+    if (path === 'swallow') {
+      f.push([6, '"room"', E + ', err, tb', 'swallowed', out, '__exit__ returns True (kind is ZeroDivisionError). A true return value tells Python to <b>suppress</b> the error.']);
+      out += '\nafter';
+      f.push([11, '"room"', E + ', err, tb', 'swallowed', out, 'The error is gone and the program goes on after the block, so after is printed.']);
+    } else {
+      f.push([6, '"room"', E + ', err, tb', E, out, '__exit__ returns False, so Python lets the error carry on.']);
+      f.push([-1, '"room"', E + ', err, tb', E, out + '\nZeroDivisionError: division by zero', 'The error travels up and the program stops: print("after") never runs. But close was printed first, which is the whole point of with.']);
+    }
+    return f;
+  }
+  trace('pywith', {
+    title: 'What a with statement does',
+    sub: 'Pick a case. Each step shows the line that runs, what as stores, the arguments __exit__ gets, and whether an error is on its way.',
+    W: 600, H: 400,
+    params: [{ k: 'path', label: 'Case', type: 'select', v: 'error', opts: [['normal', 'The body works'], ['error', 'The body raises, __exit__ returns False'], ['swallow', 'The body raises, __exit__ returns True']] }],
+    tips: [
+      { t: 'An error in the body still runs __exit__, so close is printed before the program stops.', set: { path: 'error' }, play: true },
+      { t: 'A true return value from __exit__ swallows the error.', set: { path: 'swallow' }, play: true }
+    ],
+    frames(p) { return frames(p.path).map(s => ({ code: code(p.path), line: s[0], as: s[1], args: s[2], err: s[3], out: s[4], say: s[5] })); },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Program', 16, 18);
+      codeView(z, f.code, f.line, 16, 26, 320, { s: 11, lh: 19 });
+      head(z, 'place (from as)', 352, 18);
+      box(z, 352, 26, 232, 32, f.as || '(not set yet)', { mono: true, s: 12.5, b: !!f.as, stroke: c.cv });
+      head(z, '__exit__ got', 352, 82);
+      box(z, 352, 90, 232, 32, f.args || '(not called yet)', { mono: true, s: 11, stroke: f.args ? c.green : c.line });
+      head(z, 'Error on its way', 352, 146);
+      const bad = f.err && f.err !== 'swallowed';
+      box(z, 352, 154, 232, 32, f.err || '(none)', { mono: true, s: 12, b: !!f.err, stroke: bad ? c.red : (f.err ? c.green : c.line), fill: bad ? (c.dark ? '#3b1414' : '#fee2e2') : c.surf });
+      if (f.out) consoleBox(z, f.out, 16, 278, 568, 114, { title: 'Output', err: /Error/.test(f.out.split('\n').pop()) });
+    }
+  });
+})();
