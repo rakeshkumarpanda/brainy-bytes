@@ -416,56 +416,59 @@ def tree_to_list(root):
     return out
 
 
-# ================================================================== 8. String to Integer (atoi) (Medium)
-# https://leetcode.com/problems/string-to-integer-atoi/
-# Pattern: Careful step by step parsing
-# Idea: Skip spaces, read one optional sign, read digits until something else, then clamp to the 32
-# bit range. Every rule is a place where real input can go wrong.
+# ================================================================== 394. Decode String (Medium)
+# https://leetcode.com/problems/decode-string/
+# Pattern: A stack of unfinished parts
+# Idea: Read the text once. A number before [ says how many times to repeat. On [ save the text so
+# far and the count on a stack. On ] repeat the inner text and glue it to the saved text. This is
+# how a loader rebuilds nested data from a flat string.
 
-def my_atoi(s):
-    i, n = 0, len(s)
-    while i < n and s[i] == " ":
-        i += 1
-    sign = 1
-    if i < n and s[i] in "+-":
-        if s[i] == "-":
-            sign = -1
-        i += 1
-    number = 0
-    while i < n and s[i] in "0123456789":
-        number = number * 10 + int(s[i])
-        i += 1
-    number = sign * number
-    return max(-2 ** 31, min(2 ** 31 - 1, number))
-
-
-# ================================================================== 65. Valid Number (Hard)
-# https://leetcode.com/problems/valid-number/
-# Pattern: One pass with flags
-# Idea: Track whether a digit, a dot and an e were seen. A sign may come only first or right after
-# e. The number must end with a digit after any e.
-
-def is_number(s):
-    seen_digit = seen_dot = seen_e = False
-    for i in range(len(s)):
-        ch = s[i]
-        if ch in "0123456789":
-            seen_digit = True
-        elif ch in "+-":
-            if i > 0 and s[i - 1] not in "eE":
-                return False
-        elif ch in "eE":
-            if seen_e or not seen_digit:
-                return False
-            seen_e = True
-            seen_digit = False
-        elif ch == ".":
-            if seen_dot or seen_e:
-                return False
-            seen_dot = True
+def decode_string(s):
+    stack = []
+    text = ""
+    count = 0
+    for ch in s:
+        if ch.isdigit():
+            count = count * 10 + int(ch)
+        elif ch == "[":
+            stack.append((text, count))
+            text = ""
+            count = 0
+        elif ch == "]":
+            before, times = stack.pop()
+            text = before + text * times
         else:
-            return False
-    return seen_digit
+            text = text + ch
+    return text
+
+
+# ================================================================== 1106. Parsing A Boolean Expression (Hard)
+# https://leetcode.com/problems/parsing-a-boolean-expression/
+# Pattern: A stack of values and operators
+# Idea: Push every character except commas. On ) pop the values back to the (, take the operator in
+# front of it, and push the single result. Nested expressions are solved from the inside out.
+
+def parse_bool_expr(expression):
+    stack = []
+    for ch in expression:
+        if ch == ",":
+            continue
+        if ch != ")":
+            stack.append(ch)
+            continue
+        values = []
+        while stack[-1] != "(":
+            values.append(stack.pop() == "t")
+        stack.pop()                            # the "("
+        op = stack.pop()
+        if op == "!":
+            result = not values[0]
+        elif op == "&":
+            result = all(values)
+        else:
+            result = any(values)
+        stack.append("t" if result else "f")
+    return stack[-1] == "t"
 
 
 if __name__ == "__main__":
@@ -478,7 +481,7 @@ if __name__ == "__main__":
     results.append(check("606. Construct String from Binary Tree", [('tree2str(build_tree([1, 2, 3, 4]))', '1(2(4))(3)'), ('tree2str(build_tree([1, 2, 3, None, 4]))', '1(2()(4))(3)')]))
     results.append(check("331. Verify Preorder Serialization of a Binary Tree", [('is_valid_serialization("9,3,4,#,#,1,#,#,2,#,6,#,#")', True), ('is_valid_serialization("1,#")', False), ('is_valid_serialization("9,#,#,1")', False)]))
     results.append(check("652. Find Duplicate Subtrees", [('sorted(tree_to_list(n) for n in find_duplicate_subtrees(build_tree([1, 2, 3, 4, None, 2, 4, None, None, 4])))', [[2, 4], [4]])]))
-    results.append(check("8. String to Integer (atoi)", [('my_atoi("42")', 42), ('my_atoi("   -042")', -42), ('my_atoi("1337c0d3")', 1337), ('my_atoi("0-1")', 0), ('my_atoi("words and 987")', 0), ('my_atoi("-91283472332")', -2147483648)]))
-    results.append(check("65. Valid Number", [('[is_number(t) for t in ["0", "2e10", "-90E3", "+.8", ".1", "53.5e93"]]', [True, True, True, True, True, True]), ('[is_number(t) for t in ["e", ".", "1e", "e3", "99e2.5", "--6", "-+3", "95a54e53"]]', [False, False, False, False, False, False, False, False])]))
+    results.append(check("394. Decode String", [('decode_string("3[a]2[bc]")', 'aaabcbc'), ('decode_string("3[a2[c]]")', 'accaccacc'), ('decode_string("2[abc]3[cd]ef")', 'abcabccdcdcdef')]))
+    results.append(check("1106. Parsing A Boolean Expression", [('parse_bool_expr("&(|(f))")', False), ('parse_bool_expr("|(f,f,f,t)")', True), ('parse_bool_expr("!(&(f,t))")', True), ('parse_bool_expr("t")', True)]))
     if all(results):
         print("Every solution passes its tests.")

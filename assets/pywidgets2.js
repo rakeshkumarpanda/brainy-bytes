@@ -265,3 +265,69 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 1.5  how a class statement becomes a class: metaclass, namespace, __new__, __init_subclass__, decorator
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, consoleBox, D, box } = PYZ;
+  const CODE = ['registry = []', 'class Base:', '    def __init_subclass__(cls):', '        registry.append(cls.__name__)',
+    'class Meta(type):', '    def __init__(cls, name, bases, ns):', '        super().__init__(name, bases, ns)', '        cls.tag = name.lower()',
+    'def stamp(cls):', '    cls.stamped = True', '    return cls', '@stamp', 'class Dog(Base, metaclass=Meta):', '    sound = "woof"',
+    '    def speak(self):', '        return self.sound', 'print(Dog.tag, Dog.stamped, registry)', 'rex = Dog()', 'print(type(Dog).__name__)'];
+  const NS0 = ["__module__ = '__main__'", "__qualname__ = 'Dog'", '__firstlineno__ = 13'];
+  const NS1 = NS0.concat(["sound = 'woof'"]);
+  const NS2 = NS1.concat(['speak = <function speak>']);
+  const C1 = ['name: Dog, bases: (Base,)', 'type(Dog) is Meta', 'holds: sound, speak'];
+  const C2 = C1.concat(["tag = 'dog'"]);
+  const C3 = C2.concat(['stamped = True']);
+  const O1 = "dog True ['Dog']";
+  /* [line, stage, namespace rows or null, class rows or null, registry, output, newest highlight, say] */
+  const ST = [
+    [0, 'registry = [] (an empty list)', null, null, '[]', '', '', 'Lines 1 to 11 only define things: an empty list, the class Base, the metaclass Meta and the function stamp. Python is now at the class statement for Dog.'],
+    [12, 'Pick the metaclass: Meta', null, null, '[]', '', '', 'Before anything else Python decides WHO will build the class. metaclass=Meta is given, so Meta builds Dog. Without it Python would use the metaclass of the base class, which is type.'],
+    [12, 'Meta.__prepare__ returns {}', [], null, '[]', '', '', 'Python asks the metaclass for an empty namespace. Meta does not define __prepare__, so the one from type gives a plain empty dict. The class body will fill it.'],
+    [13, 'Run the class body', NS1, null, '[]', '', 'ns', 'The class body runs like normal code, top to bottom. Python first stores __module__, __qualname__ and (since Python 3.13) __firstlineno__, then sound = "woof" puts the name sound in the namespace.'],
+    [14, 'Run the class body', NS2, null, '[]', '', 'ns', 'def speak only makes a function and stores it under the name speak. Nothing calls speak yet. A method is simply a function stored in the class.'],
+    [12, "Meta('Dog', (Base,), ns)", NS2, C1, '[]', '', 'cls', 'The body is done, so Python calls Meta("Dog", (Base,), ns). Meta has no __new__ of its own, so type.__new__ runs and turns the namespace into a real class object. type(Dog) is Meta, because Meta built it.'],
+    [3, 'Base.__init_subclass__(Dog)', NS2, C1, "['Dog']", '', 'reg', 'Inside type.__new__ Python also calls __init_subclass__ on the parent. Base hears that it has a new child and adds "Dog" to the registry. This hook needs no metaclass at all.'],
+    [7, 'Meta.__init__(Dog, ...)', NS2, C2, "['Dog']", '', 'cls', 'Next Python runs Meta.__init__ on the new class. It lets type.__init__ do its part, then adds tag = "dog". Every class built by Meta gets a tag without writing it in the class.'],
+    [9, 'stamp(Dog), the class decorator', NS2, C3, "['Dog']", '', 'cls', 'Only now does the class decorator run. stamp gets the finished class, adds stamped = True and returns the class.'],
+    [12, 'Store the result under the name Dog', NS2, C3, "['Dog']", '', '', 'Whatever the decorator returns is stored under the name Dog. The class statement is finished. The namespace dict is not needed any more.'],
+    [16, 'print(...)', NS2, C3, "['Dog']", O1, '', 'tag came from the metaclass, stamped from the decorator and the registry entry from __init_subclass__. Three hooks, three different moments.'],
+    [17, 'Dog() calls Meta.__call__', NS2, C3, "['Dog']", O1, '', 'Calling a class runs __call__ of its metaclass (Meta gets it from type). It runs Dog.__new__ to make an empty object and then Dog.__init__ to fill it, and returns the object.'],
+    [18, 'print(...)', NS2, C3, "['Dog']", O1 + '\nMeta', '', 'type(Dog) is Meta. rex is made by Dog, and Dog is made by Meta. Objects come from classes, and classes come from metaclasses.']
+  ];
+  function rows(z, items, x, y, w, newest) {
+    const c = z.col;
+    items.forEach((t, i) => {
+      const on = newest && i === items.length - 1;
+      box(z, x, y + i * 22, w, 20, t, { r: 4, mono: true, s: 11, fill: on ? (c.dark ? '#14321f' : '#dcfce7') : c.surf, stroke: on ? c.green : c.line });
+    });
+  }
+  trace('pymeta', {
+    title: 'How a class statement becomes a class',
+    sub: 'Each step shows what Python does now, the namespace dict the class body fills, the class object once it exists, and the registry.',
+    W: 600, H: 430,
+    tips: [{ t: 'Watch steps 6 to 9: type.__new__, __init_subclass__, Meta.__init__ and the decorator each get their own moment.', play: true }],
+    frames() { return ST.map(s => ({ line: s[0], stage: s[1], ns: s[2], cls: s[3], reg: s[4], out: s[5], hl: s[6], say: s[7] })); },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Program', 16, 18);
+      codeView(z, CODE, f.line, 16, 26, 300, { s: 10, lh: 16 });
+      head(z, 'What Python does now', 318, 18);
+      box(z, 318, 26, 266, 32, f.stage, { mono: true, s: 11.5, fill: c.dark ? '#14321f' : '#dcfce7', stroke: c.green });
+      if (f.ns) {
+        head(z, 'Namespace dict (the class body fills it)', 318, 80);
+        if (f.ns.length) rows(z, f.ns, 318, 88, 266, f.hl === 'ns'); else box(z, 318, 88, 266, 20, '{}', { r: 4, mono: true, s: 11 });
+      }
+      if (f.cls) {
+        head(z, 'Class object Dog', 318, 238);
+        rows(z, f.cls, 318, 246, 266, f.hl === 'cls');
+      }
+      head(z, 'registry', 318, 378);
+      box(z, 318, 386, 266, 26, f.reg, { r: 4, mono: true, s: 12, b: true, stroke: f.hl === 'reg' ? c.green : c.orange, fill: f.hl === 'reg' ? (c.dark ? '#14321f' : '#dcfce7') : c.surf });
+      if (f.out) consoleBox(z, f.out, 16, 352, 300, 72, { title: 'Output' });
+    }
+  });
+})();

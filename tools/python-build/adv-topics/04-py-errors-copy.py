@@ -585,48 +585,50 @@ def find_duplicate_subtrees(root):
     key(root)
     return result
 ''' + TREE, [('sorted(tree_to_list(n) for n in find_duplicate_subtrees(build_tree([1, 2, 3, 4, None, 2, 4, None, None, 4])))', [[2, 4], [4]])])
-lc(8, 'String to Integer (atoi)', 'string-to-integer-atoi', 'm', 'Careful step by step parsing', 'Skip spaces, read one optional sign, read digits until something else, then clamp to the 32 bit range. Every rule is a place where real input can go wrong.', r'''
-def my_atoi(s):
-    i, n = 0, len(s)
-    while i < n and s[i] == " ":
-        i += 1
-    sign = 1
-    if i < n and s[i] in "+-":
-        if s[i] == "-":
-            sign = -1
-        i += 1
-    number = 0
-    while i < n and s[i] in "0123456789":
-        number = number * 10 + int(s[i])
-        i += 1
-    number = sign * number
-    return max(-2 ** 31, min(2 ** 31 - 1, number))
-''', [('my_atoi("42")', 42), ('my_atoi("   -042")', -42), ('my_atoi("1337c0d3")', 1337), ('my_atoi("0-1")', 0), ('my_atoi("words and 987")', 0), ('my_atoi("-91283472332")', -2147483648)])
-lc(65, 'Valid Number', 'valid-number', 'h', 'One pass with flags', 'Track whether a digit, a dot and an e were seen. A sign may come only first or right after e. The number must end with a digit after any e.', r'''
-def is_number(s):
-    seen_digit = seen_dot = seen_e = False
-    for i in range(len(s)):
-        ch = s[i]
-        if ch in "0123456789":
-            seen_digit = True
-        elif ch in "+-":
-            if i > 0 and s[i - 1] not in "eE":
-                return False
-        elif ch in "eE":
-            if seen_e or not seen_digit:
-                return False
-            seen_e = True
-            seen_digit = False
-        elif ch == ".":
-            if seen_dot or seen_e:
-                return False
-            seen_dot = True
+lc(394, 'Decode String', 'decode-string', 'm', 'A stack of unfinished parts', 'Read the text once. A number before [ says how many times to repeat. On [ save the text so far and the count on a stack. On ] repeat the inner text and glue it to the saved text. This is how a loader rebuilds nested data from a flat string.', r'''
+def decode_string(s):
+    stack = []
+    text = ""
+    count = 0
+    for ch in s:
+        if ch.isdigit():
+            count = count * 10 + int(ch)
+        elif ch == "[":
+            stack.append((text, count))
+            text = ""
+            count = 0
+        elif ch == "]":
+            before, times = stack.pop()
+            text = before + text * times
         else:
-            return False
-    return seen_digit
-''', [('[is_number(t) for t in ["0", "2e10", "-90E3", "+.8", ".1", "53.5e93"]]', [True, True, True, True, True, True]), ('[is_number(t) for t in ["e", ".", "1e", "e3", "99e2.5", "--6", "-+3", "95a54e53"]]', [False, False, False, False, False, False, False, False])])
+            text = text + ch
+    return text
+''', [('decode_string("3[a]2[bc]")', 'aaabcbc'), ('decode_string("3[a2[c]]")', 'accaccacc'), ('decode_string("2[abc]3[cd]ef")', 'abcabccdcdcdef')])
+lc(1106, 'Parsing A Boolean Expression', 'parsing-a-boolean-expression', 'h', 'A stack of values and operators', 'Push every character except commas. On ) pop the values back to the (, take the operator in front of it, and push the single result. Nested expressions are solved from the inside out.', r'''
+def parse_bool_expr(expression):
+    stack = []
+    for ch in expression:
+        if ch == ",":
+            continue
+        if ch != ")":
+            stack.append(ch)
+            continue
+        values = []
+        while stack[-1] != "(":
+            values.append(stack.pop() == "t")
+        stack.pop()                            # the "("
+        op = stack.pop()
+        if op == "!":
+            result = not values[0]
+        elif op == "&":
+            result = all(values)
+        else:
+            result = any(values)
+        stack.append("t" if result else "f")
+    return stack[-1] == "t"
+''', [('parse_bool_expr("&(|(f))")', False), ('parse_bool_expr("|(f,f,f,t)")', True), ('parse_bool_expr("!(&(f,t))")', True), ('parse_bool_expr("t")', True)])
 
-K.lesson('leetcode', 'LeetCode practice', leet('<p>Two problems are deep copies done by hand with a memo dict, which is exactly how copy.deepcopy avoids loops. Five are serialisation: turning trees and URLs into strings and back, like pickle. Two are careful parsing where every bad input must be handled.</p>'), kw=['LeetCode', 'deep copy', 'clone graph', 'serialize tree', 'parsing', 'atoi'])
+K.lesson('leetcode', 'LeetCode practice', leet('<p>Two problems are deep copies done by hand with a memo dict, which is exactly how copy.deepcopy avoids loops. Five are serialisation: turning trees and URLs into strings and back, like pickle. Two rebuild nested structure from a flat string with a stack, which is what any loader does.</p>'), kw=['LeetCode', 'deep copy', 'clone graph', 'serialize tree', 'parsing', 'decode string'])
 
 K.lesson('recap', 'Chapter summary', f'''
 {recap([
@@ -662,7 +664,7 @@ K.calc('m', 'Expected number of attempts until success when each attempt fails w
 K.calc('m', 'A 100 by 50 nested list (100 inner lists of 50 ints). How many list objects does deepcopy create?', '101', '1 + n.', ['1 outer list.', '100 inner lists. The ints are shared.', eq('101')], check=101)
 K.calc('m', 'is_valid_serialization("9,#,#"): what is the slot count at the end?', '0', 'Start at 1.', ['9 uses 1 and adds 2: 2.', 'Each # uses 1: 1, then 0.', eq('0, so it is valid')], check=0)
 K.calc('h', 'p = 0.2. Smallest k with 1 &minus; 0.2<sup>k</sup> &ge; 0.9999?', '6', 'k &ge; log(0.0001) / log(0.2).', ['log(0.0001) / log(0.2) &asymp; 5.72.', 'Round up.', eq('6')], check=6)
-K.calc('h', 'my_atoi("-91283472332") clamps to what value?', '-2147483648', 'The 32 bit minimum.', ['The number is below &minus;2<sup>31</sup>.', 'So it becomes &minus;2<sup>31</sup>.', eq('&minus;2,147,483,648')], check=-2 ** 31)
+K.calc('h', 'How long is decode_string("3[a2[c]]")?', '9', 'Inside out.', ['2[c] is cc, so a2[c] is acc (3 characters).', '3[acc] repeats it 3 times.', eq('3 &times; 3 = 9')], check=len('acc' * 3))
 K.calc('x', 'In the style of an MIT 6.042 problem: three independent services each fail with probability 0.1, and a request needs all three. What is the chance in percent that a request succeeds, to 1 decimal place?', '72.9', 'All must work.', ['Each works with 0.9.', '0.9<sup>3</sup> = 0.729.', eq('72.9 %')], check=round(0.9 ** 3 * 100, 1))
 
 K.assign('errors', 'm', 'An exception hierarchy with chaining',
