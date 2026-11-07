@@ -206,15 +206,18 @@ def run_code(key, c):
         rec = json.loads(t.stdout)
         if rec['err']:
             raise SystemExit(f'example {key} raised while recording:\n{rec["err"]}')
-        if rec['cut']:
+        if rec['cut'] and not c.get('long'):
             raise SystemExit(f'the recording of {key} was cut at 600 steps, make the example shorter')
         return r.stdout.rstrip('\n'), rec
 
 
 CHECK = r'''
 import json, sys
+import types
 code, tests = json.load(sys.stdin)
-ns = {'__name__': 'exercise'}
+module = types.ModuleType('exercise')   # a real module, so code such as Django's ROOT_URLCONF = __name__ can import it
+sys.modules['exercise'] = module
+ns = module.__dict__
 try:
     exec(compile(code, 'exercise.py', 'exec'), ns)
 except BaseException as e:

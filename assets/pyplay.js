@@ -18,12 +18,15 @@ const PYPLAY = (() => {
 
   /* ---------- the worker ---------- */
   const HELPERS = `
-import sys, json, traceback, linecache
+import sys, json, traceback, linecache, types
 def _bb_run(src):
     linecache.cache['main.py'] = (len(src), None, src.splitlines(True), 'main.py')
+    saved_main = sys.modules.get('__main__')
     try:
         code = compile(src, 'main.py', 'exec')
-        exec(code, {'__name__': '__main__'})
+        main = types.ModuleType('__main__')     # a real module, so pickle, doctest and unittest find the program
+        sys.modules['__main__'] = main
+        exec(code, main.__dict__)
     except SystemExit:
         pass
     except BaseException as e:
@@ -32,6 +35,8 @@ def _bb_run(src):
             tb = tb.tb_next
         sys.stdout.flush()
         traceback.print_exception(type(e), e, tb)
+    finally:
+        sys.modules['__main__'] = saved_main
     sys.stdout.flush(); sys.stderr.flush()
 
 def _bb_norm(v):
@@ -46,7 +51,9 @@ def _bb_norm(v):
 
 def _bb_tests(code, tests_json):
     tests = json.loads(tests_json)
-    ns = {'__name__': 'exercise'}
+    module = types.ModuleType('exercise')   # a real module, so code such as Django's ROOT_URLCONF = __name__ can import it
+    sys.modules['exercise'] = module
+    ns = module.__dict__
     try:
         exec(compile(code, 'exercise.py', 'exec'), ns)
     except BaseException as e:
@@ -74,11 +81,32 @@ const ready = loadPyodide({ indexURL: ${JSON.stringify(PYODIDE)} }).then(py => {
   return py;
 }).catch(e => { postMessage({ k: 'fatal', t: String(e && e.message || e) }); throw e; });
 let traceNs = null;
+/* packages from PyPI that some examples import (Flask, Django, requests ...). Pyodide's own packages, such as sqlite3
+   and pydantic, load with loadPackagesFromImports. Each one is installed once per page with micropip. */
+const PYPI = { flask: 'flask', django: 'django', rest_framework: 'djangorestframework', requests: 'requests', httpx: 'httpx', fastapi: 'fastapi', pytest: 'pytest' };
+const have = new Set();
+async function prep(py, code) {
+  if (!code) return;
+  try { await py.loadPackagesFromImports(code); } catch (e) { /* not a Pyodide package, micropip may still find it */ }
+  /* Django uses sqlite3 inside, so the import scan cannot see it */
+  if (/^\\s*(from|import)\\s+(django|rest_framework)\\b/m.test(code)) {
+    try { await py.loadPackage('sqlite3'); } catch (e) { /* not split out in this Pyodide */ }
+    /* settings.configure() works once per Django, so every run gets a fresh copy of Django */
+    py.runPython("import sys\\nfor _m in [m for m in sys.modules if m.split('.')[0] in ('django', 'rest_framework')]:\\n    del sys.modules[_m]");
+  }
+  const want = Object.keys(PYPI).filter(m => !have.has(m) && new RegExp('^\\\\s*(from|import)\\\\s+' + m + '\\\\b', 'm').test(code));
+  if (!want.length) return;
+  postMessage({ k: 'wait', t: 'Installing ' + want.map(m => PYPI[m]).join(', ') + ' into the browser for this example. This happens once per page and can take half a minute.' });
+  await py.loadPackage('micropip');
+  const mp = py.pyimport('micropip');
+  for (const m of want) { await mp.install(PYPI[m]); have.add(m); }
+}
 onmessage = async ev => {
   const d = ev.data;
   let py;
   try { py = await ready; } catch (e) { return; }
   try {
+    await prep(py, d.code);
     if (d.mode === 'run') {
       stdinText = d.stdin || '';
       py.globals.get('_bb_run')(d.code);
@@ -126,9 +154,11 @@ onmessage = async ev => {
       const on = ev => {
         const m = ev.data;
         if (m.k === 'log' || m.k === 'error') { onMsg && onMsg(m.k, m.t); return; }
+        /* a package is being installed: show it and give the job more time */
+        if (m.k === 'wait') { onStatus && onStatus(m.t); clearTimeout(timer); timer = setTimeout(() => { kill(); end({ k: 'timeout' }); }, limit + 90000); return; }
         end(m);
       };
-      const timer = setTimeout(() => { kill(); end({ k: 'timeout' }); }, limit);
+      let timer = setTimeout(() => { kill(); end({ k: 'timeout' }); }, limit);
       current = { stop: () => { kill(); end({ k: 'stopped' }); } };
       w.addEventListener('message', on);
       w.postMessage(msg);

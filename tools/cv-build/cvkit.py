@@ -30,10 +30,12 @@ class Kit:
     def lesson(self, id, title, html, kw=None):
         self.lessons.append({'id': id, 'title': title, 'html': html, 'kw': kw or []})
 
-    def code(self, key, src, stdin=''):
+    def code(self, key, src, stdin='', long=False):
+        """long=True: the program may run for more than 600 recorded steps. Its step through recording then stops
+        at 600 steps (the page says so), while the output still comes from the full run."""
         if key in self.codes:
             raise SystemExit(f'code block {key} is written twice')
-        self.codes[key] = {'src': src.strip('\n'), 'stdin': stdin}
+        self.codes[key] = {'src': src.strip('\n'), 'stdin': stdin, 'long': long}
 
     def quiz(self, lv, q, o, a, hint, why, code=None):
         d = {'lv': lv, 'q': q, 'o': o, 'a': a, 'hint': hint, 'why': why}

@@ -32,7 +32,7 @@ def fmt(v, depth=0):
 def visible(name, v):
     if name.startswith('__') or name in ('_record_',):
         return False
-    return not isinstance(v, types.ModuleType)
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
 
 
 def record(src, stdin_text=''):
@@ -95,7 +95,14 @@ def record(src, stdin_text=''):
         code = compile(src, FILE, 'exec')
         sys.settrace(tracer)
         try:
-            exec(code, {'__name__': '__main__'})
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
         finally:
             sys.settrace(None)
     except KeyboardInterrupt:
