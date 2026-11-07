@@ -51,7 +51,9 @@ def _bb_norm(v):
 
 def _bb_tests(code, tests_json):
     tests = json.loads(tests_json)
-    ns = {'__name__': 'exercise'}
+    module = types.ModuleType('exercise')   # a real module, so code such as Django's ROOT_URLCONF = __name__ can import it
+    sys.modules['exercise'] = module
+    ns = module.__dict__
     try:
         exec(compile(code, 'exercise.py', 'exec'), ns)
     except BaseException as e:
@@ -86,6 +88,12 @@ const have = new Set();
 async function prep(py, code) {
   if (!code) return;
   try { await py.loadPackagesFromImports(code); } catch (e) { /* not a Pyodide package, micropip may still find it */ }
+  /* Django uses sqlite3 inside, so the import scan cannot see it */
+  if (/^\\s*(from|import)\\s+(django|rest_framework)\\b/m.test(code)) {
+    try { await py.loadPackage('sqlite3'); } catch (e) { /* not split out in this Pyodide */ }
+    /* settings.configure() works once per Django, so every run gets a fresh copy of Django */
+    py.runPython("import sys\\nfor _m in [m for m in sys.modules if m.split('.')[0] in ('django', 'rest_framework')]:\\n    del sys.modules[_m]");
+  }
   const want = Object.keys(PYPI).filter(m => !have.has(m) && new RegExp('^\\\\s*(from|import)\\\\s+' + m + '\\\\b', 'm').test(code));
   if (!want.length) return;
   postMessage({ k: 'wait', t: 'Installing ' + want.map(m => PYPI[m]).join(', ') + ' into the browser for this example. This happens once per page and can take half a minute.' });

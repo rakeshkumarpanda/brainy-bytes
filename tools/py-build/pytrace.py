@@ -32,7 +32,7 @@ def fmt(v, depth=0):
 def visible(name, v):
     if name.startswith('__') or name in ('_record_',):
         return False
-    return not isinstance(v, types.ModuleType)
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
 
 
 def record(src, stdin_text=''):

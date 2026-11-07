@@ -488,7 +488,7 @@
         S(1, [['app', 'Flask("shop")']], 'The factory makes a new Flask object. Calling it twice gives two separate apps, which is exactly what tests need.'),
         S(2, [['SECRET_KEY', 'dev (default)'], ['DATABASE', 'instance/shop.sqlite'], ['from settings', 'TESTING=True (in tests)'], ['from environment', 'FLASK_SECRET_KEY=...']], 'Config comes in layers: safe defaults first, then the settings passed in, then environment variables. Later layers win, so production secrets never live in the code.'),
         S(3, [['teardown_appcontext', 'close_db'], ['CLI command', 'flask init-db']], 'The database module registers <b>close_db</b> to run after every request and adds an <b>init-db</b> command for the terminal.'),
-        S(4, [['blueprint auth', '/auth/register, /auth/login'], ['blueprint books', '/, /create, /&lt;id&gt;/update'], ['blueprint api', '/api/books ...']], 'Each part of the site is a <b>Blueprint</b> in its own file. register_blueprint adds its routes, and url_prefix puts them under a path such as /api.'),
+        S(4, [['blueprint auth', '/auth/register, /auth/login'], ['blueprint books', '/, /create, /<id>/update'], ['blueprint api', '/api/books ...']], 'Each part of the site is a <b>Blueprint</b> in its own file. register_blueprint adds its routes, and url_prefix puts them under a path such as /api.'),
         S(5, [['return', 'app']], 'The factory returns the app. Gunicorn calls it with gunicorn "shop:create_app()", and tests call it with their own settings.')
       ]
     },
@@ -552,6 +552,107 @@
         if (i < stages.length - 1) D.arrow(g, 134, y + gap - 15, 134, y + gap - 1, c.ink2, 1.2, 5);
       });
       head(z, 'What the app knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Web 4.1  Django: a new project step by step, and one request through middleware, URLconf, view, ORM, template
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const FLOW = ['Browser', 'WSGI or ASGI handler', 'Middleware, on the way in', 'URLconf: urlpatterns', 'The view', 'Models and the ORM', 'The template', 'Middleware, on the way out'];
+  const CASES = {
+    project: {
+      stages: ['django-admin startproject mysite', 'python manage.py startapp books', 'Add "books" to INSTALLED_APPS', 'Write a model in books/models.py', 'python manage.py makemigrations', 'python manage.py migrate', 'python manage.py runserver'],
+      steps: [
+        S(0, [['created', 'manage.py'], ['created', 'mysite/settings.py, urls.py'], ['created', 'mysite/wsgi.py, asgi.py']], '<b>startproject</b> makes the project: manage.py to run commands, settings.py for all settings, urls.py for the first URL list, and wsgi.py and asgi.py for the web server.'),
+        S(1, [['created', 'books/models.py, views.py'], ['created', 'books/admin.py, apps.py, tests.py'], ['created', 'books/migrations/']], 'A project holds one or more <b>apps</b>. Each app is one feature, such as books or accounts, with its own models, views and tests. startapp makes the files.'),
+        S(2, [['INSTALLED_APPS', '[..., "books"]']], 'Django only looks at apps listed in <b>INSTALLED_APPS</b>. Forgetting this step is the most common reason why makemigrations says "No changes detected".'),
+        S(3, [['class Book', 'title = CharField(max_length=200)'], ['', 'year = PositiveIntegerField()']], 'A <b>model</b> is a Python class. Each class becomes a table and each field becomes a column. You never write CREATE TABLE yourself.'),
+        S(4, [['migration file', 'books/migrations/0001_initial.py'], ['operation', '+ Create model Book']], '<b>makemigrations</b> compares the models with the last migration and writes the difference into a new Python file. You commit this file to git.'),
+        S(5, [['SQL run', 'CREATE TABLE "books_book" (...)'], ['applied', 'contenttypes, auth, admin, sessions, books']], '<b>migrate</b> runs every migration that is not applied yet, also those of the built in apps. The table name is the app label plus the model name: books_book.'),
+        S(6, [['server', 'http://127.0.0.1:8000/'], ['reloads', 'on every saved file']], '<b>runserver</b> starts the development server. It is for your computer only. In production Gunicorn or Uvicorn runs the project through wsgi.py or asgi.py.')
+      ]
+    },
+    page: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'GET /books/2/']], 'The browser asks for the page of book 2.'),
+        S(1, [['HttpRequest', 'method GET, path /books/2/']], 'The <b>handler</b> (from wsgi.py or asgi.py) turns the HTTP text into an <b>HttpRequest</b> object.'),
+        S(2, [['SessionMiddleware', 'request.session loaded'], ['AuthenticationMiddleware', 'request.user = ann']], 'Each <b>middleware</b> in settings.MIDDLEWARE sees the request in order. Here they load the session and the logged in user.'),
+        S(3, [['pattern', 'books/<int:book_id>/'], ['view', 'book_detail'], ['kwargs', '{"book_id": 2}']], 'Django tries the <b>urlpatterns</b> from top to bottom and stops at the first match. The int converter turns "2" into the number 2.'),
+        S(4, [['call', 'book_detail(request, book_id=2)']], 'Django calls the <b>view</b>. A view is any function (or class) that takes a request and returns an HttpResponse.'),
+        S(5, [['ORM', 'Book.objects.get(pk=2)'], ['SQL', 'SELECT ... FROM books_book WHERE id = 2']], 'The view asks the <b>ORM</b> for the book. Django writes the SQL, sends the values safely and gives back a Book object.'),
+        S(6, [['render', 'books/detail.html'], ['context', '{"book": <Book: Emma>}']], '<b>render()</b> fills the template with the context. Every value is HTML escaped, so a title with &lt;script&gt; is shown as text.'),
+        S(7, [['response', '200 OK, text/html'], ['added', 'Set-Cookie, security headers']], 'The response goes back through the middleware in <b>reverse order</b>, which can add headers or cookies, and then to the browser.')
+      ]
+    },
+    slash: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'GET /books']], 'Someone types the address without the slash at the end.'),
+        S(2, [['CommonMiddleware', 'APPEND_SLASH = True'], ['test', '/books does not match, /books/ does']], '<b>CommonMiddleware</b> checks: no pattern matches /books, but /books/ would match, and APPEND_SLASH is on (the default).'),
+        S(7, [['response', '301 Moved Permanently'], ['Location', '/books/']], 'It answers with a redirect at once. The URLconf, the view and the template never run.', true),
+        S(0, [['next request', 'GET /books/'], ['result', '200, the list of books']], 'The browser follows the redirect. This is why Django URLs end with a slash. A POST to the address without the slash cannot be redirected and gives an error in DEBUG mode.')
+      ]
+    },
+    csrf: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'POST /books/add/'], ['form', 'title=Hamlet, no csrfmiddlewaretoken']], 'A form is sent without the hidden CSRF token, for example from another website that tries to act for a logged in user.'),
+        S(2, [['CsrfViewMiddleware', 'cookie csrftoken = abc...'], ['form token', 'missing']], '<b>CsrfViewMiddleware</b> compares the token in the form with the one in the csrftoken cookie. Another site can make the browser send the cookie, but it cannot read it to copy it into the form.'),
+        S(7, [['response', '403 Forbidden'], ['reason', 'CSRF token missing']], 'The tokens do not match, so Django stops here with <b>403</b>. The view never runs, so no book is added.', true),
+        S(0, [['fix', '{% csrf_token %} inside every POST form']], 'In your own templates, put <b>{% csrf_token %}</b> inside each POST form and the check passes. JSON APIs send the token in the X-CSRFToken header instead.')
+      ]
+    },
+    admin: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'GET /admin/books/book/'], ['logged in', 'no']], 'Someone who is not logged in opens the admin list of books.'),
+        S(2, [['AuthenticationMiddleware', 'request.user = AnonymousUser']], 'The middleware finds no user in the session, so request.user is an <b>AnonymousUser</b>.'),
+        S(3, [['pattern', 'admin/ (admin.site.urls)'], ['view', 'ModelAdmin changelist']], 'The admin is just one entry in urlpatterns, path("admin/", admin.site.urls), with many views inside.'),
+        S(4, [['check', 'user.is_staff is False'], ['response', '302 to /admin/login/?next=...']], 'The admin view checks that the user is <b>staff</b>. It is not, so the answer is a redirect to the login page.', true),
+        S(0, [['login', 'boss (created by createsuperuser)'], ['request', 'GET /admin/books/book/?q=dune']], 'After logging in as the superuser the user searches for "dune".'),
+        S(5, [['search_fields', '["title"]'], ['SQL', 'WHERE title LIKE %dune% ...']], 'The ModelAdmin settings drive the page: <b>search_fields</b> becomes a WHERE clause, <b>list_display</b> chooses the columns, <b>list_filter</b> adds the filter box.'),
+        S(6, [['template', 'admin/change_list.html'], ['rows', 'Dune Messiah, Dune']], 'Django renders its own admin templates. You wrote three lines in admin.py and got a full page to search, add, change and delete books.'),
+        S(7, [['response', '200 OK']], 'The page goes back through the middleware to the browser.')
+      ]
+    }
+  };
+  trace('pydjango', {
+    title: 'Inside Django',
+    sub: 'Pick what to follow. Each step moves one stage further and shows what Django knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Show', type: 'select', v: 'project', opts: [['project', 'A new project, command by command'], ['page', 'GET a page: URL, view, ORM, template'], ['slash', 'An address without the last slash'], ['csrf', 'A form without a CSRF token'], ['admin', 'The admin site']] }],
+    tips: [
+      { t: 'startproject, startapp, makemigrations, migrate, runserver.', set: { case: 'project' }, play: true },
+      { t: 'One page: middleware, urlpatterns, view, ORM, template.', set: { case: 'page' }, play: true },
+      { t: 'APPEND_SLASH: CommonMiddleware answers with 301.', set: { case: 'slash' }, play: true },
+      { t: 'CSRF: the middleware stops a forged form with 403.', set: { case: 'csrf' }, play: true },
+      { t: 'The admin: staff check, search_fields, list_display.', set: { case: 'admin' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 14, name, { s: 12, b: on, stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 13, 134, y + gap - 1, c.ink2, 1.2, 4);
+      });
+      head(z, 'What Django knows now', 272, 22);
       rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
       f.facts.forEach(([k, v, st], i) => {
         const y = 50 + i * 31, now = st === f.fresh;

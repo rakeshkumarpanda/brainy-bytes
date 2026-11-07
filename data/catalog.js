@@ -7295,6 +7295,29 @@ function pyWebModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-w4", title: "Django: the framework with everything built in", emoji: "4", step: 4, part: "web", level: "Intermediate", blurb: "Build full websites with Django: a project and its apps, URLs, views, templates, models and the admin, then the ORM in depth, forms, users and tests.", topics: [
+      { id: "py-django", title: "Django basics: project, URLs, views, templates, models and admin", emoji: "4.1", page: "content/python/py-django.html",
+        summary: "Project and apps, urlpatterns, views, templates, models with QuerySets, and the admin site.",
+        keywords: ["Django", "startproject", "startapp", "urlpatterns", "views", "templates", "models", "QuerySet", "admin", "middleware"],
+        minutes: 110, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "What Django is and why it has so much built in", emoji: "", group: "Lesson", keywords: ["Django", "framework", "ORM", "migrations", "admin", "MTV", "MVC", "Flask", "FastAPI", "batteries included"] },
+        { id: "project", title: "A project and its apps", emoji: "", group: "Lesson", keywords: ["startproject", "startapp", "manage.py", "settings.py", "INSTALLED_APPS", "project", "app", "runserver", "makemigrations", "migrate", "createsuperuser"] },
+        { id: "urls", title: "URLs and views", emoji: "", group: "Lesson", keywords: ["urlpatterns", "path", "path converters", "reverse", "view", "HttpRequest", "HttpResponse", "JsonResponse", "Http404", "redirect", "class based views", "APPEND_SLASH", "CSRF"] },
+        { id: "templates", title: "Templates", emoji: "", group: "Lesson", keywords: ["templates", "render", "context", "filters", "tags", "for", "if", "url tag", "extends", "block", "template inheritance", "escaping", "Jinja"] },
+        { id: "models", title: "Models: Python classes that become tables", emoji: "", group: "Lesson", keywords: ["models", "fields", "CharField", "ForeignKey", "DecimalField", "manager", "objects", "QuerySet", "filter", "get", "lookups", "related_name", "ORM", "SQL"] },
+        { id: "admin", title: "The admin site", emoji: "", group: "Lesson", keywords: ["admin", "ModelAdmin", "admin.register", "list_display", "search_fields", "list_filter", "createsuperuser", "is_staff", "permissions"] },
+        { id: "maths", title: "The maths: URL matching, pages, queries and hashing", emoji: "", group: "Lesson", keywords: ["URL matching", "pagination", "OFFSET", "N+1 problem", "select_related", "PBKDF2", "Little's law", "workers"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "apps registry", "django.setup", "DJANGO_SETTINGS_MODULE", "middleware order", "request cycle", "ASGI"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "trees", "stack", "hash map", "dynamic programming", "parsing", "design"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

@@ -213,8 +213,11 @@ def run_code(key, c):
 
 CHECK = r'''
 import json, sys
+import types
 code, tests = json.load(sys.stdin)
-ns = {'__name__': 'exercise'}
+module = types.ModuleType('exercise')   # a real module, so code such as Django's ROOT_URLCONF = __name__ can import it
+sys.modules['exercise'] = module
+ns = module.__dict__
 try:
     exec(compile(code, 'exercise.py', 'exec'), ns)
 except BaseException as e:
