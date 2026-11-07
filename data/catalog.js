@@ -6982,6 +6982,27 @@ function pyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-collections", title: "collections, heapq and bisect", emoji: "4.2", page: "content/python/py-collections.html",
+        summary: "Counter, deque, namedtuple, OrderedDict, ChainMap, heapq priority queues and bisect.",
+        keywords: ["collections", "Counter", "deque", "namedtuple", "OrderedDict", "ChainMap", "defaultdict", "heapq", "priority queue", "bisect", "binary search"],
+        minutes: 75, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "The right container for the job", emoji: "", group: "Lesson", keywords: ["collections", "Counter", "deque", "namedtuple", "OrderedDict", "ChainMap", "defaultdict", "heapq", "bisect", "choosing a container"] },
+        { id: "counter", title: "Counter: counting made easy", emoji: "", group: "Lesson", keywords: ["Counter", "most_common", "total", "elements", "multiset", "anagram", "counting"] },
+        { id: "deque", title: "deque: a fast queue with two ends", emoji: "", group: "Lesson", keywords: ["deque", "appendleft", "popleft", "rotate", "maxlen", "queue", "BFS", "breadth first search", "sliding window"] },
+        { id: "records", title: "namedtuple, OrderedDict, ChainMap and defaultdict", emoji: "", group: "Lesson", keywords: ["namedtuple", "_replace", "_asdict", "OrderedDict", "move_to_end", "LRU", "ChainMap", "defaultdict", "nested defaultdict", "dataclass vs namedtuple"] },
+        { id: "heap", title: "heapq: a priority queue in a list", emoji: "", group: "Lesson", keywords: ["heapq", "heap", "priority queue", "heappush", "heappop", "heapify", "nlargest", "nsmallest", "merge", "max heap", "heappush_max"] },
+        { id: "bisect", title: "bisect: binary search in a sorted list", emoji: "", group: "Lesson", keywords: ["bisect", "bisect_left", "bisect_right", "insort", "binary search", "key", "grade lookup", "range count", "sortedcontainers"] },
+        { id: "maths", title: "The maths: heap indexes, heights and costs", emoji: "", group: "Lesson", keywords: ["heap index", "heap height", "heapify O(n)", "top k", "binary search", "log n", "deque cost"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "monotonic deque", "two heaps", "external sort", "lazy deletion"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "heap", "top k", "bisect", "Counter", "monotonic deque", "two heaps", "median"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

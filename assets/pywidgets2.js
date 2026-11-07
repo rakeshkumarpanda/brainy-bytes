@@ -759,3 +759,95 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 4.2  heapq: push with sift up, pop with sift down, shown as a list and as a tree
+   ===================================================================================================== */
+(() => {
+  const { trace, head, codeView, D, box } = PYZ;
+  const CODE = ['import heapq', 'heap = []', 'for x in DATA:', '    heapq.heappush(heap, x)', 'smallest = heapq.heappop(heap)'];
+  trace('pyheap', {
+    title: 'A heap: the smallest item always on top',
+    sub: 'heapq keeps a plain list in heap order. Watch each push bubble up and the pop sink down, in the list and in the tree it stands for.',
+    W: 600, H: 400,
+    params: [{ k: 'data', label: 'Numbers to push', type: 'select', v: '5 3 8 1 9 2', opts: [['5 3 8 1 9 2', '5, 3, 8, 1, 9, 2'], ['1 2 3 4 5 6', '1, 2, 3, 4, 5, 6 (already in order)'], ['6 5 4 3 2 1', '6, 5, 4, 3, 2, 1 (every push goes to the top)']] }],
+    tips: [
+      { t: 'Numbers that arrive in order never move: each new one is bigger than its parent.', set: { data: '1 2 3 4 5 6' }, play: true },
+      { t: 'Numbers in reverse order make every push climb all the way to the top: about log2 n swaps each.', set: { data: '6 5 4 3 2 1' }, play: true }
+    ],
+    frames(p) {
+      const data = p.data.split(' ').map(Number);
+      const code = CODE.map(l => l.replace('DATA', '[' + data.join(', ') + ']'));
+      const h = [];
+      const fr = [];
+      const snap = (o) => fr.push({ code, heap: h.slice(), out: null, ...o });
+      data.forEach(x => {
+        h.push(x);
+        let i = h.length - 1;
+        snap({ line: 3, hl: [i], say: `heappush(heap, ${x}): ${x} goes on the END of the list, index ${i}. In the tree that is the next free place on the lowest level.` });
+        while (i > 0) {
+          const pi = (i - 1) >> 1;
+          if (h[pi] <= h[i]) {
+            snap({ line: 3, hl: [i, pi], ok: true, say: `Its parent is index (${i} &minus; 1) // 2 = ${pi}, holding ${h[pi]}. ${h[pi]} &le; ${h[i]}, so the heap rule holds and the push is done.` });
+            break;
+          }
+          snap({ line: 3, hl: [i, pi], say: `Its parent is index (${i} &minus; 1) // 2 = ${pi}, holding ${h[pi]}. ${h[i]} is smaller than ${h[pi]}, so they swap: <b>sift up</b>.` });
+          [h[pi], h[i]] = [h[i], h[pi]];
+          i = pi;
+          snap({ line: 3, hl: [i], say: i === 0 ? `${h[0]} has reached the top (index 0). It is now the smallest item in the heap.` : `${h[i]} moved up to index ${i}. Compare with the next parent.` });
+        }
+      });
+      const top = h[0];
+      snap({ line: 4, hl: [0], say: `heappop(heap): the smallest item is always heap[0], here ${top}. Python takes it out.` });
+      const last = h.pop();
+      if (h.length) {
+        h[0] = last;
+        let i = 0;
+        snap({ line: 4, hl: [0], out: top, say: `The last item, ${last}, moves into the empty top place. That keeps the tree complete, but ${last} is probably too big for the top.` });
+        for (;;) {
+          const l = 2 * i + 1, r = l + 1;
+          let m = i;
+          if (l < h.length && h[l] < h[m]) m = l;
+          if (r < h.length && h[r] < h[m]) m = r;
+          const kids = [l, r].filter(k => k < h.length);
+          if (m === i) {
+            snap({ line: 4, hl: [i, ...kids], ok: true, out: top, say: kids.length ? `The children of index ${i} are ${kids.map(k => h[k]).join(' and ')}. ${h[i]} is not bigger than them, so the heap rule holds again.` : `${h[i]} has no children left, so it stops here.` });
+            break;
+          }
+          snap({ line: 4, hl: [i, m], out: top, say: `The children of index ${i} sit at 2 &times; ${i} + 1 and 2 &times; ${i} + 2: ${kids.map(k => h[k]).join(' and ')}. The smaller child ${h[m]} is less than ${h[i]}, so they swap: <b>sift down</b>.` });
+          [h[m], h[i]] = [h[i], h[m]];
+          i = m;
+        }
+      }
+      snap({ line: 4, hl: [], out: top, end: true, say: `smallest is ${top}. Each push and pop moved an item along one path of the tree, at most about log<sub>2</sub> n swaps, so both are O(log n). The list is NOT sorted, only heap[0] is guaranteed to be the smallest.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const hlc = c.dark ? '#3a2a10' : '#fff7ed', okc = c.dark ? '#14321f' : '#dcfce7';
+      codeView(z, f.code, f.line, 16, 10, 568, { s: 12, lh: 19 });
+      head(z, 'heap (the list)', 16, 128);
+      f.heap.forEach((v, i) => {
+        const x = 16 + i * 52, on = f.hl.includes(i);
+        box(z, x, 136, 46, 36, String(v), { mono: true, s: 15, b: on, stroke: on ? (f.ok ? c.green : c.orange) : c.cv, fill: on ? (f.ok ? okc : hlc) : c.surf });
+        D.text(g, String(i), x + 23, 186, { a: 'center', s: 11, c: c.ink2 });
+      });
+      if (f.out !== null) {
+        head(z, 'smallest', 470, 128);
+        box(z, 470, 136, 114, 36, String(f.out), { mono: true, s: 16, b: true, stroke: c.green, fill: okc });
+      }
+      head(z, 'The same list as a tree: the parent of i is (i - 1) // 2', 16, 214);
+      const pos = i => {
+        const lv = Math.floor(Math.log2(i + 1)), k = i - (2 ** lv - 1), n = 2 ** lv;
+        return [16 + (k + 0.5) * 568 / n, 244 + lv * 58];
+      };
+      f.heap.forEach((v, i) => { if (i) { const [x1, y1] = pos(i), [x2, y2] = pos((i - 1) >> 1); D.line(g, x1, y1, x2, y2, c.line, 2); } });
+      f.heap.forEach((v, i) => {
+        const [x, y] = pos(i), on = f.hl.includes(i);
+        D.circle(g, x, y, 18, { fill: on ? (f.ok ? okc : hlc) : c.surf, stroke: on ? (f.ok ? c.green : c.orange) : c.cv, w: on ? 3 : 2 });
+        D.text(g, String(v), x, y + 5, { a: 'center', s: 15, b: true, c: c.ink, mono: true });
+        D.text(g, String(i), x + 24, y - 12, { s: 10, c: c.ink2 });
+      });
+    }
+  });
+})();
