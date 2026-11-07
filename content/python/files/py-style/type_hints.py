@@ -1,5 +1,5 @@
 # 3.1 Clean code: PEP 8, docstrings and type hints
-# Example "typing" from the lesson.
+# Example "type_hints" from the lesson.
 # From the Brainy Bytes Python subject. Run it with: python3 <this file>
 
 from dataclasses import dataclass

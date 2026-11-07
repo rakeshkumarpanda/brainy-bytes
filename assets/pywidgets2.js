@@ -692,3 +692,70 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 4.1  how the number of steps grows with n for the common Big O classes
+   ===================================================================================================== */
+(() => {
+  const { trace, head, D, box } = PYZ;
+  const L2 = x => Math.log2(Math.max(1, x));
+  const CLS = [
+    { k: 'O(1)', f: () => 1, ex: 'x in a set, d[key]', col: 'green', say: 'O(1), <b>constant time</b>: the work does not depend on n. Looking up a key in a dict or a set takes about the same time for 10 items or 10 million.' },
+    { k: 'O(log n)', f: n => Math.ceil(L2(n)), ex: 'binary search, bisect', col: 'cv', say: 'O(log n), <b>logarithmic</b>: each step throws away half of what is left. Doubling n adds only one more step. Binary search on a sorted list works like this.' },
+    { k: 'O(n)', f: n => n, ex: 'x in a list, sum(), max()', col: 'orange', say: 'O(n), <b>linear</b>: one step per item. Twice the data means twice the work. Searching an unsorted list or adding up all items is linear.' },
+    { k: 'O(n log n)', f: n => Math.round(n * L2(n)), ex: 'sorted(), list.sort()', col: 'purple', say: 'O(n log n): a little more than linear. Good sorting is this fast, so "sort first, then scan once" is often a smart plan.' },
+    { k: 'O(n²)', f: n => n * n, ex: 'two nested loops over the data', col: 'red', say: 'O(n²), <b>quadratic</b>: every item meets every other item, usually through a loop inside a loop. Twice the data means four times the work, and the curve leaves the chart quickly.' }
+  ];
+  trace('pybigo', {
+    title: 'How the work grows with n',
+    sub: 'Pick the size of the data. Each step adds one Big O class to the chart and to the table of steps.',
+    W: 600, H: 370,
+    params: [{ k: 'n', label: 'Size of the data n', type: 'select', v: '32', opts: [['16', 'n = 16'], ['32', 'n = 32'], ['64', 'n = 64'], ['1000', 'n = 1000']] }],
+    tips: [
+      { t: 'With n = 16 the classes look close together.', set: { n: '16' }, play: true },
+      { t: 'With n = 1000, n² is 1,000,000 steps but log n is only 10.', set: { n: '1000' }, play: true }
+    ],
+    frames(p) {
+      const n = +p.n;
+      const fr = [{ n, shown: 0, say: `The x axis is the size of the data, from 1 to ${n}. The y axis is how many basic steps an algorithm needs. Big O describes the <b>shape</b> of this curve when n gets large.` }];
+      CLS.forEach((c, i) => fr.push({ n, shown: i + 1, say: c.say + ` At n = ${n} that is ${c.f(n).toLocaleString('en')} step${c.f(n) === 1 ? '' : 's'}.` }));
+      const r = CLS[4].f(n) / CLS[2].f(n);
+      fr.push({ n, shown: 5, end: true, say: `Compare the table: at n = ${n} the quadratic algorithm needs ${r.toLocaleString('en')} times the work of the linear one. Changing the algorithm matters far more than a faster computer.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const colour = k => k === 'purple' ? (c.dark ? '#c4b5fd' : '#7c3aed') : c[k];
+      const ymax = Math.max(4, Math.round(f.n * L2(f.n) * 1.15));
+      head(z, 'Steps needed for data of size n', 16, 18);
+      const m = D.axes(g, z, [60, 30, 290, 270], [1, f.n], [0, ymax], { nx: 4, ny: 4, xl: 'n (size of the data)', yl: 'steps', fx: v => String(Math.round(v)), fy: v => Math.round(v).toLocaleString('en') });
+      g.save(); g.beginPath(); g.rect(60, 30, 290, 270); g.clip();
+      CLS.slice(0, f.shown).forEach((cl, i) => {
+        const last = i === f.shown - 1 && !f.end;
+        D.curve(g, x => cl.k === 'O(log n)' ? L2(x) : cl.f(x), [1, f.n], m, colour(cl.col), last ? 3.5 : 2.2, 300);
+      });
+      g.restore();
+      let lowest = 999;
+      CLS.slice(0, f.shown).forEach(cl => {
+        const yv = cl.f(f.n);
+        if (yv > ymax) { D.text(g, cl.k + ' goes off the top', 174, 44, { s: 11, b: true, c: colour(cl.col) }); return; }
+        const yy = Math.min(lowest - 13, Math.max(40, m.sy(yv) - 4));
+        lowest = yy;
+        D.text(g, cl.k, 346, yy, { a: 'right', s: 11, b: true, c: colour(cl.col) });
+      });
+      head(z, `At n = ${f.n}`, 372, 18);
+      CLS.forEach((cl, i) => {
+        const y = 30 + i * 52;
+        const on = i < f.shown;
+        if (on) {
+          box(z, 372, y, 212, 46, '', { stroke: colour(cl.col), b: i === f.shown - 1 && !f.end });
+          const v = cl.f(f.n);
+          D.text(g, cl.k, 382, y + 19, { s: 13, b: true, c: colour(cl.col), mono: true });
+          D.text(g, v.toLocaleString('en') + (v === 1 ? ' step' : ' steps'), 574, y + 19, { a: 'right', s: 13, b: true, c: c.ink, mono: true });
+          D.text(g, cl.ex, 382, y + 37, { s: 11, c: c.ink2 });
+        }
+      });
+      if (f.end) box(z, 372, 296, 212, 40, `n² / n = ${(CLS[4].f(f.n) / CLS[2].f(f.n)).toLocaleString('en')} times the work`, { s: 12, b: true, stroke: c.red });
+    }
+  });
+})();

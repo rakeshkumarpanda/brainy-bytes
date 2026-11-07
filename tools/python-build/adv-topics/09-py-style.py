@@ -90,7 +90,7 @@ print(greet.__annotations__)
 print(first("hello"))                          # a str, not a list: Python does not check hints
 ''')
 
-K.code('typing', r'''
+K.code('type_hints', r'''
 from dataclasses import dataclass
 from typing import Callable, Final, Literal, Protocol, TypedDict
 
@@ -228,7 +228,7 @@ K.lesson('docstrings', 'Docstrings and doctest (PEP 257)', f'''
 K.lesson('hints', 'Type hints', f'''
 {run('hints')}
 {note('Hints are stored in __annotations__ but Python never checks them while running: first("hello") worked although the hint says list. In Python 3.14 annotations are evaluated lazily (PEP 649 and 749), so a hint can even name a class defined later in the file.', 'exam')}
-{run('typing')}
+{run('type_hints')}
 {table(['Hint', 'Means'], [
     ['int, str, float, bool, None', 'That exact kind of value'],
     ['list[int], dict[str, int], tuple[int, str], set[str]', 'Containers and what is inside'],

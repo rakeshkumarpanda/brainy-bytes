@@ -20,7 +20,7 @@ print(age, my_age)  # my_age still points to 25
 print(id(age) == id(my_age))   # False now
 ''')
 
-K.code('types', r'''
+K.code('value_types', r'''
 values = [42, 3.14, 2 + 3j, "Asha", True, None, 1_000_000, 0b1010, 0o17, 0xFF, 1.5e3]
 for v in values:
     print(repr(v).ljust(12), type(v).__name__)
@@ -101,7 +101,7 @@ K.lesson('types', 'The basic data types and their literals', f'''
     ['bool', 'True or False', 'True, False', 'No'],
     ['str', 'Text, any number of characters', '"hi", \'hi\', """many lines"""', 'No'],
     ['NoneType', 'The single value meaning "nothing here"', 'None', 'No']])}
-{run('types')}
+{run('value_types')}
 {fxs(fx('Scientific notation', 'a e b = a &times; 10<sup>b</sup>', '1.5e3 = 1.5 &times; 10<sup>3</sup> = 1500.0. The result is always a float.', key=True),
      fx('Underscores in numbers', '1_000_000 == 1000000', 'Since Python 3.6 (PEP 515) underscores can group digits. Python ignores them.'))}
 {note('bool is a kind of int: True == 1 and False == 0, so True + True is 2. This surprises many people in exams.', 'exam')}

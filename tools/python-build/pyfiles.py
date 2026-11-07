@@ -120,6 +120,8 @@ def write_all(chs, out_dir):
         for k, c in T['codes'].items():
             if k in ('practice', 'solutions', 'leetcode'):
                 raise SystemExit(f'{T["slug"]}: code key "{k}" clashes with the {k}.py download, rename it')
+            if k in sys.stdlib_module_names:
+                raise SystemExit(f'{T["slug"]}: {k}.py would hide the standard library module {k} when run, rename the code key')
             head = header(T, f'Example "{k}" from the lesson.')
             if c['stdin']:
                 head += '# This program reads input. Type these lines when it asks:\n' + ''.join(f'#   {x}\n' for x in c['stdin'].split('\n') if x)

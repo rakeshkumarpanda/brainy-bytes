@@ -1,5 +1,5 @@
 # 2.2 itertools, functools and operator
-# Example "functools" from the lesson.
+# Example "functools_demo" from the lesson.
 # From the Brainy Bytes Python subject. Run it with: python3 <this file>
 
 from functools import reduce, partial, singledispatch, lru_cache

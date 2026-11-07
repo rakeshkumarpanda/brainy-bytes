@@ -1,5 +1,5 @@
 # 1.4 Exceptions in depth, copying and serialisation
-# Example "trace" from the lesson.
+# Example "tracebacks" from the lesson.
 # From the Brainy Bytes Python subject. Run it with: python3 <this file>
 
 import traceback

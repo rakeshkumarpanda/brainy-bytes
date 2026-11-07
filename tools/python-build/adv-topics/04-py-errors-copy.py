@@ -77,7 +77,7 @@ except LookupError as err:
     print("from None:", err.__cause__, err.__suppress_context__)
 ''')
 
-K.code('trace', r'''
+K.code('tracebacks', r'''
 import traceback
 
 
@@ -289,7 +289,7 @@ K.lesson('chain', 'Chaining: __cause__ and __context__', f'''
 ''', kw=['exception chaining', '__cause__', '__context__', 'raise from', 'from None', '__suppress_context__', 'PEP 3134'])
 
 K.lesson('trace', 'Tracebacks, notes and exception groups', f'''
-{run('trace')}
+{run('tracebacks')}
 {run('notes')}
 {run('groups')}
 {versus('Reporting problems', ['', 'raise one exception', 'add_note', 'ExceptionGroup and except*'], [

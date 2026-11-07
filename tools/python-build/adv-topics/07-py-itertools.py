@@ -98,7 +98,7 @@ for p in product("0123456789", repeat=4):
 print(pins, math.perm(10, 4))
 ''')
 
-K.code('functools', r'''
+K.code('functools_demo', r'''
 from functools import reduce, partial, singledispatch, lru_cache
 import operator
 
@@ -255,7 +255,7 @@ K.lesson('combos', 'Combinations and permutations', f'''
 ''', kw=['product', 'permutations', 'combinations', 'combinations_with_replacement', 'math.comb', 'math.perm', 'brute force'])
 
 K.lesson('functools', 'functools: reduce, partial, singledispatch and caches', f'''
-{run('functools')}
+{run('functools_demo')}
 {versus('Making a simpler version of a function', ['', 'partial(power, exponent=2)', 'lambda b: power(b, 2)', 'def square(b)'], [
     ['Code', 'Short', 'Short', 'Longest'],
     ['Shows what it wraps', 'Yes: .func, .args, .keywords', 'No', 'No'],

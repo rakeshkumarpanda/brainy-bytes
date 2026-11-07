@@ -1,5 +1,5 @@
 # 1.3 Class design: methods, properties, abstract classes and dataclasses
-# Example "abc" from the lesson.
+# Example "abstract" from the lesson.
 # From the Brainy Bytes Python subject. Run it with: python3 <this file>
 
 from abc import ABC, abstractmethod

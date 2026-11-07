@@ -6960,6 +6960,29 @@ function pyAdvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-a4", title: "Speed: complexity and smart data structures", emoji: "4", step: 4, part: "advanced", level: "Advanced", blurb: "Work out how fast code is, measure it, find the slow part, and pick the data structures that make it fast.", topics: [
+      { id: "py-complexity", title: "Complexity, timing and profiling", emoji: "4.1", page: "content/python/py-complexity.html",
+        summary: "Big O, operation costs, timeit, cProfile, memory, amortized cost and caching.",
+        keywords: ["complexity", "Big O", "timeit", "cProfile", "profiling", "tracemalloc", "amortized", "lru_cache", "master theorem", "performance"],
+        minutes: 75, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "Big O: how the work grows", emoji: "", group: "Lesson", keywords: ["time complexity", "Big O", "space complexity", "O(1)", "O(log n)", "O(n)", "O(n log n)", "O(n^2)", "growth"] },
+        { id: "rules", title: "Finding the Big O of code", emoji: "", group: "Lesson", keywords: ["Big O rules", "drop constants", "nested loops", "hidden loops", "list complexity", "dict complexity", "deque", "average case", "worst case"] },
+        { id: "timing", title: "Measuring with timeit", emoji: "", group: "Lesson", keywords: ["timeit", "timeit.repeat", "python -m timeit", "perf_counter", "benchmark", "fair timing"] },
+        { id: "profile", title: "Finding the slow part with cProfile", emoji: "", group: "Lesson", keywords: ["cProfile", "pstats", "profiling", "tottime", "cumtime", "line_profiler", "py-spy", "optimise"] },
+        { id: "memory", title: "Memory: getsizeof, tracemalloc and generators", emoji: "", group: "Lesson", keywords: ["memory", "sys.getsizeof", "tracemalloc", "generator memory", "__slots__", "array module", "space complexity"] },
+        { id: "amortized", title: "Amortized cost and trading memory for time", emoji: "", group: "Lesson", keywords: ["amortized", "dynamic array", "list.append O(1)", "lru_cache", "memoization", "dynamic programming", "space time trade off"] },
+        { id: "maths", title: "The maths behind Big O", emoji: "", group: "Lesson", keywords: ["Big O definition", "Big Omega", "Big Theta", "arithmetic series", "geometric series", "master theorem", "logarithm", "time estimate"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "lower bound", "cache", "PyPy", "NumPy"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "hash map", "prefix sum", "sliding window", "sieve", "Floyd cycle", "meet in the middle"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

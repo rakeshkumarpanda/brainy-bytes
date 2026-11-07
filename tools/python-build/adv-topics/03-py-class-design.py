@@ -104,7 +104,7 @@ del r.total                                    # forget it, the next read recomp
 print(r.total)
 ''')
 
-K.code('abc', r'''
+K.code('abstract', r'''
 from abc import ABC, abstractmethod
 from collections.abc import Sized
 
@@ -334,7 +334,7 @@ K.lesson('property', 'Properties: attributes with rules', f'''
 ''', kw=['property', 'getter', 'setter', 'read only', 'computed attribute', 'cached_property', 'encapsulation'])
 
 K.lesson('abc', 'Abstract base classes', f'''
-{run('abc')}
+{run('abstract')}
 {note('An abstract base class is a contract: "every Payment can pay and has a name". Python refuses to create an object until every abstract method is filled in, so a forgotten method fails at once instead of in front of a customer. collections.abc gives ready made contracts like Sized, Iterable, Sequence and Mapping.', 'tip')}
 {deep('Virtual subclasses', '<p>Payment.register(SomeClass) makes isinstance(SomeClass(), Payment) True without inheritance and without any checks. collections.abc uses __subclasshook__ instead, which is why Box counts as Sized just because it has __len__.</p>')}
 ''', kw=['abc', 'ABC', 'abstractmethod', 'abstract property', 'contract', 'collections.abc', 'register', 'virtual subclass'])
