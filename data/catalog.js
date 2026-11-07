@@ -7181,6 +7181,26 @@ function pyCoreModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-c7", title: "Exam practice", emoji: "7", step: 7, part: "core", level: "All levels", blurb: "Practise for the PCEP and PCAP exams with four papers, a bug hunt, the common traps, a mock quiz and timed problems.", topics: [
+      { id: "py-core-exam", title: "Exam practice: PCEP and PCAP style papers", emoji: "7.1", page: "content/python/py-core-exam.html",
+        summary: "Four practice papers, a bug hunt, the traps table, exam technique and a mock quiz.",
+        keywords: ["PCEP", "PCAP", "exam practice", "mock quiz", "predict output", "find the bug", "traps", "certification", "revision"],
+        minutes: 90, counts: {"lessons": 10, "problems": 10, "quiz": 30, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "map", title: "The exams and how to use this chapter", emoji: "", group: "Lesson", keywords: ["PCEP", "PCAP", "exam", "certification", "Python Institute", "pass mark", "syllabus", "revision"] },
+        { id: "paper_a", title: "Paper A: fundamentals and control flow", emoji: "", group: "Lesson", keywords: ["predict output", "operator precedence", "floor division", "modulo sign", "round half even", "while else", "for else", "truthiness"] },
+        { id: "paper_b", title: "Paper B: data collections", emoji: "", group: "Lesson", keywords: ["aliasing", "list multiplication trap", "slicing", "tuple comma", "sort returns None", "dict keys True 1"] },
+        { id: "paper_c", title: "Paper C: functions and exceptions", emoji: "", group: "Lesson", keywords: ["args kwargs", "keyword only", "mutable default", "UnboundLocalError", "late binding lambda", "finally", "nonlocal", "closure"] },
+        { id: "paper_d", title: "Paper D: objects, strings and modules", emoji: "", group: "Lesson", keywords: ["class attribute", "name mangling", "super", "string comparison", "split", "math floor ceil trunc", "__name__", "generator", "closure"] },
+        { id: "bugs", title: "Find the bug", emoji: "", group: "Lesson", keywords: ["find the bug", "modify list while iterating", "string immutable", "missing return", "except order", "input is str", "shadowing built ins"] },
+        { id: "traps", title: "The traps in one table", emoji: "", group: "Lesson", keywords: ["exam traps", "common mistakes", "gotchas", "tricky questions"] },
+        { id: "plan", title: "Exam technique and a study plan", emoji: "", group: "Lesson", keywords: ["exam technique", "time per question", "pass mark", "study plan", "PCPP"] },
+        { id: "leetcode", title: "LeetCode review set", emoji: "", group: "Lesson", keywords: ["LeetCode", "review", "two pointers", "intervals", "sudoku", "roman numerals"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
