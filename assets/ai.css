@@ -2,3 +2,38 @@
 :root{--cv:#6d28d9; --cv-soft:#f3ebff; --cv-line:#c4b5fd}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cv:#a78bfa; --cv-soft:#251843; --cv-line:#5b3fa0}}
 :root[data-theme="dark"]{--cv:#a78bfa; --cv-soft:#251843; --cv-line:#5b3fa0}
+
+/* ===== Core AI chapter pages (body class caip): what, why and how boxes, comparisons, summaries, pseudocode,
+   the notebook card and the step by step animation readout from assets/coreai.js ===== */
+.caip .wwh{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin:16px 0}
+@media (max-width:760px){.caip .wwh{grid-template-columns:1fr}}
+.caip .wwh-c{border:1px solid var(--cv-line); border-radius:14px; padding:10px 14px; background:var(--surface2)}
+.caip .wwh-t{display:block; color:var(--cv); font-size:14px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px}
+.caip .wwh-c div{font-size:15px; line-height:1.55}
+.caip .vs{border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin:16px 0}
+.caip .vs-h{font-weight:800; margin-bottom:6px}
+.caip .vs-v{margin:8px 0 0; font-size:15px}
+.caip .rc{margin:10px 0; padding-left:22px}
+.caip .rc li{margin:7px 0; line-height:1.55}
+.caip .rc-next{border-top:1px dashed var(--line); padding-top:8px}
+.caip .src-line{font-size:13px; color:var(--ink2); margin:4px 0 12px}
+.caip .algo{border:1px solid var(--line); border-radius:12px; margin:14px 0; overflow:hidden}
+.caip .algo-h{background:var(--cv-soft); color:var(--cv); font-weight:800; padding:6px 12px; font-size:14px}
+.caip .algo pre{margin:0; padding:10px 12px; font:500 13px/1.55 "JetBrains Mono", monospace; overflow-x:auto; white-space:pre}
+.caip .ck-nb{display:flex; gap:14px; align-items:center; border:1px solid var(--cv-line); background:var(--cv-soft); border-radius:14px; padding:12px 14px; margin:16px 0; flex-wrap:wrap}
+.caip .ck-nb-i{flex:none; width:52px; height:52px; border-radius:12px; background:var(--cv); color:#fff; font-weight:800; font-size:13px; display:grid; place-items:center}
+.caip .ck-nb-t{flex:1 1 260px; min-width:0}
+.caip .ck-nb-t b{display:block; font-size:16px}
+.caip .ck-nb-t span{display:block; color:var(--ink2); font-size:14.5px; line-height:1.5}
+.caip .ck-nb-t small{display:block; color:var(--ink2); font-size:12.5px; margin-top:4px}
+.caip .ck-nb-a{flex:none; background:var(--cv); color:#fff !important; text-decoration:none; font-weight:800; border-radius:10px; padding:8px 14px}
+.caip .cai-now{border-left:4px solid var(--cv); background:var(--cv-soft); border-radius:8px; padding:8px 12px; margin:0 0 8px; line-height:1.55}
+.caip .cai-now b.k{color:var(--cv)}
+.caip .cai-start{color:var(--ink2)}
+.caip .cai-log{margin:6px 0 0; font-size:14px; color:var(--ink2)}
+.caip .cai-log summary{cursor:pointer; font-weight:700}
+.caip .cai-log ol{margin:6px 0 0; padding-left:22px}
+.caip .cai-log li{margin:3px 0}
+.caip .cai-tb{border-collapse:collapse; font-size:13px; margin-top:6px}
+.caip .cai-tb td, .caip .cai-tb th{border:1px solid var(--line); padding:2px 7px; text-align:center}
+.caip .cai-tb tr.on td{background:var(--cv-soft); font-weight:800}
