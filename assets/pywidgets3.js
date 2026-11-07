@@ -306,3 +306,91 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 2.2  retries on a time line: fixed waits, exponential backoff, backoff with jitter, and Retry-After.
+   The server can take 2 requests at the same moment. A third one at the same moment makes all of them fail.
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head } = PYZ;
+  const { rr } = AIZ;
+  /* an attempt: lane 0..2 (client A, B, C), t in seconds, ok, code, and the wait that follows it */
+  const A = (lane, t, ok, code, wait) => ({ lane, t, ok, code, wait });
+  const ROUND = (t, wait) => [A(0, t, false, '503', wait), A(1, t, false, '503', wait), A(2, t, false, '503', wait)];
+  const CASES = {
+    fixed: [
+      [ROUND(0, 1), 'Three clients call the API at <b>t = 0</b>. The server can handle 2 at once, so the third one overloads it and all three get <b>503 Service Unavailable</b>.'],
+      [ROUND(1, 1), 'Each client waits a fixed 1 second and tries again. They all started together, so they all come back together at t = 1. All fail again.'],
+      [ROUND(2, 1), 't = 2: the same thing. Fixed waits keep the clients in step.'],
+      [ROUND(3, 1), 't = 3: they still hit the server at the same moment. This is called a <b>thundering herd</b>: the retries themselves keep the server overloaded.'],
+      [[], 'Fixed waits are simple, but when many clients fail together they also retry together. They never get out of step.']
+    ],
+    backoff: [
+      [ROUND(0, 1), 'The same start: three calls at t = 0, all fail.'],
+      [ROUND(1, 2), '<b>Exponential backoff</b>: wait 1 s, then 2 s, then 4 s, doubling each time. So the second try is at t = 1.'],
+      [ROUND(3, 4), 'Third try at t = 1 + 2 = 3. Fewer tries per second means less load on the server.'],
+      [ROUND(7, 0), 'Fourth try at t = 3 + 4 = 7. But all three clients use the same waits, so they still arrive together and still fail.'],
+      [[], 'Backoff alone lowers the load but does not spread the clients out. The formula is wait = base &times; 2<sup>attempt</sup>, usually with a maximum such as 30 s.']
+    ],
+    jitter: [
+      [ROUND(0, 0), 'Again three calls at t = 0, all fail.'],
+      [[A(0, 0, false, '', 0.6, true), A(1, 0, false, '', 1.7, true), A(2, 0, false, '', 1.1, true)], '<b>Jitter</b>: each client picks a RANDOM wait between 0 and base &times; 2<sup>attempt</sup>, here between 0 and 2 s. Python: random.uniform(0, 2).'],
+      [[A(0, 0.6, true, '200')], 'Client A happened to pick 0.6 s. It is alone at that moment, so it gets <b>200 OK</b>.'],
+      [[A(2, 1.1, true, '200')], 'Client C picked 1.1 s. A is already done, so C is served too.'],
+      [[A(1, 1.7, true, '200')], 'Client B picked 1.7 s and also works. Every client got its answer before t = 2.'],
+      [[], 'Random waits spread the clients over time, so the server sees a few requests at a time instead of a crowd. AWS calls this <b>full jitter</b> and recommends it.']
+    ],
+    after: [
+      [[A(0, 0, false, '429', 3)], 'Client A calls an API with a rate limit. It has used its allowance, so the server answers <b>429 Too Many Requests</b> with the header <b>Retry-After: 3</b>.'],
+      [[], 'Retry-After tells the client exactly how many seconds to wait. A polite client waits that long instead of using its own backoff.'],
+      [[A(0, 3, true, '200')], 'At t = 3 the client tries again and gets <b>200 OK</b>. Calling earlier would only have added more 429 answers.'],
+      [[A(1, 0.5, true, '200'), A(1, 2, true, '200')], 'Client B was never over its limit, so its calls work at once. Rate limits are usually counted per API key or per user.'],
+      [[], 'Read Retry-After (seconds, or a date) and the X-RateLimit-Remaining and X-RateLimit-Reset headers when an API sends them.']
+    ]
+  };
+  trace('pyretry', {
+    title: 'Retrying a failed call',
+    sub: 'Time runs left to right. Each step shows the next tries of three clients. The server can take 2 requests at the same moment.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'How to retry', type: 'select', v: 'fixed', opts: [['fixed', 'Fixed wait (1 s)'], ['backoff', 'Exponential backoff'], ['jitter', 'Backoff with jitter'], ['after', 'A 429 with Retry-After']] }],
+    tips: [
+      { t: 'Fixed waits: all clients retry together and keep failing.', set: { case: 'fixed' }, play: true },
+      { t: 'Backoff: 1, 2, 4 s. Less load, but still together.', set: { case: 'backoff' }, play: true },
+      { t: 'Jitter: random waits spread the clients out.', set: { case: 'jitter' }, play: true },
+      { t: 'Retry-After: the server says how long to wait.', set: { case: 'after' }, play: true }
+    ],
+    frames(p) {
+      const st = CASES[p.case];
+      let done = [];
+      return st.map(([add, say]) => { done = done.concat(add); return { at: done.slice(), fresh: add, say }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const X = t => 90 + t * 62, LANES = ['Client A', 'Client B', 'Client C'], Y = i => 80 + i * 80;
+      LANES.forEach((name, i) => {
+        D.text(g, name, 16, Y(i) + 4, { s: 12, b: true, c: c.ink });
+        D.line(g, X(0), Y(i), X(8), Y(i), c.line, 1.2);
+      });
+      D.line(g, X(0), 330, X(8), 330, c.ink2, 1.5);
+      for (let t = 0; t <= 8; t++) {
+        D.line(g, X(t), 326, X(t), 334, c.ink2, 1.5);
+        D.text(g, t + ' s', X(t), 350, { a: 'center', s: 11, c: c.ink2 });
+      }
+      head(z, 'time', X(8), 372, { a: 'right' });
+      f.at.forEach(a => {
+        const x = X(a.t), y = Y(a.lane), now = f.fresh.includes(a);
+        if (a.wait) {
+          const x2 = X(a.t + a.wait);
+          for (let xx = x + 14; xx < x2 - 14; xx += 8) D.line(g, xx, y - 22, Math.min(xx + 4, x2 - 14), y - 22, c.ink2, 1.2);
+          D.text(g, 'wait ' + a.wait + ' s', (x + x2) / 2, y - 28, { a: 'center', s: 10.5, c: c.ink2 });
+        }
+        if (a.ghost) return;
+        D.circle(g, x, y, now ? 13 : 11, { fill: a.ok ? c.green : c.red, stroke: now ? c.ink : c.surf, w: now ? 2 : 1.5 });
+        D.text(g, a.ok ? '✓' : '✗', x, y + 5, { a: 'center', s: 13, b: true, c: '#fff' });
+        D.text(g, a.code, x, y + 30, { a: 'center', s: 11, b: true, mono: true, c: a.ok ? c.green : c.red });
+      });
+      rr(g, 400, 14, 184, 26, 6, { fill: c.surf, stroke: c.line });
+      D.text(g, 'Server: at most 2 at once', 492, 31, { a: 'center', s: 11.5, b: true, c: c.orange });
+    }
+  });
+})();

@@ -7227,6 +7227,27 @@ function pyWebModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-api-data", title: "Real API work: pages, retries, limits and validation", emoji: "2.2", page: "content/python/py-api-data.html",
+        summary: "Pagination, retries with backoff and jitter, rate limits, pydantic validation and async calls with httpx.",
+        keywords: ["pagination", "cursor", "retry", "backoff", "jitter", "rate limit", "token bucket", "pydantic", "httpx", "asyncio"],
+        minutes: 90, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-07",
+        sections: [
+        { id: "idea", title: "What changes when an API is real", emoji: "", group: "Lesson", keywords: ["pagination", "retries", "backoff", "jitter", "rate limit", "429", "validation", "pydantic", "httpx", "async"] },
+        { id: "paging", title: "Pagination: getting every page", emoji: "", group: "Lesson", keywords: ["pagination", "page", "offset", "limit", "cursor", "Link header", "generator", "yield from", "r.links"] },
+        { id: "retries", title: "Retries with backoff, jitter and Retry-After", emoji: "", group: "Lesson", keywords: ["retry", "exponential backoff", "jitter", "Retry-After", "429", "503", "idempotent", "urllib3 Retry", "HTTPAdapter", "backoff_factor"] },
+        { id: "limits", title: "Rate limits: the token bucket", emoji: "", group: "Lesson", keywords: ["rate limit", "token bucket", "burst", "X-RateLimit-Remaining", "Retry-After", "throttling", "429"] },
+        { id: "validate", title: "Checking the data with pydantic", emoji: "", group: "Lesson", keywords: ["validation", "pydantic", "BaseModel", "Field", "ValidationError", "model_validate", "model_dump", "TypeAdapter", "JSON schema", "type hints"] },
+        { id: "async", title: "Many calls at once with httpx", emoji: "", group: "Lesson", keywords: ["httpx", "AsyncClient", "asyncio.gather", "Semaphore", "concurrency", "HTTP/2", "ThreadPoolExecutor", "blocking"] },
+        { id: "maths", title: "The maths: backoff, limits and pages", emoji: "", group: "Lesson", keywords: ["backoff formula", "jitter", "token bucket", "offset cost", "Little law", "probability of failure"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "circuit breaker", "idempotency key", "observability"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "merge", "intervals", "heap", "calendar booking", "sliding window median", "stream"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
