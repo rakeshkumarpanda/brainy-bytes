@@ -49,23 +49,21 @@ def exclusive_time(n, logs):
     return result
 
 
-# ================================================================== 71. Simplify Path (Medium)
-# https://leetcode.com/problems/simplify-path/
-# Pattern: A stack of folder names
-# Idea: Split on "/". Skip empty parts and ".". ".." pops the last folder, like leaving a with
-# block. Everything else is pushed.
+# ================================================================== 946. Validate Stack Sequences (Medium)
+# https://leetcode.com/problems/validate-stack-sequences/
+# Pattern: Replay the pushes and pops on a real stack
+# Idea: Push each value. After every push, pop while the top is the next value that should come out.
+# It works if the stack ends empty, just as every with block must close in reverse order.
 
-def simplify_path(path):
+def validate_stack_sequences(pushed, popped):
     stack = []
-    for part in path.split("/"):
-        if part == "" or part == ".":
-            continue
-        if part == "..":
-            if stack:
-                stack.pop()
-        else:
-            stack.append(part)
-    return "/" + "/".join(stack)
+    i = 0
+    for value in pushed:
+        stack.append(value)
+        while stack and stack[-1] == popped[i]:
+            stack.pop()
+            i += 1
+    return not stack
 
 
 # ================================================================== 921. Minimum Add to Make Parentheses Valid (Medium)
@@ -228,7 +226,7 @@ def remove_stars(s):
 if __name__ == "__main__":
     results = []
     results.append(check("636. Exclusive Time of Functions", [('exclusive_time(2, ["0:start:0", "1:start:2", "1:end:5", "0:end:6"])', [3, 4]), ('exclusive_time(1, ["0:start:0", "0:start:2", "0:end:5", "0:start:6", "0:end:6", "0:end:7"])', [8])]))
-    results.append(check("71. Simplify Path", [('simplify_path("/home/")', '/home'), ('simplify_path("/home//foo/")', '/home/foo'), ('simplify_path("/home/user/Documents/../Pictures")', '/home/user/Pictures'), ('simplify_path("/../")', '/'), ('simplify_path("/.../a/../b/c/../d/./")', '/.../b/d')]))
+    results.append(check("946. Validate Stack Sequences", [('validate_stack_sequences([1, 2, 3, 4, 5], [4, 5, 3, 2, 1])', True), ('validate_stack_sequences([1, 2, 3, 4, 5], [4, 3, 5, 1, 2])', False), ('validate_stack_sequences([], [])', True)]))
     results.append(check("921. Minimum Add to Make Parentheses Valid", [('min_add_to_make_valid("())")', 1), ('min_add_to_make_valid("(((")', 3), ('min_add_to_make_valid("()))((")', 4)]))
     results.append(check("1249. Minimum Remove to Make Valid Parentheses", [('min_remove_to_make_valid("lee(t(c)o)de)")', 'lee(t(c)o)de'), ('min_remove_to_make_valid("a)b(c)d")', 'ab(c)d'), ('min_remove_to_make_valid("))((")', '')]))
     results.append(check("856. Score of Parentheses", [('score_of_parentheses("()")', 1), ('score_of_parentheses("(())")', 2), ('score_of_parentheses("()()")', 2), ('score_of_parentheses("(()(()))")', 6)]))

@@ -160,39 +160,42 @@ def invalid_transactions(transactions):
     return result
 
 
-# ================================================================== 609. Find Duplicate File in System (Medium)
-# https://leetcode.com/problems/find-duplicate-file-in-system/
-# Pattern: Parse lines into a dict by content
-# Idea: Each line is a folder then files like name(content). Group full paths by content and keep
-# groups with more than one file.
+# ================================================================== 539. Minimum Time Difference (Medium)
+# https://leetcode.com/problems/minimum-time-difference/
+# Pattern: Turn log times into minutes and sort
+# Idea: Change each "HH:MM" into minutes, sort, and compare neighbours. Do not forget the gap that
+# wraps around midnight: first + 1440 − last.
 
-def find_duplicate(paths):
-    by_content = {}
-    for line in paths:
-        folder, *files = line.split(" ")
-        for entry in files:
-            name, content = entry[:-1].split("(")
-            by_content.setdefault(content, []).append(folder + "/" + name)
-    return [group for group in by_content.values() if len(group) > 1]
-
-
-# ================================================================== 388. Longest Absolute File Path (Medium)
-# https://leetcode.com/problems/longest-absolute-file-path/
-# Pattern: A stack of path lengths by depth
-# Idea: The number of tabs is the depth. Keep the total length of the path at each depth. A name
-# with a dot is a file.
-
-def length_longest_path(text):
-    length_at = {0: 0}
-    best = 0
-    for line in text.split("\n"):
-        name = line.lstrip("\t")
-        depth = len(line) - len(name)
-        if "." in name:
-            best = max(best, length_at[depth] + len(name))
-        else:
-            length_at[depth + 1] = length_at[depth] + len(name) + 1
+def find_min_difference(time_points):
+    minutes = []
+    for clock in time_points:
+        hours, mins = clock.split(":")
+        minutes.append(int(hours) * 60 + int(mins))
+    minutes.sort()
+    best = minutes[0] + 1440 - minutes[-1]
+    for i in range(1, len(minutes)):
+        best = min(best, minutes[i] - minutes[i - 1])
     return best
+
+
+# ================================================================== 1418. Display Table of Food Orders in a Restaurant (Medium)
+# https://leetcode.com/problems/display-table-of-food-orders-in-a-restaurant/
+# Pattern: Turn order records into a report table
+# Idea: Count orders in a dict of table number to a dict of food to count. The header is "Table"
+# plus the sorted food names. Rows go in number order of the tables.
+
+def display_table(orders):
+    counts = {}
+    foods = set()
+    for customer, table, food in orders:
+        foods.add(food)
+        row = counts.setdefault(int(table), {})
+        row[food] = row.get(food, 0) + 1
+    names = sorted(foods)
+    result = [["Table"] + names]
+    for table in sorted(counts):
+        result.append([str(table)] + [str(counts[table].get(food, 0)) for food in names])
+    return result
 
 
 # ================================================================== 165. Compare Version Numbers (Medium)
@@ -221,8 +224,8 @@ if __name__ == "__main__":
     results.append(check("1817. Finding the Users Active Minutes", [('finding_users_active_minutes([[0, 5], [1, 2], [0, 2], [0, 5], [1, 3]], 5)', [0, 2, 0, 0, 0]), ('finding_users_active_minutes([[1, 1], [2, 2], [2, 3]], 4)', [1, 1, 0, 0])]))
     results.append(check("2747. Count Zero Request Servers", [('count_servers(3, [[1, 3], [2, 6], [1, 5]], 5, [10, 11])', [1, 2]), ('count_servers(3, [[2, 4], [2, 1], [1, 2], [3, 1]], 2, [3, 4])', [0, 1])]))
     results.append(check("1169. Invalid Transactions", [('invalid_transactions(["alice,20,800,mtv", "alice,50,100,beijing"])', ['alice,20,800,mtv', 'alice,50,100,beijing']), ('invalid_transactions(["alice,20,800,mtv", "alice,50,1200,mtv"])', ['alice,50,1200,mtv'])]))
-    results.append(check("609. Find Duplicate File in System", [('sorted(sorted(g) for g in find_duplicate(["root/a 1.txt(abcd) 2.txt(efgh)", "root/c 3.txt(abcd)", "root/c/d 4.txt(efgh)", "root 4.txt(efgh)"]))', [['root/4.txt', 'root/a/2.txt', 'root/c/d/4.txt'], ['root/a/1.txt', 'root/c/3.txt']])]))
-    results.append(check("388. Longest Absolute File Path", [('length_longest_path("dir\\n\\tsubdir1\\n\\tsubdir2\\n\\t\\tfile.ext")', 20), ('length_longest_path("a")', 0)]))
+    results.append(check("539. Minimum Time Difference", [('find_min_difference(["23:59", "00:00"])', 1), ('find_min_difference(["00:00", "23:59", "00:00"])', 0), ('find_min_difference(["01:10", "03:20", "22:00"])', 130)]))
+    results.append(check("1418. Display Table of Food Orders in a Restaurant", [('display_table([["David", "3", "Ceviche"], ["Corina", "10", "Beef Burrito"], ["David", "3", "Fried Chicken"], ["Carla", "5", "Water"], ["Carla", "5", "Ceviche"], ["Rous", "3", "Ceviche"]])', [['Table', 'Beef Burrito', 'Ceviche', 'Fried Chicken', 'Water'], ['3', '0', '2', '1', '0'], ['5', '0', '1', '0', '1'], ['10', '1', '0', '0', '0']])]))
     results.append(check("165. Compare Version Numbers", [('compare_version("1.2", "1.10")', -1), ('compare_version("1.01", "1.001")', 0), ('compare_version("1.0", "1.0.0.0")', 0), ('compare_version("7.5.2.4", "7.5.3")', -1)]))
     if all(results):
         print("Every solution passes its tests.")

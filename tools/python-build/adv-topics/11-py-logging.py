@@ -375,29 +375,32 @@ def invalid_transactions(transactions):
             result.append(transactions[i])
     return result
 ''', [('invalid_transactions(["alice,20,800,mtv", "alice,50,100,beijing"])', ['alice,20,800,mtv', 'alice,50,100,beijing']), ('invalid_transactions(["alice,20,800,mtv", "alice,50,1200,mtv"])', ['alice,50,1200,mtv'])])
-lc(609, 'Find Duplicate File in System', 'find-duplicate-file-in-system', 'm', 'Parse lines into a dict by content', 'Each line is a folder then files like name(content). Group full paths by content and keep groups with more than one file.', r'''
-def find_duplicate(paths):
-    by_content = {}
-    for line in paths:
-        folder, *files = line.split(" ")
-        for entry in files:
-            name, content = entry[:-1].split("(")
-            by_content.setdefault(content, []).append(folder + "/" + name)
-    return [group for group in by_content.values() if len(group) > 1]
-''', [('sorted(sorted(g) for g in find_duplicate(["root/a 1.txt(abcd) 2.txt(efgh)", "root/c 3.txt(abcd)", "root/c/d 4.txt(efgh)", "root 4.txt(efgh)"]))', [['root/4.txt', 'root/a/2.txt', 'root/c/d/4.txt'], ['root/a/1.txt', 'root/c/3.txt']])])
-lc(388, 'Longest Absolute File Path', 'longest-absolute-file-path', 'm', 'A stack of path lengths by depth', 'The number of tabs is the depth. Keep the total length of the path at each depth. A name with a dot is a file.', r'''
-def length_longest_path(text):
-    length_at = {0: 0}
-    best = 0
-    for line in text.split("\n"):
-        name = line.lstrip("\t")
-        depth = len(line) - len(name)
-        if "." in name:
-            best = max(best, length_at[depth] + len(name))
-        else:
-            length_at[depth + 1] = length_at[depth] + len(name) + 1
+lc(539, 'Minimum Time Difference', 'minimum-time-difference', 'm', 'Turn log times into minutes and sort', 'Change each "HH:MM" into minutes, sort, and compare neighbours. Do not forget the gap that wraps around midnight: first + 1440 &minus; last.', r"""
+def find_min_difference(time_points):
+    minutes = []
+    for clock in time_points:
+        hours, mins = clock.split(":")
+        minutes.append(int(hours) * 60 + int(mins))
+    minutes.sort()
+    best = minutes[0] + 1440 - minutes[-1]
+    for i in range(1, len(minutes)):
+        best = min(best, minutes[i] - minutes[i - 1])
     return best
-''', [('length_longest_path("dir\\n\\tsubdir1\\n\\tsubdir2\\n\\t\\tfile.ext")', 20), ('length_longest_path("a")', 0)])
+""", [('find_min_difference(["23:59", "00:00"])', 1), ('find_min_difference(["00:00", "23:59", "00:00"])', 0), ('find_min_difference(["01:10", "03:20", "22:00"])', 130)])
+lc(1418, 'Display Table of Food Orders in a Restaurant', 'display-table-of-food-orders-in-a-restaurant', 'm', 'Turn order records into a report table', 'Count orders in a dict of table number to a dict of food to count. The header is "Table" plus the sorted food names. Rows go in number order of the tables.', r"""
+def display_table(orders):
+    counts = {}
+    foods = set()
+    for customer, table, food in orders:
+        foods.add(food)
+        row = counts.setdefault(int(table), {})
+        row[food] = row.get(food, 0) + 1
+    names = sorted(foods)
+    result = [["Table"] + names]
+    for table in sorted(counts):
+        result.append([str(table)] + [str(counts[table].get(food, 0)) for food in names])
+    return result
+""", [('display_table([["David", "3", "Ceviche"], ["Corina", "10", "Beef Burrito"], ["David", "3", "Fried Chicken"], ["Carla", "5", "Water"], ["Carla", "5", "Ceviche"], ["Rous", "3", "Ceviche"]])', [['Table', 'Beef Burrito', 'Ceviche', 'Fried Chicken', 'Water'], ['3', '0', '2', '1', '0'], ['5', '0', '1', '0', '1'], ['10', '1', '0', '0', '0']])])
 lc(165, 'Compare Version Numbers', 'compare-version-numbers', 'm', 'Compare number by number', 'Split on dots, turn each part into an int (so 01 equals 1) and treat missing parts as 0.', r'''
 from itertools import zip_longest
 
@@ -411,7 +414,7 @@ def compare_version(version1, version2):
     return 0
 ''', [('compare_version("1.2", "1.10")', -1), ('compare_version("1.01", "1.001")', 0), ('compare_version("1.0", "1.0.0.0")', 0), ('compare_version("7.5.2.4", "7.5.3")', -1)])
 
-K.lesson('leetcode', 'LeetCode practice', leet('<p>These problems are log analysis: sorting log lines, finding three key card swipes inside an hour, active minutes per user, servers with no requests in a time window, and parsing file system listings. It is exactly the code you write to find problems in real logs.</p>'), kw=['LeetCode', 'logs', 'sliding window', 'parsing', 'sorting', 'time windows'])
+K.lesson('leetcode', 'LeetCode practice', leet('<p>These problems are log analysis: sorting log lines, finding three key card swipes inside an hour, active minutes per user, servers with no requests in a time window, the closest two log times, and turning order records into a report table. It is exactly the code you write to find problems in real logs.</p>'), kw=['LeetCode', 'logs', 'sliding window', 'parsing', 'sorting', 'time windows'])
 
 K.lesson('recap', 'Chapter summary', f'''
 {recap([

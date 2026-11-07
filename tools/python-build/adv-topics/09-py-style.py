@@ -290,31 +290,42 @@ def license_key_formatting(s: str, k: int) -> str:
         groups.append(clean[start:start + k])
     return "-".join(group for group in groups if group)
 ''', [('license_key_formatting("5F3Z-2e-9-w", 4)', '5F3Z-2E9W'), ('license_key_formatting("2-5g-3-J", 2)', '2-5G-3J'), ('license_key_formatting("---", 3)', '')])
-lc(68, 'Text Justification', 'text-justification', 'h', 'Fill each line, then share out the spaces', 'Take as many words as fit. Spread the extra spaces from the left. The last line and one word lines are left justified.', r'''
-def full_justify(words: list[str], max_width: int) -> list[str]:
-    """Return the lines of words justified to max_width characters."""
-    lines = []
-    start = 0
-    while start < len(words):
-        end = start
-        width = 0
-        while end < len(words) and width + len(words[end]) + (end - start) <= max_width:
-            width += len(words[end])
-            end += 1
-        gaps = end - start - 1
-        if end == len(words) or gaps == 0:
-            line = " ".join(words[start:end])
-            lines.append(line + " " * (max_width - len(line)))
-        else:
-            spaces = max_width - width
-            line = ""
-            for i in range(start, end - 1):
-                extra = 1 if i - start < spaces % gaps else 0
-                line += words[i] + " " * (spaces // gaps + extra)
-            lines.append(line + words[end - 1])
-        start = end
-    return lines
-''', [('full_justify(["This", "is", "an", "example", "of", "text", "justification."], 16)', ['This    is    an', 'example  of text', 'justification.  ']), ('full_justify(["What", "must", "be", "acknowledgment", "shall", "be"], 16)', ['What   must   be', 'acknowledgment  ', 'shall be        '])])
+lc(273, 'Integer to English Words', 'integer-to-english-words', 'h', 'Groups of three digits with clear helper names', 'Split the number into groups of three from the right (ones, Thousand, Million, Billion). Turn each group under 1000 into words with a small helper, and skip groups that are zero.', r'''
+BELOW_20 = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+            "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen",
+            "Eighteen", "Nineteen"]
+TENS = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+GROUP_NAMES = ["", "Thousand", "Million", "Billion"]
+
+
+def three_digits_to_words(number: int) -> list[str]:
+    """Return the words for a number from 0 to 999."""
+    words = []
+    if number >= 100:
+        words += [BELOW_20[number // 100], "Hundred"]
+        number = number % 100
+    if number >= 20:
+        words.append(TENS[number // 10])
+        number = number % 10
+    if number > 0:
+        words.append(BELOW_20[number])
+    return words
+
+
+def number_to_words(num: int) -> str:
+    """Return num written in English words, for example 123 is One Hundred Twenty Three."""
+    if num == 0:
+        return "Zero"
+    words = []
+    group = 0
+    while num > 0:
+        part = num % 1000
+        if part > 0:
+            words = three_digits_to_words(part) + ([GROUP_NAMES[group]] if group else []) + words
+        num = num // 1000
+        group += 1
+    return " ".join(words)
+''', [('number_to_words(123)', 'One Hundred Twenty Three'), ('number_to_words(12345)', 'Twelve Thousand Three Hundred Forty Five'), ('number_to_words(1234567)', 'One Million Two Hundred Thirty Four Thousand Five Hundred Sixty Seven'), ('number_to_words(0)', 'Zero'), ('number_to_words(1000010)', 'One Million Ten')])
 lc(824, 'Goat Latin', 'goat-latin', 'e', 'Follow the rules word by word', 'Vowel start: add "ma". Otherwise move the first letter to the end and add "ma". Then add one "a" per word position.', r'''
 def to_goat_latin(sentence: str) -> str:
     """Return sentence translated into Goat Latin."""

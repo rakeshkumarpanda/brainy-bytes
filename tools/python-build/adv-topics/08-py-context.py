@@ -319,19 +319,17 @@ def exclusive_time(n, logs):
             previous = time + 1
     return result
 ''', [('exclusive_time(2, ["0:start:0", "1:start:2", "1:end:5", "0:end:6"])', [3, 4]), ('exclusive_time(1, ["0:start:0", "0:start:2", "0:end:5", "0:start:6", "0:end:6", "0:end:7"])', [8])])
-lc(71, 'Simplify Path', 'simplify-path', 'm', 'A stack of folder names', 'Split on "/". Skip empty parts and ".". ".." pops the last folder, like leaving a with block. Everything else is pushed.', r'''
-def simplify_path(path):
+lc(946, 'Validate Stack Sequences', 'validate-stack-sequences', 'm', 'Replay the pushes and pops on a real stack', 'Push each value. After every push, pop while the top is the next value that should come out. It works if the stack ends empty, just as every with block must close in reverse order.', r"""
+def validate_stack_sequences(pushed, popped):
     stack = []
-    for part in path.split("/"):
-        if part == "" or part == ".":
-            continue
-        if part == "..":
-            if stack:
-                stack.pop()
-        else:
-            stack.append(part)
-    return "/" + "/".join(stack)
-''', [('simplify_path("/home/")', '/home'), ('simplify_path("/home//foo/")', '/home/foo'), ('simplify_path("/home/user/Documents/../Pictures")', '/home/user/Pictures'), ('simplify_path("/../")', '/'), ('simplify_path("/.../a/../b/c/../d/./")', '/.../b/d')])
+    i = 0
+    for value in pushed:
+        stack.append(value)
+        while stack and stack[-1] == popped[i]:
+            stack.pop()
+            i += 1
+    return not stack
+""", [('validate_stack_sequences([1, 2, 3, 4, 5], [4, 5, 3, 2, 1])', True), ('validate_stack_sequences([1, 2, 3, 4, 5], [4, 3, 5, 1, 2])', False), ('validate_stack_sequences([], [])', True)])
 lc(921, 'Minimum Add to Make Parentheses Valid', 'minimum-add-to-make-parentheses-valid', 'm', 'Count open brackets', 'Track how many "(" are still open. A ")" with nothing open needs an added "(". At the end every open one needs a ")".', r'''
 def min_add_to_make_valid(s):
     open_count = 0
@@ -444,7 +442,7 @@ def remove_stars(s):
     return "".join(stack)
 ''', [('remove_stars("leet**cod*e")', 'lecoe'), ('remove_stars("erase*****")', '')])
 
-K.lesson('leetcode', 'LeetCode practice', leet('<p>with blocks nest like brackets: the last one opened is the first one closed. Every problem here uses a stack for that same reason, from timing nested function calls to matching brackets and folders.</p>'), kw=['LeetCode', 'stack', 'parentheses', 'nested', 'exclusive time', 'simplify path'])
+K.lesson('leetcode', 'LeetCode practice', leet('<p>with blocks nest like brackets: the last one opened is the first one closed. Every problem here uses a stack for that same reason, from timing nested function calls to matching brackets and replaying pushes and pops.</p>'), kw=['LeetCode', 'stack', 'parentheses', 'nested', 'exclusive time', 'stack sequences'])
 
 K.lesson('recap', 'Chapter summary', f'''
 {recap([

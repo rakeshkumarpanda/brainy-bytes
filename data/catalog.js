@@ -6889,7 +6889,7 @@ function pyAdvModules() {
         { id: "many", title: "Several managers and ExitStack", emoji: "", group: "Lesson", keywords: ["multiple managers", "exit order", "LIFO", "ExitStack", "enter_context", "callback", "async with", "__aenter__"] },
         { id: "maths", title: "The maths: leaks, failures and exit order", emoji: "", group: "Lesson", keywords: ["exit order", "failure probability", "resource leak", "file descriptor limit", "elapsed time"] },
         { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "PEP 343", "exception triple"] },
-        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "stack", "parentheses", "nested", "exclusive time", "simplify path"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "stack", "parentheses", "nested", "exclusive time", "stack sequences"] },
         { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },

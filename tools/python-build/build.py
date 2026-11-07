@@ -80,6 +80,12 @@ def main():
             chs = B.build(args)
             pyfiles.write_all([T for T in chs if not args or T['slug'] in args], os.path.join(B.ROOT, 'content', 'python', 'files'))
         every += chs
+    seen = {}
+    for T in every:
+        for item in T.get('leet') or []:
+            if item['num'] in seen:
+                raise SystemExit(f'LeetCode {item["num"]} is in both {seen[item["num"]]} and {T["slug"]}: pick another problem')
+            seen[item['num']] = T['slug']
     if fast:
         return
     import cheatsheet
