@@ -288,7 +288,7 @@ K.lesson('versus', 'Lists compared with other collections', f'''
     ['Can change', 'Yes', 'No', 'Yes', 'Yes'],
     ['Repeats allowed', 'Yes', 'Yes', 'No', 'Keys no, values yes'],
     ['Find an item', 'O(n)', 'O(n)', 'O(1) average', 'O(1) average by key'],
-    ['Written as', '[1, 2]', '(1, 2)', '{{1, 2}}', '{{"a": 1}}'],
+    ['Written as', '[1, 2]', '(1, 2)', '{1, 2}', '{"a": 1}'],
     ['Best for', 'A changing sequence', 'A fixed record', 'Unique items and membership', 'Looking up a value by a key']],
     'start with a list. Switch to a tuple when the data must not change, a set when you test membership often, and a dict when you look things up by name.')}
 {table(['Operation', 'Time'], [

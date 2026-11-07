@@ -1193,7 +1193,7 @@ const PYZ = (() => {
       return fr;
     },
     paint(z, f) {
-      const c = z.col, n = f.s.length, w = Math.min(44, 560 / n), x0 = (600 - n * w) / 2;
+      const c = z.col, n = f.s.length, w = Math.min(44, 505 / n), x0 = 85 + (505 - n * w) / 2;
       D.text(z.g, 'from the left', x0 - 6, 34, { a: 'right', s: 10, c: c.ink2 });
       D.text(z.g, 'from the right', x0 - 6, 120, { a: 'right', s: 10, c: c.ink2 });
       f.s.forEach((ch, i) => {
@@ -1368,7 +1368,7 @@ const PYZ = (() => {
         PYZ.rr(z.g, x, y, cw - 3, 22, 4, { fill: k < f.size ? (f.resized && k === f.size - 1 ? c.orange : c.cv) : c.surf, stroke: c.line });
       }
       head(z, 'Resizes: when, and the new room', 16, 160);
-      f.hist.slice(-10).forEach((h, i) => D.text(z.g, `append ${h.at}: ${h.from} → ${h.to}`, 16 + (i % 5) * 116, 182 + Math.floor(i / 5) * 20, { s: 12, mono: true, c: c.ink }));
+      f.hist.slice(-8).forEach((h, i) => D.text(z.g, `append ${h.at}: ${h.from} → ${h.to}`, 16 + (i % 4) * 142, 182 + Math.floor(i / 4) * 20, { s: 12, mono: true, c: c.ink }));
       D.text(z.g, `items copied so far: ${f.copies}`, 16, 240, { s: 13, b: true, c: c.ink });
       const bw = Math.min(560, f.copies * 2);
       PYZ.rr(z.g, 16, 250, Math.max(2, bw), 14, 4, { fill: c.orange });
@@ -1415,16 +1415,19 @@ const PYZ = (() => {
     paint(z, f) {
       const c = z.col, g = z.g;
       const L = { x: 220, y: 150, r: 110 }, R = { x: 380, y: 150, r: 110 };
-      const region = (inA, inB) => { if (!f.op) return false; return { '|': inA || inB, '&': inA && inB, '-': inA && !inB, '^': inA !== inB }[f.op]; };
-      // shade regions by sampling
-      if (f.op) {
-        g.save(); g.globalAlpha = 0.28; g.fillStyle = c.cv;
-        for (let x = 100; x < 500; x += 4) for (let y = 30; y < 270; y += 4) {
-          const a = Math.hypot(x - L.x, y - L.y) < L.r, b = Math.hypot(x - R.x, y - R.y) < R.r;
-          if ((a || b) && region(a, b)) g.fillRect(x, y, 4, 4);
-        }
+      // shade the chosen region with clipping: inside every circle of ins, outside every circle of outs
+      const shade = (ins, outs) => {
+        g.save();
+        ins.forEach(q => { g.beginPath(); g.arc(q.x, q.y, q.r, 0, Math.PI * 2); g.clip(); });
+        g.beginPath(); g.rect(0, 0, 600, 300);
+        outs.forEach(q => { g.moveTo(q.x + q.r, q.y); g.arc(q.x, q.y, q.r, 0, Math.PI * 2); });
+        g.globalAlpha = 0.28; g.fillStyle = c.cv; g.fill('evenodd');
         g.restore();
-      }
+      };
+      if (f.op === '&') shade([L, R], []);
+      if (f.op === '-') shade([L], [R]);
+      if (f.op === '^') { shade([L], [R]); shade([R], [L]); }
+      if (f.op === '|') { g.save(); g.beginPath(); g.arc(L.x, L.y, L.r, 0, Math.PI * 2); g.moveTo(R.x + R.r, R.y); g.arc(R.x, R.y, R.r, 0, Math.PI * 2); g.globalAlpha = 0.28; g.fillStyle = c.cv; g.fill('nonzero'); g.restore(); }
       D.circle(g, L.x, L.y, L.r, { stroke: c.cv, w: 2.5 }); D.circle(g, R.x, R.y, R.r, { stroke: c.orange, w: 2.5 });
       D.text(g, 'A', L.x - 90, 40, { s: 18, b: true, c: c.cv }); D.text(g, 'B', R.x + 80, 40, { s: 18, b: true, c: c.orange });
       const spots = { l: [], m: [], r: [] };

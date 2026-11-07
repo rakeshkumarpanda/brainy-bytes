@@ -49,7 +49,7 @@ def centre(text, width, fill):
 
 # ================================================================== task 3: Read a line of marks
 # Write marks_report(line). line holds whole numbers separated by spaces, for example "78 91 64".
-# Return f"Total {{t}}, average {{a:.2f}}". Return "No marks" for an empty or blank line.
+# Return f"Total {t}, average {a:.2f}". Return "No marks" for an empty or blank line.
 # Why it works: This is the same work a program does after reading a line with input().
 
 def marks_report(line):

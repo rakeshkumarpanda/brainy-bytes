@@ -154,7 +154,7 @@ K.lesson('truthy', 'Truthy and falsy values', f'''
     ['False, None', 'True'],
     ['0, 0.0, 0j', 'any other number, even -2 and 0.001'],
     ['"" (empty text)', '"0", " ", "False" (non empty text)'],
-    ['[], (), {{}}, set(), range(0)', '[0], (None,), {{"a": 1}} (non empty collections)']])}
+    ['[], (), {}, set(), range(0)', '[0], (None,), {"a": 1} (non empty collections)']])}
 {run('truthy')}
 {note('Write if items: instead of if len(items) &gt; 0:, and if not name: instead of if name == "":. PEP 8 recommends this short form. But write if x is None: when you really mean None, because 0 and "" are falsy too.', 'tip')}
 ''', kw=['truthy', 'falsy', 'bool()', 'empty collection', 'None check', 'is None'])
@@ -181,7 +181,7 @@ K.lesson('ternary', 'One line choices: the conditional expression and the walrus
 K.lesson('match', 'match and case: pattern matching', f'''
 {wwh('match compares a value (the subject) with a list of <b>patterns</b>. The first pattern that fits runs its block. Patterns can check the shape of the data and pull values out of it at the same time.',
      'Long elif chains that look inside lists, tuples and dicts are hard to read. match describes the shape you expect directly, like a picture of the data.',
-     'Python tries each case from the top. A literal must be equal, a name captures the value, [a, b] needs a sequence of length 2, *rest collects the remaining items, {{"key": v}} looks inside a dict, | means or, if adds a guard, and _ matches anything.')}
+     'Python tries each case from the top. A literal must be equal, a name captures the value, [a, b] needs a sequence of length 2, *rest collects the remaining items, {"key": v} looks inside a dict, | means or, if adds a guard, and _ matches anything.')}
 {viz('pymatch')}
 {run('match')}
 {run('matchmore')}
@@ -192,7 +192,7 @@ K.lesson('match', 'match and case: pattern matching', f'''
     ['Or', 'Any of the alternatives', 'case 200 | 201:'],
     ['Sequence', 'A list or tuple of that length', 'case ["go", direction]:'],
     ['Star', 'Collects the rest of a sequence', 'case ["drop", *things]:'],
-    ['Mapping', 'A dict with those keys (others allowed)', 'case {{"x": x, "y": y}}:'],
+    ['Mapping', 'A dict with those keys (others allowed)', 'case {"x": x, "y": y}:'],
     ['Class', 'An instance of the class, with attributes', 'case Point(x=0, y=y):'],
     ['Guard', 'The pattern plus a condition', 'case int(n) if n &gt; 0:']])}
 {note('A plain name in a case is a capture, not a comparison. case RED: catches everything and binds it to RED. To compare with a constant, use a dotted name such as case Color.RED:.', 'warn')}
@@ -283,7 +283,7 @@ K.lesson('recap', 'Chapter summary', f'''
     'Falsy values: False, None, 0, 0.0, "", and empty collections. Everything else is truthy, even "0" and [0].',
     'Combine with and, or, not, 13 &lt;= age &lt;= 19 and day in ("Sat", "Sun"). day == "Sat" or "Sun" is always True.',
     'One line choices: x if cond else y. The walrus (n := len(data)) assigns inside a condition.',
-    '<b>match</b> tries patterns from the top: literals, captures, _, |, [a, *rest], {{"k": v}}, Class(...), and guards with if.',
+    '<b>match</b> tries patterns from the top: literals, captures, _, |, [a, *rest], {"k": v}, Class(...), and guards with if.',
     'De Morgan: not (a and b) == not a or not b. k independent ifs give up to 2<sup>k</sup> paths to test.'],
     'Core 2.2 repeats work with while and for loops, range(), break, continue and else.')}
 {files('Three tasks: a ticket price chain, a leap year with match, and a triangle classifier.')}

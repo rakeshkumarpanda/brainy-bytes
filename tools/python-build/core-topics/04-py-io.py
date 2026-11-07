@@ -118,17 +118,17 @@ K.lesson('inputs', 'input() always returns text', f'''
 ''', kw=['input()', 'int(input())', 'float(input())', 'split', 'map', 'strip', 'lower', 'TypeError'])
 
 K.lesson('fstrings', 'f-strings: the modern way to build text', f'''
-{wwh('An f-string is a text with an f before the quotes: <code>f"Total: {{total}}"</code>. Anything inside curly brackets is worked out and put into the text.',
+{wwh('An f-string is a text with an f before the quotes: <code>f"Total: {total}"</code>. Anything inside curly brackets is worked out and put into the text.',
      'Joining texts with + and str() is long and easy to get wrong ("Total: " + str(total)). f-strings are shorter, easier to read and also the fastest way.',
-     'Python finds each {{...}} field, works out the expression, formats it with the optional spec after a colon, and joins all the pieces.')}
+     'Python finds each {...} field, works out the expression, formats it with the optional spec after a colon, and joins all the pieces.')}
 {run('fstr')}
 {table(['Inside the brackets', 'Meaning', 'Example', 'Gives'], [
-    ['{{x}}', 'The value as str(x)', 'f"{{3 * 4}}"', '12'],
-    ['{{x!r}}', 'repr(x), shows quotes on text', 'f"{{\'hi\'!r}}"', "'hi'"],
-    ['{{x = }}', 'The expression text, then the value (Python 3.8+)', 'f"{{price = }}"', 'price = 45.5'],
-    ['{{x:spec}}', 'Formatted with a format spec', 'f"{{3.14159:.2f}}"', '3.14'],
-    ['{{{{ and }}}}', 'A real curly bracket', 'f"{{{{x}}}}"', '{{x}}']])}
-{note('Since Python 3.12 (PEP 701) you may reuse the same quotes inside an f-string expression, for example f"{{", ".join(names)}}". Older versions need the other kind of quote inside.', 'tip')}
+    ['{x}', 'The value as str(x)', 'f"{3 * 4}"', '12'],
+    ['{x!r}', 'repr(x), shows quotes on text', 'f"{\'hi\'!r}"', "'hi'"],
+    ['{x = }', 'The expression text, then the value (Python 3.8+)', 'f"{price = }"', 'price = 45.5'],
+    ['{x:spec}', 'Formatted with a format spec', 'f"{3.14159:.2f}"', '3.14'],
+    ['{{ and }}', 'A real curly bracket', 'f"{{x}}"', '{x}']])}
+{note('Since Python 3.12 (PEP 701) you may reuse the same quotes inside an f-string expression, for example f"{", ".join(names)}". Older versions need the other kind of quote inside.', 'tip')}
 ''', kw=['f-string', 'formatted string literal', 'interpolation', 'repr', 'self documenting expression', 'PEP 498', 'PEP 701'])
 
 K.lesson('spec', 'The format spec: width, alignment, decimals and more', f'''
@@ -137,13 +137,13 @@ K.lesson('spec', 'The format spec: width, alignment, decimals and more', f'''
      fx('Common types', 'd (int), f (fixed), e (scientific), % (percent), b o x X (bases), s (text)', 'No type means the same as str() for most values.'))}
 {run('spec')}
 {run('table')}
-{note('.2f rounds the stored binary value, and exact halves go to the even digit: f"{{2.5:.0f}}" gives 2 and f"{{2.675:.2f}}" gives 2.67.', 'exam')}
+{note('.2f rounds the stored binary value, and exact halves go to the even digit: f"{2.5:.0f}" gives 2 and f"{2.675:.2f}" gives 2.67.', 'exam')}
 ''', kw=['format spec', 'mini language', 'width', 'align', 'fill', 'precision', 'thousands separator', 'percent', 'scientific notation', 'table output'])
 
 K.lesson('older', 'Older ways: % formatting and str.format()', f'''
 {run('old')}
 {versus('Three ways to format text', ['', '% formatting', 'str.format()', 'f-string'], [
-    ['Looks like', '"%s is %d" % (name, age)', '"{{}} is {{}}".format(name, age)', 'f"{{name}} is {{age}}"'],
+    ['Looks like', '"%s is %d" % (name, age)', '"{} is {}".format(name, age)', 'f"{name} is {age}"'],
     ['Since', 'Python 1 (copied from C printf)', 'Python 2.6', 'Python 3.6'],
     ['Readability', 'Values far from their places', 'Better, numbered or named fields', 'Best, values sit in place'],
     ['Speed', 'Medium', 'Slowest', 'Fastest'],
@@ -175,9 +175,9 @@ K.lesson('streams', 'Where input and output really go', f'''
 K.lesson('maths', 'The maths: widths and rounding', f'''
 {fxs(fx('Padding added by a width', 'pad = max(0, width &minus; len(text))', 'Width is a minimum. It never cuts the text.', key=True),
      fx('Centre alignment', 'left = &lfloor;pad / 2&rfloor;, right = pad &minus; left', 'With an odd pad the extra character goes on the right.', key=True),
-     fx('Rounding to p places', 'round half to even on the exact binary value', 'f"{{0.125:.2f}}" is 0.12 because 0.125 is exact and 2 is even.'),
+     fx('Rounding to p places', 'round half to even on the exact binary value', 'f"{0.125:.2f}" is 0.12 because 0.125 is exact and 2 is even.'),
      fx('Digits of a number', 'len(str(n)) = &lfloor;log<sub>10</sub> n&rfloor; + 1', 'For a whole number n &gt; 0.'))}
-{steps('Worked example: f"{{\'Menu\':*^11}}"', [
+{steps('Worked example: f"{\'Menu\':*^11}"', [
     'The text Menu has 4 characters.',
     'pad = 11 &minus; 4 = 7.',
     'left = 7 // 2 = 3, right = 7 &minus; 3 = 4.',
@@ -188,12 +188,12 @@ K.lesson('levels', 'From beginner to expert', f'''
 {ladder(
     '<p>input() asks a question and gives you the answer as text. f-strings let you put values into a sentence.</p>',
     '<p>Convert input with int() or float(), split lines with split(). Use the format spec for width, alignment, decimals and separators. Check input with try and a loop.</p>',
-    '<p>f-strings compile to fast bytecode (FORMAT_VALUE, BUILD_STRING). The spec is passed to the value\'s __format__ method, so dates, Decimal and your own classes can define their own codes, for example f"{{today:%d %B %Y}}".</p>',
+    '<p>f-strings compile to fast bytecode (FORMAT_VALUE, BUILD_STRING). The spec is passed to the value\'s __format__ method, so dates, Decimal and your own classes can define their own codes, for example f"{today:%d %B %Y}".</p>',
     '<p>Python 3.14 adds template strings (t-strings, PEP 750): t"..." gives a Template object with the static parts and the values kept apart, so a library can escape values safely for HTML or SQL before joining them.</p>')}
 {grow('Read a name and a number, and print a sentence with an f-string.',
       'Format a bill as a neat table and keep asking until the input is valid.',
       'Write __format__ for your own class and explain why t-strings help against injection.')}
-{scene('printing a pay slip', '<p>A payroll script reads hours and rate for each worker, works out the pay and prints a pay slip where every column lines up: names left aligned in 15 characters, amounts right aligned with two decimals and thousands separators. This is exactly f"{{name:&lt;15}}{{pay:&gt;12,.2f}}". Without widths, columns zigzag and the slip is hard to check.</p>')}
+{scene('printing a pay slip', '<p>A payroll script reads hours and rate for each worker, works out the pay and prints a pay slip where every column lines up: names left aligned in 15 characters, amounts right aligned with two decimals and thousands separators. This is exactly f"{name:&lt;15}{pay:&gt;12,.2f}". Without widths, columns zigzag and the slip is hard to check.</p>')}
 ''', kw=['beginner', 'expert', '__format__', 't-strings', 'PEP 750'])
 
 lc(412, 'Fizz Buzz', 'fizz-buzz', 'e', 'Modulo and building text', 'Check divisible by 15 first, then 3, then 5. Build a list of texts.', r'''
@@ -237,8 +237,8 @@ K.lesson('recap', 'Chapter summary', f'''
 {recap([
     '<b>input(prompt)</b> shows the prompt, waits for Enter and returns <b>text</b>. Use int() or float() before doing maths.',
     'Several values on one line: a, b = map(int, input().split()).',
-    '<b>f-strings</b> put values into text: f"{{name}} is {{age}}". {{x!r}} uses repr, {{x = }} shows the expression too.',
-    'Format spec: [[fill]align][sign][#][0][width][grouping][.precision][type], for example {{amount:&gt;12,.2f}}.',
+    '<b>f-strings</b> put values into text: f"{name} is {age}". {x!r} uses repr, {x = } shows the expression too.',
+    'Format spec: [[fill]align][sign][#][0][width][grouping][.precision][type], for example {amount:&gt;12,.2f}.',
     'Width is a minimum, centre puts the extra pad on the right, rounding goes half to even on the stored value.',
     '% formatting and str.format() are older. Know them, but use f-strings in new code.',
     'Check input in a loop with try and except ValueError, so typing mistakes do not crash the program.'],
@@ -298,7 +298,7 @@ def centre(text, width, fill):
     return fill * left + text + fill * right
 ''', 'pad = width - len(text). left = pad // 2, right = pad - left.', '<p>Python puts the extra character on the right when pad is odd, and so do we.</p>')
 K.assign('parse', 'm', 'Read a line of marks',
-         '<p>Write <code>marks_report(line)</code>. line holds whole numbers separated by spaces, for example "78 91 64". Return f"Total {{t}}, average {{a:.2f}}". Return "No marks" for an empty or blank line.</p>',
+         '<p>Write <code>marks_report(line)</code>. line holds whole numbers separated by spaces, for example "78 91 64". Return f"Total {t}, average {a:.2f}". Return "No marks" for an empty or blank line.</p>',
          '''
 def marks_report(line):
     # your code here
