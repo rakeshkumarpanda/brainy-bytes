@@ -78,7 +78,8 @@ window.CATALOG = {
       blurb: 'Arrays, strings, linked lists, stacks, queues, trees and graphs, animated step by step.',
       intro: 'Start with the building blocks, then climb to expert patterns. Every ready topic has animations, everyday examples, line by line code runs and practice problems with brute force and optimized solutions. The last chapter is a bank of coding interview questions with hints and full answers.',
       tags: ['Arrays', 'Strings', 'Linked lists', 'Trees', 'Graphs'],
-      modules: [
+      layout: 'path',
+      modules: asPath('dsa', [
         {
           id: 'getting-started', title: 'Getting started', emoji: '🚀',
           blurb: 'What DSA is and how we measure speed.',
@@ -173,7 +174,7 @@ window.CATALOG = {
             }
           ]
         }
-      ].concat(iqModule('dsa'))
+      ].concat(sheetModule('dsa'), iqModule('dsa')), ['Beginner', 'Beginner', 'Intermediate', 'Advanced'])
     },
     {
       id: 'manual-testing',
@@ -183,7 +184,8 @@ window.CATALOG = {
       blurb: 'Find bugs before your users do: test design, life cycles, bug reports and test plans.',
       intro: 'Fifteen chapters, from what testing is to the test plan, followed by the newer practices every tester now needs: static testing and reviews, security, accessibility, localization and mobile testing, estimation and metrics, Agile and DevOps testing, and AI in testing. Every diagram is an animation you can step through, every idea has an everyday example, and each chapter has hands on labs, quizzes from easy to expert, number practice and a narrator in six languages. The last chapter collects the interview questions asked most, with hints and full answers.',
       tags: ['STLC', 'Test cases', 'Bug life cycle', 'Regression', 'Test plan'],
-      modules: mtModules().concat(iqModule('manual-testing'))
+      layout: 'path',
+      modules: asPath('manual-testing', mtModules().concat(sheetModule('manual-testing'), iqModule('manual-testing')), ['Beginner', 'Intermediate', 'Intermediate', 'Advanced', 'Advanced'])
     },
     {
       id: 'java',
@@ -193,7 +195,8 @@ window.CATALOG = {
       blurb: 'Core Java from your first identifier to the JVM, with every example compiled and run.',
       intro: 'Start with the Complete Java Session track: seven chapters that follow the session programs from the first class to reading Excel files, ending with all 66 practice programs. Then go deeper with nineteen reference chapters in seven modules. Every code block was compiled and run with JDK 21, and the real output, compile error or exception is shown under it. Each chapter has a comic strip, everyday examples, quizzes from easy to expert, number practice with full working, and a narrator who reads it aloud in six languages. Finish with the Interview Questions chapter, where you answer first, then use a hint, then see the full explanation.',
       tags: ['OOP', 'Exceptions', 'Collections', 'Threads', 'JVM'],
-      modules: [cjsModule()].concat(javaModules(), javaNewModules(), iqModule('java'))
+      layout: 'path',
+      modules: asPath('java', [cjsModule()].concat(javaModules(), javaNewModules(), sheetModule('java'), iqModule('java')), ['Beginner', 'Beginner', 'Intermediate', 'Intermediate', 'Intermediate', 'Advanced', 'Advanced', 'Advanced', 'Expert'])
     },
     {
       id: 'testng',
@@ -203,7 +206,8 @@ window.CATALOG = {
       blurb: 'Annotations, suites, data providers, listeners and framework design, run on real TestNG.',
       intro: 'Three chapters that take you from a first @Test to a Page Object framework with listeners, retries and parallel runs. Every Java example runs on real TestNG with its testng.xml, and the same idea is shown with pytest and Mocha. The last chapter is a set of TestNG interview questions with hints and full answers.',
       tags: ['Annotations', 'testng.xml', 'DataProvider', 'Listeners', 'Parallel'],
-      modules: [tngModule(), iqModule('testng')]
+      layout: 'path',
+      modules: asPath('testng', [tngModule(), sheetModule('testng'), iqModule('testng')], ['Beginner to advanced'])
     },
     {
       id: 'javascript',
@@ -213,7 +217,8 @@ window.CATALOG = {
       blurb: 'JavaScript from your first variable to the latest features, with unit, API and UI test automation for QA.',
       intro: 'Twenty seven chapters in eight modules take you from values and functions to async code, the DOM and Node.js, then deeper into how the engine works, debugging, regular expressions, functional style and metaprogramming. A full TypeScript module covers types, generics, advanced types, real projects and test automation written in TypeScript. Parts marked QA are the ones testers need for Selenium, Playwright and Cypress. The testing module runs unit tests in node:test, Jest, Vitest and Mocha, then API tests and full browser tests. Every example was run with Node.js 26 and every TypeScript example was checked with tsc, and the real output is shown under it. Each chapter has quizzes, number practice, coding exercises and a narrator in six languages. The last chapter is a bank of JavaScript and TypeScript interview questions with hints and full answers.',
       tags: ['ES2026', 'Async', 'TypeScript', 'Jest and Vitest', 'Playwright', 'Interview'],
-      modules: jsModules().concat(iqModule('javascript'))
+      layout: 'path',
+      modules: asPath('javascript', jsModules().concat(sheetModule('javascript'), iqModule('javascript')), ['Beginner', 'Beginner', 'Intermediate', 'Intermediate', 'Advanced', 'Advanced', 'Advanced', 'Expert'])
     },
     {
       id: 'api-manual-testing',
@@ -223,7 +228,8 @@ window.CATALOG = {
       blurb: 'Test APIs by hand from your first HTTP request to security, contracts and AI APIs, with a live playground.',
       intro: 'One complete course in 38 parts and four levels, from what an API is and how to watch real traffic, through files, time zones, race conditions and side effects, to contract testing, fuzzing, the OWASP API Top 10, testing AI and MCP APIs and the newest 2026 standards and tools. Every part has an animation or a tool to try, and the live playground lets you send requests to a mock shop API and hunt seven hidden bugs.',
       tags: ['HTTP', 'Postman', 'Status codes', 'Auth', 'API security'],
-      modules: [apiManualModule()]
+      layout: 'path',
+      modules: asPath('api-manual-testing', [apiManualModule(), sheetModule('api-manual-testing')], ['Beginner to expert'])
     },
     {
       id: 'api-automation',
@@ -233,7 +239,16 @@ window.CATALOG = {
       blurb: 'Pick a language, then a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript, and Playwright in TypeScript.',
       intro: 'One page that asks for your programming language first, then for a tool: Rest Assured, Playwright or HttpClient in Java, requests or Playwright in Python, Postman, Playwright or fetch in JavaScript, and Playwright with Zod and OpenAPI generated types in TypeScript. Every track runs from a first GET to schema checks, mocking, framework design, real project essentials (environments, secrets, fake data, safe logging and cleanup), parallel runs, CI and a lesson on the newest tool features, with a real world scenario, a quiz, an animated request walkthrough and a hands on sandbox. Every code sample was run against a copy of the Restful Booker practice API.',
       tags: ['Rest Assured', 'Playwright', 'TypeScript', 'pytest', 'Postman', 'Newman', 'fetch', 'HttpClient', 'JSON Schema', 'Zod'],
-      page: 'content/api-automation/api-automation.html'
+      layout: 'path',
+      modules: asPath('api-automation', [{
+        id: 'api-auto', title: 'Pick your stack and learn it', blurb: 'Choose a language, then a tool. Every track runs from a first GET to schema checks, mocking, framework design, parallel runs and CI.',
+        topics: [{
+          id: 'api-automation', title: 'API Automation Testing: every track', page: 'content/api-automation/api-automation.html',
+          summary: 'Nine tracks on one page: Rest Assured, Playwright and HttpClient in Java, requests and Playwright in Python, Postman, Playwright and fetch in JavaScript, and Playwright in TypeScript, each with a scenario, a quiz, an animated request walkthrough and a sandbox.',
+          keywords: ['API automation', 'Rest Assured', 'Playwright API testing', 'HttpClient', 'requests', 'pytest', 'Postman', 'Newman', 'fetch', 'JSON Schema', 'Zod', 'OpenAPI', 'interview questions'],
+          added: '2026-10-20'
+        }]
+      }, sheetModule('api-automation')], ['Beginner to expert'])
     },
     {
       id: 'master-claude',
@@ -243,7 +258,8 @@ window.CATALOG = {
       blurb: 'Get the most out of Claude: prompting, projects, Claude Code and the Claude API.',
       intro: 'Fifteen chapters in five modules take you from your first chat to your own agents and to the Claude 101 certificate. Learn to prompt well and manage context, then set up Claude Code step by step and see exactly what goes in CLAUDE.md, rules, skills, settings, hooks, subagents, output styles, plugins and .mcp.json, with ready to copy files for real jobs, including skills and rules for a QA engineer\'s day and a developer\'s day, and a screenshot for every setup step. Build MCP servers in Python, automate daily work with claude -p and GitHub Actions, call the Claude API, and build agents with tools and safety limits. Every file name, field and command was checked against the official documentation, and every script, hook, MCP server and SDK example on these pages was run for real. Parts marked Easy make a beginner path a child can follow. Chapter 15 walks through Anthropic Academy\'s Claude 101 course lesson by lesson and prepares you for the Claude Certified Associate exam. The last chapter is a bank of interview questions with hints and full answers.',
       tags: ['Prompting', 'Claude Code', 'Claude API', 'Agents', 'MCP', 'Claude 101'],
-      modules: claudeModules().concat(iqModule('master-claude'))
+      layout: 'path',
+      modules: asPath('master-claude', claudeModules().concat(sheetModule('master-claude'), iqModule('master-claude')), ['Beginner', 'Intermediate', 'Advanced', 'Advanced', 'Expert'])
     },
 
     /* ===== Coming soon subjects. Each one shows a Coming soon card until its first topic gets a page. ===== */
@@ -294,7 +310,8 @@ window.CATALOG = {
       blurb: 'Browser tests in Java, Python, JavaScript and TypeScript, from setup to a company style framework, reporting labs and CI.',
       intro: 'Learn Playwright in TypeScript, JavaScript, Python and Java, from setup and browser handling to locators, network mocking, fixtures, a company style framework built step by step, reporting labs, CI pipelines and the AI test agents.',
       tags: ['Java', 'Python', 'JS and TS', 'Framework', 'Reports', 'CI'],
-      modules: pwModules().concat(langSheetModule('playwright'), iqModule('playwright'))
+      layout: 'path',
+      modules: asPath('playwright', pwModules().concat(langSheetModule('playwright'), iqModule('playwright')), ['Beginner', 'Beginner', 'Intermediate', 'Intermediate', 'Advanced', 'Advanced', 'Expert'])
     },
     {
       id: 'python',
@@ -324,7 +341,8 @@ window.CATALOG = {
       blurb: 'The linear algebra, calculus, probability and statistics that machine learning is built on.',
       intro: 'Fifteen chapters that start from school arithmetic and climb to the maths inside real models, ending with an advanced module on matrix factorisations, Taylor series and automatic differentiation, and Bayesian inference with sampling. Every idea is shown as a step by step animation you can control, worked through with examples, and run as code in Python, JavaScript, TypeScript and Java.',
       tags: ['Linear algebra', 'Calculus', 'Probability', 'Statistics', 'Loss and metrics'],
-      modules: mlMathModules().concat(iqModule('ml-maths'))
+      layout: 'path',
+      modules: asPath('ml-maths', mlMathModules().concat(sheetModule('ml-maths'), iqModule('ml-maths')), ['Beginner', 'Intermediate', 'Intermediate', 'Intermediate', 'Advanced', 'Expert'])
     },
     {
       id: 'machine-learning',
@@ -1271,6 +1289,33 @@ function javaModules() {
   ];
 }
 
+/* Learning path for the subjects written before the Python subject. asPath() gives every chapter module a step
+   number and a level, numbers the topics 1.1, 1.2 like the Python path, and adds the minutes and counts that
+   tools/path-build/build.py read from the chapter pages (pathMeta below). The cheatsheet and interview modules
+   keep no step, so the path shows them after the steps. levels: one level per step, in order. */
+function asPath(sid, modules, levels) {
+  const meta = pathMeta()[sid] || {};
+  let n = 0;
+  return modules.map(m => {
+    if (m.id === 'cheatsheet' || m.id === 'interview') return m;
+    n++;
+    const step = n;
+    return Object.assign({}, m, {
+      step: step, emoji: String(step), level: (levels && levels[step - 1]) || m.level || '',
+      topics: m.topics.map((t, i) => {
+        const x = meta[t.id] || {};
+        return Object.assign({}, t, { emoji: step + '.' + (i + 1) }, x.minutes ? { minutes: x.minutes } : {}, x.counts ? { counts: x.counts } : {});
+      })
+    });
+  });
+}
+
+/* path-build meta: start */
+function pathMeta() {
+  return {"api-automation":{"api-automation":{"counts":{"lessons":160},"minutes":0}},"api-manual-testing":{"manual-api-testing":{"counts":{"assign":8,"lessons":38,"problems":8,"quiz":32},"minutes":120}},"dsa":{"arrays":{"counts":{"assign":128,"lessons":32},"minutes":0},"graphs":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":16},"introduction":{"counts":{"assign":8,"lessons":9,"problems":8,"quiz":16},"minutes":12},"linked-lists":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":13},"math":{"counts":{"lessons":22},"minutes":0},"runtime-analysis":{"counts":{"assign":8,"lessons":10,"problems":8,"quiz":16},"minutes":14},"stacks-queues":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":13},"strings":{"counts":{"assign":8,"lessons":8,"problems":8,"quiz":16},"minutes":14},"trees":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":15}},"java":{"assertions":{"counts":{"lessons":6,"problems":8,"quiz":12},"minutes":9},"cjs-apis":{"counts":{"assign":8,"lessons":8,"problems":8,"quiz":16},"minutes":8},"cjs-basics":{"counts":{"assign":8,"lessons":8,"problems":8,"quiz":16},"minutes":8},"cjs-control-flow":{"counts":{"assign":8,"lessons":6,"problems":8,"quiz":16},"minutes":8},"cjs-files":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":8},"cjs-methods":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":8},"cjs-oop":{"counts":{"assign":8,"lessons":9,"problems":8,"quiz":16},"minutes":8},"cjs-programs":{"counts":{"assign":8,"lessons":8,"problems":8,"quiz":16},"minutes":8},"collections":{"counts":{"lessons":14,"problems":8,"quiz":12},"minutes":21},"declarations-access-modifiers":{"counts":{"lessons":13,"problems":8,"quiz":12},"minutes":23},"development":{"counts":{"lessons":7,"problems":8,"quiz":12},"minutes":10},"enum":{"counts":{"lessons":10,"problems":8,"quiz":12},"minutes":10},"exception-handling":{"counts":{"lessons":14,"problems":8,"quiz":12},"minutes":18},"file-io":{"counts":{"lessons":8,"problems":8,"quiz":12},"minutes":11},"flow-control":{"counts":{"lessons":10,"problems":8,"quiz":12},"minutes":14},"garbage-collection":{"counts":{"lessons":6,"problems":8,"quiz":12},"minutes":12},"generics":{"counts":{"lessons":8,"problems":8,"quiz":12},"minutes":11},"i18n":{"counts":{"lessons":7,"problems":8,"quiz":12},"minutes":8},"inner-classes":{"counts":{"lessons":8,"problems":8,"quiz":12},"minutes":11},"java-annotations-modules":{"counts":{"lessons":7,"problems":7,"quiz":12},"minutes":24},"java-concurrency":{"counts":{"lessons":9,"problems":8,"quiz":12},"minutes":28},"java-jdbc-http":{"counts":{"lessons":7,"problems":7,"quiz":12},"minutes":26},"java-jvm-internals":{"counts":{"lessons":10,"problems":8,"quiz":12},"minutes":26},"java-lambdas":{"counts":{"lessons":9,"problems":8,"quiz":12},"minutes":22},"java-lang":{"counts":{"lessons":14,"problems":8,"quiz":12},"minutes":19},"java-records-patterns":{"counts":{"lessons":10,"problems":8,"quiz":12},"minutes":25},"java-streams":{"counts":{"lessons":11,"problems":8,"quiz":12},"minutes":26},"java-whats-new":{"counts":{"lessons":7,"problems":7,"quiz":12},"minutes":25},"language-fundamentals":{"counts":{"lessons":11,"problems":8,"quiz":12},"minutes":29},"multithreading":{"counts":{"lessons":12,"problems":8,"quiz":12},"minutes":16},"oops-concepts":{"counts":{"lessons":16,"problems":8,"quiz":12},"minutes":26},"operators":{"counts":{"lessons":12,"problems":8,"quiz":12},"minutes":17},"regex":{"counts":{"lessons":8,"problems":8,"quiz":12},"minutes":9},"serialization":{"counts":{"lessons":9,"problems":8,"quiz":12},"minutes":17}},"javascript":{"js-api-testing":{"counts":{"assign":4,"lessons":8,"problems":8,"quiz":12},"minutes":22},"js-async":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":18},"js-collections-iterators":{"counts":{"assign":4,"lessons":8,"problems":8,"quiz":14},"minutes":21},"js-control-flow":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":18},"js-dom-browser":{"counts":{"assign":4,"lessons":9,"problems":8,"quiz":14},"minutes":23},"js-engine":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":20},"js-errors-debugging":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":18},"js-expert":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":20},"js-functional":{"counts":{"assign":4,"lessons":6,"problems":8,"quiz":12},"minutes":16},"js-functions":{"counts":{"assign":4,"lessons":8,"problems":8,"quiz":12},"minutes":20},"js-getting-started":{"counts":{"assign":4,"lessons":8,"problems":8,"quiz":12},"minutes":14},"js-how-it-runs":{"counts":{"assign":4,"lessons":11,"problems":8,"quiz":12},"minutes":25},"js-http-node":{"counts":{"assign":4,"lessons":8,"problems":8,"quiz":14},"minutes":24},"js-metaprogramming":{"counts":{"assign":4,"lessons":6,"problems":8,"quiz":12},"minutes":17},"js-modern":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":16},"minutes":22},"js-modules-tooling":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":16},"js-node-deep":{"counts":{"assign":4,"lessons":6,"problems":8,"quiz":12},"minutes":19},"js-objects-arrays":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":20},"js-oop":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":17},"js-regex":{"counts":{"assign":4,"lessons":8,"problems":8,"quiz":12},"minutes":18},"js-strings-dates-json":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":14},"minutes":26},"js-ui-automation":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":26},"js-unit-testing":{"counts":{"assign":4,"lessons":8,"problems":8,"quiz":12},"minutes":25},"js-values-types":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":18},"ts-advanced":{"counts":{"assign":4,"lessons":9,"problems":8,"quiz":12},"minutes":20},"ts-basics":{"counts":{"assign":4,"lessons":8,"problems":8,"quiz":12},"minutes":18},"ts-config-modules":{"counts":{"assign":4,"lessons":7,"problems":7,"quiz":12},"minutes":22},"ts-projects":{"counts":{"assign":4,"lessons":6,"problems":8,"quiz":12},"minutes":18},"ts-testing":{"counts":{"assign":4,"lessons":7,"problems":8,"quiz":12},"minutes":20},"ts-type-system":{"counts":{"assign":4,"lessons":8,"problems":7,"quiz":12},"minutes":22},"ts-whats-new":{"counts":{"assign":4,"lessons":7,"problems":7,"quiz":12},"minutes":22}},"manual-testing":{"agile-devops":{"counts":{"lessons":8,"problems":6,"quiz":12},"minutes":8},"ai-testing":{"counts":{"lessons":8,"problems":6,"quiz":12},"minutes":9},"defects":{"counts":{"lessons":11,"problems":9,"quiz":19},"minutes":10},"environments":{"counts":{"lessons":10,"problems":9,"quiz":15},"minutes":9},"fundamentals":{"counts":{"lessons":11,"problems":9,"quiz":16},"minutes":12},"metrics":{"counts":{"lessons":7,"problems":7,"quiz":12},"minutes":7},"non-functional":{"counts":{"lessons":9,"problems":10,"quiz":20},"minutes":8},"regression":{"counts":{"lessons":10,"problems":10,"quiz":19},"minutes":8},"sdlc":{"counts":{"lessons":12,"problems":9,"quiz":17},"minutes":14},"specialised":{"counts":{"lessons":7,"problems":6,"quiz":12},"minutes":10},"static-testing":{"counts":{"lessons":9,"problems":6,"quiz":12},"minutes":11},"test-design":{"counts":{"lessons":12,"problems":9,"quiz":19},"minutes":11},"test-plan":{"counts":{"lessons":11,"problems":9,"quiz":19},"minutes":7},"testing-levels":{"counts":{"lessons":11,"problems":9,"quiz":16},"minutes":12},"white-box":{"counts":{"lessons":10,"problems":10,"quiz":18},"minutes":7}},"master-claude":{"claude-101":{"counts":{"lessons":13,"problems":6,"quiz":13},"minutes":30},"claude-agents":{"counts":{"lessons":6,"problems":6,"quiz":10},"minutes":20},"claude-api":{"counts":{"lessons":8,"problems":6,"quiz":10},"minutes":20},"claude-automation":{"counts":{"lessons":6,"problems":6,"quiz":10},"minutes":18},"claude-code-start":{"counts":{"lessons":8,"problems":6,"quiz":10},"minutes":15},"claude-context":{"counts":{"lessons":8,"problems":6,"quiz":10},"minutes":15},"claude-file-map":{"counts":{"lessons":6,"problems":6,"quiz":10},"minutes":16},"claude-mcp":{"counts":{"lessons":9,"problems":6,"quiz":13},"minutes":26},"claude-md":{"counts":{"lessons":9,"problems":6,"quiz":10},"minutes":17},"claude-meet":{"counts":{"lessons":9,"problems":6,"quiz":10},"minutes":14},"claude-prompting":{"counts":{"lessons":10,"problems":6,"quiz":10},"minutes":16},"claude-rules":{"counts":{"lessons":11,"problems":8,"quiz":12},"minutes":19},"claude-settings-hooks":{"counts":{"lessons":9,"problems":6,"quiz":10},"minutes":18},"claude-skills":{"counts":{"lessons":13,"problems":8,"quiz":14},"minutes":28},"claude-subagents":{"counts":{"lessons":8,"problems":6,"quiz":10},"minutes":16}},"ml-maths":{"bayes-sampling":{"counts":{"assign":4,"lessons":7,"problems":12,"quiz":15},"minutes":60},"decompositions":{"counts":{"assign":4,"lessons":7,"problems":12,"quiz":15},"minutes":60},"derivatives":{"counts":{"assign":4,"lessons":7,"problems":13,"quiz":15},"minutes":60},"distributions":{"counts":{"assign":4,"lessons":7,"problems":14,"quiz":15},"minutes":60},"eigen-svd-pca":{"counts":{"assign":4,"lessons":7,"problems":14,"quiz":15},"minutes":60},"functions-logs":{"counts":{"assign":4,"lessons":7,"problems":13,"quiz":15},"minutes":50},"gradients":{"counts":{"assign":4,"lessons":7,"problems":13,"quiz":15},"minutes":60},"loss-metrics":{"counts":{"assign":4,"lessons":7,"problems":13,"quiz":16},"minutes":60},"matrices":{"counts":{"assign":4,"lessons":7,"problems":13,"quiz":15},"minutes":55},"numbers-algebra":{"counts":{"assign":4,"lessons":7,"problems":14,"quiz":15},"minutes":45},"optimisation":{"counts":{"assign":4,"lessons":7,"problems":13,"quiz":15},"minutes":60},"probability":{"counts":{"assign":4,"lessons":7,"problems":13,"quiz":15},"minutes":55},"statistics":{"counts":{"assign":4,"lessons":7,"problems":14,"quiz":16},"minutes":65},"taylor-autodiff":{"counts":{"assign":4,"lessons":7,"problems":12,"quiz":15},"minutes":60},"vectors":{"counts":{"assign":4,"lessons":7,"problems":13,"quiz":15},"minutes":50}},"playwright":{"pw-actions":{"counts":{"lessons":7,"problems":8,"quiz":12},"minutes":24},"pw-api":{"counts":{"lessons":4,"problems":8,"quiz":12},"minutes":24},"pw-assertions":{"counts":{"lessons":7,"problems":8,"quiz":12},"minutes":22},"pw-browsers":{"counts":{"lessons":8,"problems":8,"quiz":12},"minutes":20},"pw-ci":{"counts":{"lessons":8,"problems":8,"quiz":12},"minutes":30},"pw-debug":{"counts":{"lessons":6,"problems":8,"quiz":12},"minutes":22},"pw-fixtures":{"counts":{"lessons":4,"problems":8,"quiz":12},"minutes":22},"pw-framework":{"counts":{"lessons":6,"problems":8,"quiz":12},"minutes":30},"pw-intro":{"counts":{"lessons":7,"problems":8,"quiz":12},"minutes":16},"pw-locators":{"counts":{"lessons":7,"problems":8,"quiz":12},"minutes":24},"pw-network":{"counts":{"lessons":6,"problems":8,"quiz":12},"minutes":26},"pw-new":{"counts":{"lessons":5,"problems":8,"quiz":12},"minutes":25},"pw-pages":{"counts":{"lessons":7,"problems":8,"quiz":12},"minutes":22},"pw-parallel":{"counts":{"lessons":5,"problems":8,"quiz":12},"minutes":24},"pw-pom":{"counts":{"lessons":4,"problems":8,"quiz":12},"minutes":22},"pw-reports":{"counts":{"lessons":7,"problems":8,"quiz":12},"minutes":35},"pw-runner":{"counts":{"lessons":5,"problems":8,"quiz":12},"minutes":22},"pw-setup":{"counts":{"lessons":7,"problems":8,"quiz":12},"minutes":18},"pw-visual":{"counts":{"lessons":4,"problems":8,"quiz":12},"minutes":22}},"testng":{"tng-advanced":{"counts":{"assign":8,"lessons":6,"problems":8,"quiz":16},"minutes":8},"tng-basics":{"counts":{"assign":8,"lessons":6,"problems":8,"quiz":16},"minutes":8},"tng-suites":{"counts":{"assign":8,"lessons":6,"problems":8,"quiz":16},"minutes":8}}};
+}
+/* path-build meta: end */
+
 /* Cheatsheet: every formula, key idea, table and tip of a subject on one page, with a PDF to download.
    The page and the PDF are built by the subject's builder (tools/cv-build/cheatsheet.py) from the chapters. */
 function sheetModule(sid) {
@@ -1280,11 +1325,20 @@ function sheetModule(sid) {
     'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
     'python': ['content/python/cheatsheet.html', 'Every key idea, formula, table, memory aid and common mistake from all three sections on one page. Core Python runs from print() and types to strings, lists, dictionaries, functions, exceptions, files and classes. Advanced Python runs from magic methods, decorators and metaclasses to generators, testing, complexity, regular expressions and concurrency. Web and APIs runs from HTTP and REST to requests, Flask, Django, DRF, FastAPI and JWT. Search it, filter it, print it or download the PDF.', ['print sep end', 'integer division', 'operator precedence', 'slicing', 'list methods', 'dict methods', 'LEGB', '*args **kwargs', 'try except finally', 'file modes', 'MRO', 'magic methods', 'decorators', 'generators', 'big O', 'regex', 'GIL', 'HTTP status codes', 'Flask routes', 'Django ORM', 'FastAPI', 'JWT']],
+    'dsa': ['content/dsa/cheatsheet.html', 'The key idea of every lesson, every complexity formula and rule, every comparison table, tip and common mistake from the DSA chapters on one page, from Big O and recurrences to arrays, strings, linked lists, stacks, queues, trees and graphs. Search it, filter it, print it or download the PDF.', ['big O', 'time complexity', 'master theorem', 'binary search', 'two pointers', 'sliding window', 'linked list', 'stack', 'queue', 'BST', 'heap', 'BFS', 'DFS', 'dijkstra'], 'eight'],
+    'manual-testing': ['content/manual-testing/cheatsheet.html', 'The key idea of every lesson, every rule, table, tip and common mistake from the Manual Testing chapters on one page, from the seven testing principles, SDLC and STLC to test design techniques, the bug life cycle, test plans, metrics, Agile, DevOps and AI in testing. Search it, filter it, print it or download the PDF.', ['seven principles', 'STLC', 'equivalence partitioning', 'boundary value analysis', 'decision table', 'state transition', 'bug life cycle', 'severity and priority', 'test plan', 'RTM', 'regression'], 'eight'],
+    'java': ['content/java/cheatsheet.html', 'The key idea of every lesson, short code examples, rules, tables, tips, common mistakes and exam notes from the Java chapters on one page, from data types, operators and flow control to OOP, exceptions, collections, generics, threads, I/O, the JVM, lambdas, streams, records and the newest Java. Search it, filter it, print it or download the PDF.', ['data types', 'operators', 'access modifiers', 'overloading', 'overriding', 'String', 'exceptions', 'collections', 'HashMap', 'generics', 'threads', 'streams', 'lambdas', 'records', 'JVM'], 'twelve'],
+    'testng': ['content/testng/cheatsheet.html', 'The key idea of every lesson, short code examples, tables, tips, common mistakes and exam notes from the TestNG chapters on one page, from @Test and the annotation lifecycle to testng.xml suites, data providers, listeners, retries and parallel runs. Search it, filter it, print it or download the PDF.', ['@Test', 'annotations', 'testng.xml', 'DataProvider', 'listeners', 'retry', 'parallel', 'soft assert', 'groups', 'dependsOnMethods']],
+    'javascript': ['content/javascript/cheatsheet.html', 'The key idea of every lesson, short code examples, tables, tips, common mistakes and exam notes from the JavaScript and TypeScript chapters on one page, from values, types and functions to objects, async code, the DOM, Node, testing and the TypeScript type system. Search it, filter it, print it or download the PDF.', ['let const var', 'closures', 'this', 'promises', 'async await', 'event loop', 'array methods', 'destructuring', 'modules', 'TypeScript types', 'generics', 'Jest', 'Mocha'], 'twelve'],
+    'master-claude': ['content/claude/cheatsheet.html', 'The key idea of every lesson, ready to copy files and commands, tables, tips and common mistakes from the Master the Claude chapters on one page, from prompting and context to CLAUDE.md, rules, skills, hooks, subagents, MCP, the API and agents. Search it, filter it, print it or download the PDF.', ['prompting', 'context window', 'CLAUDE.md', 'rules', 'skills', 'SKILL.md', 'hooks', 'settings.json', 'subagents', 'MCP', 'Messages API', 'agents'], 'eight'],
+    'ml-maths': ['content/ml-maths/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Maths for ML chapters on one page, from algebra, logs and functions to vectors, matrices, eigenvalues, SVD and PCA, derivatives, gradients, optimisation, probability, distributions, statistics, loss functions and Bayes. Search it, filter it, print it or download the PDF.', ['dot product', 'cosine similarity', 'matrix multiplication', 'eigenvalues', 'SVD', 'PCA', 'chain rule', 'gradient descent', 'Bayes rule', 'normal distribution', 'cross entropy', 'softmax'], 'eight'],
+    'api-manual-testing': ['content/api-testing/cheatsheet.html', 'The key idea of all 38 parts, every rule, table, tip and common mistake of the Manual API Testing course on one page, from HTTP methods, status codes and headers to auth, test design, pagination, rate limits, contracts, the OWASP API Top 10 and AI APIs. Search it, filter it, print it or download the PDF.', ['HTTP methods', 'status codes', 'headers', 'JSON', 'REST', 'Postman', 'JWT', 'OAuth', 'idempotency', 'pagination', 'rate limit', 'OWASP API Top 10', 'contract testing']],
+    'api-automation': ['content/api-automation/cheatsheet.html', 'The key idea of every lesson, short code examples, tables, tips and common mistakes of all nine API automation tracks on one page, grouped by language: Rest Assured, Playwright and HttpClient in Java, requests and Playwright in Python, Postman, Playwright and fetch in JavaScript, and Playwright in TypeScript. Search it, filter it, print it or download the PDF.', ['Rest Assured', 'given when then', 'pytest', 'requests', 'Playwright request', 'Postman tests', 'Newman', 'fetch', 'JSON Schema', 'Zod', 'auth token', 'mocking'], 'eight'],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
   }[sid];
   return {
     id: 'cheatsheet', title: 'Cheatsheet', emoji: '📄',
-    blurb: 'Revise the whole subject from one page, or from the compact version of at most six pages. Each item links back to the lesson that teaches it, and both PDFs work offline.',
+    blurb: 'Revise the whole subject from one page, or from the compact version of at most ' + (info[3] || 'six') + ' pages. Each item links back to the lesson that teaches it, and both PDFs work offline.',
     topics: [{
       id: 'cheatsheet', title: 'Cheatsheet', emoji: '📄', page: info[0],
       summary: info[1],
@@ -1292,7 +1346,7 @@ function sheetModule(sid) {
       added: '2026-10-31'
     }, {
       id: 'cheatsheet-compact', title: 'Compact cheatsheet', emoji: '📄', page: info[0].replace('cheatsheet.html', 'cheatsheet-compact.html'),
-      summary: 'The key ideas, exam favourite formulas and common traps of every chapter in at most six printed pages, for the last look before an exam. Download the PDF or print it.',
+      summary: 'The key ideas, exam favourite formulas and common traps of every chapter in at most ' + (info[3] || 'six') + ' printed pages, for the last look before an exam. Download the PDF or print it.',
       keywords: ['compact cheatsheet', 'short cheatsheet', 'one page revision', 'last minute revision', 'exam favourite formulas', 'PDF', 'download'],
       added: '2026-10-31'
     }]
