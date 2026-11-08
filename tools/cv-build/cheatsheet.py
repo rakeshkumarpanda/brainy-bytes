@@ -332,7 +332,7 @@ def render(src, pdf, title):
 
 
 def write(chs, cfg, root):
-    out = os.path.join(root, 'content', cfg['subject'])
+    out = os.path.join(root, 'content', cfg.get('dir', cfg['subject']))  # 'dir' when the folder name differs from the subject id
     full, comp = os.path.join(out, 'cheatsheet.html'), os.path.join(out, 'cheatsheet-compact.html')
     pdf, cpdf = os.path.join(out, file_name(cfg)), os.path.join(out, file_name(cfg, True))
     old = lambda f: {'kb': os.path.getsize(f) // 1024} if os.path.exists(f) else {}

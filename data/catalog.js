@@ -78,7 +78,8 @@ window.CATALOG = {
       blurb: 'Arrays, strings, linked lists, stacks, queues, trees and graphs, animated step by step.',
       intro: 'Start with the building blocks, then climb to expert patterns. Every ready topic has animations, everyday examples, line by line code runs and practice problems with brute force and optimized solutions. The last chapter is a bank of coding interview questions with hints and full answers.',
       tags: ['Arrays', 'Strings', 'Linked lists', 'Trees', 'Graphs'],
-      modules: [
+      layout: 'path',
+      modules: asPath('dsa', [
         {
           id: 'getting-started', title: 'Getting started', emoji: '🚀',
           blurb: 'What DSA is and how we measure speed.',
@@ -173,7 +174,7 @@ window.CATALOG = {
             }
           ]
         }
-      ].concat(iqModule('dsa'))
+      ].concat(sheetModule('dsa'), iqModule('dsa')), ['Beginner', 'Beginner', 'Intermediate', 'Advanced'])
     },
     {
       id: 'manual-testing',
@@ -1271,6 +1272,33 @@ function javaModules() {
   ];
 }
 
+/* Learning path for the subjects written before the Python subject. asPath() gives every chapter module a step
+   number and a level, numbers the topics 1.1, 1.2 like the Python path, and adds the minutes and counts that
+   tools/path-build/build.py read from the chapter pages (pathMeta below). The cheatsheet and interview modules
+   keep no step, so the path shows them after the steps. levels: one level per step, in order. */
+function asPath(sid, modules, levels) {
+  const meta = pathMeta()[sid] || {};
+  let n = 0;
+  return modules.map(m => {
+    if (m.id === 'cheatsheet' || m.id === 'interview') return m;
+    n++;
+    const step = n;
+    return Object.assign({}, m, {
+      step: step, emoji: String(step), level: (levels && levels[step - 1]) || m.level || '',
+      topics: m.topics.map((t, i) => {
+        const x = meta[t.id] || {};
+        return Object.assign({}, t, { emoji: step + '.' + (i + 1) }, x.minutes ? { minutes: x.minutes } : {}, x.counts ? { counts: x.counts } : {});
+      })
+    });
+  });
+}
+
+/* path-build meta: start */
+function pathMeta() {
+  return {"dsa":{"arrays":{"counts":{"assign":128,"lessons":32},"minutes":0},"graphs":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":16},"introduction":{"counts":{"assign":8,"lessons":9,"problems":8,"quiz":16},"minutes":12},"linked-lists":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":13},"math":{"counts":{"lessons":22},"minutes":0},"runtime-analysis":{"counts":{"assign":8,"lessons":10,"problems":8,"quiz":16},"minutes":14},"stacks-queues":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":13},"strings":{"counts":{"assign":8,"lessons":8,"problems":8,"quiz":16},"minutes":14},"trees":{"counts":{"assign":8,"lessons":7,"problems":8,"quiz":16},"minutes":15}}};
+}
+/* path-build meta: end */
+
 /* Cheatsheet: every formula, key idea, table and tip of a subject on one page, with a PDF to download.
    The page and the PDF are built by the subject's builder (tools/cv-build/cheatsheet.py) from the chapters. */
 function sheetModule(sid) {
@@ -1280,11 +1308,12 @@ function sheetModule(sid) {
     'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
     'python': ['content/python/cheatsheet.html', 'Every key idea, formula, table, memory aid and common mistake from all three sections on one page. Core Python runs from print() and types to strings, lists, dictionaries, functions, exceptions, files and classes. Advanced Python runs from magic methods, decorators and metaclasses to generators, testing, complexity, regular expressions and concurrency. Web and APIs runs from HTTP and REST to requests, Flask, Django, DRF, FastAPI and JWT. Search it, filter it, print it or download the PDF.', ['print sep end', 'integer division', 'operator precedence', 'slicing', 'list methods', 'dict methods', 'LEGB', '*args **kwargs', 'try except finally', 'file modes', 'MRO', 'magic methods', 'decorators', 'generators', 'big O', 'regex', 'GIL', 'HTTP status codes', 'Flask routes', 'Django ORM', 'FastAPI', 'JWT']],
+    'dsa': ['content/dsa/cheatsheet.html', 'The key idea of every lesson, every complexity formula and rule, every comparison table, tip and common mistake from the DSA chapters on one page, from Big O and recurrences to arrays, strings, linked lists, stacks, queues, trees and graphs. Search it, filter it, print it or download the PDF.', ['big O', 'time complexity', 'master theorem', 'binary search', 'two pointers', 'sliding window', 'linked list', 'stack', 'queue', 'BST', 'heap', 'BFS', 'DFS', 'dijkstra'], 'eight'],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
   }[sid];
   return {
     id: 'cheatsheet', title: 'Cheatsheet', emoji: '📄',
-    blurb: 'Revise the whole subject from one page, or from the compact version of at most six pages. Each item links back to the lesson that teaches it, and both PDFs work offline.',
+    blurb: 'Revise the whole subject from one page, or from the compact version of at most ' + (info[3] || 'six') + ' pages. Each item links back to the lesson that teaches it, and both PDFs work offline.',
     topics: [{
       id: 'cheatsheet', title: 'Cheatsheet', emoji: '📄', page: info[0],
       summary: info[1],
@@ -1292,7 +1321,7 @@ function sheetModule(sid) {
       added: '2026-10-31'
     }, {
       id: 'cheatsheet-compact', title: 'Compact cheatsheet', emoji: '📄', page: info[0].replace('cheatsheet.html', 'cheatsheet-compact.html'),
-      summary: 'The key ideas, exam favourite formulas and common traps of every chapter in at most six printed pages, for the last look before an exam. Download the PDF or print it.',
+      summary: 'The key ideas, exam favourite formulas and common traps of every chapter in at most ' + (info[3] || 'six') + ' printed pages, for the last look before an exam. Download the PDF or print it.',
       keywords: ['compact cheatsheet', 'short cheatsheet', 'one page revision', 'last minute revision', 'exam favourite formulas', 'PDF', 'download'],
       added: '2026-10-31'
     }]
