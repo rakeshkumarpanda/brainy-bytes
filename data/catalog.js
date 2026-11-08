@@ -7384,6 +7384,31 @@ function pyWebModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-w6", title: "Securing APIs and the web revision exam", emoji: "6", step: 6, part: "web", level: "Advanced", blurb: "Protect what you built: passwords, tokens, OAuth 2.0, CORS and the OWASP API Top 10, then test the whole web section in one exam.", topics: [
+      { id: "py-api-security", title: "API security: passwords, JWT, OAuth 2.0, CORS and OWASP", emoji: "6.1", page: "content/python/py-api-security.html",
+        summary: "Password hashing, JWTs by hand and with PyJWT, OAuth 2.0 scopes in FastAPI, CORS and CSRF, and the OWASP API Top 10.",
+        keywords: ["API security", "JWT", "PyJWT", "OAuth 2.0", "password hashing", "PBKDF2", "CORS", "CSRF", "OWASP", "rate limiting"],
+        minutes: 120, counts: {"lessons": 12, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-08",
+        sections: [
+        { id: "idea", title: "What API security is and why every endpoint needs it", emoji: "", group: "Lesson", keywords: ["API security", "authentication", "authorization", "JWT", "OAuth 2.0", "API key", "session cookie", "CORS", "OWASP"] },
+        { id: "passwords", title: "Storing passwords and secrets", emoji: "", group: "Lesson", keywords: ["password hashing", "salt", "PBKDF2", "bcrypt", "scrypt", "Argon2id", "rainbow table", "compare_digest", "secrets", "environment variables"] },
+        { id: "jwt", title: "JSON Web Tokens from scratch", emoji: "", group: "Lesson", keywords: ["JWT", "claims", "HS256", "HMAC", "base64url", "exp", "alg none", "RS256", "JWKS"] },
+        { id: "tokens", title: "Real tokens with PyJWT: expiry, refresh and key rotation", emoji: "", group: "Lesson", keywords: ["PyJWT", "access token", "refresh token", "rotation", "audience", "issuer", "kid", "jti", "revocation", "HttpOnly cookie"] },
+        { id: "oauth", title: "OAuth 2.0 logins, scopes and owner checks in FastAPI", emoji: "", group: "Lesson", keywords: ["OAuth 2.0", "PKCE", "authorization code", "client credentials", "scopes", "OAuth2PasswordBearer", "Security", "401", "403", "WWW-Authenticate"] },
+        { id: "cors", title: "CORS, CSRF and security headers", emoji: "", group: "Lesson", keywords: ["CORS", "preflight", "Access-Control-Allow-Origin", "same origin policy", "CSRF", "SameSite", "HSTS", "Content-Security-Policy", "security headers"] },
+        { id: "owasp", title: "The OWASP API Security Top 10", emoji: "", group: "Lesson", keywords: ["OWASP API Top 10", "BOLA", "mass assignment", "SQL injection", "SSRF", "resource consumption", "misconfiguration", "extra forbid"] },
+        { id: "ops", title: "Rate limits, HTTPS, logging and secrets in production", emoji: "", group: "Lesson", keywords: ["HTTPS", "TLS", "rate limiting", "429", "token bucket", "secrets management", "logging", "pip-audit", "least privilege"] },
+        { id: "maths", title: "The maths: guessing, entropy, hashing cost and rate limits", emoji: "", group: "Lesson", keywords: ["entropy", "brute force", "key stretching", "token bucket", "birthday bound", "length extension", "HMAC"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "OpenID Connect", "ID token", "Authlib", "threat model"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "hashing", "rolling hash", "union find", "KMP", "greedy", "strings"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

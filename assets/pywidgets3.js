@@ -946,3 +946,104 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 6.1  API security: signed tokens, forged tokens, CORS, object level checks and password storage
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const JWT = ['POST /token with name and password', 'Server signs header.payload with its secret', 'Client keeps the token', 'GET /notes/1 with Authorization: Bearer', 'Server signs header.payload again', 'Compare signatures, check exp, aud, iss', 'The endpoint runs'];
+  const CASES = {
+    jwt: {
+      stages: JWT,
+      steps: [
+        S(0, [['form', 'username=ann, password=tea-for-two'], ['password check', 'PBKDF2 hash matches']], 'Ann logs in once with her password. The server checks it against the stored slow hash.'),
+        S(1, [['header', '{"alg": "HS256", "typ": "JWT"}'], ['payload', '{"sub": "ann", "scope": "notes:read", "exp": ...}'], ['signature', 'HMAC-SHA256(secret, header.payload)']], 'The server writes who she is and what she may do, then signs it with a secret only the server knows.'),
+        S(2, [['token', 'eyJhbGci... . eyJzdWIi... . Q46Cf6DE...'], ['note', 'base64url, readable by anyone']], 'The client stores the token. Anyone can read the payload, so never put a secret inside it.'),
+        S(3, [['request', 'GET /notes/1'], ['header', 'Authorization: Bearer eyJhbGci...']], 'Every later request carries the token. No session table is needed on the server.'),
+        S(4, [['recomputed', 'HMAC-SHA256(secret, header.payload)']], 'The server signs the same two parts again with its own secret.'),
+        S(5, [['signatures', 'equal (compare_digest)'], ['exp', 'in 14 minutes, ok'], ['aud, iss', 'bookshop-api, our auth server']], 'Equal signatures prove that the server made this token and nobody changed it. Then the claims are checked.'),
+        S(6, [['user', 'ann'], ['scopes', 'notes:read'], ['status', '200 OK']], 'Only now does the endpoint run, knowing exactly who is asking.')
+      ]
+    },
+    forged: {
+      stages: JWT,
+      steps: [
+        S(2, [['attacker has', 'a real token for ann'], ['payload', '{"sub": "ann", "role": "user"}']], 'An attacker copies a real token, for example from a log file.'),
+        S(3, [['edited payload', '{"sub": "ann", "role": "admin"}'], ['signature', 'the old one, unchanged']], 'They change role to admin. They cannot make a new signature, because they do not know the secret.', true),
+        S(4, [['recomputed', 'HMAC over the EDITED payload'], ['result', 'a completely different signature']], 'The server signs the edited parts and gets a different value. One changed letter changes the whole HMAC.'),
+        S(5, [['signatures', 'not equal'], ['status', '401 Unauthorized']], 'The token is refused.', true),
+        S(5, [['next trick', '"alg": "none" and no signature'], ['defence', 'algorithms=["HS256"] is pinned']], 'Some old libraries believed the header and skipped the check for "alg": "none". Always pass the list of allowed algorithms.', true),
+        S(6, [['rule', 'never trust what the token says about itself'], ['also', 'short exp, rotate keys with kid']], 'The endpoint never runs. Short lifetimes limit the damage when a real token is stolen.')
+      ]
+    },
+    cors: {
+      stages: ['Page on https://shop.example.com runs fetch()', 'Browser sends a preflight OPTIONS', 'API answers Access-Control-Allow-*', 'Browser sends the real POST', 'The page may read the answer', 'Page on https://evil.example tries the same'],
+      steps: [
+        S(0, [['page', 'https://shop.example.com'], ['calls', 'POST https://api.example.com/orders'], ['with', 'Authorization header, JSON body']], 'A page from one origin calls an API on another origin. The browser steps in because the origins differ.'),
+        S(1, [['OPTIONS', '/orders'], ['Origin', 'https://shop.example.com'], ['Request-Method', 'POST'], ['Request-Headers', 'authorization, content-type']], 'The request is not a simple one, so the browser first asks permission with a preflight.'),
+        S(2, [['Allow-Origin', 'https://shop.example.com'], ['Allow-Methods', 'GET, POST'], ['Allow-Credentials', 'true'], ['Max-Age', '600']], 'The API lists what it allows. Max-Age lets the browser remember the answer for 10 minutes.'),
+        S(3, [['POST', '/orders, 201 Created']], 'The browser now sends the real request.'),
+        S(4, [['page reads', '{"id": 7}']], 'The answer carries Allow-Origin again, so the browser hands it to the page.'),
+        S(5, [['Origin', 'https://evil.example'], ['answer', 'no Access-Control-Allow-Origin'], ['browser', 'hides the answer from the page']], 'For an origin that is not listed the browser blocks the page from reading the answer. A script or curl outside a browser is not stopped, so CORS never replaces a login.', true)
+      ]
+    },
+    bola: {
+      stages: ['GET /notes/1 from ben', 'Token check: who is it', 'Scope check: may ben read notes', 'Load note 1', 'Owner check: is it ben’s note', 'Answer'],
+      steps: [
+        S(0, [['request', 'GET /notes/1'], ['token', 'a valid token for ben']], 'Ben is logged in and simply changes the number in the URL from his note to note 1.'),
+        S(1, [['sub', 'ben'], ['authentication', 'passed']], 'The token is real, so the server knows the caller is ben.'),
+        S(2, [['scope', 'notes:read'], ['function level check', 'passed']], 'Ben may read notes in general.'),
+        S(3, [['note 1', '{"owner": "ann", "text": "Buy milk"}']], 'The note is found. A careless API would return it now. That bug is number 1 on the OWASP API Top 10: Broken Object Level Authorization.', true),
+        S(4, [['owner', 'ann'], ['caller', 'ben'], ['object level check', 'failed']], 'The fix is one line: compare the owner of the object with the caller on every request that takes an id.'),
+        S(5, [['status', '404 Not Found'], ['why not 403', 'do not confirm that note 1 exists']], 'Ben gets 404, so he cannot even learn which ids exist. Random ids such as UUIDs make guessing harder too, but the check is what protects the data.')
+      ]
+    },
+    password: {
+      stages: ['Sign up: password "sunshine"', 'Make a random salt', 'PBKDF2-SHA256, 600,000 rounds', 'Store algorithm$rounds$salt$hash', 'Log in: hash the typed password again', 'compare_digest'],
+      steps: [
+        S(0, [['typed', 'sunshine'], ['never stored', 'the password itself, or a fast sha256']], 'The server must be able to check the password later without keeping it.'),
+        S(1, [['salt', 'Qx81LmZ0aa7Kc3d1 (random per user)']], 'A random salt makes two users with the same password get different hashes, so precomputed tables are useless.'),
+        S(2, [['rounds', '600,000'], ['time', 'about 120 ms per guess']], 'The hash runs the HMAC 600,000 times on purpose. A login barely notices, a billion guesses take years.'),
+        S(3, [['stored', 'pbkdf2_sha256$600000$Qx81LmZ0aa7Kc3d1$pUPUtAH5...'], ['format', 'the same one Django uses']], 'The rounds and the salt are stored next to the hash, so the rounds can be raised later.'),
+        S(4, [['typed', 'sunshine'], ['hash again', 'same salt, same rounds']], 'At login the server repeats the work with the stored salt and rounds.'),
+        S(5, [['result', 'equal, logged in'], ['old rounds', 're-hash now with the new setting']], 'compare_digest takes the same time whether the first or the last byte differs. When the stored rounds are lower than today’s setting, re-hash while the password is known.')
+      ]
+    }
+  };
+  trace('pyapisec', {
+    title: 'How API security checks work',
+    sub: 'Pick a story. Each step moves one stage further and shows what the server knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Show', type: 'select', v: 'jwt', opts: [['jwt', 'A JWT from login to endpoint'], ['forged', 'A forged token is refused'], ['cors', 'CORS: what the browser checks'], ['bola', 'Object level check (OWASP API1)'], ['password', 'Storing a password safely']] }],
+    tips: [
+      { t: 'Sign, send, sign again, compare.', set: { case: 'jwt' }, play: true },
+      { t: 'role: admin without the secret fails.', set: { case: 'forged' }, play: true },
+      { t: 'Preflight, allowed origin, blocked origin.', set: { case: 'cors' }, play: true },
+      { t: 'A valid token is not enough.', set: { case: 'bola' }, play: true },
+      { t: 'Salt, slow hash, constant time compare.', set: { case: 'password' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 14, name, { s: PYZ.fit(g, name, 226, 12), b: on, stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 13, 134, y + gap - 1, c.ink2, 1.2, 4);
+      });
+      head(z, 'What the server knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();
