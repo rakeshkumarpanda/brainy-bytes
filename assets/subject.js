@@ -186,7 +186,7 @@
       return `<li class="lp-step${done ? ' done' : ''}${isCur ? ' current' : ''}${open ? ' open' : ''}" id="m-${esc(m.id)}" data-m="${esc(m.id)}">
         <div class="lp-rail"><span class="lp-num">${done ? '✓' : m.step}</span></div>
         <div class="lp-card"><button type="button" class="lp-head" aria-expanded="${open}">
-          <span class="lp-hb"><span class="lp-meta">Step ${m.step}${m.level ? ' · ' + esc(m.level) : ''}${ts.length ? ` · ${ts.length} topic${ts.length === 1 ? '' : 's'} · ${hrs(mins(ts))}` : ''}</span><span class="lp-title">${esc(m.title)}</span><span class="lp-blurb">${esc(m.blurb || '')}</span></span>
+          <span class="lp-hb"><span class="lp-meta">Step ${m.step}${m.level ? ' · ' + esc(m.level) : ''}${ts.length ? ` · ${ts.length} topic${ts.length === 1 ? '' : 's'}${mins(ts) ? ' · ' + hrs(mins(ts)) : ''}` : ''}</span><span class="lp-title">${esc(m.title)}</span><span class="lp-blurb">${esc(m.blurb || '')}</span></span>
           <span class="lp-sp">${d.done}/${d.total}<small>done</small></span><span class="chev">▾</span></button>
           <ol class="lp-topics">${m.topics.map(topicRow).join('')}</ol></div></li>`;
     };
@@ -197,7 +197,7 @@
         <p class="lede">${esc(subj.intro || subj.blurb || '')}</p>
         ${partTabs}
         ${partInfo && partInfo.intro ? `<p class="lede lp-pintro">${esc(partInfo.intro)}</p>` : ''}
-        <div class="lp-stats"><span><b>${steps.length}</b> steps</span><span><b>${all.length}</b> topics</span><span><b>${count('problems')}</b> worked problems</span><span><b>${count('quiz')}</b> quiz questions</span>${count('assign') ? `<span><b>${count('assign')}</b> assignments</span>` : ''}<span><b>${hrs(mins(all))}</b></span></div>
+        <div class="lp-stats"><span><b>${steps.length}</b> step${steps.length === 1 ? '' : 's'}</span><span><b>${all.length}</b> topic${all.length === 1 ? '' : 's'}</span>${count('lessons') && !count('problems') ? `<span><b>${count('lessons')}</b> lessons</span>` : ''}${count('problems') ? `<span><b>${count('problems')}</b> worked problems</span>` : ''}${count('quiz') ? `<span><b>${count('quiz')}</b> quiz questions</span>` : ''}${count('assign') ? `<span><b>${count('assign')}</b> assignments</span>` : ''}${mins(all) ? `<span><b>${hrs(mins(all))}</b></span>` : ''}</div>
         <div class="lp-prog"><div class="meter"><i style="width:${pct}%"></i></div><span>${p.done ? `${p.done} of ${p.total} topics complete` : 'Not started yet. Follow the steps in order, each one builds on the last.'}</span></div>
         ${target ? `<a class="ibtn primary lp-go" href="${LH.topicUrl(target)}${resume && resume.hash ? '#' + esc(resume.hash) : ''}" data-t="${esc(target.id)}" data-h="${esc(resume ? resume.hash : '')}">${resume ? 'Continue: ' + esc(target.title) : 'Start step 1: ' + esc(target.title)}</a>` : (parts ? '<p class="lp-soonmsg">The topics of this section are being written. Switch to the other section to start learning now.</p>' : '')}
       </header>

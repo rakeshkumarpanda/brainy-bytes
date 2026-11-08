@@ -46,6 +46,7 @@ SUBJECTS = {
     'master-claude': {'name': 'Master the Claude', 'dir': 'claude', 'badge': 'AI', 'code': True, 'compact_max': 8},
     'playwright': {'name': 'Playwright', 'dir': 'playwright', 'badge': 'PW', 'code': True, 'sheet': False, 'sheet_link': './cheatsheet.html'},
     'api-manual-testing': {'name': 'Manual API Testing', 'dir': 'api-testing', 'badge': 'API', 'code': False},
+    'api-automation': {'name': 'API Automation Testing', 'dir': 'api-automation', 'badge': 'API', 'code': True, 'compact_max': 8},
     'ml-maths': {'name': 'Maths for Machine Learning', 'dir': 'ml-maths', 'badge': 'MATH', 'code': False, 'compact_max': 8},
 }
 MARK = '<!-- pathskin -->'
@@ -193,9 +194,68 @@ def app_chapter(src, info):
     return T, len(probs) + len(lessons)
 
 
+TRACKS = [  # API Automation: the page teaches one track per tool, grouped here by language for the cheatsheet
+    ('java-rest-assured', 'Java · Rest Assured', 1, 'Java'), ('java-playwright', 'Java · Playwright', 1, 'Java'),
+    ('java-native', 'Java · HttpClient', 1, 'Java'), ('python', 'Python · requests and pytest', 2, 'Python'),
+    ('py-playwright', 'Python · Playwright', 2, 'Python'), ('js-postman', 'JavaScript · Postman and Newman', 3, 'JavaScript'),
+    ('js-playwright', 'JavaScript · Playwright', 3, 'JavaScript'), ('js-native', 'JavaScript · fetch', 3, 'JavaScript'),
+    ('ts-playwright', 'TypeScript · Playwright', 4, 'TypeScript'),
+]
+NOTE_KIND = {'n-tip': 'tip', 'n-why': 'tip', 'n-qa': 'exam', 'n-warn': 'warn'}
+
+
+def track_chapters(src, info, slug):
+    """API Automation is one page with a track of lessons (section.tsec) per tool. Each track becomes one chapter
+    of the cheatsheet, with its key ideas, short code examples, tables and notes."""
+    # the tracks sit inside <template> tags until a reader picks them, and BeautifulSoup gives no text for those
+    soup = BeautifulSoup(re.sub(r'</?template\b[^>]*>', '', src), 'html.parser')
+    chs, n = [], 0
+    for i, (tid, name, step, lang) in enumerate(TRACKS):
+        secs = soup.select(f'section.tsec[id^="{tid}--"]')
+        if not secs:
+            continue
+        n += len(secs)
+        T = {'slug': slug, 'topic': info['id'], 'title': name, 'summary': f'The {len(secs)} lessons of the {name} track.',
+             'badge': f'{step}.{sum(1 for x in TRACKS[:i] if x[2] == step) + 1}', 'step': (step, lang), 'must': [], 'sheet': []}
+        for sec in secs:
+            h = sec.find('h3')
+            lt = clean(h.get_text()) if h else sec['id']
+            p = next((t for t in (text_of(p) for p in sec.find_all('p', recursive=False)) if len(t) > 40), '')
+            if p:
+                T['must'].append((html.escape(lt), html.escape(short(p, 220))))
+            items = []
+            for fig in sec.select('figure.cb'):
+                code = fig.find('code')
+                lines = code.get_text().rstrip('\n').split('\n') if code else []
+                if 2 <= len(lines) <= 14 and max(len(x) for x in lines) <= 90:
+                    lbl = fig.find(class_='cb-l')
+                    title = html.escape(clean(lbl.get_text()) if lbl else lt)
+                    body = f'<pre class="ls-pre">{html.escape(code.get_text().rstrip())}</pre>'
+                    items.append({'k': 'fx', 'title': title, 'body': body, 'note': '', 'key': False, 'html': cheatsheet.cvkit.fx(title, body)})
+                    break
+            for tw in sec.select('.tw'):
+                t = table_item(tw)
+                if t:
+                    items.append(t)
+            for d in sec.select('div.note'):
+                kind = next((NOTE_KIND[c] for c in d.get('class', []) if c in NOTE_KIND), 'tip')
+                body = d.find('div')
+                text = inner(body).strip() if body else inner(d).strip()
+                items.append({'k': kind, 'text': text, 'html': cheatsheet.cvkit.note(text, kind)})
+            for it in items:
+                it.update(lesson=sec['id'], ltitle=lt)
+            T['sheet'] += items
+        chs.append(T)
+    return chs, n
+
+
 def chapter(path, info, cfg):
-    """Read one chapter page. Returns the counts for the learning path and the cheatsheet entry."""
+    """Read one chapter page. Returns the counts for the learning path and the cheatsheet entry
+    (a list of entries for a page that holds several tracks)."""
     src = open(path, encoding='utf-8').read()
+    if 'class="tsec' in src:
+        chs, n = track_chapters(src, info, os.path.basename(path)[:-5])
+        return {'minutes': 0, 'counts': {'lessons': n}}, chs
     if 'section class="card reveal jsec' not in src and re.search(r'\b[PT]\(\{', src):
         T, n = app_chapter(src, info)
         T['slug'] = os.path.basename(path)[:-5]
@@ -317,6 +377,10 @@ def build(sid, sheet=True):
             meta[t['id']] = tm
             kicker = f'Step {m["step"]} · Topic {i + 1} of {len(ready)}' + (f' · {m["level"]}' if m['level'] else '')
             slug = os.path.basename(path)[:-5]
+            if isinstance(T, list):
+                chs += T
+                print(f'{sid}: {t["page"]} has its own layout (a track per tool), kept as it is')
+                continue
             if T:
                 chs.append(T)
             if T and T['must'] and 'section class="card reveal jsec' in open(path, encoding='utf-8').read():
