@@ -121,7 +121,7 @@
     g.className = 'ps-fx';
     g.innerHTML = fx.map(f => f.title !== undefined
       ? `<div class="ps-fxc"><h4>${esc(f.title)}</h4>${f.html}<button type="button" class="ps-from" data-go="${esc(f.L.id)}">Lesson: ${esc(f.L.title)}</button></div>`
-      : `<div class="ps-fxc">${f.html}<button type="button" class="ps-from" data-go="${esc(f.L.id)}">Lesson: ${esc(f.L.title)}</button></div>`).join('');
+      : `<div class="ps-fxw">${f.html}<button type="button" class="ps-from" data-go="${esc(f.L.id)}">Lesson: ${esc(f.L.title)}</button></div>`).join('');
     p.appendChild(g);
   }
   /* the quiz and Number crunch widgets show their size as "0/8" in their score box */

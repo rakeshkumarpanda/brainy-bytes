@@ -93,3 +93,8 @@ html.embedded body.pskin .crumb{display:none}
 .ps-keys li .ps-rule{display:block; margin-top:4px; color:var(--ink2); font-size:14.5px}
 body.pskin .hero .lead{font-weight:500}
 body.pskin .hero .ps-toggle{font-size:12.5px; padding:3px 12px; border-radius:999px; box-shadow:none}
+/* a chapter's own formula card keeps its look: only the lesson link is added under it */
+.ps-fxw{min-width:0}
+.ps-fxw>.fx{margin:0}
+.ps-fxw .fx-b{overflow-x:auto}
+.ps-fxw .ps-from{display:inline-block; margin:6px 0 0 4px; font-size:12.5px; font-weight:800; color:var(--ps); background:none; border:0; padding:0; cursor:pointer; font-family:inherit}
