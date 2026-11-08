@@ -46,6 +46,8 @@
     a.dataset.topic = topic; a.dataset.h = (cfg.sheet.split('#')[1] || '');
     chips.appendChild(a);
   }
+  /* the QA path and beginner path switches live in the part links row, which the tabs replace: keep them */
+  $$('nav.toc .qa-toggle, nav.toc .cl-toggle').forEach(b => { b.classList.add('ps-toggle'); (chips || hero).appendChild(b); });
   $$('.reveal').forEach(e => e.classList.add('in'));
 
   /* ---------- the panes ---------- */
@@ -158,17 +160,19 @@
   if (usable(special.comic)) sum.appendChild(special.comic);
   if (usable(special.real)) sum.appendChild(special.real);
 
-  /* Previous and Next under every lesson */
+  /* Previous and Next under every lesson. They skip the lessons that the QA path or beginner path switch hides,
+     so they are drawn again each time a lesson opens. */
   const firstPractice = ['problems', 'quiz', 'practice', 'summary'].find(id => tabs.some(t => t.id === id));
-  lessons.forEach((L, i) => {
-    const nav = document.createElement('nav');
-    nav.className = 'ps-lnav';
-    const pv = lessons[i - 1], nx = lessons[i + 1];
-    nav.innerHTML = (pv ? `<button type="button" class="ps-btn" data-go="${esc(pv.id)}">Previous: ${esc(pv.title)}</button>` : '<span></span>') +
+  const filtered = L => (document.body.classList.contains('qa-only') && !L.sec.classList.contains('qa-part')) ||
+    (document.body.classList.contains('easy-only') && !L.sec.classList.contains('easy-part'));
+  lessons.forEach(L => { L.nav = document.createElement('nav'); L.nav.className = 'ps-lnav'; L.sec.appendChild(L.nav); });
+  function drawNav(L) {
+    const list = lessons.filter(x => x === L || !filtered(x)), i = list.indexOf(L);
+    const pv = list[i - 1], nx = list[i + 1];
+    L.nav.innerHTML = (pv ? `<button type="button" class="ps-btn" data-go="${esc(pv.id)}">Previous: ${esc(pv.title)}</button>` : '<span></span>') +
       (nx ? `<button type="button" class="ps-btn primary" data-go="${esc(nx.id)}">Next: ${esc(nx.title)}</button>`
         : `<button type="button" class="ps-btn primary" data-tab-go="${firstPractice}">Lessons done. Practise now</button>`);
-    L.sec.appendChild(nav);
-  });
+  }
 
   /* ---------- showing one thing at a time ---------- */
   const seen = new Set(store.get('seen', []));
@@ -195,6 +199,7 @@
     seen.add(id); store.set('seen', [...seen]); store.set('lesson', id);
     lessons.forEach(L => { L.link.classList.toggle('on', L.id === id); L.link.classList.toggle('seen', seen.has(L.id)); });
     const on = lessons.find(L => L.id === id);
+    if (on) drawNav(on);
     if (on) { const li = on.link.parentElement; ol.scrollLeft = Math.max(0, li.offsetLeft - ol.offsetLeft - (ol.clientWidth - li.offsetWidth) / 2); }
     kick();
   }
@@ -268,5 +273,14 @@
     openTab('learn', null, false, true);  /* no hash yet: open the last lesson without touching the address */
   }
   window.addEventListener('hashchange', route);
+  /* when a path switch hides the open lesson, open the first lesson that is still shown */
+  const refilter = () => {
+    const cur = lessons.find(L => !L.sec.hidden);
+    if (!cur) return;
+    if (filtered(cur)) { const first = lessons.find(L => !filtered(L)); if (first) showLesson(first.id); }
+    else drawNav(cur);
+  };
+  new MutationObserver(refilter).observe(document.body, { attributes: true, attributeFilter: ['class'] });
   route();
+  refilter();
 })();

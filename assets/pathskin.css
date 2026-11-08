@@ -92,3 +92,4 @@ body.qa-only .ps-stepper li[data-qa="0"], body.easy-only .ps-stepper li[data-eas
 html.embedded body.pskin .crumb{display:none}
 .ps-keys li .ps-rule{display:block; margin-top:4px; color:var(--ink2); font-size:14.5px}
 body.pskin .hero .lead{font-weight:500}
+body.pskin .hero .ps-toggle{font-size:12.5px; padding:3px 12px; border-radius:999px; box-shadow:none}
