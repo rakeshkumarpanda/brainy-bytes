@@ -7340,6 +7340,29 @@ function pyWebModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "py-w5", title: "Building APIs: Django REST framework and FastAPI", emoji: "5", step: 5, part: "web", level: "Advanced", blurb: "Build JSON APIs two ways: Django REST framework on top of a Django project, and FastAPI with type hints and automatic docs.", topics: [
+      { id: "py-drf", title: "Django REST framework: JSON APIs on top of Django", emoji: "5.1", page: "content/python/py-drf.html",
+        summary: "Serializers, ViewSets and routers, pagination and filters, authentication, permissions, throttles and API tests.",
+        keywords: ["Django REST framework", "serializer", "ModelViewSet", "router", "pagination", "TokenAuthentication", "permissions", "throttling", "APITestCase", "REST"],
+        minutes: 110, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-08",
+        sections: [
+        { id: "idea", title: "What Django REST framework adds", emoji: "", group: "Lesson", keywords: ["Django REST framework", "DRF", "REST API", "JSON", "serializer", "ViewSet", "router", "FastAPI"] },
+        { id: "serializers", title: "Serializers and API views", emoji: "", group: "Lesson", keywords: ["serializer", "ModelSerializer", "is_valid", "validated_data", "validate", "SerializerMethodField", "api_view", "Response", "request.data", "status codes"] },
+        { id: "viewsets", title: "ViewSets, routers, filters and pages", emoji: "", group: "Lesson", keywords: ["ViewSet", "ModelViewSet", "router", "DefaultRouter", "action", "get_queryset", "SearchFilter", "OrderingFilter", "pagination", "PageNumberPagination", "generic views"] },
+        { id: "auth", title: "Authentication, permissions and throttling", emoji: "", group: "Lesson", keywords: ["authentication", "TokenAuthentication", "JWT", "SessionAuthentication", "permissions", "IsAuthenticatedOrReadOnly", "has_object_permission", "throttling", "429", "401", "403", "perform_create"] },
+        { id: "nested", title: "Nested data and API tests", emoji: "", group: "Lesson", keywords: ["nested serializer", "relations", "PrimaryKeyRelatedField", "HyperlinkedRelatedField", "APITestCase", "APIClient", "force_authenticate", "transaction.atomic", "prefetch_related"] },
+        { id: "design", title: "Designing a good API", emoji: "", group: "Lesson", keywords: ["REST design", "resources", "status codes", "pagination", "versioning", "idempotency", "errors"] },
+        { id: "maths", title: "The maths: pages, limits and payload size", emoji: "", group: "Lesson", keywords: ["pagination", "rate limit", "Retry-After", "sliding window", "payload size", "page size"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "dispatch", "initial", "handle_exception", "OpenAPI", "drf-spectacular", "caching"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "binary search", "design", "intervals", "dynamic programming", "hash map"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

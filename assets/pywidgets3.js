@@ -763,3 +763,100 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 5.1  Django REST framework: one API request through authentication, permissions, throttles, serializer
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const FLOW = ['Request arrives at the router URL', 'Authentication: who is it?', 'Permissions: may they?', 'Throttling: too many requests?', 'The ViewSet action', 'Serializer: validate and save', 'Response rendered as JSON'];
+  const CASES = {
+    create: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'POST /api/notes/'], ['body', '{"text": "buy milk"}'], ['header', 'Authorization: Token 136f...']], 'A client sends a new note as JSON, with a token in the Authorization header.'),
+        S(1, [['TokenAuthentication', 'token found in authtoken_token'], ['request.user', 'ann']], 'Each class in DEFAULT_AUTHENTICATION_CLASSES tries to find the user. <b>TokenAuthentication</b> looks the token up and sets request.user.'),
+        S(2, [['IsAuthenticatedOrReadOnly', 'POST needs a user: ann, ok']], 'Every class in permission_classes must say yes. Reading is open to everyone, writing needs a logged in user.'),
+        S(3, [['UserRateThrottle', '1 of 1000 per day, ok']], 'The <b>throttle</b> counts requests per user or per IP address in the cache.'),
+        S(4, [['router', 'POST on notes/ is create'], ['call', 'NoteViewSet.create()']], 'The <b>router</b> maps POST on the list URL to the create action of the ViewSet.'),
+        S(5, [['is_valid', 'text: ok (max 200 chars)'], ['perform_create', 'save(owner=request.user)'], ['SQL', 'INSERT INTO note ...']], 'The <b>serializer</b> checks the data like a form does. perform_create adds the owner from the token, never from the body.'),
+        S(6, [['status', '201 Created'], ['body', '{"id": 1, "text": "buy milk", "owner": "ann"}']], 'serializer.data turns the new object into a dict and the <b>renderer</b> writes JSON. The browser can also show it as an HTML page.')
+      ]
+    },
+    anon: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'POST /api/notes/'], ['header', 'no Authorization']], 'The same request, but without a token.'),
+        S(1, [['request.user', 'AnonymousUser']], 'No authentication class finds a user. That is not an error yet, the user is simply anonymous.'),
+        S(2, [['IsAuthenticatedOrReadOnly', 'POST by anonymous: NO']], 'The permission check fails.', true),
+        S(6, [['status', '401 Unauthorized'], ['body', '{"detail": "Authentication credentials were not provided."}'], ['header', 'WWW-Authenticate: Token']], '<b>401</b> means "tell me who you are". Throttles and the view never run.', true)
+      ]
+    },
+    forbidden: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'DELETE /api/notes/1/'], ['user', 'bob (logged in)']], 'Bob tries to delete a note that belongs to ann.'),
+        S(1, [['request.user', 'bob']], 'Bob is known, authentication passes.'),
+        S(2, [['has_permission', 'bob is logged in: yes']], 'The first check, has_permission, runs for every request and passes.'),
+        S(4, [['get_object()', 'Note 1, owner ann'], ['has_object_permission', 'DELETE and owner is not bob: NO']], 'When the view loads the object, <b>has_object_permission</b> of IsOwnerOrReadOnly runs. Bob is not the owner.', true),
+        S(6, [['status', '403 Forbidden'], ['body', '{"detail": "You do not have permission ..."}']], '<b>403</b> means "I know who you are, and you may not do this". Compare with 401 above.', true)
+      ]
+    },
+    throttle: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'GET /api/notes/ (4th this minute)'], ['user', 'anonymous, IP 10.0.0.7']], 'An anonymous client keeps asking for the list.'),
+        S(2, [['permission', 'GET is read only: ok']], 'Reading is allowed for anonymous users.'),
+        S(3, [['AnonRateThrottle', 'rate 3/minute'], ['history', '3 requests in the last 60 s']], 'The throttle keeps the times of recent requests for this IP in the cache. There are already 3 in the last minute.', true),
+        S(6, [['status', '429 Too Many Requests'], ['Retry-After', '60']], '<b>429</b> with a Retry-After header tells the client when to try again. A good client waits, as in the retries lesson of step 2.', true)
+      ]
+    },
+    router: {
+      stages: ['router.register("books", BookViewSet)', 'GET /api/books/', 'POST /api/books/', 'GET /api/books/7/', 'PUT or PATCH /api/books/7/', 'DELETE /api/books/7/', '@action: /api/books/oldest/'],
+      steps: [
+        S(0, [['URL names', 'book-list, book-detail']], 'One line makes all the URL patterns. The names come from the model: book-list and book-detail.'),
+        S(1, [['action', 'list()'], ['answer', '200, a page of books']], 'GET on the list URL calls <b>list</b>, with pagination, search and ordering.'),
+        S(2, [['action', 'create()'], ['answer', '201, the new book']], 'POST on the list URL calls <b>create</b>.'),
+        S(3, [['action', 'retrieve()'], ['answer', '200, or 404']], 'GET with an id calls <b>retrieve</b>.'),
+        S(4, [['action', 'update() / partial_update()'], ['PATCH', 'only the fields sent']], 'PUT replaces every field, PATCH changes only the fields that are sent.'),
+        S(5, [['action', 'destroy()'], ['answer', '204 No Content']], 'DELETE calls <b>destroy</b> and answers 204 with an empty body.'),
+        S(6, [['action', 'oldest()'], ['name', 'book-oldest']], 'A method marked <b>@action(detail=False)</b> adds its own URL to the router.')
+      ]
+    }
+  };
+  trace('pydrf', {
+    title: 'Inside Django REST framework',
+    sub: 'Pick a request. Each step moves it one stage further and shows what the API knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Request', type: 'select', v: 'create', opts: [['create', 'POST a note with a token'], ['anon', 'POST without a token (401)'], ['forbidden', 'DELETE someone else\'s note (403)'], ['throttle', 'Too many requests (429)'], ['router', 'What the router makes']] }],
+    tips: [
+      { t: 'The full path: authentication, permissions, throttle, serializer.', set: { case: 'create' }, play: true },
+      { t: '401: nobody is logged in.', set: { case: 'anon' }, play: true },
+      { t: '403: logged in, but not the owner.', set: { case: 'forbidden' }, play: true },
+      { t: '429: the throttle stops the 4th request.', set: { case: 'throttle' }, play: true },
+      { t: 'The router: one ViewSet, six actions.', set: { case: 'router' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 14, name, { s: 12, b: on, stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 13, 134, y + gap - 1, c.ink2, 1.2, 4);
+      });
+      head(z, 'What the API knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();
