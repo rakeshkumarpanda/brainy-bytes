@@ -7408,6 +7408,25 @@ function pyWebModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-web-exam", title: "Web revision exam: HTTP, Flask, Django, FastAPI and security", emoji: "6.2", page: "content/python/py-web-exam.html",
+        summary: "Four papers that run in the page, eight bugs, the web traps, a design answer and a mock quiz.",
+        keywords: ["web revision", "exam practice", "mock quiz", "predict output", "find the bug", "system design", "Flask", "Django", "FastAPI", "interview"],
+        minutes: 100, counts: {"lessons": 11, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-08",
+        sections: [
+        { id: "map", title: "How to use this revision chapter", emoji: "", group: "Lesson", keywords: ["revision", "exam", "interview", "web programming", "predict the output", "mock quiz"] },
+        { id: "paper_a", title: "Paper A: HTTP, URLs and JSON", emoji: "", group: "Lesson", keywords: ["urlsplit", "parse_qs", "urlencode", "quote", "urljoin", "HTTPStatus", "idempotent", "cookies", "JSON", "Content-Length"] },
+        { id: "paper_b", title: "Paper B: Flask", emoji: "", group: "Lesson", keywords: ["Flask", "converters", "404", "405", "get_json", "request.args", "g", "session", "Blueprint", "url_for", "errorhandler"] },
+        { id: "paper_c", title: "Paper C: Django and Django REST framework", emoji: "", group: "Lesson", keywords: ["QuerySet", "Q", "F", "annotate", "JOIN", "reverse", "resolve", "templates", "autoescape", "serializer", "validated_data"] },
+        { id: "paper_d", title: "Paper D: Pydantic, tokens and security", emoji: "", group: "Lesson", keywords: ["Pydantic", "Literal", "ValidationError", "model_dump", "JWT", "PyJWT", "audience", "SHA-256", "secrets", "ipaddress"] },
+        { id: "bugs", title: "Find the bugs", emoji: "", group: "Lesson", keywords: ["find the bug", "code review", "SECRET_KEY", "BOLA", "SQL injection", "mass assignment", "timeout", "debug mode"] },
+        { id: "traps", title: "The traps in one table", emoji: "", group: "Lesson", keywords: ["exam traps", "common mistakes", "gotchas", "web traps"] },
+        { id: "design", title: "A system design answer: a link shortener API", emoji: "", group: "Lesson", keywords: ["system design", "URL shortener", "base 62", "cache", "Redis", "redirect", "interview"] },
+        { id: "plan", title: "Exam technique and a study plan", emoji: "", group: "Lesson", keywords: ["exam technique", "study plan", "interview", "revision plan"] },
+        { id: "leetcode", title: "LeetCode review set", emoji: "", group: "Lesson", keywords: ["LeetCode", "review", "topological sort", "heaps", "BFS", "sliding window", "dynamic programming", "greedy"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
