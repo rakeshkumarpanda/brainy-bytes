@@ -48,6 +48,12 @@
   }
   /* the QA path and beginner path switches live in the part links row, which the tabs replace: keep them */
   $$('nav.toc .qa-toggle, nav.toc .cl-toggle').forEach(b => { b.classList.add('ps-toggle'); (chips || hero).appendChild(b); });
+  /* a level banner between parts (Manual API Testing) opens the first lesson of its level */
+  $$(':scope > .lvl-banner', wrap).forEach(b => {
+    let n = b.nextElementSibling;
+    while (n && !n.classList.contains('jsec')) n = n.nextElementSibling;
+    if (n) { const h = $(':scope > h2', n); n.insertBefore(b, h ? h.nextSibling : n.firstChild); }
+  });
   $$('.reveal').forEach(e => e.classList.add('in'));
 
   /* ---------- the panes ---------- */
@@ -129,6 +135,13 @@
   if (usable(special.numbers)) pane('problems', 'Worked problems', countIn(special.numbers), '').appendChild(special.numbers);
   if (usable(special.quiz)) pane('quiz', 'Quiz', countIn(special.quiz), '').appendChild(special.quiz);
   if (usable(special.practice)) pane('practice', 'Practice', 0, '').appendChild(special.practice);
+  /* any other section of the chapter (a playground, an in-page cheat sheet, interview questions) gets a tab of its own */
+  const NAMES = { lab: 'Playground', cheatsheet: 'Cheat sheet', interview: 'Interview' };
+  $$(':scope > section.card', wrap).filter(s => usable(s) && s.id && !s.classList.contains('jsec') && !Object.values(special).includes(s)).forEach(s => {
+    const h = $('h2, h3', s);
+    const name = NAMES[s.id] || (h ? h.textContent.replace(/[^\p{L}\p{N} ,'-]/gu, '').trim().slice(0, 28) : s.id);
+    pane(s.id, name, 0, '').appendChild(s);
+  });
 
   /* Summary: the key idea of every lesson, then the comic and the real life examples */
   /* the same rules as tools/path-build/build.py uses for the cheatsheet: the first real paragraph of the lesson

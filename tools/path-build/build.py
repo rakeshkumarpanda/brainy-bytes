@@ -45,6 +45,7 @@ SUBJECTS = {
     'javascript': {'name': 'JavaScript and TypeScript', 'dir': 'javascript', 'badge': 'JS', 'code': True, 'compact_max': 12},
     'master-claude': {'name': 'Master the Claude', 'dir': 'claude', 'badge': 'AI', 'code': True, 'compact_max': 8},
     'playwright': {'name': 'Playwright', 'dir': 'playwright', 'badge': 'PW', 'code': True, 'sheet': False, 'sheet_link': './cheatsheet.html'},
+    'api-manual-testing': {'name': 'Manual API Testing', 'dir': 'api-testing', 'badge': 'API', 'code': False},
     'ml-maths': {'name': 'Maths for Machine Learning', 'dir': 'ml-maths', 'badge': 'MATH', 'code': False, 'compact_max': 8},
 }
 MARK = '<!-- pathskin -->'
