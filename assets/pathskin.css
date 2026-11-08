@@ -99,3 +99,4 @@ body.pskin .hero .ps-toggle{font-size:12.5px; padding:3px 12px; border-radius:99
 .ps-fxw>.fx{margin:0}
 .ps-fxw .fx-b{overflow-x:auto}
 .ps-fxw .ps-from{display:inline-block; margin:6px 0 0 4px; font-size:12.5px; font-weight:800; color:var(--ps); background:none; border:0; padding:0; cursor:pointer; font-family:inherit}
+.ps-keys{min-width:0} .ps-keys li{min-width:0; overflow-wrap:anywhere}
