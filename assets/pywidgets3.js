@@ -662,3 +662,104 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 4.2  Django ORM in depth: a lazy QuerySet, the N + 1 problem, migrations, a form, a transaction
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const CASES = {
+    lazy: {
+      stages: ['Book.objects', '.filter(year__gte=1900)', '.exclude(stock=0)', '.order_by("-price")', 'Read it: for, list(), len()', 'The SQL runs once', 'Results are cached'],
+      steps: [
+        S(0, [['qs', 'Book.objects (the manager)'], ['SQL so far', 'none']], 'Every query starts at the <b>manager</b>, Book.objects. Nothing has touched the database yet.'),
+        S(1, [['qs', 'QuerySet, WHERE year >= 1900'], ['SQL run', '0 queries']], '<b>filter()</b> returns a new QuerySet that only remembers the condition. It still runs no SQL.'),
+        S(2, [['qs', '+ AND NOT stock = 0'], ['SQL run', '0 queries']], '<b>exclude()</b> adds a NOT condition. You can chain as many steps as you like for free.'),
+        S(3, [['qs', '+ ORDER BY price DESC'], ['SQL run', '0 queries']], '<b>order_by("-price")</b> adds the order. The minus sign means largest first.'),
+        S(4, [['trigger', 'for book in qs:']], 'Only now does Python need the rows. Looping, list(), len(), bool() and slicing with a step all <b>evaluate</b> the QuerySet.'),
+        S(5, [['SQL', 'SELECT ... FROM book'], ['', 'WHERE year >= 1900 AND NOT stock = 0'], ['', 'ORDER BY price DESC'], ['SQL run', '1 query']], 'Django builds one SQL statement from all the steps and sends it once. This is called <b>lazy evaluation</b>.'),
+        S(6, [['second loop', 'uses the cache, 0 new queries'], ['but', 'qs.filter(...) is a new QuerySet, new SQL']], 'The rows stay cached in this QuerySet, so a second loop is free. A new filter() makes a new QuerySet with new SQL.')
+      ]
+    },
+    nplus1: {
+      stages: ['Book.objects.all()', 'for book in books', 'book.author.name', 'Total for 20 books', 'Fix: select_related("author")', 'Fix for many to many: prefetch_related'],
+      steps: [
+        S(0, [['query 1', 'SELECT * FROM book']], 'The page lists 20 books with their authors. The first query reads the books.'),
+        S(1, [['books', '20 Book objects'], ['author loaded?', 'no, only author_id']], 'Each Book knows only the <b>author_id</b> number, not the author row.'),
+        S(2, [['query 2', 'SELECT * FROM author WHERE id = 1'], ['query 3', 'SELECT * FROM author WHERE id = 2'], ['...', 'one query for each book']], 'Reading <b>book.author</b> makes Django fetch that author, one query per book.', true),
+        S(3, [['total', '1 + 20 = 21 queries']], 'This is the <b>N + 1 problem</b>: 1 query for the list plus N for the related rows. The page gets slower with every row.', true),
+        S(4, [['SQL', 'SELECT ... FROM book INNER JOIN author ...'], ['total', '1 query']], '<b>select_related</b> follows a ForeignKey or OneToOne with a JOIN, so one query reads books and authors together.'),
+        S(5, [['query 1', 'SELECT * FROM book'], ['query 2', 'tags of book_id IN (1, ..., 20)'], ['total', '2 queries']], 'For a ManyToMany a JOIN would repeat rows, so <b>prefetch_related</b> runs one extra query for all tags and joins them in Python. Always 2 queries, for 20 or 20,000 books.')
+      ]
+    },
+    migrate: {
+      stages: ['Change models.py', 'makemigrations', 'A new file in migrations/', 'migrate', 'SQL changes the table', 'django_migrations remembers it'],
+      steps: [
+        S(0, [['models.py', '+ slug = SlugField(default="")']], 'You add a <b>slug</b> field to Book. The database does not know yet.'),
+        S(1, [['compare', 'models now vs state of 0001'], ['difference', 'Book has a new field slug']], '<b>makemigrations</b> rebuilds the old state from the existing migration files and compares it with your models.'),
+        S(2, [['file', 'books/migrations/0002_add_slug.py'], ['operation', 'AddField("book", "slug", ...)'], ['depends on', '0001_initial']], 'It writes a small Python file with the <b>operations</b>. Commit it to git, so every computer and the server get the same change.'),
+        S(3, [['run', 'python manage.py migrate'], ['to apply', '0002_add_slug']], '<b>migrate</b> looks for migrations that are not applied yet on this database and runs them in order.'),
+        S(4, [['SQL', 'ALTER TABLE ... ADD COLUMN slug'], ['old rows', 'get the default ""']], 'Django turns each operation into SQL for your database. SQLite rebuilds the table, PostgreSQL adds the column.'),
+        S(5, [['django_migrations', '+ (books, 0002_add_slug)'], ['undo', 'migrate books 0001']], 'A row in the <b>django_migrations</b> table records that 0002 is applied. migrate books 0001 would undo it.')
+      ]
+    },
+    form: {
+      stages: ['POST data arrives', 'form = BookForm(request.POST)', 'form.is_valid()', 'Each field cleans itself', 'clean_isbn()', 'clean() checks fields together', 'Errors, or form.save()'],
+      steps: [
+        S(0, [['POST', 'title=Emma, year=2999, isbn=12-34']], 'The browser sends the form. Every value arrives as <b>text</b>, and none of it can be trusted.'),
+        S(1, [['form', 'bound to the data']], 'Giving the data to the form makes it <b>bound</b>. Nothing is checked yet.'),
+        S(2, [['call', 'form.is_valid()']], '<b>is_valid()</b> runs every check and returns True only if all of them pass.'),
+        S(3, [['title', '"Emma" ok, max 40 chars, unique'], ['year', '"2999" becomes the int 2999']], 'Each <b>field</b> turns text into a Python value and checks it: required, max_length, a whole number, unique in the table.'),
+        S(4, [['clean_isbn', '"1234" has 4 digits'], ['error', 'An ISBN has 13 digits.']], 'A method named <b>clean_&lt;field&gt;</b> adds your own rule for one field.', true),
+        S(5, [['clean', 'year 2999 > 2026'], ['error', 'That year is in the future.']], '<b>clean()</b> sees all fields at once, for rules that need two or more of them.', true),
+        S(6, [['is_valid', 'False'], ['form.errors', '{"isbn": [...], "year": [...]}'], ['next', 'render the form again with the errors']], 'With errors, the view shows the form again with the messages. With no errors, <b>form.save()</b> would INSERT the cleaned values.')
+      ]
+    },
+    atomic: {
+      stages: ['with transaction.atomic():', 'Add 9999 cents to ann', 'Read bob\'s balance', 'Not enough money: raise', 'ROLLBACK', 'The database as before'],
+      steps: [
+        S(0, [['SQL', 'BEGIN (or SAVEPOINT)'], ['ann', '5000 cents'], ['bob', '1000 cents']], 'Bob sends ann 9999 cents. Money is kept in whole cents, never as a float. A transfer must change two rows together. <b>atomic()</b> starts a transaction.'),
+        S(1, [['SQL', 'UPDATE ... SET balance = balance + 9999'], ['ann (inside)', '14999']], 'The first update runs. <b>F("balance") + 9999</b> adds inside the database, so two transfers at the same moment cannot overwrite each other.'),
+        S(2, [['bob', '1000'], ['needed', '9999']], 'Then the code checks the sender. Bob does not have enough.'),
+        S(3, [['raised', 'NotEnoughMoney'], ['leaves', 'the with block']], 'The code raises an exception inside the with block.', true),
+        S(4, [['SQL', 'ROLLBACK'], ['ann', 'back to 5000']], 'atomic() sees the exception and <b>rolls back</b> every change of the block, including the update that already ran.', true),
+        S(5, [['ann', '5000'], ['bob', '1000'], ['rule', 'all changes or none']], 'Nobody got money from nowhere. Without atomic(), ann would keep the 9999 cents and the bank would lose it.')
+      ]
+    }
+  };
+  trace('pydjangoorm', {
+    title: 'Inside the Django ORM',
+    sub: 'Pick what to follow. Each step moves one stage further and shows what Django knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Show', type: 'select', v: 'lazy', opts: [['lazy', 'A lazy QuerySet'], ['nplus1', 'The N + 1 problem and its fix'], ['migrate', 'From a model change to the table'], ['form', 'A form checks the input'], ['atomic', 'A transfer in a transaction']] }],
+    tips: [
+      { t: 'Lazy: chaining runs no SQL until you read.', set: { case: 'lazy' }, play: true },
+      { t: 'N + 1: 21 queries, then 1 with select_related.', set: { case: 'nplus1' }, play: true },
+      { t: 'Migrations: makemigrations writes, migrate runs.', set: { case: 'migrate' }, play: true },
+      { t: 'Forms: field checks, clean_isbn, clean.', set: { case: 'form' }, play: true },
+      { t: 'atomic(): an error rolls back every change.', set: { case: 'atomic' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 14, name, { s: 12, b: on, mono: i > 0 && z.p.case === 'lazy', stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 13, 134, y + gap - 1, c.ink2, 1.2, 4);
+      });
+      head(z, 'What Django knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();

@@ -7317,6 +7317,28 @@ function pyWebModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-django-orm", title: "Django in depth: ORM, migrations, forms, users and tests", emoji: "4.2", page: "content/python/py-django-orm.html",
+        summary: "Q, F, aggregate, annotate, the N + 1 problem, migrations, forms, users and permissions, transactions and TestCase.",
+        keywords: ["Django ORM", "QuerySet", "Q", "F", "annotate", "select_related", "migrations", "ModelForm", "permissions", "TestCase"],
+        minutes: 120, counts: {"lessons": 11, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-08",
+        sections: [
+        { id: "idea", title: "The ORM: asking the database in Python", emoji: "", group: "Lesson", keywords: ["ORM", "QuerySet", "SQL", "lazy evaluation", "SQLAlchemy", "raw SQL", "database"] },
+        { id: "queries", title: "QuerySets: filter, Q, F, aggregate and annotate", emoji: "", group: "Lesson", keywords: ["filter", "exclude", "lookups", "Q objects", "F expressions", "aggregate", "annotate", "Count", "Avg", "values", "ManyToManyField", "distinct", "HAVING"] },
+        { id: "nplus1", title: "Fast queries: the N + 1 problem", emoji: "", group: "Lesson", keywords: ["N+1 problem", "select_related", "prefetch_related", "JOIN", "only", "defer", "exists", "count", "bulk_create", "index", "assertNumQueries", "CaptureQueriesContext"] },
+        { id: "migrations", title: "Migrations: changing tables safely", emoji: "", group: "Lesson", keywords: ["migrations", "makemigrations", "migrate", "sqlmigrate", "showmigrations", "data migration", "RunPython", "apps.get_model", "rollback", "default"] },
+        { id: "forms", title: "Forms: checking what users send", emoji: "", group: "Lesson", keywords: ["forms", "Form", "ModelForm", "is_valid", "cleaned_data", "clean_field", "clean", "ValidationError", "add_error", "form.errors", "save"] },
+        { id: "auth", title: "Users, logins and permissions", emoji: "", group: "Lesson", keywords: ["authentication", "User", "create_user", "check_password", "authenticate", "login", "login_required", "permission_required", "permissions", "Group", "AUTH_USER_MODEL", "AbstractUser"] },
+        { id: "testing", title: "Transactions and tests", emoji: "", group: "Lesson", keywords: ["transaction", "atomic", "rollback", "savepoint", "select_for_update", "TestCase", "setUpTestData", "assertNumQueries", "manage.py test", "test database"] },
+        { id: "maths", title: "The maths: query counts, indexes and transactions", emoji: "", group: "Lesson", keywords: ["N+1", "query count", "index", "B-tree", "logarithm", "weighted average", "join table"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Subquery", "OuterRef", "Window", "zero downtime", "expand and contract"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "SQL", "Django ORM", "Subquery", "annotate", "aggregate", "Case", "When"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
