@@ -83,7 +83,7 @@ const ready = loadPyodide({ indexURL: ${JSON.stringify(PYODIDE)} }).then(py => {
 let traceNs = null;
 /* packages from PyPI that some examples import (Flask, Django, requests ...). Pyodide's own packages, such as sqlite3
    and pydantic, load with loadPackagesFromImports. Each one is installed once per page with micropip. */
-const PYPI = { flask: 'flask', django: 'django', rest_framework: 'djangorestframework', requests: 'requests', httpx: 'httpx', fastapi: 'fastapi', pytest: 'pytest' };
+const PYPI = { flask: 'flask', django: 'django', rest_framework: 'djangorestframework', requests: 'requests', httpx: 'httpx', fastapi: 'fastapi', pytest: 'pytest', jwt: 'pyjwt' };
 const have = new Set();
 async function prep(py, code) {
   if (!code) return;

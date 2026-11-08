@@ -662,3 +662,388 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 4.2  Django ORM in depth: a lazy QuerySet, the N + 1 problem, migrations, a form, a transaction
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const CASES = {
+    lazy: {
+      stages: ['Book.objects', '.filter(year__gte=1900)', '.exclude(stock=0)', '.order_by("-price")', 'Read it: for, list(), len()', 'The SQL runs once', 'Results are cached'],
+      steps: [
+        S(0, [['qs', 'Book.objects (the manager)'], ['SQL so far', 'none']], 'Every query starts at the <b>manager</b>, Book.objects. Nothing has touched the database yet.'),
+        S(1, [['qs', 'QuerySet, WHERE year >= 1900'], ['SQL run', '0 queries']], '<b>filter()</b> returns a new QuerySet that only remembers the condition. It still runs no SQL.'),
+        S(2, [['qs', '+ AND NOT stock = 0'], ['SQL run', '0 queries']], '<b>exclude()</b> adds a NOT condition. You can chain as many steps as you like for free.'),
+        S(3, [['qs', '+ ORDER BY price DESC'], ['SQL run', '0 queries']], '<b>order_by("-price")</b> adds the order. The minus sign means largest first.'),
+        S(4, [['trigger', 'for book in qs:']], 'Only now does Python need the rows. Looping, list(), len(), bool() and slicing with a step all <b>evaluate</b> the QuerySet.'),
+        S(5, [['SQL', 'SELECT ... FROM book'], ['', 'WHERE year >= 1900 AND NOT stock = 0'], ['', 'ORDER BY price DESC'], ['SQL run', '1 query']], 'Django builds one SQL statement from all the steps and sends it once. This is called <b>lazy evaluation</b>.'),
+        S(6, [['second loop', 'uses the cache, 0 new queries'], ['but', 'qs.filter(...) is a new QuerySet, new SQL']], 'The rows stay cached in this QuerySet, so a second loop is free. A new filter() makes a new QuerySet with new SQL.')
+      ]
+    },
+    nplus1: {
+      stages: ['Book.objects.all()', 'for book in books', 'book.author.name', 'Total for 20 books', 'Fix: select_related("author")', 'Fix for many to many: prefetch_related'],
+      steps: [
+        S(0, [['query 1', 'SELECT * FROM book']], 'The page lists 20 books with their authors. The first query reads the books.'),
+        S(1, [['books', '20 Book objects'], ['author loaded?', 'no, only author_id']], 'Each Book knows only the <b>author_id</b> number, not the author row.'),
+        S(2, [['query 2', 'SELECT * FROM author WHERE id = 1'], ['query 3', 'SELECT * FROM author WHERE id = 2'], ['...', 'one query for each book']], 'Reading <b>book.author</b> makes Django fetch that author, one query per book.', true),
+        S(3, [['total', '1 + 20 = 21 queries']], 'This is the <b>N + 1 problem</b>: 1 query for the list plus N for the related rows. The page gets slower with every row.', true),
+        S(4, [['SQL', 'SELECT ... FROM book INNER JOIN author ...'], ['total', '1 query']], '<b>select_related</b> follows a ForeignKey or OneToOne with a JOIN, so one query reads books and authors together.'),
+        S(5, [['query 1', 'SELECT * FROM book'], ['query 2', 'tags of book_id IN (1, ..., 20)'], ['total', '2 queries']], 'For a ManyToMany a JOIN would repeat rows, so <b>prefetch_related</b> runs one extra query for all tags and joins them in Python. Always 2 queries, for 20 or 20,000 books.')
+      ]
+    },
+    migrate: {
+      stages: ['Change models.py', 'makemigrations', 'A new file in migrations/', 'migrate', 'SQL changes the table', 'django_migrations remembers it'],
+      steps: [
+        S(0, [['models.py', '+ slug = SlugField(default="")']], 'You add a <b>slug</b> field to Book. The database does not know yet.'),
+        S(1, [['compare', 'models now vs state of 0001'], ['difference', 'Book has a new field slug']], '<b>makemigrations</b> rebuilds the old state from the existing migration files and compares it with your models.'),
+        S(2, [['file', 'books/migrations/0002_add_slug.py'], ['operation', 'AddField("book", "slug", ...)'], ['depends on', '0001_initial']], 'It writes a small Python file with the <b>operations</b>. Commit it to git, so every computer and the server get the same change.'),
+        S(3, [['run', 'python manage.py migrate'], ['to apply', '0002_add_slug']], '<b>migrate</b> looks for migrations that are not applied yet on this database and runs them in order.'),
+        S(4, [['SQL', 'ALTER TABLE ... ADD COLUMN slug'], ['old rows', 'get the default ""']], 'Django turns each operation into SQL for your database. SQLite rebuilds the table, PostgreSQL adds the column.'),
+        S(5, [['django_migrations', '+ (books, 0002_add_slug)'], ['undo', 'migrate books 0001']], 'A row in the <b>django_migrations</b> table records that 0002 is applied. migrate books 0001 would undo it.')
+      ]
+    },
+    form: {
+      stages: ['POST data arrives', 'form = BookForm(request.POST)', 'form.is_valid()', 'Each field cleans itself', 'clean_isbn()', 'clean() checks fields together', 'Errors, or form.save()'],
+      steps: [
+        S(0, [['POST', 'title=Emma, year=2999, isbn=12-34']], 'The browser sends the form. Every value arrives as <b>text</b>, and none of it can be trusted.'),
+        S(1, [['form', 'bound to the data']], 'Giving the data to the form makes it <b>bound</b>. Nothing is checked yet.'),
+        S(2, [['call', 'form.is_valid()']], '<b>is_valid()</b> runs every check and returns True only if all of them pass.'),
+        S(3, [['title', '"Emma" ok, max 40 chars, unique'], ['year', '"2999" becomes the int 2999']], 'Each <b>field</b> turns text into a Python value and checks it: required, max_length, a whole number, unique in the table.'),
+        S(4, [['clean_isbn', '"1234" has 4 digits'], ['error', 'An ISBN has 13 digits.']], 'A method named <b>clean_&lt;field&gt;</b> adds your own rule for one field.', true),
+        S(5, [['clean', 'year 2999 > 2026'], ['error', 'That year is in the future.']], '<b>clean()</b> sees all fields at once, for rules that need two or more of them.', true),
+        S(6, [['is_valid', 'False'], ['form.errors', '{"isbn": [...], "year": [...]}'], ['next', 'render the form again with the errors']], 'With errors, the view shows the form again with the messages. With no errors, <b>form.save()</b> would INSERT the cleaned values.')
+      ]
+    },
+    atomic: {
+      stages: ['with transaction.atomic():', 'Add 9999 cents to ann', 'Read bob\'s balance', 'Not enough money: raise', 'ROLLBACK', 'The database as before'],
+      steps: [
+        S(0, [['SQL', 'BEGIN (or SAVEPOINT)'], ['ann', '5000 cents'], ['bob', '1000 cents']], 'Bob sends ann 9999 cents. Money is kept in whole cents, never as a float. A transfer must change two rows together. <b>atomic()</b> starts a transaction.'),
+        S(1, [['SQL', 'UPDATE ... SET balance = balance + 9999'], ['ann (inside)', '14999']], 'The first update runs. <b>F("balance") + 9999</b> adds inside the database, so two transfers at the same moment cannot overwrite each other.'),
+        S(2, [['bob', '1000'], ['needed', '9999']], 'Then the code checks the sender. Bob does not have enough.'),
+        S(3, [['raised', 'NotEnoughMoney'], ['leaves', 'the with block']], 'The code raises an exception inside the with block.', true),
+        S(4, [['SQL', 'ROLLBACK'], ['ann', 'back to 5000']], 'atomic() sees the exception and <b>rolls back</b> every change of the block, including the update that already ran.', true),
+        S(5, [['ann', '5000'], ['bob', '1000'], ['rule', 'all changes or none']], 'Nobody got money from nowhere. Without atomic(), ann would keep the 9999 cents and the bank would lose it.')
+      ]
+    }
+  };
+  trace('pydjangoorm', {
+    title: 'Inside the Django ORM',
+    sub: 'Pick what to follow. Each step moves one stage further and shows what Django knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Show', type: 'select', v: 'lazy', opts: [['lazy', 'A lazy QuerySet'], ['nplus1', 'The N + 1 problem and its fix'], ['migrate', 'From a model change to the table'], ['form', 'A form checks the input'], ['atomic', 'A transfer in a transaction']] }],
+    tips: [
+      { t: 'Lazy: chaining runs no SQL until you read.', set: { case: 'lazy' }, play: true },
+      { t: 'N + 1: 21 queries, then 1 with select_related.', set: { case: 'nplus1' }, play: true },
+      { t: 'Migrations: makemigrations writes, migrate runs.', set: { case: 'migrate' }, play: true },
+      { t: 'Forms: field checks, clean_isbn, clean.', set: { case: 'form' }, play: true },
+      { t: 'atomic(): an error rolls back every change.', set: { case: 'atomic' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 14, name, { s: 12, b: on, mono: i > 0 && z.p.case === 'lazy', stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 13, 134, y + gap - 1, c.ink2, 1.2, 4);
+      });
+      head(z, 'What Django knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Web 5.1  Django REST framework: one API request through authentication, permissions, throttles, serializer
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const FLOW = ['Request arrives at the router URL', 'Authentication: who is it?', 'Permissions: may they?', 'Throttling: too many requests?', 'The ViewSet action', 'Serializer: validate and save', 'Response rendered as JSON'];
+  const CASES = {
+    create: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'POST /api/notes/'], ['body', '{"text": "buy milk"}'], ['header', 'Authorization: Token 136f...']], 'A client sends a new note as JSON, with a token in the Authorization header.'),
+        S(1, [['TokenAuthentication', 'token found in authtoken_token'], ['request.user', 'ann']], 'Each class in DEFAULT_AUTHENTICATION_CLASSES tries to find the user. <b>TokenAuthentication</b> looks the token up and sets request.user.'),
+        S(2, [['IsAuthenticatedOrReadOnly', 'POST needs a user: ann, ok']], 'Every class in permission_classes must say yes. Reading is open to everyone, writing needs a logged in user.'),
+        S(3, [['UserRateThrottle', '1 of 1000 per day, ok']], 'The <b>throttle</b> counts requests per user or per IP address in the cache.'),
+        S(4, [['router', 'POST on notes/ is create'], ['call', 'NoteViewSet.create()']], 'The <b>router</b> maps POST on the list URL to the create action of the ViewSet.'),
+        S(5, [['is_valid', 'text: ok (max 200 chars)'], ['perform_create', 'save(owner=request.user)'], ['SQL', 'INSERT INTO note ...']], 'The <b>serializer</b> checks the data like a form does. perform_create adds the owner from the token, never from the body.'),
+        S(6, [['status', '201 Created'], ['body', '{"id": 1, "text": "buy milk", "owner": "ann"}']], 'serializer.data turns the new object into a dict and the <b>renderer</b> writes JSON. The browser can also show it as an HTML page.')
+      ]
+    },
+    anon: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'POST /api/notes/'], ['header', 'no Authorization']], 'The same request, but without a token.'),
+        S(1, [['request.user', 'AnonymousUser']], 'No authentication class finds a user. That is not an error yet, the user is simply anonymous.'),
+        S(2, [['IsAuthenticatedOrReadOnly', 'POST by anonymous: NO']], 'The permission check fails.', true),
+        S(6, [['status', '401 Unauthorized'], ['body', '{"detail": "Authentication credentials were not provided."}'], ['header', 'WWW-Authenticate: Token']], '<b>401</b> means "tell me who you are". Throttles and the view never run.', true)
+      ]
+    },
+    forbidden: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'DELETE /api/notes/1/'], ['user', 'bob (logged in)']], 'Bob tries to delete a note that belongs to ann.'),
+        S(1, [['request.user', 'bob']], 'Bob is known, authentication passes.'),
+        S(2, [['has_permission', 'bob is logged in: yes']], 'The first check, has_permission, runs for every request and passes.'),
+        S(4, [['get_object()', 'Note 1, owner ann'], ['has_object_permission', 'DELETE and owner is not bob: NO']], 'When the view loads the object, <b>has_object_permission</b> of IsOwnerOrReadOnly runs. Bob is not the owner.', true),
+        S(6, [['status', '403 Forbidden'], ['body', '{"detail": "You do not have permission ..."}']], '<b>403</b> means "I know who you are, and you may not do this". Compare with 401 above.', true)
+      ]
+    },
+    throttle: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'GET /api/notes/ (4th this minute)'], ['user', 'anonymous, IP 10.0.0.7']], 'An anonymous client keeps asking for the list.'),
+        S(2, [['permission', 'GET is read only: ok']], 'Reading is allowed for anonymous users.'),
+        S(3, [['AnonRateThrottle', 'rate 3/minute'], ['history', '3 requests in the last 60 s']], 'The throttle keeps the times of recent requests for this IP in the cache. There are already 3 in the last minute.', true),
+        S(6, [['status', '429 Too Many Requests'], ['Retry-After', '60']], '<b>429</b> with a Retry-After header tells the client when to try again. A good client waits, as in the retries lesson of step 2.', true)
+      ]
+    },
+    router: {
+      stages: ['router.register("books", BookViewSet)', 'GET /api/books/', 'POST /api/books/', 'GET /api/books/7/', 'PUT or PATCH /api/books/7/', 'DELETE /api/books/7/', '@action: /api/books/oldest/'],
+      steps: [
+        S(0, [['URL names', 'book-list, book-detail']], 'One line makes all the URL patterns. The names come from the model: book-list and book-detail.'),
+        S(1, [['action', 'list()'], ['answer', '200, a page of books']], 'GET on the list URL calls <b>list</b>, with pagination, search and ordering.'),
+        S(2, [['action', 'create()'], ['answer', '201, the new book']], 'POST on the list URL calls <b>create</b>.'),
+        S(3, [['action', 'retrieve()'], ['answer', '200, or 404']], 'GET with an id calls <b>retrieve</b>.'),
+        S(4, [['action', 'update() / partial_update()'], ['PATCH', 'only the fields sent']], 'PUT replaces every field, PATCH changes only the fields that are sent.'),
+        S(5, [['action', 'destroy()'], ['answer', '204 No Content']], 'DELETE calls <b>destroy</b> and answers 204 with an empty body.'),
+        S(6, [['action', 'oldest()'], ['name', 'book-oldest']], 'A method marked <b>@action(detail=False)</b> adds its own URL to the router.')
+      ]
+    }
+  };
+  trace('pydrf', {
+    title: 'Inside Django REST framework',
+    sub: 'Pick a request. Each step moves it one stage further and shows what the API knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Request', type: 'select', v: 'create', opts: [['create', 'POST a note with a token'], ['anon', 'POST without a token (401)'], ['forbidden', 'DELETE someone else\'s note (403)'], ['throttle', 'Too many requests (429)'], ['router', 'What the router makes']] }],
+    tips: [
+      { t: 'The full path: authentication, permissions, throttle, serializer.', set: { case: 'create' }, play: true },
+      { t: '401: nobody is logged in.', set: { case: 'anon' }, play: true },
+      { t: '403: logged in, but not the owner.', set: { case: 'forbidden' }, play: true },
+      { t: '429: the throttle stops the 4th request.', set: { case: 'throttle' }, play: true },
+      { t: 'The router: one ViewSet, six actions.', set: { case: 'router' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 14, name, { s: 12, b: on, stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 13, 134, y + gap - 1, c.ink2, 1.2, 4);
+      });
+      head(z, 'What the API knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Web 5.2  FastAPI: type hints drive validation, dependencies, the event loop and the automatic docs
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const FLOW = ['Uvicorn: an ASGI server', 'Starlette routing: path and method', 'Dependencies: Depends(...)', 'Pydantic checks params and body', 'Your endpoint function', 'response_model shapes the answer', 'JSON response'];
+  const CASES = {
+    post: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'POST /books'], ['body', '{"title": "Emma", "year": "1815", "price": 5}']], 'A client sends a new book. Uvicorn reads the HTTP and calls the app through <b>ASGI</b>, the async cousin of WSGI.'),
+        S(1, [['route', 'POST /books -> add_book']], 'The path and the method pick the function, as in Flask.'),
+        S(2, [['get_db()', 'connection opened'], ['current_user()', 'ann (from the Bearer token)']], 'FastAPI looks at the parameters of add_book. Each <b>Depends</b> is a function it runs first, and the results become the arguments.'),
+        S(3, [['book: BookIn', 'title "Emma" ok'], ['year', '"1815" becomes the int 1815'], ['price', '5 becomes 5.0']], 'The type hint book: BookIn tells FastAPI to read the JSON body and check it with <b>Pydantic</b>. Text is converted to the declared types.'),
+        S(4, [['call', 'add_book(book=BookIn(...), db=..., user="ann")'], ['returns', 'BookOut(id=2, ...)']], 'Only now does your function run, with clean, typed values. No if statements for checking input.'),
+        S(5, [['response_model', 'BookOut: id, title, year, price'], ['dropped', 'any field not in BookOut']], '<b>response_model</b> checks the answer too and drops fields it does not list, so a password hash can never leak by accident.'),
+        S(6, [['status', '201 Created'], ['body', '{"title": "Emma", "year": 1815, "price": 5.0, "id": 2}'], ['get_db()', 'closed after the answer']], 'The answer goes out as JSON. The code after yield in get_db runs last and closes the connection.')
+      ]
+    },
+    invalid: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'POST /books'], ['body', '{"title": "", "year": 3000}']], 'The same endpoint gets bad data.'),
+        S(1, [['route', 'POST /books -> add_book']], 'The route matches as before.'),
+        S(3, [['body.title', 'at least 1 character'], ['body.year', 'less than or equal to 2026'], ['body.price', 'Field required']], 'Pydantic finds every problem at once, with where it is: body, query, path or header.', true),
+        S(6, [['status', '422 Unprocessable Content'], ['detail', '[{"loc": ["body", "title"], "msg": ...}, ...]']], 'FastAPI answers <b>422</b> with the list. Your function never ran.', true)
+      ]
+    },
+    loop: {
+      stages: ['10 requests arrive together', 'async def + await asyncio.sleep(0.2)', 'def + time.sleep(0.2)', 'async def + time.sleep(0.2)', 'The rule'],
+      steps: [
+        S(0, [['requests', '10 at the same moment'], ['each one', 'waits 0.2 s for a database']], 'Ten clients call an endpoint that waits 0.2 s, like a database query. One worker process handles all of them.'),
+        S(1, [['while waiting', 'await gives the event loop back'], ['total time', '0.2 s']], 'With <b>await</b>, a waiting request lets the event loop serve the others. All ten wait at the same time: 0.2 s in total.'),
+        S(2, [['plain def', 'runs in a thread pool (40 threads)'], ['total time', '0.2 s']], 'A plain <b>def</b> endpoint is run in a thread pool, so blocking calls do not stop the loop. Also 0.2 s.'),
+        S(3, [['blocking call in async def', 'the loop is stuck'], ['total time', '10 x 0.2 = 2.0 s']], 'A blocking call such as time.sleep or requests.get inside <b>async def</b> freezes the loop. The requests run one by one: 2.0 s, the real measurement from the program.', true),
+        S(4, [['async libraries', 'httpx.AsyncClient, asyncpg, aiofiles'], ['blocking libraries', 'use def, not async def']], 'Use async def only with libraries you can await. Otherwise write a plain def and let FastAPI use its threads.')
+      ]
+    },
+    docs: {
+      stages: ['Type hints and Pydantic models', 'FastAPI builds OpenAPI JSON', 'GET /openapi.json', 'GET /docs: Swagger UI', 'GET /redoc: ReDoc', 'Client code generators'],
+      steps: [
+        S(0, [['def get_book', '(book_id: int) -> BookOut'], ['class BookIn', 'title: str, year: int, price: float']], 'You only write normal Python with type hints.'),
+        S(1, [['paths', '/books: get, post'], ['', '/books/{book_id}: get, delete'], ['schemas', 'BookIn, BookOut, HTTPValidationError']], 'At start up FastAPI turns every route and model into an <b>OpenAPI</b> description, the standard format for API docs.'),
+        S(2, [['openapi.json', '{"openapi": "3.1.0", "paths": {...}}']], 'The description is served as JSON at /openapi.json.'),
+        S(3, [['/docs', 'Swagger UI, try every endpoint in the browser']], '<b>Swagger UI</b> at /docs shows every endpoint, its parameters and models, with a Try it out button.'),
+        S(4, [['/redoc', 'ReDoc, a reading view']], '<b>ReDoc</b> at /redoc shows the same description as a long, readable page.'),
+        S(5, [['generators', 'openapi-generator makes TypeScript, Java, Swift clients'], ['always in sync', 'the docs come from the code']], 'Other teams can generate client code from the same JSON. Because the docs come from the code, they never go out of date.')
+      ]
+    }
+  };
+  trace('pyfastapi', {
+    title: 'Inside FastAPI',
+    sub: 'Pick what to follow. Each step moves one stage further and shows what FastAPI knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Show', type: 'select', v: 'post', opts: [['post', 'POST a book: dependencies and Pydantic'], ['invalid', 'Bad data: an automatic 422'], ['loop', 'async def and the event loop'], ['docs', 'Docs written from type hints']] }],
+    tips: [
+      { t: 'A request: Depends, Pydantic, response_model.', set: { case: 'post' }, play: true },
+      { t: '422: every error listed, the function never runs.', set: { case: 'invalid' }, play: true },
+      { t: 'The event loop: 0.2 s, 0.2 s, then 2.0 s.', set: { case: 'loop' }, play: true },
+      { t: 'OpenAPI, Swagger UI and ReDoc for free.', set: { case: 'docs' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 14, name, { s: 12, b: on, stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 13, 134, y + gap - 1, c.ink2, 1.2, 4);
+      });
+      head(z, 'What FastAPI knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Web 6.1  API security: signed tokens, forged tokens, CORS, object level checks and password storage
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const JWT = ['POST /token with name and password', 'Server signs header.payload with its secret', 'Client keeps the token', 'GET /notes/1 with Authorization: Bearer', 'Server signs header.payload again', 'Compare signatures, check exp, aud, iss', 'The endpoint runs'];
+  const CASES = {
+    jwt: {
+      stages: JWT,
+      steps: [
+        S(0, [['form', 'username=ann, password=tea-for-two'], ['password check', 'PBKDF2 hash matches']], 'Ann logs in once with her password. The server checks it against the stored slow hash.'),
+        S(1, [['header', '{"alg": "HS256", "typ": "JWT"}'], ['payload', '{"sub": "ann", "scope": "notes:read", "exp": ...}'], ['signature', 'HMAC-SHA256(secret, header.payload)']], 'The server writes who she is and what she may do, then signs it with a secret only the server knows.'),
+        S(2, [['token', 'eyJhbGci... . eyJzdWIi... . Q46Cf6DE...'], ['note', 'base64url, readable by anyone']], 'The client stores the token. Anyone can read the payload, so never put a secret inside it.'),
+        S(3, [['request', 'GET /notes/1'], ['header', 'Authorization: Bearer eyJhbGci...']], 'Every later request carries the token. No session table is needed on the server.'),
+        S(4, [['recomputed', 'HMAC-SHA256(secret, header.payload)']], 'The server signs the same two parts again with its own secret.'),
+        S(5, [['signatures', 'equal (compare_digest)'], ['exp', 'in 14 minutes, ok'], ['aud, iss', 'bookshop-api, our auth server']], 'Equal signatures prove that the server made this token and nobody changed it. Then the claims are checked.'),
+        S(6, [['user', 'ann'], ['scopes', 'notes:read'], ['status', '200 OK']], 'Only now does the endpoint run, knowing exactly who is asking.')
+      ]
+    },
+    forged: {
+      stages: JWT,
+      steps: [
+        S(2, [['attacker has', 'a real token for ann'], ['payload', '{"sub": "ann", "role": "user"}']], 'An attacker copies a real token, for example from a log file.'),
+        S(3, [['edited payload', '{"sub": "ann", "role": "admin"}'], ['signature', 'the old one, unchanged']], 'They change role to admin. They cannot make a new signature, because they do not know the secret.', true),
+        S(4, [['recomputed', 'HMAC over the EDITED payload'], ['result', 'a completely different signature']], 'The server signs the edited parts and gets a different value. One changed letter changes the whole HMAC.'),
+        S(5, [['signatures', 'not equal'], ['status', '401 Unauthorized']], 'The token is refused.', true),
+        S(5, [['next trick', '"alg": "none" and no signature'], ['defence', 'algorithms=["HS256"] is pinned']], 'Some old libraries believed the header and skipped the check for "alg": "none". Always pass the list of allowed algorithms.', true),
+        S(6, [['rule', 'never trust what the token says about itself'], ['also', 'short exp, rotate keys with kid']], 'The endpoint never runs. Short lifetimes limit the damage when a real token is stolen.')
+      ]
+    },
+    cors: {
+      stages: ['Page on https://shop.example.com runs fetch()', 'Browser sends a preflight OPTIONS', 'API answers Access-Control-Allow-*', 'Browser sends the real POST', 'The page may read the answer', 'Page on https://evil.example tries the same'],
+      steps: [
+        S(0, [['page', 'https://shop.example.com'], ['calls', 'POST https://api.example.com/orders'], ['with', 'Authorization header, JSON body']], 'A page from one origin calls an API on another origin. The browser steps in because the origins differ.'),
+        S(1, [['OPTIONS', '/orders'], ['Origin', 'https://shop.example.com'], ['Request-Method', 'POST'], ['Request-Headers', 'authorization, content-type']], 'The request is not a simple one, so the browser first asks permission with a preflight.'),
+        S(2, [['Allow-Origin', 'https://shop.example.com'], ['Allow-Methods', 'GET, POST'], ['Allow-Credentials', 'true'], ['Max-Age', '600']], 'The API lists what it allows. Max-Age lets the browser remember the answer for 10 minutes.'),
+        S(3, [['POST', '/orders, 201 Created']], 'The browser now sends the real request.'),
+        S(4, [['page reads', '{"id": 7}']], 'The answer carries Allow-Origin again, so the browser hands it to the page.'),
+        S(5, [['Origin', 'https://evil.example'], ['answer', 'no Access-Control-Allow-Origin'], ['browser', 'hides the answer from the page']], 'For an origin that is not listed the browser blocks the page from reading the answer. A script or curl outside a browser is not stopped, so CORS never replaces a login.', true)
+      ]
+    },
+    bola: {
+      stages: ['GET /notes/1 from ben', 'Token check: who is it', 'Scope check: may ben read notes', 'Load note 1', 'Owner check: is it ben’s note', 'Answer'],
+      steps: [
+        S(0, [['request', 'GET /notes/1'], ['token', 'a valid token for ben']], 'Ben is logged in and simply changes the number in the URL from his note to note 1.'),
+        S(1, [['sub', 'ben'], ['authentication', 'passed']], 'The token is real, so the server knows the caller is ben.'),
+        S(2, [['scope', 'notes:read'], ['function level check', 'passed']], 'Ben may read notes in general.'),
+        S(3, [['note 1', '{"owner": "ann", "text": "Buy milk"}']], 'The note is found. A careless API would return it now. That bug is number 1 on the OWASP API Top 10: Broken Object Level Authorization.', true),
+        S(4, [['owner', 'ann'], ['caller', 'ben'], ['object level check', 'failed']], 'The fix is one line: compare the owner of the object with the caller on every request that takes an id.'),
+        S(5, [['status', '404 Not Found'], ['why not 403', 'do not confirm that note 1 exists']], 'Ben gets 404, so he cannot even learn which ids exist. Random ids such as UUIDs make guessing harder too, but the check is what protects the data.')
+      ]
+    },
+    password: {
+      stages: ['Sign up: password "sunshine"', 'Make a random salt', 'PBKDF2-SHA256, 600,000 rounds', 'Store algorithm$rounds$salt$hash', 'Log in: hash the typed password again', 'compare_digest'],
+      steps: [
+        S(0, [['typed', 'sunshine'], ['never stored', 'the password itself, or a fast sha256']], 'The server must be able to check the password later without keeping it.'),
+        S(1, [['salt', 'Qx81LmZ0aa7Kc3d1 (random per user)']], 'A random salt makes two users with the same password get different hashes, so precomputed tables are useless.'),
+        S(2, [['rounds', '600,000'], ['time', 'about 120 ms per guess']], 'The hash runs the HMAC 600,000 times on purpose. A login barely notices, a billion guesses take years.'),
+        S(3, [['stored', 'pbkdf2_sha256$600000$Qx81LmZ0aa7Kc3d1$pUPUtAH5...'], ['format', 'the same one Django uses']], 'The rounds and the salt are stored next to the hash, so the rounds can be raised later.'),
+        S(4, [['typed', 'sunshine'], ['hash again', 'same salt, same rounds']], 'At login the server repeats the work with the stored salt and rounds.'),
+        S(5, [['result', 'equal, logged in'], ['old rounds', 're-hash now with the new setting']], 'compare_digest takes the same time whether the first or the last byte differs. When the stored rounds are lower than today’s setting, re-hash while the password is known.')
+      ]
+    }
+  };
+  trace('pyapisec', {
+    title: 'How API security checks work',
+    sub: 'Pick a story. Each step moves one stage further and shows what the server knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Show', type: 'select', v: 'jwt', opts: [['jwt', 'A JWT from login to endpoint'], ['forged', 'A forged token is refused'], ['cors', 'CORS: what the browser checks'], ['bola', 'Object level check (OWASP API1)'], ['password', 'Storing a password safely']] }],
+    tips: [
+      { t: 'Sign, send, sign again, compare.', set: { case: 'jwt' }, play: true },
+      { t: 'role: admin without the secret fails.', set: { case: 'forged' }, play: true },
+      { t: 'Preflight, allowed origin, blocked origin.', set: { case: 'cors' }, play: true },
+      { t: 'A valid token is not enough.', set: { case: 'bola' }, play: true },
+      { t: 'Salt, slow hash, constant time compare.', set: { case: 'password' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 14, name, { s: PYZ.fit(g, name, 226, 12), b: on, stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 13, 134, y + gap - 1, c.ink2, 1.2, 4);
+      });
+      head(z, 'What the server knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();
