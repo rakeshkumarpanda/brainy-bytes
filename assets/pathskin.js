@@ -49,14 +49,16 @@
   $$('.reveal').forEach(e => e.classList.add('in'));
 
   /* ---------- the panes ---------- */
-  const byId = id => document.getElementById(id);
+  /* a lesson may share an id with these (the Java program bank has a lesson called numbers), so skip the parts */
+  const byId = id => $('section#' + id + ':not(.jsec)');
   const special = { comic: byId('comic'), real: byId('real-life'), practice: byId('practice'), quiz: byId('quiz'), numbers: byId('numbers') };
   const usable = el => el && !el.hasAttribute('hidden') && el.tagName === 'SECTION';
   const titleOf = sec => {
     const h = $('h2', sec);
     if (!h) return sec.id;
-    const spans = $$(':scope > span', h);
-    return (spans.length ? spans[spans.length - 1].textContent : h.textContent).trim();
+    /* the title is the plain span after the emoji; the narrator may add more spans to the heading */
+    const t = $(':scope > span:not([class])', h);
+    return (t ? t.textContent : h.textContent).trim();
   };
   const tabs = [];
   const anchor = document.createElement('div');
@@ -122,7 +124,7 @@
   }
   /* the quiz and Number crunch widgets show their size as "0/8" in their score box */
   const countIn = el => { const s = el && $('.lq-score span', el); const m = s && s.textContent.match(/\d+/); return m ? +m[0] : 0; };
-  if (usable(special.numbers)) pane('numbers', 'Worked problems', countIn(special.numbers), '').appendChild(special.numbers);
+  if (usable(special.numbers)) pane('problems', 'Worked problems', countIn(special.numbers), '').appendChild(special.numbers);
   if (usable(special.quiz)) pane('quiz', 'Quiz', countIn(special.quiz), '').appendChild(special.quiz);
   if (usable(special.practice)) pane('practice', 'Practice', 0, '').appendChild(special.practice);
 
@@ -157,7 +159,7 @@
   if (usable(special.real)) sum.appendChild(special.real);
 
   /* Previous and Next under every lesson */
-  const firstPractice = ['numbers', 'quiz', 'practice', 'summary'].find(id => tabs.some(t => t.id === id));
+  const firstPractice = ['problems', 'quiz', 'practice', 'summary'].find(id => tabs.some(t => t.id === id));
   lessons.forEach((L, i) => {
     const nav = document.createElement('nav');
     nav.className = 'ps-lnav';
@@ -171,7 +173,7 @@
   /* ---------- showing one thing at a time ---------- */
   const seen = new Set(store.get('seen', []));
   const tabIds = tabs.map(t => t.id);
-  const ALIAS = { problems: 'numbers', assign: 'practice', comic: 'summary', 'real-life': 'summary', formulas: 'formulas' };
+  const ALIAS = { numbers: 'problems', assign: 'practice', comic: 'summary', 'real-life': 'summary', formulas: 'formulas' };
   function setHash(h) {
     const nh = h ? '#' + h : '';
     if (location.hash !== nh) { history.replaceState(null, '', location.pathname + location.search + nh); if (F.reportHash) F.reportHash(); }
