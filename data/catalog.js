@@ -7362,6 +7362,27 @@ function pyWebModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "py-fastapi", title: "FastAPI: fast, typed APIs with automatic docs", emoji: "5.2", page: "content/python/py-fastapi.html",
+        summary: "Pydantic models, typed parameters, response_model, Depends, async def and the event loop, docs and pytest.",
+        keywords: ["FastAPI", "Pydantic", "type hints", "Depends", "response_model", "async", "event loop", "OpenAPI", "TestClient", "Uvicorn"],
+        minutes: 110, counts: {"lessons": 10, "problems": 10, "quiz": 13, "assign": 3},
+        added: "2026-11-08",
+        sections: [
+        { id: "idea", title: "What FastAPI is and why type hints matter", emoji: "", group: "Lesson", keywords: ["FastAPI", "type hints", "Pydantic", "ASGI", "OpenAPI", "Swagger UI", "async", "Flask", "Django REST framework"] },
+        { id: "pydantic", title: "Pydantic: data that checks itself", emoji: "", group: "Lesson", keywords: ["Pydantic", "BaseModel", "Field", "Literal", "field_validator", "model_validator", "ValidationError", "model_dump", "JSON Schema"] },
+        { id: "first", title: "Your first API: parameters, bodies and errors", emoji: "", group: "Lesson", keywords: ["path parameters", "query parameters", "request body", "response_model", "status_code", "HTTPException", "422", "Query", "OpenAPI", "uvicorn"] },
+        { id: "depends", title: "Dependencies", emoji: "", group: "Lesson", keywords: ["Depends", "dependency injection", "yield", "Annotated", "Header", "dependency_overrides", "OAuth2PasswordBearer", "Bearer token"] },
+        { id: "async", title: "async def, background tasks and start up", emoji: "", group: "Lesson", keywords: ["async", "await", "event loop", "thread pool", "blocking call", "BackgroundTasks", "lifespan", "ASGITransport", "WebSocket", "Celery"] },
+        { id: "testing", title: "Testing a FastAPI app with pytest", emoji: "", group: "Lesson", keywords: ["pytest", "TestClient", "fixture", "dependency_overrides", "parametrize", "CI"] },
+        { id: "maths", title: "The maths: concurrency, workers and timeouts", emoji: "", group: "Lesson", keywords: ["Little's law", "concurrency", "event loop", "thread pool", "workers", "timeouts", "asyncio.gather"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Starlette", "ASGI", "Uvicorn", "SQLAlchemy", "deployment"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "sorting", "two pointers", "heaps", "trie", "Dijkstra", "segment tree", "design"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

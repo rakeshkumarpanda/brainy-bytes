@@ -860,3 +860,89 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Web 5.2  FastAPI: type hints drive validation, dependencies, the event loop and the automatic docs
+   ===================================================================================================== */
+(() => {
+  const { trace, D, box, head } = PYZ;
+  const { rr } = AIZ;
+  const S = (stage, facts, say, bad) => ({ stage, facts, say, bad });
+  const FLOW = ['Uvicorn: an ASGI server', 'Starlette routing: path and method', 'Dependencies: Depends(...)', 'Pydantic checks params and body', 'Your endpoint function', 'response_model shapes the answer', 'JSON response'];
+  const CASES = {
+    post: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'POST /books'], ['body', '{"title": "Emma", "year": "1815", "price": 5}']], 'A client sends a new book. Uvicorn reads the HTTP and calls the app through <b>ASGI</b>, the async cousin of WSGI.'),
+        S(1, [['route', 'POST /books -> add_book']], 'The path and the method pick the function, as in Flask.'),
+        S(2, [['get_db()', 'connection opened'], ['current_user()', 'ann (from the Bearer token)']], 'FastAPI looks at the parameters of add_book. Each <b>Depends</b> is a function it runs first, and the results become the arguments.'),
+        S(3, [['book: BookIn', 'title "Emma" ok'], ['year', '"1815" becomes the int 1815'], ['price', '5 becomes 5.0']], 'The type hint book: BookIn tells FastAPI to read the JSON body and check it with <b>Pydantic</b>. Text is converted to the declared types.'),
+        S(4, [['call', 'add_book(book=BookIn(...), db=..., user="ann")'], ['returns', 'BookOut(id=2, ...)']], 'Only now does your function run, with clean, typed values. No if statements for checking input.'),
+        S(5, [['response_model', 'BookOut: id, title, year, price'], ['dropped', 'any field not in BookOut']], '<b>response_model</b> checks the answer too and drops fields it does not list, so a password hash can never leak by accident.'),
+        S(6, [['status', '201 Created'], ['body', '{"title": "Emma", "year": 1815, "price": 5.0, "id": 2}'], ['get_db()', 'closed after the answer']], 'The answer goes out as JSON. The code after yield in get_db runs last and closes the connection.')
+      ]
+    },
+    invalid: {
+      stages: FLOW,
+      steps: [
+        S(0, [['request', 'POST /books'], ['body', '{"title": "", "year": 3000}']], 'The same endpoint gets bad data.'),
+        S(1, [['route', 'POST /books -> add_book']], 'The route matches as before.'),
+        S(3, [['body.title', 'at least 1 character'], ['body.year', 'less than or equal to 2026'], ['body.price', 'Field required']], 'Pydantic finds every problem at once, with where it is: body, query, path or header.', true),
+        S(6, [['status', '422 Unprocessable Content'], ['detail', '[{"loc": ["body", "title"], "msg": ...}, ...]']], 'FastAPI answers <b>422</b> with the list. Your function never ran.', true)
+      ]
+    },
+    loop: {
+      stages: ['10 requests arrive together', 'async def + await asyncio.sleep(0.2)', 'def + time.sleep(0.2)', 'async def + time.sleep(0.2)', 'The rule'],
+      steps: [
+        S(0, [['requests', '10 at the same moment'], ['each one', 'waits 0.2 s for a database']], 'Ten clients call an endpoint that waits 0.2 s, like a database query. One worker process handles all of them.'),
+        S(1, [['while waiting', 'await gives the event loop back'], ['total time', '0.2 s']], 'With <b>await</b>, a waiting request lets the event loop serve the others. All ten wait at the same time: 0.2 s in total.'),
+        S(2, [['plain def', 'runs in a thread pool (40 threads)'], ['total time', '0.2 s']], 'A plain <b>def</b> endpoint is run in a thread pool, so blocking calls do not stop the loop. Also 0.2 s.'),
+        S(3, [['blocking call in async def', 'the loop is stuck'], ['total time', '10 x 0.2 = 2.0 s']], 'A blocking call such as time.sleep or requests.get inside <b>async def</b> freezes the loop. The requests run one by one: 2.0 s, the real measurement from the program.', true),
+        S(4, [['async libraries', 'httpx.AsyncClient, asyncpg, aiofiles'], ['blocking libraries', 'use def, not async def']], 'Use async def only with libraries you can await. Otherwise write a plain def and let FastAPI use its threads.')
+      ]
+    },
+    docs: {
+      stages: ['Type hints and Pydantic models', 'FastAPI builds OpenAPI JSON', 'GET /openapi.json', 'GET /docs: Swagger UI', 'GET /redoc: ReDoc', 'Client code generators'],
+      steps: [
+        S(0, [['def get_book', '(book_id: int) -> BookOut'], ['class BookIn', 'title: str, year: int, price: float']], 'You only write normal Python with type hints.'),
+        S(1, [['paths', '/books: get, post'], ['', '/books/{book_id}: get, delete'], ['schemas', 'BookIn, BookOut, HTTPValidationError']], 'At start up FastAPI turns every route and model into an <b>OpenAPI</b> description, the standard format for API docs.'),
+        S(2, [['openapi.json', '{"openapi": "3.1.0", "paths": {...}}']], 'The description is served as JSON at /openapi.json.'),
+        S(3, [['/docs', 'Swagger UI, try every endpoint in the browser']], '<b>Swagger UI</b> at /docs shows every endpoint, its parameters and models, with a Try it out button.'),
+        S(4, [['/redoc', 'ReDoc, a reading view']], '<b>ReDoc</b> at /redoc shows the same description as a long, readable page.'),
+        S(5, [['generators', 'openapi-generator makes TypeScript, Java, Swift clients'], ['always in sync', 'the docs come from the code']], 'Other teams can generate client code from the same JSON. Because the docs come from the code, they never go out of date.')
+      ]
+    }
+  };
+  trace('pyfastapi', {
+    title: 'Inside FastAPI',
+    sub: 'Pick what to follow. Each step moves one stage further and shows what FastAPI knows at that point.',
+    W: 600, H: 400,
+    params: [{ k: 'case', label: 'Show', type: 'select', v: 'post', opts: [['post', 'POST a book: dependencies and Pydantic'], ['invalid', 'Bad data: an automatic 422'], ['loop', 'async def and the event loop'], ['docs', 'Docs written from type hints']] }],
+    tips: [
+      { t: 'A request: Depends, Pydantic, response_model.', set: { case: 'post' }, play: true },
+      { t: '422: every error listed, the function never runs.', set: { case: 'invalid' }, play: true },
+      { t: 'The event loop: 0.2 s, 0.2 s, then 2.0 s.', set: { case: 'loop' }, play: true },
+      { t: 'OpenAPI, Swagger UI and ReDoc for free.', set: { case: 'docs' }, play: true }
+    ],
+    frames(p) {
+      let facts = [];
+      return CASES[p.case].steps.map(st => { facts = facts.concat(st.facts.map(x => x.concat([st]))); return { stage: st.stage, facts: facts.slice(-11), fresh: st, say: st.say, bad: st.bad }; });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, stages = CASES[z.p.case].stages;
+      const gap = Math.min(54, 376 / stages.length);
+      stages.forEach((name, i) => {
+        const y = 14 + i * gap, on = i === f.stage;
+        box(z, 16, y, 236, gap - 14, name, { s: 12, b: on, stroke: on ? (f.bad ? c.red : c.cv) : c.line, w: on ? 2.5 : 1.2, fill: on ? (c.dark ? '#1e3a5f' : '#dbeafe') : c.surf });
+        if (i < stages.length - 1) D.arrow(g, 134, y + gap - 13, 134, y + gap - 1, c.ink2, 1.2, 4);
+      });
+      head(z, 'What FastAPI knows now', 272, 22);
+      rr(g, 268, 30, 316, 360, 8, { fill: c.surf, stroke: c.line });
+      f.facts.forEach(([k, v, st], i) => {
+        const y = 50 + i * 31, now = st === f.fresh;
+        D.text(g, k, 278, y, { s: PYZ.fit(g, k, 296, 11, { mono: true }), mono: true, b: true, c: now ? (f.bad ? c.red : c.cv) : c.ink2 });
+        D.text(g, v, 290, y + 14, { s: PYZ.fit(g, v, 286, 11.5, { mono: true }), mono: true, c: now ? c.ink : c.ink2 });
+      });
+    }
+  });
+})();
