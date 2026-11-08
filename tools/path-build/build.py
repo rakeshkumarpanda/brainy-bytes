@@ -44,7 +44,7 @@ SUBJECTS = {
     'testng': {'name': 'TestNG', 'dir': 'testng', 'badge': 'TNG', 'code': True},
     'javascript': {'name': 'JavaScript and TypeScript', 'dir': 'javascript', 'badge': 'JS', 'code': True, 'compact_max': 12},
     'master-claude': {'name': 'Master the Claude', 'dir': 'claude', 'badge': 'AI', 'code': True, 'compact_max': 8},
-    'playwright': {'name': 'Playwright', 'dir': 'playwright', 'badge': 'PW', 'code': True, 'sheet': False},
+    'playwright': {'name': 'Playwright', 'dir': 'playwright', 'badge': 'PW', 'code': True, 'sheet': False, 'sheet_link': './cheatsheet.html'},
     'ml-maths': {'name': 'Maths for Machine Learning', 'dir': 'ml-maths', 'badge': 'MATH', 'code': False, 'compact_max': 8},
 }
 MARK = '<!-- pathskin -->'
@@ -319,7 +319,7 @@ def build(sid, sheet=True):
             if T:
                 chs.append(T)
             if T and T['must'] and 'section class="card reveal jsec' in open(path, encoding='utf-8').read():
-                inject(path, kicker, f'./cheatsheet.html#{slug}' if want_sheet else '')
+                inject(path, kicker, f'./cheatsheet.html#{slug}' if want_sheet else cfg.get('sheet_link', ''))
             else:
                 print(f'{sid}: {t["page"]} has its own layout, kept as it is')
     write_meta(sid, meta)

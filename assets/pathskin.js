@@ -41,7 +41,7 @@
   const chips = $('.chips', hero);
   if (chips && cfg.sheet) {
     const a = document.createElement('a');
-    a.className = 'ps-sheet'; a.href = cfg.sheet; a.textContent = 'This chapter on the cheatsheet';
+    a.className = 'ps-sheet'; a.href = cfg.sheet; a.textContent = cfg.sheet.includes('#') ? 'This chapter on the cheatsheet' : 'Cheatsheets for this subject';
     const topic = cfg.sheet.split('/').pop().split('#')[0].replace(/\.html$/, '');
     a.dataset.topic = topic; a.dataset.h = (cfg.sheet.split('#')[1] || '');
     chips.appendChild(a);
