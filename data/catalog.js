@@ -8120,6 +8120,30 @@ function mlFoundModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-f3", title: "Working with data", emoji: "3", step: 3, part: "foundations", level: "Beginner", blurb: "Real data is messy. Load it, clean it, and turn it into features a model can learn from.", topics: [
+      { id: "ml-data-cleaning", title: "Data cleaning: missing values, types, outliers and joins", emoji: "3.1", page: "content/machine-learning/ml-data-cleaning.html",
+        summary: "inspecting data, missing values and imputation, types and text, outliers, joins and reshaping, and a validated cleaning function.",
+        keywords: ["data cleaning", "missing values", "imputation", "fillna", "outliers", "IQR", "merge", "melt", "duplicates", "pandas"],
+        minutes: 60, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "inspect", title: "Load the data and look before you touch it", emoji: "", group: "Lesson", keywords: ["data cleaning", "inspect data", "shape", "dtypes", "isna", "duplicated", "unique", "read_csv", "garbage in garbage out"] },
+        { id: "missing", title: "Missing values: drop or fill", emoji: "", group: "Lesson", keywords: ["missing values", "NaN", "dropna", "fillna", "imputation", "SimpleImputer", "missing indicator", "MCAR", "MAR", "MNAR"] },
+        { id: "types", title: "Fix types, text, dates and duplicates", emoji: "", group: "Lesson", keywords: ["data types", "astype", "to_numeric", "to_datetime", "errors coerce", "str strip", "str lower", "replace", "drop_duplicates"] },
+        { id: "outliers", title: "Outliers: find them, then decide", emoji: "", group: "Lesson", keywords: ["outlier", "IQR", "quartile", "box plot", "z score", "masking", "winsorising", "clip", "robust statistics", "MAD"] },
+        { id: "combine", title: "Combine and reshape tables", emoji: "", group: "Lesson", keywords: ["merge", "join", "inner join", "left join", "melt", "pivot", "wide and long data", "key"] },
+        { id: "smart", title: "Smarter filling compared", emoji: "", group: "Lesson", keywords: ["KNN imputer", "IterativeImputer", "mean imputation", "HistGradientBoosting missing values", "imputation comparison"] },
+        { id: "pipeline", title: "A cleaning function you can trust", emoji: "", group: "Lesson", keywords: ["cleaning function", "assert", "data validation", "reproducible cleaning", "groupby transform", "checklist"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["quantile", "IQR", "fences", "variance shrink", "multiple imputation", "z score"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "data contracts", "schema validation", "missingness mechanism"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "pandas", "30 Days of Pandas", "drop_duplicates", "dropna", "fillna", "melt", "isin"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

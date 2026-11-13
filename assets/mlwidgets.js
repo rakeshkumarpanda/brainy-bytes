@@ -913,3 +913,146 @@ const MLZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 3.1  filling missing values (imputation)
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, box, list } = MLZ;
+  const NAME = { mean: 'mean', median: 'median', mode: 'most common value (mode)', zero: 'a constant 0' };
+  trace('mlimpute', {
+    title: 'Filling missing values: mean, median or mode',
+    sub: 'Type a column of numbers and use ? for a missing value. Pick how to fill the holes and step through. Watch what filling does to the spread of the data.',
+    W: 600, H: 330,
+    params: [
+      { k: 'vals', label: 'Column (use ? for missing)', type: 'text', v: '25, ?, 35, 40, ?, 29, 90' },
+      { k: 'how', label: 'Fill with', type: 'select', v: 'median', opts: Object.keys(NAME).map(k => [k, NAME[k]]) }
+    ],
+    tips: [
+      { t: 'With the outlier 90 in the column, the mean fill (43.8) is pulled up but the median fill (35) is not.', set: { how: 'mean' }, play: true },
+      { t: 'Many holes: filling them all with one number makes the column look less spread out than it really is.', set: { vals: '10, ?, ?, 30, ?, ?, 50', how: 'mean' }, play: true }
+    ],
+    frames(p) {
+      const cells = list(p.vals).slice(0, 12);
+      if (cells.length < 2) throw new Error('Type at least two values, for example 25, ?, 35');
+      const known = cells.filter(c => c !== '?').map(Number);
+      if (known.some(isNaN)) throw new Error('Use numbers, and ? for a missing value');
+      if (!known.length) throw new Error('At least one value must be known');
+      const holes = cells.map((c, i) => c === '?' ? i : -1).filter(i => i >= 0);
+      const sorted = known.slice().sort((a, b) => a - b);
+      const mean = known.reduce((a, b) => a + b, 0) / known.length;
+      const mid = sorted.length >> 1;
+      const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+      const freq = {}; known.forEach(v => { freq[v] = (freq[v] || 0) + 1; });
+      const mode = +Object.keys(freq).sort((a, b) => freq[b] - freq[a] || a - b)[0];
+      const fill = { mean, median, mode, zero: 0 }[p.how];
+      const std = a => { const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((x, y) => x + (y - m) ** 2, 0) / a.length); };
+      const base = { cells, holes, fill, filled: [] };
+      const how = {
+        mean: `Mean = sum ÷ count = ${known.join(' + ')} ÷ ${known.length} = <b>${f2(mean)}</b>.`,
+        median: `Sort the known values: ${sorted.join(', ')}. The middle value is the median = <b>${f2(median)}</b>. A very big or very small value does not move it much.`,
+        mode: `Count each value. The most common one is <b>${mode}</b> (${freq[mode]} time${freq[mode] > 1 ? 's' : ''}). Mode filling is mostly used for categories like city names.`,
+        zero: 'Fill every hole with <b>0</b>. Only do this when a missing value really means zero, like "no purchases".'
+      }[p.how];
+      const fr = [
+        { ...base, say: `This column has ${cells.length} rows and <b>${holes.length}</b> missing value${holes.length === 1 ? '' : 's'} (shown as ?). Most models cannot work with a missing value, so we must drop the row or fill the hole.` },
+        { ...base, known: true, say: `Keep only the ${known.length} known values: ${known.join(', ')}. The filling value is worked out from these, and in a real project only from the training rows.` },
+        { ...base, known: true, stat: true, say: how }
+      ];
+      holes.forEach((h, i) => fr.push({ ...base, known: true, stat: true, filled: holes.slice(0, i + 1), say: `Row ${h + 1} was missing. Put <b>${f2(fill)}</b> in it.` }));
+      const after = cells.map(c => c === '?' ? fill : +c);
+      fr.push({ ...base, known: true, stat: true, filled: holes, done: true, sa: std(known), sb: std(after),
+        say: `Done. The spread (standard deviation) was ${f2(std(known))} for the known values and is <b>${f2(std(after))}</b> after filling. Filling many holes with one number shrinks the spread, so add a "was missing" column to keep that information for the model.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      const ch = Math.min(24, 290 / f.cells.length);
+      head(z, 'Column', 20, 22);
+      f.cells.forEach((v, i) => {
+        const miss = v === '?', isFilled = f.filled.includes(i);
+        box(z, 20, 32 + i * ch, 110, ch - 3, miss ? (isFilled ? f2(f.fill) : '?') : v,
+          { fill: miss ? (isFilled ? c.green : c.bg) : c.surf, stroke: miss ? (isFilled ? c.green : c.red) : c.line, c: isFilled ? '#fff' : (miss ? c.red : c.ink), mono: true, b: miss, r: 4, s: 12, dash: miss && !isFilled ? [4, 3] : undefined });
+        D.text(z.g, `row ${i + 1}`, 140, 32 + i * ch + ch / 2 + 2, { s: 11, c: c.ink2 });
+      });
+      if (f.known) {
+        head(z, 'Known values', 220, 22);
+        const known = f.cells.filter(v => v !== '?');
+        D.text(z.g, known.join(', '), 220, 46, { s: 13, mono: true, c: c.ink });
+      }
+      if (f.stat) {
+        head(z, `Filling value (${z.p.how})`, 220, 90);
+        D.text(z.g, f2(f.fill), 220, 126, { s: 26, b: true, mono: true, c: c.cv });
+      }
+      if (f.done) {
+        head(z, 'Spread (std)', 220, 180);
+        D.text(z.g, `known only   ${f2(f.sa)}`, 220, 206, { s: 13, mono: true, c: c.ink });
+        D.text(z.g, `after fill   ${f2(f.sb)}`, 220, 230, { s: 13, mono: true, b: true, c: f.sb < f.sa ? c.orange : c.green });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 3.1  finding outliers with the IQR rule
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, nums, span, rr } = MLZ;
+  const quant = (s, q) => { const pos = (s.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos); return s[lo] + (s[hi] - s[lo]) * (pos - lo); };
+  trace('mliqr', {
+    title: 'Outliers: the IQR rule (box plot fences)',
+    sub: 'Type some numbers. The IQR rule finds values that sit far outside the middle half of the data. Step through to see the quartiles, the box and the fences.',
+    W: 600, H: 300,
+    params: [
+      { k: 'vals', label: 'Values', type: 'text', v: '32, 35, 36, 38, 40, 41, 43, 45, 47, 150' },
+      { k: 'k', label: 'Fence width (times IQR)', type: 'range', v: 1.5, min: 0.5, max: 3, step: 0.5 }
+    ],
+    tips: [
+      { t: 'k = 3 is the "far outlier" rule: only very extreme values are flagged.', set: { k: 3 }, play: true },
+      { t: 'Two low outliers as well as a high one.', set: { vals: '2, 5, 30, 32, 33, 35, 36, 38, 40, 90', k: 1.5 }, play: true }
+    ],
+    frames(p) {
+      const v = nums(p.vals).slice(0, 40);
+      if (v.length < 4) throw new Error('Type at least four numbers');
+      const s = v.slice().sort((a, b) => a - b);
+      const q1 = quant(s, 0.25), q3 = quant(s, 0.75), med = quant(s, 0.5), iqr = q3 - q1;
+      const lo = q1 - p.k * iqr, hi = q3 + p.k * iqr;
+      const out = s.filter(x => x < lo || x > hi);
+      const mean = s.reduce((a, b) => a + b, 0) / s.length;
+      const b = { s, q1, q3, med, iqr, lo, hi, out, mean };
+      return [
+        { ...b, st: 1, say: `Here are the ${s.length} values on a number line, sorted from small to large: ${s.join(', ')}.` },
+        { ...b, st: 2, say: `The <b>median</b> splits the data in half: ${f2(med)}.` },
+        { ...b, st: 3, say: `<b>Q1</b> (the first quartile) has a quarter of the values below it: ${f2(q1)}. <b>Q3</b> has three quarters below it: ${f2(q3)}. (Same method as pandas quantile.)` },
+        { ...b, st: 4, say: `The box from Q1 to Q3 holds the middle half of the data. Its width is the <b>IQR</b> = Q3 − Q1 = ${f2(q3)} − ${f2(q1)} = <b>${f2(iqr)}</b>.` },
+        { ...b, st: 5, say: `Fences: Q1 − ${p.k} × IQR = <b>${f2(lo)}</b> and Q3 + ${p.k} × IQR = <b>${f2(hi)}</b>. Values outside the fences are called outliers.` },
+        { ...b, st: 6, say: out.length ? `Outlier${out.length > 1 ? 's' : ''}: <b>${out.join(', ')}</b> (red). Check each one: a typing mistake should be fixed or removed, but a real rare value (a very rich customer, a real fraud) may be the most important row you have.` : 'No value falls outside the fences, so this rule finds no outliers.' },
+        { ...b, st: 7, say: `The mean is ${f2(mean)} and the median is ${f2(med)}. ${Math.abs(mean - med) > 0.1 * iqr ? 'Outliers drag the mean but hardly move the median or the quartiles. That is why the IQR rule is robust, and a z score rule (which uses the mean and std) can miss outliers.' : 'They are close, so the data has no strong pull to one side.'}` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const [a, bb] = span(f.s.concat([f.lo, f.hi]), 0.05);
+      const X = v => 30 + (v - a) / (bb - a) * 540;
+      const y = 170;
+      D.line(g, 30, y, 570, y, c.ink2, 1.5);
+      for (let i = 0; i <= 5; i++) { const v = a + (bb - a) * i / 5; D.line(g, X(v), y, X(v), y + 6, c.ink2, 1); D.text(g, f2(v, 1), X(v), y + 20, { a: 'center', s: 11, c: c.ink2 }); }
+      const seen = {};
+      f.s.forEach(v => {
+        seen[v] = (seen[v] || 0) + 1;
+        const isOut = f.st >= 6 && (v < f.lo || v > f.hi);
+        D.circle(g, X(v), y - 12 - (seen[v] - 1) * 12, 5, { fill: isOut ? c.red : c.cv });
+      });
+      if (f.st >= 4) rr(g, X(f.q1), 70, X(f.q3) - X(f.q1), 50, 4, { fill: c.bg, stroke: c.cv, w: 2 });
+      if (f.st >= 2) { D.line(g, X(f.med), 62, X(f.med), 128, c.green, 2.5); D.text(g, `median ${f2(f.med)}`, X(f.med), 56, { a: 'center', s: 11, b: true, c: c.green }); }
+      if (f.st >= 3) {
+        [[f.q1, 'Q1', -1], [f.q3, 'Q3', 1]].forEach(([v, t, side]) => { D.line(g, X(v), 66, X(v), 140, c.purple || c.cv, 1.5, [4, 3]); D.text(g, `${t} ${f2(v)}`, X(v) + side * 6, 100, { a: side < 0 ? 'right' : 'left', s: 11, b: true, c: c.ink }); });
+      }
+      if (f.st >= 5) {
+        [[f.lo, 'low fence'], [f.hi, 'high fence']].forEach(([v, t]) => { D.line(g, X(v), 40, X(v), 200, c.orange, 2, [6, 4]); D.text(g, `${t} ${f2(v)}`, X(v), 232, { a: 'center', s: 11, b: true, c: c.orange }); });
+      }
+      if (f.st >= 7) { D.line(g, X(f.mean), 250, X(f.mean), 270, c.red, 2.5); D.text(g, `mean ${f2(f.mean)}`, X(f.mean), 288, { a: 'center', s: 11, b: true, c: c.red }); }
+      head(z, 'Number line', 30, 22);
+    }
+  });
+})();
