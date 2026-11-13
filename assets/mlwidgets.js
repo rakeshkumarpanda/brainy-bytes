@@ -769,3 +769,147 @@ const MLZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 2.3  Bayes rule with a crowd of people (a medical test)
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, rng, box } = MLZ;
+  const N = 400;
+  trace('mlbayes', {
+    title: 'Bayes rule: what does a positive test really mean?',
+    sub: 'Picture 400 people. Some have a disease. A test catches most sick people but also wrongly flags some healthy ones. Step through to count who is really sick among the positives.',
+    W: 600, H: 330,
+    params: [
+      { k: 'prev', label: 'People who are sick (%)', type: 'range', v: 2, min: 1, max: 50, step: 1 },
+      { k: 'sens', label: 'Test finds sick people (%)', type: 'range', v: 90, min: 50, max: 100, step: 1 },
+      { k: 'fpr', label: 'Test wrongly flags healthy people (%)', type: 'range', v: 5, min: 0, max: 30, step: 1 }
+    ],
+    tips: [
+      { t: 'A rare disease (1%) with a very good test (99% and 1%): still only about half of the positives are sick.', set: { prev: 1, sens: 99, fpr: 1 }, play: true },
+      { t: 'A common disease (30%): now a positive test is very convincing. The prior matters a lot.', set: { prev: 30, sens: 90, fpr: 5 }, play: true }
+    ],
+    frames(p) {
+      const sick = Math.round(N * p.prev / 100), well = N - sick;
+      const tp = Math.round(sick * p.sens / 100), fp = Math.round(well * p.fpr / 100);
+      const exact = (p.sens / 100) * (p.prev / 100) / ((p.sens / 100) * (p.prev / 100) + (p.fpr / 100) * (1 - p.prev / 100) || 1);
+      const c = { sick, well, tp, fp };
+      return [
+        { s: 1, ...c, say: `Here are ${N} people. Before any test, we only know that ${p.prev}% of people are sick. This starting belief is called the <b>prior</b>, P(sick) = ${f2(p.prev / 100)}.` },
+        { s: 2, ...c, say: `Colour the sick people red: ${N} × ${p.prev}% = <b>${sick}</b> people. The other ${well} are healthy (grey).` },
+        { s: 3, ...c, say: `Everyone takes the test. It finds ${p.sens}% of the sick people, so <b>${tp}</b> of the ${sick} sick people test positive (red with a dark ring). These are <b>true positives</b>.` },
+        { s: 4, ...c, say: `The test also wrongly says yes for ${p.fpr}% of the ${well} healthy people: <b>${fp}</b> grey people with a ring. These are <b>false positives</b>.` },
+        { s: 5, ...c, say: `Your test is positive, so you are one of the ringed people. Fade everyone else. There are ${tp} + ${fp} = <b>${tp + fp}</b> positives in total.` },
+        { s: 6, ...c, say: `Chance you are sick, given a positive test = sick positives ÷ all positives = ${tp} ÷ ${tp + fp} = <b>${tp + fp ? f2(tp / (tp + fp), 3) : '0'}</b>. Bayes rule gives the exact value P(sick | +) = P(+ | sick) P(sick) ÷ P(+) = <b>${f2(exact, 3)}</b>. This updated belief is the <b>posterior</b>.${Math.abs((tp + fp ? tp / (tp + fp) : 0) - exact) > 0.0005 ? ' The small gap between the two numbers comes from rounding to whole people.' : ''}` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const r = rng(7);
+      const order = Array.from({ length: N }, (_, i) => i);
+      for (let i = N - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+      /* person k (in the shuffled order) is sick if k < sick, a true positive if k < tp,
+         and a false positive if sick <= k < sick + fp */
+      const where = new Array(N);
+      order.forEach((pos, k) => { where[pos] = k; });
+      const cell = 15.5, x0 = 14, y0 = 12;
+      for (let pos = 0; pos < N; pos++) {
+        const k = where[pos], col = pos % 20, row = Math.floor(pos / 20);
+        const x = x0 + col * cell + cell / 2, y = y0 + row * cell + cell / 2;
+        const isSick = f.s >= 2 && k < f.sick;
+        const pos1 = (f.s >= 3 && k < f.tp) || (f.s >= 4 && k >= f.sick && k < f.sick + f.fp);
+        const fade = f.s >= 5 && !pos1;
+        g.save(); g.globalAlpha = fade ? 0.15 : 1;
+        D.circle(g, x, y, 5, { fill: isSick ? c.red : c.ink2 });
+        if (pos1) D.circle(g, x, y, 7, { stroke: c.ink, w: 1.6 });
+        g.restore();
+      }
+      const bx = 340;
+      head(z, 'Counts', bx, 26);
+      const rows = [['People', N, 1], ['Sick (red)', f.sick, 2], ['Healthy (grey)', f.well, 2], ['True positives', f.tp, 3], ['False positives', f.fp, 4], ['All positives', f.tp + f.fp, 5]];
+      rows.forEach(([t, v, s], i) => {
+        if (f.s < s) return;
+        D.text(g, t, bx, 54 + i * 26, { s: 13, c: c.ink });
+        D.text(g, String(v), bx + 240, 54 + i * 26, { s: 14, b: true, mono: true, a: 'right', c: c.ink });
+      });
+      if (f.s >= 6) {
+        box(z, bx, 220, 245, 70, '', { fill: c.bg });
+        D.text(g, 'P(sick | positive)', bx + 12, 244, { s: 13, b: true, c: c.ink2 });
+        D.text(g, `${f.tp} ÷ ${f.tp + f.fp} = ${f.tp + f.fp ? f2(f.tp / (f.tp + f.fp), 3) : '0'}`, bx + 12, 274, { s: 18, b: true, mono: true, c: c.cv });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 2.3  the central limit theorem: averages become bell shaped
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, rr } = MLZ;
+  const SRC = {
+    die: { name: 'A fair die (flat: 1 to 6)', vals: [1, 2, 3, 4, 5, 6], w: [1, 1, 1, 1, 1, 1] },
+    wait: { name: 'Waiting time in minutes (skewed)', vals: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], w: [30, 22, 15, 10, 8, 6, 4, 2, 2, 1] },
+    coin: { name: 'A coin that lands heads 20% of the time (0 or 1)', vals: [0, 1], w: [8, 2] }
+  };
+  const SIZES = [1, 2, 5, 10, 30];
+  trace('mlclt', {
+    title: 'Central limit theorem: averages turn into a bell curve',
+    sub: 'Take n values from any distribution and average them. Do that 2,000 times and draw a histogram of the averages. As n grows the histogram gets narrower and bell shaped.',
+    W: 600, H: 330,
+    params: [{ k: 'src', label: 'Where the values come from', type: 'select', v: 'wait', opts: Object.keys(SRC).map(k => [k, SRC[k].name]) }],
+    tips: [
+      { t: 'Even the 0 or 1 coin gives a bell curve once you average 30 flips.', set: { src: 'coin' }, play: true },
+      { t: 'The die starts flat, not bell shaped at all.', set: { src: 'die' }, play: true }
+    ],
+    frames(p) {
+      const S = SRC[p.src], tot = S.w.reduce((a, b) => a + b, 0);
+      const pr = S.w.map(w => w / tot);
+      const mu = S.vals.reduce((a, v, i) => a + v * pr[i], 0);
+      const sd = Math.sqrt(S.vals.reduce((a, v, i) => a + (v - mu) ** 2 * pr[i], 0));
+      const r = rng(11);
+      const draw = () => { let u = r(), i = 0; while (i < pr.length - 1 && u > pr[i]) { u -= pr[i]; i++; } return S.vals[i]; };
+      const fr = [{ src: true, mu, sd, pr, say: `This is the starting distribution: ${S.name}. Its mean is μ = ${f2(mu)} and its standard deviation is σ = ${f2(sd)}. It does not look like a bell.` }];
+      SIZES.forEach((n, idx) => {
+        const means = [];
+        for (let t = 0; t < 2000; t++) { let s = 0; for (let j = 0; j < n; j++) s += draw(); means.push(s / n); }
+        const m = means.reduce((a, b) => a + b, 0) / means.length;
+        const s = Math.sqrt(means.reduce((a, b) => a + (b - m) ** 2, 0) / means.length);
+        const last = idx === SIZES.length - 1;
+        fr.push({ n, means, mu, sd, m, s, bell: last, say: `Average n = ${n} value${n > 1 ? 's' : ''}, 2,000 times. The averages centre on ${f2(m)} (close to μ) and spread by ${f2(s, 3)}. Theory says σ ÷ √n = ${f2(sd, 2)} ÷ ${f2(Math.sqrt(n), 2)} = ${f2(sd / Math.sqrt(n), 3)}.${last ? ' The green curve is a normal distribution with that mean and spread, and it fits the histogram. This is why so many statistics tests assume a normal shape.' : ''}` });
+      });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, S = SRC[z.p.src];
+      const lo = Math.min(...S.vals), hi = Math.max(...S.vals);
+      if (f.src) {
+        const P = plot(z, [10, 10, 400, 310], [lo - 0.5, hi + 0.5], [0, Math.max(...f.pr) * 1.15], { dx: 0, dy: 2, yl: 'probability' });
+        f.pr.forEach((q, i) => { const x = S.vals[i]; rr(g, P.X(x - 0.35), P.Y(q), P.X(x + 0.35) - P.X(x - 0.35), P.Y(0) - P.Y(q), 2, { fill: c.cv }); });
+      } else {
+        /* bin width is a whole number of 1/n steps, because an average of n whole numbers is always a multiple of 1/n */
+        const bw = Math.max(1, Math.ceil((hi - lo) / 90 * f.n)) / f.n, bins = Math.round((hi - lo) / bw);
+        const cnt = new Array(bins + 1).fill(0);
+        f.means.forEach(v => { cnt[Math.min(bins, Math.round((v - lo) / bw))]++; });
+        const dens = cnt.map(k => k / f.means.length / bw);
+        const peak = Math.max(...dens, 1 / (f.sd / Math.sqrt(f.n) * Math.sqrt(2 * Math.PI)));
+        const P = plot(z, [10, 10, 400, 310], [lo - bw / 2, hi + bw / 2], [0, peak * 1.1], { dx: 1, dy: 2, xl: `average of ${f.n}` });
+        dens.forEach((d, i) => { if (d > 0) rr(g, P.X(lo + i * bw - bw / 2), P.Y(d), Math.max(1, P.X(bw) - P.X(0) - 1), P.Y(0) - P.Y(d), 1, { fill: c.cv }); });
+        if (f.bell) {
+          const s = f.sd / Math.sqrt(f.n);
+          g.save(); g.beginPath();
+          for (let i = 0; i <= 160; i++) { const x = lo + (hi - lo) * i / 160, y = Math.exp(-((x - f.mu) ** 2) / (2 * s * s)) / (s * Math.sqrt(2 * Math.PI)); i ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)); }
+          g.strokeStyle = c.green; g.lineWidth = 2.5; g.stroke(); g.restore();
+        }
+        D.line(g, P.X(f.mu), P.Y(0), P.X(f.mu), P.Y(peak * 1.05), c.red, 1.5, [4, 3]);
+      }
+      head(z, f.src ? 'Start' : `n = ${f.n}`, 425, 30, { s: 16 });
+      D.text(g, `μ = ${f2(f.mu)}`, 425, 62, { s: 14, mono: true, c: c.ink });
+      D.text(g, `σ = ${f2(f.sd)}`, 425, 86, { s: 14, mono: true, c: c.ink });
+      if (!f.src) {
+        D.text(g, `spread of averages`, 425, 124, { s: 12, b: true, c: c.ink2 });
+        D.text(g, `measured ${f2(f.s, 3)}`, 425, 148, { s: 13, mono: true, c: c.ink });
+        D.text(g, `σ/√n     ${f2(f.sd / Math.sqrt(f.n), 3)}`, 425, 170, { s: 13, mono: true, c: c.green });
+      }
+    }
+  });
+})();

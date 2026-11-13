@@ -8095,6 +8095,30 @@ function mlFoundModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-probability", title: "Probability and statistics for ML", emoji: "2.3", page: "content/machine-learning/ml-probability.html",
+        summary: "probability rules, Bayes rule, distributions, mean and variance, the central limit theorem, maximum likelihood, cross entropy and hypothesis tests.",
+        keywords: ["probability", "Bayes rule", "distribution", "normal distribution", "variance", "correlation", "central limit theorem", "maximum likelihood", "cross entropy", "p value"],
+        minutes: 65, counts: {"lessons": 13, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "rules", title: "Probability: counting how likely things are", emoji: "", group: "Lesson", keywords: ["probability", "random variable", "sum rule", "product rule", "conditional probability", "independence", "complement"] },
+        { id: "bayes", title: "Bayes rule: updating a belief with new evidence", emoji: "", group: "Lesson", keywords: ["Bayes rule", "prior", "posterior", "likelihood", "evidence", "total probability", "base rate fallacy"] },
+        { id: "distributions", title: "The distributions you will meet everywhere", emoji: "", group: "Lesson", keywords: ["distribution", "Bernoulli", "binomial", "Poisson", "uniform", "normal distribution", "Gaussian", "PMF", "PDF", "CDF"] },
+        { id: "describe", title: "Mean, variance and correlation", emoji: "", group: "Lesson", keywords: ["mean", "median", "variance", "standard deviation", "covariance", "correlation", "expected value", "ddof", "causation"] },
+        { id: "clt", title: "The law of large numbers and the central limit theorem", emoji: "", group: "Lesson", keywords: ["law of large numbers", "central limit theorem", "standard error", "sampling distribution", "error bars"] },
+        { id: "mle", title: "Maximum likelihood: where loss functions come from", emoji: "", group: "Lesson", keywords: ["maximum likelihood", "likelihood", "log likelihood", "negative log likelihood", "MAP", "prior", "regularisation link"] },
+        { id: "entropy", title: "Entropy, cross entropy and KL divergence", emoji: "", group: "Lesson", keywords: ["entropy", "cross entropy", "KL divergence", "information gain", "log loss", "bits", "surprise"] },
+        { id: "testing", title: "Hypothesis tests and confidence intervals", emoji: "", group: "Lesson", keywords: ["hypothesis test", "p value", "null hypothesis", "confidence interval", "z test", "A/B test", "type I error", "type II error", "power"] },
+        { id: "versus", title: "Frequentist and Bayesian thinking compared", emoji: "", group: "Lesson", keywords: ["frequentist", "Bayesian", "credible interval", "posterior distribution", "MAP vs MLE"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["conditional probability formula", "Bayes formula", "expectation", "variance", "binomial", "Jensen inequality", "Gibbs inequality"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "exponential family", "Fisher information", "Cramer Rao", "Hoeffding", "PAC learning"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "probability", "dynamic programming", "median", "heap", "prefix sum", "weighted sampling"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
