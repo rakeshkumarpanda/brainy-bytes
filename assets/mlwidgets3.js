@@ -796,3 +796,173 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Reinforcement 3.1  function approximation: state aggregation on the 1000 state random walk, and the parts of DQN
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, rng, plot, box } = MLZ;
+  const nf = v => (Number.isInteger(v) ? String(v).replace('-', '−') : f2(v, 3));
+  const pn = v => (v < 0 ? '(' + f2(v, 3) + ')' : f2(v, 3));
+  let TRUE = null;
+  const trueValues = () => {
+    if (TRUE) return TRUE;
+    const N = 1000, J = 100;
+    let v = new Float64Array(N);
+    for (let it = 0; it < 6000; it++) {
+      const c = new Float64Array(N + 2 * J + 1);
+      for (let i = 0; i < N + 2 * J; i++) c[i + 1] = c[i] + (i < J ? -1 : i >= N + J ? 1 : v[i - J]);
+      const nv = new Float64Array(N);
+      let diff = 0;
+      for (let s = 0; s < N; s++) { const k = s + J; nv[s] = ((c[k] - c[k - J]) + (c[k + J + 1] - c[k + 1])) / (2 * J); diff = Math.max(diff, Math.abs(nv[s] - v[s])); }
+      v = nv;
+      if (diff < 1e-7) break;
+    }
+    TRUE = v;
+    return v;
+  };
+
+  trace('mlaggregate', {
+    title: 'State aggregation: 1000 states, a handful of weights',
+    sub: 'A random walk over states 1 to 1000 starts at 500 and jumps 1 to 100 states left or right. Leaving on the left gives −1, on the right +1. The grey curve is the true value of each state. The blue staircase is the estimate: every state in a group shares one weight.',
+    W: 600, H: 330,
+    params: [
+      { k: 'm', label: 'Method', type: 'select', v: 'mc', opts: [['mc', 'Gradient Monte Carlo'], ['td', 'Semi gradient TD(0)']] },
+      { k: 'g', label: 'Number of groups', type: 'select', v: '10', opts: [['5', '5 groups'], ['10', '10 groups'], ['20', '20 groups'], ['50', '50 groups']] },
+      { k: 'a', label: 'Step size α (TD only, Monte Carlo uses 1/n)', type: 'range', v: 0.01, min: 0.002, max: 0.05, step: 0.002 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 3, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: '50 groups with Monte Carlo: the staircase gets much closer to the curve, but each weight sees fewer visits, so it is noisier after only a few episodes.', set: { m: 'mc', g: '50', seed: 3 }, play: true },
+      { t: 'Semi gradient TD with 10 groups: the steps near both ends stay closer to 0 than Monte Carlo’s, because TD bootstraps from the neighbouring group’s weight, which is itself a rough average.', set: { m: 'td', g: '10', a: 0.01, seed: 3 }, play: true }
+    ],
+    frames(p) {
+      const v = trueValues(), G = +p.g, R = rng(+p.seed * 7907), al = +p.a, isMC = p.m === 'mc';
+      const w = new Array(G).fill(0), n = new Array(G).fill(0), grp = s => Math.floor((s - 1) * G / 1000);
+      const rmse = () => { let e = 0; for (let s = 1; s <= 1000; s++) e += (w[grp(s)] - v[s - 1]) ** 2; return Math.sqrt(e / 1000); };
+      const fr = [{ w: w.slice(), G, isMC, path: [], say: `${G} groups of ${1000 / G} states, so ${G} weights instead of 1000 table entries. All weights start at 0. ${isMC ? 'Gradient Monte Carlo moves each visited group’s weight towards the final reward G (+1 or −1), with step 1/n, a running average.' : `Semi gradient TD(0) moves each visited group’s weight towards the weight of the next state’s group (or the final reward), with α = ${f2(al, 3)}.`}` }];
+      const show = [1, 2, 5, 20, 100, 300, 1000, 2000];
+      for (let ep = 1; ep <= 2000; ep++) {
+        let s = 500; const states = [];
+        while (s >= 1 && s <= 1000) { states.push(s); s += (1 + Math.floor(R() * 100)) * (R() < 0.5 ? 1 : -1); }
+        const Gret = s > 1000 ? 1 : -1;
+        states.forEach((st, i) => {
+          const k = grp(st);
+          if (isMC) { n[k]++; w[k] += (Gret - w[k]) / n[k]; }
+          else { const tgt = i + 1 < states.length ? w[grp(states[i + 1])] : Gret; w[k] += al * (tgt - w[k]); }
+        });
+        if (show.includes(ep)) {
+          fr.push({ w: w.slice(), G, isMC, path: ep <= 2 ? states : [], end: Gret, say: ep <= 2
+            ? `Episode ${ep}: ${states.length} jumps, it leaves on the ${Gret > 0 ? 'right, reward +1' : 'left, reward −1'}. The dots show the states it visited. ${isMC ? 'Every visited group moves towards ' + nf(Gret) + ', the return.' : 'Only the group just before the exit sees the reward directly. The others move towards their neighbours’ weights.'} Error over all states: ${f2(rmse(), 3)}.`
+            : `After ${ep} episodes the root mean squared error over all 1000 states is <b>${f2(rmse(), 3)}</b>.${ep === 2000 ? ` Inside a group every state gets the same value, so some error stays however long we train. ${isMC ? 'Monte Carlo finds the best staircase for the states the walk visits most.' : 'TD settles near, but not at, the best staircase: bootstrapping adds bias.'}` : ''}` });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, v = trueValues();
+      const P = plot(z, [10, 10, 580, 300], [1, 1000], [-1, 1], { dx: 0, dy: 1, xl: 'state', yl: 'value' });
+      for (let s = 1; s < 1000; s += 3) D.line(g, P.X(s), P.Y(v[s - 1]), P.X(s + 3), P.Y(v[Math.min(999, s + 2)]), c.ink2, 2);
+      const gw = 1000 / f.G;
+      f.w.forEach((wv, k) => {
+        D.line(g, P.X(1 + k * gw), P.Y(wv), P.X((k + 1) * gw), P.Y(wv), klass(z, 0), 3);
+        if (k) D.line(g, P.X(1 + k * gw), P.Y(f.w[k - 1]), P.X(1 + k * gw), P.Y(wv), klass(z, 0), 1, [3, 3]);
+      });
+      f.path.forEach(s => D.circle(g, P.X(s), P.Y(0), 3, { fill: klass(z, 1) }));
+      D.text(g, 'grey: true value   blue: estimate   ' + (f.isMC ? 'gradient Monte Carlo' : 'semi gradient TD(0)'), 120, 30, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+(() => {
+  const { trace, D, f2, head, klass, rr, rng, plot, box } = MLZ;
+  const pn = v => (v < 0 ? '(' + f2(v, 3) + ')' : f2(v, 3));
+  const phi = s => [1, s / 5];
+  const qv = (W, s, a) => W[a][0] + W[a][1] * s / 5;
+  const ideal = (s, a) => (a === 1 ? 0.9 ** (4 - s) : 0.9 * 0.9 ** (4 - Math.max(s - 1, 0)));
+
+  trace('mldqn', {
+    title: 'Inside DQN: replay memory and a target network',
+    sub: 'A corridor of states 0 to 5, reaching 5 gives +1. Q is a tiny model: Q(s, a) = w₀ + w₁ × s/5 for each action, so 4 weights replace the table. Transitions go into a replay memory of 8, updates use random minibatches of 3, and targets come from a frozen copy of the weights.',
+    W: 600, H: 330,
+    params: [
+      { k: 'C', label: 'Copy to the target network every C updates', type: 'range', v: 5, min: 1, max: 30 },
+      { k: 'rep', label: 'Replay memory', type: 'select', v: 'on', opts: [['on', 'On: random minibatch of 3'], ['off', 'Off: learn from the newest step only']] },
+      { k: 'lr', label: 'Learning rate', type: 'range', v: 0.3, min: 0.05, max: 1, step: 0.05 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 2, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'C = 30: the target network (orange) stays still for 30 updates and then jumps, while the online line (blue) moves towards it between jumps. Early learning is slower than with C = 5.', set: { C: 30, rep: 'on', lr: 0.3, seed: 2 }, play: true },
+      { t: 'C = 1 and replay off: this is plain online Q learning with a model. Every update chases a target that changed one step ago, using only the newest transition.', set: { C: 1, rep: 'off', lr: 0.3, seed: 2 }, play: true }
+    ],
+    frames(p) {
+      const C = +p.C, rep = p.rep === 'on', lr = +p.lr, R = rng(+p.seed * 3571), g = 0.9, eps = 0.3;
+      const W = [[0, 0], [0, 0]];
+      let T = W.map(r => r.slice()), buf = [], updates = 0, s = Math.floor(R() * 5), t = 0, steps = 0, extra = 0, goals = 0;
+      const snap = extra => ({ W: W.map(r => r.slice()), T: T.map(r => r.slice()), buf: buf.slice(), s, ...extra });
+      const fr = [snap({ say: `Online weights and target weights all start at 0. The memory is empty. The agent starts in state ${s} and acts ε greedily with ε = 0.3. Training starts once the memory holds 3 transitions.` })];
+      const showAt = [60, 120, 250, 500];
+      for (steps = 1; steps <= 500; steps++) {
+        const best = qv(W, s, 1) > qv(W, s, 0) ? 1 : qv(W, s, 1) < qv(W, s, 0) ? 0 : (R() < 0.5 ? 1 : 0);
+        const a = R() < eps ? Math.floor(R() * 2) : best;
+        const s2 = Math.max(0, s + (a ? 1 : -1)), done = s2 === 5, r = done ? 1 : 0;
+        const tr = { s, a, r, s2, done };
+        buf.push(tr); if (buf.length > 8) buf.shift();
+        let batch = [], info = '';
+        if (buf.length >= 3) {
+          const idx = rep ? [0, 1, 2].map(() => Math.floor(R() * buf.length)) : [buf.length - 1];
+          batch = idx;
+          const grads = [[0, 0], [0, 0]], parts = [];
+          idx.forEach(i => {
+            const b = buf[i], y = b.r + (b.done ? 0 : g * Math.max(qv(T, b.s2, 0), qv(T, b.s2, 1))), q = qv(W, b.s, b.a), e = y - q;
+            grads[b.a][0] += e * phi(b.s)[0] / idx.length; grads[b.a][1] += e * phi(b.s)[1] / idx.length;
+            parts.push(`(${b.s}, ${b.a ? 'R' : 'L'}): ${b.done ? 'y = r = 1 (goal)' : `y = ${b.r} + 0.9 × ${pn(Math.max(qv(T, b.s2, 0), qv(T, b.s2, 1)))} = ${f2(y, 3)}`}, Q = ${f2(q, 3)}`);
+          });
+          for (let a2 = 0; a2 < 2; a2++) for (let j = 0; j < 2; j++) W[a2][j] += lr * grads[a2][j];
+          updates++;
+          info = ` ${rep ? 'Minibatch' : 'Newest transition only'} ${parts.join('. ')}. Each weight moves by learning rate × error × feature.`;
+          if (updates % C === 0) { T = W.map(r => r.slice()); info += ` Update ${updates}: <b>copy the online weights into the target network</b>.`; }
+        }
+        const copied = C > 1 && buf.length >= 3 && updates % C === 0 && updates <= 2 * C;
+        if (steps <= 5 || ((done && goals++ < 4) || copied) && extra < 7) {
+          if (steps > 5) extra++;
+          fr.push(snap({ batch, last: buf.length - 1, s: s2, from: s, say: `Step ${steps}: state ${s}, action ${a ? 'right' : 'left'}, reward ${r}, next state ${s2}${done ? ' (the goal, so the episode ends)' : ''}. ${buf.length === 8 && steps > 8 ? 'The memory is full, so the oldest transition was dropped to make room.' : `Stored in memory slot ${buf.length}.`}${buf.length < 3 ? ' Not enough memories to train yet.' : info}` }));
+        }
+        s = s2; t++;
+        if (done || t >= 20) { s = Math.floor(R() * 5); t = 0; }
+        if (showAt.includes(steps)) {
+          let err = 0; for (let k = 0; k <= 4; k++) err = Math.max(err, Math.abs(qv(W, k, 1) - ideal(k, 1)));
+          const right = [0, 1, 2, 3, 4].every(k => qv(W, k, 1) > qv(W, k, 0));
+          fr.push(snap({ batch: [], say: `After ${steps} steps and ${updates} updates. ${right ? 'Q(s, right) is above Q(s, left) in every state, so the greedy policy goes right everywhere.' : 'The greedy policy does not yet go right in every state.'} The largest gap between the blue line and the ideal values (green) is ${f2(err, 3)}.${steps === 500 ? ' A straight line cannot match the curved ideal exactly, so a gap remains. A deep network has enough flexibility to bend.' : ''}` }));
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      for (let i = 0; i < 6; i++) {
+        rr(g, 10 + i * 48, 22, 42, 30, 5, { fill: i === 5 ? 'rgba(22,163,74,0.25)' : c.surf, stroke: c.line });
+        D.text(g, i === 5 ? '5 +1' : String(i), 31 + i * 48, 42, { a: 'center', s: 12, b: true, c: i === 5 ? c.green : c.ink });
+      }
+      if (f.s !== undefined) D.circle(g, 31 + f.s * 48, 12, 7, { fill: klass(z, 0) });
+      head(z, 'Replay memory (newest on the right)', 10, 74);
+      for (let i = 0; i < 8; i++) {
+        const b = f.buf[i], hot = f.batch && f.batch.includes(i);
+        box(z, 10 + i * 36, 82, 32, 40, b ? `${b.s}${b.a ? '→' : '←'}${b.s2}` : '', { fill: hot ? klass(z, 1) : c.surf, c: hot ? '#fff' : c.ink, s: 11, mono: true, r: 4 });
+      }
+      D.text(g, 'orange: in this minibatch', 10, 138, { s: 10, c: c.ink2 });
+      head(z, 'Weights  [w₀, w₁]', 10, 162);
+      [['online left', f.W[0]], ['online right', f.W[1]], ['target left', f.T[0]], ['target right', f.T[1]]].forEach(([nm, w], i) => {
+        D.text(g, nm, 10, 186 + i * 22, { s: 11, c: i < 2 ? klass(z, 0) : klass(z, 1), b: true });
+        D.text(g, `[${f2(w[0], 3)}, ${f2(w[1], 3)}]`, 110, 186 + i * 22, { s: 11, mono: true, c: c.ink });
+      });
+      D.text(g, 'y = r + γ maxₐ′ Q_target(s′, a′)', 10, 286, { s: 11, mono: true, b: true, c: c.cv });
+      D.text(g, 'w += lr × (y − Q(s, a)) × [1, s/5]', 10, 306, { s: 11, mono: true, b: true, c: c.cv });
+      const P = plot(z, [312, 10, 278, 300], [0, 4], [-0.2, 1.1], { dx: 0, dy: 1, xl: 'state s', yl: 'Q(s, right)' });
+      for (let k = 0; k <= 4; k++) D.circle(g, P.X(k), P.Y(ideal(k, 1)), 4, { fill: c.green });
+      D.line(g, P.X(0), P.Y(qv(f.T, 0, 1)), P.X(4), P.Y(qv(f.T, 4, 1)), klass(z, 1), 2, [6, 4]);
+      D.line(g, P.X(0), P.Y(qv(f.W, 0, 1)), P.X(4), P.Y(qv(f.W, 4, 1)), klass(z, 0), 3);
+      D.text(g, 'blue: online   orange dashed: target   green: ideal', 320, 324, { s: 10, c: c.ink2 });
+    }
+  });
+})();

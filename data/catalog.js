@@ -8755,6 +8755,29 @@ function mlRlModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-r3", title: "Modern RL", emoji: "3", step: 3, part: "reinforcement", level: "Advanced", blurb: "Scale RL to huge problems: function approximation and deep Q networks, policy gradients and actor critic methods, and how RL is used in practice, from offline data to RLHF.", topics: [
+      { id: "ml-dqn", title: "Function approximation and deep Q networks", emoji: "3.1", page: "content/machine-learning/ml-dqn.html",
+        summary: "Value function approximation, tile coding, DQN with replay and a target network, its improvements, and the deadly triad.",
+        keywords: ["DQN", "deep Q network", "function approximation", "tile coding", "experience replay", "target network", "Double DQN", "dueling network", "prioritised replay", "deadly triad"],
+        minutes: 55, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Why tables break, and learning a value function", emoji: "", group: "Lesson", keywords: ["function approximation", "generalisation", "state aggregation", "gradient Monte Carlo", "semi gradient TD", "value error"] },
+        { id: "linear", title: "Linear features and tile coding", emoji: "", group: "Lesson", keywords: ["linear function approximation", "tile coding", "CMAC", "mountain car", "features", "Fourier basis"] },
+        { id: "dqn", title: "Deep Q networks: replay memory and a target network", emoji: "", group: "Lesson", keywords: ["DQN", "deep Q network", "experience replay", "target network", "Atari", "Huber loss", "CartPole"] },
+        { id: "better", title: "Double DQN, dueling networks, prioritised replay and Rainbow", emoji: "", group: "Lesson", keywords: ["Double DQN", "dueling network", "prioritised experience replay", "Rainbow", "distributional RL", "noisy nets", "multi step"] },
+        { id: "triad", title: "The deadly triad: when approximation diverges", emoji: "", group: "Lesson", keywords: ["deadly triad", "Baird counterexample", "divergence", "off policy", "gradient TD", "emphatic TD"] },
+        { id: "versus", title: "Tables, linear models and deep networks compared", emoji: "", group: "Lesson", keywords: ["tabular vs linear vs deep", "choosing a function approximator"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["value error formula", "semi gradient", "DQN target formula", "residual gradient", "projected Bellman error"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "fitted Q iteration", "emphatic TD"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "heap", "ring buffer", "cache", "sliding window"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
