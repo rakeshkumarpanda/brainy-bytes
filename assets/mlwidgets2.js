@@ -2717,3 +2717,174 @@ const MLBASKETS = [['bread', 'milk'], ['bread', 'butter', 'milk'], ['bread', 'bu
     }
   });
 })();
+
+/* =====================================================================================================
+   Unsupervised 3.3  recommender systems: user based collaborative filtering and matrix factorisation
+   ===================================================================================================== */
+const MLRATINGS = '5 4 0 1 0; 4 5 1 0 1; 1 0 5 4 5; 0 1 4 5 4; 5 5 0 2 1';
+const MLFILMS = ['Space', 'Star', 'Haunt', 'Ghost', 'Fog'];
+function mlParseRatings(s) {
+  const R = String(s).split(/[;\n]+/).map(r => r.trim()).filter(Boolean).map(r => r.split(/[\s,]+/).map(Number));
+  if (R.length < 2 || R.length > 7) throw new Error('Type 2 to 7 rows of ratings, one row per user');
+  const m = R[0].length;
+  if (m < 2 || m > 7) throw new Error('Each row needs 2 to 7 ratings, one per film');
+  R.forEach(r => { if (r.length !== m || r.some(v => isNaN(v) || v < 0 || v > 5)) throw new Error('Every row needs the same number of ratings from 0 to 5 (0 = not rated)'); });
+  return R;
+}
+(() => {
+  const { trace, D, f2, head, klass, rr, box } = MLZ;
+  const filmName = j => (j < MLFILMS.length ? MLFILMS[j] : 'film ' + j);
+  function drawGrid(z, f, o) {
+    const c = z.col, g = z.g, n = f.R.length, m = f.R[0].length, cw = 40, ch = 30, x0 = 62, y0 = 30;
+    MLFILMS.slice(0, m).forEach((t, j) => D.text(g, t, x0 + j * cw + cw / 2 - 1, y0 - 8, { a: 'center', s: 10, b: true, c: c.ink2 }));
+    for (let j = MLFILMS.length; j < m; j++) D.text(g, 'film ' + j, x0 + j * cw + cw / 2 - 1, y0 - 8, { a: 'center', s: 10, b: true, c: c.ink2 });
+    if (o.means) D.text(g, 'mean', x0 + m * cw + 22, y0 - 8, { a: 'center', s: 10, b: true, c: c.ink2 });
+    for (let u = 0; u < n; u++) {
+      const y = y0 + u * ch, mark = o.rowCol ? o.rowCol(u) : null;
+      D.text(g, 'user ' + u, x0 - 8, y + 19, { a: 'right', s: 11, b: !!mark, c: mark || c.ink });
+      for (let j = 0; j < m; j++) {
+        const v = f.R[u][j], hl = o.hl ? o.hl(u, j) : null, pv = o.pred ? o.pred(u, j) : null;
+        let txt = v ? String(v) : '';
+        if (!v && pv !== null && pv !== undefined) txt = f2(pv, 1);
+        box(z, x0 + j * cw, y, cw - 3, ch - 3, txt, { fill: hl || (v ? c.surf : c.bg), c: hl ? '#fff' : v ? c.ink : klass(z, 3), s: 12, mono: true, r: 4, b: !!hl || (!v && pv !== null && pv !== undefined) });
+      }
+      if (o.means) D.text(g, f2(f.mean[u], 2), x0 + m * cw + 22, y + 19, { a: 'center', s: 11, mono: true, c: c.ink2 });
+      if (o.side && o.side(u)) D.text(g, o.side(u)[0], x0 + m * cw + 50, y + 19, { s: 11, mono: true, b: true, c: o.side(u)[1] });
+    }
+    return y0 + n * ch;
+  }
+
+  trace('mlcf', {
+    title: 'User based collaborative filtering: ask people with similar taste',
+    sub: 'A grid of film ratings from 1 to 5, where 0 means not rated. To guess one missing rating we centre each user’s ratings, find the users whose taste matches best on films they both rated, and take a weighted average of how they rated the missing film.',
+    W: 600, H: 330,
+    params: [
+      { k: 'R', label: 'Ratings (one row per user, 0 = not rated)', type: 'area', v: MLRATINGS },
+      { k: 'u', label: 'User', type: 'range', v: 0, min: 0, max: 6 },
+      { k: 'j', label: 'Film (column, from 0)', type: 'range', v: 2, min: 0, max: 6 },
+      { k: 'k', label: 'Neighbours to use', type: 'range', v: 2, min: 1, max: 4 }
+    ],
+    tips: [
+      { t: 'User 4 and film 2: the most similar user hated the film, so the guess is low.', set: { R: MLRATINGS, u: 4, j: 2, k: 2 }, play: true },
+      { t: 'User 3 and film 0: a user who agrees with user 3 disliked it, and a user who disagrees loved it. Both pull the guess down.', set: { R: MLRATINGS, u: 3, j: 0, k: 2 }, play: true }
+    ],
+    frames(p) {
+      const R = mlParseRatings(p.R), n = R.length, m = R[0].length, u = +p.u, j = +p.j;
+      if (u >= n) throw new Error(`There are only ${n} users (0 to ${n - 1})`);
+      if (j >= m) throw new Error(`There are only ${m} films (0 to ${m - 1})`);
+      if (R[u][j]) throw new Error('Pick a cell that is 0 (not rated yet), so there is something to predict');
+      const mean = R.map(r => { const s = r.filter(v => v > 0); return s.length ? s.reduce((a, b) => a + b, 0) / s.length : 0; });
+      if (!R[u].some(v => v > 0)) throw new Error('This user has no ratings at all, so there is no taste to compare. That is the cold start problem.');
+      const Cc = R.map((r, a) => r.map(v => (v > 0 ? v - mean[a] : 0)));
+      const sim = v => {
+        let xy = 0, xx = 0, yy = 0, both = 0;
+        for (let t = 0; t < m; t++) if (R[u][t] > 0 && R[v][t] > 0) { both++; xy += Cc[u][t] * Cc[v][t]; xx += Cc[u][t] ** 2; yy += Cc[v][t] ** 2; }
+        return { s: xx && yy ? xy / Math.sqrt(xx * yy) : 0, both };
+      };
+      const cand = [];
+      for (let v = 0; v < n; v++) if (v !== u && R[v][j] > 0) cand.push({ v, ...sim(v) });
+      if (!cand.length) throw new Error('Nobody has rated this film yet, so collaborative filtering cannot predict it');
+      const base = { R, mean, u, j, sims: {} };
+      const fr = [{ ...base, st: 1, say: `We want to guess how <b>user ${u}</b> would rate <b>${filmName(j)}</b> (the outlined empty cell). ${cand.length} other user${cand.length > 1 ? 's have' : ' has'} rated that film.` }];
+      fr.push({ ...base, st: 2, say: `Some people rate everything high and some rate everything low. So we work with each rating minus that user’s own mean. User ${u}’s mean is <b>${f2(mean[u], 2)}</b>.` });
+      const sims = {};
+      cand.forEach(c => {
+        sims[c.v] = c.s;
+        fr.push({ ...base, st: 3, cur: c.v, sims: { ...sims }, say: `User ${c.v} and user ${u} both rated ${c.both} film${c.both === 1 ? '' : 's'} (shaded). The cosine of their centred ratings on those films is <b>${f2(c.s, 3)}</b>. ${c.s > 0.3 ? 'Similar taste.' : c.s < -0.3 ? 'Opposite taste.' : 'Little in common.'}` });
+      });
+      const K = Math.min(+p.k, cand.length), top = cand.slice().sort((a, b) => b.s - a.s).slice(0, K);
+      fr.push({ ...base, st: 4, sims, top: top.map(t => t.v), say: `Keep the ${K} user${K > 1 ? 's' : ''} with the highest similarity: <b>${top.map(t => 'user ' + t.v).join(' and ')}</b>.` });
+      const num = top.reduce((a, t) => a + t.s * Cc[t.v][j], 0), den = top.reduce((a, t) => a + Math.abs(t.s), 0);
+      const pred = den ? mean[u] + num / den : mean[u];
+      const parts = top.map(t => `${t.s < 0 ? '(' + f2(t.s, 2) + ')' : f2(t.s, 2)} × (${R[t.v][j]} − ${f2(mean[t.v], 2)})`).join(' + ');
+      fr.push({ ...base, st: 5, sims, top: top.map(t => t.v), pred, say: `Prediction = user ${u}’s mean + weighted average of the neighbours’ centred ratings = ${f2(mean[u], 2)} + [${parts}] ÷ ${f2(den, 2)} = <b>${f2(Math.min(5, Math.max(1, pred)), 2)}</b>${pred > 5 || pred < 1 ? ' (clipped to the 1 to 5 scale)' : ''}.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, m = f.R[0].length;
+      const inTop = v => f.top && f.top.includes(v);
+      const yEnd = drawGrid(z, f, {
+        means: f.st >= 2,
+        rowCol: v => (v === f.u ? klass(z, 0) : inTop(v) ? klass(z, 2) : f.cur === v ? klass(z, 1) : null),
+        hl: (v, t) => (f.cur !== undefined && f.st === 3 && (v === f.u || v === f.cur) && f.R[f.u][t] > 0 && f.R[f.cur][t] > 0 ? klass(z, 1) : f.st >= 4 && inTop(v) && t === f.j ? klass(z, 2) : null),
+        pred: (v, t) => (f.pred !== undefined && v === f.u && t === f.j ? Math.min(5, Math.max(1, f.pred)) : null),
+        side: v => (f.sims[v] !== undefined ? [`sim ${f2(f.sims[v], 2)}`, f.sims[v] > 0 ? c.green : c.red] : null)
+      });
+      const x0 = 62, cw = 40, ch = 30;
+      rr(g, x0 + f.j * cw - 2, 30 + f.u * ch - 2, cw + 1, ch + 1, 6, { stroke: klass(z, 0), w: 2.5 });
+      const y = Math.max(yEnd + 26, 230);
+      if (f.st >= 2) D.text(g, 'centred rating = rating − that user’s mean', 20, y, { s: 11, c: c.ink2 });
+      if (f.st >= 5) {
+        D.text(g, 'r̂ = mean(u) + Σ sim · (r − mean(v)) ÷ Σ |sim|', 20, y + 22, { s: 12, mono: true, b: true, c: c.cv });
+        D.text(g, `guess for user ${f.u}: ${f2(Math.min(5, Math.max(1, f.pred)), 2)}`, 20, y + 46, { s: 14, b: true, c: klass(z, 3) });
+      }
+      head(z, 'Key', 470, 24);
+      [[klass(z, 0), 'target user'], [klass(z, 1), 'films both rated'], [klass(z, 2), 'chosen neighbours']].forEach(([col, t], i) => { rr(g, 470, 36 + i * 20, 12, 12, 3, { fill: col }); D.text(g, t, 488, 46 + i * 20, { s: 11, c: c.ink }); });
+    }
+  });
+
+  trace('mlmf', {
+    title: 'Matrix factorisation: learn hidden tastes and fill the whole grid',
+    sub: 'Each user and each film gets a short list of k hidden numbers. A rating is guessed as the overall mean plus a user bias plus a film bias plus the dot product of the two lists. Stochastic gradient descent nudges all of them to fit the known ratings, and the same numbers then fill every empty cell.',
+    W: 600, H: 330,
+    params: [
+      { k: 'R', label: 'Ratings (one row per user, 0 = not rated)', type: 'area', v: MLRATINGS },
+      { k: 'k', label: 'Hidden factors k', type: 'range', v: 2, min: 1, max: 3 },
+      { k: 'reg', label: 'Regularisation λ', type: 'range', v: 0.05, min: 0, max: 1, step: 0.05 },
+      { k: 'lr', label: 'Learning rate', type: 'range', v: 0.05, min: 0.01, max: 0.1, step: 0.01 }
+    ],
+    tips: [
+      { t: 'A strong penalty λ = 1 keeps the hidden numbers small: the fit to known ratings is worse and the guesses stay close to the averages.', set: { R: MLRATINGS, k: 2, reg: 1, lr: 0.05 }, play: true },
+      { t: 'A tiny learning rate: training crawls, and after 200 epochs the error is still several times higher than with the default rate of 0.05.', set: { R: MLRATINGS, k: 2, reg: 0.05, lr: 0.01 }, play: true }
+    ],
+    frames(p) {
+      const R = mlParseRatings(p.R), n = R.length, m = R[0].length, K = +p.k, lam = +p.reg, lr = +p.lr;
+      const known = [];
+      R.forEach((r, u) => r.forEach((v, j) => { if (v > 0) known.push([u, j, v]); }));
+      if (known.length < 3) throw new Error('Type at least 3 known ratings');
+      const mu = known.reduce((a, t) => a + t[2], 0) / known.length;
+      const rnd = MLZ.rng(7), gauss = () => (rnd() + rnd() + rnd() - 1.5) * 0.2;
+      const P = R.map(() => Array.from({ length: K }, gauss)), Q = R[0].map(() => Array.from({ length: K }, gauss));
+      const bu = R.map(() => 0), bi = R[0].map(() => 0);
+      const guess = (u, j) => mu + bu[u] + bi[j] + P[u].reduce((a, x, t) => a + x * Q[j][t], 0);
+      const rmse = () => Math.sqrt(known.reduce((a, [u, j, v]) => a + (v - guess(u, j)) ** 2, 0) / known.length);
+      const snap = () => R.map((r, u) => r.map((v, j) => guess(u, j)));
+      const show = [0, 1, 2, 5, 10, 20, 50, 100, 200], hist = [[0, rmse()]];
+      const base = { R, mu, K, lam };
+      const fr = [{ ...base, st: 0, G: null, hist: [], say: `${known.length} known ratings in a ${n} × ${m} grid. Each user and each film gets ${K} hidden number${K > 1 ? 's' : ''}, started at small random values. The overall mean rating μ is <b>${f2(mu, 2)}</b>.` }];
+      fr.push({ ...base, st: 1, G: snap(), hist: hist.slice(), ep: 0, say: `Before any training every guess is about μ = ${f2(mu, 2)}, shown in purple in the empty cells. The error on the known ratings is RMSE <b>${f2(hist[0][1], 3)}</b>.` });
+      const order = known.map((_, i) => i);
+      for (let ep = 1; ep <= 200; ep++) {
+        for (let i = order.length - 1; i > 0; i--) { const s = Math.floor(rnd() * (i + 1)); [order[i], order[s]] = [order[s], order[i]]; }
+        order.forEach(i => {
+          const [u, j, v] = known[i], e = v - guess(u, j);
+          bu[u] += lr * (e - lam * bu[u]); bi[j] += lr * (e - lam * bi[j]);
+          for (let t = 0; t < K; t++) { const pu = P[u][t], qi = Q[j][t]; P[u][t] += lr * (e * qi - lam * pu); Q[j][t] += lr * (e * pu - lam * qi); }
+        });
+        hist.push([ep, rmse()]);
+        if (show.includes(ep)) {
+          const r = hist[ep][1];
+          const say = ep === 1 ? `One epoch: for every known rating, find the error e = r − r̂ and move the biases and the hidden numbers a little to shrink it, with a pull λ = ${lam} back towards 0. RMSE is now <b>${f2(r, 3)}</b>.`
+            : ep < 200 ? `After ${ep} epochs the RMSE on known ratings is <b>${f2(r, 3)}</b>. Watch the purple guesses settle as the hidden tastes take shape.`
+              : `After 200 epochs RMSE is <b>${f2(r, 3)}</b>. ${r < 0.3 ? 'The known ratings are fitted closely' : 'The known ratings are only roughly fitted'}, and every empty cell now holds a guess. High guesses are the films to recommend. A model that fits the known cells perfectly may still guess badly, so in practice λ is tuned on held out ratings.`;
+          fr.push({ ...base, st: 2, G: snap(), hist: hist.slice(), ep, say });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const yEnd = drawGrid(z, f, { pred: f.G ? (u, j) => Math.min(5, Math.max(1, f.G[u][j])) : null });
+      D.text(g, 'r̂ = μ + bᵤ + bᵢ + pᵤ · qᵢ', 20, Math.max(yEnd + 30, 240), { s: 13, mono: true, b: true, c: c.cv });
+      D.text(g, 'black: known rating   purple: model guess', 20, Math.max(yEnd + 54, 264), { s: 11, c: c.ink2 });
+      if (f.hist && f.hist.length) {
+        const Pl = MLZ.plot(z, [360, 130, 230, 190], [0, 200], [0, Math.max(1.2, f.hist[0][1] * 1.1)], { dx: 0, dy: 1, yl: 'RMSE by epoch' });
+        for (let i = 1; i < f.hist.length; i++) D.line(g, Pl.X(f.hist[i - 1][0]), Pl.Y(f.hist[i - 1][1]), Pl.X(f.hist[i][0]), Pl.Y(f.hist[i][1]), klass(z, 0), 2);
+      }
+      head(z, 'Training', 360, 24);
+      D.text(g, `k = ${f.K}   λ = ${f.lam}`, 360, 50, { s: 12, mono: true, c: c.ink });
+      if (f.ep !== undefined) D.text(g, `epoch ${f.ep}`, 360, 74, { s: 13, b: true, c: c.ink });
+      if (f.hist && f.hist.length) D.text(g, `RMSE ${f2(f.hist[f.hist.length - 1][1], 3)}`, 360, 98, { s: 14, b: true, c: klass(z, 0) });
+    }
+  });
+})();

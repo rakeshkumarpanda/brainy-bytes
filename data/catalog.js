@@ -8601,6 +8601,27 @@ function mlUnsupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-recommenders", title: "Recommender systems", emoji: "3.3", page: "content/machine-learning/ml-recommenders.html",
+        summary: "Content based and collaborative filtering, matrix factorisation by SGD and ALS, ranking metrics, cold start and production systems.",
+        keywords: ["recommender systems", "collaborative filtering", "content based filtering", "matrix factorisation", "ALS", "NDCG", "cold start", "latent factors", "two tower model", "implicit feedback"],
+        minutes: 55, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "What a recommender does, and content based filtering", emoji: "", group: "Lesson", keywords: ["recommender system", "user item matrix", "sparsity", "content based filtering", "cosine similarity", "explicit feedback", "implicit feedback"] },
+        { id: "cf", title: "Collaborative filtering: people like you and items like this", emoji: "", group: "Lesson", keywords: ["collaborative filtering", "user based", "item based", "neighbourhood methods", "Pearson correlation", "adjusted cosine", "k nearest neighbours"] },
+        { id: "mf", title: "Matrix factorisation: hidden tastes learned from ratings", emoji: "", group: "Lesson", keywords: ["matrix factorisation", "latent factors", "biases", "SGD", "alternating least squares", "regularisation", "Netflix Prize", "implicit ALS"] },
+        { id: "evaluate", title: "Measuring recommendations and starting cold", emoji: "", group: "Lesson", keywords: ["precision at k", "recall at k", "NDCG", "MRR", "RMSE", "cold start", "popularity baseline", "time based split"] },
+        { id: "production", title: "Recommenders at scale and their side effects", emoji: "", group: "Lesson", keywords: ["two tower model", "candidate generation", "ranking", "approximate nearest neighbours", "FAISS", "feedback loops", "popularity bias", "A/B testing"] },
+        { id: "versus", title: "Recommendation methods compared", emoji: "", group: "Lesson", keywords: ["content based vs collaborative filtering", "matrix factorisation vs nearest neighbours", "hybrid recommender"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["Pearson correlation", "prediction formula", "matrix factorisation loss", "SGD update", "ALS", "NDCG formula", "low rank", "SVD"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "two tower", "bandits", "propensity weighting"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "sorting", "ranking", "breadth first search", "binary search", "heap"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
