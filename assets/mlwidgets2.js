@@ -1669,3 +1669,141 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Unsupervised 1.1  k-means: assign every point to the nearest centre, move each centre to its points' mean
+   ===================================================================================================== */
+const MLKM = (() => {
+  const { rng } = MLZ;
+  function blobs(n, centres, sd, seed) {
+    const r = rng(seed), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < n; i++) { const c = centres[i % centres.length]; P.push({ x: c[0] + sd * g(), y: c[1] + sd * g(), t: i % centres.length }); }
+    return P;
+  }
+  const d2 = (a, c) => (a.x - c.x) ** 2 + (a.y - c.y) ** 2;
+  function seedCentres(P, k, how, seed) {
+    const r = rng(seed);
+    if (how === 'random') { const C = []; while (C.length < k) { const q = P[Math.floor(r() * P.length)]; if (!C.includes(q)) C.push(q); } return C.map(q => ({ x: q.x, y: q.y })); }
+    const C = [P[Math.floor(r() * P.length)]];
+    while (C.length < k) {
+      const w = P.map(a => Math.min(...C.map(c => d2(a, c)))), s = w.reduce((u, v) => u + v, 0);
+      let t = r() * s, i = 0; while (t > w[i] && i < P.length - 1) { t -= w[i]; i++; }
+      C.push(P[i]);
+    }
+    return C.map(q => ({ x: q.x, y: q.y }));
+  }
+  function run(P, C) {
+    const hist = [];
+    for (let it = 0; it < 20; it++) {
+      const lab = P.map(a => { let b = 0; C.forEach((c, j) => { if (d2(a, c) < d2(a, C[b])) b = j; }); return b; });
+      const inertia = P.reduce((s, a, i) => s + d2(a, C[lab[i]]), 0);
+      const N = C.map((c, j) => { const S = P.filter((_, i) => lab[i] === j); return S.length ? { x: S.reduce((s, a) => s + a.x, 0) / S.length, y: S.reduce((s, a) => s + a.y, 0) / S.length } : c; });
+      hist.push({ C: C.map(c => ({ ...c })), lab, inertia, N });
+      const moved = N.reduce((s, c, j) => s + Math.hypot(c.x - C[j].x, c.y - C[j].y), 0);
+      C = N;
+      if (moved < 1e-9) break;
+    }
+    return hist;
+  }
+  return { blobs, seedCentres, run, d2 };
+})();
+(() => {
+  const { trace, plot, D, f2, head, klass } = MLZ;
+  const DATA = { three: [[2, 2], [7, 3], [4.5, 7.5]], four: [[2, 2], [7, 2], [2, 7], [7, 7]], close: [[3, 3], [5, 4], [8, 8]] };
+  trace('mlkmeans', {
+    title: 'k-means: assign, update, repeat',
+    sub: 'Pick k starting centres. Then repeat two steps until nothing changes: give every point to its nearest centre, and move every centre to the mean of its points. Each round can only lower the total squared distance (inertia).',
+    W: 600, H: 330,
+    params: [
+      { k: 'data', label: 'Data', type: 'select', v: 'three', opts: [['three', 'Three groups'], ['four', 'Four groups'], ['close', 'Two groups close together']] },
+      { k: 'k', label: 'k (number of clusters)', type: 'range', v: 3, min: 2, max: 5, step: 1 },
+      { k: 'init', label: 'Starting centres', type: 'select', v: 'random', opts: [['random', 'Random points'], ['pp', 'k-means++ (spread out)']] },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 3, min: 1, max: 20, step: 1 }
+    ],
+    tips: [
+      { t: 'Four groups but k = 3: k-means must merge two of them. It always returns exactly k clusters.', set: { data: 'four', k: 3 }, play: true },
+      { t: 'Try seeds with random starts on four groups and k = 4: some runs get stuck with two centres in one group.', set: { data: 'four', k: 4, init: 'random', seed: 6 }, play: true }
+    ],
+    frames(p) {
+      const P = MLKM.blobs(60, DATA[p.data], 0.9, 11), C0 = MLKM.seedCentres(P, p.k, p.init, p.seed);
+      const H = MLKM.run(P, C0);
+      const fr = [{ P, say: `${P.length} points with no labels. We ask k-means for <b>${p.k}</b> clusters.` }];
+      fr.push({ P, C: H[0].C, say: `Choose ${p.k} starting centres (crosses) ${p.init === 'pp' ? 'with k-means++: the first at random, each next one far from those already chosen' : 'by picking random points'}.` });
+      H.forEach((h, i) => {
+        fr.push({ P, C: h.C, lab: h.lab, inertia: h.inertia, say: `Round ${i + 1}, assign: every point joins its nearest centre. Inertia (sum of squared distances to the centres) = <b>${f2(h.inertia, 1)}</b>.` });
+        if (i < H.length - 1) fr.push({ P, C: h.N, old: h.C, lab: h.lab, inertia: h.inertia, say: `Round ${i + 1}, update: move each centre to the mean of its points (the arrows).` });
+      });
+      const last = H[H.length - 1];
+      fr.push({ P, C: last.C, lab: last.lab, inertia: last.inertia, done: true, say: `No point changed cluster, so k-means has converged after ${H.length} rounds with inertia <b>${f2(last.inertia, 1)}</b>. This is a local minimum: a different start can end somewhere else, which is why KMeans runs n_init starts and keeps the best.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1, 10.5], [-1, 10.5], { dx: 0, dy: 0 });
+      f.P.forEach((a, i) => D.circle(g, P.X(a.x), P.Y(a.y), 4.5, { fill: f.lab ? klass(z, f.lab[i]) : c.ink2, stroke: c.surf, w: 1 }));
+      if (f.old) f.old.forEach((o, j) => D.arrow ? D.arrow(g, P.X(o.x), P.Y(o.y), P.X(f.C[j].x), P.Y(f.C[j].y), c.ink, 1.6) : D.line(g, P.X(o.x), P.Y(o.y), P.X(f.C[j].x), P.Y(f.C[j].y), c.ink, 1.6));
+      (f.C || []).forEach((q, j) => {
+        const X = P.X(q.x), Y = P.Y(q.y), col = klass(z, j);
+        D.line(g, X - 9, Y - 9, X + 9, Y + 9, c.ink, 5); D.line(g, X - 9, Y + 9, X + 9, Y - 9, c.ink, 5);
+        D.line(g, X - 8, Y - 8, X + 8, Y + 8, col, 3); D.line(g, X - 8, Y + 8, X + 8, Y - 8, col, 3);
+      });
+      head(z, 'k-means', 425, 24);
+      if (f.inertia !== undefined) D.text(g, `inertia ${f2(f.inertia, 1)}`, 425, 50, { s: 14, b: true, c: c.cv });
+      if (f.lab) (f.C || []).forEach((q, j) => D.text(g, `cluster ${j + 1}: ${f.lab.filter(l => l === j).length} points`, 425, 80 + j * 20, { s: 12, mono: true, c: klass(z, j) }));
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 1.1  choosing k: the elbow of the inertia curve and the silhouette score
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass } = MLZ;
+  trace('mlelbow', {
+    title: 'Choosing k: elbow and silhouette',
+    sub: 'Run k-means for k = 1 to 8 on the same points. Inertia always falls as k grows, so look for the bend (elbow). The silhouette score measures how much closer points are to their own cluster than to the next one, higher is better.',
+    W: 600, H: 330,
+    params: [{ k: 'groups', label: 'True number of groups in the data', type: 'range', v: 4, min: 2, max: 6, step: 1 }],
+    tips: [{ t: 'Two true groups: the elbow and the silhouette both point clearly at k = 2.', set: { groups: 2 }, play: true }],
+    frames(p) {
+      const centres = [[2, 2], [8, 2], [2, 8], [8, 8], [5, 5], [5, 9]].slice(0, p.groups);
+      const P = MLKM.blobs(150, centres, 0.8, 21);
+      const res = [];
+      const sil = lab => {
+        let tot = 0;
+        P.forEach((a, i) => {
+          const by = {};
+          P.forEach((b, j) => { if (i !== j) { const d = Math.sqrt(MLKM.d2(a, b)); (by[lab[j]] = by[lab[j]] || []).push(d); } });
+          const own = by[lab[i]] ? by[lab[i]].reduce((s, v) => s + v, 0) / by[lab[i]].length : 0;
+          const other = Math.min(...Object.keys(by).filter(k => +k !== lab[i]).map(k => by[k].reduce((s, v) => s + v, 0) / by[k].length));
+          tot += isFinite(other) ? (other - own) / Math.max(own, other) : 0;
+        });
+        return tot / P.length;
+      };
+      const fr = [{ P, res: [], say: `150 points. In truth there are ${p.groups} groups, but k-means does not know that. We try every k from 1 to 8.` }];
+      for (let k = 1; k <= 8; k++) {
+        let best = null;
+        for (let s = 1; s <= 3; s++) { const H = MLKM.run(P, MLKM.seedCentres(P, k, 'pp', s * 7 + k)); const h = H[H.length - 1]; if (!best || h.inertia < best.inertia) best = h; }
+        const sv = k > 1 ? sil(best.lab) : null;
+        res.push({ k, inertia: best.inertia, sil: sv, lab: best.lab, C: best.C });
+        fr.push({ P, res: res.slice(), show: res[k - 1], say: `k = ${k}: inertia <b>${f2(best.inertia, 0)}</b>${sv === null ? ' (silhouette needs at least 2 clusters)' : `, silhouette <b>${f2(sv, 3)}</b>`}.${k > 1 ? ` Inertia fell by ${f2(100 * (1 - best.inertia / res[k - 2].inertia), 0)}% from k = ${k - 1}.` : ''}` });
+      }
+      const bs = res.filter(r => r.sil !== null).reduce((a, b) => (b.sil > a.sil ? b : a));
+      fr.push({ P, res, show: bs, done: true, bs, say: `The inertia curve bends sharply around k = ${p.groups}, and after that each extra cluster helps little. The silhouette is highest at <b>k = ${bs.k}</b>. When the two disagree, or the data has no clear groups, choose k by what the clusters will be used for.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const mx = f.res.length ? f.res[0].inertia : 1;
+      const P = plot(z, [10, 10, 280, 310], [0, 8], [0, mx * 1.05 || 1], { dx: 0, dy: 0, xl: 'k', yl: 'inertia' });
+      g.save(); g.beginPath(); f.res.forEach((r, i) => (i ? g.lineTo(P.X(r.k), P.Y(r.inertia)) : g.moveTo(P.X(r.k), P.Y(r.inertia)))); g.strokeStyle = c.cv; g.lineWidth = 2.4; g.stroke(); g.restore();
+      f.res.forEach(r => D.circle(g, P.X(r.k), P.Y(r.inertia), 4, { fill: c.cv }));
+      f.res.forEach(r => { if (r.sil !== null) { const h = Math.max(0, r.sil) * 120; g.fillStyle = f.bs && r.k === f.bs.k ? klass(z, 1) : c.line; g.fillRect(P.X(r.k) - 6, P.Y(0) - h, 12, h); } });
+      D.text(g, 'bars: silhouette', 200, 30, { s: 10, b: true, c: klass(z, 1) });
+      const Q = plot(z, [300, 10, 290, 310], [-1, 11], [-1, 11], { dx: 0, dy: 0, grid: false });
+      f.P.forEach((a, i) => D.circle(g, Q.X(a.x), Q.Y(a.y), 3.5, { fill: f.show ? klass(z, f.show.lab[i]) : c.ink2 }));
+      if (f.show) D.text(g, `k = ${f.show.k}`, 310, 30, { s: 13, b: true, c: c.ink });
+    }
+  });
+})();
