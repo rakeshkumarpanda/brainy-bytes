@@ -654,3 +654,145 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Reinforcement 2.3  control with TD: a Q table filling up step by step, and Q learning against SARSA on the cliff
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, rng, plot, box } = MLZ;
+  const pick = (q, eps, R) => { if (R() < eps) return Math.floor(R() * q.length); const m = Math.max(...q), t = q.map((v, i) => (v === m ? i : -1)).filter(i => i >= 0); return t[Math.floor(R() * t.length)]; };
+  const pn = v => (v < 0 ? '(' + f2(v, 3) + ')' : f2(v, 3));
+
+  trace('mlqstep', {
+    title: 'Filling a Q table one step at a time',
+    sub: 'A corridor of 5 cells. The agent starts in cell 0, and reaching cell 4 gives +1 and ends the episode. It keeps a table Q(s, a) for left and right in each cell and picks actions ε greedily. Q learning learns from the best next action, SARSA from the next action it really takes.',
+    W: 600, H: 330,
+    params: [
+      { k: 'm', label: 'Method', type: 'select', v: 'q', opts: [['q', 'Q learning'], ['sarsa', 'SARSA']] },
+      { k: 'a', label: 'Step size α', type: 'range', v: 0.5, min: 0.1, max: 1, step: 0.1 },
+      { k: 'eps', label: 'ε (chance of a random action)', type: 'range', v: 0.2, min: 0, max: 0.5, step: 0.05 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 4, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'SARSA with ε = 0.5: random moves are frequent, and SARSA’s values include their cost, so its numbers end up lower than Q learning’s.', set: { m: 'sarsa', eps: 0.5, a: 0.5, seed: 4 }, play: true },
+      { t: 'ε = 0: no exploration. Ties are broken at random, so the agent still wanders at first, then repeats the first route that worked.', set: { m: 'q', eps: 0, a: 0.5, seed: 4 }, play: true }
+    ],
+    frames(p) {
+      const isQ = p.m === 'q', al = +p.a, eps = +p.eps, R = rng(+p.seed * 4111), g = 0.9;
+      const Q = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+      const base = { isQ };
+      const fr = [{ ...base, Q: Q.map(r => r.slice()), s: 0, ep: 1, say: `Every Q value starts at 0. γ = 0.9. Method: <b>${isQ ? 'Q learning' : 'SARSA'}</b>.` }];
+      let shown = 0;
+      for (let ep = 1; ep <= 30; ep++) {
+        let s = 0, a = pick(Q[s], eps, R), t = 0;
+        while (s !== 4 && t < 60) {
+          t++;
+          const s2 = Math.max(0, s + (a === 1 ? 1 : -1)), r = s2 === 4 ? 1 : 0, done = s2 === 4;
+          const a2 = done ? 0 : pick(Q[s2], eps, R);
+          const nxt = done ? 0 : isQ ? Math.max(...Q[s2]) : Q[s2][a2], target = r + g * nxt, old = Q[s][a];
+          Q[s][a] += al * (target - old);
+          if (shown < 22 && ep <= 3) {
+            shown++;
+            fr.push({ ...base, Q: Q.map(rw => rw.slice()), s: s2, from: s, upd: [s, a], ep, say: `Episode ${ep}, cell ${s}, action <b>${a ? 'right' : 'left'}</b> to cell ${s2}${done ? ' (goal, +1)' : ''}. ${done ? 'Terminal, so the target is just r = 1.' : isQ ? `Target = r + γ max Q(${s2}, ·) = ${r} + 0.9 × ${pn(nxt)} = ${f2(target, 3)}.` : `Next action chosen: ${a2 ? 'right' : 'left'}. Target = r + γ Q(${s2}, ${a2 ? 'right' : 'left'}) = ${r} + 0.9 × ${pn(nxt)} = ${f2(target, 3)}.`} Q(${s}, ${a ? 'right' : 'left'}) = ${f2(old, 3)} + ${f2(al, 1)} × (${f2(target, 3)} − ${f2(old, 3)}) = <b>${f2(Q[s][a], 3)}</b>.` });
+          }
+          s = s2; a = a2;
+        }
+        if (ep === 10 || ep === 30) fr.push({ ...base, Q: Q.map(rw => rw.slice()), s: 0, ep, say: `After ${ep} episodes. ${Q.slice(0, 4).every(q => q[1] > q[0]) ? 'Right is now the better action in every cell.' : 'Right is not yet the better action in every cell, so keep going.'} With γ = 0.9 the ideal values for right are 0.9³, 0.9², 0.9 and 1 = 0.729, 0.81, 0.9 and 1, which Q learning approaches. ${isQ ? '' : 'SARSA aims lower when ε is large, because its targets include the random moves it will keep making.'}` });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, x0 = 40, w = 100, y0 = 40;
+      for (let i = 0; i < 5; i++) {
+        const x = x0 + i * w;
+        rr(g, x, y0, w - 8, 44, 6, { fill: i === 4 ? 'rgba(22,163,74,0.25)' : c.surf, stroke: c.line });
+        D.text(g, i === 4 ? 'goal +1' : 'cell ' + i, x + (w - 8) / 2, y0 + 27, { a: 'center', s: 12, b: true, c: i === 4 ? c.green : c.ink });
+        if (f.s === i) D.circle(g, x + (w - 8) / 2, y0 - 12, 9, { fill: klass(z, 0) });
+      }
+      if (f.from !== undefined && f.from !== f.s) D.arrow(g, x0 + f.from * w + 46, y0 - 12, x0 + f.s * w + 46, y0 - 12, klass(z, 1), 2, 8);
+      head(z, 'Q table', x0, 130);
+      ['left', 'right'].forEach((nm, a) => {
+        D.text(g, nm, x0 - 6, 168 + a * 40, { a: 'right', s: 12, b: true, c: c.ink2 });
+        for (let s = 0; s < 4; s++) {
+          const hot = f.upd && f.upd[0] === s && f.upd[1] === a, best = f.Q[s][a] > f.Q[s][1 - a];
+          box(z, x0 + s * w, 148 + a * 40, w - 8, 34, f2(f.Q[s][a], 3), { fill: hot ? klass(z, 1) : best ? 'rgba(22,163,74,0.18)' : c.surf, c: hot ? '#fff' : c.ink, mono: true, s: 13, r: 5 });
+        }
+      });
+      D.text(g, f.isQ ? 'Q learning: Q(s,a) += α [r + γ maxₐ′ Q(s′,a′) − Q(s,a)]' : 'SARSA: Q(s,a) += α [r + γ Q(s′,a′) − Q(s,a)], a′ = next action taken', x0, 260, { s: 12, mono: true, b: true, c: c.cv });
+      D.text(g, `episode ${f.ep}   green: the better action in that cell`, x0, 290, { s: 11, c: c.ink2 });
+    }
+  });
+
+  const CL = { R: 4, C: 12 };
+  trace('mlcliff', {
+    title: 'The cliff walk: Q learning against SARSA',
+    sub: 'Start S at bottom left, goal G at bottom right. The bottom row between them is a cliff: falling costs −100 and sends you back to S. Every move costs −1. Both methods explore with ε greedy. The orange line is the greedy path learned so far, and the chart shows the reward of each episode while learning.',
+    W: 600, H: 330,
+    params: [
+      { k: 'm', label: 'Method', type: 'select', v: 'q', opts: [['q', 'Q learning'], ['sarsa', 'SARSA'], ['es', 'Expected SARSA']] },
+      { k: 'eps', label: 'ε', type: 'range', v: 0.1, min: 0, max: 0.3, step: 0.05 },
+      { k: 'a', label: 'Step size α', type: 'range', v: 0.5, min: 0.1, max: 1, step: 0.1 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 1, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'SARSA learns a path one or more rows away from the edge, because its values count the random steps that sometimes fall off. Its reward while learning is better.', set: { m: 'sarsa', eps: 0.1, a: 0.5, seed: 1 }, play: true },
+      { t: 'Q learning with ε = 0.3: the greedy path still hugs the edge, but with so much exploring it falls in very often while learning.', set: { m: 'q', eps: 0.3, a: 0.5, seed: 1 }, play: true }
+    ],
+    frames(p) {
+      const R = rng(+p.seed * 9001), eps = +p.eps, al = +p.a, m = p.m, mv = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      const Q = Array.from({ length: CL.R * CL.C }, () => [0, 0, 0, 0]);
+      const step = (s, a) => { let r = Math.floor(s / CL.C) + mv[a][0], c = (s % CL.C) + mv[a][1]; r = Math.min(3, Math.max(0, r)); c = Math.min(11, Math.max(0, c)); if (r === 3 && c >= 1 && c <= 10) return [36, -100, false, true]; const s2 = r * CL.C + c; return [s2, -1, s2 === 47, false]; };
+      const greedy = () => { let s = 36; const path = [s]; for (let i = 0; i < 40 && s !== 47; i++) { const q = Q[s]; s = step(s, q.indexOf(Math.max(...q)))[0]; path.push(s); } return path; };
+      const hist = [], show = [1, 5, 10, 25, 50, 100, 200, 500];
+      const fr = [{ path: [36], walk: [], hist: [], ep: 0, m, say: 'All Q values start at 0. The shortest route runs right along the cliff edge: 13 moves, reward −13.' }];
+      for (let ep = 1; ep <= 500; ep++) {
+        let s = 36, a = pick(Q[s], eps, R), tot = 0, falls = 0, t = 0;
+        const walk = [s];
+        while (s !== 47 && t < 1000) {
+          t++;
+          const [s2, r, done, fell] = step(s, a);
+          const a2 = pick(Q[s2], eps, R);
+          let nxt = 0;
+          if (!done) {
+            if (m === 'q') nxt = Math.max(...Q[s2]);
+            else if (m === 'sarsa') nxt = Q[s2][a2];
+            else { const b = Q[s2].indexOf(Math.max(...Q[s2])); nxt = Q[s2].reduce((acc, v, i) => acc + v * (eps / 4 + (i === b ? 1 - eps : 0)), 0); }
+          }
+          Q[s][a] += al * (r + nxt - Q[s][a]);
+          tot += r; falls += fell ? 1 : 0;
+          s = s2; a = a2; walk.push(s);
+        }
+        hist.push(tot);
+        if (show.includes(ep)) {
+          const last20 = hist.slice(-20), avg = last20.reduce((x, y) => x + y, 0) / last20.length, path = greedy(), ok = path[path.length - 1] === 47;
+          const edge = ok && path.slice(1, -1).every(q => Math.floor(q / CL.C) >= 2) && path.some(q => Math.floor(q / CL.C) === 2);
+          fr.push({ path, walk: ep <= 10 ? walk : [], hist: hist.slice(), ep, m, say: ep <= 10
+            ? `Episode ${ep}: ${t} moves, ${falls} fall${falls === 1 ? '' : 's'} off the cliff, reward ${tot}.${ep === 1 ? ' Early on the agent wanders and falls, and each fall makes the moves next to the cliff look bad.' : ''}`
+            : `After ${ep} episodes the average reward of the last 20 episodes is ${f2(avg, 1)}. ${ok ? `The greedy path takes ${path.length - 1} moves${edge ? ', right along the edge of the cliff' : ', keeping away from the edge'}.` : 'The greedy path does not reach the goal yet.'}${ep === 500 ? (m === 'q' ? ' Q learning learns the values of the best path (assuming it stops exploring), but while it still explores it falls off now and then, so its reward during learning is worse than SARSA’s.' : ' SARSA learns the value of the policy it actually follows, random steps included, so it prefers a safer path and earns more while learning.') : ''}` });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, cs = 40, x0 = 60, y0 = 12;
+      for (let r = 0; r < 4; r++) for (let cc = 0; cc < 12; cc++) {
+        const cliff = r === 3 && cc >= 1 && cc <= 10;
+        rr(g, x0 + cc * cs, y0 + r * cs, cs - 2, cs - 2, 4, { fill: cliff ? 'rgba(220,38,38,0.35)' : c.surf, stroke: c.line });
+      }
+      D.text(g, 'S', x0 + 19, y0 + 3 * cs + 24, { a: 'center', s: 13, b: true, c: c.ink });
+      D.text(g, 'G', x0 + 11 * cs + 19, y0 + 3 * cs + 24, { a: 'center', s: 13, b: true, c: c.green });
+      D.text(g, 'cliff  −100', x0 + 6 * cs, y0 + 3 * cs + 24, { a: 'center', s: 12, b: true, c: c.red });
+      const P = q => [x0 + (q % CL.C) * cs + 19, y0 + Math.floor(q / CL.C) * cs + 19];
+      f.walk.forEach(q => { const [x, y] = P(q); D.circle(g, x, y, 3, { fill: 'rgba(37,99,235,0.35)' }); });
+      for (let i = 1; i < f.path.length; i++) { const [a, b] = P(f.path[i - 1]), [cx, cy] = P(f.path[i]); D.line(g, a, b, cx, cy, klass(z, 1), 4); }
+      const name = { q: 'Q learning', sarsa: 'SARSA', es: 'Expected SARSA' }[f.m];
+      D.text(g, `${name}, episode ${f.ep}`, 10, 196, { s: 12, b: true, c: c.ink });
+      if (f.hist.length) {
+        const Pl = plot(z, [10, 204, 580, 122], [0, 500], [-200, 0], { dx: 0, dy: 0, xl: 'episode', yl: 'reward per episode' });
+        let acc = 0, prev = 0;
+        f.hist.forEach((v, i) => { prev = acc; acc = i ? 0.9 * acc + 0.1 * Math.max(-200, v) : Math.max(-200, v); if (i) D.line(g, Pl.X(i - 1), Pl.Y(prev), Pl.X(i), Pl.Y(acc), klass(z, 0), 1.5); });
+        D.text(g, 'smoothed', 520, 222, { s: 10, c: c.ink2 });
+      }
+    }
+  });
+})();

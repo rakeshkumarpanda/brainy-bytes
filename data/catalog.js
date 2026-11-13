@@ -8734,6 +8734,26 @@ function mlRlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-qlearning", title: "SARSA and Q learning", emoji: "2.3", page: "content/machine-learning/ml-qlearning.html",
+        summary: "SARSA, Q learning and expected SARSA on the cliff walk, on and off policy learning, and double Q learning.",
+        keywords: ["Q learning", "SARSA", "expected SARSA", "double Q learning", "cliff walking", "off policy", "on policy", "epsilon greedy", "maximisation bias", "action values"],
+        minutes: 50, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "From prediction to control: action values and SARSA", emoji: "", group: "Lesson", keywords: ["TD control", "action values", "SARSA", "on policy", "epsilon greedy", "generalised policy iteration"] },
+        { id: "q", title: "Q learning: learning the best policy while exploring", emoji: "", group: "Lesson", keywords: ["Q learning", "off policy", "target policy", "behaviour policy", "cliff walking", "Watkins"] },
+        { id: "expected", title: "Expected SARSA, and comparing the three", emoji: "", group: "Lesson", keywords: ["expected SARSA", "variance reduction", "on policy vs off policy", "cliff walking comparison"] },
+        { id: "bias", title: "Maximisation bias and double Q learning", emoji: "", group: "Lesson", keywords: ["maximisation bias", "overestimation", "double Q learning", "double estimator", "Jensen inequality"] },
+        { id: "versus", title: "TD control methods compared", emoji: "", group: "Lesson", keywords: ["SARSA vs Q learning", "Monte Carlo control", "on policy vs off policy control"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["SARSA formula", "Q learning formula", "expected SARSA formula", "GLIE", "importance sampling"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Retrace", "tree backup"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "grid", "breadth first search", "shortest path", "state design"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
