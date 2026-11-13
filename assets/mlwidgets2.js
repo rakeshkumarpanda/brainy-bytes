@@ -1979,3 +1979,191 @@ const MLKM = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Unsupervised 1.3  EM for a 1D Gaussian mixture: E step responsibilities, M step new means, spreads, weights
+   ===================================================================================================== */
+const MLGM = (() => {
+  const npdf = (x, m, s) => Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * Math.sqrt(2 * Math.PI));
+  function em1(x, mu, sd, w, rounds) {
+    const H = [];
+    for (let it = 0; it < rounds; it++) {
+      const R = x.map(v => { const d = mu.map((m, k) => w[k] * npdf(v, m, sd[k])); const s = d.reduce((a, b) => a + b, 0) || 1e-300; return { r: d.map(q => q / s), s }; });
+      const ll = R.reduce((a, q) => a + Math.log(q.s), 0);
+      const nk = mu.map((_, k) => R.reduce((a, q) => a + q.r[k], 0));
+      const nmu = mu.map((_, k) => R.reduce((a, q, i) => a + q.r[k] * x[i], 0) / (nk[k] || 1e-12));
+      const nsd = mu.map((_, k) => Math.max(0.05, Math.sqrt(R.reduce((a, q, i) => a + q.r[k] * (x[i] - nmu[k]) ** 2, 0) / (nk[k] || 1e-12))));
+      const nw = nk.map(n => n / x.length);
+      H.push({ mu: mu.slice(), sd: sd.slice(), w: w.slice(), R: R.map(q => q.r), ll, nmu, nsd, nw });
+      const move = nmu.reduce((a, m, k) => a + Math.abs(m - mu[k]) + Math.abs(nsd[k] - sd[k]), 0);
+      mu = nmu; sd = nsd; w = nw;
+      if (move < 1e-3) break;
+    }
+    return H;
+  }
+  return { npdf, em1 };
+})();
+(() => {
+  const { trace, plot, nums, D, f2, head, klass, span } = MLZ;
+  trace('mlem', {
+    title: 'EM for a Gaussian mixture, one round at a time',
+    sub: 'Each point gets a probability of belonging to each bell curve (E step). Then each curve moves to fit the points it is responsible for, weighted by those probabilities (M step). Repeat until nothing changes.',
+    W: 600, H: 330,
+    params: [
+      { k: 'x', label: 'Data values', type: 'area', v: '150 152 155 157 160 170 174 176 179 182' },
+      { k: 'k', label: 'Number of bell curves', type: 'range', v: 2, min: 2, max: 3, step: 1 },
+      { k: 'start', label: 'Starting means', type: 'select', v: 'close', opts: [['close', 'Close together'], ['spread', 'Spread over the range']] }
+    ],
+    tips: [
+      { t: 'Starting means spread over the range: EM reaches the same answer in fewer rounds.', set: { start: 'spread' }, play: true },
+      { t: 'Three tight groups with three curves: each curve settles on one group and the weights match the group sizes.', set: { x: '1 1.3 1.5 1.8 5 5.2 5.5 9 9.2 9.4 9.5 9.8', k: 3, start: 'spread' }, play: true }
+    ],
+    frames(p) {
+      const x = nums(p.x).slice(0, 40);
+      if (x.length < 4) throw new Error('Type at least four numbers');
+      const lo = Math.min(...x), hi = Math.max(...x), rg = hi - lo || 1, mean = x.reduce((a, b) => a + b, 0) / x.length;
+      const sd0 = Math.sqrt(x.reduce((a, v) => a + (v - mean) ** 2, 0) / x.length) || 1;
+      const K = p.k;
+      const mu0 = Array.from({ length: K }, (_, k) => p.start === 'close' ? mean + (k - (K - 1) / 2) * 0.5 * sd0 : lo + rg * (k + 0.5) / K);
+      const H = MLGM.em1(x, mu0, mu0.map(() => sd0), mu0.map(() => 1 / K), 100);
+      const xr = span(x, 0.25), base = { x, xr };
+      const fmt = h => h.mu.map((m, k) => `curve ${k + 1}: mean ${f2(m, 1)}, sd ${f2(h.sd[k], 1)}, weight ${f2(h.w[k], 2)}`).join('. ');
+      const fr = [{ ...base, say: `${x.length} values and no labels. We believe they come from <b>${K}</b> bell curves (Gaussians), but we do not know where the curves are, how wide they are, or which value came from which.` }];
+      fr.push({ ...base, mu: H[0].mu, sd: H[0].sd, w: H[0].w, say: `Start with a guess. ${fmt(H[0])}.` });
+      const show = H.length <= 8 ? H.map((_, i) => i) : [0, 1, 2, 3, 5, 8, 12, 20, H.length - 1].filter((v, i, a) => v < H.length && a.indexOf(v) === i);
+      show.forEach(i => {
+        const h = H[i];
+        const ex = x.reduce((b, v, j) => (Math.max(...h.R[j]) < Math.max(...h.R[b]) ? j : b), 0);
+        fr.push({ ...base, mu: h.mu, sd: h.sd, w: h.w, R: h.R, ll: h.ll, mark: ex, say: `Round ${i + 1}, E step: for each value, the share of the bars says how likely each curve produced it. The value ${f2(x[ex], 1)} is the most uncertain: ${h.R[ex].map((r, k) => `${f2(100 * r, 0)}% curve ${k + 1}`).join(', ')}. Log likelihood of the data under these curves: <b>${f2(h.ll, 3)}</b>.` });
+        fr.push({ ...base, mu: h.nmu, sd: h.nsd, w: h.nw, old: h.mu, R: h.R, ll: h.ll, say: `Round ${i + 1}, M step: each curve moves to the weighted mean of the values, using those probabilities as weights. ${fmt({ mu: h.nmu, sd: h.nsd, w: h.nw })}.` });
+      });
+      const L = H[H.length - 1];
+      fr.push({ ...base, mu: L.nmu, sd: L.nsd, w: L.nw, R: L.R, ll: L.ll, done: true, say: `${H.length < 100 ? `Converged after ${H.length} rounds: the curves stopped moving and the log likelihood stopped rising (it never falls in EM).` : 'Stopped after 100 rounds, still creeping: the log likelihood rises a little each round but has not settled. A different start would converge faster.'} Every value keeps a probability for every curve, which is a <b>soft</b> clustering. k-means would give each value to exactly one group.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const ymax = f.mu ? Math.max(...f.mu.map((m, k) => f.w[k] * MLGM.npdf(m, m, f.sd[k]))) * 1.15 : 1;
+      const P = plot(z, [10, 10, 580, 310], f.xr, [-0.45 * ymax, ymax], { dx: 0, dy: 3 });
+      D.line(g, P.X(f.xr[0]), P.Y(0), P.X(f.xr[1]), P.Y(0), c.line, 1);
+      if (f.mu) f.mu.forEach((m, k) => {
+        g.save(); g.beginPath();
+        for (let i = 0; i <= 200; i++) { const v = f.xr[0] + (f.xr[1] - f.xr[0]) * i / 200, y = f.w[k] * MLGM.npdf(v, m, f.sd[k]); i ? g.lineTo(P.X(v), P.Y(y)) : g.moveTo(P.X(v), P.Y(y)); }
+        g.strokeStyle = klass(z, k); g.lineWidth = 2.4; g.stroke(); g.restore();
+        D.line(g, P.X(m), P.Y(0), P.X(m), P.Y(f.w[k] * MLGM.npdf(m, m, f.sd[k])), klass(z, k), 1, [3, 3]);
+        if (f.old) D.line(g, P.X(f.old[k]), P.Y(-0.04 * ymax), P.X(m), P.Y(-0.04 * ymax), klass(z, k), 2);
+      });
+      const bh = P.Y(-0.4 * ymax) - P.Y(-0.1 * ymax);
+      f.x.forEach((v, j) => {
+        const X = P.X(v);
+        if (f.R) { let y0 = P.Y(-0.1 * ymax); f.R[j].forEach((r, k) => { g.fillStyle = klass(z, k); g.fillRect(X - 3, y0, 6, bh * r); y0 += bh * r; }); }
+        D.circle(g, X, P.Y(0), f.mark === j ? 6 : 4, { fill: c.ink, stroke: f.mark === j ? c.red : c.surf, w: f.mark === j ? 2 : 1 });
+      });
+      if (f.R) D.text(g, 'bars: probability of each curve', 590 - 8, 26, { a: 'right', s: 11, b: true, c: c.ink2 });
+      if (f.ll !== undefined) D.text(g, `log likelihood ${f2(f.ll, 3)}`, 590 - 8, 44, { a: 'right', s: 12, b: true, c: c.cv });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 1.3  a 2D Gaussian mixture fitted by EM: ellipses, soft assignments, compared with k-means
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  const SETS = {
+    flat: [[[0, 0], [[6, 0], [0, 0.3]], 90], [[0, 2.5], [[6, 0], [0, 0.3]], 90]],
+    tilted: [[[-2.5, 1], [[3, 2.4], [2.4, 3]], 90], [[3.5, 1], [[0.4, 0], [0, 2.5]], 90]],
+    blobs: [[[-3, 0], [[0.5, 0], [0, 0.5]], 60], [[2, -1], [[1.5, 0], [0, 1.5]], 60], [[1, 4], [[0.8, 0.5], [0.5, 0.8]], 60]]
+  };
+  function make(kind) {
+    const r = rng(17), n = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    SETS[kind].forEach(([m, S, cnt], t) => {
+      const a = Math.sqrt(S[0][0]), b = S[1][0] / a, cc = Math.sqrt(Math.max(1e-9, S[1][1] - b * b));
+      for (let i = 0; i < cnt; i++) { const u = n(), v = n(); P.push({ x: m[0] + a * u, y: m[1] + b * u + cc * v, t }); }
+    });
+    return P;
+  }
+  const gpdf = (p, m, S) => {
+    const det = S[0] * S[2] - S[1] * S[1], dx = p.x - m.x, dy = p.y - m.y;
+    const q = (S[2] * dx * dx - 2 * S[1] * dx * dy + S[0] * dy * dy) / det;
+    return Math.exp(-0.5 * q) / (2 * Math.PI * Math.sqrt(det));
+  };
+  function em(P, K, seed) {
+    const r = rng(seed);
+    let M = []; while (M.length < K) { const q = P[Math.floor(r() * P.length)]; if (!M.includes(q)) M.push(q); }
+    M = M.map(q => ({ x: q.x, y: q.y }));
+    let S = M.map(() => [1, 0, 1]), W = M.map(() => 1 / K);
+    const H = [];
+    for (let it = 0; it < 150; it++) {
+      let ll = 0;
+      const R = P.map(p => { const d = M.map((m, k) => W[k] * gpdf(p, m, S[k])); const s = d.reduce((a, b) => a + b, 0) || 1e-300; ll += Math.log(s); return d.map(v => v / s); });
+      H.push({ M: M.map(m => ({ ...m })), S: S.map(s => s.slice()), W: W.slice(), R, ll });
+      const nk = M.map((_, k) => R.reduce((a, q) => a + q[k], 0) + 1e-9);
+      const NM = M.map((_, k) => ({ x: R.reduce((a, q, i) => a + q[k] * P[i].x, 0) / nk[k], y: R.reduce((a, q, i) => a + q[k] * P[i].y, 0) / nk[k] }));
+      S = NM.map((m, k) => {
+        let a = 0, b = 0, d = 0;
+        P.forEach((p, i) => { const w = R[i][k], dx = p.x - m.x, dy = p.y - m.y; a += w * dx * dx; b += w * dx * dy; d += w * dy * dy; });
+        return [a / nk[k] + 1e-3, b / nk[k], d / nk[k] + 1e-3];
+      });
+      W = nk.map(v => v / P.length);
+      if (it > 0 && Math.abs(ll - H[it - 1].ll) < 1e-4) break;
+      M = NM;
+    }
+    return H;
+  }
+  trace('mlgmm2d', {
+    title: 'A Gaussian mixture in 2D: ellipses instead of circles',
+    sub: 'Each cluster is a Gaussian with its own mean, its own shape and tilt (covariance), and its own weight. EM fits them all. The ellipses show where each Gaussian holds most of its points, and the colour strength shows how sure the model is.',
+    W: 600, H: 330,
+    params: [
+      { k: 'data', label: 'Data', type: 'select', v: 'flat', opts: [['flat', 'Two long flat clusters'], ['tilted', 'A tilted and a tall cluster'], ['blobs', 'Three blobs of different size']] },
+      { k: 'k', label: 'Number of components', type: 'range', v: 2, min: 1, max: 4, step: 1 },
+      { k: 'seed', label: 'Random start', type: 'range', v: 5, min: 1, max: 12, step: 1 }
+    ],
+    tips: [
+      { t: 'A tilted and a tall cluster: k-means could only cut them with a straight line between centres, but the ellipses follow each shape.', set: { data: 'tilted', k: 2, seed: 2 }, play: true },
+      { t: 'Another random start on the flat clusters: EM crawls for many rounds and ends in a worse local maximum with a lower log likelihood. That is why GaussianMixture has n_init.', set: { data: 'flat', k: 2, seed: 2 }, play: true }
+    ],
+    frames(p) {
+      const P = make(p.data), H = em(P, p.k, p.seed);
+      const fr = [{ P, say: `${P.length} points. We fit a mixture of <b>${p.k}</b> Gaussian${p.k > 1 ? 's' : ''}, each with a mean, a 2 by 2 covariance (its shape and tilt) and a weight.` }];
+      const show = H.length <= 10 ? H.map((_, i) => i) : [0, 1, 2, 3, 5, 8, 12, 18, 26, 40, 60, 90, 120, H.length - 1].filter((v, i, a) => v < H.length && a.indexOf(v) === i);
+      show.forEach((i, j) => {
+        const h = H[i];
+        fr.push({ P, h, say: i === 0 ? `Start: ${p.k} means at random points, round covariances, equal weights. The colours are the first E step: each point’s colour mixes the components by probability. Log likelihood <b>${f2(h.ll, 1)}</b>.` : `Round ${i + 1}: the M step refitted each mean, covariance and weight, then the E step recomputed the probabilities. Log likelihood <b>${f2(h.ll, 1)}</b>${i > show[j - 1] + 1 ? ` (${i - show[j - 1] - 1 === 1 ? `round ${i}` : `rounds ${show[j - 1] + 2} to ${i}`} skipped here)` : ''}.` });
+      });
+      const L = H[H.length - 1];
+      const unsure = L.R.filter(r => Math.max(...r) < 0.9).length;
+      fr.push({ P, h: L, done: true, say: `${H.length < 150 ? 'Converged' : 'Stopped'} after ${H.length} rounds with log likelihood <b>${f2(L.ll, 1)}</b>. Weights: ${L.W.map(w => f2(w, 2)).join(', ')}. ${unsure} point${unsure === 1 ? ' is less than 90% sure of its' : 's are less than 90% sure of their'} component (pale colours), mostly where the ellipses overlap.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-7, 7], [-4.2, 6.6], { dx: 0, dy: 0 });
+      const mixc = r => { let R2 = 0, G2 = 0, B2 = 0; r.forEach((v, k) => { const h = klass(z, k).replace('#', ''); R2 += v * parseInt(h.slice(0, 2), 16); G2 += v * parseInt(h.slice(2, 4), 16); B2 += v * parseInt(h.slice(4, 6), 16); }); return `rgb(${R2 | 0},${G2 | 0},${B2 | 0})`; };
+      f.P.forEach((q, i) => {
+        const r = f.h ? f.h.R[i] : null, sure = r ? Math.max(...r) : 1;
+        g.globalAlpha = r && r.length > 1 ? 0.35 + 0.65 * (sure - 1 / r.length) / (1 - 1 / r.length) : 1;
+        D.circle(g, P.X(q.x), P.Y(q.y), 3.5, { fill: r && /^#/.test(klass(z, 0)) ? mixc(r) : r ? klass(z, r.indexOf(sure)) : c.ink2 });
+        g.globalAlpha = 1;
+      });
+      if (f.h) f.h.M.forEach((m, k) => {
+        const [a, b, d] = f.h.S[k], tr = a + d, dt = a * d - b * b, l1 = tr / 2 + Math.sqrt(Math.max(0, tr * tr / 4 - dt)), l2 = Math.max(1e-9, tr / 2 - Math.sqrt(Math.max(0, tr * tr / 4 - dt)));
+        const th = Math.abs(b) < 1e-12 ? (a >= d ? 0 : Math.PI / 2) : Math.atan2(l1 - a, b);
+        const v1 = [Math.cos(th), Math.sin(th)], v2 = [-Math.sin(th), Math.cos(th)];
+        g.save(); g.beginPath();
+        for (let i = 0; i <= 72; i++) { const t = 2 * Math.PI * i / 72, u = 2 * Math.sqrt(l1) * Math.cos(t), v = 2 * Math.sqrt(l2) * Math.sin(t); const X = P.X(m.x + u * v1[0] + v * v2[0]), Y = P.Y(m.y + u * v1[1] + v * v2[1]); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+        g.strokeStyle = klass(z, k); g.lineWidth = 2.4; g.stroke(); g.restore();
+        D.circle(g, P.X(m.x), P.Y(m.y), 5, { fill: klass(z, k), stroke: c.ink, w: 1.5 });
+      });
+      head(z, 'Gaussian mixture', 425, 24);
+      if (f.h) {
+        D.text(g, `log likelihood ${f2(f.h.ll, 1)}`, 425, 50, { s: 13, b: true, c: c.cv });
+        f.h.W.forEach((w, k) => D.text(g, `component ${k + 1}: weight ${f2(w, 2)}`, 425, 76 + 18 * k, { s: 12, mono: true, c: klass(z, k) }));
+        D.text(g, 'ellipse = 2 standard deviations', 425, 250, { s: 11, c: c.ink2 });
+        D.text(g, 'pale point = unsure', 425, 268, { s: 11, c: c.ink2 });
+      }
+    }
+  });
+})();

@@ -8494,6 +8494,26 @@ function mlUnsupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-gmm", title: "Gaussian mixture models and EM", emoji: "1.3", page: "content/machine-learning/ml-gmm.html",
+        summary: "Mixtures of Gaussians, the E and M steps, soft clusters, covariance types, BIC, and density based anomaly scores.",
+        keywords: ["Gaussian mixture model", "EM algorithm", "responsibility", "soft clustering", "BIC", "covariance type", "GaussianMixture", "BayesianGaussianMixture", "density estimation", "ELBO"],
+        minutes: 50, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Mixtures of bell curves and the EM algorithm", emoji: "", group: "Lesson", keywords: ["Gaussian mixture model", "GMM", "EM algorithm", "E step", "M step", "responsibility", "soft clustering", "log likelihood"] },
+        { id: "sklearn", title: "Gaussian mixtures in scikit-learn", emoji: "", group: "Lesson", keywords: ["GaussianMixture", "covariance matrix", "predict_proba", "n_init", "GMM vs k-means", "elliptical clusters"] },
+        { id: "covariance", title: "Covariance types and choosing K", emoji: "", group: "Lesson", keywords: ["covariance_type", "spherical", "diag", "tied", "full", "BIC", "AIC", "model selection"] },
+        { id: "uses", title: "Densities, anomalies, new samples and automatic K", emoji: "", group: "Lesson", keywords: ["score_samples", "density estimation", "anomaly detection", "sample", "BayesianGaussianMixture", "Dirichlet process"] },
+        { id: "versus", title: "GMM compared with k-means and the others", emoji: "", group: "Lesson", keywords: ["k-means vs GMM", "hard vs soft clustering", "EM vs Lloyd"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["EM derivation", "ELBO", "Jensen inequality", "covariance update", "BIC formula", "singular covariance"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "latent variable models", "variational inference", "hidden Markov model"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "sweep line", "difference array", "mean", "median", "binary search"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
