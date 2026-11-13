@@ -533,3 +533,124 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Reinforcement 2.2  Monte Carlo and temporal difference learning on the five state random walk
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, rng, plot } = MLZ;
+  const NAMES = ['end', 'A', 'B', 'C', 'D', 'E', 'end'], TRUE = [0, 1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6, 0];
+  function walk(z, f, y0) {
+    const c = z.col, g = z.g, x0 = 30, w = 62;
+    for (let i = 0; i <= 6; i++) {
+      const x = x0 + i * w, endc = i === 0 || i === 6;
+      if (endc) rr(g, x - 20, y0 - 18, 40, 36, 6, { fill: i === 6 ? 'rgba(22,163,74,0.2)' : c.surf, stroke: c.line });
+      else D.circle(g, x, y0, 20, { fill: f.s === i ? klass(z, 0) : c.surf, stroke: c.ink2, w: 1.5 });
+      D.text(g, endc ? (i === 6 ? '+1' : '0') : NAMES[i], x, y0 + 5, { a: 'center', s: 12, b: true, c: f.s === i && !endc ? '#fff' : i === 6 ? c.green : c.ink });
+      if (i < 6) D.line(g, x + 21, y0, x + w - 21, y0, c.line, 1.5);
+    }
+    return { x0, w };
+  }
+
+  trace('mltdstep', {
+    title: 'One episode of TD(0): learn after every step',
+    sub: 'A random walk: start in C, step left or right with chance ½, reward +1 only for leaving on the right. TD(0) does not wait for the episode to end. After every step it compares its old guess V(s) with the TD target r + γV(s′) and moves V(s) a fraction α towards it.',
+    W: 600, H: 330,
+    params: [
+      { k: 'a', label: 'Step size α', type: 'range', v: 0.5, min: 0.05, max: 1, step: 0.05 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 16, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'α = 1: each value jumps all the way to its target, so one step decides it and earlier learning is thrown away.', set: { a: 1, seed: 16 }, play: true },
+      { t: 'A walk that ends on the left: the last target is 0 + V(end) = 0, so V(A) drops sharply.', set: { a: 0.5, seed: 2 }, play: true }
+    ],
+    frames(p) {
+      const a = +p.a, R = rng(+p.seed * 3571), V = [0, 0.3, 0.4, 0.5, 0.6, 0.8, 0];
+      let s = 3, t = 0;
+      const fr = [{ V: V.slice(), s, say: 'The guesses are left over from earlier episodes: 0.3, 0.4, 0.5, 0.6 and 0.8 for A to E, close to the truth but not exact. The two ends are worth 0. The walker starts in C.' }];
+      while (s >= 1 && s <= 5 && t < 30) {
+        t++;
+        const s2 = s + (R() < 0.5 ? -1 : 1), r = s2 === 6 ? 1 : 0, target = r + V[s2], err = target - V[s], old = V[s];
+        V[s] += a * err;
+        fr.push({ V: V.slice(), s: s2, from: s, upd: s, say: `Step ${t}: ${NAMES[s]} to ${s2 === 0 || s2 === 6 ? 'the ' + (s2 === 6 ? 'right' : 'left') + ' end' : NAMES[s2]}, reward ${r}. TD target = ${r} + V(${NAMES[s2]}) = ${f2(target, 3)}. TD error δ = ${f2(target, 3)} − ${f2(old, 3)} = <b>${f2(err, 3)}</b>. V(${NAMES[s]}) becomes ${f2(old, 3)} + ${f2(a, 2)} × ${err < 0 ? '(' + f2(err, 3) + ')' : f2(err, 3)} = <b>${f2(V[s], 3)}</b>.${err === 0 ? ' The error is 0, so nothing changes: the guess already agrees with its neighbour.' : ''}` });
+        s = s2;
+      }
+      fr.push({ V: V.slice(), s, done: true, say: `The episode ended after ${t} steps on the ${s === 6 ? 'right (+1)' : 'left (0)'}. Monte Carlo would only now update every visited state with the final return. TD has already updated as it went, using its own guesses for the next state. This is called <b>bootstrapping</b>.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, { x0, w } = walk(z, f, 50);
+      if (f.from !== undefined) D.arrow(g, x0 + f.from * w, 82, x0 + f.s * w, 82, klass(z, 1), 2.5, 9);
+      const by = 280, H = 150;
+      D.line(g, x0 + w / 2, by, x0 + 5.6 * w, by, c.ink2, 1);
+      for (let i = 1; i <= 5; i++) {
+        const x = x0 + i * w;
+        rr(g, x - 16, by - f.V[i] * H, 32, f.V[i] * H, 3, { fill: f.upd === i ? klass(z, 1) : 'rgba(37,99,235,0.5)' });
+        D.line(g, x - 22, by - TRUE[i] * H, x + 22, by - TRUE[i] * H, c.ink, 2, [4, 3]);
+        D.text(g, f2(f.V[i], 2), x, by - f.V[i] * H - 6, { a: 'center', s: 11, mono: true, c: c.ink });
+        D.text(g, NAMES[i], x, by + 15, { a: 'center', s: 11, b: true, c: c.ink2 });
+      }
+      const x = 440;
+      head(z, 'TD(0)', x, 120);
+      D.text(g, 'V(s) ← V(s) + α δ', x, 144, { s: 11, mono: true, b: true, c: c.cv });
+      D.text(g, 'δ = r + γV(s′) − V(s)', x, 164, { s: 11, mono: true, c: c.ink });
+      D.text(g, '▬ estimate', x, 196, { s: 11, c: klass(z, 0) });
+      D.text(g, '- - true value', x, 214, { s: 11, c: c.ink });
+    }
+  });
+
+  trace('mlmctd', {
+    title: 'Monte Carlo against TD: who learns faster?',
+    sub: 'Both learn the random walk values from the same episodes. Monte Carlo waits until each episode ends and moves every visited state towards the final return. TD(0) moves each state towards r + V(next) after every step. The chart tracks the average error against the true values 1/6 to 5/6.',
+    W: 600, H: 330,
+    params: [
+      { k: 'amc', label: 'Monte Carlo step size α', type: 'range', v: 0.03, min: 0.01, max: 0.2, step: 0.01 },
+      { k: 'atd', label: 'TD step size α', type: 'range', v: 0.05, min: 0.01, max: 0.3, step: 0.01 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 1, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'A large TD step size of 0.3: TD drops fast at first, then keeps bouncing because each step jumps too far.', set: { amc: 0.03, atd: 0.3, seed: 1 }, play: true },
+      { t: 'Give Monte Carlo a large step size too (0.2): its error also bounces, and more than TD’s, because whole returns are noisier targets.', set: { amc: 0.2, atd: 0.05, seed: 1 }, play: true }
+    ],
+    frames(p) {
+      const amc = +p.amc, atd = +p.atd, R = rng(+p.seed * 2311);
+      const Vm = [0, 0.5, 0.5, 0.5, 0.5, 0.5, 0], Vt = Vm.slice(), rms = V => Math.sqrt([1, 2, 3, 4, 5].reduce((a, i) => a + (V[i] - TRUE[i]) ** 2, 0) / 5);
+      const hm = [rms(Vm)], ht = [rms(Vt)];
+      const fr = [{ Vm: Vm.slice(), Vt: Vt.slice(), hm: hm.slice(), ht: ht.slice(), ep: 0, say: `Both start with every value at 0.5, an error of ${f2(hm[0], 3)}. The dashed lines mark the true values.` }];
+      const show = [1, 2, 3, 5, 10, 20, 50, 100, 200];
+      for (let ep = 1; ep <= 200; ep++) {
+        let s = 3; const path = [];
+        while (s >= 1 && s <= 5) {
+          const s2 = s + (R() < 0.5 ? -1 : 1), r = s2 === 6 ? 1 : 0;
+          Vt[s] += atd * (r + Vt[s2] - Vt[s]);
+          path.push(s); s = s2;
+        }
+        const G = s === 6 ? 1 : 0;
+        path.forEach(x => { Vm[x] += amc * (G - Vm[x]); });
+        hm.push(rms(Vm)); ht.push(rms(Vt));
+        if (show.includes(ep)) fr.push({ Vm: Vm.slice(), Vt: Vt.slice(), hm: hm.slice(), ht: ht.slice(), ep, say: ep <= 3
+          ? `Episode ${ep} visited ${path.map(i => NAMES[i]).join(' ')} and ended ${G ? 'right (+1)' : 'left (0)'}. Monte Carlo pushed every visited state towards ${G}. TD changed only where a neighbour’s value differed.`
+          : `After ${ep} episodes the error is ${f2(hm[ep], 3)} for Monte Carlo and ${f2(ht[ep], 3)} for TD.${ep === 200 ? (ht[ep] < hm[ep] ? ' TD is ahead: its one step targets are less noisy than whole returns, which is why it usually learns faster on problems like this.' : ' Monte Carlo is ahead here: with these step sizes, TD’s steps are too large or too small for this run.') : ''}` });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, x0 = 40, w = 46, by = 150, H = 120;
+      head(z, 'values', 20, 22);
+      for (let i = 1; i <= 5; i++) {
+        const x = x0 + (i - 1) * w;
+        rr(g, x, by - f.Vm[i] * H, 16, f.Vm[i] * H, 3, { fill: klass(z, 1) });
+        rr(g, x + 18, by - f.Vt[i] * H, 16, f.Vt[i] * H, 3, { fill: klass(z, 0) });
+        D.line(g, x - 3, by - TRUE[i] * H, x + 37, by - TRUE[i] * H, c.ink, 2, [4, 3]);
+        D.text(g, NAMES[i], x + 17, by + 16, { a: 'center', s: 11, b: true, c: c.ink2 });
+      }
+      D.text(g, '▬ Monte Carlo', 20, 196, { s: 11, b: true, c: klass(z, 1) });
+      D.text(g, '▬ TD(0)', 120, 196, { s: 11, b: true, c: klass(z, 0) });
+      D.text(g, `episode ${f.ep}`, 20, 230, { s: 14, b: true, c: c.ink });
+      D.text(g, `error MC ${f2(f.hm[f.hm.length - 1], 3)}`, 20, 256, { s: 12, mono: true, c: klass(z, 1) });
+      D.text(g, `error TD ${f2(f.ht[f.ht.length - 1], 3)}`, 20, 276, { s: 12, mono: true, c: klass(z, 0) });
+      const Pl = plot(z, [280, 14, 310, 300], [0, 200], [0, 0.3], { dx: 0, dy: 2, xl: 'episodes', yl: 'RMS error' });
+      [[f.hm, klass(z, 1)], [f.ht, klass(z, 0)]].forEach(([h, col]) => { for (let i = 1; i < h.length; i++) D.line(g, Pl.X(i - 1), Pl.Y(Math.min(0.3, h[i - 1])), Pl.X(i), Pl.Y(Math.min(0.3, h[i])), col, 2); });
+    }
+  });
+})();

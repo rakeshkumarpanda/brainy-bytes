@@ -8714,6 +8714,26 @@ function mlRlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-td", title: "Monte Carlo and temporal difference learning", emoji: "2.2", page: "content/machine-learning/ml-td.html",
+        summary: "Monte Carlo and TD(0) prediction, their bias and variance, batch updating, n step TD and TD(lambda).",
+        keywords: ["Monte Carlo", "temporal difference", "TD learning", "TD error", "bootstrapping", "eligibility traces", "TD lambda", "n step TD", "random walk", "model free"],
+        minutes: 50, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Learning without a model: Monte Carlo prediction", emoji: "", group: "Lesson", keywords: ["Monte Carlo prediction", "first visit", "every visit", "model free", "return", "random walk"] },
+        { id: "td", title: "Temporal difference learning: TD(0)", emoji: "", group: "Lesson", keywords: ["temporal difference", "TD(0)", "TD error", "bootstrapping", "TD target", "TD-Gammon", "dopamine"] },
+        { id: "compare", title: "Monte Carlo against TD: bias, variance and batch learning", emoji: "", group: "Lesson", keywords: ["bias variance trade off", "MC vs TD", "batch TD", "certainty equivalence", "step size"] },
+        { id: "nstep", title: "Between the two: n step TD and TD(&lambda;)", emoji: "", group: "Lesson", keywords: ["n step TD", "TD lambda", "eligibility traces", "lambda return", "credit assignment"] },
+        { id: "versus", title: "Prediction methods compared", emoji: "", group: "Lesson", keywords: ["DP vs MC vs TD", "bootstrapping vs sampling", "model free prediction"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["TD update formula", "n step return", "lambda return", "eligibility trace", "Robbins Monro", "deadly triad"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "true online TD", "emphatic TD"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "sliding window", "queue", "deque", "prefix product", "streams"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
