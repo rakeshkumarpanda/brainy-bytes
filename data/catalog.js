@@ -8072,6 +8072,29 @@ function mlFoundModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-calculus", title: "Calculus for ML: derivatives, gradients and gradient descent", emoji: "2.2", page: "content/machine-learning/ml-calculus.html",
+        summary: "derivatives, the chain rule, gradients, gradient descent, learning rates, SGD and mini-batches, and convexity.",
+        keywords: ["derivative", "chain rule", "gradient", "gradient descent", "learning rate", "SGD", "mini-batch", "epoch", "convex", "local minimum"],
+        minutes: 60, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "derivative", title: "Derivatives: how fast something changes", emoji: "", group: "Lesson", keywords: ["derivative", "slope", "rate of change", "limit", "tangent line", "difference quotient"] },
+        { id: "rules", title: "The derivative rules you need", emoji: "", group: "Lesson", keywords: ["power rule", "sum rule", "product rule", "exponential", "logarithm", "sigmoid derivative", "ReLU derivative", "central difference"] },
+        { id: "chain", title: "The chain rule: slopes multiply", emoji: "", group: "Lesson", keywords: ["chain rule", "composite function", "backpropagation preview", "sigmoid", "computational graph"] },
+        { id: "gradient", title: "Partial derivatives and the gradient", emoji: "", group: "Lesson", keywords: ["partial derivative", "gradient", "nabla", "gradient descent update", "MSE gradient", "steepest ascent"] },
+        { id: "descent", title: "Gradient descent: walking downhill", emoji: "", group: "Lesson", keywords: ["gradient descent", "learning rate", "divergence", "overshooting", "convergence"] },
+        { id: "variants", title: "Batch, stochastic and mini-batch gradient descent", emoji: "", group: "Lesson", keywords: ["batch gradient descent", "stochastic gradient descent", "SGD", "mini-batch", "epoch", "batch size"] },
+        { id: "convex", title: "Valleys, convexity and local minima", emoji: "", group: "Lesson", keywords: ["convex function", "local minimum", "global minimum", "saddle point", "second derivative", "Newton method"] },
+        { id: "versus", title: "Optimisers compared", emoji: "", group: "Lesson", keywords: ["closed form", "Newton method", "Hessian", "lbfgs", "gradient free", "optimiser comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["limit definition", "chain rule", "gradient descent formula", "convergence condition", "condition number", "gradient checking"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Hessian", "L smooth", "Nesterov", "Robbins Monro", "saddle points"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "binary search", "binary search on answer", "peak finding", "monotone function"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

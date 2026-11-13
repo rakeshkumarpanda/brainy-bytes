@@ -658,3 +658,114 @@ const MLZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 2.2  the derivative as the limit of a slope
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head } = MLZ;
+  const FN = {
+    sq: { name: 'f(x) = x²', f: x => x * x, d: x => 2 * x, dn: '2x' },
+    cube: { name: 'f(x) = x³ − 3x', f: x => x ** 3 - 3 * x, d: x => 3 * x * x - 3, dn: '3x² − 3' },
+    sig: { name: 'f(x) = sigmoid(x) = 1 / (1 + e^(−x))', f: x => 1 / (1 + Math.exp(-x)), d: x => { const s = 1 / (1 + Math.exp(-x)); return s * (1 - s); }, dn: 'σ(x)(1 − σ(x))' }
+  };
+  trace('mlslope', {
+    title: 'What a derivative is: the slope at one point',
+    sub: 'Pick a function and a point. We draw a line through two points on the curve and slide the second point closer. The slope of that line settles on the derivative.',
+    W: 600, H: 330,
+    params: [
+      { k: 'fn', label: 'Function', type: 'select', v: 'sq', opts: Object.keys(FN).map(k => [k, FN[k].name]) },
+      { k: 'x0', label: 'Point x', type: 'range', v: 1, min: -2, max: 2, step: 0.5 }
+    ],
+    tips: [
+      { t: 'Try the sigmoid at x = 0. The slope settles on 0.25, the largest slope a sigmoid ever has.', set: { fn: 'sig', x0: 0 }, play: true },
+      { t: 'Try x³ − 3x at x = 1. The slope goes to 0: the curve is flat there, a bottom of a valley.', set: { fn: 'cube', x0: 1 }, play: true }
+    ],
+    frames(p) {
+      const F = FN[p.fn], x = p.x0;
+      const fr = [{ h: null, say: `The curve is ${F.name}. We want its slope at x = ${x}, where f(x) = ${f2(F.f(x), 3)}. A curve has no single slope, so we zoom in.` }];
+      [2, 1, 0.5, 0.1, 0.01].forEach(h => {
+        const s = (F.f(x + h) - F.f(x)) / h;
+        fr.push({ h, say: `Take a second point h = ${h} to the right. Slope of the line through both points = (f(${f2(x + h, 2)}) − f(${x})) / ${h} = <b>${f2(s, 4)}</b>.` });
+      });
+      fr.push({ h: 0, done: true, say: `As h shrinks to 0 the slope settles on <b>${f2(F.d(x), 4)}</b>. That limit is the <b>derivative</b>, written f′(x) = ${F.dn}. It says how fast f changes when x moves a tiny bit. Gradient descent uses it to know which way is downhill.` });
+      return fr;
+    },
+    paint(z, f) {
+      const F = FN[z.p.fn], c = z.col, x = z.p.x0;
+      const xs = [], ys = [];
+      for (let t = -3; t <= 3.0001; t += 0.05) { xs.push(t); ys.push(F.f(t)); }
+      const lo = Math.min(...ys), hi = Math.max(...ys);
+      const P = plot(z, [10, 10, 400, 310], [-3, 3], [lo - 0.1 * (hi - lo), hi + 0.1 * (hi - lo)], { dx: 0, dy: 1 });
+      z.g.save(); z.g.beginPath(); xs.forEach((t, i) => i ? z.g.lineTo(P.X(t), P.Y(ys[i])) : z.g.moveTo(P.X(t), P.Y(ys[i]))); z.g.strokeStyle = c.cv; z.g.lineWidth = 2.5; z.g.stroke(); z.g.restore();
+      const clipLine = (s, col, dash) => { const g = z.g; g.save(); g.beginPath(); g.rect(P.x0, P.y0, P.w, P.h); g.clip(); D.line(g, P.X(-3), P.Y(F.f(x) + s * (-3 - x)), P.X(3), P.Y(F.f(x) + s * (3 - x)), col, 2, dash); g.restore(); };
+      if (f.h) { const s = (F.f(x + f.h) - F.f(x)) / f.h; clipLine(s, c.orange, [6, 4]); D.circle(z.g, P.X(x + f.h), P.Y(F.f(x + f.h)), 5, { fill: c.orange }); }
+      if (f.done) clipLine(F.d(x), c.green);
+      D.circle(z.g, P.X(x), P.Y(F.f(x)), 6, { fill: c.red });
+      head(z, 'Slope of the line', 425, 30);
+      D.text(z.g, f.h === null ? '?' : f2(f.done ? F.d(x) : (F.f(x + f.h) - F.f(x)) / f.h, 4), 425, 66, { s: 24, b: true, c: f.done ? c.green : c.orange, mono: true });
+      if (f.h) D.text(z.g, `h = ${f.h}`, 425, 96, { s: 14, mono: true, c: c.ink });
+      if (f.done) D.text(z.g, `f′(x) = ${F.dn}`, 425, 96, { s: 13, mono: true, c: c.green, b: true });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 2.2  gradient descent rolling down a curve
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rr } = MLZ;
+  const FN = {
+    bowl: { name: 'f(x) = (x − 2)²  (one valley)', f: x => (x - 2) ** 2, d: x => 2 * (x - 2), r: [-3, 6] },
+    two: { name: 'f(x) = x⁴ − 3x² + x  (two valleys)', f: x => x ** 4 - 3 * x * x + x, d: x => 4 * x ** 3 - 6 * x + 1, r: [-2.2, 2.2] }
+  };
+  trace('mlgd', {
+    title: 'Gradient descent: walk downhill one step at a time',
+    sub: 'The ball starts at x and moves against the slope. The learning rate sets how big each step is. Try different starts and rates.',
+    W: 600, H: 330,
+    params: [
+      { k: 'fn', label: 'Loss curve', type: 'select', v: 'bowl', opts: Object.keys(FN).map(k => [k, FN[k].name]) },
+      { k: 'x0', label: 'Start x', type: 'range', v: -2, min: -2, max: 5, step: 0.5 },
+      { k: 'lr', label: 'Learning rate', type: 'range', v: 0.2, min: 0.02, max: 1.1, step: 0.02 },
+      { k: 'n', label: 'Steps', type: 'range', v: 8, min: 3, max: 20 }
+    ],
+    tips: [
+      { t: 'Learning rate 0.9 on the bowl: the ball jumps from side to side but still settles. At 1.02 it flies away (diverges).', set: { fn: 'bowl', lr: 0.9 }, play: true },
+      { t: 'Learning rate 0.04: tiny safe steps, but after 8 steps it is still far from the bottom.', set: { fn: 'bowl', lr: 0.04 }, play: true },
+      { t: 'Two valleys, start at 1.5 with rate 0.05: the ball stops in the right valley, which is not the deepest one. That is a local minimum.', set: { fn: 'two', x0: 1.5, lr: 0.05, n: 15 }, play: true }
+    ],
+    frames(p) {
+      const F = FN[p.fn];
+      let x = Math.max(F.r[0], Math.min(F.r[1], p.x0));
+      const path = [x];
+      const fr = [{ path: path.slice(), say: `Start at x = ${f2(x)}, where the loss is ${f2(F.f(x), 3)}. The goal is the lowest point of the curve.` }];
+      for (let i = 1; i <= p.n; i++) {
+        const g = F.d(x), nx = x - p.lr * g;
+        const far = !isFinite(nx) || Math.abs(nx) > 50;
+        fr.push({ path: path.concat([nx]), say: `Step ${i}: slope at ${f2(x)} is ${f2(g, 3)}. New x = ${f2(x)} − ${f2(p.lr)} × (${f2(g, 3)}) = <b>${f2(nx, 3)}</b>${far ? '. The steps keep growing: the learning rate is too big, so it diverges.' : `, loss ${f2(F.f(nx), 4)}.`}` });
+        if (far) return fr;
+        x = nx; path.push(x);
+      }
+      fr.push({ path, done: true, say: `After ${p.n} steps x = ${f2(x, 3)} with slope ${f2(F.d(x), 3)}. ${Math.abs(F.d(x)) < 0.05 ? 'The slope is almost 0, so we are at the bottom of a valley.' : 'The slope is not yet 0, so more steps (or a bigger rate) are needed.'} Real models do the same with millions of weights at once.` });
+      return fr;
+    },
+    paint(z, f) {
+      const F = FN[z.p.fn], c = z.col;
+      const xs = [], ys = [];
+      for (let t = F.r[0]; t <= F.r[1] + 1e-9; t += (F.r[1] - F.r[0]) / 120) { xs.push(t); ys.push(F.f(t)); }
+      const P = plot(z, [10, 10, 400, 310], F.r, [Math.min(...ys) - 0.5, Math.max(...ys)], { dx: 1, dy: 0 });
+      z.g.save(); z.g.beginPath(); xs.forEach((t, i) => i ? z.g.lineTo(P.X(t), P.Y(ys[i])) : z.g.moveTo(P.X(t), P.Y(ys[i]))); z.g.strokeStyle = c.cv; z.g.lineWidth = 2.5; z.g.stroke(); z.g.restore();
+      const inR = x => x >= F.r[0] && x <= F.r[1];
+      f.path.forEach((x, i) => {
+        if (i && inR(x) && inR(f.path[i - 1])) D.arrow(z.g, P.X(f.path[i - 1]), P.Y(F.f(f.path[i - 1])), P.X(x), P.Y(F.f(x)), c.orange, 1.5, 6);
+      });
+      f.path.forEach((x, i) => { if (inR(x)) D.circle(z.g, P.X(x), P.Y(F.f(x)), i === f.path.length - 1 ? 7 : 3.5, { fill: i === f.path.length - 1 ? c.red : c.orange }); });
+      head(z, 'Loss at each step', 425, 26);
+      const L = f.path.map(x => F.f(x)).filter(isFinite);
+      const max = Math.max(...L.map(Math.abs), 1e-9);
+      const bw = Math.min(16, 160 / L.length);
+      L.forEach((v, i) => { const h = Math.max(2, Math.min(240, Math.abs(v) / max * 240)); rr(z.g, 428 + i * (bw + 2), 290 - h, bw, h, 2, { fill: i === L.length - 1 ? c.red : c.cv }); });
+      D.text(z.g, `x = ${f2(f.path[f.path.length - 1], 3)}`, 425, 310, { s: 12, mono: true, c: c.ink });
+    }
+  });
+})();
