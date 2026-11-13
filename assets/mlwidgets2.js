@@ -195,7 +195,7 @@
           D.text(g, `d ${h.d}`, 425, y + 14, { s: 12, mono: true, b: true, c: h.d === f.d ? c.ink : c.ink2 });
           rr(g, 460, y, Math.max(2, Math.min(h.a, max) / max * 100), 12, 2, { fill: c.cv });
           rr(g, 460, y + 15, Math.max(2, Math.min(h.b, max) / max * 100), 12, 2, { fill: c.orange });
-          if (h.b > max) D.text(g, 'off the scale', 462, y + 40, { s: 10, b: true, c: c.orange });
+          if (h.b > max) D.text(g, 'more', 564, y + 25, { s: 10, b: true, c: c.orange });
         });
       }
     }
