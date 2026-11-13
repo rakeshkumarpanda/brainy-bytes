@@ -8537,6 +8537,27 @@ function mlUnsupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-manifold", title: "Manifold learning: t-SNE, UMAP, MDS and Isomap", emoji: "2.2", page: "content/machine-learning/ml-manifold.html",
+        summary: "Isomap and geodesic distance, MDS from distances, t-SNE and perplexity, reading maps safely, and UMAP.",
+        keywords: ["t-SNE", "UMAP", "Isomap", "MDS", "manifold learning", "perplexity", "geodesic distance", "LLE", "spectral embedding", "visualisation"],
+        minutes: 50, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Manifolds, and distance along the data", emoji: "", group: "Lesson", keywords: ["manifold learning", "manifold", "geodesic distance", "Isomap", "LLE", "spectral embedding", "nearest neighbour graph", "swiss roll"] },
+        { id: "mds", title: "Multidimensional scaling: a map from distances", emoji: "", group: "Lesson", keywords: ["MDS", "multidimensional scaling", "classical MDS", "stress", "distance matrix", "precomputed"] },
+        { id: "tsne", title: "t-SNE: maps that keep neighbours together", emoji: "", group: "Lesson", keywords: ["t-SNE", "TSNE", "perplexity", "Student t distribution", "KL divergence", "early exaggeration", "trustworthiness"] },
+        { id: "pitfalls", title: "Reading t-SNE maps without being fooled", emoji: "", group: "Lesson", keywords: ["t-SNE pitfalls", "cluster size", "global structure", "perplexity choice", "random seed", "How to Use t-SNE Effectively"] },
+        { id: "umap", title: "UMAP and choosing a method", emoji: "", group: "Lesson", keywords: ["UMAP", "n_neighbors", "min_dist", "umap-learn", "choosing a dimensionality reduction method"] },
+        { id: "versus", title: "Manifold learning compared with PCA", emoji: "", group: "Lesson", keywords: ["PCA vs t-SNE", "PCA vs UMAP", "Isomap vs t-SNE", "PCA then t-SNE"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["classical MDS formula", "double centring", "t-SNE gradient", "crowding problem", "KL asymmetry", "Barnes-Hut"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "diffusion maps", "graph Laplacian", "fuzzy simplicial sets"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "Dijkstra", "Floyd Warshall", "shortest path", "graphs", "heap"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

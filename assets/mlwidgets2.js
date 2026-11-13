@@ -2292,3 +2292,172 @@ const MLGM = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Unsupervised 2.2  Isomap idea: distance along the data (shortest path in a neighbour graph) versus straight line
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const grad = (t, z) => { const a = hex(/^#/.test(klass(z, 0)) ? klass(z, 0) : '#2563eb'), b = hex(/^#/.test(klass(z, 1)) ? klass(z, 1) : '#ea580c'); return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`; };
+  trace('mlgeodesic', {
+    title: 'Distance along the data: the idea behind Isomap',
+    sub: 'Points lie on a spiral. Two points can be close in a straight line but far apart along the spiral. Isomap links each point to its nearest neighbours and measures distance as the shortest path through those links, then lays the points out by that distance.',
+    W: 600, H: 330,
+    params: [
+      { k: 'k', label: 'Neighbours per point (k)', type: 'range', v: 4, min: 1, max: 10, step: 1 },
+      { k: 'noise', label: 'Noise', type: 'range', v: 0.1, min: 0, max: 0.6, step: 0.05 }
+    ],
+    tips: [
+      { t: 'Too many neighbours: links jump across the gap between turns of the spiral, a short circuit, and the path distance becomes almost the straight line distance.', set: { k: 10, noise: 0.3 }, play: true },
+      { t: 'Only one neighbour: the graph breaks into pieces, so some points cannot be reached at all.', set: { k: 1 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(23), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+      const n = 70, P = [];
+      for (let i = 0; i < n; i++) { const t = 1.5 * Math.PI + 3 * Math.PI * i / (n - 1); P.push({ x: t * Math.cos(t) / 3 + p.noise * g(), y: t * Math.sin(t) / 3 + p.noise * g(), t: i / (n - 1) }); }
+      const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+      const nb = P.map((a, i) => P.map((b, j) => [dist(a, b), j]).filter(q => q[1] !== i).sort((u, v) => u[0] - v[0]).slice(0, p.k).map(q => q[1]));
+      const adj = P.map(() => new Map());
+      nb.forEach((L, i) => L.forEach(j => { const d = dist(P[i], P[j]); adj[i].set(j, d); adj[j].set(i, d); }));
+      const edges = []; adj.forEach((m, i) => m.forEach((d, j) => { if (i < j) edges.push([i, j]); }));
+      const A = 6;
+      let B = -1, bd = Infinity;
+      P.forEach((q, j) => { if (Math.abs(j - A) > n / 4) { const d = dist(P[A], q); if (d < bd) { bd = d; B = j; } } });
+      const dj = P.map(() => Infinity), prev = P.map(() => -1), done = P.map(() => false); dj[A] = 0;
+      for (let it = 0; it < n; it++) { let u = -1; dj.forEach((d, i) => { if (!done[i] && (u < 0 || d < dj[u])) u = i; }); if (u < 0 || dj[u] === Infinity) break; done[u] = true; adj[u].forEach((w, v) => { if (dj[u] + w < dj[v]) { dj[v] = dj[u] + w; prev[v] = u; } }); }
+      const path = []; if (dj[B] < Infinity) for (let v = B; v >= 0; v = prev[v]) path.unshift(v);
+      const reach = dj.filter(d => d < Infinity).length;
+      const base = { P, edges, A, B };
+      const fr = [{ ...base, say: `${n} points lying on a spiral in 2D. The spiral is really a one dimensional curve: one number (how far along it you are) is enough to describe each point.` }];
+      fr.push({ ...base, line: true, say: `Take two points, A and B, on neighbouring turns of the spiral. In a straight line they are only <b>${f2(bd)}</b> apart, so PCA and plain distances treat them as close.` });
+      fr.push({ ...base, graph: true, say: `Link every point to its ${p.k} nearest neighbour${p.k > 1 ? 's' : ''}. This neighbour graph has ${edges.length} links. Short links follow the curve, as long as k is small enough.` });
+      if (path.length) {
+        const half = path.slice(0, Math.ceil(path.length / 2));
+        fr.push({ ...base, graph: true, path: half, say: `Find the shortest path from A to B through the links (Dijkstra’s algorithm). Halfway there, it has taken ${half.length - 1} links.` });
+        const ratio = dj[B] / bd;
+        fr.push({ ...base, graph: true, path, line: true, say: `The path takes ${path.length - 1} links and has length <b>${f2(dj[B])}</b>, which is ${f2(ratio, 1)} times the straight line. ${ratio > 2 ? 'That is the distance along the spiral, the geodesic distance.' : 'The path is barely longer than the straight line: some links jump across the gap between turns (a short circuit), so this k is too large for this data.'}` });
+      } else {
+        fr.push({ ...base, graph: true, say: `There is <b>no path</b> from A to B: with k = ${p.k} the graph falls apart into pieces, and only ${reach} of ${n} points can be reached from A. Isomap would fail here, so k must be larger.` });
+      }
+      fr.push({ ...base, graph: true, geo: dj, done: true, say: reach === n ? `Now give every point its path distance from A and lay the points out on a line in that order (right). ${dj[B] / bd > 2 ? 'The spiral unrolls into a straight strip, with colours in order: one number per point keeps the structure.' : 'Because of the short circuits, points from different turns land side by side and the order is mixed up.'} Isomap does this with all pairs of points and then runs classical MDS.` : `Only ${reach} of ${n} points are connected to A, so the layout cannot be made. Raise k until the graph is connected, but keep it small enough to avoid short circuits.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 310, 304], [-5.3, 5.3], [-5.3, 5.3], { dx: 0, dy: 0, grid: false });
+      if (f.graph) f.edges.forEach(([i, j]) => D.line(g, P.X(f.P[i].x), P.Y(f.P[i].y), P.X(f.P[j].x), P.Y(f.P[j].y), c.line, 1));
+      if (f.path) for (let i = 1; i < f.path.length; i++) { const a = f.P[f.path[i - 1]], b = f.P[f.path[i]]; D.line(g, P.X(a.x), P.Y(a.y), P.X(b.x), P.Y(b.y), c.cv, 3); }
+      if (f.line) D.line(g, P.X(f.P[f.A].x), P.Y(f.P[f.A].y), P.X(f.P[f.B].x), P.Y(f.P[f.B].y), c.red, 2, [6, 4]);
+      const mx = f.geo ? Math.max(...f.geo.filter(d => d < Infinity)) || 1 : 1;
+      f.P.forEach((q, i) => D.circle(g, P.X(q.x), P.Y(q.y), i === f.A || i === f.B ? 6 : 4, { fill: f.geo ? (f.geo[i] < Infinity ? grad(f.geo[i] / mx, z) : c.line) : grad(q.t, z), stroke: i === f.A || i === f.B ? c.ink : c.surf, w: 1.5 }));
+      D.text(g, 'A', P.X(f.P[f.A].x) + 8, P.Y(f.P[f.A].y) - 6, { s: 12, b: true, c: c.ink });
+      D.text(g, 'B', P.X(f.P[f.B].x) + 8, P.Y(f.P[f.B].y) - 6, { s: 12, b: true, c: c.ink });
+      head(z, 'Isomap idea', 335, 24);
+      D.text(g, 'colour = position along the spiral', 335, 46, { s: 11, c: c.ink2 });
+      if (f.geo) {
+        D.text(g, 'laid out by path distance from A', 335, 76, { s: 11, b: true, c: c.cv });
+        D.line(g, 360, 92, 360, 300, c.line, 1.5);
+        f.P.forEach((q, i) => { if (f.geo[i] < Infinity) D.circle(g, 360 + (i % 2 ? 10 : -10) * 0, 92 + 208 * f.geo[i] / mx, 4, { fill: grad(q.t, z) }); });
+        D.text(g, 'A', 372, 96, { s: 11, b: true, c: c.ink }); D.text(g, 'far end', 372, 300, { s: 11, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 2.2  t-SNE: neighbour probabilities in high dimensions, a Student t map in 2D, gradient steps
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function data(kind) {
+    const r = rng(41), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const C = [[0, 0, 0, 0, 0], [6, 0, 0, 0, 0], [0, 6, 0, 0, 0]], S = kind === 'spread' ? [0.3, 1.5, 0.6] : [0.7, 0.7, 0.7];
+    const X = [], lab = [];
+    for (let k = 0; k < 3; k++) for (let i = 0; i < 20; i++) { X.push(C[k].map(v => v + S[k] * g())); lab.push(k); }
+    return { X, lab, S };
+  }
+  function affinities(X, perp) {
+    const n = X.length, P = X.map(() => new Array(n).fill(0));
+    const D2 = X.map(a => X.map(b => a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0)));
+    for (let i = 0; i < n; i++) {
+      let lo = 1e-4, hi = 1e4, beta = 1;
+      for (let t = 0; t < 60; t++) {
+        beta = Math.sqrt(lo * hi);
+        let sum = 0, H = 0; const row = D2[i].map((d, j) => (j === i ? 0 : Math.exp(-d * beta)));
+        row.forEach(v => { sum += v; }); sum = sum || 1e-300;
+        row.forEach((v, j) => { const p = v / sum; if (p > 1e-300) H -= p * Math.log(p); P[i][j] = p; });
+        if (Math.exp(H) > perp) lo = beta; else hi = beta;
+      }
+    }
+    const Q = P.map((row, i) => row.map((v, j) => (v + P[j][i]) / (2 * n)));
+    return Q;
+  }
+  function tsne(P, seed, iters) {
+    const n = P.length, r = rng(seed), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    let Y = P.map(() => [1e-2 * g(), 1e-2 * g()]), V = P.map(() => [0, 0]);
+    const snaps = {}, want = new Set([0, 10, 25, 50, 100, 200, iters]);
+    const kl = () => { const W = Y.map(a => Y.map(b => 1 / (1 + (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2))); let Z = 0; W.forEach((row, i) => row.forEach((w, j) => { if (i !== j) Z += w; })); let s = 0; P.forEach((row, i) => row.forEach((p, j) => { if (i !== j && p > 1e-12) s += p * Math.log(p / (W[i][j] / Z)); })); return s; };
+    for (let it = 0; it <= iters; it++) {
+      if (want.has(it)) snaps[it] = { Y: Y.map(y => y.slice()), kl: kl() };
+      if (it === iters) break;
+      const ex = it < 50 ? 4 : 1, mom = it < 50 ? 0.5 : 0.8, lr = 50;
+      const W = Y.map(a => Y.map(b => 1 / (1 + (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)));
+      let Z = 0; W.forEach((row, i) => row.forEach((w, j) => { if (i !== j) Z += w; }));
+      const G = Y.map((a, i) => { let gx = 0, gy = 0; for (let j = 0; j < n; j++) { if (j === i) continue; const m = (ex * P[i][j] - W[i][j] / Z) * W[i][j]; gx += 4 * m * (a[0] - Y[j][0]); gy += 4 * m * (a[1] - Y[j][1]); } return [gx, gy]; });
+      V = V.map((v, i) => [mom * v[0] - lr * G[i][0], mom * v[1] - lr * G[i][1]]);
+      Y = Y.map((y, i) => [y[0] + V[i][0], y[1] + V[i][1]]);
+    }
+    return snaps;
+  }
+  trace('mltsne', {
+    title: 't-SNE: keep neighbours together in a 2D map',
+    sub: '60 points live in 5 dimensions, in three groups. t-SNE turns distances into neighbour probabilities with a chosen perplexity, places the points randomly in 2D, and moves them step by step so that 2D neighbours match high dimensional neighbours.',
+    W: 600, H: 330,
+    params: [
+      { k: 'data', label: 'Data', type: 'select', v: 'blobs', opts: [['blobs', 'Three equal groups'], ['spread', 'Three groups of different spread']] },
+      { k: 'perp', label: 'Perplexity (about how many neighbours count)', type: 'range', v: 10, min: 2, max: 30, step: 1 },
+      { k: 'seed', label: 'Random start', type: 'range', v: 1, min: 1, max: 10, step: 1 }
+    ],
+    tips: [
+      { t: 'Groups of very different spread: t-SNE draws them at similar sizes. Sizes in a t-SNE map do not mean anything.', set: { data: 'spread', perp: 10 }, play: true },
+      { t: 'Perplexity 2: each point only cares about one or two neighbours, so groups can break into small islands.', set: { data: 'blobs', perp: 2 }, play: true }
+    ],
+    frames(p) {
+      const { X, lab, S } = data(p.data), P = affinities(X, p.perp), snaps = tsne(P, p.seed, 300);
+      const mx = Math.max(...P.flat()), top = P[0].map((v, j) => [v, j]).sort((a, b) => b[0] - a[0]).slice(0, 3);
+      const fr = [{ lab, say: `60 points in 5 dimensions: three groups of 20${p.data === 'spread' ? ` with spreads ${S.join(', ')}` : ', all with the same spread'}. We cannot draw 5 dimensions, so t-SNE will make a 2D map.` }];
+      fr.push({ lab, P, say: `For every point, t-SNE turns distances into probabilities of being neighbours, using a bell curve whose width is set so that the perplexity is <b>${p.perp}</b> (roughly the number of neighbours that matter). Point 1’s three most likely neighbours are points ${top.map(t => t[1] + 1).join(', ')}${top.every(t => lab[t[1]] === lab[0]) ? ', all in its own group' : ''}. The square shows all 60 by 60 probabilities.` });
+      Object.keys(snaps).map(Number).sort((a, b) => a - b).forEach(it => {
+        const s = snaps[it];
+        fr.push({ lab, Y: s.Y, it, kl: s.kl, say: it === 0 ? `Start: put the 60 points at random, very close to (0, 0). The colours show the true groups, which t-SNE never sees. KL divergence (how badly 2D neighbours match) = <b>${f2(s.kl, 3)}</b>.` : `After ${it} steps of gradient descent${it <= 50 ? ', with early exaggeration that pulls neighbours together strongly at first' : ''}: KL divergence = <b>${f2(s.kl, 3)}</b>. Each step pulls true neighbours together and pushes everything else apart.` });
+      });
+      const L = snaps[300];
+      fr.push({ lab, Y: L.Y, it: 300, kl: L.kl, done: true, say: `Final map with KL divergence <b>${f2(L.kl, 3)}</b>. Points that were neighbours in 5D are neighbours here. But the sizes of groups and the gaps between them are not reliable, and a different random start gives a rotated or rearranged map.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      if (f.Y) {
+        const xs = f.Y.map(y => y[0]), ys = f.Y.map(y => y[1]);
+        const R = Math.max(1e-3, ...xs.map(Math.abs), ...ys.map(Math.abs)) * 1.15;
+        const P = plot(z, [10, 10, 310, 304], [-R, R], [-R, R], { dx: R < 1 ? 2 : 0, dy: R < 1 ? 2 : 0 });
+        f.Y.forEach((y, i) => D.circle(g, P.X(y[0]), P.Y(y[1]), 4.5, { fill: klass(z, f.lab[i]), stroke: c.surf, w: 1 }));
+      } else if (f.P) {
+        const cell = 4.4; const x0 = 30, y0 = 30;
+        const mx = Math.max(...f.P.flat());
+        f.P.forEach((row, i) => row.forEach((v, j) => { g.fillStyle = c.cv; g.globalAlpha = Math.min(1, Math.sqrt(v / mx)); g.fillRect(x0 + j * cell, y0 + i * cell, cell, cell); }));
+        g.globalAlpha = 1;
+        D.text(g, 'neighbour probabilities, 60 by 60', 30, 22, { s: 11, b: true, c: c.ink2 });
+        D.text(g, 'darker = more likely neighbours', 30, 310, { s: 11, c: c.ink2 });
+      } else {
+        D.text(g, '5 dimensions cannot be drawn directly', 160, 160, { a: 'center', s: 13, c: c.ink2 });
+      }
+      head(z, 't-SNE', 335, 24);
+      if (f.it !== undefined) { D.text(g, `step ${f.it}`, 335, 50, { s: 13, b: true, c: c.ink }); D.text(g, `KL divergence ${f2(f.kl, 3)}`, 335, 70, { s: 13, b: true, c: c.cv }); }
+      [0, 1, 2].forEach(k => D.text(g, `true group ${k + 1}`, 335, 110 + 18 * k, { s: 12, mono: true, c: klass(z, k) }));
+      D.text(g, 'colours are only for you:', 335, 180, { s: 11, c: c.ink2 });
+      D.text(g, 't-SNE never sees the groups', 335, 196, { s: 11, c: c.ink2 });
+    }
+  });
+})();
