@@ -139,7 +139,7 @@
   const val = (w, x) => w.reduce((a, c, i) => a + c * x ** i, 0);
   trace('mlpolyfit', {
     title: 'Polynomial degree: too simple, just right, too wiggly',
-    sub: 'Blue dots are training data, hollow dots are test data. Each step fits a polynomial of a higher degree to the training dots and shows both errors.',
+    sub: 'Filled purple dots are training data, hollow dots are test data. Each step fits a polynomial of a higher degree to the training dots and shows both errors.',
     W: 600, H: 330,
     params: [
       { k: 'n', label: 'Training points', type: 'range', v: 12, min: 8, max: 40 },
@@ -157,7 +157,7 @@
       const tr = Array.from({ length: p.n }, () => { const x = r() * 2 - 1; return { x, y: truth(x) + p.noise * gauss() }; });
       const te = Array.from({ length: 60 }, () => { const x = r() * 2 - 1; return { x, y: truth(x) + p.noise * gauss() }; });
       const mse = (w, S) => S.reduce((a, q) => a + (val(w, q.x) - q.y) ** 2, 0) / S.length;
-      const fr = [{ tr, te, say: `Here are ${p.n} training points (blue) and 60 test points (hollow), all from the same smooth curve plus noise. The model only learns from the blue ones.` }];
+      const fr = [{ tr, te, say: `Here are ${p.n} training points (filled purple) and 60 test points (hollow), all from the same smooth curve plus noise. The model only learns from the blue ones.` }];
       const all = [1, 2, 3, 5, 8, 12].map(d => {
         const w = polyfit(tr.map(q => q.x), tr.map(q => q.y), d, 1e-9 + p.lam);
         return { d, w, a: mse(w, tr), b: mse(w, te) };
@@ -267,6 +267,125 @@
         bar(f.R[j], 4, c.cv, 'ridge');
         bar(f.L[j], 22, c.orange, 'lasso');
       });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.1  logistic regression: line, sigmoid, probability, threshold and log loss
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, points } = MLZ;
+  const sig = z => 1 / (1 + Math.exp(-z));
+  trace('mlsigmoid', {
+    title: 'Logistic regression: from a score to a probability to a class',
+    sub: 'Each point is a student: hours studied (x) and whether they passed (1) or failed (0). Set the weight w and bias b, then step through how the model turns x into a prediction and a loss.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Points (hours label)', type: 'area', v: '0.5 0; 1 0; 1.5 0; 2 0; 2.5 1; 3 0; 3.5 1; 4 1; 4.5 1; 5 1' },
+      { k: 'w', label: 'Weight w', type: 'range', v: 2.6, min: -3, max: 5, step: 0.1 },
+      { k: 'b', label: 'Bias b', type: 'range', v: -7.1, min: -12, max: 4, step: 0.1 }
+    ],
+    tips: [
+      { t: 'w = 1, b = −2.7: a gentle slope. Probabilities stay near 0.5, so the log loss is high even where the class is right.', set: { w: 1, b: -2.7 }, play: true },
+      { t: 'w = −2.6, b = 7.1: the curve is flipped. Almost every prediction is wrong and the log loss is huge.', set: { w: -2.6, b: 7.1 }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 20);
+      if (P.length < 2) throw new Error('Type at least two points');
+      if (P.some(q => q.y !== 0 && q.y !== 1)) throw new Error('Each label must be 0 or 1');
+      const rows = P.map(q => { const z = p.w * q.x + p.b, pr = sig(z); return { ...q, z, pr, pred: pr >= 0.5 ? 1 : 0, loss: -(q.y ? Math.log(Math.max(pr, 1e-12)) : Math.log(Math.max(1 - pr, 1e-12))) }; });
+      const L = rows.reduce((a, r) => a + r.loss, 0) / rows.length, acc = rows.filter(r => r.pred === r.y).length;
+      const b = { rows, L, acc };
+      const worst = rows.reduce((x, y) => y.loss > x.loss ? y : x);
+      return [
+        { ...b, st: 1, say: `${rows.length} students. Red dots failed (label 0) and purple dots passed (label 1). We want P(pass) for any number of hours.` },
+        { ...b, st: 2, say: `Step 1, a straight line score: z = w x + b = ${f2(p.w, 1)}x ${p.b < 0 ? '−' : '+'} ${f2(Math.abs(p.b), 1)}. For x = ${rows[0].x}, z = ${f2(rows[0].z)}. A score can be any number, so it is not yet a probability.` },
+        { ...b, st: 3, say: 'Step 2, squash the score with the sigmoid σ(z) = 1 ÷ (1 + e^(−z)). Big negative z gives almost 0, z = 0 gives 0.5, big positive z gives almost 1. The green S curve is the model.' },
+        { ...b, st: 4, say: `Step 3, every student now has a probability of passing (the dots on the curve). For example x = ${rows[rows.length - 1].x} gives ${f2(rows[rows.length - 1].pr, 3)}.` },
+        { ...b, st: 5, say: `Step 4, predict "pass" when the probability is at least 0.5. The boundary is where z = 0, at x = −b ÷ w = ${p.w ? f2(-p.b / p.w) : 'none'}. <b>${acc} of ${rows.length}</b> students are classified correctly (wrong ones have a dark ring).` },
+        { ...b, st: 6, say: `Step 5, log loss scores the probabilities, not just the classes: −ln(p) for a pass and −ln(1 − p) for a fail. The worst point is x = ${worst.x} with loss ${f2(worst.loss, 3)}. The average log loss is <b>${f2(L, 4)}</b>. Training picks w and b to make this as small as possible.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, xs = f.rows.map(r => r.x);
+      const lo = Math.min(...xs) - 0.5, hi = Math.max(...xs) + 0.5;
+      const P = plot(z, [10, 10, 400, 310], [lo, hi], [-0.1, 1.1], { dx: 1, dy: 1 });
+      if (f.st >= 5) { D.line(g, P.X(lo), P.Y(0.5), P.X(hi), P.Y(0.5), c.ink2, 1, [5, 4]); if (z.p.w) { const xb = -z.p.b / z.p.w; if (xb > lo && xb < hi) D.line(g, P.X(xb), P.Y(-0.1), P.X(xb), P.Y(1.1), c.orange, 2, [6, 4]); } }
+      if (f.st >= 3) {
+        g.save(); g.beginPath();
+        for (let i = 0; i <= 160; i++) { const x = lo + (hi - lo) * i / 160, y = sig(z.p.w * x + z.p.b); i ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)); }
+        g.strokeStyle = c.green; g.lineWidth = 2.5; g.stroke(); g.restore();
+      }
+      f.rows.forEach(r => {
+        const col = r.y ? c.cv : c.red;
+        D.circle(g, P.X(r.x), P.Y(r.y), 5.5, { fill: col });
+        if (f.st >= 4) { D.line(g, P.X(r.x), P.Y(r.y), P.X(r.x), P.Y(r.pr), c.line, 1, [2, 3]); D.circle(g, P.X(r.x), P.Y(r.pr), 4, { fill: c.green }); }
+        if (f.st >= 5 && r.pred !== r.y) D.circle(g, P.X(r.x), P.Y(r.y), 9, { stroke: c.ink, w: 2 });
+      });
+      head(z, f.st >= 6 ? 'Log loss per point' : 'Score z = w x + b', 425, 24);
+      if (f.st >= 2) f.rows.slice(0, 10).forEach((r, i) => {
+        const y = 46 + i * 26;
+        D.text(g, `x ${r.x}`, 425, y, { s: 11, mono: true, c: c.ink2 });
+        if (f.st >= 6) { const w = Math.min(100, r.loss * 40); MLZ.rr(g, 470, y - 10, Math.max(2, w), 12, 2, { fill: r.y ? c.cv : c.red }); D.text(g, f2(r.loss, 2), 474 + w, y, { s: 11, mono: true, c: c.ink }); }
+        else D.text(g, `z ${f2(r.z, 2)}${f.st >= 4 ? `  p ${f2(r.pr, 2)}` : ''}`, 470, y, { s: 11, mono: true, c: c.ink });
+      });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.1  training logistic regression with gradient descent
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, points, rr } = MLZ;
+  const sig = z => 1 / (1 + Math.exp(-z));
+  trace('mllogfit', {
+    title: 'Training logistic regression: the S curve learns',
+    sub: 'Start from w = 0 and b = 0 (a flat 0.5 for everyone). Each step moves w and b against the gradient of the log loss. Watch the curve get steeper and slide into place.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Points (x label)', type: 'area', v: '0.5 0; 1 0; 1.5 0; 2 0; 2.5 1; 3 0; 3.5 1; 4 1; 4.5 1; 5 1' },
+      { k: 'lr', label: 'Learning rate', type: 'range', v: 0.5, min: 0.1, max: 2, step: 0.1 },
+      { k: 'every', label: 'Gradient steps between pictures', type: 'range', v: 50, min: 1, max: 200 }
+    ],
+    tips: [
+      { t: 'Perfectly separated data (no overlap): the weights keep growing forever and the curve becomes a step. That is why logistic regression needs a penalty (C) for separable data.', set: { pts: '1 0; 2 0; 3 0; 4 1; 5 1; 6 1' }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 20);
+      if (P.length < 2 || P.some(q => q.y !== 0 && q.y !== 1)) throw new Error('Type at least two points, each label 0 or 1');
+      const n = P.length;
+      let w = 0, b = 0;
+      const loss = () => P.reduce((a, q) => { const pr = Math.min(1 - 1e-12, Math.max(1e-12, sig(w * q.x + b))); return a - (q.y ? Math.log(pr) : Math.log(1 - pr)); }, 0) / n;
+      const hist = [loss()];
+      const fr = [{ w, b, hist: hist.slice(), say: `Start: w = 0, b = 0, so everyone gets probability 0.5. Log loss = ln 2 = ${f2(hist[0], 4)}.` }];
+      for (let k = 1; k <= 10; k++) {
+        let gw = 0, gb = 0;
+        for (let s = 0; s < p.every; s++) {
+          gw = 0; gb = 0;
+          P.forEach(q => { const e = sig(w * q.x + b) - q.y; gw += e * q.x / n; gb += e / n; });
+          w -= p.lr * gw; b -= p.lr * gb;
+        }
+        hist.push(loss());
+        fr.push({ w, b, hist: hist.slice(), say: `After ${k * p.every} steps: gradient ∂L/∂w = Σ(p − y)x ÷ n = ${f2(gw, 3)}, so w = <b>${f2(w, 3)}</b> and b = <b>${f2(b, 3)}</b>. Log loss ${f2(hist[k], 4)}. The 50% point is at x = ${w ? f2(-b / w) : '?'}.` });
+      }
+      fr.push({ w, b, hist, done: true, say: `The gradient of the log loss has the same simple form as in linear regression: (prediction − label) × x. The loss is convex, so gradient descent cannot get stuck in a wrong valley. scikit-learn uses faster solvers (lbfgs) for the same job.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, P = points(z.p.pts).slice(0, 20), xs = P.map(q => q.x);
+      const lo = Math.min(...xs) - 0.5, hi = Math.max(...xs) + 0.5;
+      const Pl = plot(z, [10, 10, 400, 310], [lo, hi], [-0.1, 1.1], { dx: 1, dy: 1 });
+      g.save(); g.beginPath();
+      for (let i = 0; i <= 160; i++) { const x = lo + (hi - lo) * i / 160, y = sig(f.w * x + f.b); i ? g.lineTo(Pl.X(x), Pl.Y(y)) : g.moveTo(Pl.X(x), Pl.Y(y)); }
+      g.strokeStyle = c.green; g.lineWidth = 2.5; g.stroke(); g.restore();
+      P.forEach(q => D.circle(g, Pl.X(q.x), Pl.Y(q.y), 5.5, { fill: q.y ? c.cv : c.red }));
+      head(z, 'Log loss', 425, 26);
+      const max = Math.max(...f.hist, 1e-9);
+      f.hist.forEach((v, i) => { const h = Math.max(2, v / max * 200); rr(g, 428 + i * 14, 250 - h, 12, h, 2, { fill: i === f.hist.length - 1 ? c.red : c.cv }); });
+      D.text(g, `w = ${f2(f.w, 3)}`, 425, 280, { s: 12, mono: true, c: c.ink });
+      D.text(g, `b = ${f2(f.b, 3)}`, 425, 300, { s: 12, mono: true, c: c.ink });
     }
   });
 })();

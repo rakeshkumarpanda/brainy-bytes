@@ -654,7 +654,7 @@ const MLZ = (() => {
       if (f.s >= 3) poly(pts.map(T), c.orange, c.orange);
       D.arrow(z.g, P.X(0), P.Y(0), P.X(v[0]), P.Y(v[1]), c.cv, 2.5);
       if (f.out && f.s >= 2) D.arrow(z.g, P.X(0), P.Y(0), P.X(f.out[0]), P.Y(f.out[1]), c.green, 2.5);
-      D.text(z.g, 'blue: v   green: M v', 318, 312, { s: 11, c: c.ink2 });
+      D.text(z.g, 'purple: v   green: M v', 318, 312, { s: 11, c: c.ink2 });
     }
   });
 })();

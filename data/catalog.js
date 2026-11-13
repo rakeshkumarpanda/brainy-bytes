@@ -8219,6 +8219,31 @@ function mlSupModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-s2", title: "Classification", emoji: "2", step: 2, part: "supervised", level: "Intermediate", blurb: "Predict categories: yes or no, spam or not, or which of many classes, with four very different families of models.", topics: [
+      { id: "ml-logistic", title: "Logistic regression: probabilities for classification", emoji: "2.1", page: "content/machine-learning/ml-logistic.html",
+        summary: "the sigmoid, log loss training, thresholds, softmax for many classes, odds ratios and the penalty C.",
+        keywords: ["logistic regression", "sigmoid", "log loss", "classification", "softmax", "odds ratio", "threshold", "decision boundary", "predict_proba", "C"],
+        minutes: 65, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "From a score to a probability", emoji: "", group: "Lesson", keywords: ["logistic regression", "classification", "sigmoid", "probability", "log odds", "logit", "decision boundary"] },
+        { id: "train", title: "Training with log loss", emoji: "", group: "Lesson", keywords: ["log loss", "binary cross entropy", "gradient", "maximum likelihood", "convex", "gradient descent", "lbfgs"] },
+        { id: "sklearn", title: "Logistic regression in scikit-learn", emoji: "", group: "Lesson", keywords: ["LogisticRegression", "predict_proba", "predict", "coef_", "StandardScaler", "convergence warning", "breast cancer dataset"] },
+        { id: "threshold", title: "Choosing the threshold", emoji: "", group: "Lesson", keywords: ["threshold", "precision", "recall", "false negative", "false positive", "cost sensitive"] },
+        { id: "multi", title: "More than two classes: softmax", emoji: "", group: "Lesson", keywords: ["multiclass", "softmax", "multinomial logistic regression", "categorical cross entropy", "one versus rest", "iris"] },
+        { id: "odds", title: "Reading the weights: odds ratios", emoji: "", group: "Lesson", keywords: ["odds ratio", "odds", "interpretation", "e to the w", "effect size"] },
+        { id: "boundary", title: "Curved boundaries and the penalty C", emoji: "", group: "Lesson", keywords: ["decision boundary", "nonlinear boundary", "polynomial features", "C parameter", "inverse regularisation", "LogisticRegressionCV", "separable data"] },
+        { id: "versus", title: "Logistic regression compared", emoji: "", group: "Lesson", keywords: ["logistic vs linear regression", "discriminative", "generative", "LDA", "calibration", "model comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["sigmoid derivative", "log loss gradient", "softmax gradient", "Hessian", "IRLS", "Newton method"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "GLM", "exponential family", "calibration"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "threshold", "binary search", "decision boundary", "prefix sum", "sign"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
