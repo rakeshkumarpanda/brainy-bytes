@@ -8798,6 +8798,28 @@ function mlRlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-rl-practice", title: "RL in practice: models, offline data and RLHF", emoji: "3.3", page: "content/machine-learning/ml-rl-practice.html",
+        summary: "Model based planning, MCTS, offline RL, imitation, RLHF, DPO and safe deployment.",
+        keywords: ["model based RL", "Dyna-Q", "MCTS", "AlphaZero", "offline RL", "behaviour cloning", "RLHF", "reward model", "DPO", "reward hacking"],
+        minutes: 55, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Model based RL: learning a model and planning with it", emoji: "", group: "Lesson", keywords: ["model based RL", "Dyna-Q", "planning", "learned model", "sample efficiency"] },
+        { id: "mcts", title: "Planning at decision time: MCTS, AlphaZero and MuZero", emoji: "", group: "Lesson", keywords: ["MCTS", "Monte Carlo tree search", "UCT", "AlphaGo", "AlphaZero", "MuZero", "self play"] },
+        { id: "offline", title: "Offline RL and imitation learning", emoji: "", group: "Lesson", keywords: ["offline RL", "batch RL", "imitation learning", "behaviour cloning", "DAgger", "distribution shift", "CQL"] },
+        { id: "rlhf", title: "RLHF: learning from human preferences", emoji: "", group: "Lesson", keywords: ["RLHF", "reward model", "Bradley Terry", "KL penalty", "InstructGPT", "human preferences", "reward hacking"] },
+        { id: "dpo", title: "DPO and learning from AI feedback", emoji: "", group: "Lesson", keywords: ["DPO", "direct preference optimization", "implicit reward", "RLAIF", "Constitutional AI"] },
+        { id: "safety", title: "Making RL work safely in the real world", emoji: "", group: "Lesson", keywords: ["reward hacking", "specification gaming", "AI safety", "safe exploration", "sim to real", "constrained MDP"] },
+        { id: "versus", title: "Model free, model based, offline and preference based RL compared", emoji: "", group: "Lesson", keywords: ["model free vs model based", "offline vs online", "RLHF vs DPO"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["KL optimum derivation", "Bradley Terry formula", "model errors", "MBPO", "Dreamer"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "reward overoptimisation", "scalable oversight"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "topological sort", "graph", "breadth first search", "planning"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

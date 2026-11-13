@@ -1078,3 +1078,135 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Reinforcement 3.3  RL in practice: Dyna-Q planning in a maze, and RLHF with a Bradley-Terry reward model
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, rng, plot, box } = MLZ;
+  const MAZE = ['       #G', '  #    # ', 'S #    # ', '  #      ', '     #   ', '         '];
+  const RW = 6, CW = 9, START = [2, 0], GOAL = [0, 8], MV = [[-1, 0], [1, 0], [0, -1], [0, 1]], ARW = ['↑', '↓', '←', '→'];
+  const mstep = (s, a) => { let r = s[0] + MV[a][0], c = s[1] + MV[a][1]; if (r < 0 || r >= RW || c < 0 || c >= CW || MAZE[r][c] === '#') { r = s[0]; c = s[1]; } return [[r, c], r === GOAL[0] && c === GOAL[1] ? 1 : 0]; };
+
+  trace('mldyna', {
+    title: 'Dyna-Q: planning with a learned model',
+    sub: 'The maze of Sutton and Barto example 8.1. Reaching G gives +1, everything else 0, γ = 0.95. After every real step the agent also replays n remembered steps from its model. Cell shading shows max Q, arrows the greedy action where Q is not zero.',
+    W: 600, H: 330,
+    params: [
+      { k: 'n', label: 'Planning steps n per real step', type: 'select', v: '50', opts: [['0', 'n = 0 (plain Q learning)'], ['5', 'n = 5'], ['50', 'n = 50']] },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 1, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'n = 0: after two episodes only the cells right next to the goal have a value, because one real step updates one value.', set: { n: '0', seed: 1 }, play: true },
+      { t: 'n = 50: by the end of episode 2, planning has spread value across most of the maze, and episode 2 is already short.', set: { n: '50', seed: 1 }, play: true }
+    ],
+    frames(p) {
+      const n = +p.n, R = rng(+p.seed * 5303), al = 0.1, g = 0.95, eps = 0.1;
+      const Q = {}, model = new Map(), keyOf = s => s[0] * CW + s[1], q = s => (Q[keyOf(s)] ||= [0, 0, 0, 0]);
+      const greedy = s => { const v = q(s), m = Math.max(...v), t = [0, 1, 2, 3].filter(a => v[a] === m); return t[Math.floor(R() * t.length)]; };
+      const snap = () => { const V = {}; for (const k in Q) V[k] = Q[k].slice(); return V; };
+      const lens = [];
+      const fr = [{ V: {}, lens: [], pos: START, say: `All Q values start at 0, so every action looks the same and the first episode is a random walk. Planning steps per real step: <b>${n}</b>.` }];
+      for (let ep = 1; ep <= 30; ep++) {
+        let s = START, t = 0, half = null;
+        while (!(s[0] === GOAL[0] && s[1] === GOAL[1]) && t < 4000) {
+          const a = R() < eps ? Math.floor(R() * 4) : greedy(s);
+          const [s2, r] = mstep(s, a), done = r === 1;
+          q(s)[a] += al * (r + (done ? 0 : g * Math.max(...q(s2))) - q(s)[a]);
+          model.set(keyOf(s) * 4 + a, [s, a, s2, r]);
+          const keys = [...model.values()];
+          for (let i = 0; i < n; i++) { const [ps, pa, ps2, pr] = keys[Math.floor(R() * keys.length)]; const pd = pr === 1; q(ps)[pa] += al * (pr + (pd ? 0 : g * Math.max(...q(ps2))) - q(ps)[pa]); }
+          s = s2; t++;
+          if (ep === 2 && t === 10) half = { V: snap(), pos: s };
+        }
+        lens.push(t);
+        if (ep === 2 && half) {
+          const known = Object.values(half.V).filter(v => Math.max(...v) > 0).length;
+          fr.push({ V: half.V, lens: lens.slice(0, 1), pos: half.pos, say: `Ten steps into episode 2. <b>${known}</b> ${known === 1 ? 'cell has' : 'cells have'} a value above 0. ${n === 0 ? 'Without planning, only the last step of episode 1 was learned, so value sits next to the goal.' : `Each real step also ran ${n} planning updates, so value from the goal has spread backwards through the remembered moves.`}` });
+        }
+        if ([1, 2, 3, 5, 10, 30].includes(ep)) {
+          const known = Object.values(Q).filter(v => Math.max(...v) > 0).length;
+          fr.push({ V: snap(), lens: lens.slice(), pos: GOAL, say: `Episode ${ep} took <b>${t}</b> steps (the shortest path is 14). ${known} ${known === 1 ? 'cell has' : 'cells have'} a value above 0.${ep === 1 ? ' Only now has the agent seen the reward once.' : ''}${ep === 30 ? ` Average over the last 5 episodes: ${f2(lens.slice(-5).reduce((x, y) => x + y, 0) / 5, 1)} steps. Exploration with ε = 0.1 keeps it a little above 14.` : ''}` });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, cs = 32, x0 = 10, y0 = 14;
+      let vmax = 0; for (const k in f.V) vmax = Math.max(vmax, ...f.V[k]);
+      for (let r = 0; r < RW; r++) for (let cc = 0; cc < CW; cc++) {
+        const wall = MAZE[r][cc] === '#', v = f.V[r * CW + cc], m = v ? Math.max(...v) : 0;
+        rr(g, x0 + cc * cs, y0 + r * cs, cs - 2, cs - 2, 4, { fill: wall ? c.ink2 : m > 0 ? `rgba(37,99,235,${0.12 + 0.6 * m / (vmax || 1)})` : c.surf, stroke: c.line });
+        if (!wall && m > 0 && !(r === GOAL[0] && cc === GOAL[1])) D.text(g, ARW[v.indexOf(m)], x0 + cc * cs + 15, y0 + r * cs + 21, { a: 'center', s: 14, b: true, c: c.ink });
+      }
+      D.text(g, 'S', x0 + START[1] * cs + 15, y0 + START[0] * cs + 21, { a: 'center', s: 12, b: true, c: c.red });
+      D.text(g, 'G', x0 + GOAL[1] * cs + 15, y0 + GOAL[0] * cs + 21, { a: 'center', s: 13, b: true, c: c.green });
+      if (f.pos) D.circle(g, x0 + f.pos[1] * cs + 15, y0 + f.pos[0] * cs + 8, 4, { fill: klass(z, 1) });
+      D.text(g, 'darker blue: higher max Q', x0, 226, { s: 11, c: c.ink2 });
+      const P = plot(z, [310, 10, 280, 310], [1, 30], [0, 800], { dx: 0, dy: 0, xl: 'episode', yl: 'steps per episode (capped at 800)' });
+      D.line(g, P.X(1), P.Y(14), P.X(30), P.Y(14), c.green, 1.2, [5, 4]);
+      f.lens.forEach((v, i) => { D.circle(g, P.X(i + 1), P.Y(Math.min(800, v)), 3, { fill: klass(z, 0) }); if (i) D.line(g, P.X(i), P.Y(Math.min(800, f.lens[i - 1])), P.X(i + 1), P.Y(Math.min(800, v)), klass(z, 0), 1.5); });
+    }
+  });
+
+  const ANS = ['wrong', 'vague', 'correct', 'correct and clear', 'too long', 'made up but confident'];
+  const QUAL = [-2, -0.5, 1, 2, 0, -1], REF = [0.15, 0.30, 0.25, 0.05, 0.20, 0.05];
+  const sig = x => 1 / (1 + Math.exp(-x));
+  trace('mlrlhf', {
+    title: 'RLHF in miniature: preferences, a reward model, and a KL leash',
+    sub: 'One prompt with 6 possible answers. The reference model picks them with the grey probabilities. Labellers compare pairs, a Bradley–Terry reward model is fitted to their choices, and the tuned policy is π(y) ∝ π_ref(y) exp(r(y) / β).',
+    W: 600, H: 330,
+    params: [
+      { k: 'fool', label: 'Labellers', type: 'select', v: 'yes', opts: [['no', 'Honest: they judge true quality'], ['yes', 'Fooled: a confident made up answer seems great']] },
+      { k: 'beta', label: 'KL strength β', type: 'select', v: '1', opts: [['10', 'β = 10'], ['2', 'β = 2'], ['1', 'β = 1'], ['0.3', 'β = 0.3'], ['0.1', 'β = 0.1']] },
+      { k: 'N', label: 'Number of comparisons', type: 'select', v: '400', opts: [['50', '50'], ['400', '400']] },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 1, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'Fooled labellers with β = 0.1: the policy puts almost everything on the made up answer, and true quality drops below the reference. This is reward hacking.', set: { fool: 'yes', beta: '0.1', N: '400', seed: 1 }, play: true },
+      { t: 'Honest labellers with β = 0.3: the reward model is right, so a weak leash is safe and most probability moves to the best answers.', set: { fool: 'no', beta: '0.3', N: '400', seed: 1 }, play: true }
+    ],
+    frames(p) {
+      const R = rng(+p.seed * 4441), beta = +p.beta, N = +p.N, seems = QUAL.slice();
+      if (p.fool === 'yes') seems[5] = 3;
+      const draw = () => { let u = R(), k = 0; while (k < 5 && u >= REF[k]) { u -= REF[k]; k++; } return k; };
+      const pairs = [];
+      while (pairs.length < N) { const i = draw(), j = draw(); if (i === j) continue; pairs.push(R() < sig(seems[i] - seems[j]) ? [i, j] : [j, i]); }
+      const r = [0, 0, 0, 0, 0, 0];
+      for (let it = 0; it < 1500; it++) { const gr = [0, 0, 0, 0, 0, 0]; pairs.forEach(([w, l]) => { const d = 1 - sig(r[w] - r[l]); gr[w] += d; gr[l] -= d; }); for (let k = 0; k < 6; k++) r[k] += 0.01 * gr[k] * 400 / N; const m = r.reduce((a, b) => a + b, 0) / 6; for (let k = 0; k < 6; k++) r[k] -= m; }
+      const w = REF.map((pr, k) => pr * Math.exp(r[k] / beta)), Z = w.reduce((a, b) => a + b, 0), pi = w.map(x => x / Z);
+      const EQ = v => v.reduce((a, x, k) => a + x * QUAL[k], 0), kl = pi.reduce((a, x, k) => a + (x > 0 ? x * Math.log(x / REF[k]) : 0), 0);
+      const cnt = [0, 0, 0, 0, 0, 0]; pairs.forEach(([a, b]) => { cnt[a]++; cnt[b]++; });
+      const base = { seems, fool: p.fool === 'yes' };
+      return [
+        { ...base, show: 1, say: `The reference model (after supervised fine tuning) gives these probabilities. Its expected true quality is ${f2(EQ(REF), 2)}. True qualities are hidden from the model: −2 for wrong up to +2 for correct and clear.` },
+        { ...base, show: 2, pairs: pairs.slice(0, 4), say: `${N} comparisons of two answers drawn from the reference model. For example: ${pairs.slice(0, 3).map(([a, b]) => `“${ANS[a]}” beat “${ANS[b]}”`).join(', ')}. ${p.fool === 'yes' ? 'The labellers cannot check facts, so the made up answer seems better than it is.' : 'The labellers judge true quality.'} Rare answers are compared less often: ${ANS[3]} ${cnt[3]} times, ${ANS[5]} ${cnt[5]} times.` },
+        { ...base, show: 3, r, say: `Fit the reward model by maximising Σ ln σ(r<sub>winner</sub> − r<sub>loser</sub>). Highest learned reward: <b>${ANS[r.indexOf(Math.max(...r))]}</b> (${f2(Math.max(...r), 2)}).${p.fool === 'yes' ? (r.indexOf(Math.max(...r)) === 5 ? ' The reward model faithfully learns what the labellers prefer, including their mistake.' : ' The labellers’ mistake still lifts the made up answer, though in this sample it is not the top reward.') : ''}` },
+        { ...base, show: 4, r, pi, say: `Tune with β = ${beta}: π(y) ∝ π_ref(y) exp(r(y) / ${beta}). P(correct and clear) = ${f2(pi[3], 2)}, P(made up) = ${f2(pi[5], 2)}. KL from the reference = ${f2(kl, 2)}.` },
+        { ...base, show: 5, r, pi, say: `Expected true quality: reference ${f2(EQ(REF), 2)}, tuned <b>${f2(EQ(pi), 2)}</b>. ${EQ(pi) < EQ(REF) ? 'Tuning made answers worse: the policy exploited an error in the reward model.' : EQ(pi) > EQ(REF) + 0.3 ? 'Tuning clearly helped.' : 'Tuning changed little.'} ${beta >= 2 ? 'A large β keeps the policy close to the reference.' : 'A small β lets the policy move far from the reference.'}` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, y0 = 40, rh = 44;
+      D.text(g, 'answer', 10, 24, { s: 11, b: true, c: c.ink2 });
+      D.text(g, 'reference π_ref', 200, 24, { s: 11, b: true, c: c.ink2 });
+      if (f.show >= 3) D.text(g, 'learned reward r', 330, 24, { s: 11, b: true, c: c.ink2 });
+      if (f.show >= 4) D.text(g, 'tuned π', 480, 24, { s: 11, b: true, c: c.ink2 });
+      ANS.forEach((nm, k) => {
+        const y = y0 + k * rh;
+        D.text(g, nm, 10, y + 16, { s: 12, b: true, c: c.ink });
+        D.text(g, `true quality ${QUAL[k] > 0 ? '+' : ''}${String(QUAL[k]).replace('-', '−')}`, 10, y + 32, { s: 10, c: c.ink2 });
+        rr(g, 200, y + 6, 110 * REF[k] / 0.35 + 2, 16, 3, { fill: c.ink2 });
+        D.text(g, f2(REF[k], 2), 206 + 110 * REF[k] / 0.35, y + 19, { s: 10, c: c.ink2 });
+        if (f.show >= 3) {
+          const v = f.r[k], wbar = Math.min(60, Math.abs(v) * 20), mid = 400;
+          rr(g, v >= 0 ? mid : mid - wbar, y + 6, wbar + 1, 16, 3, { fill: v >= 0 ? klass(z, 0) : c.red });
+          D.line(g, mid, y + 2, mid, y + 26, c.line, 1);
+          D.text(g, f2(v, 2).replace('-', '−'), v >= 0 ? mid - 6 : mid + 6, y + 19, { a: v >= 0 ? 'right' : 'left', s: 10, c: c.ink });
+        }
+        if (f.show >= 4) { rr(g, 480, y + 6, 90 * f.pi[k] + 2, 16, 3, { fill: klass(z, 1) }); D.text(g, f2(f.pi[k], 2), 486 + 90 * f.pi[k], y + 19, { s: 10, c: c.ink }); }
+        if (f.show === 2 && k === 5 && f.fool) D.text(g, 'seems great to labellers', 200, y + 38, { s: 10, b: true, c: c.red });
+      });
+    }
+  });
+})();
