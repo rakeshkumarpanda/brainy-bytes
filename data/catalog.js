@@ -8849,6 +8849,26 @@ function mlDeepModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-backprop", title: "Backpropagation and automatic differentiation", emoji: "1.2", page: "content/machine-learning/ml-backprop.html",
+        summary: "The chain rule on graphs, autodiff, matrix backprop with gradient checks, and gradient flow through depth.",
+        keywords: ["backpropagation", "chain rule", "automatic differentiation", "autograd", "gradient check", "vanishing gradient", "exploding gradient", "He initialisation", "Xavier initialisation", "computational graph"],
+        minutes: 50, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "The chain rule on a computational graph", emoji: "", group: "Lesson", keywords: ["backpropagation", "chain rule", "computational graph", "forward pass", "backward pass", "local gradient"] },
+        { id: "autograd", title: "Automatic differentiation", emoji: "", group: "Lesson", keywords: ["automatic differentiation", "autograd", "reverse mode", "forward mode", "PyTorch", "topological sort"] },
+        { id: "matrix", title: "Backpropagation with matrices, and gradient checking", emoji: "", group: "Lesson", keywords: ["matrix backpropagation", "dense layer gradient", "softmax cross entropy gradient", "gradient check", "finite differences"] },
+        { id: "vanish", title: "Vanishing and exploding gradients", emoji: "", group: "Lesson", keywords: ["vanishing gradient", "exploding gradient", "Xavier initialisation", "He initialisation", "gradient clipping", "depth"] },
+        { id: "versus", title: "Ways to compute gradients compared", emoji: "", group: "Lesson", keywords: ["finite differences vs autodiff", "forward vs reverse mode"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["chain rule formula", "softmax gradient derivation", "gradient checkpointing", "Hessian vector product"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "signal propagation", "dynamical isometry"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "tree", "DAG", "post order", "memoisation"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

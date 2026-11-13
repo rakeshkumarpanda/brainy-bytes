@@ -149,3 +149,138 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Deep learning 1.2  backpropagation: a computational graph forward and backward, and gradients through depth
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, rng, plot, box } = MLZ;
+  const nf = v => { const r = Math.abs(v) < 5e-4 ? 0 : v; return (Number.isInteger(r) ? String(r) : f2(r, 3)).replace('-', '−'); };
+  const pn = v => (v < 0 ? '(' + nf(v) + ')' : nf(v));
+  const GRAPHS = {
+    add: { nodes: [
+      { id: 'x', x: 60, y: 60 }, { id: 'y', x: 60, y: 150 }, { id: 'z', x: 60, y: 250 },
+      { id: 'q', op: '+', ins: ['x', 'y'], x: 250, y: 105 }, { id: 'f', op: '×', ins: ['q', 'z'], x: 440, y: 170 }] },
+    neuron: { nodes: [
+      { id: 'w0', x: 40, y: 30 }, { id: 'x0', x: 40, y: 90 }, { id: 'w1', x: 40, y: 160 }, { id: 'x1', x: 40, y: 220 }, { id: 'b', x: 40, y: 290 },
+      { id: 'm0', op: '×', ins: ['w0', 'x0'], x: 170, y: 60 }, { id: 'm1', op: '×', ins: ['w1', 'x1'], x: 170, y: 190 },
+      { id: 's1', op: '+', ins: ['m0', 'm1'], x: 290, y: 125 }, { id: 's2', op: '+', ins: ['s1', 'b'], x: 400, y: 200 }, { id: 'f', op: 'σ', ins: ['s2'], x: 520, y: 200 }] }
+  };
+
+  trace('mlcompgraph', {
+    title: 'Backpropagation on a computational graph',
+    sub: 'Every calculation is a graph of small operations. The forward pass computes each value (green) from left to right. The backward pass starts with a gradient of 1 at the output and sends gradients (red) back with the chain rule: each node multiplies the incoming gradient by its own local slope.',
+    W: 600, H: 330,
+    params: [
+      { k: 'g', label: 'Graph', type: 'select', v: 'add', opts: [['add', 'f = (x + y) × z'], ['neuron', 'A sigmoid neuron: f = σ(w₀x₀ + w₁x₁ + b)']] },
+      { k: 'x', label: 'x (first graph)', type: 'range', v: -2, min: -5, max: 5, step: 1 },
+      { k: 'y', label: 'y (first graph)', type: 'range', v: 5, min: -5, max: 5, step: 1 },
+      { k: 'z', label: 'z (first graph)', type: 'range', v: -4, min: -5, max: 5, step: 1 }
+    ],
+    tips: [
+      { t: 'The neuron graph: the sigmoid’s local slope is σ(1)(1 − σ(1)) = 0.197, and every input then gets its share through the adds and multiplies.', set: { g: 'neuron' }, play: true },
+      { t: 'Set z = 0: then f = 0 for any x and y, and the gradients reaching x and y are 0 too, because the multiply sends z × (incoming gradient) to q.', set: { g: 'add', x: -2, y: 5, z: 0 }, play: true }
+    ],
+    frames(p) {
+      const G = GRAPHS[p.g], val = {}, grad = {};
+      if (p.g === 'add') { val.x = +p.x; val.y = +p.y; val.z = +p.z; } else Object.assign(val, { w0: 2, x0: -1, w1: -3, x1: -2, b: -3 });
+      const ops = G.nodes.filter(n => n.op), snap = (extra) => ({ g: p.g, val: { ...val }, grad: { ...grad }, ...extra });
+      const fr = [snap({ say: `The inputs: ${G.nodes.filter(n => !n.op).map(n => `${n.id} = ${nf(val[n.id])}`).join(', ')}. Nothing else is computed yet.` })];
+      ops.forEach(n => {
+        const a = n.ins.map(i => val[i]);
+        val[n.id] = n.op === '+' ? a[0] + a[1] : n.op === '×' ? a[0] * a[1] : 1 / (1 + Math.exp(-a[0]));
+        fr.push(snap({ hot: n.id, say: `Forward: ${n.id} = ${n.op === 'σ' ? `σ(${nf(a[0])})` : `${pn(a[0])} ${n.op} ${pn(a[1])}`} = <b>${nf(val[n.id])}</b>.` }));
+      });
+      const out = ops[ops.length - 1].id;
+      grad[out] = 1;
+      fr.push(snap({ hot: out, say: `Backward starts at the output with ∂f/∂f = 1.` }));
+      [...ops].reverse().forEach(n => {
+        const g0 = grad[n.id], a = n.ins.map(i => val[i]);
+        let parts;
+        if (n.op === '+') { n.ins.forEach(i => (grad[i] = (grad[i] || 0) + g0)); parts = `an add passes the gradient ${nf(g0)} unchanged to ${n.ins.join(' and ')}`; }
+        else if (n.op === '×') { grad[n.ins[0]] = (grad[n.ins[0]] || 0) + g0 * a[1]; grad[n.ins[1]] = (grad[n.ins[1]] || 0) + g0 * a[0]; parts = `a multiply swaps its inputs: ∂/∂${n.ins[0]} = ${pn(g0)} × ${pn(a[1])} = ${nf(g0 * a[1])} and ∂/∂${n.ins[1]} = ${pn(g0)} × ${pn(a[0])} = ${nf(g0 * a[0])}`; }
+        else { const s = val[n.id], d = s * (1 - s); grad[n.ins[0]] = (grad[n.ins[0]] || 0) + g0 * d; parts = `the sigmoid’s local slope is σ(1 − σ) = ${nf(s)} × ${nf(1 - s)} = ${nf(d)}, so ∂/∂${n.ins[0]} = ${nf(g0 * d)}`; }
+        fr.push(snap({ hot: n.id, say: `Backward through ${n.id}: ${parts}.` }));
+      });
+      const ins = G.nodes.filter(n => !n.op);
+      fr.push(snap({ say: `Done. Gradients of f: ${ins.map(n => `∂f/∂${n.id} = <b>${nf(grad[n.id])}</b>`).join(', ')}. One forward and one backward pass gave every gradient at once.` }));
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, G = GRAPHS[f.g], pos = {};
+      G.nodes.forEach(n => (pos[n.id] = n));
+      G.nodes.filter(n => n.op).forEach(n => n.ins.forEach(i => D.arrow(g, pos[i].x + (pos[i].op ? 22 : 42), pos[i].y, n.x - 24, n.y, c.ink2, 1.5, 7)));
+      G.nodes.forEach(n => {
+        const hot = f.hot === n.id;
+        if (n.op) D.circle(g, n.x, n.y, 22, { fill: hot ? 'rgba(234,88,12,0.2)' : c.surf, stroke: hot ? klass(z, 1) : c.line, w: hot ? 3 : 1.5 });
+        else rr(g, n.x - 22, n.y - 16, 64, 32, 6, { fill: c.surf, stroke: c.line });
+        if (n.op) {
+          D.text(g, n.op, n.x, n.y + 5, { a: 'center', s: 16, b: true, c: c.ink });
+          D.text(g, n.id, n.x, n.y - 27, { a: 'center', s: 10, c: c.ink2 });
+          if (f.val[n.id] !== undefined) D.text(g, nf(f.val[n.id]), n.x + 26, n.y - 14, { a: 'left', s: 12, b: true, c: c.green });
+          if (f.grad[n.id] !== undefined) D.text(g, nf(f.grad[n.id]), n.x, n.y + 38, { a: 'center', s: 12, b: true, c: c.red });
+        } else {
+          D.text(g, n.id, n.x - 15, n.y + 5, { a: 'left', s: 13, b: true, c: c.ink });
+          if (f.val[n.id] !== undefined) D.text(g, nf(f.val[n.id]), n.x + 36, n.y + 5, { a: 'right', s: 12, b: true, c: c.green });
+          if (f.grad[n.id] !== undefined) D.text(g, nf(f.grad[n.id]), n.x + 10, n.y + 30, { a: 'center', s: 12, b: true, c: c.red });
+        }
+      });
+      D.text(g, 'green: value (forward)    red: gradient ∂f/∂node (backward)', 590, 322, { a: 'right', s: 11, c: c.ink2 });
+    }
+  });
+
+  const gauss = R => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+  trace('mlvanish', {
+    title: 'Vanishing and exploding gradients',
+    sub: 'A batch goes forward through a deep stack of layers. Then a gradient of 1s comes back from the top, and we measure its average size at each layer on a log scale. Healthy training needs sizes that stay roughly level from layer to layer.',
+    W: 600, H: 330,
+    params: [
+      { k: 'act', label: 'Activation', type: 'select', v: 'sigmoid', opts: [['sigmoid', 'sigmoid'], ['tanh', 'tanh'], ['relu', 'ReLU']] },
+      { k: 'init', label: 'Weight initialisation', type: 'select', v: 'xavier', opts: [['small', 'small: N(0, 0.01²)'], ['xavier', 'Xavier: N(0, 1/n)'], ['he', 'He: N(0, 2/n)'], ['big', 'too big: N(0, 4/n)']] },
+      { k: 'L', label: 'Number of layers', type: 'select', v: '20', opts: [['10', '10'], ['20', '20'], ['30', '30']] }
+    ],
+    tips: [
+      { t: 'ReLU with He initialisation: the gradient size stays roughly the same at every layer, which is what He and colleagues designed it for.', set: { act: 'relu', init: 'he', L: '20' }, play: true },
+      { t: 'ReLU with “too big” weights: each layer multiplies the gradient by more than 1, so it explodes on the way back, about 2000 times larger at layer 1.', set: { act: 'relu', init: 'big', L: '20' }, play: true }
+    ],
+    frames(p) {
+      const R = rng(1234), L = +p.L, n = 32, B = 48, act = p.act;
+      const sc = { small: 0.01, xavier: Math.sqrt(1 / n), he: Math.sqrt(2 / n), big: Math.sqrt(4 / n) }[p.init];
+      let x = Array.from({ length: B }, () => Array.from({ length: n }, () => gauss(R)));
+      const Ws = [], Zs = [];
+      for (let l = 0; l < L; l++) {
+        const W = Array.from({ length: n }, () => Array.from({ length: n }, () => gauss(R) * sc));
+        const Z = x.map(r => W[0].map((_, j) => r.reduce((a, v, k) => a + v * W[k][j], 0)));
+        x = Z.map(r => r.map(v => (act === 'sigmoid' ? 1 / (1 + Math.exp(-v)) : act === 'tanh' ? Math.tanh(v) : Math.max(0, v))));
+        Ws.push(W); Zs.push(Z);
+      }
+      let gmat = x.map(r => r.map(() => 1));
+      const sizes = new Array(L);
+      for (let l = L - 1; l >= 0; l--) {
+        const Z = Zs[l], W = Ws[l];
+        const dz = gmat.map((r, i) => r.map((v, j) => { const zv = Z[i][j]; const d = act === 'sigmoid' ? (s => s * (1 - s))(1 / (1 + Math.exp(-zv))) : act === 'tanh' ? 1 - Math.tanh(zv) ** 2 : zv > 0 ? 1 : 0; return v * d; }));
+        gmat = dz.map(r => W.map((wr) => wr.reduce((a, wv, j) => a + wv * r[j], 0)));
+        sizes[l] = gmat.reduce((a, r) => a + r.reduce((b, v) => b + Math.abs(v), 0), 0) / (B * n);
+      }
+      const fr = [{ sizes, upto: L, L, say: `${L} layers of ${n} units, ${act} activations, ${p.init} initialisation. The forward pass is done. Now the gradient travels back from layer ${L}.` }];
+      const chunk = Math.max(2, Math.round(L / 5));
+      for (let k = L - chunk; k > 0; k -= chunk) fr.push({ sizes, upto: k, L, say: `Back to layer ${k + 1}: average gradient size ${sizes[k].toExponential(1)}, compared with ${sizes[L - 1].toExponential(1)} at layer ${L}.` });
+      const ratio = sizes[0] / sizes[L - 1];
+      fr.push({ sizes, upto: 0, L, say: `At layer 1 the gradient is ${sizes[0].toExponential(1)}, ${ratio < 1 ? `${(1 / ratio).toExponential(1)} times smaller` : `${ratio.toExponential(1)} times larger`} than at layer ${L}. ${ratio < 1e-3 ? '<b>Vanishing</b>: the first layers would barely learn.' : ratio < 0.1 ? '<b>Shrinking</b>: the first layers would learn much more slowly than the last.' : ratio > 1e3 ? '<b>Exploding</b>: updates to the first layers would be huge.' : ratio > 10 ? '<b>Growing</b>: a mild form of exploding, the first layers get much larger updates.' : '<b>Healthy</b>: every layer gets a gradient of a similar size.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, L = f.L;
+      const P = plot(z, [10, 10, 580, 300], [0.5, L + 0.5], [-24, 4], { dx: 0, dy: 0, xl: 'layer (1 = first)', yl: 'log₁₀ of average gradient size', grid: true });
+      D.line(g, P.X(0.5), P.Y(0), P.X(L + 0.5), P.Y(0), c.ink2, 1, [4, 4]);
+      const bw = (P.X(2) - P.X(1)) * 0.7;
+      for (let l = 0; l < L; l++) {
+        if (l < f.upto) continue;
+        const v = Math.max(-24, Math.min(4, Math.log10(f.sizes[l] + 1e-30)));
+        const x = P.X(l + 1) - bw / 2, y0 = P.Y(v), yb = P.Y(0), h = Math.max(3, Math.abs(yb - y0));
+        rr(g, x, v >= 0 ? yb - h : yb, bw, h, 2, { fill: v < -3 ? c.red : v > 3 ? klass(z, 1) : klass(z, 0) });
+      }
+      D.text(g, 'bars grow from size 1 (dashed)   blue: healthy   red: below 0.001   orange: above 1000', 585, 270, { a: 'right', s: 11, c: c.ink2 });
+    }
+  });
+})();
