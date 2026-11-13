@@ -409,3 +409,129 @@ const MLZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 1.3  NumPy broadcasting: how two shapes line up
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, D, nums } = MLZ;
+  trace('mlbroadcast', {
+    title: 'NumPy broadcasting, step by step',
+    sub: 'Type two array shapes. NumPy lines them up from the right and checks each pair of sizes. A size of 1 is stretched to match.',
+    W: 600, H: 300,
+    params: [
+      { k: 'a', label: 'Shape of A', type: 'text', v: '4, 3' },
+      { k: 'b', label: 'Shape of B', type: 'text', v: '3' }
+    ],
+    tips: [
+      { t: 'A (4, 3) plus B (3): a row of 3 numbers is added to every one of the 4 rows. This is how you subtract the column means from a data table.', set: { a: '4, 3', b: '3' }, play: true },
+      { t: 'A (4, 1) and B (1, 3) give a (4, 3) table: every pair of a row value and a column value.', set: { a: '4, 1', b: '1, 3' }, play: true },
+      { t: 'A (4, 3) and B (4): the last sizes 3 and 4 differ and neither is 1, so NumPy raises an error. Reshape B to (4, 1) to fix it.', set: { a: '4, 3', b: '4' }, play: true }
+    ],
+    frames(p) {
+      const A = nums(p.a).map(Math.round), B = nums(p.b).map(Math.round);
+      if (!A.length || !B.length || A.concat(B).some(v => v < 1 || v > 99)) throw new Error('Type shapes such as 4, 3 with sizes from 1 to 99.');
+      const L = Math.max(A.length, B.length);
+      const pa = Array(L - A.length).fill(null).concat(A), pb = Array(L - B.length).fill(null).concat(B);
+      const fr = [];
+      fr.push({ pa, pb, k: -1, res: [], say: `A has shape (${A.join(', ')}) and B has shape (${B.join(', ')}). NumPy compares the shapes starting from the <b>right</b> end, one size at a time.` });
+      if (A.length !== B.length) fr.push({ pa, pb, k: -1, res: [], pad: true, say: `The shapes have different lengths, so NumPy pretends the shorter one has extra sizes of 1 on the left. They are shown as 1 in grey.` });
+      const res = Array(L).fill(null);
+      let bad = false;
+      for (let i = L - 1; i >= 0; i--) {
+        const x = pa[i] ?? 1, y = pb[i] ?? 1;
+        let say, r;
+        if (x === y) { r = x; say = `Position ${L - i} from the right: ${x} and ${y} are equal, so this size is <b>${r}</b>.`; }
+        else if (x === 1) { r = y; say = `Position ${L - i} from the right: A has 1 and B has ${y}. A is <b>stretched</b> (copied) ${y} times along this axis. Result size ${r}.`; }
+        else if (y === 1) { r = x; say = `Position ${L - i} from the right: B has 1 and A has ${x}. B is <b>stretched</b> ${x} times. Result size ${r}.`; }
+        else { bad = true; say = `Position ${L - i} from the right: ${x} and ${y} are different and neither is 1. NumPy stops with <b>ValueError: operands could not be broadcast together</b>.`; }
+        res[i] = bad ? '✗' : r;
+        fr.push({ pa, pb, k: i, res: res.slice(), bad, say });
+        if (bad) break;
+      }
+      if (!bad) fr.push({ pa, pb, k: -1, res, done: true, say: `Every pair matched, so A and B can be combined element by element. The result has shape <b>(${res.join(', ')})</b>. NumPy never really copies the data, it just reuses the same numbers, so broadcasting is fast and saves memory.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, L = f.pa.length, cw = 70, x0 = 300 - L * cw / 2;
+      const row = (lbl, arr, y, isRes) => {
+        head(z, lbl, x0 - 14, y + 26, { a: 'right', s: 13 });
+        arr.forEach((v, i) => {
+          const on = i === f.k;
+          const ghost = v === null;
+          box(z, x0 + i * cw, y, cw - 8, 40, ghost ? (f.pad ? '1' : '') : String(v), { fill: on ? c.cv : (isRes && v === '✗' ? c.red : c.surf), c: on || (isRes && v === '✗') ? '#fff' : (ghost ? c.ink2 : c.ink), b: true, s: 16, mono: true, dash: ghost ? [4, 3] : null });
+        });
+      };
+      row('A', f.pa, 40, false);
+      row('B', f.pb, 110, false);
+      if (f.res.some(v => v !== null)) row('result', f.res.map(v => v), 200, true);
+      D.text(z.g, '← NumPy compares from the right', 300 + L * cw / 2 - 8, 26, { a: 'right', s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 1.3  pandas groupby: split, apply, combine
+   ===================================================================================================== */
+(() => {
+  const { trace, head, D, rr, klass, f2, fit } = MLZ;
+  trace('mlgroupby', {
+    title: 'pandas groupby: split, apply, combine',
+    sub: 'Type a small table of (group, value) rows. groupby splits the rows by group, applies a function to each pile, and combines the answers into a new table.',
+    W: 600, H: 330,
+    params: [
+      { k: 'rows', label: 'Rows: group value', type: 'area', v: 'Pune 31\nDelhi 38\nPune 29\nChennai 34\nDelhi 41\nChennai 33\nPune 30' },
+      { k: 'fn', label: 'Function to apply', type: 'select', v: 'mean', opts: [['mean', 'mean()'], ['sum', 'sum()'], ['max', 'max()'], ['count', 'count()']] }
+    ],
+    tips: [{ t: 'Change the function to count(). It tells how many rows each group has, a quick way to spot rare groups.', set: { fn: 'count' }, play: true }],
+    frames(p) {
+      const rows = String(p.rows).split(/\n+/).map(l => l.trim()).filter(Boolean).map(l => { const t = l.split(/[\s,]+/); const v = +t[t.length - 1]; if (isNaN(v) || t.length < 2) throw new Error('Each row needs a group name and a number.'); return { g: t.slice(0, -1).join(' '), v }; });
+      if (rows.length > 12) throw new Error('Use at most 12 rows.');
+      const groups = [];
+      rows.forEach(r => { if (!groups.includes(r.g)) groups.push(r.g); });
+      groups.sort();
+      const F = { mean: a => a.reduce((s, x) => s + x, 0) / a.length, sum: a => a.reduce((s, x) => s + x, 0), max: a => Math.max(...a), count: a => a.length };
+      const fr = [];
+      fr.push({ rows, stage: 0, say: `This is the table with ${rows.length} rows. We want one answer per group: df.groupby("group")["value"].${p.fn}().` });
+      fr.push({ rows, groups, stage: 1, say: `<b>Split</b>: pandas puts the rows into ${groups.length} piles, one per group (${groups.join(', ')}). Groups come out sorted by name.` });
+      const out = [];
+      groups.forEach((g, i) => {
+        const vals = rows.filter(r => r.g === g).map(r => r.v);
+        out.push({ g, v: F[p.fn](vals) });
+        fr.push({ rows, groups, stage: 2, upto: i, out: out.slice(), say: `<b>Apply</b> to ${g}: values ${vals.join(', ')} give ${p.fn}() = <b>${f2(F[p.fn](vals), p.fn === 'mean' ? 2 : 0)}</b>.` });
+      });
+      fr.push({ rows, groups, stage: 3, out, done: true, say: `<b>Combine</b>: the answers form a new, smaller table indexed by group. In ML we use this to make features such as "average temperature of the customer’s city".` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      head(z, 'Table', 16, 18);
+      f.rows.forEach((r, i) => {
+        const gi = f.groups ? f.groups.indexOf(r.g) : -1;
+        rr(z.g, 16, 26 + i * 22, 150, 19, 4, { fill: gi >= 0 ? klass(z, gi) : c.surf, stroke: c.line });
+        D.text(z.g, r.g, 22, 40 + i * 22, { s: 12, b: true, c: gi >= 0 ? '#fff' : c.ink });
+        D.text(z.g, String(r.v), 160, 40 + i * 22, { a: 'right', s: 12, mono: true, c: gi >= 0 ? '#fff' : c.ink });
+      });
+      if (f.stage >= 1) {
+        head(z, 'Split into piles', 200, 18);
+        f.groups.forEach((g, gi) => {
+          const vals = f.rows.filter(r => r.g === g).map(r => r.v);
+          const y = 26 + gi * 56;
+          rr(z.g, 200, y, 200, 48, 6, { fill: c.surf, stroke: klass(z, gi), w: 2 });
+          const s = fit(z.g, g, 80, 12, { b: true });
+          D.text(z.g, g, 208, y + 18, { s, b: true, c: klass(z, gi) });
+          D.text(z.g, vals.join('  '), 208, y + 38, { s: 12, mono: true, c: c.ink });
+          if (f.out && f.out[gi]) D.arrow(z.g, 402, y + 24, 430, y + 24, c.ink2, 1.5);
+        });
+      }
+      if (f.out) {
+        head(z, 'Combined result', 440, 18);
+        f.out.forEach((o, gi) => {
+          const y = 26 + gi * 56;
+          rr(z.g, 440, y + 8, 145, 32, 6, { fill: f.done ? c.cv : c.bg, stroke: c.line });
+          D.text(z.g, `${o.g}: ${f2(o.v, Number.isInteger(o.v) ? 0 : 2)}`, 512, y + 29, { a: 'center', s: 12, b: true, c: f.done ? '#fff' : c.ink });
+        });
+      }
+    }
+  });
+})();

@@ -8025,6 +8025,29 @@ function mlFoundModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-tools", title: "Python tools for ML: NumPy, pandas and scikit-learn", emoji: "1.3", page: "content/machine-learning/ml-tools.html",
+        summary: "NumPy arrays and broadcasting, pandas tables and groupby, and the scikit-learn estimator API.",
+        keywords: ["NumPy", "pandas", "scikit-learn", "broadcasting", "axis", "DataFrame", "groupby", "fit transform", "Pipeline"],
+        minutes: 60, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "stack", title: "The ML toolbox at a glance", emoji: "", group: "Lesson", keywords: ["NumPy", "pandas", "scikit-learn", "matplotlib", "PyTorch", "ML libraries", "Python for ML"] },
+        { id: "numpy", title: "NumPy arrays", emoji: "", group: "Lesson", keywords: ["ndarray", "np.array", "dtype", "shape", "vectorisation", "boolean mask", "arange", "linspace"] },
+        { id: "shapes", title: "Shapes, axes and broadcasting", emoji: "", group: "Lesson", keywords: ["shape", "axis", "axis 0 vs axis 1", "reshape", "transpose", "broadcasting", "centring"] },
+        { id: "nmaths", title: "NumPy maths for models", emoji: "", group: "Lesson", keywords: ["dot product", "matrix multiplication", "@ operator", "np.random.default_rng", "seed"] },
+        { id: "pandas", title: "pandas DataFrames", emoji: "", group: "Lesson", keywords: ["DataFrame", "Series", "index", "loc", "iloc", "read_csv", "filter rows", "describe"] },
+        { id: "groupby", title: "groupby, merge and missing values", emoji: "", group: "Lesson", keywords: ["groupby", "agg", "transform", "merge", "join", "isna", "fillna", "dropna", "split apply combine"] },
+        { id: "sklearn", title: "The scikit-learn API: estimators and transformers", emoji: "", group: "Lesson", keywords: ["estimator", "transformer", "predictor", "fit", "transform", "fit_transform", "predict_proba", "Pipeline", "make_pipeline"] },
+        { id: "versus", title: "Lists, arrays and DataFrames compared", emoji: "", group: "Lesson", keywords: ["list vs array", "array vs DataFrame", "scikit-learn vs PyTorch", "comparison"] },
+        { id: "maths", title: "The maths behind the tools", emoji: "", group: "Lesson", keywords: ["mean axis", "standard deviation", "ddof", "standard scaling", "z score", "memory", "SIMD"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "views and copies", "strides", "Arrow", "estimator contract"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "pandas", "DataFrame", "pivot", "concat", "method chaining"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
