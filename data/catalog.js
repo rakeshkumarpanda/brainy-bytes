@@ -8197,6 +8197,27 @@ function mlSupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-regularization", title: "Polynomial regression and regularisation: ridge, lasso, elastic net", emoji: "1.2", page: "content/machine-learning/ml-regularization.html",
+        summary: "polynomial features, underfitting and overfitting, ridge, lasso, elastic net, and choosing alpha with cross validation.",
+        keywords: ["polynomial regression", "overfitting", "underfitting", "ridge", "lasso", "elastic net", "regularisation", "L1", "L2", "RidgeCV"],
+        minutes: 60, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "overfit", title: "Curves, underfitting and overfitting", emoji: "", group: "Lesson", keywords: ["polynomial regression", "underfitting", "overfitting", "bias", "variance", "model complexity", "train vs test error"] },
+        { id: "ridge", title: "Ridge regression (L2): keep weights small", emoji: "", group: "Lesson", keywords: ["ridge regression", "L2 penalty", "shrinkage", "alpha", "multicollinearity", "Ridge", "closed form"] },
+        { id: "lasso", title: "Lasso (L1): weights that become exactly zero", emoji: "", group: "Lesson", keywords: ["lasso", "L1 penalty", "sparsity", "feature selection", "soft thresholding", "coordinate descent", "Lasso"] },
+        { id: "enet", title: "Elastic net: the best of both", emoji: "", group: "Lesson", keywords: ["elastic net", "ElasticNet", "l1_ratio", "correlated features", "grouping effect"] },
+        { id: "cv", title: "Choosing alpha with cross validation", emoji: "", group: "Lesson", keywords: ["hyperparameter", "RidgeCV", "LassoCV", "ElasticNetCV", "cross validation", "alpha search", "log scale"] },
+        { id: "versus", title: "Penalties compared", emoji: "", group: "Lesson", keywords: ["ridge vs lasso", "L1 vs L2", "constraint form", "geometry of lasso", "diamond", "penalty comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["ridge formula", "lasso objective", "elastic net objective", "MAP", "Laplace prior", "effective degrees of freedom", "SVD shrinkage"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "LARS", "regularisation path", "group lasso", "weight decay"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "squared difference", "absolute difference", "prefix sum", "budget", "binary search", "subset sum"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

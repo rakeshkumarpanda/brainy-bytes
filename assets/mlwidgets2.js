@@ -115,3 +115,158 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 1.2  polynomial degree: underfitting, a good fit, and overfitting
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, rr } = MLZ;
+  /* least squares polynomial fit on x scaled to [-1, 1], with a tiny ridge so high degrees stay solvable */
+  function polyfit(xs, ys, deg, lam) {
+    const m = deg + 1, A = Array.from({ length: m }, () => new Array(m + 1).fill(0));
+    xs.forEach((x, k) => {
+      const pw = [1]; for (let i = 1; i < m; i++) pw.push(pw[i - 1] * x);
+      for (let i = 0; i < m; i++) { for (let j = 0; j < m; j++) A[i][j] += pw[i] * pw[j]; A[i][m] += pw[i] * ys[k]; }
+    });
+    for (let i = 1; i < m; i++) A[i][i] += lam;
+    for (let c = 0; c < m; c++) {
+      let piv = c; for (let r = c + 1; r < m; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+      [A[c], A[piv]] = [A[piv], A[c]];
+      for (let r = 0; r < m; r++) if (r !== c) { const t = A[r][c] / A[c][c]; for (let j = c; j <= m; j++) A[r][j] -= t * A[c][j]; }
+    }
+    return A.map((row, i) => row[m] / row[i]);
+  }
+  const val = (w, x) => w.reduce((a, c, i) => a + c * x ** i, 0);
+  trace('mlpolyfit', {
+    title: 'Polynomial degree: too simple, just right, too wiggly',
+    sub: 'Blue dots are training data, hollow dots are test data. Each step fits a polynomial of a higher degree to the training dots and shows both errors.',
+    W: 600, H: 330,
+    params: [
+      { k: 'n', label: 'Training points', type: 'range', v: 12, min: 8, max: 40 },
+      { k: 'noise', label: 'Noise', type: 'range', v: 0.2, min: 0.05, max: 0.5, step: 0.05 },
+      { k: 'lam', label: 'Ridge penalty (0 = none)', type: 'range', v: 0, min: 0, max: 1, step: 0.05 }
+    ],
+    tips: [
+      { t: 'Add a small ridge penalty (0.05): the high degree curves calm down and the test error stays low.', set: { lam: 0.05 }, play: true },
+      { t: 'With 40 training points even degree 12 behaves much better. More data fights overfitting.', set: { n: 40, lam: 0 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(5 + p.n);
+      const gauss = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+      const truth = x => Math.sin(Math.PI * (x + 1));
+      const tr = Array.from({ length: p.n }, () => { const x = r() * 2 - 1; return { x, y: truth(x) + p.noise * gauss() }; });
+      const te = Array.from({ length: 60 }, () => { const x = r() * 2 - 1; return { x, y: truth(x) + p.noise * gauss() }; });
+      const mse = (w, S) => S.reduce((a, q) => a + (val(w, q.x) - q.y) ** 2, 0) / S.length;
+      const fr = [{ tr, te, say: `Here are ${p.n} training points (blue) and 60 test points (hollow), all from the same smooth curve plus noise. The model only learns from the blue ones.` }];
+      const all = [1, 2, 3, 5, 8, 12].map(d => {
+        const w = polyfit(tr.map(q => q.x), tr.map(q => q.y), d, 1e-9 + p.lam);
+        return { d, w, a: mse(w, tr), b: mse(w, te) };
+      });
+      const top = all.reduce((x, y) => y.b < x.b ? y : x);
+      const hist = [];
+      all.forEach(h => {
+        hist.push({ d: h.d, a: h.a, b: h.b });
+        const kind = h.b <= 1.6 * top.b ? 'Both errors are low: the curve follows the pattern, not the noise.' :
+          h.d < top.d ? 'The curve is too stiff to follow the wave, so both errors are high. This is <b>underfitting</b> (high bias).' :
+          'The training error is small but the test error grew: the curve chases the noise. This is <b>overfitting</b> (high variance).';
+        fr.push({ tr, te, w: h.w, d: h.d, hist: hist.slice(), say: `Degree ${h.d}: training error ${f2(h.a, 3)}, test error <b>${f2(h.b, 3)}</b>. ${kind}` });
+      });
+      const best = top;
+      fr.push({ tr, te, w: best.w, d: best.d, hist, done: true, say: `The lowest test error is at degree <b>${best.d}</b>. Training error alone always prefers the most complex model, so pick complexity with test or validation data. A ridge penalty (Ridge penalty slider) lets you keep a high degree and still avoid wild curves.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1, 1], [-2, 2], { dx: 1, dy: 1 });
+      f.te.forEach(q => D.circle(g, P.X(q.x), P.Y(q.y), 3.5, { stroke: c.ink2, w: 1 }));
+      f.tr.forEach(q => D.circle(g, P.X(q.x), P.Y(q.y), 4.5, { fill: c.cv }));
+      if (f.w) {
+        g.save(); g.beginPath(); g.rect(P.x0, P.y0, P.w, P.h); g.clip(); g.beginPath();
+        for (let i = 0; i <= 200; i++) { const x = -1 + i / 100, y = val(f.w, x); i ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)); }
+        g.strokeStyle = f.done ? c.green : c.orange; g.lineWidth = 2.5; g.stroke(); g.restore();
+      }
+      if (f.hist) {
+        head(z, 'Error by degree', 425, 24);
+        D.text(g, 'train', 470, 42, { s: 11, b: true, c: c.cv }); D.text(g, 'test', 520, 42, { s: 11, b: true, c: c.orange });
+        /* scale the bars to the simple models, so one exploding test error does not flatten the rest */
+        const max = Math.max(f.hist[0].a, f.hist[0].b, 0.05) * 1.25;
+        f.hist.forEach((h, i) => {
+          const y = 58 + i * 40;
+          D.text(g, `d ${h.d}`, 425, y + 14, { s: 12, mono: true, b: true, c: h.d === f.d ? c.ink : c.ink2 });
+          rr(g, 460, y, Math.max(2, Math.min(h.a, max) / max * 100), 12, 2, { fill: c.cv });
+          rr(g, 460, y + 15, Math.max(2, Math.min(h.b, max) / max * 100), 12, 2, { fill: c.orange });
+          if (h.b > max) D.text(g, 'off the scale', 462, y + 40, { s: 10, b: true, c: c.orange });
+        });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 1.2  ridge shrinks weights, lasso sets some to exactly zero
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, rng, rr } = MLZ;
+  const NAMES = ['size', 'rooms', 'age', 'noise1', 'noise2'];
+  const TRUE = [3, 2, -1.5, 0, 0];
+  function data() {
+    const r = rng(4), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const X = [], y = [];
+    for (let i = 0; i < 60; i++) { const row = NAMES.map(() => g()); X.push(row); y.push(row.reduce((a, v, j) => a + v * TRUE[j], 0) + g()); }
+    /* centre and scale the columns so one penalty treats every weight the same */
+    for (let j = 0; j < 5; j++) { const m = X.reduce((a, r2) => a + r2[j], 0) / 60, s = Math.sqrt(X.reduce((a, r2) => a + (r2[j] - m) ** 2, 0) / 60); X.forEach(r2 => { r2[j] = (r2[j] - m) / s; }); }
+    const my = y.reduce((a, b) => a + b, 0) / 60;
+    return { X, y: y.map(v => v - my) };
+  }
+  function ridge(X, y, a) {
+    const d = 5, A = Array.from({ length: d }, (_, i) => Array.from({ length: d + 1 }, (_, j) => j < d ? X.reduce((s, r) => s + r[i] * r[j], 0) / X.length + (i === j ? a : 0) : X.reduce((s, r, k) => s + r[i] * y[k], 0) / X.length));
+    for (let c = 0; c < d; c++) for (let r = 0; r < d; r++) if (r !== c) { const t = A[r][c] / A[c][c]; for (let j = c; j <= d; j++) A[r][j] -= t * A[c][j]; }
+    return A.map((row, i) => row[d] / row[i]);
+  }
+  function lasso(X, y, a) {
+    const w = new Array(5).fill(0), n = X.length;
+    for (let it = 0; it < 300; it++) for (let j = 0; j < 5; j++) {
+      let rho = 0, zz = 0;
+      X.forEach((r, k) => { const pred = r.reduce((s, v, m) => s + (m === j ? 0 : v * w[m]), 0); rho += r[j] * (y[k] - pred); zz += r[j] * r[j]; });
+      rho /= n; zz /= n;
+      w[j] = rho > a ? (rho - a) / zz : rho < -a ? (rho + a) / zz : 0;
+    }
+    return w;
+  }
+  trace('mlreg', {
+    title: 'Ridge and lasso: what a penalty does to the weights',
+    sub: 'Five features: three really matter (size, rooms, age) and two are pure noise. Each step makes the penalty α stronger and shows the weights of ridge (left bars) and lasso (right bars).',
+    W: 600, H: 320,
+    params: [{ k: 'show', label: 'Show', type: 'select', v: 'both', opts: [['both', 'Ridge and lasso'], ['ridge', 'Only ridge'], ['lasso', 'Only lasso']] }],
+    frames(p) {
+      const { X, y } = data();
+      const alphas = [0, 0.1, 0.5, 1, 2, 4];
+      return alphas.map((a, i) => {
+        const R = ridge(X, y, a), L = lasso(X, y, a / 2);
+        const zeros = L.filter(v => v === 0).length;
+        return { a, R, L, say: i === 0 ? `With no penalty (α = 0) both are plain least squares: ${NAMES.map((n, j) => `${n} ${f2(R[j])}`).join(', ')}. The noise features get small weights that are not exactly 0.` :
+          `α = ${a}. Ridge shrinks every weight a little towards 0 but none reaches 0 (biggest ${f2(Math.max(...R.map(Math.abs)))}). Lasso has set <b>${zeros}</b> weight${zeros === 1 ? '' : 's'} to exactly 0${zeros ? ` (${NAMES.filter((n, j) => L[j] === 0).join(', ')})` : ''}.${a >= 2 && zeros >= 3 ? ' A strong penalty starts to remove real features too, so α must be chosen with cross validation.' : ''}` };
+      });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, `Penalty α = ${f.a}`, 20, 24, { s: 15 });
+      const zeroX = 330, sc = 70;
+      D.line(g, zeroX, 40, zeroX, 300, c.ink2, 1.5);
+      D.text(g, '0', zeroX, 314, { a: 'center', s: 11, c: c.ink2 });
+      NAMES.forEach((n, j) => {
+        const y = 52 + j * 50;
+        D.text(g, n, 20, y + 20, { s: 13, b: true, c: j < 3 ? c.ink : c.ink2 });
+        D.text(g, `true ${TRUE[j]}`, 100, y + 20, { s: 11, mono: true, c: c.ink2 });
+        const bar = (v, dy, col, label) => {
+          if (z.p.show !== 'both' && z.p.show !== label) return;
+          const w = v * sc;
+          rr(g, w >= 0 ? zeroX : zeroX + w, y + dy, Math.max(1.5, Math.abs(w)), 14, 3, { fill: col });
+          D.text(g, `${label} ${v === 0 ? '0' : f2(v)}`, w >= 0 ? zeroX + w + 6 : zeroX + w - 6, y + dy + 11, { s: 11, mono: true, a: w >= 0 ? 'left' : 'right', c: col, b: v === 0 });
+        };
+        bar(f.R[j], 4, c.cv, 'ridge');
+        bar(f.L[j], 22, c.orange, 'lasso');
+      });
+    }
+  });
+})();
