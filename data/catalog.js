@@ -8049,6 +8049,30 @@ function mlFoundModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-f2", title: "Maths you need", emoji: "2", step: 2, part: "foundations", level: "Beginner", blurb: "The linear algebra, calculus and probability that every model uses, explained with simple words, pictures and code.", topics: [
+      { id: "ml-linalg", title: "Linear algebra for ML: vectors, distances and matrices", emoji: "2.1", page: "content/machine-learning/ml-linalg.html",
+        summary: "vectors and distances, matrices and products, the linear model, inverses, rank, projections and eigenvectors.",
+        keywords: ["linear algebra", "vector", "dot product", "Euclidean distance", "cosine similarity", "matrix multiplication", "determinant", "inverse", "rank", "eigenvalues"],
+        minutes: 60, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "vectors", title: "Vectors: every example is a list of numbers", emoji: "", group: "Lesson", keywords: ["vector", "component", "dimension", "vector addition", "scalar multiplication", "dot product", "feature vector"] },
+        { id: "distance", title: "Length, distance and similarity", emoji: "", group: "Lesson", keywords: ["Euclidean distance", "Manhattan distance", "L1 norm", "L2 norm", "cosine similarity", "distance metric", "feature scaling"] },
+        { id: "matrices", title: "Matrices: tables of numbers that transform vectors", emoji: "", group: "Lesson", keywords: ["matrix", "matrix vector product", "matrix multiplication", "identity", "transpose", "symmetric", "inverse", "shape rule"] },
+        { id: "model", title: "A linear model is a matrix product", emoji: "", group: "Lesson", keywords: ["linear model", "X w + b", "weights", "bias", "bias trick", "prediction as matrix product"] },
+        { id: "systems", title: "Systems of equations, inverse, determinant and rank", emoji: "", group: "Lesson", keywords: ["system of equations", "np.linalg.solve", "determinant", "inverse", "rank", "linear independence", "multicollinearity"] },
+        { id: "eigen", title: "Projections and eigenvectors: a first look", emoji: "", group: "Lesson", keywords: ["projection", "eigenvector", "eigenvalue", "eigh", "trace", "PCA preview", "least squares geometry"] },
+        { id: "versus", title: "Which distance to use", emoji: "", group: "Lesson", keywords: ["distance comparison", "Chebyshev", "L infinity", "NumPy vs loops", "BLAS"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["dot product angle", "orthogonal", "transpose of product", "pairwise distance", "Cauchy Schwarz"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "column space", "condition number", "spectral theorem", "SVD", "Eckart Young", "LoRA"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "Manhattan distance", "Chebyshev distance", "Euclidean distance", "reshape", "determinant", "rotation"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

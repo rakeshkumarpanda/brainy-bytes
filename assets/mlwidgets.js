@@ -535,3 +535,126 @@ const MLZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 2.1  distance between two examples: Euclidean, Manhattan and cosine
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, plot, D, f2, nums } = MLZ;
+  trace('mldist', {
+    title: 'How far apart are two examples?',
+    sub: 'Each example is a point (a vector). Pick a way to measure distance and watch it being worked out piece by piece.',
+    W: 600, H: 330,
+    params: [
+      { k: 'a', label: 'Point A (x, y)', type: 'text', v: '1, 2' },
+      { k: 'b', label: 'Point B (x, y)', type: 'text', v: '4, 6' },
+      { k: 'm', label: 'Distance', type: 'select', v: 'euc', opts: [['euc', 'Euclidean (straight line, L2)'], ['man', 'Manhattan (city blocks, L1)'], ['cos', 'Cosine (angle between the arrows)']] }
+    ],
+    tips: [
+      { t: 'Manhattan distance walks along the grid like a taxi in a city. It is always at least as long as the straight line.', set: { m: 'man' }, play: true },
+      { t: 'Cosine: set B to 2, 4, which points the same way as A = 1, 2 but is twice as long. Cosine distance is 0 because only the direction matters. Text search uses this.', set: { m: 'cos', b: '2, 4' }, play: true }
+    ],
+    frames(p) {
+      const A = nums(p.a), B = nums(p.b);
+      if (A.length !== 2 || B.length !== 2) throw new Error('Each point needs exactly two numbers, such as 1, 2.');
+      const dx = B[0] - A[0], dy = B[1] - A[1];
+      const fr = [];
+      fr.push({ A, B, s: 0, say: `Point A is (${A.join(', ')}) and point B is (${B.join(', ')}). In ML each example is a list of feature values, so it is a point in space. Similar examples are close together.` });
+      if (p.m === 'euc') {
+        fr.push({ A, B, s: 1, say: `Find the gap on each axis: across ${B[0]} − ${A[0]} = <b>${f2(dx)}</b>, up ${B[1]} − ${A[1]} = <b>${f2(dy)}</b>.` });
+        fr.push({ A, B, s: 2, say: `Square each gap so the sign does not matter: ${f2(dx)}² = ${f2(dx * dx)} and ${f2(dy)}² = ${f2(dy * dy)}. Add them: ${f2(dx * dx + dy * dy)}.` });
+        fr.push({ A, B, s: 3, done: true, say: `Take the square root: √${f2(dx * dx + dy * dy)} = <b>${f2(Math.hypot(dx, dy))}</b>. This is Pythagoras, the straight line length. With more features you just add more squared gaps. k nearest neighbours and k means use it.` });
+      } else if (p.m === 'man') {
+        fr.push({ A, B, s: 1, say: `Gap across: |${f2(dx)}| = ${f2(Math.abs(dx))}. Gap up: |${f2(dy)}| = ${f2(Math.abs(dy))}. We use the size of each gap, ignoring the sign.` });
+        fr.push({ A, B, s: 4, done: true, say: `Add them: ${f2(Math.abs(dx))} + ${f2(Math.abs(dy))} = <b>${f2(Math.abs(dx) + Math.abs(dy))}</b>. Like a taxi that can only drive along the streets of a grid city. It is less affected by one huge gap than Euclidean distance.` });
+      } else {
+        const dot = A[0] * B[0] + A[1] * B[1], na = Math.hypot(...A), nb = Math.hypot(...B);
+        if (!na || !nb) throw new Error('Cosine needs points that are not at (0, 0).');
+        const cs = dot / (na * nb);
+        fr.push({ A, B, s: 5, say: `Dot product A · B = ${A[0]}×${B[0]} + ${A[1]}×${B[1]} = <b>${f2(dot)}</b>.` });
+        fr.push({ A, B, s: 5, say: `Lengths: |A| = √(${A[0]}² + ${A[1]}²) = ${f2(na)} and |B| = ${f2(nb)}.` });
+        fr.push({ A, B, s: 6, done: true, say: `Cosine similarity = ${f2(dot)} / (${f2(na)} × ${f2(nb)}) = <b>${f2(cs, 3)}</b>, an angle of about ${f2(Math.acos(Math.max(-1, Math.min(1, cs))) * 180 / Math.PI, 0)} degrees. Cosine distance = 1 − similarity = <b>${f2(1 - cs, 3)}</b>. Only the direction counts, not the length.` });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, A = f.A, B = f.B;
+      const xs = [0, A[0], B[0]], ys = [0, A[1], B[1]];
+      const lo = Math.min(...xs, ...ys) - 1, hi = Math.max(...xs, ...ys) + 1;
+      const P = plot(z, [10, 10, 330, 310], [lo, hi], [lo, hi], { dx: 0, dy: 0 });
+      if (f.s >= 5) { D.arrow(z.g, P.X(0), P.Y(0), P.X(A[0]), P.Y(A[1]), c.cv, 2.5); D.arrow(z.g, P.X(0), P.Y(0), P.X(B[0]), P.Y(B[1]), c.orange, 2.5); }
+      if (f.s === 1 || f.s === 2 || f.s === 4) {
+        D.line(z.g, P.X(A[0]), P.Y(A[1]), P.X(B[0]), P.Y(A[1]), c.green, 2.5);
+        D.line(z.g, P.X(B[0]), P.Y(A[1]), P.X(B[0]), P.Y(B[1]), c.green, 2.5);
+      }
+      if (f.s === 2 || f.s === 3) D.line(z.g, P.X(A[0]), P.Y(A[1]), P.X(B[0]), P.Y(B[1]), c.red, 2.5, f.s === 2 ? [5, 4] : null);
+      D.circle(z.g, P.X(A[0]), P.Y(A[1]), 6, { fill: c.cv });
+      D.circle(z.g, P.X(B[0]), P.Y(B[1]), 6, { fill: c.orange });
+      D.text(z.g, 'A', P.X(A[0]) + 8, P.Y(A[1]) - 6, { s: 13, b: true, c: c.cv });
+      D.text(z.g, 'B', P.X(B[0]) + 8, P.Y(B[1]) - 6, { s: 13, b: true, c: c.orange });
+      head(z, 'Formulas', 360, 30);
+      const rows = [['Euclidean (L2)', '√(Σ (aᵢ − bᵢ)²)'], ['Manhattan (L1)', 'Σ |aᵢ − bᵢ|'], ['Cosine similarity', 'A·B / (|A| |B|)']];
+      const which = { euc: 0, man: 1, cos: 2 }[z.p.m];
+      rows.forEach((r, i) => box(z, 360, 44 + i * 58, 228, 48, `${r[0]}:  ${r[1]}`, { fill: i === which ? c.cv : c.surf, c: i === which ? '#fff' : c.ink, s: 12, b: i === which }));
+      if (f.done) D.text(z.g, 'Done', 588, 236, { a: 'right', s: 13, b: true, c: c.green });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 2.1  a matrix times a vector, row by row, and what it does to the plane
+   ===================================================================================================== */
+(() => {
+  const { trace, box, head, plot, D, f2, nums, grid } = MLZ;
+  trace('mlmatvec', {
+    title: 'A matrix times a vector: one dot product per row',
+    sub: 'Type a 2 × 2 matrix and a vector. Each row of the matrix gives one number of the answer. At the end you see what the matrix does to every point: it stretches, turns or flips the plane.',
+    W: 600, H: 330,
+    params: [
+      { k: 'm', label: 'Matrix rows (a b, c d)', type: 'text', v: '2 1, 0 1' },
+      { k: 'v', label: 'Vector (x, y)', type: 'text', v: '1, 2' }
+    ],
+    tips: [
+      { t: 'Matrix 0 -1, 1 0 turns every point a quarter turn (90 degrees) to the left.', set: { m: '0 -1, 1 0' }, play: true },
+      { t: 'Matrix 2 0, 0 0.5 stretches across and squashes up. Scaling features does the same to the data cloud.', set: { m: '2 0, 0 0.5' }, play: true }
+    ],
+    frames(p) {
+      const r = String(p.m).split(',').map(s => nums(s));
+      if (r.length !== 2 || r.some(x => x.length !== 2)) throw new Error('Type two rows of two numbers, for example 2 1, 0 1.');
+      const v = nums(p.v);
+      if (v.length !== 2) throw new Error('The vector needs two numbers.');
+      const out = [r[0][0] * v[0] + r[0][1] * v[1], r[1][0] * v[0] + r[1][1] * v[1]];
+      const det = r[0][0] * r[1][1] - r[0][1] * r[1][0];
+      return [
+        { r, v, s: 0, say: `We want M × v, where M = [[${r[0].join(', ')}], [${r[1].join(', ')}]] and v = (${v.join(', ')}). The answer is a new vector with one number per row of M.` },
+        { r, v, s: 1, out, say: `Row 1 · v = ${r[0][0]}×${v[0]} + ${r[0][1]}×${v[1]} = <b>${f2(out[0])}</b>. This is the first number of the answer.` },
+        { r, v, s: 2, out, say: `Row 2 · v = ${r[1][0]}×${v[0]} + ${r[1][1]}×${v[1]} = <b>${f2(out[1])}</b>. So M × v = (${f2(out[0])}, ${f2(out[1])}). A linear model with many outputs does exactly this, one row of weights per output.` },
+        { r, v, s: 3, out, det, done: true, say: `The picture shows the effect on the whole plane: the grey unit square becomes the orange shape. Its area is multiplied by the <b>determinant</b> ad − bc = ${f2(det)}. ${det === 0 ? 'A determinant of 0 squashes the plane onto a line, so the matrix has no inverse.' : det < 0 ? 'A negative determinant also flips the plane like a mirror.' : 'Every point moves the same way, which is why it is called a linear transformation.'}` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, r = f.r, v = f.v;
+      grid(z, [[r[0][0], r[0][1]], [r[1][0], r[1][1]]].map(x => x.map(y => f2(y, Number.isInteger(y) ? 0 : 2))), 20, 40, 46, 36, { hl: (i) => (f.s === 1 && i === 0) || (f.s === 2 && i === 1), mono: true, s: 14 });
+      D.text(z.g, '×', 120, 82, { s: 20, b: true, c: c.ink });
+      grid(z, [[v[0]], [v[1]]], 140, 40, 46, 36, { mono: true, s: 14 });
+      if (f.out) {
+        D.text(z.g, '=', 200, 82, { s: 20, b: true, c: c.ink });
+        grid(z, [[f2(f.out[0])], [f.s >= 2 ? f2(f.out[1]) : '?']], 222, 40, 60, 36, { hl: (i) => i === f.s - 1, mono: true, s: 14 });
+      }
+      head(z, 'M (matrix)', 20, 30); head(z, 'v', 140, 30); if (f.out) head(z, 'M v', 222, 30);
+      const pts = [[0, 0], [1, 0], [1, 1], [0, 1]];
+      const T = q => [r[0][0] * q[0] + r[0][1] * q[1], r[1][0] * q[0] + r[1][1] * q[1]];
+      const all = pts.concat(pts.map(T), [v, f.out || v]);
+      const ext = Math.max(2, ...all.map(q => Math.max(Math.abs(q[0]), Math.abs(q[1])))) + 0.5;
+      const P = plot(z, [310, 10, 280, 310], [-ext, ext], [-ext, ext], { dx: 0, dy: 0 });
+      D.line(z.g, P.X(-ext), P.Y(0), P.X(ext), P.Y(0), c.ink2, 1);
+      D.line(z.g, P.X(0), P.Y(-ext), P.X(0), P.Y(ext), c.ink2, 1);
+      const poly = (qs, col, fill) => { const g = z.g; g.save(); g.beginPath(); qs.forEach((q, i) => i ? g.lineTo(P.X(q[0]), P.Y(q[1])) : g.moveTo(P.X(q[0]), P.Y(q[1]))); g.closePath(); g.globalAlpha = 0.25; g.fillStyle = fill; g.fill(); g.globalAlpha = 1; g.strokeStyle = col; g.lineWidth = 2; g.stroke(); g.restore(); };
+      poly(pts, c.ink2, c.ink2);
+      if (f.s >= 3) poly(pts.map(T), c.orange, c.orange);
+      D.arrow(z.g, P.X(0), P.Y(0), P.X(v[0]), P.Y(v[1]), c.cv, 2.5);
+      if (f.out && f.s >= 2) D.arrow(z.g, P.X(0), P.Y(0), P.X(f.out[0]), P.Y(f.out[1]), c.green, 2.5);
+      D.text(z.g, 'blue: v   green: M v', 318, 312, { s: 11, c: c.ink2 });
+    }
+  });
+})();
