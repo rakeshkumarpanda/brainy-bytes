@@ -8693,6 +8693,28 @@ function mlRlModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-r2", title: "Solving MDPs", emoji: "2", step: 2, part: "reinforcement", level: "Advanced", blurb: "Find good policies: plan with a known model by dynamic programming, then learn from experience with Monte Carlo, temporal difference learning, SARSA and Q learning.", topics: [
+      { id: "ml-dp", title: "Dynamic programming: policy and value iteration", emoji: "2.1", page: "content/machine-learning/ml-dp.html",
+        summary: "Policy evaluation, policy iteration, value iteration on FrozenLake and the gambler, and generalised policy iteration.",
+        keywords: ["dynamic programming", "policy iteration", "value iteration", "policy evaluation", "policy improvement", "FrozenLake", "gambler problem", "generalised policy iteration", "Bellman backup", "curse of dimensionality"],
+        minutes: 50, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Dynamic programming and policy evaluation", emoji: "", group: "Lesson", keywords: ["dynamic programming", "policy evaluation", "iterative policy evaluation", "synchronous update", "in place update", "convergence threshold"] },
+        { id: "pi", title: "Policy improvement and policy iteration", emoji: "", group: "Lesson", keywords: ["policy improvement theorem", "policy iteration", "greedy policy", "Howard", "convergence in finite steps"] },
+        { id: "vi", title: "Value iteration", emoji: "", group: "Lesson", keywords: ["value iteration", "Bellman optimality backup", "policy extraction", "FrozenLake", "gambler problem", "bold play"] },
+        { id: "gpi", title: "Generalised policy iteration and the limits of DP", emoji: "", group: "Lesson", keywords: ["generalised policy iteration", "asynchronous DP", "curse of dimensionality", "linear programming", "prioritised sweeping"] },
+        { id: "versus", title: "Policy iteration and value iteration compared", emoji: "", group: "Lesson", keywords: ["policy iteration vs value iteration", "dynamic programming comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["policy evaluation matrix form", "policy improvement theorem", "value iteration formula", "stopping rule", "proof"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "approximate dynamic programming", "real time dynamic programming"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "dynamic programming", "Bellman Ford", "shortest paths", "state space"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

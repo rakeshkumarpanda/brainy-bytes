@@ -406,3 +406,130 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Reinforcement 2.1  dynamic programming: policy evaluation on the 4 x 4 gridworld, value iteration on FrozenLake
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr } = MLZ;
+  const ARW = ['↑', '↓', '←', '→'];
+  /* draw an arrow glyph set in a cell: dirs is a list of indices into ARW */
+  function arrows(z, x, y, s, dirs, col) {
+    const g = z.g, cy = y + s * 0.4, off = [[0, -13], [0, 13], [-16, 0], [16, 0]];
+    dirs.forEach(d => D.text(g, ARW[d], x + s / 2 + off[d][0], cy + off[d][1] + 5, { a: 'center', s: 13, b: true, c: col }));
+  }
+
+  trace('mlpolicyeval', {
+    title: 'Policy evaluation: sweep the Bellman equation until the values settle',
+    sub: 'The 4 × 4 gridworld: the shaded corners are exits, every move costs −1, and the policy moves up, down, left or right with chance 1/4 each. Each sweep sets every value to the average over the four moves of −1 + γ × (value of the cell you land in). The small arrows show the greedy moves for the current values.',
+    W: 600, H: 330,
+    params: [{ k: 'g', label: 'Discount γ', type: 'range', v: 1, min: 0.5, max: 1, step: 0.05 }],
+    tips: [
+      { t: 'γ = 0.5: far future costs hardly count, so values stay between −1 and −2 and settle in a few sweeps.', set: { g: 0.5 }, play: true },
+      { t: 'γ = 0.9: values settle much faster than with γ = 1, and the greedy arrows still point to the exits.', set: { g: 0.9 }, play: true }
+    ],
+    frames(p) {
+      const g = +p.g, mv = [-4, 4, -1, 1];
+      const nx = (s, m) => { const r = Math.floor(s / 4), c = s % 4; return (m === -4 && r === 0) || (m === 4 && r === 3) || (m === -1 && c === 0) || (m === 1 && c === 3) ? s : s + m; };
+      const greedy = V => V.map((_, s) => { if (s === 0 || s === 15) return []; const q = mv.map(m => -1 + g * V[nx(s, m)]), b = Math.max(...q); return q.map((v, i) => (Math.abs(v - b) < 1e-6 ? i : -1)).filter(i => i >= 0); });
+      let V = Array(16).fill(0);
+      const fr = [{ V: V.slice(), k: 0, G: greedy(V), g, say: 'Sweep 0: every value starts at 0. All moves look equally good, so every cell shows all four greedy arrows.' }];
+      const show = [1, 2, 3, 5, 10, 30];
+      let k = 0, delta = 1;
+      while (delta > 1e-4 && k < 2000) {
+        k++;
+        const nw = V.map((_, s) => (s === 0 || s === 15 ? 0 : mv.reduce((a, m) => a + 0.25 * (-1 + g * V[nx(s, m)]), 0)));
+        delta = Math.max(...nw.map((v, i) => Math.abs(v - V[i])));
+        const old = V; V = nw;
+        if (show.includes(k)) fr.push({ V: V.slice(), k, G: greedy(V), g, say: k === 1 ? 'Sweep 1: one move costs −1 and all next values were 0, so every non exit cell becomes −1. Cells next to an exit already prefer stepping into it.'
+          : k === 2 ? `Sweep 2: cell 1 = ¼ × (−1 + ${f2(g, 2)} × 0) + ¾ × (−1 + ${f2(g, 2)} × (−1)) = ${f2(V[1], 3)}. Cells near an exit lose less.`
+            : `After ${k} sweeps the largest change in one sweep was ${f2(delta, 4)}. The greedy arrows ${k >= 3 ? 'already form shortest paths to the exits' : 'are sorting themselves out'}.` });
+        void old;
+      }
+      fr.push({ V: V.slice(), k, G: greedy(V), g, done: true, say: `Converged after ${k} sweeps (largest change below 0.0001). ${g === 1 ? 'These are the values −14, −18, −20 and −22 from Sutton and Barto’s example 4.1.' : ''} The policy was random, yet acting greedily on its values gives an optimal policy here.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, s = 66, x0 = 20, y0 = 26;
+      const lo = Math.min(-1, ...f.V);
+      for (let i = 0; i < 16; i++) {
+        const r = Math.floor(i / 4), cc = i % 4, x = x0 + cc * s, y = y0 + r * s, exit = i === 0 || i === 15;
+        const t = exit ? 0 : f.V[i] / lo;
+        rr(g, x, y, s - 3, s - 3, 6, { fill: exit ? 'rgba(22,163,74,0.25)' : `rgba(220,38,38,${(0.06 + 0.4 * t).toFixed(3)})`, stroke: c.line });
+        D.text(g, exit ? 'exit' : f2(f.V[i], 1), x + s / 2 - 1, exit ? y + s / 2 + 5 : y + s - 9, { a: 'center', s: exit ? 13 : 11, b: true, mono: !exit, c: exit ? c.green : c.ink });
+        if (!exit) arrows(z, x, y, s - 3, f.G[i], klass(z, 0));
+      }
+      const x = 310;
+      head(z, f.done ? `converged, sweep ${f.k}` : `sweep ${f.k}`, x, 30);
+      D.text(g, `γ = ${f2(f.g, 2)}`, x, 56, { s: 13, b: true, c: klass(z, 1) });
+      D.text(g, 'v(s) ← Σₐ 0.25 (−1 + γ v(s′))', x, 88, { s: 12, mono: true, b: true, c: c.cv });
+      D.text(g, 'darker red: more costly to finish', x, 116, { s: 11, c: c.ink2 });
+      D.text(g, 'arrows: greedy moves for these values', x, 134, { s: 11, c: klass(z, 0) });
+    }
+  });
+
+  const MAP = 'SFFFFHFHFFFHHFFG', DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]], GL = ['←', '↓', '→', '↑'];
+  trace('mlvalueiter', {
+    title: 'Value iteration on slippery ice',
+    sub: 'The FrozenLake map from Gymnasium: start S, holes H, goal G (reward 1). On slippery ice the agent may slide to either side of the way it chose. Each sweep sets every value to the best action’s expected next value. The arrows show the best action. Watch the value spread back from the goal.',
+    W: 600, H: 330,
+    params: [
+      { k: 'slip', label: 'Chance of sliding sideways', type: 'range', v: 0.67, min: 0, max: 0.67, step: 0.01 },
+      { k: 'g', label: 'Discount γ', type: 'range', v: 0.99, min: 0.5, max: 0.99, step: 0.01 }
+    ],
+    tips: [
+      { t: 'No sliding: the agent walks a shortest 6 move route and always succeeds, so the start is worth 0.99⁵ = 0.951, because the reward arrives on the sixth move.', set: { slip: 0, g: 0.99 }, play: true },
+      { t: 'γ = 0.7 on slippery ice: long careful routes are not worth it, so the values near the start shrink a lot.', set: { slip: 0.67, g: 0.7 }, play: true }
+    ],
+    frames(p) {
+      const sl = +p.slip, g = +p.g;
+      const T = (s, a) => {
+        if (MAP[s] === 'H' || MAP[s] === 'G') return [];
+        const out = [];
+        [[a - 1, sl / 2], [a, 1 - sl], [a + 1, sl / 2]].forEach(([b, pr]) => {
+          if (pr <= 0) return;
+          const [dr, dc] = DIRS[(b + 4) % 4];
+          const r = Math.min(3, Math.max(0, Math.floor(s / 4) + dr)), c = Math.min(3, Math.max(0, (s % 4) + dc)), s2 = 4 * r + c;
+          out.push([pr, s2, MAP[s2] === 'G' ? 1 : 0, MAP[s2] === 'H' || MAP[s2] === 'G']);
+        });
+        return out;
+      };
+      const Q = (V, s, a) => T(s, a).reduce((acc, [pr, s2, r, done]) => acc + pr * (r + (done ? 0 : g * V[s2])), 0);
+      const pol = V => V.map((_, s) => { if (MAP[s] === 'H' || MAP[s] === 'G') return -1; const q = [0, 1, 2, 3].map(a => Q(V, s, a)), m = Math.max(...q); return m < 1e-9 ? -1 : q.findIndex(v => v > m - 1e-9); });
+      let V = Array(16).fill(0);
+      const fr = [{ V: V.slice(), k: 0, pi: pol(V), sl, g, say: `All values start at 0. The only reward is 1 for stepping onto G. Chance of going the chosen way: ${f2(1 - sl, 2)}, sliding to each side: ${f2(sl / 2, 2)}.` }];
+      const show = [1, 2, 3, 4, 5, 6, 8, 10, 20, 50, 100];
+      let k = 0, delta = 1;
+      while (delta > 1e-6 && k < 3000) {
+        k++;
+        const nw = V.map((_, s) => Math.max(...[0, 1, 2, 3].map(a => Q(V, s, a))));
+        delta = Math.max(...nw.map((v, i) => Math.abs(v - V[i])));
+        V = nw;
+        if (show.includes(k)) fr.push({ V: V.slice(), k, pi: pol(V), sl, g, say: k <= 3 ? `Sweep ${k}: value has reached the cells ${k} step${k > 1 ? 's' : ''} from the goal. Cells with no route yet stay at 0 and show no arrow.` : `After ${k} sweeps the start is worth ${f2(V[0], 3)} and the largest change was ${f2(delta, 5)}.` });
+      }
+      const PF = pol(V);
+      fr.push({ V: V.slice(), k, pi: PF, sl, g, done: true, say: `Converged after ${k} sweeps. The start is worth <b>${f2(V[0], 3)}</b>${sl > 0 ? (g >= 0.95 ? ', a little below the chance of reaching the goal with the best policy, because γ shrinks late rewards' : '. With γ this small the value mostly says how soon the goal can be reached, not how likely it is, and far cells are worth almost nothing') : ''}. ${sl > 0.5 && PF[0] === 0 ? 'On very slippery ice the best first move at S points left, into the wall: it can never slide into a hole that way.' : sl === 0 ? 'Without sliding the policy walks a shortest path.' : 'Look at how the arrows steer away from the holes.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, s = 66, x0 = 20, y0 = 26;
+      for (let i = 0; i < 16; i++) {
+        const r = Math.floor(i / 4), cc = i % 4, x = x0 + cc * s, y = y0 + r * s, ch = MAP[i];
+        const fill = ch === 'H' ? 'rgba(15,23,42,0.55)' : ch === 'G' ? 'rgba(22,163,74,0.35)' : `rgba(37,99,235,${(0.05 + 0.5 * f.V[i]).toFixed(3)})`;
+        rr(g, x, y, s - 3, s - 3, 6, { fill, stroke: c.line });
+        if (ch === 'H') { D.text(g, 'hole', x + s / 2 - 1, y + s / 2 + 5, { a: 'center', s: 12, b: true, c: '#fff' }); continue; }
+        if (ch === 'G') { D.text(g, 'goal', x + s / 2 - 1, y + s / 2 + 5, { a: 'center', s: 12, b: true, c: c.green }); continue; }
+        D.text(g, f2(f.V[i], 2), x + s / 2 - 1, y + s - 12, { a: 'center', s: 11, mono: true, c: c.ink });
+        if (f.pi[i] >= 0) D.text(g, GL[f.pi[i]], x + s / 2 - 1, y + 30, { a: 'center', s: 20, b: true, c: klass(z, 1) });
+        if (ch === 'S') D.text(g, 'S', x + 8, y + 16, { s: 11, b: true, c: c.ink2 });
+      }
+      const x = 310;
+      head(z, f.done ? `converged, sweep ${f.k}` : `sweep ${f.k}`, x, 30);
+      D.text(g, `slide sideways ${f2(f.sl, 2)}   γ = ${f2(f.g, 2)}`, x, 56, { s: 12, mono: true, c: c.ink });
+      D.text(g, 'v(s) ← maxₐ Σ p (r + γ v(s′))', x, 88, { s: 12, mono: true, b: true, c: c.cv });
+      D.text(g, `value of start ${f2(f.V[0], 3)}`, x, 120, { s: 14, b: true, c: klass(z, 0) });
+      D.text(g, 'orange arrow: best action', x, 150, { s: 11, c: klass(z, 1) });
+      D.text(g, 'deeper blue: higher value', x, 168, { s: 11, c: c.ink2 });
+    }
+  });
+})();
