@@ -8310,6 +8310,30 @@ function mlSupModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-s3", title: "Trees and ensembles", emoji: "3", step: 3, part: "supervised", level: "Intermediate", blurb: "Ask the data a chain of yes or no questions, then combine hundreds of such trees into the strongest models for tables.", topics: [
+      { id: "ml-trees", title: "Decision trees: a chain of yes or no questions", emoji: "3.1", page: "content/machine-learning/ml-trees.html",
+        summary: "Questions chosen by Gini and entropy, overfitting and pruning, regression trees, feature importance, and instability.",
+        keywords: ["decision tree", "Gini impurity", "entropy", "information gain", "pruning", "ccp_alpha", "regression tree", "feature importance", "CART", "DecisionTreeClassifier"],
+        minutes: 55, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "A model made of yes or no questions", emoji: "", group: "Lesson", keywords: ["decision tree", "CART", "leaf", "root", "split", "export_text", "interpretable model"] },
+        { id: "split", title: "Choosing a split: Gini and entropy", emoji: "", group: "Lesson", keywords: ["Gini impurity", "entropy", "information gain", "best split", "impurity", "criterion"] },
+        { id: "depth", title: "Overfitting, depth and pruning", emoji: "", group: "Lesson", keywords: ["overfitting", "max_depth", "min_samples_leaf", "pruning", "cost complexity pruning", "ccp_alpha"] },
+        { id: "regress", title: "Regression trees", emoji: "", group: "Lesson", keywords: ["regression tree", "DecisionTreeRegressor", "step function", "squared error split", "extrapolation"] },
+        { id: "importance", title: "Feature importance", emoji: "", group: "Lesson", keywords: ["feature importance", "impurity importance", "permutation importance", "MDI", "bias towards high cardinality"] },
+        { id: "instability", title: "Why one tree is not enough", emoji: "", group: "Lesson", keywords: ["instability", "variance", "bootstrap", "ensembles", "strengths and weaknesses"] },
+        { id: "versus", title: "Trees compared", emoji: "", group: "Lesson", keywords: ["tree vs logistic regression", "tree vs KNN", "interpretability", "axis parallel"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["Gini formula", "entropy formula", "weighted impurity", "regression split", "cost complexity", "CART", "C4.5", "NP complete"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "optimal trees", "oblique trees", "model trees"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "binary tree", "depth", "paths", "breadth first search", "binary search tree"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

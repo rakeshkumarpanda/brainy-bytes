@@ -839,3 +839,158 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 3.1  choosing a split: try every cut point and keep the lowest weighted Gini
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rr } = MLZ;
+  const gini = L => { if (!L.length) return 0; const n = {}; L.forEach(c => { n[c] = (n[c] || 0) + 1; }); return 1 - Object.values(n).reduce((s, k) => s + (k / L.length) ** 2, 0); };
+  trace('mlgini', {
+    title: 'Decision tree split: try every cut, keep the purest',
+    sub: 'Type values with a class (value class). A tree tries a cut between every pair of neighbouring values, measures how mixed each side is with the Gini impurity, and keeps the cut with the lowest weighted Gini.',
+    W: 600, H: 330,
+    params: [{ k: 'pts', label: 'Values (value class)', type: 'area', v: '1 no; 2 no; 3 no; 4 no; 5 yes; 6 no; 7 yes; 8 yes' }],
+    tips: [
+      { t: 'Perfectly separable values: the best cut gives Gini 0 on both sides.', set: { pts: '1 no; 2 no; 3 no; 6 yes; 7 yes; 8 yes' }, play: true },
+      { t: 'Three classes: Gini works the same way, 1 minus the sum of squared shares.', set: { pts: '1 a; 2 a; 3 b; 4 b; 5 b; 6 c; 7 c; 8 a' }, play: true }
+    ],
+    frames(p) {
+      const P = String(p.pts).split(/[\n;]+/).map(s => s.trim()).filter(Boolean).map(s => { const t = s.replace(/−/g, '-').split(/[\s,]+/); return { x: +t[0], c: t[1] || 'A' }; }).filter(a => !isNaN(a.x)).sort((a, b) => a.x - b.x).slice(0, 14);
+      if (P.length < 2) throw new Error('Type at least two values with a class, for example 3 yes');
+      const classes = [...new Set(P.map(a => a.c))].sort();
+      const g0 = gini(P.map(a => a.c));
+      const cuts = [];
+      for (let i = 1; i < P.length; i++) {
+        if (P[i].x === P[i - 1].x) continue;
+        const cut = (P[i - 1].x + P[i].x) / 2, L = P.filter(a => a.x < cut).map(a => a.c), R = P.filter(a => a.x >= cut).map(a => a.c);
+        cuts.push({ cut, nl: L.length, nr: R.length, gl: gini(L), gr: gini(R), w: (L.length * gini(L) + R.length * gini(R)) / P.length });
+      }
+      let best = 0; cuts.forEach((c, i) => { if (c.w < cuts[best].w - 1e-12) best = i; });
+      const b = { P, classes, g0, cuts };
+      const share = classes.map(c => `${c} ${P.filter(a => a.c === c).length}`).join(', ');
+      const fr = [{ ...b, st: 1, say: `${P.length} examples (${share}). Before any split the Gini impurity is 1 − Σ(share)² = <b>${f2(g0, 3)}</b>. 0 would mean one class only.` }];
+      cuts.forEach((c, i) => fr.push({ ...b, st: 2, upto: i, say: `Cut at ${f2(c.cut)}: left ${c.nl} example${c.nl === 1 ? "" : "s"} with Gini ${f2(c.gl, 3)}, right ${c.nr} with Gini ${f2(c.gr, 3)}. Weighted Gini = (${c.nl} × ${f2(c.gl, 3)} + ${c.nr} × ${f2(c.gr, 3)}) ÷ ${P.length} = <b>${f2(c.w, 3)}</b>.` }));
+      fr.push({ ...b, st: 3, upto: cuts.length - 1, best, say: `The best cut is at <b>${f2(cuts[best].cut)}</b> with weighted Gini ${f2(cuts[best].w, 3)}, a drop of ${f2(g0 - cuts[best].w, 3)} from ${f2(g0, 3)}. The tree asks "value < ${f2(cuts[best].cut)}?" and then repeats the same search inside each side.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.P.map(a => a.x), lo = Math.min(...xs), hi = Math.max(...xs), pad = (hi - lo) * 0.08 + 0.5;
+      const P = plot(z, [10, 10, 580, 130], [lo - pad, hi + pad], [-1, 1], { dx: 1, dy: 0, grid: false });
+      D.line(g, P.X(lo - pad), P.Y(0), P.X(hi + pad), P.Y(0), c.line, 1.2);
+      const cur = f.st === 3 ? f.cuts[f.best] : f.st === 2 ? f.cuts[f.upto] : null;
+      if (cur) D.line(g, P.X(cur.cut), P.Y(0.9), P.X(cur.cut), P.Y(-0.9), f.st === 3 ? c.cv : c.ink2, 2, f.st === 3 ? undefined : [5, 4]);
+      f.P.forEach((a, i) => {
+        const k = f.classes.indexOf(a.c), same = f.P.filter((q, j) => j < i && q.x === a.x).length;
+        D.circle(g, P.X(a.x), P.Y(0) - same * 14, 7, { fill: klass(z, k) });
+        D.text(g, a.c, P.X(a.x), P.Y(0) - 14 - same * 14, { a: 'center', s: 10, b: true, c: c.ink2 });
+        D.text(g, f2(a.x, 1), P.X(a.x), P.Y(0) + 20, { a: 'center', s: 10, c: c.ink2 });
+      });
+      if (f.st >= 2) {
+        head(z, 'Weighted Gini for each cut (lower is purer)', 16, 166);
+        const n = f.cuts.length, bw = Math.min(56, 540 / n - 6), mx = Math.max(f.g0, ...f.cuts.map(t => t.w)) || 1;
+        f.cuts.forEach((t, i) => {
+          if (i > f.upto) return;
+          const x = 30 + i * (540 / n), h = t.w / mx * 110;
+          rr(g, x, 300 - h, bw, Math.max(2, h), 3, { fill: f.st === 3 && i === f.best ? c.cv : klass(z, 1) });
+          D.text(g, f2(t.w, 3), x + bw / 2, 294 - h, { a: 'center', s: 10, b: true, c: c.ink });
+          D.text(g, f2(t.cut, 1), x + bw / 2, 316, { a: 'center', s: 10, c: c.ink2 });
+        });
+        D.line(g, 24, 300 - f.g0 / mx * 110, 580, 300 - f.g0 / mx * 110, c.ink2, 1, [3, 3]);
+        D.text(g, `before split ${f2(f.g0, 3)}`, 580, 296 - f.g0 / mx * 110, { a: 'right', s: 10, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 3.1  growing a tree: each split cuts one box in two, parallel to an axis
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  function data(kind, seed) {
+    const r = rng(seed), P = [];
+    for (let i = 0; i < 70; i++) {
+      const x = r() * 10, y = r() * 10;
+      let c;
+      if (kind === 'diag') c = y > x + (r() - 0.5) * 1.2 ? 1 : 0;
+      else if (kind === 'ring') c = Math.hypot(x - 5, y - 5) < 3 + (r() - 0.5) * 0.8 ? 1 : 0;
+      else c = (x > 4 && y > 5.5) || (x > 7.5) ? 1 : 0;
+      if (r() < 0.04) c = 1 - c;
+      P.push({ x, y, c });
+    }
+    return P;
+  }
+  const gini = (P, I) => { if (!I.length) return 0; const k = I.filter(i => P[i].c === 1).length / I.length; return 2 * k * (1 - k); };
+  function bestSplit(P, I) {
+    let best = null;
+    ['x', 'y'].forEach(ax => {
+      const v = [...new Set(I.map(i => P[i][ax]))].sort((a, b) => a - b);
+      for (let j = 1; j < v.length; j++) {
+        const t = (v[j - 1] + v[j]) / 2, L = I.filter(i => P[i][ax] <= t), R = I.filter(i => P[i][ax] > t);
+        const w = (L.length * gini(P, L) + R.length * gini(P, R)) / I.length;
+        if (!best || w < best.w - 1e-12) best = { ax, t, L, R, w };
+      }
+    });
+    return best;
+  }
+  trace('mltreegrow', {
+    title: 'Growing a decision tree, one split at a time',
+    sub: 'Each step finds the best question "x ≤ t?" or "y ≤ t?" for one box and cuts it in two. Every box (leaf) predicts its majority class. Cuts are always parallel to an axis.',
+    W: 600, H: 330,
+    params: [
+      { k: 'kind', label: 'Data', type: 'select', v: 'blocks', opts: [['blocks', 'Blocks (easy for trees)'], ['diag', 'Diagonal boundary'], ['ring', 'Ring']] },
+      { k: 'depth', label: 'Maximum depth', type: 'range', v: 3, min: 1, max: 6, step: 1 }
+    ],
+    tips: [
+      { t: 'The diagonal: a tree needs a staircase of many cuts for one slanted line.', set: { kind: 'diag', depth: 5 }, play: true },
+      { t: 'Depth 6 on the blocks: the extra cuts chase the few noisy points (overfitting).', set: { kind: 'blocks', depth: 6 }, play: true }
+    ],
+    frames(p) {
+      const P = data(p.kind, 7);
+      const all = P.map((_, i) => i);
+      const maj = I => (I.filter(i => P[i].c === 1).length * 2 > I.length ? 1 : 0);
+      let leaves = [{ I: all, b: [0, 10, 0, 10], d: 0, m: maj(all) }];
+      const cuts = [];
+      const acc = () => leaves.reduce((s, l) => s + l.I.filter(i => P[i].c === l.m).length, 0) / P.length;
+      const fr = [{ P, leaves: leaves.slice(), cuts: [], acc: acc(), say: `${P.length} training points, two classes. Before any question the tree is one leaf that predicts the majority class everywhere: training accuracy ${f2(acc() * 100, 1)}%.` }];
+      let q = 0;
+      while (q < leaves.length && cuts.length < 24) {
+        const l = leaves[q];
+        if (l.d >= p.depth || gini(P, l.I) === 0 || l.I.length < 2) { q++; continue; }
+        const s = bestSplit(P, l.I);
+        if (!s) { q++; continue; }
+        const [x0, x1, y0, y1] = l.b;
+        const A = { I: s.L, b: s.ax === 'x' ? [x0, s.t, y0, y1] : [x0, x1, y0, s.t], d: l.d + 1, m: maj(s.L) };
+        const B = { I: s.R, b: s.ax === 'x' ? [s.t, x1, y0, y1] : [x0, x1, s.t, y1], d: l.d + 1, m: maj(s.R) };
+        leaves.splice(q, 1, A, B);
+        cuts.push({ ax: s.ax, t: s.t, b: l.b, d: l.d + 1 });
+        fr.push({ P, leaves: leaves.slice(), cuts: cuts.slice(), acc: acc(), say: `Split ${cuts.length} (depth ${l.d + 1}): in a box with ${l.I.length} points, ask <b>${s.ax} ≤ ${f2(s.t)}</b>. Weighted Gini falls from ${f2(gini(P, l.I), 3)} to ${f2(s.w, 3)}. Training accuracy is now ${f2(acc() * 100, 1)}%.` });
+        q = 0;
+        leaves.sort((u, v) => u.d - v.d);
+      }
+      fr.push({ P, leaves, cuts, acc: acc(), done: true, say: `Finished: ${cuts.length} questions, ${leaves.length} leaves, training accuracy <b>${f2(acc() * 100, 1)}%</b>. ${p.kind === 'diag' ? 'A slanted boundary needs a staircase of axis parallel cuts. A linear model would need one line.' : 'Limit the depth (or prune) so the tree does not grow tiny boxes around single noisy points.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [0, 10], [0, 10], { dx: 0, dy: 0 });
+      g.save(); g.globalAlpha = 0.18;
+      f.leaves.forEach(l => { g.fillStyle = klass(z, l.m); g.fillRect(P.X(l.b[0]), P.Y(l.b[3]), P.X(l.b[1]) - P.X(l.b[0]), P.Y(l.b[2]) - P.Y(l.b[3])); });
+      g.restore();
+      f.cuts.forEach((s, i) => {
+        const last = i === f.cuts.length - 1 && !f.done;
+        if (s.ax === 'x') D.line(g, P.X(s.t), P.Y(s.b[2]), P.X(s.t), P.Y(s.b[3]), last ? c.cv : c.ink, last ? 3 : 1.6);
+        else D.line(g, P.X(s.b[0]), P.Y(s.t), P.X(s.b[1]), P.Y(s.t), last ? c.cv : c.ink, last ? 3 : 1.6);
+      });
+      f.P.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 4, { fill: klass(z, a.c), stroke: c.surf, w: 1 }));
+      head(z, 'The tree so far', 425, 24);
+      D.text(g, `questions: ${f.cuts.length}`, 425, 48, { s: 12, mono: true, c: c.ink });
+      D.text(g, `leaves: ${f.leaves.length}`, 425, 68, { s: 12, mono: true, c: c.ink });
+      D.text(g, `train accuracy: ${f2(f.acc * 100, 1)}%`, 425, 88, { s: 12, mono: true, b: true, c: c.cv });
+      f.cuts.slice(0, 10).forEach((s, i) => D.text(g, `${' '.repeat(2 * (s.d - 1))}${s.ax} ≤ ${f2(s.t, 1)}`, 425, 116 + i * 18, { s: 11, mono: true, c: i === f.cuts.length - 1 ? c.cv : c.ink2 }));
+      if (f.cuts.length > 10) D.text(g, `… ${f.cuts.length - 10} more`, 425, 116 + 10 * 18, { s: 11, c: c.ink2 });
+    }
+  });
+})();
