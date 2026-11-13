@@ -8672,6 +8672,26 @@ function mlRlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-mdp", title: "Markov decision processes and Bellman equations", emoji: "1.3", page: "content/machine-learning/ml-mdp.html",
+        summary: "Markov chains, reward processes, MDPs, state and action values, and the Bellman expectation and optimality equations.",
+        keywords: ["Markov decision process", "MDP", "Markov chain", "Bellman equation", "value function", "Q function", "optimal policy", "stationary distribution", "gridworld", "POMDP"],
+        minutes: 50, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "The Markov property and Markov chains", emoji: "", group: "Lesson", keywords: ["Markov property", "Markov chain", "transition matrix", "stationary distribution", "eigenvector", "PageRank"] },
+        { id: "mdp", title: "Markov reward processes and decision processes", emoji: "", group: "Lesson", keywords: ["Markov reward process", "Markov decision process", "MDP tuple", "value function", "Bellman equation", "linear system", "POMDP"] },
+        { id: "values", title: "State values and action values for a policy", emoji: "", group: "Lesson", keywords: ["state value function", "action value function", "Q function", "gridworld", "policy evaluation", "greedy policy"] },
+        { id: "optimal", title: "Optimal values and the Bellman optimality equation", emoji: "", group: "Lesson", keywords: ["optimal value function", "Bellman optimality equation", "optimal policy", "greedy policy", "contraction mapping", "Banach fixed point"] },
+        { id: "versus", title: "Markov models compared", emoji: "", group: "Lesson", keywords: ["Markov chain vs MDP", "MRP vs MDP", "bandit vs MDP"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["MDP definition", "Bellman expectation equation", "Bellman optimality equation", "q star", "contraction", "POMDP", "belief state"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "linear programming MDP", "constrained MDP"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "dynamic programming", "backward induction", "grid DP", "Markov chain counting"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

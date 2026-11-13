@@ -263,3 +263,146 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Reinforcement 1.3  Markov chains and the Bellman equation: a weather chain walk, and value backups on a small MRP
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, rng } = MLZ;
+  const nf = v => (Number.isInteger(v) ? String(v).replace('-', '−') : f2(v, 3));
+  function parseP(s, n) {
+    const P = String(s).split(/[;\n]+/).map(r => r.trim()).filter(Boolean).map(r => r.split(/[\s,]+/).map(Number));
+    if (P.length !== n || P.some(r => r.length !== n || r.some(v => isNaN(v) || v < 0))) throw new Error(`Type ${n} rows of ${n} chances, one row per state`);
+    P.forEach((r, i) => { if (Math.abs(r.reduce((a, b) => a + b, 0) - 1) > 0.011) throw new Error(`Row ${i + 1} must add up to 1`); });
+    return P;
+  }
+  /* an arrow from node a to node b, pushed sideways so that a and b can have arrows both ways */
+  function link(z, A, B, rad, label, col, w) {
+    const g = z.g, dx = B.x - A.x, dy = B.y - A.y, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, ox = -uy * 7, oy = ux * 7;
+    D.arrow(g, A.x + ux * rad + ox, A.y + uy * rad + oy, B.x - ux * rad + ox, B.y - uy * rad + oy, col, w, 8);
+    if (label) D.text(g, label, (A.x + B.x) / 2 + ox * 2.6, (A.y + B.y) / 2 + oy * 2.6 + 4, { a: 'center', s: 11, b: true, c: col });
+  }
+  function loop(z, A, rad, label, col, w, up = true) {
+    const g = z.g, cy = up ? A.y - rad - 12 : A.y + rad + 12;
+    g.save(); g.strokeStyle = col; g.lineWidth = w; g.beginPath(); g.arc(A.x, cy, 12, 0, Math.PI * 2); g.stroke(); g.restore();
+    if (label) D.text(g, label, A.x + 18, cy + (up ? -6 : 14), { s: 11, b: true, c: col });
+  }
+
+  const WEATHER = ['sunny', 'cloudy', 'rainy'];
+  trace('mlmarkov', {
+    title: 'A Markov chain: tomorrow depends only on today',
+    sub: 'Three kinds of weather. Each arrow gives the chance of moving from today’s weather to tomorrow’s. We walk the chain one day at a time and count how often each state comes up. In the long run the shares settle at the stationary distribution, whatever the starting day.',
+    W: 600, H: 330,
+    params: [
+      { k: 'P', label: 'Transition chances (row = today: sunny, cloudy, rainy)', type: 'area', v: '0.7 0.2 0.1; 0.3 0.4 0.3; 0.2 0.4 0.4' },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 4, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'Sticky weather: each state keeps itself with chance 0.9, so the walk stays in long runs and even 5,000 days are not enough for the shares to settle.', set: { P: '0.9 0.05 0.05; 0.05 0.9 0.05; 0.05 0.05 0.9', seed: 2 }, play: true },
+      { t: 'A chain that never rains after sunshine: the shares still settle, just at different values.', set: { P: '0.6 0.4 0; 0.3 0.3 0.4; 0.5 0.3 0.2', seed: 2 }, play: true }
+    ],
+    frames(p) {
+      const P = parseP(p.P, 3), R = rng(+p.seed * 6151);
+      let pi = [1 / 3, 1 / 3, 1 / 3];
+      for (let i = 0; i < 2000; i++) pi = [0, 1, 2].map(j => pi.reduce((a, v, k) => a + v * P[k][j], 0));
+      let s = 0;
+      const cnt = [0, 0, 0], base = { P, pi };
+      const fr = [{ ...base, s, cnt: cnt.slice(), day: 0, say: 'Day 0 is sunny. Each row of chances adds up to 1. The next day depends only on today, not on the days before: this is the <b>Markov property</b>.' }];
+      const show = [1, 2, 3, 4, 5, 6, 7, 8, 10, 20, 50, 100, 500, 5000];
+      cnt[0] = 1;
+      for (let d = 1; d <= 5000; d++) {
+        const u = R(), prev = s;
+        s = u < P[s][0] ? 0 : u < P[s][0] + P[s][1] ? 1 : 2;
+        cnt[s]++;
+        if (show.includes(d)) {
+          const sh = cnt.map(c => c / (d + 1));
+          fr.push({ ...base, s, prev: d <= 8 ? prev : undefined, cnt: cnt.slice(), day: d, say: d <= 8
+            ? `Day ${d}: from ${WEATHER[prev]}, the chances are ${P[prev].map(v => f2(v, 2)).join(', ')}. The walk lands on <b>${WEATHER[s]}</b>.`
+            : `After ${d} days the shares are ${sh.map(v => f2(v, 3)).join(', ')}.${d === 5000 ? ` The stationary distribution π, solving π = πP, is ${pi.map(v => f2(v, 3)).join(', ')}. ${Math.max(...sh.map((v, i) => Math.abs(v - pi[i]))) < 0.02 ? 'The long walk matches it closely.' : 'The walk is near it but not there yet: a chain that stays in long runs needs a much longer walk.'}` : ''}` });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, N = [{ x: 80, y: 90 }, { x: 300, y: 90 }, { x: 190, y: 250 }], rad = 30;
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+        if (!f.P[i][j]) continue;
+        const hot = f.prev === i && f.s === j, col = hot ? klass(z, 1) : c.ink2, w = hot ? 3 : 1.4;
+        if (i === j) loop(z, N[i], rad, f2(f.P[i][j], 2), col, w, i < 2); else link(z, N[i], N[j], rad, f2(f.P[i][j], 2), col, w);
+      }
+      N.forEach((q, i) => {
+        D.circle(g, q.x, q.y, rad, { fill: i === f.s ? klass(z, 0) : c.surf, stroke: c.ink2, w: 1.5 });
+        D.text(g, WEATHER[i], q.x, q.y + 5, { a: 'center', s: 12, b: true, c: i === f.s ? '#fff' : c.ink });
+      });
+      const x = 420, tot = f.cnt.reduce((a, b) => a + b, 0);
+      head(z, `day ${f.day}`, x, 30);
+      D.text(g, 'share of days so far', x, 54, { s: 11, c: c.ink2 });
+      WEATHER.forEach((w, i) => {
+        const y = 74 + i * 52, sh = f.cnt[i] / tot;
+        D.text(g, w, x, y + 12, { s: 12, b: true, c: c.ink });
+        rr(g, x + 56, y, 110 * sh, 16, 3, { fill: klass(z, i) });
+        D.line(g, x + 56 + 110 * f.pi[i], y - 4, x + 56 + 110 * f.pi[i], y + 20, c.ink, 2, [3, 2]);
+        D.text(g, f2(sh, 2), x + 56, y + 32, { s: 11, mono: true, c: c.ink });
+      });
+      D.text(g, '- - stationary π', x, 250, { s: 11, c: c.ink });
+    }
+  });
+
+  const MRP = { names: ['Wake', 'Gym', 'Work', 'Couch', 'End'], pos: [{ x: 60, y: 150 }, { x: 175, y: 60 }, { x: 320, y: 95 }, { x: 175, y: 255 }, { x: 330, y: 255 }],
+    P: [[0, 0.5, 0, 0.5, 0], [0, 0, 0.8, 0.2, 0], [0, 0, 0, 0.4, 0.6], [0.4, 0, 0, 0.6, 0], [0, 0, 0, 0, 1]] };
+  trace('mlbackup', {
+    title: 'The Bellman equation: a value from rewards and the values next door',
+    sub: 'A day as a Markov reward process. Each state gives a reward when you leave it, and arrows show where you go next. The value V(s) is the expected discounted return from s. The Bellman equation V(s) = R(s) + γ Σ P(s′|s) V(s′) links each value to its neighbours, and repeating it as an update finds every value.',
+    W: 600, H: 330,
+    params: [
+      { k: 'g', label: 'Discount γ', type: 'range', v: 0.9, min: 0, max: 0.99, step: 0.01 },
+      { k: 'rw', label: 'Reward for leaving Work', type: 'range', v: 10, min: -5, max: 20 }
+    ],
+    tips: [
+      { t: 'γ = 0: every value is just its own reward, since nothing after the next step counts.', set: { g: 0, rw: 10 }, play: true },
+      { t: 'Work pays nothing: every value turns negative, and Couch is worst because it keeps looping.', set: { g: 0.9, rw: 0 }, play: true }
+    ],
+    frames(p) {
+      const g = +p.g, R = [-1, -2, +p.rw, -1, 0], n = 5;
+      let V = Array(n).fill(0);
+      const base = { g, R };
+      const fr = [{ ...base, V: null, say: `Five states. Rewards: Wake −1, Gym −2, Work ${nf(R[2])}, Couch −1, End 0 (the day is over and End keeps you forever with no reward). γ = ${f2(g, 2)}.` }];
+      fr.push({ ...base, V: V.slice(), say: 'Start with every value at 0. Each sweep replaces every V(s) with R(s) + γ × (the average of the next values, weighted by the arrows).' });
+      const show = [1, 2, 3, 5, 10, 30, 100];
+      for (let k = 1; k <= 100; k++) {
+        const old = V;
+        V = R.map((r, s) => (s === 4 ? 0 : r + g * MRP.P[s].reduce((a, pv, t) => a + pv * old[t], 0)));
+        if (show.includes(k)) {
+          const s = k === 1 ? 2 : k === 2 ? 1 : 0;
+          const terms = MRP.P[s].map((pv, t) => (pv ? `${f2(pv, 1)} × ${old[t] < 0 ? '(' + f2(old[t], 2) + ')' : f2(old[t], 2)}` : null)).filter(Boolean).join(' + ');
+          fr.push({ ...base, V: V.slice(), k, hot: k <= 3 ? s : undefined, say: k <= 3
+            ? `Sweep ${k}. For example V(${MRP.names[s]}) = ${nf(R[s])} + ${f2(g, 2)} × (${terms}) = <b>${f2(V[s], 3)}</b>.`
+            : `After ${k} sweeps the values are ${V.slice(0, 4).map((v, i) => MRP.names[i] + ' ' + f2(v, 2)).join(', ')}.${k === 100 ? ' They have stopped changing: these are the exact solution of the Bellman equation.' : ''}` });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, rad = 28, Np = MRP.pos;
+      MRP.P.forEach((row, i) => row.forEach((pv, j) => {
+        if (!pv || i === 4) return;
+        const hot = f.hot === i, col = hot ? klass(z, 1) : c.ink2;
+        if (i === j) loop(z, Np[i], rad, f2(pv, 1), col, hot ? 2.5 : 1.3, false); else link(z, Np[i], Np[j], rad, f2(pv, 1), col, hot ? 2.5 : 1.3);
+      }));
+      Np.forEach((q, i) => {
+        const v = f.V ? f.V[i] : null, hot = f.hot === i;
+        D.circle(g, q.x, q.y, rad, { fill: hot ? klass(z, 0) : c.surf, stroke: c.ink2, w: 1.5 });
+        D.text(g, MRP.names[i], q.x, q.y - 4, { a: 'center', s: 11, b: true, c: hot ? '#fff' : c.ink });
+        D.text(g, `R ${nf(f.R[i])}`, q.x, q.y + 11, { a: 'center', s: 10, mono: true, c: hot ? '#fff' : c.ink2 });
+      });
+      const x = 420;
+      head(z, f.k ? `sweep ${f.k}` : 'values', x, 30);
+      MRP.names.forEach((nm, i) => {
+        D.text(g, nm, x, 60 + i * 26, { s: 12, b: true, c: c.ink });
+        if (f.V) D.text(g, f2(f.V[i], 3), x + 70, 60 + i * 26, { s: 12, mono: true, b: f.hot === i, c: f.V[i] > 0 ? c.green : f.V[i] < 0 ? c.red : c.ink });
+      });
+      D.text(g, 'V(s) = R(s) + γ Σ P(s′|s) V(s′)', 380, 304, { s: 11, mono: true, b: true, c: c.cv });
+      D.text(g, `γ = ${f2(f.g, 2)}`, x, 236, { s: 13, b: true, c: klass(z, 1) });
+    }
+  });
+})();
