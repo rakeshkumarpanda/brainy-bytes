@@ -1,0 +1,526 @@
+/* ===== Complete Machine Learning animations, part 2: supervised and unsupervised learning.
+   Uses the framework MLZ from assets/mlwidgets.js. Every animation starts empty and adds one step each time Step
+   is pressed, with a plain English line for that step. ===== */
+
+/* =====================================================================================================
+   Supervised 1.1  least squares: the best straight line, its residuals and R squared
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, span, fline, points, D, f2, head } = MLZ;
+  trace('mlols', {
+    title: 'Least squares: find the line with the smallest squared errors',
+    sub: 'Type some points (x y on each line or separated by semicolons). We compare the flat "just guess the average" line with the least squares line, and measure how much better it is with R².',
+    W: 600, H: 330,
+    params: [{ k: 'pts', label: 'Points (x y)', type: 'area', v: '1 52; 2 55; 3 61; 4 64; 5 70; 6 72' }],
+    tips: [
+      { t: 'Points with no pattern: the best line is almost flat and R² is close to 0.', set: { pts: '1 5; 2 9; 3 4; 4 8; 5 5; 6 7' }, play: true },
+      { t: 'One far point pulls the whole line towards it, because its error is squared.', set: { pts: '1 2; 2 4; 3 6; 4 8; 5 10; 6 30' }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 25);
+      if (P.length < 2) throw new Error('Type at least two points');
+      const n = P.length, mx = P.reduce((a, q) => a + q.x, 0) / n, my = P.reduce((a, q) => a + q.y, 0) / n;
+      const sxy = P.reduce((a, q) => a + (q.x - mx) * (q.y - my), 0), sxx = P.reduce((a, q) => a + (q.x - mx) ** 2, 0);
+      if (!sxx) throw new Error('The x values must not all be the same');
+      const b1 = sxy / sxx, b0 = my - b1 * mx;
+      const sst = P.reduce((a, q) => a + (q.y - my) ** 2, 0), sse = P.reduce((a, q) => a + (q.y - b0 - b1 * q.x) ** 2, 0);
+      const base = { P, mx, my, b0, b1, sst, sse };
+      return [
+        { ...base, st: 1, say: `Here are ${n} points. We want a straight line ŷ = b₀ + b₁x that predicts y from x as well as possible.` },
+        { ...base, st: 2, say: `The centre of the points is (x̄, ȳ) = (${f2(mx)}, ${f2(my)}). The least squares line always passes through this point.` },
+        { ...base, st: 3, say: `First the laziest model: always predict ȳ = ${f2(my)} (the flat line). Its squared errors add up to <b>SST = ${f2(sst)}</b>, the total variation in y.` },
+        { ...base, st: 4, say: `The least squares slope is b₁ = Σ(x − x̄)(y − ȳ) ÷ Σ(x − x̄)² = ${f2(sxy)} ÷ ${f2(sxx)} = <b>${f2(b1, 3)}</b>. The intercept is b₀ = ȳ − b₁x̄ = <b>${f2(b0, 3)}</b>.` },
+        { ...base, st: 5, say: `Draw ŷ = ${f2(b0)} + ${f2(b1)}x. No other straight line has a smaller sum of squared errors for these points.` },
+        { ...base, st: 6, say: `The residuals (red) are the vertical gaps y − ŷ. Their squares add up to <b>SSE = ${f2(sse)}</b>, much less than the flat line’s ${f2(sst)}${sse < sst * 0.5 ? '' : ' (only a little less here)'}.` },
+        { ...base, st: 7, say: `<b>R² = 1 − SSE ÷ SST = 1 − ${f2(sse)} ÷ ${f2(sst)} = ${f2(1 - sse / (sst || 1), 3)}</b>. The line explains ${f2(100 * (1 - sse / (sst || 1)), 1)}% of the variation in y. R² = 1 is a perfect fit and 0 is no better than the average.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.P.map(q => q.x), ys = f.P.map(q => q.y);
+      const Pl = plot(z, [10, 10, 400, 310], span(xs, 0.12), span(ys.concat([f.b0 + f.b1 * Math.min(...xs), f.b0 + f.b1 * Math.max(...xs)]), 0.12), { dx: 1, dy: 1 });
+      if (f.st === 3 || f.st === 4) {
+        fline(z, Pl, f.my, 0, c.orange, 2, [6, 4]);
+        f.P.forEach(q => D.line(g, Pl.X(q.x), Pl.Y(q.y), Pl.X(q.x), Pl.Y(f.my), c.orange, 1.5));
+      }
+      if (f.st >= 5) fline(z, Pl, f.b0, f.b1, c.cv, 2.5);
+      if (f.st >= 6) f.P.forEach(q => D.line(g, Pl.X(q.x), Pl.Y(q.y), Pl.X(q.x), Pl.Y(f.b0 + f.b1 * q.x), c.red, 2));
+      f.P.forEach(q => D.circle(g, Pl.X(q.x), Pl.Y(q.y), 5, { fill: c.ink }));
+      if (f.st >= 2) { D.circle(g, Pl.X(f.mx), Pl.Y(f.my), 7, { stroke: c.green, w: 2.5 }); D.text(g, 'mean point', Pl.X(f.mx) + 10, Pl.Y(f.my) + 16, { s: 11, b: true, c: c.green }); }
+      const x = 425;
+      head(z, 'Numbers', x, 26);
+      const rows = [];
+      if (f.st >= 2) rows.push([`mean x = ${f2(f.mx)}`, c.ink], [`mean y = ${f2(f.my)}`, c.ink]);
+      if (f.st >= 3) rows.push([`SST = ${f2(f.sst)}`, c.orange]);
+      if (f.st >= 4) rows.push([`b₁ = ${f2(f.b1, 3)}`, c.cv], [`b₀ = ${f2(f.b0, 3)}`, c.cv]);
+      if (f.st >= 6) rows.push([`SSE = ${f2(f.sse)}`, c.red]);
+      if (f.st >= 7) rows.push([`R² = ${f2(1 - f.sse / (f.sst || 1), 3)}`, c.green]);
+      rows.forEach(([t, col], i) => D.text(g, t, x, 56 + i * 26, { s: 13, mono: true, b: true, c: col }));
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 1.1  gradient descent fitting a line, one step at a time
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, span, fline, points, D, f2, head, rr } = MLZ;
+  trace('mlgdline', {
+    title: 'Gradient descent fits a line step by step',
+    sub: 'The line starts flat at 0. Each step computes the gradient of the mean squared error and moves w (slope) and b (intercept) a little downhill.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Points (x y)', type: 'area', v: '1 3; 2 5; 3 6; 4 9; 5 11' },
+      { k: 'lr', label: 'Learning rate', type: 'range', v: 0.05, min: 0.01, max: 0.12, step: 0.01 },
+      { k: 'n', label: 'Steps', type: 'range', v: 12, min: 4, max: 40 }
+    ],
+    tips: [
+      { t: 'Learning rate 0.12: the line overshoots and the error goes up. That is divergence.', set: { lr: 0.12 }, play: true },
+      { t: 'Learning rate 0.01: safe but slow, the line is still far off after 12 steps.', set: { lr: 0.01 }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 25);
+      if (P.length < 2) throw new Error('Type at least two points');
+      const n = P.length;
+      let w = 0, b = 0;
+      const mse = (w, b) => P.reduce((a, q) => a + (w * q.x + b - q.y) ** 2, 0) / n;
+      const hist = [mse(w, b)];
+      const fr = [{ w, b, hist: hist.slice(), say: `Start with w = 0 and b = 0: a flat line at 0. The mean squared error is ${f2(hist[0], 3)}.` }];
+      for (let i = 1; i <= p.n; i++) {
+        const gw = 2 / n * P.reduce((a, q) => a + (w * q.x + b - q.y) * q.x, 0), gb = 2 / n * P.reduce((a, q) => a + (w * q.x + b - q.y), 0);
+        w -= p.lr * gw; b -= p.lr * gb;
+        const m = mse(w, b); hist.push(m);
+        const bad = !isFinite(m) || m > 1e6;
+        fr.push({ w, b, hist: hist.slice(), say: `Step ${i}: gradient ∂L/∂w = ${f2(gw, 2)}, ∂L/∂b = ${f2(gb, 2)}. New w = <b>${f2(w, 3)}</b>, b = <b>${f2(b, 3)}</b>, error ${f2(m, 3)}.${bad ? ' The error is exploding: lower the learning rate.' : ''}` });
+        if (bad) return fr;
+      }
+      const mx = P.reduce((a, q) => a + q.x, 0) / n, my = P.reduce((a, q) => a + q.y, 0) / n;
+      const b1 = P.reduce((a, q) => a + (q.x - mx) * (q.y - my), 0) / P.reduce((a, q) => a + (q.x - mx) ** 2, 0), b0 = my - b1 * mx;
+      fr.push({ w, b, hist, done: true, b0, b1, say: `After ${p.n} steps: w = ${f2(w, 3)}, b = ${f2(b, 3)}. The exact least squares answer is w = ${f2(b1, 3)}, b = ${f2(b0, 3)} (green dashes). Gradient descent creeps towards it. The intercept is usually the slowest to settle when x is not centred, which is one reason to scale features.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = MLZ.points(z.p.pts).slice(0, 25);
+      const Pl = plot(z, [10, 10, 400, 310], span(P.map(q => q.x).concat([0]), 0.1), span(P.map(q => q.y).concat([0]), 0.1), { dx: 0, dy: 0 });
+      if (f.done) fline(z, Pl, f.b0, f.b1, c.green, 2, [6, 4]);
+      fline(z, Pl, f.b, f.w, c.cv, 2.5);
+      P.forEach(q => D.circle(g, Pl.X(q.x), Pl.Y(q.y), 5, { fill: c.ink }));
+      head(z, 'Error after each step', 425, 26);
+      const H = f.hist.filter(isFinite), max = Math.max(...H, 1e-9);
+      const bw = Math.min(14, 160 / H.length);
+      H.forEach((v, i) => { const h = Math.max(2, Math.min(220, v / max * 220)); rr(g, 428 + i * (bw + 1), 270 - h, bw, h, 2, { fill: i === H.length - 1 ? c.red : c.cv }); });
+      D.text(g, `w = ${f2(f.w, 3)}`, 425, 292, { s: 12, mono: true, c: c.ink });
+      D.text(g, `b = ${f2(f.b, 3)}`, 425, 310, { s: 12, mono: true, c: c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 1.2  polynomial degree: underfitting, a good fit, and overfitting
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, rr } = MLZ;
+  /* least squares polynomial fit on x scaled to [-1, 1], with a tiny ridge so high degrees stay solvable */
+  function polyfit(xs, ys, deg, lam) {
+    const m = deg + 1, A = Array.from({ length: m }, () => new Array(m + 1).fill(0));
+    xs.forEach((x, k) => {
+      const pw = [1]; for (let i = 1; i < m; i++) pw.push(pw[i - 1] * x);
+      for (let i = 0; i < m; i++) { for (let j = 0; j < m; j++) A[i][j] += pw[i] * pw[j]; A[i][m] += pw[i] * ys[k]; }
+    });
+    for (let i = 1; i < m; i++) A[i][i] += lam;
+    for (let c = 0; c < m; c++) {
+      let piv = c; for (let r = c + 1; r < m; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+      [A[c], A[piv]] = [A[piv], A[c]];
+      for (let r = 0; r < m; r++) if (r !== c) { const t = A[r][c] / A[c][c]; for (let j = c; j <= m; j++) A[r][j] -= t * A[c][j]; }
+    }
+    return A.map((row, i) => row[m] / row[i]);
+  }
+  const val = (w, x) => w.reduce((a, c, i) => a + c * x ** i, 0);
+  trace('mlpolyfit', {
+    title: 'Polynomial degree: too simple, just right, too wiggly',
+    sub: 'Filled purple dots are training data, hollow dots are test data. Each step fits a polynomial of a higher degree to the training dots and shows both errors.',
+    W: 600, H: 330,
+    params: [
+      { k: 'n', label: 'Training points', type: 'range', v: 12, min: 8, max: 40 },
+      { k: 'noise', label: 'Noise', type: 'range', v: 0.2, min: 0.05, max: 0.5, step: 0.05 },
+      { k: 'lam', label: 'Ridge penalty (0 = none)', type: 'range', v: 0, min: 0, max: 1, step: 0.05 }
+    ],
+    tips: [
+      { t: 'Add a small ridge penalty (0.05): the high degree curves calm down and the test error stays low.', set: { lam: 0.05 }, play: true },
+      { t: 'With 40 training points even degree 12 behaves much better. More data fights overfitting.', set: { n: 40, lam: 0 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(5 + p.n);
+      const gauss = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+      const truth = x => Math.sin(Math.PI * (x + 1));
+      const tr = Array.from({ length: p.n }, () => { const x = r() * 2 - 1; return { x, y: truth(x) + p.noise * gauss() }; });
+      const te = Array.from({ length: 60 }, () => { const x = r() * 2 - 1; return { x, y: truth(x) + p.noise * gauss() }; });
+      const mse = (w, S) => S.reduce((a, q) => a + (val(w, q.x) - q.y) ** 2, 0) / S.length;
+      const fr = [{ tr, te, say: `Here are ${p.n} training points (filled purple) and 60 test points (hollow), all from the same smooth curve plus noise. The model only learns from the blue ones.` }];
+      const all = [1, 2, 3, 5, 8, 12].map(d => {
+        const w = polyfit(tr.map(q => q.x), tr.map(q => q.y), d, 1e-9 + p.lam);
+        return { d, w, a: mse(w, tr), b: mse(w, te) };
+      });
+      const top = all.reduce((x, y) => y.b < x.b ? y : x);
+      const hist = [];
+      all.forEach(h => {
+        hist.push({ d: h.d, a: h.a, b: h.b });
+        const kind = h.b <= 1.6 * top.b ? 'Both errors are low: the curve follows the pattern, not the noise.' :
+          h.d < top.d ? 'The curve is too stiff to follow the wave, so both errors are high. This is <b>underfitting</b> (high bias).' :
+          'The training error is small but the test error grew: the curve chases the noise. This is <b>overfitting</b> (high variance).';
+        fr.push({ tr, te, w: h.w, d: h.d, hist: hist.slice(), say: `Degree ${h.d}: training error ${f2(h.a, 3)}, test error <b>${f2(h.b, 3)}</b>. ${kind}` });
+      });
+      const best = top;
+      fr.push({ tr, te, w: best.w, d: best.d, hist, done: true, say: `The lowest test error is at degree <b>${best.d}</b>. Training error alone always prefers the most complex model, so pick complexity with test or validation data. A ridge penalty (Ridge penalty slider) lets you keep a high degree and still avoid wild curves.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1, 1], [-2, 2], { dx: 1, dy: 1 });
+      f.te.forEach(q => D.circle(g, P.X(q.x), P.Y(q.y), 3.5, { stroke: c.ink2, w: 1 }));
+      f.tr.forEach(q => D.circle(g, P.X(q.x), P.Y(q.y), 4.5, { fill: c.cv }));
+      if (f.w) {
+        g.save(); g.beginPath(); g.rect(P.x0, P.y0, P.w, P.h); g.clip(); g.beginPath();
+        for (let i = 0; i <= 200; i++) { const x = -1 + i / 100, y = val(f.w, x); i ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)); }
+        g.strokeStyle = f.done ? c.green : c.orange; g.lineWidth = 2.5; g.stroke(); g.restore();
+      }
+      if (f.hist) {
+        head(z, 'Error by degree', 425, 24);
+        D.text(g, 'train', 470, 42, { s: 11, b: true, c: c.cv }); D.text(g, 'test', 520, 42, { s: 11, b: true, c: c.orange });
+        /* scale the bars to the simple models, so one exploding test error does not flatten the rest */
+        const max = Math.max(f.hist[0].a, f.hist[0].b, 0.05) * 1.25;
+        f.hist.forEach((h, i) => {
+          const y = 58 + i * 40;
+          D.text(g, `d ${h.d}`, 425, y + 14, { s: 12, mono: true, b: true, c: h.d === f.d ? c.ink : c.ink2 });
+          rr(g, 460, y, Math.max(2, Math.min(h.a, max) / max * 100), 12, 2, { fill: c.cv });
+          rr(g, 460, y + 15, Math.max(2, Math.min(h.b, max) / max * 100), 12, 2, { fill: c.orange });
+          if (h.b > max) D.text(g, 'more', 564, y + 25, { s: 10, b: true, c: c.orange });
+        });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 1.2  ridge shrinks weights, lasso sets some to exactly zero
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, rng, rr } = MLZ;
+  const NAMES = ['size', 'rooms', 'age', 'noise1', 'noise2'];
+  const TRUE = [3, 2, -1.5, 0, 0];
+  function data() {
+    const r = rng(4), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const X = [], y = [];
+    for (let i = 0; i < 60; i++) { const row = NAMES.map(() => g()); X.push(row); y.push(row.reduce((a, v, j) => a + v * TRUE[j], 0) + g()); }
+    /* centre and scale the columns so one penalty treats every weight the same */
+    for (let j = 0; j < 5; j++) { const m = X.reduce((a, r2) => a + r2[j], 0) / 60, s = Math.sqrt(X.reduce((a, r2) => a + (r2[j] - m) ** 2, 0) / 60); X.forEach(r2 => { r2[j] = (r2[j] - m) / s; }); }
+    const my = y.reduce((a, b) => a + b, 0) / 60;
+    return { X, y: y.map(v => v - my) };
+  }
+  function ridge(X, y, a) {
+    const d = 5, A = Array.from({ length: d }, (_, i) => Array.from({ length: d + 1 }, (_, j) => j < d ? X.reduce((s, r) => s + r[i] * r[j], 0) / X.length + (i === j ? a : 0) : X.reduce((s, r, k) => s + r[i] * y[k], 0) / X.length));
+    for (let c = 0; c < d; c++) for (let r = 0; r < d; r++) if (r !== c) { const t = A[r][c] / A[c][c]; for (let j = c; j <= d; j++) A[r][j] -= t * A[c][j]; }
+    return A.map((row, i) => row[d] / row[i]);
+  }
+  function lasso(X, y, a) {
+    const w = new Array(5).fill(0), n = X.length;
+    for (let it = 0; it < 300; it++) for (let j = 0; j < 5; j++) {
+      let rho = 0, zz = 0;
+      X.forEach((r, k) => { const pred = r.reduce((s, v, m) => s + (m === j ? 0 : v * w[m]), 0); rho += r[j] * (y[k] - pred); zz += r[j] * r[j]; });
+      rho /= n; zz /= n;
+      w[j] = rho > a ? (rho - a) / zz : rho < -a ? (rho + a) / zz : 0;
+    }
+    return w;
+  }
+  trace('mlreg', {
+    title: 'Ridge and lasso: what a penalty does to the weights',
+    sub: 'Five features: three really matter (size, rooms, age) and two are pure noise. Each step makes the penalty α stronger and shows the weights of ridge (left bars) and lasso (right bars).',
+    W: 600, H: 320,
+    params: [{ k: 'show', label: 'Show', type: 'select', v: 'both', opts: [['both', 'Ridge and lasso'], ['ridge', 'Only ridge'], ['lasso', 'Only lasso']] }],
+    frames(p) {
+      const { X, y } = data();
+      const alphas = [0, 0.1, 0.5, 1, 2, 4];
+      return alphas.map((a, i) => {
+        const R = ridge(X, y, a), L = lasso(X, y, a / 2);
+        const zeros = L.filter(v => v === 0).length;
+        return { a, R, L, say: i === 0 ? `With no penalty (α = 0) both are plain least squares: ${NAMES.map((n, j) => `${n} ${f2(R[j])}`).join(', ')}. The noise features get small weights that are not exactly 0.` :
+          `α = ${a}. Ridge shrinks every weight a little towards 0 but none reaches 0 (biggest ${f2(Math.max(...R.map(Math.abs)))}). Lasso has set <b>${zeros}</b> weight${zeros === 1 ? '' : 's'} to exactly 0${zeros ? ` (${NAMES.filter((n, j) => L[j] === 0).join(', ')})` : ''}.${a >= 2 && zeros >= 3 ? ' A strong penalty starts to remove real features too, so α must be chosen with cross validation.' : ''}` };
+      });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, `Penalty α = ${f.a}`, 20, 24, { s: 15 });
+      const zeroX = 330, sc = 70;
+      D.line(g, zeroX, 40, zeroX, 300, c.ink2, 1.5);
+      D.text(g, '0', zeroX, 314, { a: 'center', s: 11, c: c.ink2 });
+      NAMES.forEach((n, j) => {
+        const y = 52 + j * 50;
+        D.text(g, n, 20, y + 20, { s: 13, b: true, c: j < 3 ? c.ink : c.ink2 });
+        D.text(g, `true ${TRUE[j]}`, 100, y + 20, { s: 11, mono: true, c: c.ink2 });
+        const bar = (v, dy, col, label) => {
+          if (z.p.show !== 'both' && z.p.show !== label) return;
+          const w = v * sc;
+          rr(g, w >= 0 ? zeroX : zeroX + w, y + dy, Math.max(1.5, Math.abs(w)), 14, 3, { fill: col });
+          D.text(g, `${label} ${v === 0 ? '0' : f2(v)}`, w >= 0 ? zeroX + w + 6 : zeroX + w - 6, y + dy + 11, { s: 11, mono: true, a: w >= 0 ? 'left' : 'right', c: col, b: v === 0 });
+        };
+        bar(f.R[j], 4, c.cv, 'ridge');
+        bar(f.L[j], 22, c.orange, 'lasso');
+      });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.1  logistic regression: line, sigmoid, probability, threshold and log loss
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, points } = MLZ;
+  const sig = z => 1 / (1 + Math.exp(-z));
+  trace('mlsigmoid', {
+    title: 'Logistic regression: from a score to a probability to a class',
+    sub: 'Each point is a student: hours studied (x) and whether they passed (1) or failed (0). Set the weight w and bias b, then step through how the model turns x into a prediction and a loss.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Points (hours label)', type: 'area', v: '0.5 0; 1 0; 1.5 0; 2 0; 2.5 1; 3 0; 3.5 1; 4 1; 4.5 1; 5 1' },
+      { k: 'w', label: 'Weight w', type: 'range', v: 2.6, min: -3, max: 5, step: 0.1 },
+      { k: 'b', label: 'Bias b', type: 'range', v: -7.1, min: -12, max: 4, step: 0.1 }
+    ],
+    tips: [
+      { t: 'w = 1, b = −2.7: a gentle slope. Probabilities stay near 0.5, so the log loss is high even where the class is right.', set: { w: 1, b: -2.7 }, play: true },
+      { t: 'w = −2.6, b = 7.1: the curve is flipped. Almost every prediction is wrong and the log loss is huge.', set: { w: -2.6, b: 7.1 }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 20);
+      if (P.length < 2) throw new Error('Type at least two points');
+      if (P.some(q => q.y !== 0 && q.y !== 1)) throw new Error('Each label must be 0 or 1');
+      const rows = P.map(q => { const z = p.w * q.x + p.b, pr = sig(z); return { ...q, z, pr, pred: pr >= 0.5 ? 1 : 0, loss: -(q.y ? Math.log(Math.max(pr, 1e-12)) : Math.log(Math.max(1 - pr, 1e-12))) }; });
+      const L = rows.reduce((a, r) => a + r.loss, 0) / rows.length, acc = rows.filter(r => r.pred === r.y).length;
+      const b = { rows, L, acc };
+      const worst = rows.reduce((x, y) => y.loss > x.loss ? y : x);
+      return [
+        { ...b, st: 1, say: `${rows.length} students. Red dots failed (label 0) and purple dots passed (label 1). We want P(pass) for any number of hours.` },
+        { ...b, st: 2, say: `Step 1, a straight line score: z = w x + b = ${f2(p.w, 1)}x ${p.b < 0 ? '−' : '+'} ${f2(Math.abs(p.b), 1)}. For x = ${rows[0].x}, z = ${f2(rows[0].z)}. A score can be any number, so it is not yet a probability.` },
+        { ...b, st: 3, say: 'Step 2, squash the score with the sigmoid σ(z) = 1 ÷ (1 + e^(−z)). Big negative z gives almost 0, z = 0 gives 0.5, big positive z gives almost 1. The green S curve is the model.' },
+        { ...b, st: 4, say: `Step 3, every student now has a probability of passing (the dots on the curve). For example x = ${rows[rows.length - 1].x} gives ${f2(rows[rows.length - 1].pr, 3)}.` },
+        { ...b, st: 5, say: `Step 4, predict "pass" when the probability is at least 0.5. The boundary is where z = 0, at x = −b ÷ w = ${p.w ? f2(-p.b / p.w) : 'none'}. <b>${acc} of ${rows.length}</b> students are classified correctly (wrong ones have a dark ring).` },
+        { ...b, st: 6, say: `Step 5, log loss scores the probabilities, not just the classes: −ln(p) for a pass and −ln(1 − p) for a fail. The worst point is x = ${worst.x} with loss ${f2(worst.loss, 3)}. The average log loss is <b>${f2(L, 4)}</b>. Training picks w and b to make this as small as possible.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, xs = f.rows.map(r => r.x);
+      const lo = Math.min(...xs) - 0.5, hi = Math.max(...xs) + 0.5;
+      const P = plot(z, [10, 10, 400, 310], [lo, hi], [-0.1, 1.1], { dx: 1, dy: 1 });
+      if (f.st >= 5) { D.line(g, P.X(lo), P.Y(0.5), P.X(hi), P.Y(0.5), c.ink2, 1, [5, 4]); if (z.p.w) { const xb = -z.p.b / z.p.w; if (xb > lo && xb < hi) D.line(g, P.X(xb), P.Y(-0.1), P.X(xb), P.Y(1.1), c.orange, 2, [6, 4]); } }
+      if (f.st >= 3) {
+        g.save(); g.beginPath();
+        for (let i = 0; i <= 160; i++) { const x = lo + (hi - lo) * i / 160, y = sig(z.p.w * x + z.p.b); i ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)); }
+        g.strokeStyle = c.green; g.lineWidth = 2.5; g.stroke(); g.restore();
+      }
+      f.rows.forEach(r => {
+        const col = r.y ? c.cv : c.red;
+        D.circle(g, P.X(r.x), P.Y(r.y), 5.5, { fill: col });
+        if (f.st >= 4) { D.line(g, P.X(r.x), P.Y(r.y), P.X(r.x), P.Y(r.pr), c.line, 1, [2, 3]); D.circle(g, P.X(r.x), P.Y(r.pr), 4, { fill: c.green }); }
+        if (f.st >= 5 && r.pred !== r.y) D.circle(g, P.X(r.x), P.Y(r.y), 9, { stroke: c.ink, w: 2 });
+      });
+      head(z, f.st >= 6 ? 'Log loss per point' : 'Score z = w x + b', 425, 24);
+      if (f.st >= 2) f.rows.slice(0, 10).forEach((r, i) => {
+        const y = 46 + i * 26;
+        D.text(g, `x ${r.x}`, 425, y, { s: 11, mono: true, c: c.ink2 });
+        if (f.st >= 6) { const w = Math.min(100, r.loss * 40); MLZ.rr(g, 470, y - 10, Math.max(2, w), 12, 2, { fill: r.y ? c.cv : c.red }); D.text(g, f2(r.loss, 2), 474 + w, y, { s: 11, mono: true, c: c.ink }); }
+        else D.text(g, `z ${f2(r.z, 2)}${f.st >= 4 ? `  p ${f2(r.pr, 2)}` : ''}`, 470, y, { s: 11, mono: true, c: c.ink });
+      });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.1  training logistic regression with gradient descent
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, points, rr } = MLZ;
+  const sig = z => 1 / (1 + Math.exp(-z));
+  trace('mllogfit', {
+    title: 'Training logistic regression: the S curve learns',
+    sub: 'Start from w = 0 and b = 0 (a flat 0.5 for everyone). Each step moves w and b against the gradient of the log loss. Watch the curve get steeper and slide into place.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Points (x label)', type: 'area', v: '0.5 0; 1 0; 1.5 0; 2 0; 2.5 1; 3 0; 3.5 1; 4 1; 4.5 1; 5 1' },
+      { k: 'lr', label: 'Learning rate', type: 'range', v: 0.5, min: 0.1, max: 2, step: 0.1 },
+      { k: 'every', label: 'Gradient steps between pictures', type: 'range', v: 50, min: 1, max: 200 }
+    ],
+    tips: [
+      { t: 'Perfectly separated data (no overlap): the weights keep growing forever and the curve becomes a step. That is why logistic regression needs a penalty (C) for separable data.', set: { pts: '1 0; 2 0; 3 0; 4 1; 5 1; 6 1' }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 20);
+      if (P.length < 2 || P.some(q => q.y !== 0 && q.y !== 1)) throw new Error('Type at least two points, each label 0 or 1');
+      const n = P.length;
+      let w = 0, b = 0;
+      const loss = () => P.reduce((a, q) => { const pr = Math.min(1 - 1e-12, Math.max(1e-12, sig(w * q.x + b))); return a - (q.y ? Math.log(pr) : Math.log(1 - pr)); }, 0) / n;
+      const hist = [loss()];
+      const fr = [{ w, b, hist: hist.slice(), say: `Start: w = 0, b = 0, so everyone gets probability 0.5. Log loss = ln 2 = ${f2(hist[0], 4)}.` }];
+      for (let k = 1; k <= 10; k++) {
+        let gw = 0, gb = 0;
+        for (let s = 0; s < p.every; s++) {
+          gw = 0; gb = 0;
+          P.forEach(q => { const e = sig(w * q.x + b) - q.y; gw += e * q.x / n; gb += e / n; });
+          w -= p.lr * gw; b -= p.lr * gb;
+        }
+        hist.push(loss());
+        fr.push({ w, b, hist: hist.slice(), say: `After ${k * p.every} steps: gradient ∂L/∂w = Σ(p − y)x ÷ n = ${f2(gw, 3)}, so w = <b>${f2(w, 3)}</b> and b = <b>${f2(b, 3)}</b>. Log loss ${f2(hist[k], 4)}. The 50% point is at x = ${w ? f2(-b / w) : '?'}.` });
+      }
+      fr.push({ w, b, hist, done: true, say: `The gradient of the log loss has the same simple form as in linear regression: (prediction − label) × x. The loss is convex, so gradient descent cannot get stuck in a wrong valley. scikit-learn uses faster solvers (lbfgs) for the same job.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, P = points(z.p.pts).slice(0, 20), xs = P.map(q => q.x);
+      const lo = Math.min(...xs) - 0.5, hi = Math.max(...xs) + 0.5;
+      const Pl = plot(z, [10, 10, 400, 310], [lo, hi], [-0.1, 1.1], { dx: 1, dy: 1 });
+      g.save(); g.beginPath();
+      for (let i = 0; i <= 160; i++) { const x = lo + (hi - lo) * i / 160, y = sig(f.w * x + f.b); i ? g.lineTo(Pl.X(x), Pl.Y(y)) : g.moveTo(Pl.X(x), Pl.Y(y)); }
+      g.strokeStyle = c.green; g.lineWidth = 2.5; g.stroke(); g.restore();
+      P.forEach(q => D.circle(g, Pl.X(q.x), Pl.Y(q.y), 5.5, { fill: q.y ? c.cv : c.red }));
+      head(z, 'Log loss', 425, 26);
+      const max = Math.max(...f.hist, 1e-9);
+      f.hist.forEach((v, i) => { const h = Math.max(2, v / max * 200); rr(g, 428 + i * 14, 250 - h, 12, h, 2, { fill: i === f.hist.length - 1 ? c.red : c.cv }); });
+      D.text(g, `w = ${f2(f.w, 3)}`, 425, 280, { s: 12, mono: true, c: c.ink });
+      D.text(g, `b = ${f2(f.b, 3)}`, 425, 300, { s: 12, mono: true, c: c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.2  k nearest neighbours: measure, sort, take k, vote
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, span, points, D, f2, head, klass } = MLZ;
+  trace('mlknn', {
+    title: 'k nearest neighbours: ask the closest examples',
+    sub: 'Type labelled points (x y class) and a new point. KNN measures the distance to every point, keeps the k closest and lets them vote.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Points (x y class)', type: 'area', v: '1 2 A; 2 1 A; 2 3 A; 3 2 A; 6 5 B; 7 6 B; 6 7 B; 5 6 B; 4 4 B; 3 5 A' },
+      { k: 'q', label: 'New point (x, y)', type: 'text', v: '4, 3.5' },
+      { k: 'k', label: 'k (neighbours)', type: 'range', v: 3, min: 1, max: 9, step: 1 },
+      { k: 'metric', label: 'Distance', type: 'select', v: 'euclid', opts: [['euclid', 'Euclidean (straight line)'], ['manhattan', 'Manhattan (city blocks)']] }
+    ],
+    tips: [
+      { t: 'k = 1: the single closest point decides. One noisy point can flip the answer.', set: { k: 1 }, play: true },
+      { t: 'k = 9: almost everyone votes, so the bigger class tends to win everywhere.', set: { k: 9 }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts, true).slice(0, 30);
+      const q = MLZ.nums(p.q);
+      if (P.length < 2 || q.length < 2) throw new Error('Type at least two points and a new point like 4, 3.5');
+      const k = Math.min(p.k, P.length);
+      const dist = (a) => p.metric === 'manhattan' ? Math.abs(a.x - q[0]) + Math.abs(a.y - q[1]) : Math.hypot(a.x - q[0], a.y - q[1]);
+      const rows = P.map((a, i) => ({ ...a, i, d: dist(a) })).sort((a, b) => a.d - b.d);
+      const near = rows.slice(0, k), votes = {};
+      near.forEach(r => { votes[r.c] = (votes[r.c] || 0) + 1; });
+      const ranked = Object.keys(votes).sort((a, b) => votes[b] - votes[a]);
+      const tie = ranked.length > 1 && votes[ranked[0]] === votes[ranked[1]];
+      const winner = tie ? near[0].c : ranked[0];
+      const classes = [...new Set(P.map(a => a.c))];
+      const b = { P, q, rows, k, near, votes, winner, classes };
+      const fr = [
+        { ...b, st: 1, say: `${P.length} labelled examples in ${classes.length} classes, and a new point at (${q[0]}, ${q[1]}) (the star). KNN has no training step: it just keeps all the examples.` },
+        { ...b, st: 2, say: `Measure the ${p.metric === 'manhattan' ? 'Manhattan distance |Δx| + |Δy|' : 'Euclidean distance √(Δx² + Δy²)'} from the new point to every example. The closest is (${rows[0].x}, ${rows[0].y}) at ${f2(rows[0].d)}.` }
+      ];
+      near.forEach((r, j) => fr.push({ ...b, st: 3, upto: j + 1, say: `Neighbour ${j + 1} of ${k}: (${r.x}, ${r.y}), class <b>${r.c}</b>, distance ${f2(r.d)}.` }));
+      fr.push({ ...b, st: 4, upto: k, say: `Votes: ${ranked.map(c => `${c} ${votes[c]}`).join(', ')}. ${tie ? `It is a tie, so we use the single closest neighbour, class <b>${winner}</b>. An odd k avoids ties with two classes.` : `The prediction is class <b>${winner}</b>.`}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.P.map(a => a.x).concat([f.q[0]]), ys = f.P.map(a => a.y).concat([f.q[1]]);
+      const Pl = plot(z, [10, 10, 400, 310], span(xs, 0.12), span(ys, 0.12), { dx: 0, dy: 0 });
+      const col = name => klass(z, f.classes.indexOf(name));
+      if (f.st >= 3) {
+        const r = f.near[(f.upto || 1) - 1].d;
+        if (z.p.metric !== 'manhattan') { g.save(); g.setLineDash([5, 4]); g.strokeStyle = c.ink2; g.lineWidth = 1.2; g.beginPath(); g.ellipse(Pl.X(f.q[0]), Pl.Y(f.q[1]), Math.abs(Pl.X(f.q[0] + r) - Pl.X(f.q[0])), Math.abs(Pl.Y(f.q[1] + r) - Pl.Y(f.q[1])), 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
+      }
+      if (f.st >= 2) f.rows.forEach((a, j) => {
+        const isNear = f.st >= 3 && j < (f.upto || 0);
+        D.line(g, Pl.X(f.q[0]), Pl.Y(f.q[1]), Pl.X(a.x), Pl.Y(a.y), isNear ? col(a.c) : c.line, isNear ? 2.2 : 0.8, isNear ? undefined : [2, 3]);
+      });
+      f.P.forEach(a => D.circle(g, Pl.X(a.x), Pl.Y(a.y), 6, { fill: col(a.c) }));
+      f.P.forEach(a => D.text(g, a.c, Pl.X(a.x), Pl.Y(a.y) - 9, { a: 'center', s: 10, b: true, c: c.ink2 }));
+      const sx = Pl.X(f.q[0]), sy = Pl.Y(f.q[1]);
+      g.save(); g.beginPath();
+      for (let i = 0; i < 10; i++) { const rr = i % 2 ? 4 : 10, an = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(sx + rr * Math.cos(an), sy + rr * Math.sin(an)); }
+      g.closePath(); g.fillStyle = f.st >= 4 ? col(f.winner) : c.ink; g.fill(); g.restore();
+      head(z, f.st >= 2 ? 'Nearest first' : 'Examples', 425, 24);
+      if (f.st >= 2) f.rows.slice(0, 9).forEach((a, j) => {
+        const isNear = f.st >= 3 && j < (f.upto || 0);
+        D.text(g, `${j + 1}. ${a.c}  d = ${f2(a.d)}`, 425, 48 + j * 22, { s: 12, mono: true, b: isNear, c: isNear ? col(a.c) : c.ink2 });
+      });
+      if (f.st >= 4) D.text(g, `prediction: ${f.winner}`, 425, 260, { s: 15, b: true, c: col(f.winner) });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.2  how k changes the decision regions
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass, rr } = MLZ;
+  function moons(n, noise, seed) {
+    const r = rng(seed), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < n; i++) {
+      const t = Math.PI * r(), up = i % 2 === 0;
+      const x = up ? Math.cos(t) : 1 - Math.cos(t), y = up ? Math.sin(t) : 0.5 - Math.sin(t);
+      P.push({ x: x + noise * g(), y: y + noise * g(), c: up ? 0 : 1 });
+    }
+    return P;
+  }
+  const vote = (P, x, y, k) => { const d = P.map(a => [(a.x - x) ** 2 + (a.y - y) ** 2, a.c]).sort((a, b) => a[0] - b[0]).slice(0, k); const s = d.reduce((a, t) => a + t[1], 0); return s * 2 > k ? 1 : 0; };
+  trace('mlkregions', {
+    title: 'Choosing k: wiggly or smooth decision regions',
+    sub: 'Two moon shaped classes with noise. Each step colours the whole plane by the KNN vote for a bigger k and shows training and test accuracy.',
+    W: 600, H: 330,
+    params: [{ k: 'noise', label: 'Noise', type: 'range', v: 0.3, min: 0.05, max: 0.5, step: 0.05 }],
+    tips: [{ t: 'With little noise even k = 1 does well, because the classes barely overlap.', set: { noise: 0.1 }, play: true }],
+    frames(p) {
+      const tr = moons(120, p.noise, 3), te = moons(200, p.noise, 99);
+      const acc = (S, k) => S.filter(a => vote(tr, a.x, a.y, k) === a.c).length / S.length;
+      const fr = [{ tr, say: '120 training points from two moon shaped classes. The classes overlap where the noise pushes points across.' }];
+      const res = [];
+      [1, 5, 15, 45, 119].forEach(k => {
+        const a = acc(tr, k), b = acc(te, k);
+        res.push({ k, a, b });
+        fr.push({ tr, k, res: res.slice(), say: `k = ${k}: training accuracy ${f2(a * 100, 1)}%, test accuracy <b>${f2(b * 100, 1)}%</b>. ${k === 1 ? 'Every training point is its own nearest neighbour, so training accuracy is 100%, but the regions are full of islands around noisy points (overfitting).' : k >= 100 ? 'Almost every point votes, so the prediction is nearly the same everywhere (underfitting).' : 'The regions get smoother as more neighbours vote.'}` });
+      });
+      const best = res.reduce((x, y) => y.b > x.b ? y : x);
+      fr.push({ tr, k: best.k, res, done: true, say: `The best test accuracy here is at k = <b>${best.k}</b>. Small k means low bias and high variance, large k means high bias and low variance. Choose k with cross validation, and prefer an odd k for two classes.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1.5, 2.5], [-1.2, 1.7], { dx: 1, dy: 1, grid: false });
+      if (f.k) {
+        const cell = 8;
+        g.save(); g.globalAlpha = 0.22;
+        for (let px = P.x0 + 26; px < P.x0 + P.w - 10; px += cell) for (let py = P.y0 + 10; py < P.y0 + P.h - 20; py += cell) {
+          const x = -1.5 + (px + cell / 2 - P.x0 - 26) / (P.w - 36) * 4, y = -1.2 + (P.y0 + P.h - 20 - (py + cell / 2)) / (P.h - 30) * 2.9;
+          g.fillStyle = klass(z, vote(f.tr, x, y, f.k)); g.fillRect(px, py, cell, cell);
+        }
+        g.restore();
+      }
+      f.tr.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 4, { fill: klass(z, a.c), stroke: c.surf, w: 1 }));
+      if (f.res) {
+        head(z, 'Accuracy by k', 425, 24);
+        D.text(g, 'train', 470, 42, { s: 11, b: true, c: c.cv }); D.text(g, 'test', 520, 42, { s: 11, b: true, c: c.orange });
+        f.res.forEach((r, i) => {
+          const y = 56 + i * 44;
+          D.text(g, `k ${r.k}`, 425, y + 14, { s: 12, mono: true, b: true, c: r.k === f.k ? c.ink : c.ink2 });
+          rr(g, 470, y, Math.max(2, (r.a - 0.5) * 2 * 100), 12, 2, { fill: c.cv });
+          rr(g, 470, y + 15, Math.max(2, (r.b - 0.5) * 2 * 100), 12, 2, { fill: c.orange });
+          D.text(g, f2(r.b * 100, 0) + '%', 476 + Math.max(2, (r.b - 0.5) * 200), y + 26, { s: 10, b: true, c: c.orange });
+        });
+        D.text(g, 'bars start at 50%', 425, 300, { s: 10, c: c.ink2 });
+      }
+    }
+  });
+})();

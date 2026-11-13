@@ -1,0 +1,17 @@
+# the same versions as Pyodide 314.0.7, so the outputs recorded at build time match a run in the browser
+numpy==2.4.6
+pandas==3.0.2
+scikit-learn==1.8.0
+scipy==1.18.0
+statsmodels==0.14.6
+xgboost==2.1.4
+lightgbm==4.6.0
+# the serving chapters
+flask
+fastapi
+httpx
+pydantic
+django
+djangorestframework
+joblib
+pytest

@@ -349,16 +349,25 @@ window.CATALOG = {
       title: 'Machine Learning',
       emoji: '🤖',
       color: '#7c3aed',
-      blurb: 'Teach computers to learn from data, from linear regression to model evaluation.',
-      intro: 'Learn supervised and unsupervised learning with animated explanations, real datasets and code you can run in Python with scikit-learn.',
-      tags: ['Regression', 'Classification', 'Clustering', 'scikit-learn'],
-      modules: [soonModule([
-        ['What machine learning is', '👋', 'Data, features, labels and the learning loop.'],
-        ['Linear and logistic regression', '📈', 'The first models every learner should know.'],
-        ['Decision trees and ensembles', '🌳', 'Random forests and gradient boosting.'],
-        ['Clustering', '🫧', 'K means and hierarchical clustering.'],
-        ['Model evaluation', '🎯', 'Train and test splits, cross validation and metrics.']
-      ])]
+      layout: 'path',
+      blurb: 'Complete machine learning in six sections, from your first model to certification level: Foundations, Supervised, Unsupervised, Reinforcement, Deep Learning, and MLOps with model serving in Flask, FastAPI and Django.',
+      intro: 'Pick a section at the top, then follow its steps in order. Every chapter explains what each idea is, why it is needed and how it works in simple everyday words, compares it with similar methods, and shows the maths with formulas and worked problems. Step by step animations start empty and fill in as you press Step, with your own input, and a voice can read each step and each lesson aloud. Every program runs in your browser with real Python (NumPy, pandas and scikit-learn included), can be stepped through line by line and downloaded as a .py file. Each chapter ends with quizzes from easy to the level of top university exams, assignments checked by tests, LeetCode problems with downloadable solutions and a chapter summary. For the Python language itself, Django, Flask and API handling, use the Complete Python subject.',
+      tags: ['NumPy', 'pandas', 'scikit-learn', 'Regression', 'Classification', 'Trees and ensembles', 'Clustering', 'PCA', 'Reinforcement learning', 'Neural networks', 'CNN', 'Transformers', 'MLOps', 'Flask', 'FastAPI'],
+      parts: [
+        { id: 'foundations', title: 'Foundations', blurb: 'What machine learning is, how an ML project runs, the Python tools (NumPy, pandas, scikit-learn), the maths you need, and cleaning and preparing data.',
+          intro: 'Foundations starts from zero. You learn what machine learning is and how a machine learns from examples, walk through a whole project from the question to a working model, learn NumPy, pandas and the scikit-learn API, pick up the linear algebra, calculus and probability that every model uses, and learn to clean data and build good features without leaking answers.' },
+        { id: 'supervised', title: 'Supervised', blurb: 'Learning from labelled examples: linear and polynomial regression, regularisation, logistic regression, k nearest neighbours, naive Bayes, support vector machines, decision trees, random forests and boosting, and how to evaluate and tune them.',
+          intro: 'Supervised learning is where most real ML work happens. Each model is built from scratch in plain Python first, so you see every step, and then used the professional way with scikit-learn. The last step teaches metrics, cross validation, the bias and variance trade off, hyperparameter tuning and imbalanced data.' },
+        { id: 'unsupervised', title: 'Unsupervised', blurb: 'Finding structure without labels: k means, hierarchical clustering, DBSCAN, Gaussian mixtures, PCA, t-SNE and UMAP, anomaly detection, association rules and recommender systems.',
+          intro: 'Unsupervised learning finds groups, directions and unusual points in data that has no answers. You build k means, hierarchical clustering, DBSCAN and Gaussian mixtures, reduce dimensions with PCA and t-SNE, catch anomalies, mine shopping baskets and build a small recommender.' },
+        { id: 'reinforcement', title: 'Reinforcement', blurb: 'Learning by trial and reward: agents and Markov decision processes, multi armed bandits, value and policy iteration, Monte Carlo, temporal difference, Q learning and SARSA, and deep reinforcement learning.',
+          intro: 'Reinforcement learning teaches an agent to act. You start with rewards, returns and the Markov decision process, balance exploring and exploiting with bandits, solve small worlds exactly with dynamic programming, learn from experience with Q learning and SARSA, and finish with DQN, policy gradients, PPO and RLHF.' },
+        { id: 'deep', title: 'Deep Learning', blurb: 'Neural networks from one neuron to transformers: perceptrons, backpropagation, optimisers and regularisation, CNNs, RNNs and LSTMs, attention and transformers, and generative models.',
+          intro: 'Deep learning builds models out of layers of simple neurons. You build a neuron and a small network by hand, see backpropagation number by number, learn the tricks that make training work, and then meet the main architectures: CNNs for images, RNNs and LSTMs for sequences, transformers for language, and autoencoders, GANs and diffusion for generating new data.' },
+        { id: 'mlops', title: 'MLOps', blurb: 'From notebook to product: pipelines and saving models, serving models with Flask, FastAPI and Django, MLOps and monitoring, explainability and fairness, time series, ML system design and the certification revision.',
+          intro: 'A model only helps when it runs reliably for real users. You package preprocessing and the model into one pipeline, save it, serve it as a REST API with Flask, FastAPI and Django, track experiments, watch for data drift, explain predictions and check fairness, forecast time series, design whole ML systems the way interviews ask, and revise everything for a certification exam.' }
+      ],
+      modules: mlFoundModules().concat(mlSupModules(), mlUnsupModules(), mlRlModules(), mlDeepModules(), mlOpsModules(), sheetModule('machine-learning'))
     },
     {
       id: 'neural-networks',
@@ -1324,6 +1333,7 @@ function sheetModule(sid) {
     'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. Core AI runs from agents and BFS to A*, local search, CSPs, minimax and alpha beta, logic and resolution, planning, Bayesian networks, causality and reinforcement learning. Advanced AI runs from preferences and utility to expected utility, risk, discounting, games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['A*', 'admissible heuristic', 'alpha beta', 'arc consistency', 'resolution', 'unification', 'STRIPS', 'Bayes rule', 'd-separation', 'Bellman equation', 'Q learning', 'utility', 'expected utility', 'IESDS']],
     'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
+    'machine-learning': ['content/machine-learning/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from all six sections on one page: Foundations (the learning loop, NumPy, pandas, the maths and data preparation), Supervised (regression, classification, trees, ensembles, metrics and tuning), Unsupervised (clustering, PCA, anomalies, recommenders), Reinforcement (MDPs, Bellman, Q learning), Deep Learning (backpropagation, optimisers, CNNs, RNNs, transformers) and MLOps (pipelines, serving, drift, fairness). Search it, filter it, print it or download the PDF.', ['mean squared error', 'gradient descent', 'normal equation', 'sigmoid', 'log loss', 'entropy', 'gini', 'precision recall', 'ROC AUC', 'bias variance', 'k means', 'PCA', 'Bellman equation', 'Q learning', 'backpropagation', 'Adam', 'convolution', 'attention', 'data drift'], 'eighteen'],
     'python': ['content/python/cheatsheet.html', 'Every key idea, formula, table, memory aid and common mistake from all three sections on one page. Core Python runs from print() and types to strings, lists, dictionaries, functions, exceptions, files and classes. Advanced Python runs from magic methods, decorators and metaclasses to generators, testing, complexity, regular expressions and concurrency. Web and APIs runs from HTTP and REST to requests, Flask, Django, DRF, FastAPI and JWT. Search it, filter it, print it or download the PDF.', ['print sep end', 'integer division', 'operator precedence', 'slicing', 'list methods', 'dict methods', 'LEGB', '*args **kwargs', 'try except finally', 'file modes', 'MRO', 'magic methods', 'decorators', 'generators', 'big O', 'regex', 'GIL', 'HTTP status codes', 'Flask routes', 'Django ORM', 'FastAPI', 'JWT']],
     'dsa': ['content/dsa/cheatsheet.html', 'The key idea of every lesson, every complexity formula and rule, every comparison table, tip and common mistake from the DSA chapters on one page, from Big O and recurrences to arrays, strings, linked lists, stacks, queues, trees and graphs. Search it, filter it, print it or download the PDF.', ['big O', 'time complexity', 'master theorem', 'binary search', 'two pointers', 'sliding window', 'linked list', 'stack', 'queue', 'BST', 'heap', 'BFS', 'DFS', 'dijkstra'], 'eight'],
     'manual-testing': ['content/manual-testing/cheatsheet.html', 'The key idea of every lesson, every rule, table, tip and common mistake from the Manual Testing chapters on one page, from the seven testing principles, SDLC and STLC to test design techniques, the bug life cycle, test plans, metrics, Agile, DevOps and AI in testing. Search it, filter it, print it or download the PDF.', ['seven principles', 'STLC', 'equivalence partitioning', 'boundary value analysis', 'decision table', 'state transition', 'bug life cycle', 'severity and priority', 'test plan', 'RTM', 'regression'], 'eight'],
@@ -7964,3 +7974,301 @@ function pyCoreModules() {
   ];
 }
 /* ===== end of python-core-build ===== */
+
+/* ===== ml-found-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlFoundModules() {
+  return [
+    { id: "ml-f1", title: "Start here", emoji: "1", step: 1, part: "foundations", level: "Beginner", blurb: "What machine learning is, how a project runs from raw data to a working model, and the Python tools every ML engineer uses.", topics: [
+      { id: "ml-intro", title: "What machine learning is: learning from examples", emoji: "1.1", page: "content/machine-learning/ml-intro.html",
+        summary: "what ML is, the learning loop, kinds of learning, the vocabulary, generalisation and your first scikit-learn models.",
+        keywords: ["machine learning", "supervised", "unsupervised", "reinforcement", "features", "labels", "loss", "gradient descent", "overfitting", "scikit-learn"],
+        minutes: 55, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "What machine learning is", emoji: "", group: "Lesson", keywords: ["machine learning", "definition", "Tom Mitchell", "task experience performance", "rules vs learning", "spam filter"] },
+        { id: "loop", title: "The learning loop: guess, check, adjust, repeat", emoji: "", group: "Lesson", keywords: ["learning loop", "loss", "gradient descent", "learning rate", "parameters", "training"] },
+        { id: "types", title: "The kinds of machine learning", emoji: "", group: "Lesson", keywords: ["supervised", "unsupervised", "reinforcement", "semi supervised", "self supervised", "regression", "classification"] },
+        { id: "words", title: "The words of machine learning", emoji: "", group: "Lesson", keywords: ["feature", "label", "target", "example", "dataset", "X and y", "model", "parameter", "hyperparameter", "training", "inference", "loss"] },
+        { id: "generalise", title: "Learning, not memorising: generalisation", emoji: "", group: "Lesson", keywords: ["generalisation", "overfitting", "underfitting", "test set", "training set", "memorising"] },
+        { id: "sklearn", title: "Your first models with scikit-learn", emoji: "", group: "Lesson", keywords: ["scikit-learn", "sklearn", "fit", "predict", "score", "LinearRegression", "KNeighborsClassifier", "estimator API"] },
+        { id: "where", title: "Where machine learning is used, and a short history", emoji: "", group: "Lesson", keywords: ["applications", "history", "Samuel", "perceptron", "AlexNet", "transformer", "where ML is used"] },
+        { id: "versus", title: "Machine learning compared with similar ideas", emoji: "", group: "Lesson", keywords: ["ML vs programming", "ML vs statistics", "AI vs ML vs deep learning", "comparison"] },
+        { id: "maths", title: "The maths of learning", emoji: "", group: "Lesson", keywords: ["model formula", "theta", "y hat", "MSE", "accuracy", "gradient descent formula", "empirical risk"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "empirical risk minimisation", "PAC learning", "VC dimension", "no free lunch", "inductive bias"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "sliding window", "moving average", "trimmed mean", "monotonic"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-workflow", title: "The machine learning project: from a question to a working model", emoji: "1.2", page: "content/machine-learning/ml-workflow.html",
+        summary: "framing, the project stages, fair data splits, baselines, error analysis, leakage, deployment and monitoring.",
+        keywords: ["ML workflow", "CRISP-DM", "train test split", "validation set", "stratify", "baseline", "data leakage", "deployment", "monitoring"],
+        minutes: 55, counts: {"lessons": 13, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "frame", title: "Step 1: frame the problem before any code", emoji: "", group: "Lesson", keywords: ["problem framing", "business goal", "metric", "baseline", "success criteria", "do we need ML"] },
+        { id: "stages", title: "The stages of an ML project", emoji: "", group: "Lesson", keywords: ["ML lifecycle", "CRISP-DM", "stages", "deployment", "monitoring", "project workflow"] },
+        { id: "data", title: "Step 2 and 3: get the data and look at it", emoji: "", group: "Lesson", keywords: ["exploratory data analysis", "EDA", "pandas", "describe", "shape", "head", "data quality"] },
+        { id: "split", title: "Step 4: train, validation and test sets", emoji: "", group: "Lesson", keywords: ["train test split", "validation set", "test set", "stratify", "random_state", "time split", "group split"] },
+        { id: "baseline", title: "Step 5: always start with a baseline", emoji: "", group: "Lesson", keywords: ["baseline", "DummyRegressor", "DummyClassifier", "mean absolute error", "majority class"] },
+        { id: "iterate", title: "Step 6 and 7: train, look at errors, improve", emoji: "", group: "Lesson", keywords: ["error analysis", "iteration", "validation", "experiment log", "model improvement"] },
+        { id: "leakage", title: "The silent killer: data leakage", emoji: "", group: "Lesson", keywords: ["data leakage", "target leakage", "train test contamination", "pipeline", "future information"] },
+        { id: "deploy", title: "Step 8 and 9: deploy and monitor", emoji: "", group: "Lesson", keywords: ["deployment", "batch prediction", "online prediction", "API", "monitoring", "data drift", "retraining"] },
+        { id: "versus", title: "Ways of working compared", emoji: "", group: "Lesson", keywords: ["CRISP-DM vs MLOps", "batch vs online", "notebook", "comparison"] },
+        { id: "maths", title: "The maths of splitting and testing", emoji: "", group: "Lesson", keywords: ["split sizes", "standard error", "confidence interval", "MAE", "test set size", "McNemar"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "adaptive overfitting", "distribution shift", "reusable holdout"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "partition", "prefix sum", "shuffle", "Fisher Yates", "split"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-tools", title: "Python tools for ML: NumPy, pandas and scikit-learn", emoji: "1.3", page: "content/machine-learning/ml-tools.html",
+        summary: "NumPy arrays and broadcasting, pandas tables and groupby, and the scikit-learn estimator API.",
+        keywords: ["NumPy", "pandas", "scikit-learn", "broadcasting", "axis", "DataFrame", "groupby", "fit transform", "Pipeline"],
+        minutes: 60, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "stack", title: "The ML toolbox at a glance", emoji: "", group: "Lesson", keywords: ["NumPy", "pandas", "scikit-learn", "matplotlib", "PyTorch", "ML libraries", "Python for ML"] },
+        { id: "numpy", title: "NumPy arrays", emoji: "", group: "Lesson", keywords: ["ndarray", "np.array", "dtype", "shape", "vectorisation", "boolean mask", "arange", "linspace"] },
+        { id: "shapes", title: "Shapes, axes and broadcasting", emoji: "", group: "Lesson", keywords: ["shape", "axis", "axis 0 vs axis 1", "reshape", "transpose", "broadcasting", "centring"] },
+        { id: "nmaths", title: "NumPy maths for models", emoji: "", group: "Lesson", keywords: ["dot product", "matrix multiplication", "@ operator", "np.random.default_rng", "seed"] },
+        { id: "pandas", title: "pandas DataFrames", emoji: "", group: "Lesson", keywords: ["DataFrame", "Series", "index", "loc", "iloc", "read_csv", "filter rows", "describe"] },
+        { id: "groupby", title: "groupby, merge and missing values", emoji: "", group: "Lesson", keywords: ["groupby", "agg", "transform", "merge", "join", "isna", "fillna", "dropna", "split apply combine"] },
+        { id: "sklearn", title: "The scikit-learn API: estimators and transformers", emoji: "", group: "Lesson", keywords: ["estimator", "transformer", "predictor", "fit", "transform", "fit_transform", "predict_proba", "Pipeline", "make_pipeline"] },
+        { id: "versus", title: "Lists, arrays and DataFrames compared", emoji: "", group: "Lesson", keywords: ["list vs array", "array vs DataFrame", "scikit-learn vs PyTorch", "comparison"] },
+        { id: "maths", title: "The maths behind the tools", emoji: "", group: "Lesson", keywords: ["mean axis", "standard deviation", "ddof", "standard scaling", "z score", "memory", "SIMD"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "views and copies", "strides", "Arrow", "estimator contract"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "pandas", "DataFrame", "pivot", "concat", "method chaining"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "ml-f2", title: "Maths you need", emoji: "2", step: 2, part: "foundations", level: "Beginner", blurb: "The linear algebra, calculus and probability that every model uses, explained with simple words, pictures and code.", topics: [
+      { id: "ml-linalg", title: "Linear algebra for ML: vectors, distances and matrices", emoji: "2.1", page: "content/machine-learning/ml-linalg.html",
+        summary: "vectors and distances, matrices and products, the linear model, inverses, rank, projections and eigenvectors.",
+        keywords: ["linear algebra", "vector", "dot product", "Euclidean distance", "cosine similarity", "matrix multiplication", "determinant", "inverse", "rank", "eigenvalues"],
+        minutes: 60, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "vectors", title: "Vectors: every example is a list of numbers", emoji: "", group: "Lesson", keywords: ["vector", "component", "dimension", "vector addition", "scalar multiplication", "dot product", "feature vector"] },
+        { id: "distance", title: "Length, distance and similarity", emoji: "", group: "Lesson", keywords: ["Euclidean distance", "Manhattan distance", "L1 norm", "L2 norm", "cosine similarity", "distance metric", "feature scaling"] },
+        { id: "matrices", title: "Matrices: tables of numbers that transform vectors", emoji: "", group: "Lesson", keywords: ["matrix", "matrix vector product", "matrix multiplication", "identity", "transpose", "symmetric", "inverse", "shape rule"] },
+        { id: "model", title: "A linear model is a matrix product", emoji: "", group: "Lesson", keywords: ["linear model", "X w + b", "weights", "bias", "bias trick", "prediction as matrix product"] },
+        { id: "systems", title: "Systems of equations, inverse, determinant and rank", emoji: "", group: "Lesson", keywords: ["system of equations", "np.linalg.solve", "determinant", "inverse", "rank", "linear independence", "multicollinearity"] },
+        { id: "eigen", title: "Projections and eigenvectors: a first look", emoji: "", group: "Lesson", keywords: ["projection", "eigenvector", "eigenvalue", "eigh", "trace", "PCA preview", "least squares geometry"] },
+        { id: "versus", title: "Which distance to use", emoji: "", group: "Lesson", keywords: ["distance comparison", "Chebyshev", "L infinity", "NumPy vs loops", "BLAS"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["dot product angle", "orthogonal", "transpose of product", "pairwise distance", "Cauchy Schwarz"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "column space", "condition number", "spectral theorem", "SVD", "Eckart Young", "LoRA"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "Manhattan distance", "Chebyshev distance", "Euclidean distance", "reshape", "determinant", "rotation"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-calculus", title: "Calculus for ML: derivatives, gradients and gradient descent", emoji: "2.2", page: "content/machine-learning/ml-calculus.html",
+        summary: "derivatives, the chain rule, gradients, gradient descent, learning rates, SGD and mini-batches, and convexity.",
+        keywords: ["derivative", "chain rule", "gradient", "gradient descent", "learning rate", "SGD", "mini-batch", "epoch", "convex", "local minimum"],
+        minutes: 60, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "derivative", title: "Derivatives: how fast something changes", emoji: "", group: "Lesson", keywords: ["derivative", "slope", "rate of change", "limit", "tangent line", "difference quotient"] },
+        { id: "rules", title: "The derivative rules you need", emoji: "", group: "Lesson", keywords: ["power rule", "sum rule", "product rule", "exponential", "logarithm", "sigmoid derivative", "ReLU derivative", "central difference"] },
+        { id: "chain", title: "The chain rule: slopes multiply", emoji: "", group: "Lesson", keywords: ["chain rule", "composite function", "backpropagation preview", "sigmoid", "computational graph"] },
+        { id: "gradient", title: "Partial derivatives and the gradient", emoji: "", group: "Lesson", keywords: ["partial derivative", "gradient", "nabla", "gradient descent update", "MSE gradient", "steepest ascent"] },
+        { id: "descent", title: "Gradient descent: walking downhill", emoji: "", group: "Lesson", keywords: ["gradient descent", "learning rate", "divergence", "overshooting", "convergence"] },
+        { id: "variants", title: "Batch, stochastic and mini-batch gradient descent", emoji: "", group: "Lesson", keywords: ["batch gradient descent", "stochastic gradient descent", "SGD", "mini-batch", "epoch", "batch size"] },
+        { id: "convex", title: "Valleys, convexity and local minima", emoji: "", group: "Lesson", keywords: ["convex function", "local minimum", "global minimum", "saddle point", "second derivative", "Newton method"] },
+        { id: "versus", title: "Optimisers compared", emoji: "", group: "Lesson", keywords: ["closed form", "Newton method", "Hessian", "lbfgs", "gradient free", "optimiser comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["limit definition", "chain rule", "gradient descent formula", "convergence condition", "condition number", "gradient checking"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Hessian", "L smooth", "Nesterov", "Robbins Monro", "saddle points"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "binary search", "binary search on answer", "peak finding", "monotone function"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-probability", title: "Probability and statistics for ML", emoji: "2.3", page: "content/machine-learning/ml-probability.html",
+        summary: "probability rules, Bayes rule, distributions, mean and variance, the central limit theorem, maximum likelihood, cross entropy and hypothesis tests.",
+        keywords: ["probability", "Bayes rule", "distribution", "normal distribution", "variance", "correlation", "central limit theorem", "maximum likelihood", "cross entropy", "p value"],
+        minutes: 65, counts: {"lessons": 13, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "rules", title: "Probability: counting how likely things are", emoji: "", group: "Lesson", keywords: ["probability", "random variable", "sum rule", "product rule", "conditional probability", "independence", "complement"] },
+        { id: "bayes", title: "Bayes rule: updating a belief with new evidence", emoji: "", group: "Lesson", keywords: ["Bayes rule", "prior", "posterior", "likelihood", "evidence", "total probability", "base rate fallacy"] },
+        { id: "distributions", title: "The distributions you will meet everywhere", emoji: "", group: "Lesson", keywords: ["distribution", "Bernoulli", "binomial", "Poisson", "uniform", "normal distribution", "Gaussian", "PMF", "PDF", "CDF"] },
+        { id: "describe", title: "Mean, variance and correlation", emoji: "", group: "Lesson", keywords: ["mean", "median", "variance", "standard deviation", "covariance", "correlation", "expected value", "ddof", "causation"] },
+        { id: "clt", title: "The law of large numbers and the central limit theorem", emoji: "", group: "Lesson", keywords: ["law of large numbers", "central limit theorem", "standard error", "sampling distribution", "error bars"] },
+        { id: "mle", title: "Maximum likelihood: where loss functions come from", emoji: "", group: "Lesson", keywords: ["maximum likelihood", "likelihood", "log likelihood", "negative log likelihood", "MAP", "prior", "regularisation link"] },
+        { id: "entropy", title: "Entropy, cross entropy and KL divergence", emoji: "", group: "Lesson", keywords: ["entropy", "cross entropy", "KL divergence", "information gain", "log loss", "bits", "surprise"] },
+        { id: "testing", title: "Hypothesis tests and confidence intervals", emoji: "", group: "Lesson", keywords: ["hypothesis test", "p value", "null hypothesis", "confidence interval", "z test", "A/B test", "type I error", "type II error", "power"] },
+        { id: "versus", title: "Frequentist and Bayesian thinking compared", emoji: "", group: "Lesson", keywords: ["frequentist", "Bayesian", "credible interval", "posterior distribution", "MAP vs MLE"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["conditional probability formula", "Bayes formula", "expectation", "variance", "binomial", "Jensen inequality", "Gibbs inequality"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "exponential family", "Fisher information", "Cramer Rao", "Hoeffding", "PAC learning"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "probability", "dynamic programming", "median", "heap", "prefix sum", "weighted sampling"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "ml-f3", title: "Working with data", emoji: "3", step: 3, part: "foundations", level: "Beginner", blurb: "Real data is messy. Load it, clean it, and turn it into features a model can learn from.", topics: [
+      { id: "ml-data-cleaning", title: "Data cleaning: missing values, types, outliers and joins", emoji: "3.1", page: "content/machine-learning/ml-data-cleaning.html",
+        summary: "inspecting data, missing values and imputation, types and text, outliers, joins and reshaping, and a validated cleaning function.",
+        keywords: ["data cleaning", "missing values", "imputation", "fillna", "outliers", "IQR", "merge", "melt", "duplicates", "pandas"],
+        minutes: 60, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "inspect", title: "Load the data and look before you touch it", emoji: "", group: "Lesson", keywords: ["data cleaning", "inspect data", "shape", "dtypes", "isna", "duplicated", "unique", "read_csv", "garbage in garbage out"] },
+        { id: "missing", title: "Missing values: drop or fill", emoji: "", group: "Lesson", keywords: ["missing values", "NaN", "dropna", "fillna", "imputation", "SimpleImputer", "missing indicator", "MCAR", "MAR", "MNAR"] },
+        { id: "types", title: "Fix types, text, dates and duplicates", emoji: "", group: "Lesson", keywords: ["data types", "astype", "to_numeric", "to_datetime", "errors coerce", "str strip", "str lower", "replace", "drop_duplicates"] },
+        { id: "outliers", title: "Outliers: find them, then decide", emoji: "", group: "Lesson", keywords: ["outlier", "IQR", "quartile", "box plot", "z score", "masking", "winsorising", "clip", "robust statistics", "MAD"] },
+        { id: "combine", title: "Combine and reshape tables", emoji: "", group: "Lesson", keywords: ["merge", "join", "inner join", "left join", "melt", "pivot", "wide and long data", "key"] },
+        { id: "smart", title: "Smarter filling compared", emoji: "", group: "Lesson", keywords: ["KNN imputer", "IterativeImputer", "mean imputation", "HistGradientBoosting missing values", "imputation comparison"] },
+        { id: "pipeline", title: "A cleaning function you can trust", emoji: "", group: "Lesson", keywords: ["cleaning function", "assert", "data validation", "reproducible cleaning", "groupby transform", "checklist"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["quantile", "IQR", "fences", "variance shrink", "multiple imputation", "z score"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "data contracts", "schema validation", "missingness mechanism"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "pandas", "30 Days of Pandas", "drop_duplicates", "dropna", "fillna", "melt", "isin"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-features", title: "Features: encoding, scaling, engineering and selection", emoji: "3.2", page: "content/machine-learning/ml-features.html",
+        summary: "encoding categories, scaling numbers, engineering new features, text features, feature selection and ColumnTransformer pipelines.",
+        keywords: ["feature engineering", "one hot encoding", "scaling", "StandardScaler", "target encoding", "polynomial features", "TF-IDF", "feature selection", "ColumnTransformer", "Pipeline"],
+        minutes: 65, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "encode", title: "Encoding categories as numbers", emoji: "", group: "Lesson", keywords: ["feature", "encoding", "one hot encoding", "OneHotEncoder", "ordinal encoding", "OrdinalEncoder", "get_dummies", "handle_unknown", "dummy variable trap"] },
+        { id: "scale", title: "Scaling numbers", emoji: "", group: "Lesson", keywords: ["feature scaling", "standardisation", "StandardScaler", "MinMaxScaler", "RobustScaler", "normalisation", "log transform", "KNN scaling"] },
+        { id: "create", title: "Creating new features", emoji: "", group: "Lesson", keywords: ["feature engineering", "date features", "ratio features", "binning", "pd.cut", "log transform", "aggregates", "cyclical encoding", "domain knowledge"] },
+        { id: "poly", title: "Polynomial and interaction features", emoji: "", group: "Lesson", keywords: ["polynomial features", "interaction features", "PolynomialFeatures", "nonlinear features", "R2"] },
+        { id: "text", title: "Features from text", emoji: "", group: "Lesson", keywords: ["bag of words", "CountVectorizer", "TF-IDF", "TfidfVectorizer", "vocabulary", "text features"] },
+        { id: "select", title: "Feature selection: keep what helps", emoji: "", group: "Lesson", keywords: ["feature selection", "filter method", "wrapper method", "embedded method", "SelectKBest", "f_classif", "mutual information", "RFE", "L1 regularisation", "feature importance"] },
+        { id: "pipeline", title: "One pipeline for every column", emoji: "", group: "Lesson", keywords: ["ColumnTransformer", "Pipeline", "mixed data types", "get_feature_names_out", "preprocessing pipeline"] },
+        { id: "versus", title: "Encodings compared, including target encoding", emoji: "", group: "Lesson", keywords: ["target encoding", "TargetEncoder", "cross fitting", "high cardinality", "feature hashing", "embedding", "encoding comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["standardisation formula", "min max formula", "robust scaling", "polynomial column count", "mutual information", "curse of dimensionality"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "feature store", "stability selection", "representation learning"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "pandas", "groupby", "rank", "nunique", "boolean mask", "computed column"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of ml-found-build ===== */
+
+/* ===== ml-sup-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlSupModules() {
+  return [
+    { id: "ml-s1", title: "Regression", emoji: "1", step: 1, part: "supervised", level: "Beginner", blurb: "Predict numbers: straight lines, curves, and how to stop a model from memorising the training data.", topics: [
+      { id: "ml-linreg", title: "Linear regression: fit the best straight line", emoji: "1.1", page: "content/machine-learning/ml-linreg.html",
+        summary: "least squares, the normal equation, regression metrics, gradient descent, residual checks, robust regression and statistical inference.",
+        keywords: ["linear regression", "least squares", "normal equation", "R2", "RMSE", "MAE", "residuals", "Huber", "statsmodels", "gradient descent"],
+        minutes: 65, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Linear regression: predict a number with a straight line", emoji: "", group: "Lesson", keywords: ["linear regression", "least squares", "slope", "intercept", "residual", "simple linear regression", "covariance"] },
+        { id: "many", title: "Many features and the normal equation", emoji: "", group: "Lesson", keywords: ["multiple linear regression", "normal equation", "design matrix", "np.linalg.solve", "LinearRegression", "coefficients", "multicollinearity"] },
+        { id: "fit", title: "Fit, predict and measure on real data", emoji: "", group: "Lesson", keywords: ["fit", "predict", "MAE", "MSE", "RMSE", "R2", "MAPE", "train test split", "load_diabetes"] },
+        { id: "gd", title: "Gradient descent for linear regression", emoji: "", group: "Lesson", keywords: ["gradient descent", "SGDRegressor", "MSE gradient", "convex", "normal equation vs gradient descent", "partial_fit"] },
+        { id: "assume", title: "Assumptions and residual checks", emoji: "", group: "Lesson", keywords: ["assumptions", "linearity", "homoscedasticity", "heteroscedasticity", "residual analysis", "independence", "normal errors"] },
+        { id: "robust", title: "Outliers and robust regression", emoji: "", group: "Lesson", keywords: ["outliers", "robust regression", "Huber loss", "HuberRegressor", "absolute error", "median"] },
+        { id: "stats", title: "Reading weights like a statistician", emoji: "", group: "Lesson", keywords: ["statsmodels", "p value", "standard error", "confidence interval", "adjusted R2", "inference vs prediction"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["matrix form", "gradient", "normal equation derivation", "projection", "hat matrix", "Gauss Markov", "maximum likelihood"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "hat matrix", "leverage", "Cook distance", "GLM"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "slope", "straight line", "median", "weighted median", "gradient descent", "convex"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-regularization", title: "Polynomial regression and regularisation: ridge, lasso, elastic net", emoji: "1.2", page: "content/machine-learning/ml-regularization.html",
+        summary: "polynomial features, underfitting and overfitting, ridge, lasso, elastic net, and choosing alpha with cross validation.",
+        keywords: ["polynomial regression", "overfitting", "underfitting", "ridge", "lasso", "elastic net", "regularisation", "L1", "L2", "RidgeCV"],
+        minutes: 60, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "overfit", title: "Curves, underfitting and overfitting", emoji: "", group: "Lesson", keywords: ["polynomial regression", "underfitting", "overfitting", "bias", "variance", "model complexity", "train vs test error"] },
+        { id: "ridge", title: "Ridge regression (L2): keep weights small", emoji: "", group: "Lesson", keywords: ["ridge regression", "L2 penalty", "shrinkage", "alpha", "multicollinearity", "Ridge", "closed form"] },
+        { id: "lasso", title: "Lasso (L1): weights that become exactly zero", emoji: "", group: "Lesson", keywords: ["lasso", "L1 penalty", "sparsity", "feature selection", "soft thresholding", "coordinate descent", "Lasso"] },
+        { id: "enet", title: "Elastic net: the best of both", emoji: "", group: "Lesson", keywords: ["elastic net", "ElasticNet", "l1_ratio", "correlated features", "grouping effect"] },
+        { id: "cv", title: "Choosing alpha with cross validation", emoji: "", group: "Lesson", keywords: ["hyperparameter", "RidgeCV", "LassoCV", "ElasticNetCV", "cross validation", "alpha search", "log scale"] },
+        { id: "versus", title: "Penalties compared", emoji: "", group: "Lesson", keywords: ["ridge vs lasso", "L1 vs L2", "constraint form", "geometry of lasso", "diamond", "penalty comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["ridge formula", "lasso objective", "elastic net objective", "MAP", "Laplace prior", "effective degrees of freedom", "SVD shrinkage"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "LARS", "regularisation path", "group lasso", "weight decay"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "squared difference", "absolute difference", "prefix sum", "budget", "binary search", "subset sum"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "ml-s2", title: "Classification", emoji: "2", step: 2, part: "supervised", level: "Intermediate", blurb: "Predict categories: yes or no, spam or not, or which of many classes, with four very different families of models.", topics: [
+      { id: "ml-logistic", title: "Logistic regression: probabilities for classification", emoji: "2.1", page: "content/machine-learning/ml-logistic.html",
+        summary: "the sigmoid, log loss training, thresholds, softmax for many classes, odds ratios and the penalty C.",
+        keywords: ["logistic regression", "sigmoid", "log loss", "classification", "softmax", "odds ratio", "threshold", "decision boundary", "predict_proba", "C"],
+        minutes: 65, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "From a score to a probability", emoji: "", group: "Lesson", keywords: ["logistic regression", "classification", "sigmoid", "probability", "log odds", "logit", "decision boundary"] },
+        { id: "train", title: "Training with log loss", emoji: "", group: "Lesson", keywords: ["log loss", "binary cross entropy", "gradient", "maximum likelihood", "convex", "gradient descent", "lbfgs"] },
+        { id: "sklearn", title: "Logistic regression in scikit-learn", emoji: "", group: "Lesson", keywords: ["LogisticRegression", "predict_proba", "predict", "coef_", "StandardScaler", "convergence warning", "breast cancer dataset"] },
+        { id: "threshold", title: "Choosing the threshold", emoji: "", group: "Lesson", keywords: ["threshold", "precision", "recall", "false negative", "false positive", "cost sensitive"] },
+        { id: "multi", title: "More than two classes: softmax", emoji: "", group: "Lesson", keywords: ["multiclass", "softmax", "multinomial logistic regression", "categorical cross entropy", "one versus rest", "iris"] },
+        { id: "odds", title: "Reading the weights: odds ratios", emoji: "", group: "Lesson", keywords: ["odds ratio", "odds", "interpretation", "e to the w", "effect size"] },
+        { id: "boundary", title: "Curved boundaries and the penalty C", emoji: "", group: "Lesson", keywords: ["decision boundary", "nonlinear boundary", "polynomial features", "C parameter", "inverse regularisation", "LogisticRegressionCV", "separable data"] },
+        { id: "versus", title: "Logistic regression compared", emoji: "", group: "Lesson", keywords: ["logistic vs linear regression", "discriminative", "generative", "LDA", "calibration", "model comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["sigmoid derivative", "log loss gradient", "softmax gradient", "Hessian", "IRLS", "Newton method"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "GLM", "exponential family", "calibration"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "threshold", "binary search", "decision boundary", "prefix sum", "sign"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of ml-sup-build ===== */
+
+/* ===== ml-unsup-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlUnsupModules() {
+  return [];
+}
+/* ===== end of ml-unsup-build ===== */
+
+/* ===== ml-rl-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlRlModules() {
+  return [];
+}
+/* ===== end of ml-rl-build ===== */
+
+/* ===== ml-deep-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlDeepModules() {
+  return [];
+}
+/* ===== end of ml-deep-build ===== */
+
+/* ===== ml-ops-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlOpsModules() {
+  return [];
+}
+/* ===== end of ml-ops-build ===== */
