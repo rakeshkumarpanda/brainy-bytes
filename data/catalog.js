@@ -349,16 +349,25 @@ window.CATALOG = {
       title: 'Machine Learning',
       emoji: '🤖',
       color: '#7c3aed',
-      blurb: 'Teach computers to learn from data, from linear regression to model evaluation.',
-      intro: 'Learn supervised and unsupervised learning with animated explanations, real datasets and code you can run in Python with scikit-learn.',
-      tags: ['Regression', 'Classification', 'Clustering', 'scikit-learn'],
-      modules: [soonModule([
-        ['What machine learning is', '👋', 'Data, features, labels and the learning loop.'],
-        ['Linear and logistic regression', '📈', 'The first models every learner should know.'],
-        ['Decision trees and ensembles', '🌳', 'Random forests and gradient boosting.'],
-        ['Clustering', '🫧', 'K means and hierarchical clustering.'],
-        ['Model evaluation', '🎯', 'Train and test splits, cross validation and metrics.']
-      ])]
+      layout: 'path',
+      blurb: 'Complete machine learning in six sections, from your first model to certification level: Foundations, Supervised, Unsupervised, Reinforcement, Deep Learning, and MLOps with model serving in Flask, FastAPI and Django.',
+      intro: 'Pick a section at the top, then follow its steps in order. Every chapter explains what each idea is, why it is needed and how it works in simple everyday words, compares it with similar methods, and shows the maths with formulas and worked problems. Step by step animations start empty and fill in as you press Step, with your own input, and a voice can read each step and each lesson aloud. Every program runs in your browser with real Python (NumPy, pandas and scikit-learn included), can be stepped through line by line and downloaded as a .py file. Each chapter ends with quizzes from easy to the level of top university exams, assignments checked by tests, LeetCode problems with downloadable solutions and a chapter summary. For the Python language itself, Django, Flask and API handling, use the Complete Python subject.',
+      tags: ['NumPy', 'pandas', 'scikit-learn', 'Regression', 'Classification', 'Trees and ensembles', 'Clustering', 'PCA', 'Reinforcement learning', 'Neural networks', 'CNN', 'Transformers', 'MLOps', 'Flask', 'FastAPI'],
+      parts: [
+        { id: 'foundations', title: 'Foundations', blurb: 'What machine learning is, how an ML project runs, the Python tools (NumPy, pandas, scikit-learn), the maths you need, and cleaning and preparing data.',
+          intro: 'Foundations starts from zero. You learn what machine learning is and how a machine learns from examples, walk through a whole project from the question to a working model, learn NumPy, pandas and the scikit-learn API, pick up the linear algebra, calculus and probability that every model uses, and learn to clean data and build good features without leaking answers.' },
+        { id: 'supervised', title: 'Supervised', blurb: 'Learning from labelled examples: linear and polynomial regression, regularisation, logistic regression, k nearest neighbours, naive Bayes, support vector machines, decision trees, random forests and boosting, and how to evaluate and tune them.',
+          intro: 'Supervised learning is where most real ML work happens. Each model is built from scratch in plain Python first, so you see every step, and then used the professional way with scikit-learn. The last step teaches metrics, cross validation, the bias and variance trade off, hyperparameter tuning and imbalanced data.' },
+        { id: 'unsupervised', title: 'Unsupervised', blurb: 'Finding structure without labels: k means, hierarchical clustering, DBSCAN, Gaussian mixtures, PCA, t-SNE and UMAP, anomaly detection, association rules and recommender systems.',
+          intro: 'Unsupervised learning finds groups, directions and unusual points in data that has no answers. You build k means, hierarchical clustering, DBSCAN and Gaussian mixtures, reduce dimensions with PCA and t-SNE, catch anomalies, mine shopping baskets and build a small recommender.' },
+        { id: 'reinforcement', title: 'Reinforcement', blurb: 'Learning by trial and reward: agents and Markov decision processes, multi armed bandits, value and policy iteration, Monte Carlo, temporal difference, Q learning and SARSA, and deep reinforcement learning.',
+          intro: 'Reinforcement learning teaches an agent to act. You start with rewards, returns and the Markov decision process, balance exploring and exploiting with bandits, solve small worlds exactly with dynamic programming, learn from experience with Q learning and SARSA, and finish with DQN, policy gradients, PPO and RLHF.' },
+        { id: 'deep', title: 'Deep Learning', blurb: 'Neural networks from one neuron to transformers: perceptrons, backpropagation, optimisers and regularisation, CNNs, RNNs and LSTMs, attention and transformers, and generative models.',
+          intro: 'Deep learning builds models out of layers of simple neurons. You build a neuron and a small network by hand, see backpropagation number by number, learn the tricks that make training work, and then meet the main architectures: CNNs for images, RNNs and LSTMs for sequences, transformers for language, and autoencoders, GANs and diffusion for generating new data.' },
+        { id: 'mlops', title: 'MLOps', blurb: 'From notebook to product: pipelines and saving models, serving models with Flask, FastAPI and Django, MLOps and monitoring, explainability and fairness, time series, ML system design and the certification revision.',
+          intro: 'A model only helps when it runs reliably for real users. You package preprocessing and the model into one pipeline, save it, serve it as a REST API with Flask, FastAPI and Django, track experiments, watch for data drift, explain predictions and check fairness, forecast time series, design whole ML systems the way interviews ask, and revise everything for a certification exam.' }
+      ],
+      modules: mlFoundModules().concat(mlSupModules(), mlUnsupModules(), mlRlModules(), mlDeepModules(), mlOpsModules(), sheetModule('machine-learning'))
     },
     {
       id: 'neural-networks',
@@ -1324,6 +1333,7 @@ function sheetModule(sid) {
     'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. Core AI runs from agents and BFS to A*, local search, CSPs, minimax and alpha beta, logic and resolution, planning, Bayesian networks, causality and reinforcement learning. Advanced AI runs from preferences and utility to expected utility, risk, discounting, games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['A*', 'admissible heuristic', 'alpha beta', 'arc consistency', 'resolution', 'unification', 'STRIPS', 'Bayes rule', 'd-separation', 'Bellman equation', 'Q learning', 'utility', 'expected utility', 'IESDS']],
     'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
+    'machine-learning': ['content/machine-learning/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from all six sections on one page: Foundations (the learning loop, NumPy, pandas, the maths and data preparation), Supervised (regression, classification, trees, ensembles, metrics and tuning), Unsupervised (clustering, PCA, anomalies, recommenders), Reinforcement (MDPs, Bellman, Q learning), Deep Learning (backpropagation, optimisers, CNNs, RNNs, transformers) and MLOps (pipelines, serving, drift, fairness). Search it, filter it, print it or download the PDF.', ['mean squared error', 'gradient descent', 'normal equation', 'sigmoid', 'log loss', 'entropy', 'gini', 'precision recall', 'ROC AUC', 'bias variance', 'k means', 'PCA', 'Bellman equation', 'Q learning', 'backpropagation', 'Adam', 'convolution', 'attention', 'data drift'], 'eighteen'],
     'python': ['content/python/cheatsheet.html', 'Every key idea, formula, table, memory aid and common mistake from all three sections on one page. Core Python runs from print() and types to strings, lists, dictionaries, functions, exceptions, files and classes. Advanced Python runs from magic methods, decorators and metaclasses to generators, testing, complexity, regular expressions and concurrency. Web and APIs runs from HTTP and REST to requests, Flask, Django, DRF, FastAPI and JWT. Search it, filter it, print it or download the PDF.', ['print sep end', 'integer division', 'operator precedence', 'slicing', 'list methods', 'dict methods', 'LEGB', '*args **kwargs', 'try except finally', 'file modes', 'MRO', 'magic methods', 'decorators', 'generators', 'big O', 'regex', 'GIL', 'HTTP status codes', 'Flask routes', 'Django ORM', 'FastAPI', 'JWT']],
     'dsa': ['content/dsa/cheatsheet.html', 'The key idea of every lesson, every complexity formula and rule, every comparison table, tip and common mistake from the DSA chapters on one page, from Big O and recurrences to arrays, strings, linked lists, stacks, queues, trees and graphs. Search it, filter it, print it or download the PDF.', ['big O', 'time complexity', 'master theorem', 'binary search', 'two pointers', 'sliding window', 'linked list', 'stack', 'queue', 'BST', 'heap', 'BFS', 'DFS', 'dijkstra'], 'eight'],
     'manual-testing': ['content/manual-testing/cheatsheet.html', 'The key idea of every lesson, every rule, table, tip and common mistake from the Manual Testing chapters on one page, from the seven testing principles, SDLC and STLC to test design techniques, the bug life cycle, test plans, metrics, Agile, DevOps and AI in testing. Search it, filter it, print it or download the PDF.', ['seven principles', 'STLC', 'equivalence partitioning', 'boundary value analysis', 'decision table', 'state transition', 'bug life cycle', 'severity and priority', 'test plan', 'RTM', 'regression'], 'eight'],
@@ -7964,3 +7974,65 @@ function pyCoreModules() {
   ];
 }
 /* ===== end of python-core-build ===== */
+
+/* ===== ml-found-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlFoundModules() {
+  return [
+    { id: "ml-f1", title: "Start here", emoji: "1", step: 1, part: "foundations", level: "Beginner", blurb: "What machine learning is, how a project runs from raw data to a working model, and the Python tools every ML engineer uses.", topics: [
+      { id: "ml-intro", title: "What machine learning is: learning from examples", emoji: "1.1", page: "content/machine-learning/ml-intro.html",
+        summary: "what ML is, the learning loop, kinds of learning, the vocabulary, generalisation and your first scikit-learn models.",
+        keywords: ["machine learning", "supervised", "unsupervised", "reinforcement", "features", "labels", "loss", "gradient descent", "overfitting", "scikit-learn"],
+        minutes: 55, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "What machine learning is", emoji: "", group: "Lesson", keywords: ["machine learning", "definition", "Tom Mitchell", "task experience performance", "rules vs learning", "spam filter"] },
+        { id: "loop", title: "The learning loop: guess, check, adjust, repeat", emoji: "", group: "Lesson", keywords: ["learning loop", "loss", "gradient descent", "learning rate", "parameters", "training"] },
+        { id: "types", title: "The kinds of machine learning", emoji: "", group: "Lesson", keywords: ["supervised", "unsupervised", "reinforcement", "semi supervised", "self supervised", "regression", "classification"] },
+        { id: "words", title: "The words of machine learning", emoji: "", group: "Lesson", keywords: ["feature", "label", "target", "example", "dataset", "X and y", "model", "parameter", "hyperparameter", "training", "inference", "loss"] },
+        { id: "generalise", title: "Learning, not memorising: generalisation", emoji: "", group: "Lesson", keywords: ["generalisation", "overfitting", "underfitting", "test set", "training set", "memorising"] },
+        { id: "sklearn", title: "Your first models with scikit-learn", emoji: "", group: "Lesson", keywords: ["scikit-learn", "sklearn", "fit", "predict", "score", "LinearRegression", "KNeighborsClassifier", "estimator API"] },
+        { id: "where", title: "Where machine learning is used, and a short history", emoji: "", group: "Lesson", keywords: ["applications", "history", "Samuel", "perceptron", "AlexNet", "transformer", "where ML is used"] },
+        { id: "versus", title: "Machine learning compared with similar ideas", emoji: "", group: "Lesson", keywords: ["ML vs programming", "ML vs statistics", "AI vs ML vs deep learning", "comparison"] },
+        { id: "maths", title: "The maths of learning", emoji: "", group: "Lesson", keywords: ["model formula", "theta", "y hat", "MSE", "accuracy", "gradient descent formula", "empirical risk"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "empirical risk minimisation", "PAC learning", "VC dimension", "no free lunch", "inductive bias"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "sliding window", "moving average", "trimmed mean", "monotonic"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of ml-found-build ===== */
+
+/* ===== ml-sup-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlSupModules() {
+  return [];
+}
+/* ===== end of ml-sup-build ===== */
+
+/* ===== ml-unsup-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlUnsupModules() {
+  return [];
+}
+/* ===== end of ml-unsup-build ===== */
+
+/* ===== ml-rl-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlRlModules() {
+  return [];
+}
+/* ===== end of ml-rl-build ===== */
+
+/* ===== ml-deep-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlDeepModules() {
+  return [];
+}
+/* ===== end of ml-deep-build ===== */
+
+/* ===== ml-ops-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlOpsModules() {
+  return [];
+}
+/* ===== end of ml-ops-build ===== */

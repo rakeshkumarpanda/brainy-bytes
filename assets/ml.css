@@ -1,0 +1,30 @@
+/* ===== Complete Machine Learning chapter pages (body class mlp): the Python and AI subject layout in the
+   subject's violet, plus the voice note controls from assets/mlvoice.js ===== */
+:root{--cv:#7c3aed; --cv-soft:#f3ecff; --cv-line:#c9b2fb}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cv:#b197fc; --cv-soft:#22173f; --cv-line:#5a3fa6}}
+:root[data-theme="dark"]{--cv:#b197fc; --cv-soft:#22173f; --cv-line:#5a3fa6}
+
+/* "Listen to this lesson" bar under each lesson title */
+.mlp .ml-lbar{display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin:-4px 0 14px}
+.mlp .ml-listen{border:1px solid var(--cv); background:var(--cv); color:#fff; font:800 13.5px Nunito, system-ui, sans-serif;
+  border-radius:999px; padding:5px 14px; cursor:pointer}
+.mlp .ml-listen::before{content:"▶ "}
+.mlp .ml-listen.on{background:var(--surface); color:var(--cv)}
+.mlp .ml-listen.on::before{content:"■ "}
+.mlp .ml-rate{font-size:13px; color:var(--ink2); display:inline-flex; gap:6px; align-items:center}
+.mlp .ml-rate select{font:600 13px Nunito, system-ui, sans-serif; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); padding:2px 6px}
+.mlp .ml-lnote{font-size:12.5px; color:var(--ink2)}
+.mlp .ml-reading{outline:3px solid var(--cv-line); outline-offset:3px; border-radius:6px; background:var(--cv-soft)}
+
+/* the voice switch inside every step by step animation */
+.mlp .z-ctl .ml-vb{border:1px dashed var(--cv); color:var(--cv); background:var(--surface)}
+.mlp .z-ctl .ml-vb::before{content:"🔈 "}
+.mlp .z-ctl .ml-vb.on{border-style:solid; background:var(--cv-soft)}
+.mlp .z-ctl .ml-vb.on::before{content:"🔊 "}
+
+/* links to other subjects (the Complete Python subject, Maths for ML) */
+.mlp .ml-link{display:flex; gap:12px; align-items:center; border:1px solid var(--line); border-left:5px solid var(--cv); border-radius:12px;
+  padding:10px 14px; margin:14px 0; background:var(--surface2); flex-wrap:wrap}
+.mlp .ml-link b{display:block}
+.mlp .ml-link span{color:var(--ink2); font-size:14.5px}
+.mlp .ml-link a.ck-nb-a{margin-left:auto}
