@@ -8400,6 +8400,27 @@ function mlSupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-validation", title: "Validation: honest estimates of performance", emoji: "4.2", page: "content/machine-learning/ml-validation.html",
+        summary: "Three way splits, k fold cross validation, the right splitter for groups and time, leakage, and learning curves.",
+        keywords: ["cross validation", "k fold", "train test split", "StratifiedKFold", "GroupKFold", "TimeSeriesSplit", "data leakage", "learning curve", "Pipeline", "validation set"],
+        minutes: 55, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Train, validation and test sets", emoji: "", group: "Lesson", keywords: ["train test split", "validation set", "test set", "holdout", "model selection", "stratify"] },
+        { id: "cv", title: "K fold cross validation", emoji: "", group: "Lesson", keywords: ["k fold cross validation", "cross_val_score", "KFold", "fold", "variance of the estimate", "shuffle"] },
+        { id: "splitters", title: "Stratified, grouped and time ordered splits", emoji: "", group: "Lesson", keywords: ["StratifiedKFold", "GroupKFold", "TimeSeriesSplit", "grouped data", "time series validation", "class balance"] },
+        { id: "leakage", title: "Data leakage: the silent killer", emoji: "", group: "Lesson", keywords: ["data leakage", "target leakage", "Pipeline", "feature selection leak", "preprocessing inside cross validation"] },
+        { id: "curves", title: "Learning curves: will more data help?", emoji: "", group: "Lesson", keywords: ["learning curve", "high bias", "high variance", "more data", "learning_curve", "diagnosis"] },
+        { id: "versus", title: "Validation methods compared", emoji: "", group: "Lesson", keywords: ["holdout vs cross validation", "leave one out", "nested cross validation", "choosing a validation method"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["cross validation formula", "standard error", "fold size", "grid search cost", "bias of cross validation", "winner curse"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "nested cross validation", "corrected t test", "adversarial validation"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "sliding window", "partition", "rotation", "prefix sum"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

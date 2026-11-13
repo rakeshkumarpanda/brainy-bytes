@@ -1411,3 +1411,156 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 4.2  cross validation splits: plain, stratified, grouped and time ordered
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, rr, klass, box } = MLZ;
+  const N = 20;
+  const label = i => (i >= 16 ? 1 : 0);
+  const patient = i => i % 5;
+  function folds(mode) {
+    const F = [];
+    const all = [...Array(N).keys()];
+    if (mode === 'kfold') for (let k = 0; k < 5; k++) { const v = all.slice(k * 4, k * 4 + 4); F.push({ val: v, train: all.filter(i => !v.includes(i)) }); }
+    if (mode === 'strat') {
+      const neg = all.filter(i => !label(i)), pos = all.filter(i => label(i));
+      for (let k = 0; k < 5; k++) { const v = neg.slice(k * 3.2 | 0, (k + 1) * 3.2 | 0).concat(pos[k] !== undefined ? [pos[k]] : []); F.push({ val: v, train: all.filter(i => !v.includes(i)) }); }
+    }
+    if (mode === 'group') for (let k = 0; k < 5; k++) { const v = all.filter(i => patient(i) === k); F.push({ val: v, train: all.filter(i => !v.includes(i)) }); }
+    if (mode === 'time') for (let k = 1; k <= 4; k++) F.push({ train: all.slice(0, 4 * k), val: all.slice(4 * k, 4 * k + 4) });
+    return F;
+  }
+  const NAMES = { kfold: 'KFold (no shuffle)', strat: 'StratifiedKFold', group: 'GroupKFold', time: 'TimeSeriesSplit' };
+  trace('mlkfold', {
+    title: 'Cross validation: every row gets a turn in validation',
+    sub: 'Twenty rows in their stored order (4 positives at the end, rows of 5 patients mixed together). Each step shows one split: blue rows train the model, the purple rows score it. Change the splitter to see how each one chooses its folds.',
+    W: 600, H: 330,
+    params: [{ k: 'mode', label: 'Splitter', type: 'select', v: 'kfold', opts: [['kfold', 'KFold without shuffling'], ['strat', 'StratifiedKFold'], ['group', 'GroupKFold (by patient)'], ['time', 'TimeSeriesSplit']] }],
+    tips: [
+      { t: 'StratifiedKFold: every validation fold gets one of the 4 positives.', set: { mode: 'strat' }, play: true },
+      { t: 'TimeSeriesSplit: always train on the past and validate on the next block, never the other way round.', set: { mode: 'time' }, play: true }
+    ],
+    frames(p) {
+      const F = folds(p.mode);
+      const fr = [{ F, mode: p.mode, say: `${N} rows. Rows 17 to 20 are the positives (orange). The letter under each row is its patient (A to E). The splitter is <b>${NAMES[p.mode]}</b>.` }];
+      F.forEach((f, k) => {
+        const pos = f.val.filter(label).length, pats = [...new Set(f.val.map(patient))].length;
+        let extra = '';
+        if (p.mode === 'kfold') extra = pos === 0 ? ' This validation fold has <b>no positives</b>, so recall cannot even be measured here.' : pos === 4 ? ' All 4 positives sit in this fold and none are left for training.' : '';
+        if (p.mode === 'strat') extra = ` It holds ${pos} positive, the same share as the whole data.`;
+        if (p.mode === 'group') extra = ` Every row of patient ${'ABCDE'[k]} is here and none in training, so the model is scored on a person it has never seen.`;
+        if (p.mode === 'time') extra = ` Train on rows 1 to ${f.train.length}, validate on the next ${f.val.length}. The future is never used to predict the past.`;
+        fr.push({ F, mode: p.mode, k, say: `Split ${k + 1} of ${F.length}: ${f.train.length} rows train the model and ${f.val.length} score it (${pats} patient${pats > 1 ? 's' : ''} in validation).${extra}` });
+      });
+      const msg = {
+        kfold: 'Without shuffling, sorted data gives lopsided folds. Shuffle (KFold(shuffle=True)) or, for classification, use StratifiedKFold.',
+        strat: 'Stratified folds keep the class balance in every fold, so every score is measured on comparable data. It is the default for classifiers in cross_val_score.',
+        group: 'Grouped folds stop the model from recognising a patient it already saw. Use GroupKFold whenever rows from the same person, device or session can appear more than once.',
+        time: 'Time ordered splits mimic deployment: the model only ever knows the past. Shuffled folds on time series give scores that are too optimistic.'
+      };
+      fr.push({ F, mode: p.mode, done: true, say: `Every row was used for validation ${p.mode === 'time' ? 'at most' : 'exactly'} once. The cross validation score is the mean of the ${F.length} fold scores. ${msg[p.mode]}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, NAMES[f.mode], 16, 24);
+      const cw = 26, x0 = 30;
+      for (let i = 0; i < N; i++) {
+        D.text(g, String(i + 1), x0 + i * cw + 11, 46, { a: 'center', s: 9, c: c.ink2 });
+        D.circle(g, x0 + i * cw + 11, 60, 6, { fill: klass(z, label(i) ? 1 : 0) });
+        D.text(g, 'ABCDE'[patient(i)], x0 + i * cw + 11, 82, { a: 'center', s: 10, b: true, c: c.ink2 });
+      }
+      f.F.forEach((s, k) => {
+        const y = 100 + k * 34, active = f.k === k || f.done;
+        D.text(g, `${k + 1}`, 16, y + 17, { s: 11, b: true, c: active ? c.ink : c.ink2 });
+        for (let i = 0; i < N; i++) {
+          const inV = s.val.includes(i), inT = s.train.includes(i);
+          const fill = !active ? c.bg : inV ? c.cv : inT ? klass(z, 0) : c.surf;
+          rr(g, x0 + i * cw, y, cw - 3, 24, 4, { fill, stroke: c.line, w: 0.6 });
+        }
+      });
+      if (f.k !== undefined || f.done) {
+        rr(g, 30, 290, 14, 14, 3, { fill: klass(z, 0) }); D.text(g, 'train', 50, 302, { s: 11, c: c.ink2 });
+        rr(g, 100, 290, 14, 14, 3, { fill: c.cv }); D.text(g, 'validation', 120, 302, { s: 11, c: c.ink2 });
+        rr(g, 200, 290, 14, 14, 3, { fill: c.surf, stroke: c.line }); D.text(g, 'not used', 220, 302, { s: 11, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 4.2  learning curves: does more data help? (polynomial regression of growing degree)
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  function fit(xs, ys, d) {
+    const m = d + 1, A = Array.from({ length: m }, () => Array(m + 1).fill(0));
+    xs.forEach((x, n) => { const pw = [1]; for (let j = 1; j < m; j++) pw.push(pw[j - 1] * x); for (let i = 0; i < m; i++) { for (let j = 0; j < m; j++) A[i][j] += pw[i] * pw[j]; A[i][m] += pw[i] * ys[n]; } });
+    for (let i = 0; i < m; i++) A[i][i] += 1e-6;
+    for (let i = 0; i < m; i++) {
+      let piv = i; for (let r = i + 1; r < m; r++) if (Math.abs(A[r][i]) > Math.abs(A[piv][i])) piv = r;
+      [A[i], A[piv]] = [A[piv], A[i]];
+      for (let r = 0; r < m; r++) if (r !== i) { const q = A[r][i] / A[i][i]; for (let cc = i; cc <= m; cc++) A[r][cc] -= q * A[i][cc]; }
+    }
+    const w = A.map((row, i) => row[m] / row[i]);
+    return x => { let s = 0, pw = 1; for (let j = 0; j < m; j++) { s += w[j] * pw; pw *= x; } return s; };
+  }
+  function sample(n, seed) {
+    const r = rng(seed), P = [];
+    for (let i = 0; i < n; i++) { const x = 2 * r() - 1; let s = 0; for (let k = 0; k < 6; k++) s += r(); P.push({ x, y: Math.sin(Math.PI * x) + 0.3 * (s - 3) * Math.SQRT2 }); }
+    return P;
+  }
+  trace('mllearncurve', {
+    title: 'Learning curve: train and validation error as data grows',
+    sub: 'Fit a polynomial of the chosen degree to more and more training points and measure the error on the training points and on 200 fresh validation points. The shape of the two curves says whether more data or a different model will help.',
+    W: 600, H: 330,
+    params: [{ k: 'deg', label: 'Polynomial degree (model complexity)', type: 'range', v: 1, min: 1, max: 9, step: 1 }],
+    tips: [
+      { t: 'Degree 3: both curves meet low, near the noise level. A good fit.', set: { deg: 3 }, play: true },
+      { t: 'Degree 9: with 8 or 12 points the validation error is huge (high variance), then the gap closes as data grows.', set: { deg: 9 }, play: true }
+    ],
+    frames(p) {
+      const pool = sample(80, 5), val = sample(200, 901);
+      const mse = (f, S) => S.reduce((s, q) => s + (q.y - f(q.x)) ** 2, 0) / S.length;
+      const res = [];
+      const fr = [{ res: [], say: `We fit a degree ${p.deg} polynomial. The noise in the data has variance 0.09, so no model can get a validation error much below about 0.09.` }];
+      [8, 12, 16, 24, 32, 48, 64, 80].forEach(n => {
+        const S = pool.slice(0, n), f = fit(S.map(q => q.x), S.map(q => q.y), p.deg);
+        const t = mse(f, S), v = mse(f, val);
+        res.push({ n, t, v });
+        fr.push({ res: res.slice(), f, S, say: `${n} training points: training error ${f2(t, 3)}, validation error <b>${f2(v, 3)}</b>${t < 0.02 && v > 0.5 ? '. The curve passes almost exactly through the training points but swings wildly between them.' : '.'}` });
+      });
+      const last = res[res.length - 1], gap = last.v - last.t;
+      const diag = last.v > 0.2 && gap < 0.08 ? `<b>High bias</b>: both errors are high and close together (${f2(last.t, 3)} and ${f2(last.v, 3)}). More data will not help. Use a more flexible model.`
+        : gap > 0.04 ? `<b>Some variance left</b>: validation error ${f2(last.v, 3)} is still above training error ${f2(last.t, 3)}. More data or regularisation would help.`
+        : res[0].v - res[0].t > 0.3 ? `<b>High variance with little data</b>: at 8 points the gap was ${res[0].v - res[0].t > 10 ? 'over 10' : f2(res[0].v - res[0].t, 2)}, by 80 points it has closed to ${f2(gap, 3)}. For this flexible model, more data was the cure.`
+        : `<b>A good fit</b>: both errors end close to the noise level (${f2(last.t, 3)} and ${f2(last.v, 3)}).`;
+      fr.push({ res, f: fr[fr.length - 1].f, S: pool, done: true, say: diag });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const top = Math.min(1.2, Math.max(0.3, ...f.res.map(r => Math.min(r.v, 1.2)), 0.3));
+      const P = plot(z, [10, 10, 300, 310], [0, 80], [0, top], { dx: 0, dy: 2, xl: 'training points', yl: 'error' });
+      D.line(g, P.X(0), P.Y(0.09), P.X(80), P.Y(0.09), c.line, 1, [4, 4]);
+      D.text(g, 'noise 0.09', P.X(78), P.Y(0.09) - 4, { a: 'right', s: 9, c: c.ink2 });
+      [['t', klass(z, 0), 'train'], ['v', klass(z, 1), 'validation']].forEach(([k, col, name], j) => {
+        g.save(); g.beginPath();
+        f.res.forEach((r, i) => { const X = P.X(r.n), Y = P.Y(Math.min(r[k], top)); i ? g.lineTo(X, Y) : g.moveTo(X, Y); });
+        g.strokeStyle = col; g.lineWidth = 2.4; g.stroke(); g.restore();
+        f.res.forEach(r => D.circle(g, P.X(r.n), P.Y(Math.min(r[k], top)), 3.5, { fill: col }));
+        D.text(g, name, 230, 30 + j * 16, { s: 11, b: true, c: col });
+      });
+      if (f.f) {
+        const Q = plot(z, [320, 10, 270, 310], [-1, 1], [-2, 2], { dx: 1, dy: 0 });
+        f.S.forEach(q => D.circle(g, Q.X(q.x), Q.Y(q.y), 3, { fill: klass(z, 0) }));
+        g.save(); g.beginPath(); g.rect(Q.x0, Q.y0, Q.w, Q.h); g.clip(); g.beginPath();
+        for (let i = 0; i <= 120; i++) { const x = -1 + 2 * i / 120, X = Q.X(x), Y = Q.Y(Math.max(-3, Math.min(3, f.f(x)))); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+        g.strokeStyle = klass(z, 1); g.lineWidth = 2.2; g.stroke(); g.restore();
+        D.text(g, 'the fitted curve', 330, 30, { s: 11, b: true, c: c.ink2 });
+      }
+    }
+  });
+})();
