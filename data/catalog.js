@@ -8265,6 +8265,28 @@ function mlSupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-naive-bayes", title: "Naive Bayes: classify by counting clues", emoji: "2.3", page: "content/machine-learning/ml-naive-bayes.html",
+        summary: "Bayes rule as a classifier, text with multinomial naive Bayes, smoothing, logs, Gaussian and Bernoulli versions, and its limits.",
+        keywords: ["naive Bayes", "Bayes rule", "MultinomialNB", "GaussianNB", "BernoulliNB", "Laplace smoothing", "spam filter", "text classification", "log probabilities", "generative model"],
+        minutes: 50, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Bayes rule as a classifier", emoji: "", group: "Lesson", keywords: ["naive Bayes", "Bayes rule", "conditional independence", "prior", "likelihood", "posterior", "generative classifier"] },
+        { id: "text", title: "Text classification with multinomial naive Bayes", emoji: "", group: "Lesson", keywords: ["MultinomialNB", "text classification", "CountVectorizer", "word counts", "spam filter", "tokeniser"] },
+        { id: "smooth", title: "Smoothing and log probabilities", emoji: "", group: "Lesson", keywords: ["Laplace smoothing", "additive smoothing", "alpha", "zero probability", "log probabilities", "underflow"] },
+        { id: "gauss", title: "Gaussian naive Bayes for numbers", emoji: "", group: "Lesson", keywords: ["GaussianNB", "Gaussian naive Bayes", "normal distribution", "class mean", "class variance", "numeric features"] },
+        { id: "kinds", title: "Which naive Bayes to use", emoji: "", group: "Lesson", keywords: ["BernoulliNB", "MultinomialNB", "GaussianNB", "CategoricalNB", "ComplementNB", "choosing naive Bayes"] },
+        { id: "limits", title: "Strengths and weaknesses", emoji: "", group: "Lesson", keywords: ["overconfidence", "correlated features", "calibration", "generative vs discriminative", "Ng and Jordan", "data efficiency"] },
+        { id: "versus", title: "Naive Bayes compared", emoji: "", group: "Lesson", keywords: ["naive Bayes vs logistic regression", "naive Bayes vs KNN", "generative", "discriminative"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["Bayes formula", "naive assumption", "multinomial likelihood", "Bernoulli likelihood", "log score", "linear classifier"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Bayesian network", "EM", "Domingos Pazzani"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "hash map", "counting", "word frequency", "tokenising"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

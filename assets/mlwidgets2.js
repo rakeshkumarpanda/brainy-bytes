@@ -524,3 +524,115 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 2.3  naive Bayes on words: prior times one likelihood per word
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, rr, list } = MLZ;
+  trace('mlnbspam', {
+    title: 'Naive Bayes spam filter: multiply the clues',
+    sub: 'Training messages are counted word by word. For a new message we start from the prior and multiply in P(word | class) for every word, for spam and for not spam (ham), then compare.',
+    W: 600, H: 330,
+    params: [
+      { k: 'spam', label: 'Spam messages (one per line)', type: 'area', v: 'win money now\nwin a free prize\nfree money offer\nclaim your prize now' },
+      { k: 'ham', label: 'Ham messages (one per line)', type: 'area', v: 'meeting at noon\nlunch money for friday\nproject meeting now\nsee you at lunch' },
+      { k: 'msg', label: 'New message', type: 'text', v: 'free money now' },
+      { k: 'alpha', label: 'Smoothing α', type: 'range', v: 1, min: 0, max: 2, step: 0.5 }
+    ],
+    tips: [
+      { t: 'α = 0 and a word never seen in ham ("free"): P(free | ham) = 0 wipes out the whole ham score. Smoothing prevents that.', set: { alpha: 0 }, play: true },
+      { t: 'A friendly message: "lunch meeting now".', set: { msg: 'lunch meeting now', alpha: 1 }, play: true }
+    ],
+    frames(p) {
+      const lines = s => String(s).split(/\n+/).map(t => t.trim().toLowerCase()).filter(Boolean);
+      const S = lines(p.spam), H = lines(p.ham);
+      if (!S.length || !H.length) throw new Error('Give at least one spam and one ham message');
+      const count = M => { const c = {}; let t = 0; M.forEach(m => m.split(/\s+/).forEach(w => { c[w] = (c[w] || 0) + 1; t++; })); return [c, t]; };
+      const [sc, st] = count(S), [hc, ht] = count(H);
+      const V = new Set([...Object.keys(sc), ...Object.keys(hc)]).size;
+      const words = list(String(p.msg).toLowerCase()).slice(0, 6);
+      if (!words.length) throw new Error('Type a new message');
+      const a = p.alpha;
+      const pw = (w, c, t) => (t + a * V) ? ((c[w] || 0) + a) / (t + a * V) : 0;
+      let ps = S.length / (S.length + H.length), ph = 1 - ps;
+      const rows = [];
+      const fr = [{ rows: [], ps, ph, say: `Training: ${S.length} spam and ${H.length} ham messages, ${V} different words. The prior is P(spam) = ${f2(ps, 3)} and P(ham) = ${f2(ph, 3)}: before reading the new message, that is all we know.` }];
+      words.forEach(w => {
+        const a1 = pw(w, sc, st), b1 = pw(w, hc, ht);
+        ps *= a1; ph *= b1;
+        rows.push({ w, a1, b1 });
+        fr.push({ rows: rows.slice(), ps, ph, say: `Word "${w}": seen ${sc[w] || 0} times in ${st} spam words and ${hc[w] || 0} times in ${ht} ham words. With smoothing α = ${a}, P(${w} | spam) = (${sc[w] || 0} + ${a}) ÷ (${st} + ${a} × ${V}) = ${f2(a1, 4)} and P(${w} | ham) = ${f2(b1, 4)}. Multiply them in.` });
+      });
+      const tot = ps + ph;
+      fr.push({ rows, ps, ph, done: true, post: tot ? ps / tot : 0.5, say: tot ? `Scores: spam ${ps.toExponential(2)}, ham ${ph.toExponential(2)}. Divide each by their sum: <b>P(spam | message) = ${f2(ps / tot, 3)}</b>. "Naive" means we multiplied the words as if they were independent, which is not true, but the ranking is usually still right.` : 'Both scores are 0 because a word is missing from both classes and α = 0. Raise α.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, 'Word', 20, 26); head(z, 'P(word | spam)', 130, 26); head(z, 'P(word | ham)', 300, 26);
+      f.rows.forEach((r, i) => {
+        const y = 44 + i * 30;
+        D.text(g, r.w, 20, y + 13, { s: 14, b: true, mono: true, c: c.ink });
+        const bar = (x, v, col) => { rr(g, x, y, Math.max(2, v * 900), 16, 3, { fill: col }); D.text(g, f2(v, 4), x + Math.max(2, v * 900) + 4, y + 13, { s: 11, mono: true, c: col, b: v === 0 }); };
+        bar(130, Math.min(r.a1, 0.15), c.orange); bar(300, Math.min(r.b1, 0.15), c.cv);
+      });
+      const y0 = 240;
+      head(z, 'Running score (prior × word probabilities)', 20, y0);
+      D.text(g, `spam  ${f.ps.toExponential(3)}`, 20, y0 + 26, { s: 13, mono: true, b: true, c: c.orange });
+      D.text(g, `ham   ${f.ph.toExponential(3)}`, 20, y0 + 48, { s: 13, mono: true, b: true, c: c.cv });
+      if (f.done) {
+        rr(g, 330, y0 + 8, 240, 26, 6, { fill: c.bg });
+        rr(g, 330, y0 + 8, 240 * f.post, 26, 6, { fill: c.orange });
+        D.text(g, `P(spam) = ${f2(f.post, 3)}`, 340, y0 + 26, { s: 13, b: true, c: f.post > 0.5 ? '#fff' : c.ink });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.3  Gaussian naive Bayes on one feature
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, nums, klass } = MLZ;
+  const pdf = (x, m, v) => Math.exp(-((x - m) ** 2) / (2 * v)) / Math.sqrt(2 * Math.PI * v);
+  trace('mlgnb', {
+    title: 'Gaussian naive Bayes: a bell curve per class',
+    sub: 'Two classes measured on one feature. The model fits a normal curve to each class, then for a new value compares prior × curve height.',
+    W: 600, H: 320,
+    params: [
+      { k: 'a', label: 'Class A values', type: 'text', v: '1.4, 1.5, 1.3, 1.6, 1.4, 1.7, 1.5' },
+      { k: 'b', label: 'Class B values', type: 'text', v: '4.2, 4.7, 3.9, 4.5, 5.1, 4.0' },
+      { k: 'x', label: 'New value', type: 'range', v: 3, min: 0, max: 8, step: 0.1 }
+    ],
+    tips: [{ t: 'Try x = 2.4: much closer to A in distance, yet B can win because B has a much wider curve.', set: { x: 2.4 }, play: true }],
+    frames(p) {
+      const A = nums(p.a), B = nums(p.b);
+      if (A.length < 2 || B.length < 2) throw new Error('Give each class at least two values');
+      const st = v => { const m = v.reduce((s, t) => s + t, 0) / v.length; return [m, Math.max(1e-3, v.reduce((s, t) => s + (t - m) ** 2, 0) / v.length)]; };
+      const [ma, va] = st(A), [mb, vb] = st(B), pa = A.length / (A.length + B.length), pb = 1 - pa;
+      const la = pdf(p.x, ma, va), lb = pdf(p.x, mb, vb), sa = pa * la, sb = pb * lb, tot = sa + sb || 1;
+      const base = { A, B, ma, va, mb, vb };
+      return [
+        { ...base, st: 1, say: `Class A has ${A.length} values and class B has ${B.length}. The prior P(A) = ${f2(pa, 3)}, P(B) = ${f2(pb, 3)}.` },
+        { ...base, st: 2, say: `Fit a normal curve to A: mean ${f2(ma)}, variance ${f2(va, 3)}.` },
+        { ...base, st: 3, say: `Fit a normal curve to B: mean ${f2(mb)}, variance ${f2(vb, 3)}. B is spread out much more${vb > va ? '' : ' (or less)'}.` },
+        { ...base, st: 4, say: `New value x = ${p.x}. Curve heights: p(x | A) = ${la.toExponential(2)}, p(x | B) = ${lb.toExponential(2)}.` },
+        { ...base, st: 5, x: p.x, post: sa / tot, say: `Multiply by the priors and normalise: <b>P(A | x) = ${f2(sa / tot, 3)}</b>, P(B | x) = ${f2(sb / tot, 3)}. Predict <b>${sa >= sb ? 'A' : 'B'}</b>. With several features, Gaussian naive Bayes multiplies one such curve per feature.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 300], [0, 8], [0, Math.max(pdf(f.ma, f.ma, f.va), pdf(f.mb, f.mb, f.vb)) * 1.1], { dx: 0, dy: 1 });
+      const curve = (m, v, col) => { g.save(); g.beginPath(); for (let i = 0; i <= 200; i++) { const x = 8 * i / 200; i ? g.lineTo(P.X(x), P.Y(pdf(x, m, v))) : g.moveTo(P.X(x), P.Y(pdf(x, m, v))); } g.strokeStyle = col; g.lineWidth = 2.5; g.stroke(); g.restore(); };
+      f.A.forEach(v => D.circle(g, P.X(v), P.Y(0) - 6, 4.5, { fill: klass(z, 0) }));
+      f.B.forEach(v => D.circle(g, P.X(v), P.Y(0) - 16, 4.5, { fill: klass(z, 1) }));
+      if (f.st >= 2) curve(f.ma, f.va, klass(z, 0));
+      if (f.st >= 3) curve(f.mb, f.vb, klass(z, 1));
+      if (f.st >= 4) D.line(g, P.X(z.p.x), P.Y(0), P.X(z.p.x), P.y0 + 12, c.red, 2, [5, 4]);
+      head(z, 'Class A', 425, 30, { c: klass(z, 0) }); D.text(g, `mean ${f2(f.ma)}  var ${f2(f.va, 3)}`, 425, 50, { s: 12, mono: true, c: c.ink });
+      if (f.st >= 3) { head(z, 'Class B', 425, 84, { c: klass(z, 1) }); D.text(g, `mean ${f2(f.mb)}  var ${f2(f.vb, 3)}`, 425, 104, { s: 12, mono: true, c: c.ink }); }
+      if (f.st >= 5) { head(z, `P(A | x = ${z.p.x})`, 425, 150); D.text(g, f2(f.post, 3), 425, 184, { s: 26, b: true, mono: true, c: f.post >= 0.5 ? klass(z, 0) : klass(z, 1) }); }
+    }
+  });
+})();
