@@ -8651,6 +8651,27 @@ function mlRlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-bandits", title: "Multi armed bandits", emoji: "1.2", page: "content/machine-learning/ml-bandits.html",
+        summary: "Running averages and regret, epsilon greedy, UCB, Thompson sampling against A/B tests, and contextual bandits.",
+        keywords: ["multi armed bandit", "epsilon greedy", "UCB", "Thompson sampling", "regret", "A/B testing", "contextual bandit", "LinUCB", "exploration", "Beta distribution"],
+        minutes: 45, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "The bandit problem and running averages", emoji: "", group: "Lesson", keywords: ["multi armed bandit", "arm", "action value", "running average", "incremental update", "constant step size", "regret"] },
+        { id: "egreedy", title: "Greedy and epsilon greedy", emoji: "", group: "Lesson", keywords: ["greedy", "epsilon greedy", "exploration rate", "optimistic initial values", "10 armed testbed"] },
+        { id: "ucb", title: "Upper confidence bounds: optimism under uncertainty", emoji: "", group: "Lesson", keywords: ["UCB", "upper confidence bound", "UCB1", "optimism in the face of uncertainty", "logarithmic regret", "Hoeffding inequality"] },
+        { id: "thompson", title: "Thompson sampling and A/B tests", emoji: "", group: "Lesson", keywords: ["Thompson sampling", "Beta distribution", "posterior sampling", "Bayesian bandit", "A/B testing", "adaptive experiments"] },
+        { id: "contextual", title: "Contextual bandits and where bandits fit", emoji: "", group: "Lesson", keywords: ["contextual bandit", "LinUCB", "personalisation", "bandit vs reinforcement learning"] },
+        { id: "versus", title: "Bandit strategies compared", emoji: "", group: "Lesson", keywords: ["epsilon greedy vs UCB", "UCB vs Thompson sampling", "bandit comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["action value", "sample average", "step size conditions", "UCB regret", "Beta posterior", "Lai Robbins bound"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "EXP3", "best arm identification", "off policy evaluation"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "argmax", "reservoir sampling", "rejection sampling", "randomised algorithms"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

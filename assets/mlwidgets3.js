@@ -124,3 +124,142 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Reinforcement 1.2  multi armed bandits: greedy, epsilon greedy and UCB pulls, and Thompson sampling posteriors
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, nums, rng, plot } = MLZ;
+  const ruleName = { greedy: 'greedy', eps: 'ε greedy', ucb: 'UCB' };
+
+  trace('mlbandit', {
+    title: 'A multi armed bandit: which slot machine pays best?',
+    sub: 'Each arm pays 1 with its own hidden chance and 0 otherwise. The agent keeps an estimate Q (the average payout so far) for every arm and decides which arm to pull next. Greedy always pulls the best estimate, ε greedy sometimes pulls at random, and UCB adds a bonus to arms it has tried less.',
+    W: 600, H: 330,
+    params: [
+      { k: 'p', label: 'Hidden payout chance of each arm', type: 'text', v: '0.3 0.5 0.7 0.4' },
+      { k: 'rule', label: 'Rule', type: 'select', v: 'eps', opts: [['greedy', 'Greedy'], ['eps', 'ε greedy'], ['ucb', 'UCB']] },
+      { k: 'eps', label: 'ε (chance of a random arm)', type: 'range', v: 0.1, min: 0, max: 0.5, step: 0.05 },
+      { k: 'c', label: 'UCB bonus size c', type: 'range', v: 1, min: 0.2, max: 3, step: 0.1 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 5, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'Greedy with seed 2: an early lucky payout fixes it on a worse arm, and it never checks the others again.', set: { p: '0.3 0.5 0.7 0.4', rule: 'greedy', seed: 2 }, play: true },
+      { t: 'UCB: every arm is tried first, the orange bonus shrinks as an arm is pulled more, and the clearly worse arms get few pulls while the two best arms keep sharing them.', set: { p: '0.3 0.5 0.7 0.4', rule: 'ucb', c: 1, seed: 5 }, play: true }
+    ],
+    frames(p) {
+      const P = nums(p.p).slice(0, 6);
+      if (P.length < 2 || P.some(v => v < 0 || v > 1)) throw new Error('Type 2 to 6 chances between 0 and 1');
+      const k = P.length, R = rng(+p.seed * 104729), eps = +p.eps, c = +p.c, best = Math.max(...P);
+      const Q = Array(k).fill(0), N = Array(k).fill(0);
+      let total = 0, regret = 0;
+      const base = { P, rule: p.rule };
+      const fr = [{ ...base, Q: Q.slice(), N: N.slice(), total, regret, t: 0, say: `${k} arms. Their payout chances are hidden from the agent (dashed marks show them to you). Every estimate starts at 0. The rule is <b>${ruleName[p.rule]}</b>.` }];
+      const show = t => t <= 15 || t % 5 === 0;
+      for (let t = 1; t <= 100; t++) {
+        let a, why;
+        const bonus = Q.map((q, i) => (N[i] ? c * Math.sqrt(Math.log(t) / N[i]) : Infinity));
+        if (p.rule === 'ucb') {
+          const sc = Q.map((q, i) => q + bonus[i]);
+          a = sc.indexOf(Math.max(...sc));
+          why = N[a] === 0 ? `arm ${a + 1} has never been pulled, so its bonus is unlimited` : `arm ${a + 1} has the highest Q + bonus = ${f2(Q[a], 2)} + ${f2(bonus[a], 2)}`;
+        } else if (p.rule === 'eps' && R() < eps) {
+          a = Math.floor(R() * k); why = `a random number fell below ε = ${f2(eps, 2)}, so it explores and picks arm ${a + 1} at random`;
+        } else {
+          const m = Math.max(...Q), ties = Q.map((q, i) => (q === m ? i : -1)).filter(i => i >= 0);
+          a = ties[Math.floor(R() * ties.length)];
+          why = ties.length > 1 ? `arms ${ties.map(i => i + 1).join(', ')} tie for the best estimate, so it picks arm ${a + 1}` : `arm ${a + 1} has the best estimate, ${f2(Q[a], 2)}`;
+        }
+        const r = R() < P[a] ? 1 : 0;
+        N[a]++; Q[a] += (r - Q[a]) / N[a]; total += r; regret += best - P[a];
+        if (show(t)) fr.push({ ...base, Q: Q.slice(), N: N.slice(), total, regret, t, a, r, bonus: p.rule === 'ucb' ? Q.map((q, i) => (N[i] ? c * Math.sqrt(Math.log(t + 1) / N[i]) : 0)) : null,
+          say: t <= 15 ? `Pull ${t}: ${why}. It pays <b>${r}</b>. Q for arm ${a + 1} becomes ${f2(Q[a], 3)} after ${N[a]} pull${N[a] > 1 ? 's' : ''}.`
+            : `After ${t} pulls: total payout ${total}, and the pulls per arm are ${N.join(', ')}. Regret so far ${f2(regret, 1)}: the payout lost on average against always pulling the best arm.${t === 100 ? (N[P.indexOf(best)] > 50 ? ' Most pulls went to the best arm.' : ' The best arm got only ' + N[P.indexOf(best)] + ' of the 100 pulls, so payout was lost while the agent was still testing.') : ''}` });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, k = f.P.length, bw = Math.min(70, 340 / k), x0 = 40, y0 = 40, H = 200;
+      const Y = v => y0 + H - v * H;
+      D.line(g, x0 - 6, Y(0), x0 + k * bw, Y(0), c.ink2, 1);
+      [0, 0.5, 1].forEach(v => D.text(g, f2(v, 1), x0 - 10, Y(v) + 4, { a: 'right', s: 10, c: c.ink2 }));
+      f.P.forEach((pv, i) => {
+        const x = x0 + i * bw + 8, w = bw - 16;
+        rr(g, x, Y(f.Q[i]), w, Math.max(1, f.Q[i] * H), 3, { fill: i === f.a ? klass(z, 0) : 'rgba(37,99,235,0.45)' });
+        if (f.bonus && f.N[i]) { const top = Math.min(1.15, f.Q[i] + f.bonus[i]); rr(g, x, Y(top), w, (top - f.Q[i]) * H, 3, { fill: 'rgba(234,88,12,0.25)', stroke: klass(z, 1), w: 1 }); }
+        D.line(g, x - 4, Y(pv), x + w + 4, Y(pv), c.ink, 2, [4, 3]);
+        D.text(g, `arm ${i + 1}`, x + w / 2, Y(0) + 16, { a: 'center', s: 11, b: true, c: i === f.a ? klass(z, 0) : c.ink });
+        D.text(g, `n ${f.N[i]}`, x + w / 2, Y(0) + 32, { a: 'center', s: 11, mono: true, c: c.ink2 });
+        D.text(g, `Q ${f2(f.Q[i], 2)}`, x + w / 2, Y(0) + 48, { a: 'center', s: 11, mono: true, c: c.ink });
+      });
+      if (f.a !== undefined && f.t <= 15) D.text(g, f.r ? '+1' : '0', x0 + f.a * bw + bw / 2, Y(Math.max(f.Q[f.a], f.P[f.a])) - 10, { a: 'center', s: 14, b: true, c: f.r ? c.green : c.ink2 });
+      const x = 420;
+      head(z, ruleName[f.rule], x, 30);
+      D.text(g, `pull ${f.t}`, x, 56, { s: 13, b: true, c: c.ink });
+      D.text(g, `total payout ${f.total}`, x, 80, { s: 12, mono: true, c: c.green });
+      D.text(g, `regret ${f2(f.regret, 1)}`, x, 102, { s: 12, mono: true, c: c.red });
+      D.text(g, '▬ estimate Q', x, 140, { s: 11, c: klass(z, 0) });
+      D.text(g, '- - hidden chance', x, 158, { s: 11, c: c.ink });
+      if (f.rule === 'ucb') D.text(g, '▢ UCB bonus', x, 176, { s: 11, c: klass(z, 1) });
+    }
+  });
+
+  /* Beta(a, b) with whole numbers a and b: the a-th smallest of a + b - 1 uniform numbers */
+  const betaSample = (R, a, b) => { const u = Array.from({ length: a + b - 1 }, R).sort((x, y) => x - y); return u[a - 1]; };
+  const lgam = x => { const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.001208650973866179, -0.000005395239384953]; let y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t); let s = 1.000000000190015; c.forEach(v => { y += 1; s += v / y; }); return -t + Math.log(2.5066282746310005 * s / x); };
+  const betaPdf = (x, a, b) => (x <= 0 || x >= 1 ? 0 : Math.exp((a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x) + lgam(a + b) - lgam(a) - lgam(b)));
+
+  trace('mlthompson', {
+    title: 'Thompson sampling: pick by drawing from what you believe',
+    sub: 'For each design we keep a Beta curve of plausible click rates, starting flat. Each visitor: draw one random rate from every curve, show the design whose draw is highest, see if the visitor clicks, and update that curve. Uncertain designs still get chances, and clear losers fade out.',
+    W: 600, H: 330,
+    params: [
+      { k: 'p', label: 'Hidden click rate of each design', type: 'text', v: '0.3 0.45 0.6' },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 4, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'Two designs that are almost equal: both keep getting visitors for a long time, because the data cannot yet tell them apart.', set: { p: '0.5 0.52', seed: 3 }, play: true },
+      { t: 'One clearly better design: it takes over after a few dozen visitors.', set: { p: '0.1 0.2 0.8', seed: 3 }, play: true }
+    ],
+    frames(p) {
+      const P = nums(p.p).slice(0, 4);
+      if (P.length < 2 || P.some(v => v <= 0 || v >= 1)) throw new Error('Type 2 to 4 click rates between 0 and 1');
+      const k = P.length, R = rng(+p.seed * 7907), W = Array(k).fill(1), L = Array(k).fill(1);
+      const base = { P };
+      const fr = [{ ...base, W: W.slice(), L: L.slice(), t: 0, say: `${k} designs. Every curve starts flat, Beta(1, 1): any click rate from 0 to 1 is equally plausible. The dashed lines mark the hidden true rates.` }];
+      const show = [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 50, 100, 200];
+      for (let t = 1; t <= 200; t++) {
+        const draws = W.map((w, i) => betaSample(R, w, L[i])), a = draws.indexOf(Math.max(...draws)), click = R() < P[a] ? 1 : 0;
+        if (click) W[a]++; else L[a]++;
+        if (show.includes(t)) {
+          const shown = W.map((w, i) => w + L[i] - 2);
+          fr.push({ ...base, W: W.slice(), L: L.slice(), t, draws, a, click, say: t <= 6
+            ? `Visitor ${t}: the draws are ${draws.map(d => f2(d, 2)).join(', ')}. Design ${a + 1} drew highest and is shown. The visitor ${click ? '<b>clicks</b>, so its curve moves right' : '<b>does not click</b>, so its curve moves left'}: now Beta(${W[a]}, ${L[a]}).`
+            : `After ${t} visitors, the designs were shown ${shown.join(', ')} times. ${t >= 100 ? (Math.max(...shown) > 0.8 * t ? `Design ${shown.indexOf(Math.max(...shown)) + 1} took most of the visitors. Its curve is narrow, while rarely shown designs keep wide curves.` : 'No design dominates yet. The curves still overlap, so the data cannot tell the designs apart and they keep sharing visitors.') : 'Curves narrow as data piles up.'}` });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, xs = Array.from({ length: 101 }, (_, i) => i / 100);
+      const curves = f.W.map((w, i) => xs.map(x => betaPdf(x, w, f.L[i])));
+      const ymax = Math.max(1.5, ...curves.flat()) * 1.08;
+      const Pl = plot(z, [10, 10, 400, 300], [0, 1], [0, ymax], { dx: 2, dy: 1, xl: 'click rate', yl: 'belief' });
+      curves.forEach((cv, i) => {
+        const col = klass(z, i);
+        for (let j = 1; j < xs.length; j++) D.line(g, Pl.X(xs[j - 1]), Pl.Y(Math.min(cv[j - 1], ymax)), Pl.X(xs[j]), Pl.Y(Math.min(cv[j], ymax)), col, i === f.a ? 3 : 2);
+        D.line(g, Pl.X(f.P[i]), Pl.Y(0), Pl.X(f.P[i]), Pl.Y(ymax * 0.95), col, 1, [4, 4]);
+        if (f.draws && f.t <= 6) D.circle(g, Pl.X(f.draws[i]), Pl.Y(0) - 6, 5, { fill: col });
+      });
+      const x = 425;
+      head(z, `visitor ${f.t}`, x, 30);
+      f.W.forEach((w, i) => {
+        const y = 58 + i * 46;
+        D.text(g, `design ${i + 1}`, x, y, { s: 12, b: true, c: klass(z, i) });
+        D.text(g, `Beta(${w}, ${f.L[i]})`, x, y + 16, { s: 11, mono: true, c: c.ink });
+        D.text(g, `shown ${w + f.L[i] - 2}`, x + 92, y + 16, { s: 11, mono: true, c: c.ink2 });
+      });
+      if (f.draws && f.t <= 6) D.text(g, `dots: this visitor’s draws`, x, 260, { s: 11, c: c.ink2 });
+    }
+  });
+})();
