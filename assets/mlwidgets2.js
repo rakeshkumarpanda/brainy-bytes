@@ -389,3 +389,138 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 2.2  k nearest neighbours: measure, sort, take k, vote
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, span, points, D, f2, head, klass } = MLZ;
+  trace('mlknn', {
+    title: 'k nearest neighbours: ask the closest examples',
+    sub: 'Type labelled points (x y class) and a new point. KNN measures the distance to every point, keeps the k closest and lets them vote.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Points (x y class)', type: 'area', v: '1 2 A; 2 1 A; 2 3 A; 3 2 A; 6 5 B; 7 6 B; 6 7 B; 5 6 B; 4 4 B; 3 5 A' },
+      { k: 'q', label: 'New point (x, y)', type: 'text', v: '4, 3.5' },
+      { k: 'k', label: 'k (neighbours)', type: 'range', v: 3, min: 1, max: 9, step: 1 },
+      { k: 'metric', label: 'Distance', type: 'select', v: 'euclid', opts: [['euclid', 'Euclidean (straight line)'], ['manhattan', 'Manhattan (city blocks)']] }
+    ],
+    tips: [
+      { t: 'k = 1: the single closest point decides. One noisy point can flip the answer.', set: { k: 1 }, play: true },
+      { t: 'k = 9: almost everyone votes, so the bigger class tends to win everywhere.', set: { k: 9 }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts, true).slice(0, 30);
+      const q = MLZ.nums(p.q);
+      if (P.length < 2 || q.length < 2) throw new Error('Type at least two points and a new point like 4, 3.5');
+      const k = Math.min(p.k, P.length);
+      const dist = (a) => p.metric === 'manhattan' ? Math.abs(a.x - q[0]) + Math.abs(a.y - q[1]) : Math.hypot(a.x - q[0], a.y - q[1]);
+      const rows = P.map((a, i) => ({ ...a, i, d: dist(a) })).sort((a, b) => a.d - b.d);
+      const near = rows.slice(0, k), votes = {};
+      near.forEach(r => { votes[r.c] = (votes[r.c] || 0) + 1; });
+      const ranked = Object.keys(votes).sort((a, b) => votes[b] - votes[a]);
+      const tie = ranked.length > 1 && votes[ranked[0]] === votes[ranked[1]];
+      const winner = tie ? near[0].c : ranked[0];
+      const classes = [...new Set(P.map(a => a.c))];
+      const b = { P, q, rows, k, near, votes, winner, classes };
+      const fr = [
+        { ...b, st: 1, say: `${P.length} labelled examples in ${classes.length} classes, and a new point at (${q[0]}, ${q[1]}) (the star). KNN has no training step: it just keeps all the examples.` },
+        { ...b, st: 2, say: `Measure the ${p.metric === 'manhattan' ? 'Manhattan distance |Δx| + |Δy|' : 'Euclidean distance √(Δx² + Δy²)'} from the new point to every example. The closest is (${rows[0].x}, ${rows[0].y}) at ${f2(rows[0].d)}.` }
+      ];
+      near.forEach((r, j) => fr.push({ ...b, st: 3, upto: j + 1, say: `Neighbour ${j + 1} of ${k}: (${r.x}, ${r.y}), class <b>${r.c}</b>, distance ${f2(r.d)}.` }));
+      fr.push({ ...b, st: 4, upto: k, say: `Votes: ${ranked.map(c => `${c} ${votes[c]}`).join(', ')}. ${tie ? `It is a tie, so we use the single closest neighbour, class <b>${winner}</b>. An odd k avoids ties with two classes.` : `The prediction is class <b>${winner}</b>.`}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.P.map(a => a.x).concat([f.q[0]]), ys = f.P.map(a => a.y).concat([f.q[1]]);
+      const Pl = plot(z, [10, 10, 400, 310], span(xs, 0.12), span(ys, 0.12), { dx: 0, dy: 0 });
+      const col = name => klass(z, f.classes.indexOf(name));
+      if (f.st >= 3) {
+        const r = f.near[(f.upto || 1) - 1].d;
+        if (z.p.metric !== 'manhattan') { g.save(); g.setLineDash([5, 4]); g.strokeStyle = c.ink2; g.lineWidth = 1.2; g.beginPath(); g.ellipse(Pl.X(f.q[0]), Pl.Y(f.q[1]), Math.abs(Pl.X(f.q[0] + r) - Pl.X(f.q[0])), Math.abs(Pl.Y(f.q[1] + r) - Pl.Y(f.q[1])), 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
+      }
+      if (f.st >= 2) f.rows.forEach((a, j) => {
+        const isNear = f.st >= 3 && j < (f.upto || 0);
+        D.line(g, Pl.X(f.q[0]), Pl.Y(f.q[1]), Pl.X(a.x), Pl.Y(a.y), isNear ? col(a.c) : c.line, isNear ? 2.2 : 0.8, isNear ? undefined : [2, 3]);
+      });
+      f.P.forEach(a => D.circle(g, Pl.X(a.x), Pl.Y(a.y), 6, { fill: col(a.c) }));
+      f.P.forEach(a => D.text(g, a.c, Pl.X(a.x), Pl.Y(a.y) - 9, { a: 'center', s: 10, b: true, c: c.ink2 }));
+      const sx = Pl.X(f.q[0]), sy = Pl.Y(f.q[1]);
+      g.save(); g.beginPath();
+      for (let i = 0; i < 10; i++) { const rr = i % 2 ? 4 : 10, an = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(sx + rr * Math.cos(an), sy + rr * Math.sin(an)); }
+      g.closePath(); g.fillStyle = f.st >= 4 ? col(f.winner) : c.ink; g.fill(); g.restore();
+      head(z, f.st >= 2 ? 'Nearest first' : 'Examples', 425, 24);
+      if (f.st >= 2) f.rows.slice(0, 9).forEach((a, j) => {
+        const isNear = f.st >= 3 && j < (f.upto || 0);
+        D.text(g, `${j + 1}. ${a.c}  d = ${f2(a.d)}`, 425, 48 + j * 22, { s: 12, mono: true, b: isNear, c: isNear ? col(a.c) : c.ink2 });
+      });
+      if (f.st >= 4) D.text(g, `prediction: ${f.winner}`, 425, 260, { s: 15, b: true, c: col(f.winner) });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.2  how k changes the decision regions
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass, rr } = MLZ;
+  function moons(n, noise, seed) {
+    const r = rng(seed), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < n; i++) {
+      const t = Math.PI * r(), up = i % 2 === 0;
+      const x = up ? Math.cos(t) : 1 - Math.cos(t), y = up ? Math.sin(t) : 0.5 - Math.sin(t);
+      P.push({ x: x + noise * g(), y: y + noise * g(), c: up ? 0 : 1 });
+    }
+    return P;
+  }
+  const vote = (P, x, y, k) => { const d = P.map(a => [(a.x - x) ** 2 + (a.y - y) ** 2, a.c]).sort((a, b) => a[0] - b[0]).slice(0, k); const s = d.reduce((a, t) => a + t[1], 0); return s * 2 > k ? 1 : 0; };
+  trace('mlkregions', {
+    title: 'Choosing k: wiggly or smooth decision regions',
+    sub: 'Two moon shaped classes with noise. Each step colours the whole plane by the KNN vote for a bigger k and shows training and test accuracy.',
+    W: 600, H: 330,
+    params: [{ k: 'noise', label: 'Noise', type: 'range', v: 0.3, min: 0.05, max: 0.5, step: 0.05 }],
+    tips: [{ t: 'With little noise even k = 1 does well, because the classes barely overlap.', set: { noise: 0.1 }, play: true }],
+    frames(p) {
+      const tr = moons(120, p.noise, 3), te = moons(200, p.noise, 99);
+      const acc = (S, k) => S.filter(a => vote(tr, a.x, a.y, k) === a.c).length / S.length;
+      const fr = [{ tr, say: '120 training points from two moon shaped classes. The classes overlap where the noise pushes points across.' }];
+      const res = [];
+      [1, 5, 15, 45, 119].forEach(k => {
+        const a = acc(tr, k), b = acc(te, k);
+        res.push({ k, a, b });
+        fr.push({ tr, k, res: res.slice(), say: `k = ${k}: training accuracy ${f2(a * 100, 1)}%, test accuracy <b>${f2(b * 100, 1)}%</b>. ${k === 1 ? 'Every training point is its own nearest neighbour, so training accuracy is 100%, but the regions are full of islands around noisy points (overfitting).' : k >= 100 ? 'Almost every point votes, so the prediction is nearly the same everywhere (underfitting).' : 'The regions get smoother as more neighbours vote.'}` });
+      });
+      const best = res.reduce((x, y) => y.b > x.b ? y : x);
+      fr.push({ tr, k: best.k, res, done: true, say: `The best test accuracy here is at k = <b>${best.k}</b>. Small k means low bias and high variance, large k means high bias and low variance. Choose k with cross validation, and prefer an odd k for two classes.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1.5, 2.5], [-1.2, 1.7], { dx: 1, dy: 1, grid: false });
+      if (f.k) {
+        const cell = 8;
+        g.save(); g.globalAlpha = 0.22;
+        for (let px = P.x0 + 26; px < P.x0 + P.w - 10; px += cell) for (let py = P.y0 + 10; py < P.y0 + P.h - 20; py += cell) {
+          const x = -1.5 + (px + cell / 2 - P.x0 - 26) / (P.w - 36) * 4, y = -1.2 + (P.y0 + P.h - 20 - (py + cell / 2)) / (P.h - 30) * 2.9;
+          g.fillStyle = klass(z, vote(f.tr, x, y, f.k)); g.fillRect(px, py, cell, cell);
+        }
+        g.restore();
+      }
+      f.tr.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 4, { fill: klass(z, a.c), stroke: c.surf, w: 1 }));
+      if (f.res) {
+        head(z, 'Accuracy by k', 425, 24);
+        D.text(g, 'train', 470, 42, { s: 11, b: true, c: c.cv }); D.text(g, 'test', 520, 42, { s: 11, b: true, c: c.orange });
+        f.res.forEach((r, i) => {
+          const y = 56 + i * 44;
+          D.text(g, `k ${r.k}`, 425, y + 14, { s: 12, mono: true, b: true, c: r.k === f.k ? c.ink : c.ink2 });
+          rr(g, 470, y, Math.max(2, (r.a - 0.5) * 2 * 100), 12, 2, { fill: c.cv });
+          rr(g, 470, y + 15, Math.max(2, (r.b - 0.5) * 2 * 100), 12, 2, { fill: c.orange });
+          D.text(g, f2(r.b * 100, 0) + '%', 476 + Math.max(2, (r.b - 0.5) * 200), y + 26, { s: 10, b: true, c: c.orange });
+        });
+        D.text(g, 'bars start at 50%', 425, 300, { s: 10, c: c.ink2 });
+      }
+    }
+  });
+})();
