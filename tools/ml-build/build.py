@@ -43,7 +43,7 @@ sys.path.append(os.path.join(TOOLS, 'ai-build'))
 sys.path.append(os.path.join(TOOLS, 'python-build'))
 sys.path.append(HERE)  # after the import above, so that 'build' still means the Computer Vision builder
 
-WIDGETS = ['cvviz.js', 'aiwidgets.js', 'mlwidgets.js', 'mlwidgets2.js', 'mlwidgets3.js', 'mlvoice.js']
+WIDGETS = ['cvviz.js', 'aiwidgets.js', 'mlwidgets.js', 'mlwidgets2.js', 'mlwidgets3.js', 'mlwidgets4.js', 'mlvoice.js']
 BASE = {
     'subject': 'machine-learning', 'builder': 'tools/ml-build/build.py', 'badge': 'ML',
     'css': ['cv.css', 'ai.css', 'python.css', 'ml.css'], 'body': 'cvp aip caip pyp mlp', 'widgets': WIDGETS,
