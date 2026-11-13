@@ -8243,6 +8243,28 @@ function mlSupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-knn", title: "k nearest neighbours: learn from similar examples", emoji: "2.2", page: "content/machine-learning/ml-knn.html",
+        summary: "the KNN vote, choosing k, distance measures, scaling, KNN regression, the curse of dimensionality and fast similarity search.",
+        keywords: ["KNN", "k nearest neighbours", "distance", "Euclidean", "Manhattan", "cosine similarity", "choosing k", "curse of dimensionality", "scaling", "similarity search"],
+        minutes: 55, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Ask the neighbours", emoji: "", group: "Lesson", keywords: ["k nearest neighbours", "KNN", "majority vote", "lazy learning", "instance based learning", "distance"] },
+        { id: "k", title: "Choosing k", emoji: "", group: "Lesson", keywords: ["choosing k", "k = 1", "overfitting", "underfitting", "bias variance", "odd k", "cross validation"] },
+        { id: "distance", title: "Distance measures and scaling", emoji: "", group: "Lesson", keywords: ["Euclidean distance", "Manhattan distance", "Minkowski", "Chebyshev", "cosine similarity", "feature scaling", "metric"] },
+        { id: "regress", title: "KNN for numbers and weighted votes", emoji: "", group: "Lesson", keywords: ["KNN regression", "KNeighborsRegressor", "distance weighting", "weights distance", "local average"] },
+        { id: "curse", title: "The curse of dimensionality", emoji: "", group: "Lesson", keywords: ["curse of dimensionality", "high dimensions", "distance concentration", "PCA before KNN", "feature selection"] },
+        { id: "search", title: "Similarity search and tuning", emoji: "", group: "Lesson", keywords: ["NearestNeighbors", "similarity search", "k-d tree", "ball tree", "approximate nearest neighbour", "HNSW", "vector database", "GridSearchCV"] },
+        { id: "versus", title: "KNN compared", emoji: "", group: "Lesson", keywords: ["KNN vs logistic regression", "lazy vs eager learning", "prediction cost", "memory"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["KNN formula", "Cover Hart", "Bayes error", "consistency", "convergence rate", "complexity"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "metric learning", "HNSW", "consistency"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "k closest", "heap", "Manhattan distance", "binary search", "minimum spanning tree"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
