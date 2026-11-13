@@ -994,3 +994,146 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 3.2  a bootstrap sample: draw rows with replacement, some repeat and some are left out
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, rng, rr, klass } = MLZ;
+  trace('mlbootstrap', {
+    title: 'Bootstrap sample: draw rows with replacement',
+    sub: 'Each tree in a random forest trains on a bootstrap sample: as many rows as the data has, drawn at random with replacement. Some rows come up twice or more, others not at all (out of bag).',
+    W: 600, H: 330,
+    params: [
+      { k: 'n', label: 'Rows in the data', type: 'range', v: 10, min: 5, max: 15, step: 1 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 3, min: 1, max: 30, step: 1 }
+    ],
+    tips: [{ t: 'Change the seed: a different tree gets a different sample, with different rows out of bag.', set: { seed: 11 }, play: true }],
+    frames(p) {
+      const r = rng(p.seed * 7 + 1), n = p.n, draws = [];
+      for (let i = 0; i < n; i++) draws.push(1 + Math.floor(r() * n));
+      const b = { n, draws };
+      const fr = [{ ...b, upto: 0, say: `The training data has ${n} rows, numbered 1 to ${n}. We will draw ${n} times, and after each draw the row goes back in the bag.` }];
+      draws.forEach((d, i) => {
+        const before = draws.slice(0, i).filter(x => x === d).length;
+        fr.push({ ...b, upto: i + 1, say: `Draw ${i + 1}: row <b>${d}</b>${before ? `, already drawn ${before === 1 ? 'once' : before + ' times'} before. Repeats are normal with replacement.` : '.'}` });
+      });
+      const uniq = new Set(draws).size, oob = [];
+      for (let k = 1; k <= n; k++) if (!draws.includes(k)) oob.push(k);
+      fr.push({ ...b, upto: n, done: true, uniq, oob, say: `The sample has ${uniq} different rows out of ${n} (${f2(100 * uniq / n, 0)}%). Rows ${oob.join(', ') || 'none'} were never drawn: they are <b>out of bag</b> for this tree and can test it for free. On average a bootstrap sample holds 1 − 1/e ≈ 63.2% of the rows.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const cnt = {};
+      f.draws.slice(0, f.upto).forEach(d => { cnt[d] = (cnt[d] || 0) + 1; });
+      head(z, 'Original rows (the bag)', 16, 24);
+      const bw = Math.min(36, 560 / f.n - 4);
+      for (let k = 1; k <= f.n; k++) {
+        const x = 16 + (k - 1) * (bw + 4), used = cnt[k] || 0, oob = f.done && !used;
+        rr(g, x, 36, bw, 34, 5, { fill: oob ? c.surf : used ? klass(z, 0) : c.bg, stroke: oob ? klass(z, 1) : c.line, w: oob ? 2 : 1 });
+        D.text(g, String(k), x + bw / 2, 58, { a: 'center', s: 13, b: true, c: used ? '#fff' : c.ink });
+        if (used > 1) D.text(g, `×${used}`, x + bw / 2, 86, { a: 'center', s: 11, b: true, c: c.ink });
+        if (oob) D.text(g, 'OOB', x + bw / 2, 86, { a: 'center', s: 10, b: true, c: klass(z, 1) });
+      }
+      head(z, 'Bootstrap sample (in the order drawn)', 16, 124);
+      f.draws.slice(0, f.upto).forEach((d, i) => {
+        const x = 16 + i * (bw + 4), rep = f.draws.slice(0, i).includes(d);
+        rr(g, x, 136, bw, 34, 5, { fill: rep ? klass(z, 1) : klass(z, 0) });
+        D.text(g, String(d), x + bw / 2, 158, { a: 'center', s: 13, b: true, c: '#fff' });
+      });
+      if (f.done) {
+        D.text(g, `different rows: ${f.uniq} of ${f.n}`, 16, 214, { s: 14, b: true, c: c.ink });
+        D.text(g, `out of bag: ${f.oob.length ? f.oob.join(', ') : 'none'}`, 16, 240, { s: 14, b: true, c: klass(z, 1) });
+        D.text(g, 'orange boxes in the sample are repeats', 16, 270, { s: 12, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 3.2  a random forest: many different trees, one majority vote
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  function moons(n, noise, seed) {
+    const r = rng(seed), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < n; i++) {
+      const t = Math.PI * r(), up = i % 2 === 0;
+      P.push({ x: (up ? Math.cos(t) : 1 - Math.cos(t)) + noise * g(), y: (up ? Math.sin(t) : 0.5 - Math.sin(t)) + noise * g(), c: up ? 0 : 1 });
+    }
+    return P;
+  }
+  const gini = (P, I) => { if (!I.length) return 0; const k = I.filter(i => P[i].c === 1).length / I.length; return 2 * k * (1 - k); };
+  function grow(P, I, d, r, maxd, randomFeature) {
+    const ones = I.filter(i => P[i].c === 1).length;
+    const leaf = { leaf: true, m: ones * 2 > I.length ? 1 : 0 };
+    if (d >= maxd || I.length < 4 || ones === 0 || ones === I.length) return leaf;
+    const axes = randomFeature ? [r() < 0.5 ? 'x' : 'y'] : ['x', 'y'];
+    let best = null;
+    axes.forEach(ax => {
+      const v = [...new Set(I.map(i => P[i][ax]))].sort((a, b) => a - b);
+      for (let j = 1; j < v.length; j++) {
+        const t = (v[j - 1] + v[j]) / 2, L = I.filter(i => P[i][ax] <= t), R = I.filter(i => P[i][ax] > t);
+        const w = L.length * gini(P, L) + R.length * gini(P, R);
+        if (!best || w < best.w) best = { ax, t, L, R, w };
+      }
+    });
+    if (!best) return leaf;
+    return { ax: best.ax, t: best.t, l: grow(P, best.L, d + 1, r, maxd, randomFeature), r: grow(P, best.R, d + 1, r, maxd, randomFeature) };
+  }
+  const pred = (T, x, y) => { let n = T; while (!n.leaf) n = (n.ax === 'x' ? x : y) <= n.t ? n.l : n.r; return n.m; };
+  trace('mlforestvote', {
+    title: 'Random forest: many different trees vote',
+    sub: 'Each tree trains on its own bootstrap sample and picks a random feature at every split, so the trees differ. Each one alone is jagged. Their majority vote is smoother and more accurate.',
+    W: 600, H: 330,
+    params: [
+      { k: 'trees', label: 'Number of trees', type: 'range', v: 7, min: 1, max: 15, step: 2 },
+      { k: 'depth', label: 'Depth of each tree', type: 'range', v: 6, min: 2, max: 10, step: 1 }
+    ],
+    tips: [
+      { t: 'One tree only: the forest is just a single jagged tree.', set: { trees: 1 }, play: true },
+      { t: 'Shallow trees (depth 2): each tree underfits, and voting cannot fix bias.', set: { depth: 2 }, play: true }
+    ],
+    frames(p) {
+      const tr = moons(120, 0.3, 5), te = moons(300, 0.3, 77), r = rng(41);
+      const forest = [], accs = [];
+      const acc = f => te.filter(a => f(a.x, a.y) === a.c).length / te.length;
+      const fr = [{ tr, say: '120 training points from two noisy moon shaped classes. We will grow several trees and let them vote.' }];
+      for (let b = 0; b < p.trees; b++) {
+        const I = tr.map(() => Math.floor(r() * tr.length));
+        const T = grow(tr, I, 0, r, p.depth, true);
+        forest.push(T);
+        const a = acc((x, y) => pred(T, x, y));
+        accs.push(a);
+        fr.push({ tr, show: T, k: b + 1, accs: accs.slice(), say: `Tree ${b + 1}: trained on a bootstrap sample (${new Set(I).size} different rows), random feature at each split. Alone it scores <b>${f2(a * 100, 1)}%</b> on 300 test points. Its regions are boxy and full of mistakes.` });
+      }
+      const vote = (x, y) => (forest.reduce((s, T) => s + pred(T, x, y), 0) * 2 > forest.length ? 1 : 0);
+      const fa = acc(vote), mean = accs.reduce((s, a) => s + a, 0) / accs.length;
+      fr.push({ tr, forest, vote: true, accs, fa, say: `Now let all ${forest.length} trees vote. The forest scores <b>${f2(fa * 100, 1)}%</b>, while the single trees average ${f2(mean * 100, 1)}%. Their mistakes are in different places, so the vote cancels many of them.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1.5, 2.5], [-1.2, 1.7], { dx: 1, dy: 1, grid: false });
+      const fn = f.vote ? (x, y) => (f.forest.reduce((s, T) => s + pred(T, x, y), 0) * 2 > f.forest.length ? 1 : 0) : f.show ? (x, y) => pred(f.show, x, y) : null;
+      if (fn) {
+        const cell = 7;
+        g.save(); g.globalAlpha = 0.22;
+        for (let px = P.x0 + 26; px < P.x0 + P.w - 10; px += cell) for (let py = P.y0 + 10; py < P.y0 + P.h - 20; py += cell) {
+          const x = -1.5 + (px + cell / 2 - P.x0 - 26) / (P.w - 36) * 4, y = -1.2 + (P.y0 + P.h - 20 - (py + cell / 2)) / (P.h - 30) * 2.9;
+          g.fillStyle = klass(z, fn(x, y)); g.fillRect(px, py, cell, cell);
+        }
+        g.restore();
+      }
+      f.tr.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 4, { fill: klass(z, a.c), stroke: c.surf, w: 1 }));
+      if (f.accs) {
+        head(z, 'Test accuracy', 425, 24);
+        f.accs.slice(0, 10).forEach((a, i) => D.text(g, `tree ${String(i + 1).padStart(2)}  ${f2(a * 100, 1)}%`, 425, 48 + i * 19, { s: 11, mono: true, b: !f.vote && i === f.accs.length - 1, c: !f.vote && i === f.accs.length - 1 ? c.ink : c.ink2 }));
+        if (f.accs.length > 10) D.text(g, `… ${f.accs.length - 10} more`, 425, 48 + 10 * 19, { s: 11, c: c.ink2 });
+        if (f.vote) D.text(g, `forest  ${f2(f.fa * 100, 1)}%`, 425, 270, { s: 15, b: true, c: c.cv });
+      }
+    }
+  });
+})();

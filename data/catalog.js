@@ -8333,6 +8333,27 @@ function mlSupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-forest", title: "Random forests: many trees vote", emoji: "3.2", page: "content/machine-learning/ml-forest.html",
+        summary: "Bagging and bootstrap samples, why averaging works, tuning trees and features, OOB scores, regression forests and extra trees.",
+        keywords: ["random forest", "bagging", "bootstrap", "out of bag", "max_features", "n_estimators", "ensemble", "variance reduction", "extra trees", "RandomForestClassifier"],
+        minutes: 50, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Many trees are wiser than one", emoji: "", group: "Lesson", keywords: ["random forest", "ensemble", "bagging", "majority vote", "variance reduction", "RandomForestClassifier"] },
+        { id: "bagging", title: "Bootstrap samples and bagging", emoji: "", group: "Lesson", keywords: ["bootstrap sample", "bagging", "sampling with replacement", "out of bag", "63.2 percent", "BaggingClassifier"] },
+        { id: "why", title: "Why averaging works, and why trees must differ", emoji: "", group: "Lesson", keywords: ["variance of an average", "correlation between trees", "decorrelation", "bias variance", "ensemble theory"] },
+        { id: "tune", title: "Number of trees, out of bag score and max_features", emoji: "", group: "Lesson", keywords: ["n_estimators", "max_features", "out of bag score", "oob_score", "min_samples_leaf", "tuning random forests"] },
+        { id: "regress", title: "Forests for regression, and extra trees", emoji: "", group: "Lesson", keywords: ["RandomForestRegressor", "ExtraTreesRegressor", "extremely randomized trees", "regression forest", "baseline comparison"] },
+        { id: "versus", title: "Forests compared", emoji: "", group: "Lesson", keywords: ["random forest vs decision tree", "random forest vs gradient boosting", "bagging vs boosting"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["bagging formula", "majority vote", "out of bag", "forest variance", "strength and correlation", "Breiman bound"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "quantile regression forest", "isolation forest", "causal forest"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "majority vote", "Boyer Moore", "counting", "frequency"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
