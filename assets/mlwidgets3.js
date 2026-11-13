@@ -966,3 +966,115 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Reinforcement 3.2  policy gradients: REINFORCE on the short corridor, and the PPO clipped objective
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, rng, plot, box } = MLZ;
+  const nf = v => (Number.isInteger(v) ? String(v).replace('-', '−') : f2(v, 3).replace('-', '−'));
+  const J = p => {                                         // start value of the short corridor for p(right) = p
+    // v0 = v1 - 1/p, v2 = -1 + q v1, and v1 = -1 + p v0 + q v2 gives v1 = (-2 - q) / (1 - p - q^2)
+    const q = 1 - p, v1 = (-2 - q) / (1 - p - q * q);
+    return v1 - 1 / p;
+  };
+  const step = (s, right) => { let m = right ? 1 : -1; if (s === 1) m = -m; return Math.max(0, s + m); };
+
+  trace('mlcorridorpg', {
+    title: 'REINFORCE learns a stochastic policy',
+    sub: 'The short corridor: in the middle cell the actions are swapped, and the agent cannot tell the cells apart, so it picks “right” with one probability p everywhere. Every step costs −1. The right chart shows the true value J(p) of every p, the left chart how p changes while REINFORCE learns.',
+    W: 600, H: 330,
+    params: [
+      { k: 'b', label: 'Baseline', type: 'select', v: 'yes', opts: [['yes', 'Learned baseline'], ['no', 'No baseline']] },
+      { k: 'a', label: 'Step size α', type: 'select', v: '9', opts: [['9', '2⁻⁹'], ['11', '2⁻¹¹'], ['13', '2⁻¹³']] },
+      { k: 'p0', label: 'Starting p(right)', type: 'range', v: 0.1, min: 0.05, max: 0.95, step: 0.05 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 1, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'No baseline with α = 2⁻¹³: every step is small, so p creeps up from 0.1 and is still well below 0.59 after 1000 episodes.', set: { b: 'no', a: '13', p0: 0.1, seed: 1 }, play: true },
+      { t: 'Start at p = 0.9: the agent often gets stuck pressing right in the swapped cell, episodes are long, and REINFORCE pushes p down towards 0.59.', set: { b: 'yes', a: '9', p0: 0.9, seed: 1 }, play: true }
+    ],
+    frames(p) {
+      const R = rng(+p.seed * 6007), al = 2 ** -(+p.a), useB = p.b === 'yes', aw = 2 ** -6;
+      let h = Math.log(+p.p0 / (1 - +p.p0)), b = 0;
+      const sig = x => 1 / (1 + Math.exp(-x)), hist = [];
+      const fr = [{ pr: sig(h), hist: [], s: 0, say: `Start with p(right) = ${f2(sig(h), 2)}. The value of this policy is J = ${nf(J(sig(h)))}. The best possible is p = 0.59 with J = −11.66. Neither always right nor always left ever reaches the goal.` }];
+      const show = [1, 2, 10, 50, 100, 200, 400, 700, 1000];
+      for (let ep = 1; ep <= 1000; ep++) {
+        const pr = sig(h);
+        let s = 0; const acts = [];
+        while (s !== 3 && acts.length < 1000) { const a = R() < pr ? 1 : 0; acts.push(a); s = step(s, a); }
+        const T = acts.length, h0 = h;
+        acts.forEach((a, t) => { const G = -(T - t), d = G - (useB ? b : 0); if (useB) b += aw * d; h += al * d * (a - pr); });
+        hist.push(pr);
+        if (show.includes(ep)) {
+          const np = sig(h);
+          fr.push({ pr: np, hist: hist.slice(), s: 3, acts: ep <= 2 ? acts : null, say: ep <= 2
+            ? `Episode ${ep}: ${T} steps (${acts.slice(0, 14).map(a => (a ? 'R' : 'L')).join(' ')}${T > 14 ? ' …' : ''}), return ${nf(-T)}. Each step t adds α × (G<sub>t</sub>${useB ? ' − b' : ''}) × (a<sub>t</sub> − p) to the preference. p moves from ${f2(pr, 3)} to ${f2(np, 3)}.`
+            : `After ${ep} episodes: p(right) = <b>${f2(np, 3)}</b>, true value J = ${nf(J(np))}${Math.abs(np - 0.59) < 0.05 ? ', close to the best −11.66' : ''}.${ep === 1000 ? ` The best policy is random on purpose: with these features a value based method that acts greedily could only pick always right or always left.` : ''}` });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      ['S', 'swap', '', 'G'].forEach((nm, i) => {
+        rr(g, 14 + i * 68, 24, 60, 36, 6, { fill: i === 3 ? 'rgba(22,163,74,0.25)' : i === 1 ? 'rgba(234,88,12,0.18)' : c.surf, stroke: c.line });
+        D.text(g, nm, 44 + i * 68, 47, { a: 'center', s: 12, b: true, c: i === 3 ? c.green : c.ink });
+      });
+      D.text(g, `p(right) = ${f2(f.pr, 3)}`, 14, 84, { s: 12, b: true, c: klass(z, 0) });
+      const P = plot(z, [10, 96, 282, 228], [0, 1000], [0, 1], { dx: 0, dy: 1, xl: 'episode', yl: 'p(right)' });
+      D.line(g, P.X(0), P.Y(0.59), P.X(1000), P.Y(0.59), c.green, 1.2, [5, 4]);
+      for (let i = 1; i < f.hist.length; i++) D.line(g, P.X(i - 1), P.Y(f.hist[i - 1]), P.X(i), P.Y(f.hist[i]), klass(z, 0), 1.5);
+      const Q = plot(z, [302, 10, 288, 314], [0, 1], [-60, 0], { dx: 1, dy: 0, xl: 'p(right)', yl: 'J(p), the start value' });
+      let prev = null;
+      for (let k = 2; k <= 98; k++) { const x = k / 100, y = Math.max(-60, J(x)); if (prev) D.line(g, Q.X(prev[0]), Q.Y(prev[1]), Q.X(x), Q.Y(y), c.ink2, 2); prev = [x, y]; }
+      D.circle(g, Q.X(0.59), Q.Y(J(0.59)), 4, { fill: c.green });
+      D.circle(g, Q.X(f.pr), Q.Y(Math.max(-60, J(f.pr))), 7, { fill: klass(z, 0) });
+      D.text(g, 'green: best p = 0.59', 380, 300, { s: 10, c: c.ink2 });
+    }
+  });
+
+  trace('mlppoclip', {
+    title: 'The PPO clipped objective, piece by piece',
+    sub: 'r is the probability ratio π_new(a|s) / π_old(a|s) for one sample, and A its advantage. PPO maximises min(r A, clip(r, 1 − ε, 1 + ε) A). Where the minimum is flat, the sample gives no gradient, so the policy cannot move too far from the old one.',
+    W: 600, H: 330,
+    params: [
+      { k: 'sA', label: 'Advantage A', type: 'select', v: '1', opts: [['1', 'A = +1 (a good action)'], ['-1', 'A = −1 (a bad action)']] },
+      { k: 'e', label: 'Clip range ε', type: 'range', v: 0.2, min: 0.1, max: 0.4, step: 0.05 },
+      { k: 'r', label: 'Ratio r of one sample', type: 'range', v: 1.3, min: 0.4, max: 1.6, step: 0.05 }
+    ],
+    tips: [
+      { t: 'A = −1 with r = 0.7: the bad action has already been made much less likely (r < 1 − ε), so the objective is flat there and the gradient is 0.', set: { sA: '-1', e: 0.2, r: 0.7 }, play: true },
+      { t: 'A = +1 with r = 0.7: the good action became less likely, which the clip does not forgive. The min keeps the unclipped r A, and the gradient pushes r back up.', set: { sA: '1', e: 0.2, r: 0.7 }, play: true }
+    ],
+    frames(p) {
+      const A = +p.sA, e = +p.e, r = +p.r, cl = Math.min(Math.max(r, 1 - e), 1 + e), L = Math.min(r * A, cl * A);
+      const flat = (A > 0 && r > 1 + e) || (A < 0 && r < 1 - e), base = { A, e, r };
+      return [
+        { ...base, show: 1, say: `The plain surrogate r × A (blue). With A = ${A > 0 ? '+1' : '−1'}, ${A > 0 ? 'raising r always raises it, so without limits the update would push r as high as it can.' : 'lowering r always raises it, so without limits the update would push r towards 0.'}` },
+        { ...base, show: 2, say: `The clipped version clip(r, ${f2(1 - e, 2)}, ${f2(1 + e, 2)}) × A (orange dashed). Outside the range [1 − ε, 1 + ε] it stays constant.` },
+        { ...base, show: 3, say: `PPO takes the <b>minimum</b> of the two (thick line). It is a pessimistic bound: improvements beyond the clip are not counted, but losses always are.` },
+        { ...base, show: 4, say: `Shaded: where the minimum is flat, so the gradient is 0. For A ${A > 0 ? '> 0 that is r > 1 + ε' : '< 0 that is r < 1 − ε'}: the policy has already moved far enough in the helpful direction.` },
+        { ...base, show: 5, say: `This sample has r = ${f2(r, 2)}: r A = ${nf(+(r * A).toFixed(3))}, clipped term = ${nf(+(cl * A).toFixed(3))}, objective = <b>${nf(+L.toFixed(3))}</b>. ${flat ? 'It sits on the flat part, so it gives <b>no gradient</b>.' : 'It is on a sloped part, so it still gives a gradient.'}` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, A = f.A, e = f.e;
+      const P = plot(z, [10, 10, 580, 292], [0, 2], [-2, 2], { dx: 1, dy: 0, xl: 'ratio r', yl: 'objective for one sample' });
+      D.line(g, P.X(0), P.Y(0), P.X(2), P.Y(0), c.ink2, 1);
+      D.line(g, P.X(1), P.Y(-2), P.X(1), P.Y(2), c.ink2, 1, [3, 3]);
+      const cl = r => Math.min(Math.max(r, 1 - e), 1 + e);
+      if (f.show >= 4) {
+        const [x0, x1] = A > 0 ? [1 + e, 2] : [0, 1 - e];
+        g.save(); g.fillStyle = 'rgba(148,163,184,0.25)'; g.fillRect(P.X(x0), P.Y(2), P.X(x1) - P.X(x0), P.Y(-2) - P.Y(2)); g.restore();
+        D.text(g, 'gradient 0', (P.X(x0) + P.X(x1)) / 2, P.Y(A > 0 ? -1 : 1), { a: 'center', s: 12, b: true, c: c.ink2 });
+      }
+      D.line(g, P.X(0), P.Y(0), P.X(2), P.Y(2 * A), klass(z, 0), 2);
+      if (f.show >= 2) { const pts = [0, 1 - e, 1 + e, 2]; for (let i = 1; i < 4; i++) D.line(g, P.X(pts[i - 1]), P.Y(cl(pts[i - 1]) * A), P.X(pts[i]), P.Y(cl(pts[i]) * A), klass(z, 1), 2, [6, 4]); }
+      if (f.show >= 3) { const pts = [0, 1 - e, 1, 1 + e, 2], m = r => Math.min(r * A, cl(r) * A); for (let i = 1; i < pts.length; i++) D.line(g, P.X(pts[i - 1]), P.Y(m(pts[i - 1])), P.X(pts[i]), P.Y(m(pts[i])), c.ink, 4); }
+      if (f.show >= 5) { const y = Math.min(f.r * A, cl(f.r) * A); D.circle(g, P.X(f.r), P.Y(y), 8, { fill: c.red }); }
+      D.text(g, `A = ${A > 0 ? '+1' : '−1'}, ε = ${f2(e, 2)}    blue: r A    orange: clip(r) A    black: the minimum`, 14, 322, { s: 11, c: c.ink2 });
+    }
+  });
+})();

@@ -8777,6 +8777,27 @@ function mlRlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-policy-gradient", title: "Policy gradients, actor critic and PPO", emoji: "3.2", page: "content/machine-learning/ml-policy-gradient.html",
+        summary: "REINFORCE, baselines, actor critic, GAE, PPO and TRPO, and continuous control methods.",
+        keywords: ["policy gradient", "REINFORCE", "actor critic", "PPO", "TRPO", "GAE", "advantage", "baseline", "SAC", "DDPG"],
+        minutes: 55, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Learning the policy directly: REINFORCE", emoji: "", group: "Lesson", keywords: ["policy gradient", "REINFORCE", "softmax policy", "stochastic policy", "short corridor", "Williams"] },
+        { id: "theorem", title: "The policy gradient theorem and baselines", emoji: "", group: "Lesson", keywords: ["policy gradient theorem", "baseline", "variance reduction", "advantage", "log derivative trick", "score function"] },
+        { id: "ac", title: "Actor critic methods", emoji: "", group: "Lesson", keywords: ["actor critic", "critic", "TD error advantage", "A2C", "A3C", "GAE", "TRPO"] },
+        { id: "ppo", title: "PPO: small, safe policy updates", emoji: "", group: "Lesson", keywords: ["PPO", "proximal policy optimization", "clipped objective", "probability ratio", "TRPO", "KL divergence", "RLHF"] },
+        { id: "continuous", title: "Continuous actions: Gaussian policies, DDPG, TD3 and SAC", emoji: "", group: "Lesson", keywords: ["continuous actions", "Gaussian policy", "DDPG", "TD3", "SAC", "deterministic policy gradient", "maximum entropy"] },
+        { id: "versus", title: "Value based, policy based and actor critic compared", emoji: "", group: "Lesson", keywords: ["value based vs policy based", "actor critic comparison", "choosing an RL algorithm"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["log derivative trick", "advantage", "GAE formula", "natural gradient", "Fisher information"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "natural gradient", "PPO implementation details"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "jump game", "greedy", "sliding window maximum", "breadth first search"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
