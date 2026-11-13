@@ -8581,6 +8581,26 @@ function mlUnsupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-association", title: "Association rules and market basket analysis", emoji: "3.2", page: "content/machine-learning/ml-association.html",
+        summary: "Support, confidence and lift, Apriori and pruning, rule tables, FP-Growth, and reading rules safely.",
+        keywords: ["association rules", "market basket analysis", "Apriori", "support", "confidence", "lift", "FP-Growth", "frequent itemsets", "leverage", "conviction"],
+        minutes: 45, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Items that go together: support, confidence and lift", emoji: "", group: "Lesson", keywords: ["association rules", "market basket analysis", "support", "confidence", "lift", "itemset"] },
+        { id: "apriori", title: "Apriori: finding frequent itemsets fast", emoji: "", group: "Lesson", keywords: ["Apriori", "frequent itemsets", "Apriori property", "candidate generation", "minimum support", "pruning"] },
+        { id: "rules", title: "From itemsets to a table of rules", emoji: "", group: "Lesson", keywords: ["rule generation", "leverage", "conviction", "one hot encoding", "mlxtend", "ranking rules"] },
+        { id: "fpgrowth", title: "FP-Growth, big data and pitfalls", emoji: "", group: "Lesson", keywords: ["FP-Growth", "FP-tree", "PCY", "SON algorithm", "multiple testing", "correlation vs causation"] },
+        { id: "versus", title: "Association rules compared", emoji: "", group: "Lesson", keywords: ["association rules vs clustering", "association rules vs recommender systems"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["support formula", "lift formula", "Apriori property", "number of rules", "multiple testing"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "closed itemsets", "sequential patterns"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "hash map", "sets", "subsets", "combinations", "bitmask"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

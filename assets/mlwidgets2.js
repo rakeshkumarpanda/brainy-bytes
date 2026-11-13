@@ -2597,3 +2597,123 @@ const MLGM = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Unsupervised 3.2  association rules: support, confidence and lift read straight off the baskets
+   ===================================================================================================== */
+const MLBASKETS = [['bread', 'milk'], ['bread', 'butter', 'milk'], ['bread', 'butter'], ['milk', 'tea'], ['bread', 'butter', 'jam'],
+  ['bread', 'milk', 'butter'], ['tea', 'biscuits'], ['bread', 'jam'], ['milk', 'biscuits', 'tea'], ['bread', 'butter', 'milk', 'jam']];
+(() => {
+  const { trace, D, f2, head, klass, rr } = MLZ;
+  const ITEMS = ['biscuits', 'bread', 'butter', 'jam', 'milk', 'tea'];
+  trace('mlrules', {
+    title: 'Support, confidence and lift on real baskets',
+    sub: 'Ten shopping baskets. For a rule "if A then B", support is the share of baskets with both, confidence is the share of A baskets that also have B, and lift compares that confidence with how common B is anyway.',
+    W: 600, H: 330,
+    params: [
+      { k: 'a', label: 'If the basket has (A)', type: 'select', v: 'bread', opts: ITEMS.map(i => [i, i]) },
+      { k: 'b', label: 'then it also has (B)', type: 'select', v: 'butter', opts: ITEMS.map(i => [i, i]) }
+    ],
+    tips: [
+      { t: 'If bread then milk: the confidence looks decent, but milk is in most baskets anyway, so the lift is about 1 and there is no real link.', set: { a: 'bread', b: 'milk' }, play: true },
+      { t: 'If tea then biscuits: rare items, but they go together strongly, so the lift is high.', set: { a: 'tea', b: 'biscuits' }, play: true }
+    ],
+    frames(p) {
+      if (p.a === p.b) throw new Error('Choose two different items');
+      const B = MLBASKETS, n = B.length;
+      const hasA = B.map(b => b.includes(p.a)), hasB = B.map(b => b.includes(p.b)), both = B.map((b, i) => hasA[i] && hasB[i]);
+      const nA = hasA.filter(Boolean).length, nB = hasB.filter(Boolean).length, nAB = both.filter(Boolean).length;
+      const sA = nA / n, sB = nB / n, sAB = nAB / n, conf = nA ? nAB / nA : 0, lift = sB ? conf / sB : 0;
+      const base = { a: p.a, b: p.b };
+      const fr = [{ ...base, say: `Ten baskets. The rule to test is <b>if ${p.a} then ${p.b}</b>.` }];
+      fr.push({ ...base, mA: hasA, say: `${nA} of ${n} baskets contain ${p.a} (outlined). Support of ${p.a} = ${nA} / ${n} = <b>${f2(sA, 2)}</b>.` });
+      fr.push({ ...base, mA: hasA, mB: hasB, say: `${nB} of ${n} baskets contain ${p.b}. Support of ${p.b} = <b>${f2(sB, 2)}</b>. This is how often ${p.b} is bought anyway.` });
+      fr.push({ ...base, mA: hasA, mB: hasB, mAB: both, say: `${nAB} baskets contain both (filled rows). Support of the rule = ${nAB} / ${n} = <b>${f2(sAB, 2)}</b>: how often the pair happens at all.` });
+      fr.push({ ...base, mA: hasA, mB: hasB, mAB: both, focus: true, say: `Confidence = baskets with both ÷ baskets with ${p.a} = ${nAB} / ${nA} = <b>${f2(conf, 3)}</b>. Among people who buy ${p.a}, that share also buy ${p.b}.` });
+      fr.push({ ...base, mA: hasA, mB: hasB, mAB: both, focus: true, done: true, lift, say: `Lift = confidence ÷ support of ${p.b} = ${f2(conf, 3)} / ${f2(sB, 2)} = <b>${f2(lift, 2)}</b>. ${lift > 1.05 ? `Above 1: buying ${p.a} makes ${p.b} more likely than usual, a real link.` : lift < 0.95 ? `Below 1: people who buy ${p.a} buy ${p.b} less often than everyone else does, so this rule is misleading however high its confidence.` : `About 1: the two items are independent.`}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      MLBASKETS.forEach((b, i) => {
+        const y = 14 + i * 30, inA = f.mA && f.mA[i], inAB = f.mAB && f.mAB[i];
+        rr(g, 10, y, 370, 26, 6, { fill: inAB ? 'rgba(124,58,237,0.16)' : c.surf, stroke: inA ? c.cv : c.line, w: inA ? 2 : 1 });
+        D.text(g, `basket ${i + 1}`, 18, y + 17, { s: 11, c: c.ink2 });
+        b.forEach((it, j) => {
+          const x = 90 + j * 72, isA = it === f.a && f.mA, isB = it === f.b && f.mB;
+          rr(g, x, y + 4, 66, 18, 4, { fill: isA ? klass(z, 0) : isB ? klass(z, 1) : c.line });
+          D.text(g, it, x + 33, y + 17, { a: 'center', s: 11, b: isA || isB, c: isA || isB ? '#fff' : c.ink });
+        });
+      });
+      head(z, 'Rule', 400, 24);
+      D.text(g, `if ${f.a}`, 400, 48, { s: 13, b: true, c: klass(z, 0) });
+      D.text(g, `then ${f.b}`, 400, 68, { s: 13, b: true, c: klass(z, 1) });
+      const n = MLBASKETS.length, cnt = m => (m ? m.filter(Boolean).length : null);
+      const rows = [['baskets with A', cnt(f.mA)], ['baskets with B', cnt(f.mB)], ['baskets with both', cnt(f.mAB)]];
+      rows.forEach(([t, v], k) => { if (v !== null) D.text(g, `${t}: ${v} of ${n}`, 400, 100 + 20 * k, { s: 12, mono: true, c: c.ink }); });
+      if (f.focus) D.text(g, `confidence ${f2(cnt(f.mAB) / (cnt(f.mA) || 1), 3)}`, 400, 172, { s: 13, b: true, c: c.cv });
+      if (f.done) D.text(g, `lift ${f2(f.lift, 2)}`, 400, 194, { s: 15, b: true, c: f.lift > 1.05 ? c.green : f.lift < 0.95 ? c.red : c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 3.2  Apriori: count small itemsets, keep the frequent ones, build bigger candidates only from them
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr } = MLZ;
+  trace('mlapriori', {
+    title: 'Apriori: grow frequent itemsets level by level',
+    sub: 'Count single items and keep those in at least min count baskets. Join the survivors into pairs, but skip any pair that contains an infrequent item, then count. Repeat for triples. If a set is rare, every bigger set containing it is rare too, which saves a lot of counting.',
+    W: 600, H: 330,
+    params: [{ k: 'min', label: 'Minimum count (baskets out of 10)', type: 'range', v: 3, min: 1, max: 6, step: 1 }],
+    tips: [
+      { t: 'A minimum count of 2: more itemsets survive, so there are more candidates to count at every level.', set: { min: 2 }, play: true },
+      { t: 'A minimum count of 5: only the most common items survive, and the search stops early.', set: { min: 5 }, play: true }
+    ],
+    frames(p) {
+      const B = MLBASKETS.map(b => new Set(b)), items = [...new Set(MLBASKETS.flat())].sort();
+      const count = s => B.filter(b => s.every(i => b.has(i))).length, key = s => s.join(' + ');
+      const levels = [];
+      let cand = items.map(i => [i]), k = 1;
+      const fr = [{ levels: [], min: p.min, say: `10 baskets with ${items.length} different items. An itemset is frequent if it appears in at least <b>${p.min}</b> baskets.` }];
+      while (cand.length && k <= 4) {
+        const counted = cand.map(s => ({ s, n: count(s) }));
+        const keep = counted.filter(x => x.n >= p.min);
+        levels.push({ k, counted, pruned: [] });
+        fr.push({ levels: levels.map(l => ({ ...l })), min: p.min, say: `Size ${k}: count ${cand.length} candidate${cand.length === 1 ? '' : 's'}. <b>${keep.length}</b> reach${keep.length === 1 ? 'es' : ''} ${p.min} (green): ${keep.map(x => `${key(x.s)} (${x.n})`).join(', ') || 'none'}.` });
+        const ks = new Set(keep.map(x => key(x.s)));
+        const joined = new Map();
+        keep.forEach(a => keep.forEach(b => { const u = [...new Set(a.s.concat(b.s))].sort(); if (u.length === k + 1) joined.set(key(u), u); }));
+        const next = [], pruned = [];
+        joined.forEach(u => { const ok = u.every((_, i) => ks.has(key(u.filter((__, j) => j !== i)))); (ok ? next : pruned).push(u); });
+        if (pruned.length) { levels[levels.length - 1].prunedNext = pruned; fr.push({ levels: levels.map(l => ({ ...l })), min: p.min, say: `Joining the frequent size ${k} sets gives ${joined.size} size ${k + 1} sets, but ${pruned.length} of them (${pruned.map(key).join(', ')}) contain a size ${k} subset that is not frequent, so they are dropped without counting. That is the Apriori rule.` }); }
+        cand = next; k++;
+      }
+      const total = levels.reduce((a, l) => a + l.counted.filter(x => x.n >= p.min).length, 0), work = levels.reduce((a, l) => a + l.counted.length, 0);
+      const all = Math.pow(2, items.length) - 1;
+      fr.push({ levels: levels.map(l => ({ ...l })), min: p.min, done: true, say: `Done: <b>${total}</b> frequent itemsets. Apriori counted only ${work} candidates, out of ${all} possible non empty itemsets of ${items.length} items. With thousands of items the saving is enormous.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, RH = 18, MAXR = 15;
+      f.levels.forEach((l, col) => {
+        const x = 10 + col * 146;
+        D.text(g, `size ${l.k}`, x, 16, { s: 12, b: true, c: c.ink });
+        l.counted.slice(0, MAXR).forEach((it, r) => {
+          const y = 24 + r * RH, ok = it.n >= f.min;
+          rr(g, x, y, 138, RH - 3, 4, { fill: ok ? c.green : c.line });
+          D.text(g, it.s.join(' + '), x + 5, y + 11, { s: 10, b: ok, c: ok ? '#fff' : c.ink2 });
+          D.text(g, String(it.n), x + 132, y + 11, { a: 'right', s: 10, b: true, c: ok ? '#fff' : c.ink2 });
+        });
+        if (l.counted.length > MAXR) D.text(g, `and ${l.counted.length - MAXR} more`, x, 24 + MAXR * RH + 10, { s: 10, c: c.ink2 });
+        if (l.prunedNext) {
+          const nx = 10 + (col + 1) * 146, base = 24 + Math.min(MAXR, (f.levels[col + 1] ? f.levels[col + 1].counted.length : 0)) * RH + 22;
+          D.text(g, 'skipped by the Apriori rule', nx, base - 6, { s: 10, b: true, c: c.red });
+          l.prunedNext.slice(0, 6).forEach((u, r) => { rr(g, nx, base + r * RH, 138, RH - 3, 4, { stroke: c.red, w: 1.2 }); D.text(g, u.join(' + '), nx + 5, base + r * RH + 11, { s: 10, c: c.red }); });
+        }
+      });
+      D.text(g, `min count ${f.min}`, 590, 16, { a: 'right', s: 12, b: true, c: c.cv });
+    }
+  });
+})();
