@@ -1564,3 +1564,108 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 4.3  grid search against random search when only one setting really matters
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  const score = (x, y) => 0.6 + 0.35 * Math.exp(-(((x - 0.63) / 0.07) ** 2)) + 0.03 * y;
+  trace('mlgridrandom', {
+    title: 'Grid search or random search?',
+    sub: 'Two settings on a 0 to 1 scale. The score (shading) depends a lot on the first setting and hardly at all on the second. Both searches get 9 tries. Watch how many different values of the important setting each one tests.',
+    W: 600, H: 330,
+    params: [{ k: 'seed', label: 'Random seed', type: 'range', v: 4, min: 1, max: 30, step: 1 }],
+    tips: [{ t: 'Try other seeds: random search is not always better, but on average it covers the important setting far more finely.', set: { seed: 12 }, play: true }],
+    frames(p) {
+      const G = [], R = [], r = rng(p.seed * 13 + 5);
+      [1 / 6, 0.5, 5 / 6].forEach(x => [1 / 6, 0.5, 5 / 6].forEach(y => G.push({ x, y, s: score(x, y) })));
+      for (let i = 0; i < 9; i++) { const x = r(), y = r(); R.push({ x, y, s: score(x, y) }); }
+      const bg = G.reduce((a, b) => (b.s > a.s ? b : a)), br = R.reduce((a, b) => (b.s > a.s ? b : a));
+      const fr = [{ G: [], R: [], say: 'Darker means a better score. The best region is a narrow band around 0.63 on the first setting. The second setting barely matters, but we do not know that in advance.' }];
+      for (let i = 3; i <= 9; i += 3) fr.push({ G: G.slice(0, i), R: [], say: `Grid search, tries ${i - 2} to ${i}: a 3 × 3 grid. ${i === 9 ? `All 9 tries test only <b>3 different values</b> of the important setting (0.17, 0.5, 0.83). Best score ${f2(bg.s, 3)}.` : 'Each column repeats the same value of the first setting.'}` });
+      for (let i = 3; i <= 9; i += 3) fr.push({ G, R: R.slice(0, i), say: `Random search, tries ${i - 2} to ${i}: each try picks both settings at random. ${i === 9 ? `9 tries test <b>9 different values</b> of the important setting. Best score ${f2(br.s, 3)}${br.s > bg.s ? ', better than the grid' : ''}.` : ''}` });
+      fr.push({ G, R, bg, br, done: true, say: `Grid best ${f2(bg.s, 3)} at first setting ${f2(bg.x, 2)}, random best ${f2(br.s, 3)} at ${f2(br.x, 2)}. When only a few settings matter, which is usual, random search explores each of them more finely for the same cost (Bergstra and Bengio, 2012).` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 330, 310], [0, 1], [0, 1], { dx: 1, dy: 1, xl: 'setting 1 (matters)', yl: 'setting 2' });
+      const cell = 8;
+      g.save();
+      for (let px = P.X(0); px < P.X(1); px += cell) for (let py = P.Y(1); py < P.Y(0); py += cell) {
+        const x = (px + cell / 2 - P.X(0)) / (P.X(1) - P.X(0)), y = (P.Y(0) - py - cell / 2) / (P.Y(0) - P.Y(1));
+        g.globalAlpha = Math.max(0, (score(x, y) - 0.58) / 0.42) * 0.55; g.fillStyle = c.cv; g.fillRect(px, py, cell, cell);
+      }
+      g.restore();
+      f.G.forEach(q => { D.circle(g, P.X(q.x), P.Y(q.y), 7, { fill: klass(z, 0), stroke: c.surf, w: 1.5 }); D.line(g, P.X(q.x), P.Y(0), P.X(q.x), P.Y(0) + 8, klass(z, 0), 3); });
+      f.R.forEach(q => { D.circle(g, P.X(q.x), P.Y(q.y), 7, { fill: klass(z, 1), stroke: c.surf, w: 1.5 }); D.line(g, P.X(q.x), P.Y(0) + 4, P.X(q.x), P.Y(0) + 12, klass(z, 1), 3); });
+      head(z, 'Best score found', 360, 24);
+      const best = S => (S.length ? S.reduce((a, b) => (b.s > a.s ? b : a)).s : null);
+      D.text(g, 'grid search', 360, 52, { s: 12, b: true, c: klass(z, 0) });
+      D.text(g, best(f.G) === null ? '...' : f2(best(f.G), 3), 500, 52, { s: 13, mono: true, b: true, c: c.ink });
+      D.text(g, 'random search', 360, 76, { s: 12, b: true, c: klass(z, 1) });
+      D.text(g, best(f.R) === null ? '...' : f2(best(f.R), 3), 500, 76, { s: 13, mono: true, b: true, c: c.ink });
+      D.text(g, 'ticks under the plot show which', 360, 120, { s: 11, c: c.ink2 });
+      D.text(g, 'values of setting 1 were tested', 360, 136, { s: 11, c: c.ink2 });
+      D.text(g, `grid: ${new Set(f.G.map(q => q.x)).size} values`, 360, 166, { s: 12, mono: true, c: klass(z, 0) });
+      D.text(g, `random: ${f.R.length} values`, 360, 186, { s: 12, mono: true, c: klass(z, 1) });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 4.3  calibration: does "70% sure" really mean right 70% of the time?
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  const sig = t => 1 / (1 + Math.exp(-t)), logit = p => Math.log(p / (1 - p));
+  trace('mlcalib', {
+    title: 'Calibration: are the probabilities honest?',
+    sub: 'An overconfident model scores 600 examples. Group the predictions into bins, and in each bin compare the average predicted probability with how often the label really was 1. Then fit Platt scaling and check again.',
+    W: 600, H: 330,
+    params: [{ k: 'over', label: 'How overconfident the model is', type: 'range', v: 2.5, min: 0.5, max: 4, step: 0.5 }],
+    tips: [
+      { t: 'Overconfidence 1: the model is already honest, the points sit on the diagonal.', set: { over: 1 }, play: true },
+      { t: 'Overconfidence 0.5: an underconfident model (too close to 0.5), the curve is too steep.', set: { over: 0.5 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(23), D0 = [];
+      for (let i = 0; i < 600; i++) { const q = 0.03 + 0.94 * r(); D0.push({ q, y: r() < q ? 1 : 0, p: sig(p.over * logit(q)) }); }
+      const bins = ps => [0, 1, 2, 3, 4].map(b => { const S = D0.filter((d, i) => Math.min(4, Math.floor(ps[i] * 5)) === b); return S.length ? { m: S.reduce((s, d, j) => s + ps[D0.indexOf(d)], 0) / S.length, o: S.reduce((s, d) => s + d.y, 0) / S.length, n: S.length } : null; }).filter(Boolean);
+      const brier = ps => D0.reduce((s, d, i) => s + (ps[i] - d.y) ** 2, 0) / D0.length;
+      const raw = D0.map(d => d.p), B1 = bins(raw);
+      let a = 1, b = 0;
+      for (let it = 0; it < 600; it++) {
+        let ga = 0, gb = 0;
+        D0.forEach(d => { const t = logit(Math.min(0.999, Math.max(0.001, d.p))), e = sig(a * t + b) - d.y; ga += e * t; gb += e; });
+        a -= 0.5 * ga / D0.length; b -= 0.5 * gb / D0.length;
+      }
+      const cal = D0.map(d => sig(a * logit(Math.min(0.999, Math.max(0.001, d.p))) + b)), B2 = bins(cal);
+      const fr = [{ B1: [], say: 'The dashed diagonal is perfect calibration: among predictions of 0.7, exactly 70% should really be 1.' }];
+      B1.forEach((q, i) => fr.push({ B1: B1.slice(0, i + 1), say: `Bin ${i + 1}: ${q.n} predictions with average probability ${f2(q.m, 2)}. The label was really 1 in <b>${f2(q.o * 100, 0)}%</b> of them. ${Math.abs(q.m - q.o) < 0.05 ? 'Close to honest.' : q.m > q.o ? 'The model predicts too high here.' : 'The model predicts too low here.'}` }));
+      fr.push({ B1, bri1: brier(raw), say: `Brier score ${f2(brier(raw), 4)}. ${p.over > 1.2 ? 'The points form an S that is too flat: when the model says 0.95 it is right much less often. Typical for naive Bayes and boosted trees.' : p.over < 0.9 ? 'The points are too steep: the model hedges towards 0.5. Typical for random forests and SVM scores.' : 'The points follow the diagonal.'}` });
+      fr.push({ B1, B2, bri1: brier(raw), bri2: brier(cal), a, b, say: `<b>Platt scaling</b> fits p' = sigmoid(A × logit(p) + B), in practice on held out data. Here A = ${f2(a, 2)}, B = ${f2(b, 2)}. The calibrated points (green) sit on the diagonal and the Brier score ${brier(cal) < brier(raw) - 0.002 ? 'drops to' : 'stays at'} <b>${f2(brier(cal), 4)}</b>. The ranking, and so the AUC, does not change.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 330, 310], [0, 1], [0, 1], { dx: 1, dy: 1, xl: 'predicted probability', yl: 'observed share of 1s' });
+      D.line(g, P.X(0), P.Y(0), P.X(1), P.Y(1), c.ink2, 1.2, [5, 4]);
+      const draw = (B, col) => {
+        g.save(); g.beginPath(); B.forEach((q, i) => (i ? g.lineTo(P.X(q.m), P.Y(q.o)) : g.moveTo(P.X(q.m), P.Y(q.o)))); g.strokeStyle = col; g.lineWidth = 2.4; g.stroke(); g.restore();
+        B.forEach(q => D.circle(g, P.X(q.m), P.Y(q.o), 5, { fill: col }));
+      };
+      draw(f.B1, klass(z, 1));
+      if (f.B2) draw(f.B2, c.green || '#16a34a');
+      head(z, 'Reliability', 360, 24);
+      D.text(g, 'model as it is', 360, 50, { s: 12, b: true, c: klass(z, 1) });
+      if (f.bri1 !== undefined) D.text(g, `Brier ${f2(f.bri1, 4)}`, 480, 50, { s: 12, mono: true, c: c.ink });
+      if (f.B2) {
+        D.text(g, 'after Platt scaling', 360, 74, { s: 12, b: true, c: c.green || '#16a34a' });
+        D.text(g, `Brier ${f2(f.bri2, 4)}`, 480, 74, { s: 12, mono: true, c: c.ink });
+        D.text(g, `A = ${f2(f.a, 2)}, B = ${f2(f.b, 2)}`, 360, 104, { s: 12, mono: true, c: c.ink2 });
+      }
+    }
+  });
+})();

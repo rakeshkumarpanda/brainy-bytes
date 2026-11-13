@@ -8421,6 +8421,28 @@ function mlSupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-tuning", title: "Tuning and calibration", emoji: "4.3", page: "content/machine-learning/ml-tuning.html",
+        summary: "Validation curves, grid and random search, halving and Bayesian search, nested CV, calibration, and class imbalance.",
+        keywords: ["hyperparameter tuning", "GridSearchCV", "RandomizedSearchCV", "nested cross validation", "calibration", "Platt scaling", "isotonic regression", "class_weight", "threshold tuning", "Optuna"],
+        minutes: 55, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Parameters and hyperparameters", emoji: "", group: "Lesson", keywords: ["hyperparameter", "parameter", "validation curve", "underfitting", "overfitting", "model complexity"] },
+        { id: "search", title: "Grid search and random search", emoji: "", group: "Lesson", keywords: ["GridSearchCV", "RandomizedSearchCV", "param_grid", "loguniform", "log scale", "random search", "Bergstra Bengio"] },
+        { id: "smart", title: "Smarter searches: halving and Bayesian optimisation", emoji: "", group: "Lesson", keywords: ["successive halving", "Hyperband", "HalvingRandomSearchCV", "Bayesian optimisation", "Optuna", "TPE"] },
+        { id: "nested", title: "Nested cross validation", emoji: "", group: "Lesson", keywords: ["nested cross validation", "optimistic bias", "winner curse", "inner loop", "outer loop", "model selection"] },
+        { id: "calib", title: "Calibrating probabilities", emoji: "", group: "Lesson", keywords: ["calibration", "reliability diagram", "CalibratedClassifierCV", "Platt scaling", "isotonic regression", "calibration_curve", "ECE"] },
+        { id: "imbalance", title: "Imbalanced classes: weights and thresholds", emoji: "", group: "Lesson", keywords: ["class imbalance", "class_weight", "balanced", "TunedThresholdClassifierCV", "threshold tuning", "SMOTE"] },
+        { id: "versus", title: "Tuning tools compared", emoji: "", group: "Lesson", keywords: ["tuning tools", "grid vs random search", "calibration methods", "imbalance methods"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["grid size", "random search probability", "class weight formula", "Platt formula", "temperature scaling", "proper scoring rule"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "BOHB", "population based training", "conformal prediction"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "binary search", "binary search on the answer", "peak finding"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
