@@ -1137,3 +1137,145 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 3.3  gradient boosting: each small tree fits what the model still gets wrong
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  function stump(x, r) {
+    let best = null;
+    for (let i = 1; i < x.length; i++) {
+      const t = (x[i - 1] + x[i]) / 2;
+      let sl = 0, nl = 0, sr = 0, nr = 0;
+      for (let j = 0; j < x.length; j++) { if (x[j] < t) { sl += r[j]; nl++; } else { sr += r[j]; nr++; } }
+      const ml = sl / nl, mr = sr / nr;
+      let e = 0; for (let j = 0; j < x.length; j++) e += (r[j] - (x[j] < t ? ml : mr)) ** 2;
+      if (!best || e < best.e) best = { t, ml, mr, e };
+    }
+    return best;
+  }
+  trace('mlboostres', {
+    title: 'Gradient boosting: fit the leftovers, step by step',
+    sub: 'Start from the average. Each round fits a one question tree (a stump) to the residuals, what the model still gets wrong, and adds a small step of it. The fit improves round by round.',
+    W: 600, H: 330,
+    params: [
+      { k: 'lr', label: 'Learning rate', type: 'range', v: 0.5, min: 0.1, max: 1, step: 0.1 },
+      { k: 'rounds', label: 'Rounds', type: 'range', v: 8, min: 1, max: 20, step: 1 }
+    ],
+    tips: [
+      { t: 'Learning rate 1: big steps, fast progress, but each tree’s noise is added at full size.', set: { lr: 1 }, play: true },
+      { t: 'Learning rate 0.1: tiny careful steps, so many more rounds are needed.', set: { lr: 0.1, rounds: 20 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(11), n = 40, x = [], y = [];
+      for (let i = 0; i < n; i++) x.push(6 * i / (n - 1) + 0.05 * (r() - 0.5));
+      x.forEach(v => { let s = 0; for (let k = 0; k < 6; k++) s += r(); y.push(Math.sin(v) + 0.18 * (s - 3) * Math.SQRT2); });
+      const mse = f => f.reduce((s, v, i) => s + (y[i] - v) ** 2, 0) / n;
+      let F = Array(n).fill(y.reduce((s, v) => s + v, 0) / n);
+      const hist = [mse(F)], stumps = [];
+      const fr = [{ x, y, F: F.slice(), hist: hist.slice(), say: `Round 0: the model predicts the average, ${f2(F[0], 2)}, everywhere. Mean squared error ${f2(hist[0], 4)}.` }];
+      for (let m = 1; m <= p.rounds; m++) {
+        const res = y.map((v, i) => v - F[i]);
+        const s = stump(x, res);
+        fr.push({ x, y, F: F.slice(), res, s, hist: hist.slice(), m, say: `Round ${m}: the residuals y − F(x) (red) show what is still wrong. A stump fitted to them asks "x < ${f2(s.t)}?" and predicts ${f2(s.ml, 2)} on the left, ${f2(s.mr, 2)} on the right.` });
+        F = F.map((v, i) => v + p.lr * (x[i] < s.t ? s.ml : s.mr));
+        stumps.push(s); hist.push(mse(F));
+        fr.push({ x, y, F: F.slice(), hist: hist.slice(), m, say: `Add ${p.lr} × that stump to the model. Mean squared error falls to <b>${f2(hist[m], 4)}</b>. The model is now the average plus ${m} small step${m > 1 ? 's' : ''}.` });
+      }
+      fr.push({ x, y, F, hist, done: true, say: `After ${p.rounds} rounds the error went from ${f2(hist[0], 4)} to <b>${f2(hist[p.rounds], 4)}</b>. Each stump alone is a crude two step function, but added up they follow the curve. With too many rounds the model starts to fit the noise, so real projects stop early using a validation set.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [0, 6], [-1.8, 1.8], { dx: 0, dy: 1 });
+      if (f.res) f.x.forEach((v, i) => D.line(g, P.X(v), P.Y(f.y[i]), P.X(v), P.Y(f.F[i]), c.red || '#dc2626', 1.4));
+      f.x.forEach((v, i) => D.circle(g, P.X(v), P.Y(f.y[i]), 3.5, { fill: klass(z, 0) }));
+      g.save(); g.beginPath();
+      f.x.forEach((v, i) => { const X = P.X(v), Y = P.Y(f.F[i]); if (!i) g.moveTo(X, Y); else { g.lineTo(X, P.Y(f.F[i - 1])); g.lineTo(X, Y); } });
+      g.strokeStyle = klass(z, 1); g.lineWidth = 2.6; g.stroke(); g.restore();
+      if (f.s) {
+        D.line(g, P.X(f.s.t), P.Y(-1.8), P.X(f.s.t), P.Y(1.8), c.cv, 1.4, [5, 4]);
+        D.text(g, `x < ${f2(f.s.t, 2)}?`, P.X(f.s.t) + 4, P.Y(1.6), { s: 11, b: true, c: c.cv });
+      }
+      head(z, 'Error by round', 425, 24);
+      const mx = f.hist[0] || 1;
+      f.hist.slice(0, 21).forEach((h, i) => {
+        const bw = 150 / Math.max(f.hist.length, 8);
+        g.fillStyle = i === f.hist.length - 1 ? klass(z, 1) : c.line;
+        g.fillRect(430 + i * bw, 200 - h / mx * 150, Math.max(2, bw - 2), h / mx * 150);
+      });
+      D.line(g, 428, 200, 590, 200, c.ink2, 1);
+      D.text(g, `MSE ${f2(f.hist[f.hist.length - 1], 4)}`, 425, 226, { s: 13, b: true, c: klass(z, 1) });
+      D.text(g, 'orange line: the model F(x)', 425, 254, { s: 11, c: c.ink2 });
+      D.text(g, 'blue dots: the data', 425, 272, { s: 11, c: c.ink2 });
+      if (f.res) D.text(g, 'red: residuals y − F(x)', 425, 290, { s: 11, c: c.red || '#dc2626' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 3.3  AdaBoost: wrong points get heavier, the next stump focuses on them
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass } = MLZ;
+  trace('mladaboost', {
+    title: 'AdaBoost: make the hard points heavier',
+    sub: 'Eight points on a line, labelled + or −. Each round picks the stump (one cut) with the lowest weighted error, gives it a say α, and then makes the points it got wrong heavier so the next stump pays attention to them.',
+    W: 600, H: 330,
+    params: [
+      { k: 'labels', label: 'Labels for x = 1 to 8', type: 'text', v: '+ + - - + + - -' },
+      { k: 'rounds', label: 'Rounds', type: 'range', v: 3, min: 1, max: 6, step: 1 }
+    ],
+    tips: [{ t: 'Labels a single cut can split: one stump is enough and its error is 0, so we stop.', set: { labels: '+ + + + - - - -' }, play: true }],
+    frames(p) {
+      const y = String(p.labels).replace(/−/g, '-').split(/[\s,]+/).filter(Boolean).slice(0, 8).map(s => (s[0] === '-' ? -1 : 1));
+      while (y.length < 8) y.push(1);
+      const x = [1, 2, 3, 4, 5, 6, 7, 8];
+      let w = Array(8).fill(1 / 8);
+      const st = [];
+      const fr = [{ x, y, w: w.slice(), st: [], say: 'Every point starts with the same weight, 1/8 = 0.125 (dot size shows weight).' }];
+      for (let m = 1; m <= p.rounds; m++) {
+        let best = null;
+        [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5].forEach(cut => [1, -1].forEach(sg => {
+          const pr = x.map(v => (v < cut ? sg : -sg));
+          const e = pr.reduce((s, q, i) => s + (q !== y[i] ? w[i] : 0), 0);
+          if (!best || e < best.e - 1e-12) best = { cut, sg, pr, e };
+        }));
+        if (best.e < 1e-9) { st.push({ ...best, a: Infinity }); fr.push({ x, y, w: w.slice(), st: st.slice(), say: `Round ${m}: the stump x &lt; ${best.cut} gets every point right (error 0). It decides alone, so boosting stops here.` }); break; }
+        const a = 0.5 * Math.log((1 - best.e) / best.e);
+        st.push({ ...best, a });
+        fr.push({ x, y, w: w.slice(), st: st.slice(), cur: best, say: `Round ${m}: best stump "x &lt; ${best.cut} → ${best.sg > 0 ? '+' : '−'}, else ${best.sg > 0 ? '−' : '+'}". Weighted error ε = ${f2(best.e, 3)}. Its say α = ½ ln((1 − ε)/ε) = <b>${f2(a, 3)}</b>.` });
+        w = w.map((v, i) => v * Math.exp(-a * y[i] * best.pr[i]));
+        const s = w.reduce((u, v) => u + v, 0); w = w.map(v => v / s);
+        const wrong = x.filter((_, i) => best.pr[i] !== y[i]);
+        fr.push({ x, y, w: w.slice(), st: st.slice(), cur: best, say: `Reweight: multiply wrong points by e<sup>α</sup> and right points by e<sup>−α</sup>, then rescale to sum 1. Points x = ${wrong.join(', ')} were wrong and now weigh ${f2(w[x.indexOf(wrong[0])], 3)} each.` });
+      }
+      const score = x.map((_, i) => st.reduce((s, t) => s + (isFinite(t.a) ? t.a : 1e3) * t.pr[i], 0));
+      const ok = score.filter((s, i) => Math.sign(s) === y[i]).length;
+      fr.push({ x, y, w, st, score, say: `Final model: add up α × prediction of every stump and take the sign. ${ok} of 8 points are right. ${ok === 8 && st.length > 1 ? 'No single stump could do that, but the weighted vote of several can.' : ''}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 580, 150], [0.5, 8.5], [-1, 1], { dx: 0, dy: 0, grid: false });
+      D.line(g, P.X(0.5), P.Y(0), P.X(8.5), P.Y(0), c.line, 1.2);
+      if (f.cur) {
+        D.line(g, P.X(f.cur.cut), P.Y(0.95), P.X(f.cur.cut), P.Y(-0.95), c.cv, 2);
+        D.text(g, f.cur.sg > 0 ? '+ side' : '− side', P.X(f.cur.cut) - 6, P.Y(0.8), { a: 'right', s: 11, b: true, c: c.cv });
+      }
+      f.x.forEach((v, i) => {
+        const r = 4 + Math.sqrt(f.w[i] / 0.125) * 7, wrong = f.cur && f.cur.pr[i] !== f.y[i];
+        D.circle(g, P.X(v), P.Y(0), r, { fill: klass(z, f.y[i] > 0 ? 0 : 1), stroke: wrong ? c.ink : undefined, w: 2.5 });
+        D.text(g, f.y[i] > 0 ? '+' : '−', P.X(v), P.Y(0) + 5, { a: 'center', s: 14, b: true, c: '#fff' });
+        D.text(g, f2(f.w[i], 3), P.X(v), P.Y(0) + 40, { a: 'center', s: 10, mono: true, c: c.ink2 });
+      });
+      head(z, 'Stumps so far', 16, 186);
+      f.st.forEach((t, i) => D.text(g, `${i + 1}. x < ${t.cut} → ${t.sg > 0 ? '+' : '−'}   ε = ${f2(t.e, 3)}   α = ${isFinite(t.a) ? f2(t.a, 3) : '∞'}`, 16, 210 + i * 18, { s: 12, mono: true, c: c.ink }));
+      if (f.score) {
+        head(z, 'Final score Σ α × prediction', 330, 186);
+        f.score.forEach((s, i) => D.text(g, `x=${i + 1}: ${f2(Math.max(-99, Math.min(99, s)), 2)} → ${s > 0 ? '+' : '−'}`, 330 + (i % 2) * 130, 210 + Math.floor(i / 2) * 18, { s: 11, mono: true, b: Math.sign(s) === f.y[i], c: Math.sign(s) === f.y[i] ? c.ink : (c.red || '#dc2626') }));
+      }
+    }
+  });
+})();

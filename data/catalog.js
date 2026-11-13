@@ -8354,6 +8354,27 @@ function mlSupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-boosting", title: "Boosting: small trees that fix each other", emoji: "3.3", page: "content/machine-learning/ml-boosting.html",
+        summary: "Fitting residuals, AdaBoost weights, gradient boosting for any loss, learning rate and early stopping, and the modern libraries.",
+        keywords: ["boosting", "gradient boosting", "AdaBoost", "XGBoost", "LightGBM", "CatBoost", "learning rate", "early stopping", "residuals", "HistGradientBoosting"],
+        minutes: 60, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Small trees that fix each other’s mistakes", emoji: "", group: "Lesson", keywords: ["boosting", "gradient boosting", "residuals", "weak learner", "additive model", "sequential ensemble"] },
+        { id: "adaboost", title: "AdaBoost: reweight the hard examples", emoji: "", group: "Lesson", keywords: ["AdaBoost", "sample weights", "weak learner", "alpha", "exponential loss", "decision stump"] },
+        { id: "gradient", title: "Gradient boosting: descent in function space", emoji: "", group: "Lesson", keywords: ["gradient boosting", "pseudo residuals", "negative gradient", "loss functions", "function space", "Friedman"] },
+        { id: "tune", title: "Learning rate, number of trees and early stopping", emoji: "", group: "Lesson", keywords: ["learning rate", "shrinkage", "n_estimators", "early stopping", "max_depth", "subsample", "HistGradientBoosting"] },
+        { id: "libraries", title: "XGBoost, LightGBM, CatBoost and HistGradientBoosting", emoji: "", group: "Lesson", keywords: ["XGBoost", "LightGBM", "CatBoost", "HistGradientBoostingClassifier", "histogram binning", "leaf wise growth"] },
+        { id: "versus", title: "Boosting compared", emoji: "", group: "Lesson", keywords: ["bagging vs boosting", "random forest vs gradient boosting", "AdaBoost vs gradient boosting", "baseline"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["additive model formula", "pseudo residuals", "AdaBoost alpha", "XGBoost leaf weight", "split gain", "weak learnability", "margin theory"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "GOSS", "ordered boosting", "margin theory"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "prefix sum", "running total", "greedy", "prefix product"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
