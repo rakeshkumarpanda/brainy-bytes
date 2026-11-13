@@ -8515,6 +8515,29 @@ function mlUnsupModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-u2", title: "Dimensionality reduction", emoji: "2", step: 2, part: "unsupervised", level: "Intermediate", blurb: "Squeeze many features into a few that keep what matters, to see, compress and speed up later models.", topics: [
+      { id: "ml-pca", title: "Principal component analysis (PCA)", emoji: "2.1", page: "content/machine-learning/ml-pca.html",
+        summary: "Directions of most variance, eigenvalues and the SVD, choosing k, scaling, reconstruction, and kernel PCA.",
+        keywords: ["PCA", "principal components", "eigenvalues", "SVD", "explained variance", "scree plot", "dimensionality reduction", "kernel PCA", "reconstruction error", "covariance matrix"],
+        minutes: 50, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "The idea: keep the directions where data spreads most", emoji: "", group: "Lesson", keywords: ["PCA", "principal component analysis", "principal components", "covariance matrix", "eigenvector", "eigenvalue", "projection", "dimensionality reduction"] },
+        { id: "sklearn", title: "PCA in scikit-learn and the SVD", emoji: "", group: "Lesson", keywords: ["PCA scikit-learn", "SVD", "singular value decomposition", "explained_variance_ratio_", "components_", "inverse_transform"] },
+        { id: "howmany", title: "How many components to keep", emoji: "", group: "Lesson", keywords: ["explained variance ratio", "scree plot", "cumulative variance", "choosing components", "reconstruction error", "n_components"] },
+        { id: "practice", title: "Scaling, pipelines and pitfalls", emoji: "", group: "Lesson", keywords: ["PCA scaling", "StandardScaler", "pipeline", "data leakage", "PCA before classification", "unsupervised"] },
+        { id: "kernel", title: "Kernel PCA and PCA at scale", emoji: "", group: "Lesson", keywords: ["kernel PCA", "randomized PCA", "IncrementalPCA", "TruncatedSVD", "nonlinear dimensionality reduction", "gamma"] },
+        { id: "versus", title: "PCA compared", emoji: "", group: "Lesson", keywords: ["PCA vs LDA", "PCA vs feature selection", "PCA vs t-SNE", "PCA vs autoencoder"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["PCA objective", "eigen decomposition", "SVD", "Eckart Young", "reconstruction error formula", "Rayleigh quotient"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "probabilistic PCA", "robust PCA", "random matrix theory"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "matrix", "transpose", "rotation", "prefix sums", "hash map"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

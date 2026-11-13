@@ -2167,3 +2167,128 @@ const MLGM = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Unsupervised 2.1  PCA: centre, search for the direction of most variance, project onto it
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, points, D, f2, head, klass } = MLZ;
+  trace('mlpca', {
+    title: 'PCA: find the direction where the data spreads most',
+    sub: 'Centre the points, then look for the line through the centre along which the projected points spread out the most. That line is the first principal component. Keeping only the position along it turns two numbers per point into one.',
+    W: 600, H: 330,
+    params: [{ k: 'pts', label: 'Points (x y)', type: 'area', v: '1 2; 2 3; 3 3.5; 4 5; 5 5.5; 6 7; 2.5 4.5; 4.5 3.8' }],
+    tips: [
+      { t: 'Points almost on a line: the first component keeps nearly all the variance, so one number per point loses almost nothing.', set: { pts: '1 1; 2 2.1; 3 2.9; 4 4.2; 5 5; 6 5.9' }, play: true },
+      { t: 'A round cloud: every direction spreads about the same, so no single component is much better than another.', set: { pts: '0 1; 1 0; 0 -1; -1 0; 0.7 0.7; -0.7 0.7; 0.7 -0.7; -0.7 -0.7' }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 30);
+      if (P.length < 3) throw new Error('Type at least three points');
+      const n = P.length, mx = P.reduce((a, q) => a + q.x, 0) / n, my = P.reduce((a, q) => a + q.y, 0) / n;
+      const C = P.map(q => ({ x: q.x - mx, y: q.y - my }));
+      const sxx = C.reduce((a, q) => a + q.x * q.x, 0) / (n - 1), syy = C.reduce((a, q) => a + q.y * q.y, 0) / (n - 1), sxy = C.reduce((a, q) => a + q.x * q.y, 0) / (n - 1);
+      const varAt = th => sxx * Math.cos(th) ** 2 + 2 * sxy * Math.sin(th) * Math.cos(th) + syy * Math.sin(th) ** 2;
+      const best = 0.5 * Math.atan2(2 * sxy, sxx - syy), l1 = varAt(best), l2 = varAt(best + Math.PI / 2), tot = l1 + l2;
+      const deg = th => f2(((th * 180 / Math.PI) % 180 + 180) % 180, 0);
+      const base = { C, sxx, syy, sxy };
+      const fr = [{ ...base, raw: P, say: `${n} points with two features each. We want one new axis that keeps as much of their spread as possible.` }];
+      fr.push({ ...base, say: `Centre the data first. Subtract the mean (${f2(mx)}, ${f2(my)}) from every point, so the cloud sits around (0, 0). PCA always works on centred data.` });
+      fr.push({ ...base, say: `The covariance matrix summarises the spread: variance of x = ${f2(sxx)}, variance of y = ${f2(syy)}, covariance = ${f2(sxy)}. The total variance is ${f2(sxx + syy)}.` });
+      [0, 45, 90, 135].forEach(a => { const th = a * Math.PI / 180; fr.push({ ...base, th, proj: true, say: `Try the line at ${a} degrees. Drop each point onto it (dashed lines). The projected points have variance <b>${f2(varAt(th))}</b>, which is ${f2(100 * varAt(th) / tot, 0)}% of the total.` }); });
+      fr.push({ ...base, th: best, proj: true, pc1: true, say: `The best line is at ${deg(best)} degrees: the top eigenvector of the covariance matrix. Its variance is the top eigenvalue, <b>${f2(l1)}</b>, which is <b>${f2(100 * l1 / tot, 1)}%</b> of the total. This is principal component 1.` });
+      fr.push({ ...base, th: best, pc1: true, pc2: true, say: `Principal component 2 is perpendicular to it (${deg(best + Math.PI / 2)} degrees) and holds the remaining variance, ${f2(l2)} (${f2(100 * l2 / tot, 1)}%). Components are always at right angles and their variances add up to the total.` });
+      fr.push({ ...base, th: best, pc1: true, flat: true, done: true, say: `Keep only component 1: each point becomes one number, its position along the line (the dots on it). We kept ${f2(100 * l1 / tot, 1)}% of the variance${l1 / tot > 0.8 ? ' and lost only the small distances to the line' : ', which is not much: the distances to the line are large, so one component is not enough for this data'}. With many features, PCA does the same in many dimensions at once.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const pts = f.raw || f.C, R = Math.max(1, ...pts.map(q => Math.max(Math.abs(q.x - (f.raw ? pts.reduce((a, b) => a + b.x, 0) / pts.length : 0)), Math.abs(q.y - (f.raw ? pts.reduce((a, b) => a + b.y, 0) / pts.length : 0))))) * 1.3;
+      const cx = f.raw ? pts.reduce((a, b) => a + b.x, 0) / pts.length : 0, cy = f.raw ? pts.reduce((a, b) => a + b.y, 0) / pts.length : 0;
+      const P = plot(z, [10, 10, 310, 304], [cx - R, cx + R], [cy - R, cy + R], { dx: 1, dy: 1 });
+      if (!f.raw) { D.line(g, P.X(-R), P.Y(0), P.X(R), P.Y(0), c.line, 1); D.line(g, P.X(0), P.Y(-R), P.X(0), P.Y(R), c.line, 1); }
+      const line = (th, col, w) => { const u = Math.cos(th), v = Math.sin(th); D.line(g, P.X(-R * u), P.Y(-R * v), P.X(R * u), P.Y(R * v), col, w); };
+      if (f.th !== undefined) {
+        line(f.th, f.pc1 ? klass(z, 0) : c.cv, 2.4);
+        const u = Math.cos(f.th), v = Math.sin(f.th);
+        f.C.forEach(q => { const t = q.x * u + q.y * v; if (f.proj || f.flat) { D.line(g, P.X(q.x), P.Y(q.y), P.X(t * u), P.Y(t * v), c.ink2, 1, [3, 3]); D.circle(g, P.X(t * u), P.Y(t * v), 3.5, { fill: f.pc1 ? klass(z, 0) : c.cv }); } });
+      }
+      if (f.pc2) line(f.th + Math.PI / 2, klass(z, 1), 2.4);
+      pts.forEach(q => D.circle(g, P.X(q.x), P.Y(q.y), 5, { fill: f.flat ? c.line : c.ink, stroke: c.surf, w: 1.5 }));
+      head(z, 'PCA', 335, 24);
+      if (!f.raw) {
+        D.text(g, `var(x) = ${f2(f.sxx)}`, 335, 52, { s: 12, mono: true, c: c.ink2 });
+        D.text(g, `var(y) = ${f2(f.syy)}`, 335, 70, { s: 12, mono: true, c: c.ink2 });
+        D.text(g, `cov(x, y) = ${f2(f.sxy)}`, 335, 88, { s: 12, mono: true, c: c.ink2 });
+      }
+      if (f.th !== undefined) {
+        const vt = f.sxx * Math.cos(f.th) ** 2 + 2 * f.sxy * Math.sin(f.th) * Math.cos(f.th) + f.syy * Math.sin(f.th) ** 2;
+        D.text(g, `variance along line: ${f2(vt)}`, 335, 120, { s: 13, b: true, c: f.pc1 ? klass(z, 0) : c.cv });
+        D.text(g, `share of total: ${f2(100 * vt / (f.sxx + f.syy), 1)}%`, 335, 140, { s: 12, c: c.ink2 });
+      }
+      if (f.pc1) D.text(g, 'blue line = PC1', 335, 180, { s: 12, b: true, c: klass(z, 0) });
+      if (f.pc2) D.text(g, 'orange line = PC2', 335, 198, { s: 12, b: true, c: klass(z, 1) });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 2.1  scree plot: how much variance each component explains, and how many to keep
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function eig(A) {
+    const n = A.length, M = A.map(r => r.slice());
+    for (let sweep = 0; sweep < 60; sweep++) {
+      let off = 0;
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) off += M[i][j] ** 2;
+      if (off < 1e-12) break;
+      for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+        if (Math.abs(M[p][q]) < 1e-15) continue;
+        const th = 0.5 * Math.atan2(2 * M[p][q], M[q][q] - M[p][p]), cs = Math.cos(th), sn = Math.sin(th);
+        for (let k = 0; k < n; k++) { const a = M[k][p], b = M[k][q]; M[k][p] = cs * a - sn * b; M[k][q] = sn * a + cs * b; }
+        for (let k = 0; k < n; k++) { const a = M[p][k], b = M[q][k]; M[p][k] = cs * a - sn * b; M[q][k] = sn * a + cs * b; }
+      }
+    }
+    return M.map((r, i) => r[i]).sort((a, b) => b - a);
+  }
+  trace('mlscree', {
+    title: 'The scree plot: how many components to keep',
+    sub: 'Ten features are made from a few hidden signals plus noise. PCA sorts the components by the variance they explain. The bars drop sharply after the real signals, and the cumulative line shows how much you keep with the first k components.',
+    W: 600, H: 330,
+    params: [
+      { k: 'r', label: 'Hidden signals behind the 10 features', type: 'range', v: 3, min: 1, max: 6, step: 1 },
+      { k: 'noise', label: 'Noise level', type: 'range', v: 0.5, min: 0.1, max: 2, step: 0.1 }
+    ],
+    tips: [
+      { t: 'Lots of noise: the drop after the real signals is much less clear, and you need many components to reach 90%.', set: { r: 3, noise: 1.6 }, play: true },
+      { t: 'One hidden signal with little noise: the first component explains nearly everything.', set: { r: 1, noise: 0.2 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(31), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+      const d = 10, n = 300;
+      const W = Array.from({ length: p.r }, () => Array.from({ length: d }, () => g()));
+      const X = Array.from({ length: n }, () => { const zz = W.map(() => g()); return Array.from({ length: d }, (_, j) => zz.reduce((a, v, k) => a + v * W[k][j], 0) + p.noise * g()); });
+      const mean = Array.from({ length: d }, (_, j) => X.reduce((a, row) => a + row[j], 0) / n);
+      const C = Array.from({ length: d }, (_, i) => Array.from({ length: d }, (_, j) => X.reduce((a, row) => a + (row[i] - mean[i]) * (row[j] - mean[j]), 0) / (n - 1)));
+      const L = eig(C), tot = L.reduce((a, b) => a + b, 0), ratio = L.map(v => v / tot);
+      const cum = ratio.map((_, i) => ratio.slice(0, i + 1).reduce((a, b) => a + b, 0));
+      const k90 = cum.findIndex(v => v >= 0.9) + 1;
+      const fr = [{ ratio, cum, k: 0, say: `${n} rows with ${d} features. Behind them are ${p.r} hidden signal${p.r > 1 ? 's' : ''} mixed together, plus noise of size ${f2(p.noise, 1)}. PCA does not know that. Let us see what it finds.` }];
+      for (let k = 1; k <= d; k++) fr.push({ ratio, cum, k, say: `Component ${k} explains <b>${f2(100 * ratio[k - 1], 1)}%</b> of the variance (eigenvalue ${f2(L[k - 1], 2)}). ${k > 1 ? ` The first ${k} together keep <b>${f2(100 * cum[k - 1], 1)}%</b>.` : ''}${k === p.r + 1 ? ` Notice the drop: from here on the components mostly hold noise.` : ''}` });
+      fr.push({ ratio, cum, k: d, k90, done: true, say: `To keep 90% of the variance you need <b>${k90}</b> component${k90 > 1 ? 's' : ''}. There ${p.r > 1 ? `were ${p.r} hidden signals, so the components after the first ${p.r}` : 'was 1 hidden signal, so the components after the first'} mostly hold noise${p.r < 10 && ratio[p.r - 1] < 3 * ratio[p.r] ? ', although with this much noise the drop is hard to see' : ''}. Choose k from the elbow of the bars, from a variance target such as 90% or 95%, or from how well the next model does.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 580, 310], [0.3, 10.7], [0, 1], { dx: 0, dy: 2, grid: false });
+      for (let t = 0; t <= 4; t++) { const v = t / 4; D.line(g, P.X(0.3), P.Y(v), P.X(10.7), P.Y(v), c.line, 0.6, [2, 3]); D.text(g, `${t * 25}%`, P.x0 + 22, P.Y(v) + 3, { a: 'right', s: 10, c: c.ink2 }); }
+      for (let k = 1; k <= 10; k++) D.text(g, String(k), P.X(k), P.y0 + P.h - 6, { a: 'center', s: 10, c: c.ink2 });
+      for (let k = 1; k <= f.k; k++) { const h = P.Y(0) - P.Y(f.ratio[k - 1]); g.fillStyle = f.k90 && k <= f.k90 ? klass(z, 0) : c.line; g.fillRect(P.X(k) - 16, P.Y(0) - h, 32, h); D.text(g, `${f2(100 * f.ratio[k - 1], 0)}%`, P.X(k), P.Y(f.ratio[k - 1]) - 4, { a: 'center', s: 10, c: c.ink2 }); }
+      if (f.k) { g.save(); g.beginPath(); for (let k = 1; k <= f.k; k++) { k === 1 ? g.moveTo(P.X(k), P.Y(f.cum[0])) : g.lineTo(P.X(k), P.Y(f.cum[k - 1])); } g.strokeStyle = klass(z, 1); g.lineWidth = 2.4; g.stroke(); g.restore(); for (let k = 1; k <= f.k; k++) D.circle(g, P.X(k), P.Y(f.cum[k - 1]), 3.5, { fill: klass(z, 1) }); }
+      D.line(g, P.X(0.3), P.Y(0.9), P.X(10.7), P.Y(0.9), c.red, 1.2, [6, 4]);
+      D.text(g, '90%', P.X(10.7) - 4, P.Y(0.9) - 5, { a: 'right', s: 11, b: true, c: c.red });
+      D.text(g, 'bars: share of each component', 330, 200, { s: 11, b: true, c: c.ink2 }); D.text(g, 'orange line: cumulative share', 330, 218, { s: 11, b: true, c: klass(z, 1) });
+    }
+  });
+})();
