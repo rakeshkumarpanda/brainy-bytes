@@ -8473,6 +8473,27 @@ function mlUnsupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-hierarchical", title: "Hierarchical clustering and DBSCAN", emoji: "1.2", page: "content/machine-learning/ml-hierarchical.html",
+        summary: "Dendrograms and linkages, DBSCAN core, border and noise points, choosing eps, and HDBSCAN for different densities.",
+        keywords: ["hierarchical clustering", "dendrogram", "Ward linkage", "single linkage", "DBSCAN", "HDBSCAN", "OPTICS", "eps", "core point", "density based clustering"],
+        minutes: 50, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "Hierarchical clustering: a tree of merges", emoji: "", group: "Lesson", keywords: ["hierarchical clustering", "agglomerative clustering", "dendrogram", "linkage matrix", "fcluster", "cutting the tree"] },
+        { id: "linkage", title: "Linkage: how far apart are two clusters?", emoji: "", group: "Lesson", keywords: ["single linkage", "complete linkage", "average linkage", "Ward linkage", "chaining", "AgglomerativeClustering"] },
+        { id: "dbscan", title: "DBSCAN: clusters are dense regions", emoji: "", group: "Lesson", keywords: ["DBSCAN", "density based clustering", "core point", "border point", "noise", "eps", "min_samples"] },
+        { id: "eps", title: "Choosing eps and minPts", emoji: "", group: "Lesson", keywords: ["choosing eps", "k distance plot", "minPts", "min_samples", "knee", "NearestNeighbors"] },
+        { id: "hdbscan", title: "Clusters of different density: HDBSCAN and OPTICS", emoji: "", group: "Lesson", keywords: ["HDBSCAN", "OPTICS", "varying density", "reachability plot", "mutual reachability distance", "cluster stability"] },
+        { id: "versus", title: "Hierarchical and density methods compared", emoji: "", group: "Lesson", keywords: ["k-means vs DBSCAN", "Ward vs single linkage", "DBSCAN vs HDBSCAN", "clustering comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["linkage formulas", "Ward formula", "eps neighbourhood", "core point definition", "minimum spanning tree", "cophenetic distance"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Lance Williams", "density level sets"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "union find", "connected components", "Kruskal", "flood fill"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

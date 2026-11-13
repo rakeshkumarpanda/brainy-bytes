@@ -1807,3 +1807,175 @@ const MLKM = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Unsupervised 1.2  agglomerative clustering: merge the two closest clusters and grow a dendrogram
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, points, D, f2, head, klass } = MLZ;
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  function link(A, B, P, how) {
+    if (how === 'ward') {
+      const m = S => ({ x: S.reduce((s, i) => s + P[i].x, 0) / S.length, y: S.reduce((s, i) => s + P[i].y, 0) / S.length });
+      return Math.sqrt(2 * A.length * B.length / (A.length + B.length)) * dist(m(A), m(B));
+    }
+    const ds = [];
+    A.forEach(i => B.forEach(j => ds.push(dist(P[i], P[j]))));
+    if (how === 'single') return Math.min(...ds);
+    if (how === 'complete') return Math.max(...ds);
+    return ds.reduce((s, v) => s + v, 0) / ds.length;
+  }
+  const NAME = { single: 'single linkage (closest pair)', complete: 'complete linkage (farthest pair)', average: 'average linkage (mean of all pairs)', ward: 'Ward (smallest rise in squared error)' };
+  trace('mldendro', {
+    title: 'Agglomerative clustering and the dendrogram',
+    sub: 'Start with every point as its own cluster. Again and again, merge the two closest clusters. The dendrogram on the right records every merge at the height of its distance. Cut it where the jump is biggest.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Points (x y)', type: 'area', v: '1 1; 1.6 2; 2.2 1.2; 6 6; 6.6 7.2; 7.4 6.2; 8 1.5; 8.8 2.2' },
+      { k: 'how', label: 'Linkage (distance between clusters)', type: 'select', v: 'single', opts: [['single', 'Single (closest pair)'], ['complete', 'Complete (farthest pair)'], ['average', 'Average'], ['ward', 'Ward']] }
+    ],
+    tips: [
+      { t: 'A chain of points with single linkage: each point is close to the next, so the chain merges early, one link at a time.', set: { pts: '1 1; 2 1.6; 3 2.2; 4 2.8; 5 3.4; 8.5 8.5; 9.2 8; 8.6 7.6', how: 'single' }, play: true },
+      { t: 'Same chain with complete linkage: the far ends make the chain look wide, so its pieces join much higher up the tree than with single linkage.', set: { pts: '1 1; 2 1.6; 3 2.2; 4 2.8; 5 3.4; 8.5 8.5; 9.2 8; 8.6 7.6', how: 'complete' }, play: true },
+      { t: 'Two groups with stray points between them: single linkage hops across the strays, so the two groups join at a low height. Switch to Ward and they join much higher.', set: { pts: '1 1; 1.6 2; 2.2 1.2; 6 6; 6.6 7.2; 7.4 6.2; 3.2 3; 4.6 4.6', how: 'single' }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 12);
+      if (P.length < 3) throw new Error('Type at least three points');
+      let C = P.map((_, i) => ({ m: [i], id: i }));
+      const merges = [];
+      let next = P.length;
+      while (C.length > 1) {
+        let best = null;
+        for (let i = 0; i < C.length; i++) for (let j = i + 1; j < C.length; j++) {
+          const d = link(C[i].m, C[j].m, P, p.how);
+          if (!best || d < best.d - 1e-12) best = { d, i, j };
+        }
+        const a = C[best.i], b = C[best.j], nc = { m: a.m.concat(b.m), id: next++, a, b, h: best.d };
+        merges.push(nc);
+        C = C.filter((_, k) => k !== best.i && k !== best.j).concat([nc]);
+      }
+      const order = []; (function walk(n) { if (n.a) { walk(n.a); walk(n.b); } else order.push(n.id); })(C[0]);
+      let gap = 0, cut = 0;
+      for (let k = 1; k < merges.length; k++) { const g2 = merges[k].h - merges[k - 1].h; if (g2 > gap) { gap = g2; cut = k; } }
+      const cutH = (merges[cut - 1].h + merges[cut].h) / 2, nClus = merges.length - cut + 1;
+      const groupsAt = k => { let G = P.map((_, i) => [i]); merges.slice(0, k).forEach(mg => { G = G.filter(g => !mg.a.m.includes(g[0]) && !mg.b.m.includes(g[0])); G.push(mg.m); }); return G; };
+      const fr = [{ P, merges, order, k: 0, G: groupsAt(0), say: `${P.length} points, each starting as its own cluster. Distance between clusters: <b>${NAME[p.how]}</b>.` }];
+      merges.forEach((mg, k) => {
+        fr.push({ P, merges, order, k: k + 1, G: groupsAt(k + 1), last: mg, say: `Merge ${k + 1}: the closest two clusters (${mg.a.m.length} and ${mg.b.m.length} point${mg.b.m.length > 1 ? 's' : ''}) are ${f2(mg.h, 2)} apart, so they join into one cluster of ${mg.m.length}. ${C.length === 1 && k === merges.length - 1 ? 'Everything is now one cluster.' : `${P.length - k - 1} clusters remain.`}` });
+      });
+      fr.push({ P, merges, order, k: merges.length, G: groupsAt(cut), cutH, done: true, say: `The biggest jump in merge height is between ${f2(merges[cut - 1].h, 2)} and ${f2(merges[cut].h, 2)}. Cutting the tree at height ${f2(cutH, 2)} (dashed line) gives <b>${nClus} clusters</b>. You never had to choose k in advance: the tree holds every answer from ${P.length} clusters down to 1.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.P.map(q => q.x), ys = f.P.map(q => q.y);
+      const lo = Math.min(...xs, ...ys) - 1, hi = Math.max(...xs, ...ys) + 1;
+      const P = plot(z, [10, 10, 280, 310], [lo, hi], [lo, hi], { dx: 0, dy: 0 });
+      const gid = i => f.G.findIndex(G => G.includes(i));
+      f.merges.slice(0, f.k).forEach(mg => {
+        let best = null;
+        mg.a.m.forEach(i => mg.b.m.forEach(j => { const d = dist(f.P[i], f.P[j]); if (!best || d < best.d) best = { d, i, j }; }));
+        D.line(g, P.X(f.P[best.i].x), P.Y(f.P[best.i].y), P.X(f.P[best.j].x), P.Y(f.P[best.j].y), f.last === mg ? c.cv : c.ink2, f.last === mg ? 2 : 1, [4, 3]);
+      });
+      f.P.forEach((q, i) => {
+        const G = f.G[gid(i)], col = G.length > 1 ? klass(z, gid(i)) : c.ink2;
+        D.circle(g, P.X(q.x), P.Y(q.y), f.last && f.last.m.includes(i) ? 7 : 5, { fill: col, stroke: f.last && f.last.m.includes(i) ? c.ink : c.surf, w: 1.5 });
+        D.text(g, String(i + 1), P.X(q.x) + 7, P.Y(q.y) - 6, { s: 10, c: c.ink2 });
+      });
+      const top = f.merges[f.merges.length - 1].h * 1.08 || 1;
+      const Q = plot(z, [300, 10, 290, 310], [-0.5, f.P.length - 0.5], [0, top], { dx: 0, dy: 2, grid: false });
+      const pos = {}, hgt = {};
+      f.order.forEach((id, k) => { pos[id] = k; hgt[id] = 0; D.text(g, String(id + 1), Q.X(k), Q.Y(0) + 14, { a: 'center', s: 10, c: c.ink2 }); });
+      D.line(g, Q.X(-0.5), Q.Y(0), Q.X(f.P.length - 0.5), Q.Y(0), c.line, 1);
+      for (let t = 0; t <= 4; t++) { const v = top * t / 4; D.text(g, f2(v, 1), Q.x0 + 22, Q.Y(v) + 3, { a: 'right', s: 10, c: c.ink2 }); }
+      f.merges.forEach((mg, k) => {
+        pos[mg.id] = (pos[mg.a.id] + pos[mg.b.id]) / 2; hgt[mg.id] = mg.h;
+        if (k >= f.k) return;
+        const col = f.last === mg ? c.cv : c.ink;
+        D.line(g, Q.X(pos[mg.a.id]), Q.Y(hgt[mg.a.id]), Q.X(pos[mg.a.id]), Q.Y(mg.h), col, 1.8);
+        D.line(g, Q.X(pos[mg.b.id]), Q.Y(hgt[mg.b.id]), Q.X(pos[mg.b.id]), Q.Y(mg.h), col, 1.8);
+        D.line(g, Q.X(pos[mg.a.id]), Q.Y(mg.h), Q.X(pos[mg.b.id]), Q.Y(mg.h), col, 1.8);
+      });
+      if (f.cutH) { D.line(g, Q.X(-0.5), Q.Y(f.cutH), Q.X(f.P.length - 0.5), Q.Y(f.cutH), c.red, 1.6, [6, 4]); D.text(g, 'cut', Q.X(f.P.length - 0.5) - 2, Q.Y(f.cutH) - 5, { a: 'right', s: 11, b: true, c: c.red }); }
+      D.text(g, 'merge height', 340, 26, { s: 11, b: true, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 1.2  DBSCAN: core points, growing clusters through dense regions, border points and noise
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function data(kind) {
+    const r = rng(kind === 'moons' ? 5 : kind === 'blobs' ? 9 : 13), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    if (kind === 'moons') for (let i = 0; i < 160; i++) { const t = Math.PI * r(); P.push(i % 2 ? { x: Math.cos(t) + 0.06 * g(), y: Math.sin(t) + 0.06 * g() } : { x: 1 - Math.cos(t) + 0.06 * g(), y: 0.5 - Math.sin(t) + 0.06 * g() }); }
+    if (kind === 'blobs') { [[-0.6, 0.1, 0.12, 60], [1.6, 0.2, 0.3, 60], [0.6, 1.4, 0.2, 40]].forEach(([cx, cy, s, n]) => { for (let i = 0; i < n; i++) P.push({ x: cx + s * g(), y: cy + s * g() }); }); }
+    if (kind === 'ring') for (let i = 0; i < 160; i++) { const t = 2 * Math.PI * r(), rad = i % 3 ? 1.3 : 0.35; P.push({ x: 0.5 + rad * Math.cos(t) + 0.05 * g(), y: 0.5 + rad * Math.sin(t) + 0.05 * g() }); }
+    for (let i = 0; i < 12; i++) P.push({ x: -1.5 + 4 * r(), y: -1 + 3 * r() });
+    return P;
+  }
+  trace('mldbscan', {
+    title: 'DBSCAN: clusters are dense regions',
+    sub: 'A point with at least minPts points within distance eps (itself included) is a core point. Clusters grow from core point to core point. Points near a cluster but not core are border points. Everything else is noise.',
+    W: 600, H: 330,
+    params: [
+      { k: 'data', label: 'Data', type: 'select', v: 'moons', opts: [['moons', 'Two moons plus noise'], ['blobs', 'Blobs of different spread'], ['ring', 'A ring around a blob']] },
+      { k: 'eps', label: 'eps (neighbourhood radius)', type: 'range', v: 0.2, min: 0.05, max: 0.6, step: 0.05 },
+      { k: 'mp', label: 'minPts', type: 'range', v: 5, min: 2, max: 12, step: 1 }
+    ],
+    tips: [
+      { t: 'eps too small: most points are noise and the moons break into pieces.', set: { data: 'moons', eps: 0.1 }, play: true },
+      { t: 'eps too large: the two moons touch and become one cluster.', set: { data: 'moons', eps: 0.45 }, play: true },
+      { t: 'Blobs of different spread: one eps cannot suit the tight blob and the wide blob at the same time.', set: { data: 'blobs', eps: 0.15, mp: 5 }, play: true }
+    ],
+    frames(p) {
+      const P = data(p.data), n = P.length;
+      const near = P.map(a => P.map((b, j) => j).filter(j => Math.hypot(a.x - P[j].x, a.y - P[j].y) <= p.eps + 1e-12));
+      const core = near.map(N => N.length >= p.mp);
+      const nc = core.filter(Boolean).length;
+      const ex = core.findIndex(Boolean) >= 0 ? core.findIndex(Boolean) : 0;
+      const lab = new Array(n).fill(-1);
+      const fr = [{ P, lab: lab.slice(), say: `${n} points, no labels. DBSCAN needs two settings: eps = <b>${f2(p.eps, 2)}</b> and minPts = <b>${p.mp}</b>. It does not need the number of clusters.` }];
+      fr.push({ P, lab: lab.slice(), ring: ex, eps: p.eps, say: `Look at one point: ${near[ex].length} points lie within eps of it (the circle), counting itself. ${near[ex].length >= p.mp ? `That is at least ${p.mp}, so it is a <b>core point</b>.` : `That is fewer than ${p.mp}, so it is not a core point.`}` });
+      fr.push({ P, lab: lab.slice(), core, say: `Do the same count for every point. <b>${nc}</b> of ${n} points are core points (outlined). The rest are not dense enough on their own.` });
+      let k = 0, shown = 0;
+      for (let i = 0; i < n; i++) {
+        if (!core[i] || lab[i] !== -1) continue;
+        lab[i] = k; let front = [i], waves = 0;
+        while (front.length) {
+          const nf = [];
+          front.forEach(q => near[q].forEach(j => { if (lab[j] === -1) { lab[j] = k; if (core[j]) nf.push(j); } }));
+          front = nf; waves++;
+          if (shown < 3 && k < 2 && (waves === 2 || waves === 6)) fr.push({ P, lab: lab.slice(), core, say: `Cluster ${k + 1} is growing: from each core point, add every point within eps, and keep going from the new core points (${lab.filter(l => l === k).length} points so far).` });
+        }
+        const size = lab.filter(l => l === k).length, border = lab.map((l, j) => l === k && !core[j]).filter(Boolean).length;
+        if (k < 6) fr.push({ P, lab: lab.slice(), core, say: `Cluster ${k + 1} cannot grow any more: <b>${size} points</b>, of which ${border} are border points (reached from a core point but not core themselves).` });
+        k++; shown++;
+      }
+      const noise = lab.filter(l => l === -1).length;
+      fr.push({ P, lab: lab.slice(), core, done: true, say: `Done: <b>${k} cluster${k === 1 ? '' : 's'}</b> and <b>${noise} noise points</b> (grey crosses). ${k > 6 ? 'Many tiny clusters usually mean eps is too small. ' : ''}${k === 1 && p.data !== 'blobs' ? 'One big cluster usually means eps is too large. ' : ''}The clusters can have any shape, because they follow the dense regions.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1.6, 2.6], [-1.1, 2.13], { dx: 1, dy: 1 });
+      const sx = (P.X(1) - P.X(0));
+      if (f.ring !== undefined) { const q = f.P[f.ring]; D.circle(g, P.X(q.x), P.Y(q.y), sx * f.eps, { fill: 'rgba(124,58,237,0.12)', stroke: c.cv, w: 1.5 }); }
+      f.P.forEach((q, i) => {
+        const X = P.X(q.x), Y = P.Y(q.y), l = f.lab[i];
+        if (f.done && l === -1) { D.line(g, X - 3.5, Y - 3.5, X + 3.5, Y + 3.5, c.ink2, 1.6); D.line(g, X - 3.5, Y + 3.5, X + 3.5, Y - 3.5, c.ink2, 1.6); return; }
+        D.circle(g, X, Y, f.core && f.core[i] ? 4.2 : 3, f.core && f.core[i] ? { fill: l >= 0 ? klass(z, l) : c.line, stroke: c.ink, w: 1 } : { fill: l >= 0 ? klass(z, l) : c.ink2 });
+      });
+      head(z, 'DBSCAN', 425, 24);
+      const k = Math.max(-1, ...f.lab) + 1, noise = f.lab.filter(l => l === -1).length;
+      D.text(g, `clusters so far: ${k}`, 425, 50, { s: 13, b: true, c: c.cv });
+      for (let j = 0; j < Math.min(k, 8); j++) D.text(g, `cluster ${j + 1}: ${f.lab.filter(l => l === j).length}`, 425, 76 + j * 18, { s: 12, mono: true, c: klass(z, j) });
+      if (k > 8) D.text(g, `and ${k - 8} more`, 425, 76 + 8 * 18, { s: 12, c: c.ink2 });
+      D.text(g, `${f.done ? 'noise' : 'not yet in a cluster'}: ${noise}`, 425, 250, { s: 12, mono: true, c: c.ink2 });
+      if (f.core) D.text(g, 'outlined = core point', 425, 272, { s: 11, c: c.ink2 });
+    }
+  });
+})();
