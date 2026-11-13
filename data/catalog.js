@@ -8287,6 +8287,28 @@ function mlSupModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-svm", title: "Support vector machines: the widest street", emoji: "2.4", page: "content/machine-learning/ml-svm.html",
+        summary: "The widest margin classifier, soft margins and hinge loss, kernels, tuning C and gamma, training, and SVR.",
+        keywords: ["SVM", "support vector machine", "maximum margin", "hinge loss", "kernel trick", "RBF kernel", "C and gamma", "SVR", "support vectors", "SVC"],
+        minutes: 55, counts: {"lessons": 11, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "The widest street", emoji: "", group: "Lesson", keywords: ["support vector machine", "SVM", "maximum margin", "margin width", "support vectors", "hyperplane", "linear classifier"] },
+        { id: "soft", title: "Soft margin, hinge loss and C", emoji: "", group: "Lesson", keywords: ["soft margin", "hinge loss", "C parameter", "slack variables", "regularisation", "margin violation"] },
+        { id: "kernel", title: "Kernels: curved boundaries", emoji: "", group: "Lesson", keywords: ["kernel trick", "RBF kernel", "polynomial kernel", "feature map", "nonlinear SVM", "Gram matrix"] },
+        { id: "tune", title: "Tuning C and gamma, and scaling", emoji: "", group: "Lesson", keywords: ["gamma", "C", "RBF SVM tuning", "GridSearchCV", "feature scaling", "StandardScaler", "overfitting"] },
+        { id: "train", title: "How an SVM is trained", emoji: "", group: "Lesson", keywords: ["convex optimisation", "dual problem", "Lagrange multipliers", "SMO", "Pegasos", "subgradient descent", "LinearSVC", "libsvm"] },
+        { id: "svr", title: "Support vector regression", emoji: "", group: "Lesson", keywords: ["SVR", "support vector regression", "epsilon tube", "epsilon insensitive loss", "regression with kernels"] },
+        { id: "versus", title: "SVMs compared", emoji: "", group: "Lesson", keywords: ["SVM vs logistic regression", "SVM vs KNN", "hinge vs log loss", "Platt scaling", "decision_function"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["primal", "dual", "slack variables", "kernel prediction", "RBF formula", "margin derivation", "hinge loss surrogate"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Mercer theorem", "RKHS", "representer theorem", "random Fourier features"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "geometry", "maximum gap", "cross product", "squared distance"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

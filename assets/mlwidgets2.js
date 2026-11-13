@@ -636,3 +636,206 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 2.4  the widest street: a hard margin linear SVM, found by trying every direction
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, points, D, f2, head, klass } = MLZ;
+  /* the gap between the classes when every point is projected onto the direction at angle t */
+  function gap(P, t) {
+    const ux = Math.cos(t), uy = Math.sin(t);
+    let hiA = -Infinity, loB = Infinity;
+    P.forEach(a => { const s = a.x * ux + a.y * uy; if (a.s < 0) hiA = Math.max(hiA, s); else loB = Math.min(loB, s); });
+    return { g: loB - hiA, mid: (loB + hiA) / 2, t, ux, uy };
+  }
+  function widest(P) {
+    let best = null;
+    const ok = [];
+    for (let i = 0; i < 1440; i++) {
+      const r = gap(P, i * Math.PI / 720);
+      if (r.g > 0) ok.push(r);
+      if (!best || r.g > best.g) best = r;
+    }
+    let lo = best.t - Math.PI / 720, hi = best.t + Math.PI / 720;
+    for (let i = 0; i < 60; i++) {
+      const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3;
+      if (gap(P, m1).g < gap(P, m2).g) lo = m1; else hi = m2;
+    }
+    return { best: gap(P, (lo + hi) / 2), ok };
+  }
+  /* draw the line ux x + uy y = k inside the plot */
+  function uline(z, P, ux, uy, k, col, w, dash) {
+    const g = z.g;
+    g.save(); g.beginPath(); g.rect(P.x0, P.y0, P.w, P.h); g.clip();
+    if (Math.abs(uy) > Math.abs(ux)) {
+      const ya = (k - ux * P.xr[0]) / uy, yb = (k - ux * P.xr[1]) / uy;
+      D.line(g, P.X(P.xr[0]), P.Y(ya), P.X(P.xr[1]), P.Y(yb), col, w, dash);
+    } else {
+      const xa = (k - uy * P.yr[0]) / ux, xb = (k - uy * P.yr[1]) / ux;
+      D.line(g, P.X(xa), P.Y(P.yr[0]), P.X(xb), P.Y(P.yr[1]), col, w, dash);
+    }
+    g.restore();
+  }
+  trace('mlsvm', {
+    title: 'Support vector machine: find the widest street',
+    sub: 'Type points of two classes (x y class). Many straight lines separate them. The SVM picks the one with the widest empty street on both sides, and only the points on the edge of the street matter.',
+    W: 600, H: 330,
+    params: [{ k: 'pts', label: 'Points (x y class)', type: 'area', v: '1 1 A; 2 1 A; 1 2 A; 4 4 B; 5 4 B; 4 5 B' }],
+    tips: [
+      { t: 'Add a far away point such as 0 0 A: it is not on the street, so the boundary does not move.', set: { pts: '1 1 A; 2 1 A; 1 2 A; 0 0 A; 4 4 B; 5 4 B; 4 5 B' }, play: true },
+      { t: 'Move one B point closer (3 3 B): the street gets narrower and the support vectors change.', set: { pts: '1 1 A; 2 1 A; 1 2 A; 3 3 B; 5 4 B; 4 5 B' }, play: true },
+      { t: 'Put a B point among the A points: no straight line separates them, so a hard margin is impossible.', set: { pts: '1 1 A; 2 1 A; 1 2 A; 1.5 1.5 B; 4 4 B; 5 4 B; 4 5 B' }, play: true }
+    ],
+    frames(p) {
+      const raw = points(p.pts, true).slice(0, 30);
+      const classes = [...new Set(raw.map(a => a.c))].sort();
+      if (classes.length !== 2) throw new Error('Use exactly two class names, for example A and B');
+      const P = raw.map(a => ({ ...a, s: a.c === classes[0] ? -1 : 1 }));
+      const nA = P.filter(a => a.s < 0).length;
+      const b0 = { P, classes };
+      const fr = [{ ...b0, st: 1, say: `${nA} points of class ${classes[0]} and ${P.length - nA} of class ${classes[1]}. We want a straight line that puts the two classes on different sides.` }];
+      const { best, ok } = widest(P);
+      if (best.g <= 0) {
+        fr.push({ ...b0, st: 1, say: 'No straight line can separate these two classes: every direction leaves the classes overlapping. A hard margin SVM has no answer here. The soft margin version (with C) allows a few points on the wrong side, and a kernel can bend the boundary.' });
+        return fr;
+      }
+      const cand = [ok[Math.floor(ok.length * 0.15)], ok[Math.floor(ok.length * 0.8)]].filter(r => r && Math.abs(r.t - best.t) > 0.05);
+      cand.forEach((r, i) => fr.push({ ...b0, st: 2, cand: cand.slice(0, i + 1), say: `${i ? 'Another' : 'One'} line that separates the classes. The empty street around it is only <b>${f2(r.g)}</b> wide. ${i ? 'Both lines get every training point right, so which one should we trust?' : 'It gets every training point right, but it passes close to some points.'}` }));
+      const half = best.g / 2;
+      const w = [best.ux / half, best.uy / half], b = -best.mid / half;
+      const sv = P.filter(a => Math.abs(a.s * (w[0] * a.x + w[1] * a.y + b) - 1) < 1e-3);
+      const base = { ...b0, best, w, b, sv };
+      fr.push({ ...base, st: 3, say: `The SVM chooses the line with the <b>widest street</b>: width <b>${f2(best.g, 3)}</b>. A wide street means new points can land a little off from the training points and still be classified correctly.` });
+      fr.push({ ...base, st: 4, say: `The ${sv.length} circled points touch the edges of the street. They are the <b>support vectors</b>. Move or delete any other point and the line does not change at all.` });
+      fr.push({ ...base, st: 5, say: `Scale the line so that w·x + b = +1 and −1 on the two edges: <b>w = (${f2(w[0], 3)}, ${f2(w[1], 3)})</b>, <b>b = ${f2(b, 3)}</b>. Then the width is 2 ÷ |w| = 2 ÷ ${f2(Math.hypot(w[0], w[1]), 3)} = ${f2(2 / Math.hypot(w[0], w[1]), 3)}. Making the street wide is the same as making |w| small.` });
+      fr.push({ ...base, st: 6, say: 'Every point has y(w·x + b) ≥ 1, and the support vectors have exactly 1. So training an SVM means: minimise ½|w|² subject to y(w·x + b) ≥ 1 for every point. With noisy data the soft margin version lets some points inside the street and pays a penalty C for each.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.P.map(a => a.x), ys = f.P.map(a => a.y);
+      let [xl, xh] = [Math.min(...xs), Math.max(...xs)], [yl, yh] = [Math.min(...ys), Math.max(...ys)];
+      const s = Math.max((xh - xl + 2) / 354, (yh - yl + 2) / 280), cx = (xl + xh) / 2, cy = (yl + yh) / 2;
+      const P = plot(z, [10, 10, 390, 310], [cx - 177 * s, cx + 177 * s], [cy - 140 * s, cy + 140 * s], { dx: 1, dy: 1 });
+      const col = a => klass(z, a.s < 0 ? 0 : 1);
+      (f.cand || []).forEach((r, i) => {
+        if (f.st > 2) return;
+        uline(z, P, r.ux, r.uy, r.mid, c.ink2, 1.6, [6, 4]);
+        uline(z, P, r.ux, r.uy, r.mid - r.g / 2, c.line, 1, [2, 3]);
+        uline(z, P, r.ux, r.uy, r.mid + r.g / 2, c.line, 1, [2, 3]);
+      });
+      if (f.st >= 3) {
+        const r = f.best;
+        g.save(); g.beginPath(); g.rect(P.x0, P.y0, P.w, P.h); g.clip();
+        const k1 = r.mid - r.g / 2, k2 = r.mid + r.g / 2, L = 1e3;
+        const px = -r.uy, py = r.ux;
+        const pt = (k, t) => [P.X(r.ux * k + px * t), P.Y(r.uy * k + py * t)];
+        g.beginPath();
+        [[k1, -L], [k1, L], [k2, L], [k2, -L]].forEach(([k, t], i) => { const [X, Y] = pt(k, t); i ? g.lineTo(X, Y) : g.moveTo(X, Y); });
+        g.closePath(); g.globalAlpha = 0.14; g.fillStyle = c.cv; g.fill();
+        g.restore();
+        uline(z, P, r.ux, r.uy, r.mid, c.ink, 2.4);
+        uline(z, P, r.ux, r.uy, k1, klass(z, 0), 1.4, [6, 4]);
+        uline(z, P, r.ux, r.uy, k2, klass(z, 1), 1.4, [6, 4]);
+      }
+      f.P.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 6, { fill: col(a) }));
+      if (f.st >= 4) f.sv.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 11, { stroke: c.ink, w: 2 }));
+      f.P.forEach(a => D.text(g, a.c, P.X(a.x) + 12, P.Y(a.y) - 10, { a: 'center', s: 10, b: true, c: c.ink2 }));
+      if (f.st === 2) {
+        head(z, 'Street width', 418, 24);
+        f.cand.forEach((r, i) => D.text(g, `line ${i + 1}: ${f2(r.g)}`, 418, 50 + i * 22, { s: 12, mono: true, c: c.ink2 }));
+      }
+      if (f.st >= 3) {
+        head(z, 'Widest street', 418, 24);
+        D.text(g, `width ${f2(f.best.g, 3)}`, 418, 48, { s: 14, b: true, c: c.cv });
+        if (f.st >= 4) D.text(g, `${f.sv.length} support vectors`, 418, 72, { s: 12, b: true, c: c.ink });
+        if (f.st >= 5) {
+          D.text(g, `w = (${f2(f.w[0], 2)}, ${f2(f.w[1], 2)})`, 418, 100, { s: 12, mono: true, c: c.ink });
+          D.text(g, `b = ${f2(f.b, 2)}`, 418, 120, { s: 12, mono: true, c: c.ink });
+          D.text(g, 'y(w·x + b) per point', 418, 146, { s: 11, b: true, c: c.ink2 });
+          f.P.slice(0, 8).forEach((a, i) => {
+            const m = a.s * (f.w[0] * a.x + f.w[1] * a.y + f.b);
+            D.text(g, `(${a.x}, ${a.y})  ${f2(m, 2)}`, 418, 166 + i * 18, { s: 11, mono: true, b: Math.abs(m - 1) < 1e-3, c: Math.abs(m - 1) < 1e-3 ? c.ink : c.ink2 });
+          });
+        }
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.4  the kernel trick: add a feature x², then a straight cut works
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, nums, D, f2, head, klass } = MLZ;
+  trace('mlkernel', {
+    title: 'The kernel trick: lift the points, then cut straight',
+    sub: 'Class A sits in the middle of the number line and class B on both sides, so no single cut point separates them. Adding the feature x² lifts the points onto a curve where a straight line does.',
+    W: 600, H: 330,
+    params: [
+      { k: 'a', label: 'Class A values', type: 'text', v: '-1, -0.5, 0, 0.6, 1.1' },
+      { k: 'b', label: 'Class B values', type: 'text', v: '-3, -2.4, -2, 2, 2.6, 3.2' }
+    ],
+    tips: [{ t: 'Put B only on the right (2, 2.6, 3.2): one cut point is already enough, no lifting needed.', set: { b: '2, 2.6, 3.2' }, play: true }],
+    frames(p) {
+      const A = nums(p.a).slice(0, 15), B = nums(p.b).slice(0, 15);
+      if (!A.length || !B.length) throw new Error('Type some numbers for both classes');
+      const all = A.map(x => ({ x, c: 0 })).concat(B.map(x => ({ x, c: 1 })));
+      const xs = all.map(a => a.x).sort((u, v) => u - v);
+      let bestErr = Infinity, bestCut = 0;
+      for (let i = 0; i <= xs.length; i++) {
+        const cut = i === 0 ? xs[0] - 1 : i === xs.length ? xs[xs.length - 1] + 1 : (xs[i - 1] + xs[i]) / 2;
+        for (const left of [0, 1]) {
+          const e = all.filter(a => (a.x < cut ? left : 1 - left) !== a.c).length;
+          if (e < bestErr) { bestErr = e; bestCut = cut; }
+        }
+      }
+      const hiA = Math.max(...A.map(x => x * x)), loB = Math.min(...B.map(x => x * x));
+      const sep = hiA < loB, t = (hiA + loB) / 2, r = Math.sqrt(t);
+      const b = { all, bestCut, bestErr, hiA, loB, sep, t, r };
+      const fr = [
+        { ...b, st: 1, say: `${A.length} points of class A and ${B.length} of class B on one number line (one feature x).` },
+        { ...b, st: 2, say: bestErr === 0 ? `One cut at x = ${f2(bestCut)} already separates them, so a plain linear model works.` : `The best single cut point (x = ${f2(bestCut)}) still gets <b>${bestErr}</b> point${bestErr > 1 ? 's' : ''} wrong. A linear classifier on x alone cannot do better.` },
+        { ...b, st: 3, say: 'Add a second feature, x². Every point moves up to the height x² on the curve. Points far from 0 rise a lot, points near 0 hardly move.' }
+      ];
+      if (!sep) { fr.push({ ...b, st: 3, say: 'Here even the lifted points overlap (some A point is further from 0 than some B point), so x² alone is not enough. An RBF kernel can still bend the boundary around each group.' }); return fr; }
+      fr.push({ ...b, st: 4, say: `In the new space (x, x²) the straight line <b>x² = ${f2(t)}</b> separates the classes: every A point is below it and every B point above.` });
+      fr.push({ ...b, st: 5, say: `Back on the original line that straight cut becomes <b>two</b> cut points, x = −${f2(r)} and x = +${f2(r)}. Between them is A, outside is B. A linear model in the lifted space is a curved model in the original space.` });
+      fr.push({ ...b, st: 6, say: 'The trick: the SVM only needs dot products between points. For the feature x², φ(x)·φ(z) = x²z² = (xz)², so the kernel K(x, z) = (xz)² gives the lifted dot product without building the new feature. The RBF kernel exp(−γ(x − z)²) works like infinitely many such features.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.all.map(a => a.x), lo = Math.min(...xs), hi = Math.max(...xs), pad = (hi - lo) * 0.1 + 0.3;
+      const top = Math.max(...xs.map(x => x * x)) * 1.1 + 0.5;
+      const lifted = f.st >= 3;
+      const P = plot(z, [10, 10, 400, 310], [lo - pad, hi + pad], lifted ? [-top * 0.08, top] : [-1, 1], { dx: 1, dy: lifted ? 1 : 0, xl: 'x', yl: lifted ? 'x²' : '' });
+      if (lifted) {
+        g.save(); g.beginPath();
+        for (let i = 0; i <= 120; i++) { const x = lo - pad + (hi - lo + 2 * pad) * i / 120; const X = P.X(x), Y = P.Y(Math.min(x * x, top)); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+        g.strokeStyle = c.line; g.lineWidth = 1.5; g.stroke(); g.restore();
+      }
+      const base = lifted ? 0 : 0;
+      D.line(g, P.X(lo - pad), P.Y(base), P.X(hi + pad), P.Y(base), c.ink2, 1.2);
+      if (f.st === 2 && f.bestErr > 0) D.line(g, P.X(f.bestCut), P.Y(lifted ? 0 : -0.8), P.X(f.bestCut), P.Y(lifted ? top : 0.8), c.red || '#dc2626', 1.6, [5, 4]);
+      if (f.st >= 4 && f.sep) D.line(g, P.X(lo - pad), P.Y(f.t), P.X(hi + pad), P.Y(f.t), c.cv, 2.2);
+      if (f.st >= 5 && f.sep) [-f.r, f.r].forEach(x => {
+        D.line(g, P.X(x), P.Y(f.t), P.X(x), P.Y(0), c.cv, 1.4, [4, 3]);
+        D.circle(g, P.X(x), P.Y(0), 4, { fill: c.cv });
+      });
+      f.all.forEach(a => {
+        const y = lifted ? a.x * a.x : 0;
+        if (lifted) D.line(g, P.X(a.x), P.Y(0), P.X(a.x), P.Y(y), c.line, 1, [2, 3]);
+        D.circle(g, P.X(a.x), P.Y(y), 6, { fill: klass(z, a.c) });
+      });
+      head(z, 'Features', 425, 24);
+      D.text(g, lifted ? 'x and x²' : 'x only', 425, 46, { s: 13, b: true, c: c.ink });
+      D.text(g, 'A', 425, 76, { s: 12, b: true, c: klass(z, 0) }); D.text(g, 'B', 455, 76, { s: 12, b: true, c: klass(z, 1) });
+      if (f.st >= 2) D.text(g, `best single cut: ${f.bestErr} wrong`, 425, 104, { s: 11, c: c.ink2 });
+      if (f.st >= 4 && f.sep) D.text(g, `line x² = ${f2(f.t)}: 0 wrong`, 425, 126, { s: 11, b: true, c: c.cv });
+      if (f.st >= 5 && f.sep) D.text(g, `cuts at ±${f2(f.r)}`, 425, 148, { s: 11, b: true, c: c.cv });
+      if (f.st >= 6) D.text(g, 'K(x, z) = (x z)²', 425, 180, { s: 13, mono: true, b: true, c: c.ink });
+    }
+  });
+})();
