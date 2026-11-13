@@ -8143,6 +8143,29 @@ function mlFoundModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-features", title: "Features: encoding, scaling, engineering and selection", emoji: "3.2", page: "content/machine-learning/ml-features.html",
+        summary: "encoding categories, scaling numbers, engineering new features, text features, feature selection and ColumnTransformer pipelines.",
+        keywords: ["feature engineering", "one hot encoding", "scaling", "StandardScaler", "target encoding", "polynomial features", "TF-IDF", "feature selection", "ColumnTransformer", "Pipeline"],
+        minutes: 65, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "encode", title: "Encoding categories as numbers", emoji: "", group: "Lesson", keywords: ["feature", "encoding", "one hot encoding", "OneHotEncoder", "ordinal encoding", "OrdinalEncoder", "get_dummies", "handle_unknown", "dummy variable trap"] },
+        { id: "scale", title: "Scaling numbers", emoji: "", group: "Lesson", keywords: ["feature scaling", "standardisation", "StandardScaler", "MinMaxScaler", "RobustScaler", "normalisation", "log transform", "KNN scaling"] },
+        { id: "create", title: "Creating new features", emoji: "", group: "Lesson", keywords: ["feature engineering", "date features", "ratio features", "binning", "pd.cut", "log transform", "aggregates", "cyclical encoding", "domain knowledge"] },
+        { id: "poly", title: "Polynomial and interaction features", emoji: "", group: "Lesson", keywords: ["polynomial features", "interaction features", "PolynomialFeatures", "nonlinear features", "R2"] },
+        { id: "text", title: "Features from text", emoji: "", group: "Lesson", keywords: ["bag of words", "CountVectorizer", "TF-IDF", "TfidfVectorizer", "vocabulary", "text features"] },
+        { id: "select", title: "Feature selection: keep what helps", emoji: "", group: "Lesson", keywords: ["feature selection", "filter method", "wrapper method", "embedded method", "SelectKBest", "f_classif", "mutual information", "RFE", "L1 regularisation", "feature importance"] },
+        { id: "pipeline", title: "One pipeline for every column", emoji: "", group: "Lesson", keywords: ["ColumnTransformer", "Pipeline", "mixed data types", "get_feature_names_out", "preprocessing pipeline"] },
+        { id: "versus", title: "Encodings compared, including target encoding", emoji: "", group: "Lesson", keywords: ["target encoding", "TargetEncoder", "cross fitting", "high cardinality", "feature hashing", "embedding", "encoding comparison"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["standardisation formula", "min max formula", "robust scaling", "polynomial column count", "mutual information", "curse of dimensionality"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "feature store", "stability selection", "representation learning"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "pandas", "groupby", "rank", "nunique", "boolean mask", "computed column"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

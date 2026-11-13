@@ -1056,3 +1056,136 @@ const MLZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 3.2  feature scaling: standard, min max, robust and log
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, nums, span } = MLZ;
+  const NAME = { std: 'Standard (z score)', minmax: 'Min max (0 to 1)', robust: 'Robust (median and IQR)', log: 'Log, log(1 + x)' };
+  const quant = (s, q) => { const pos = (s.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos); return s[lo] + (s[hi] - s[lo]) * (pos - lo); };
+  trace('mlscale', {
+    title: 'Feature scaling: put every feature on a similar scale',
+    sub: 'Type some values of one feature and pick a scaler. The top line shows the raw values and the bottom line the scaled ones. Watch what one big value does.',
+    W: 600, H: 300,
+    params: [
+      { k: 'vals', label: 'Values', type: 'text', v: '30, 35, 40, 45, 50, 400' },
+      { k: 'how', label: 'Scaler', type: 'select', v: 'std', opts: Object.keys(NAME).map(k => [k, NAME[k]]) }
+    ],
+    tips: [
+      { t: 'Min max with an outlier: five of the six values get squeezed into 0 to 0.05.', set: { how: 'minmax' }, play: true },
+      { t: 'Robust scaling keeps the normal values nicely spread out and lets the outlier sit far away.', set: { how: 'robust' }, play: true },
+      { t: 'Without an outlier every scaler looks similar.', set: { vals: '30, 35, 40, 45, 50, 55', how: 'minmax' }, play: true }
+    ],
+    frames(p) {
+      const v = nums(p.vals).slice(0, 20);
+      if (v.length < 2) throw new Error('Type at least two numbers');
+      if (p.how === 'log' && v.some(x => x <= -1)) throw new Error('log(1 + x) needs every value above −1');
+      const s = v.slice().sort((a, b) => a - b), n = v.length;
+      const mean = v.reduce((a, b) => a + b, 0) / n, sd = Math.sqrt(v.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
+      const mn = s[0], mx = s[n - 1], med = quant(s, 0.5), iqr = quant(s, 0.75) - quant(s, 0.25);
+      let tf, stat, formula;
+      if (p.how === 'std') { tf = x => sd ? (x - mean) / sd : 0; stat = `mean = ${f2(mean)}, standard deviation = ${f2(sd)}`; formula = x => `(${x} − ${f2(mean)}) ÷ ${f2(sd)}`; }
+      else if (p.how === 'minmax') { tf = x => mx > mn ? (x - mn) / (mx - mn) : 0; stat = `min = ${f2(mn)}, max = ${f2(mx)}`; formula = x => `(${x} − ${f2(mn)}) ÷ (${f2(mx)} − ${f2(mn)})`; }
+      else if (p.how === 'robust') { tf = x => iqr ? (x - med) / iqr : 0; stat = `median = ${f2(med)}, IQR = ${f2(iqr)}`; formula = x => `(${x} − ${f2(med)}) ÷ ${f2(iqr)}`; }
+      else { tf = x => Math.log1p(x); stat = 'no statistics are needed, the same formula works for every value'; formula = x => `log(1 + ${x})`; }
+      const out = v.map(tf);
+      const b = { v, out };
+      const fr = [
+        { ...b, st: 1, say: `These are the raw values: ${v.join(', ')}. Features like age (tens) and income (thousands) live on very different scales, which confuses models that use distances or gradients.` },
+        { ...b, st: 2, say: `${NAME[p.how]} scaling first learns from the training values: ${stat}.` }
+      ];
+      v.forEach((x, i) => { if (i < 6) fr.push({ ...b, st: 3, upto: i + 1, say: `Value ${x} becomes ${formula(x)} = <b>${f2(out[i], 2)}</b>.` }); });
+      fr.push({ ...b, st: 4, upto: v.length, say: `All values scaled: ${out.map(x => f2(x)).join(', ')}. ${{
+        std: 'The result has mean 0 and standard deviation 1. One outlier still squeezes the others together because it inflates the standard deviation.',
+        minmax: 'Everything now lies between 0 and 1. One outlier becomes 1 and squeezes all the normal values near 0.',
+        robust: 'The median becomes 0 and the middle half spans about 1. The outlier does not change the scale of the other values.',
+        log: 'Big values are pulled in much more than small ones, so a long right tail becomes compact. Good for prices, incomes and counts.'
+      }[p.how]} ${p.how === 'log' ? 'Unlike the other three scalers, log changes the shape of the data.' : 'Notice the dots keep the same pattern: this scaler only shifts and stretches the line, it never changes the shape of the data.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const line = (vals, y, label, band) => {
+        const [a, b] = span(band ? vals.concat([-1, 1]) : vals, 0.06);
+        const X = t => 40 + (t - a) / (b - a) * 520;
+        if (band) { g.save(); g.globalAlpha = 0.18; g.fillStyle = c.green; g.fillRect(X(-1), y - 26, X(1) - X(-1), 26); g.restore(); }
+        D.line(g, 40, y, 560, y, c.ink2, 1.5);
+        for (let i = 0; i <= 4; i++) { const t = a + (b - a) * i / 4; D.line(g, X(t), y, X(t), y + 5, c.ink2, 1); D.text(g, f2(t, 2), X(t), y + 18, { a: 'center', s: 10, c: c.ink2 }); }
+        head(z, label, 40, y - 44);
+        return X;
+      };
+      const X1 = line(f.v, 90, 'Raw values', false);
+      f.v.forEach(x => D.circle(g, X1(x), 80, 6, { fill: c.cv }));
+      if (f.st >= 3) {
+        const X2 = line(f.out, 220, 'Scaled values (the shaded band runs from −1 to 1)', true);
+        f.out.forEach((x, i) => {
+          if (i >= f.upto) return;
+          D.line(g, X1(f.v[i]), 86, X2(x), 204, c.line, 1, [3, 3]);
+          D.circle(g, X2(x), 210, 6, { fill: c.green });
+        });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 3.2  turning categories into numbers (one hot, dummy, ordinal)
+   ===================================================================================================== */
+(() => {
+  const { trace, f2, head, box, list, D } = MLZ;
+  const NAME = { onehot: 'One hot (one column per category)', dummy: 'Dummy (drop the first column)', ordinal: 'Ordinal (one number per category)' };
+  trace('mlonehot', {
+    title: 'Encoding categories: one hot, dummy and ordinal',
+    sub: 'Models only understand numbers. Type a column of categories and pick an encoding. Each step builds one more piece of the encoded table.',
+    W: 600, H: 320,
+    params: [
+      { k: 'vals', label: 'Categories', type: 'text', v: 'Delhi, Pune, Delhi, Mumbai, Pune' },
+      { k: 'how', label: 'Encoding', type: 'select', v: 'onehot', opts: Object.keys(NAME).map(k => [k, NAME[k]]) }
+    ],
+    tips: [
+      { t: 'Ordinal on sizes small, medium, large keeps a real order. Give the order yourself, because alphabetical order would put large first.', set: { vals: 'small, large, medium, small', how: 'ordinal' }, play: true },
+      { t: 'Dummy encoding: Delhi is the row of all zeros, so k categories need only k − 1 columns.', set: { how: 'dummy' }, play: true }
+    ],
+    frames(p) {
+      const rows = list(p.vals).slice(0, 8);
+      if (rows.length < 2) throw new Error('Type at least two categories, separated by commas');
+      const cats = [...new Set(rows)].sort();
+      if (cats.length > 6) throw new Error('Use at most six different categories');
+      const cols = p.how === 'dummy' ? cats.slice(1) : (p.how === 'ordinal' ? ['code'] : cats);
+      const code = r => p.how === 'ordinal' ? [cats.indexOf(r)] : cols.map(cname => r === cname ? 1 : 0);
+      const b = { rows, cats, cols, enc: rows.map(code) };
+      const fr = [
+        { ...b, st: 1, say: `The column has ${rows.length} rows of text: ${rows.join(', ')}. A model cannot multiply "${rows[0]}" by a weight, so we turn each category into numbers.` },
+        { ...b, st: 2, say: `Find the different categories (sorted): <b>${cats.join(', ')}</b>. There are k = ${cats.length}.` },
+        { ...b, st: 3, upto: 0, say: p.how === 'ordinal' ? `Ordinal encoding makes one column and gives each category a number: ${cats.map((cname, i) => `${cname} = ${i}`).join(', ')}.` :
+          p.how === 'dummy' ? `Dummy encoding makes k − 1 = ${cols.length} columns: ${cols.join(', ')}. The first category, ${cats[0]}, gets no column. It is the row of all zeros.` :
+          `One hot encoding makes one 0 or 1 column per category: ${cols.join(', ')}.` }
+      ];
+      rows.forEach((r, i) => fr.push({ ...b, st: 3, upto: i + 1, say: `Row ${i + 1} is ${r}, so it becomes <b>[${b.enc[i].join(', ')}]</b>.` }));
+      fr.push({ ...b, st: 4, upto: rows.length, say: {
+        onehot: 'Done. Each row has exactly one 1. No category is "bigger" than another, which is right for cities. With many categories the table gets very wide, so use target encoding or hashing then.',
+        dummy: 'Done. Dropping one column removes the redundancy (the columns would always add up to 1), which matters for plain linear regression. Tree models and regularised models are fine with full one hot.',
+        ordinal: `Done. One column only, but the model now thinks ${cats[cats.length - 1]} (${cats.length - 1}) is "bigger" than ${cats[0]} (0). Use ordinal only when the categories have a real order, like small, medium, large, or for tree models.`
+      }[p.how] });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      const rh = Math.min(30, 250 / f.rows.length);
+      head(z, 'Text column', 20, 24);
+      box(z, 20, 34, 110, rh - 4, 'value', { fill: c.bg, b: true, r: 4, s: 11 });
+      f.rows.forEach((r, i) => box(z, 20, 34 + (i + 1) * rh, 110, rh - 4, r, { r: 4, s: 12 }));
+      if (f.st >= 2) {
+        head(z, 'Categories', 150, 24);
+        f.cats.forEach((cname, i) => D.text(z.g, z.p.how === 'ordinal' ? `${cname} = ${i}` : cname, 150, 52 + i * 20, { s: 12, mono: true, c: c.ink }));
+      }
+      if (f.st >= 3) {
+        const x0 = 280, cw = Math.min(70, 300 / f.cols.length);
+        head(z, 'Encoded table', x0, 24);
+        f.cols.forEach((cname, j) => box(z, x0 + j * cw, 34, cw - 3, rh - 4, cname, { fill: c.bg, b: true, r: 4, s: 11 }));
+        for (let i = 0; i < (f.upto || 0); i++) f.enc[i].forEach((v, j) => box(z, x0 + j * cw, 34 + (i + 1) * rh, cw - 3, rh - 4, String(v), { fill: v && z.p.how !== 'ordinal' ? c.cv : c.surf, c: v && z.p.how !== 'ordinal' ? '#fff' : c.ink, mono: true, b: true, r: 4, s: 12 }));
+      }
+    }
+  });
+})();
