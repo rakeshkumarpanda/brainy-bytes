@@ -8376,6 +8376,31 @@ function mlSupModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-s4", title: "Evaluate and improve", emoji: "4", step: 4, part: "supervised", level: "Intermediate", blurb: "Measure models honestly, estimate how they will do on new data, and tune them without fooling yourself.", topics: [
+      { id: "ml-metrics", title: "Metrics: measuring a model properly", emoji: "4.1", page: "content/machine-learning/ml-metrics.html",
+        summary: "Confusion matrix, precision and recall, the accuracy trap, thresholds, ROC and PR curves, regression and probability metrics.",
+        keywords: ["confusion matrix", "precision", "recall", "F1 score", "ROC AUC", "precision recall curve", "RMSE", "MAE", "log loss", "imbalanced data"],
+        minutes: 55, counts: {"lessons": 12, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "The confusion matrix", emoji: "", group: "Lesson", keywords: ["confusion matrix", "true positive", "false positive", "false negative", "precision", "recall", "F1 score"] },
+        { id: "trap", title: "Why accuracy can lie", emoji: "", group: "Lesson", keywords: ["accuracy", "imbalanced data", "balanced accuracy", "classification_report", "DummyClassifier", "macro average", "weighted average"] },
+        { id: "threshold", title: "Thresholds and the precision recall trade off", emoji: "", group: "Lesson", keywords: ["threshold", "precision recall trade off", "predict_proba", "precision_recall_curve", "TunedThresholdClassifierCV", "F beta"] },
+        { id: "roc", title: "ROC curves and AUC", emoji: "", group: "Lesson", keywords: ["ROC curve", "AUC", "true positive rate", "false positive rate", "specificity", "roc_auc_score", "ranking"] },
+        { id: "pr", title: "Precision recall curves for rare positives", emoji: "", group: "Lesson", keywords: ["precision recall curve", "average precision", "PR AUC", "imbalanced classification", "ROC vs PR"] },
+        { id: "regression", title: "Metrics for regression", emoji: "", group: "Lesson", keywords: ["MAE", "MSE", "RMSE", "MAPE", "R squared", "regression metrics", "outliers"] },
+        { id: "proba", title: "Metrics for probabilities", emoji: "", group: "Lesson", keywords: ["log loss", "cross entropy", "Brier score", "probability metrics", "confident mistakes"] },
+        { id: "versus", title: "Which metric when", emoji: "", group: "Lesson", keywords: ["choosing a metric", "metric selection", "costs of errors"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["accuracy formula", "precision formula", "specificity", "F beta", "AUC ranking", "balanced accuracy", "harmonic mean"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "proper scoring rules", "H measure", "NDCG"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "counting pairs", "ranking", "sorting", "two pointers"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

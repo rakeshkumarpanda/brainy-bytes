@@ -1279,3 +1279,135 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 4.1  the confusion matrix at a threshold, and the ROC curve from sweeping it
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rr, box } = MLZ;
+  const DEF = '0.95 1; 0.9 1; 0.8 0; 0.75 1; 0.7 1; 0.6 0; 0.55 1; 0.4 0; 0.35 1; 0.3 0; 0.2 0; 0.1 0';
+  function parse(s) {
+    const P = String(s).split(/[\n;]+/).map(t => t.trim()).filter(Boolean).map(t => { const q = t.split(/[\s,]+/); return { s: +q[0], y: +q[1] === 1 ? 1 : 0 }; }).filter(a => !isNaN(a.s)).slice(0, 20);
+    if (P.length < 2 || !P.some(a => a.y) || P.every(a => a.y)) throw new Error('Type scores with labels 1 and 0, for example 0.8 1; 0.3 0');
+    return P;
+  }
+  function counts(P, t) {
+    const c = { tp: 0, fp: 0, fn: 0, tn: 0 };
+    P.forEach(a => { const p = a.s >= t; if (p && a.y) c.tp++; else if (p) c.fp++; else if (a.y) c.fn++; else c.tn++; });
+    return c;
+  }
+  function scoreLine(z, f, t, y0) {
+    const c = z.col, g = z.g;
+    const X = v => 30 + v * 540;
+    D.line(g, X(0), y0, X(1), y0, c.line, 1.2);
+    [0, 0.25, 0.5, 0.75, 1].forEach(v => D.text(g, f2(v, 2), X(v), y0 + 30, { a: 'center', s: 10, c: c.ink2 }));
+    D.text(g, 'model score →', X(1), y0 + 46, { a: 'right', s: 10, c: c.ink2 });
+    if (t !== undefined) { D.line(g, X(t), y0 - 40, X(t), y0 + 18, c.cv, 2.2); D.text(g, `threshold ${f2(t, 2)}`, X(t) + 4, y0 - 30, { s: 11, b: true, c: c.cv }); }
+    const seen = {};
+    f.P.forEach(a => {
+      const k = Math.round(a.s * 100); seen[k] = (seen[k] || 0) + 1;
+      const yy = y0 - (seen[k] - 1) * 16;
+      D.circle(g, X(a.s), yy, 7, { fill: klass(z, a.y ? 1 : 0), stroke: f.hl && f.hl(a) ? c.ink : undefined, w: 2.5 });
+      D.text(g, a.y ? '1' : '0', X(a.s), yy + 4, { a: 'center', s: 9, b: true, c: '#fff' });
+    });
+  }
+  trace('mlconfusion', {
+    title: 'Confusion matrix: what a threshold turns into',
+    sub: 'Each dot is a test example placed at its model score (orange = really positive, blue = really negative). Everything at or above the threshold is predicted positive. Count the four kinds of outcome, then compute precision and recall.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Scores and true labels (score label)', type: 'area', v: DEF },
+      { k: 't', label: 'Threshold', type: 'range', v: 0.5, min: 0.05, max: 0.95, step: 0.05 }
+    ],
+    tips: [
+      { t: 'Threshold 0.25: almost every positive is caught (high recall), but more false alarms (lower precision).', set: { t: 0.25 }, play: true },
+      { t: 'Threshold 0.85: few false alarms (high precision), but many positives are missed.', set: { t: 0.85 }, play: true }
+    ],
+    frames(p) {
+      const P = parse(p.pts), t = p.t, c = counts(P, t);
+      const prec = c.tp + c.fp ? c.tp / (c.tp + c.fp) : 0, rec = c.tp / (c.tp + c.fn), f1 = prec + rec ? 2 * prec * rec / (prec + rec) : 0;
+      const b = { P, t, c, prec, rec, f1 };
+      return [
+        { ...b, st: 1, say: `${P.length} test examples, ${P.filter(a => a.y).length} really positive (orange) and ${P.filter(a => !a.y).length} really negative (blue), placed at the score the model gave them.` },
+        { ...b, st: 2, say: `Draw the threshold at ${f2(t, 2)}. The model says <b>positive</b> for every dot at or to the right of the line, negative for the rest.` },
+        { ...b, st: 3, hl: a => a.s >= t && a.y, say: `<b>True positives (TP) = ${c.tp}</b>: really positive and predicted positive.` },
+        { ...b, st: 4, hl: a => a.s >= t && !a.y, say: `<b>False positives (FP) = ${c.fp}</b>: really negative but predicted positive, false alarms.` },
+        { ...b, st: 5, hl: a => a.s < t && a.y, say: `<b>False negatives (FN) = ${c.fn}</b>: really positive but predicted negative, misses.` },
+        { ...b, st: 6, hl: a => a.s < t && !a.y, say: `<b>True negatives (TN) = ${c.tn}</b>: really negative and predicted negative. Accuracy = (TP + TN) ÷ all = ${c.tp + c.tn} ÷ ${P.length} = ${f2((c.tp + c.tn) / P.length, 3)}.` },
+        { ...b, st: 7, say: `<b>Precision</b> = TP ÷ (TP + FP) = ${c.tp} ÷ ${c.tp + c.fp} = ${f2(prec, 3)}: how many alarms are real. <b>Recall</b> = TP ÷ (TP + FN) = ${c.tp} ÷ ${c.tp + c.fn} = ${f2(rec, 3)}: how many positives we caught. <b>F1</b> = ${f2(f1, 3)}. Move the threshold to trade one against the other.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      scoreLine(z, f, f.st >= 2 ? f.t : undefined, 90);
+      if (f.st >= 3) {
+        head(z, 'Confusion matrix', 30, 160);
+        D.text(g, 'predicted 1', 175, 178, { a: 'center', s: 11, b: true, c: c.ink2 });
+        D.text(g, 'predicted 0', 275, 178, { a: 'center', s: 11, b: true, c: c.ink2 });
+        D.text(g, 'actual 1', 115, 210, { a: 'right', s: 11, b: true, c: c.ink2 });
+        D.text(g, 'actual 0', 115, 260, { a: 'right', s: 11, b: true, c: c.ink2 });
+        const cell = (x, y, label, v, on, col) => box(z, x, y, 96, 44, on ? `${label} ${v}` : label, { fill: on ? col : c.surf, c: on ? '#fff' : c.ink2, s: 13, b: true, r: 6 });
+        cell(127, 188, 'TP', f.c.tp, f.st >= 3, c.green || '#16a34a');
+        cell(227, 238, 'TN', f.c.tn, f.st >= 6, c.green || '#16a34a');
+        cell(127, 238, 'FP', f.c.fp, f.st >= 4, c.red || '#dc2626');
+        cell(227, 188, 'FN', f.c.fn, f.st >= 5, c.red || '#dc2626');
+      }
+      if (f.st >= 7) {
+        head(z, 'Scores', 370, 160);
+        [['precision', f.prec], ['recall', f.rec], ['F1', f.f1]].forEach(([n, v], i) => {
+          D.text(g, n, 370, 196 + i * 32, { s: 12, b: true, c: c.ink });
+          rr(g, 450, 184 + i * 32, Math.max(2, v * 100), 16, 3, { fill: c.cv });
+          D.text(g, f2(v, 3), 556, 197 + i * 32, { s: 12, mono: true, b: true, c: c.ink });
+        });
+      }
+    }
+  });
+  trace('mlroc', {
+    title: 'ROC curve: sweep the threshold from high to low',
+    sub: 'Start with a threshold above every score (nothing predicted positive) and lower it past one example at a time. Each step adds a point (false positive rate, true positive rate). The area under the curve is the AUC.',
+    W: 600, H: 330,
+    params: [{ k: 'pts', label: 'Scores and true labels (score label)', type: 'area', v: DEF }],
+    tips: [
+      { t: 'A perfect model: every positive scores above every negative, so the curve hugs the top left corner and AUC = 1.', set: { pts: '0.9 1; 0.8 1; 0.7 1; 0.4 0; 0.3 0; 0.2 0' }, play: true },
+      { t: 'A useless model: labels mixed evenly along the scores, so the curve follows the diagonal, AUC about 0.5.', set: { pts: '0.9 1; 0.8 0; 0.7 1; 0.6 0; 0.5 1; 0.4 0; 0.3 1; 0.2 0' }, play: true }
+    ],
+    frames(p) {
+      const P = parse(p.pts).sort((a, b) => b.s - a.s);
+      const npos = P.filter(a => a.y).length, nneg = P.length - npos;
+      let tp = 0, fp = 0;
+      const pts = [[0, 0]];
+      const fr = [{ P, pts: pts.slice(), say: `${npos} positives and ${nneg} negatives, sorted by score. Threshold above every score: nothing is predicted positive, so TPR = 0 and FPR = 0.` }];
+      let area = 0;
+      P.forEach((a, i) => {
+        if (a.y) tp++; else fp++;
+        const prev = pts[pts.length - 1], cur = [fp / nneg, tp / npos];
+        area += (cur[0] - prev[0]) * (cur[1] + prev[1]) / 2;
+        pts.push(cur);
+        fr.push({ P, pts: pts.slice(), upto: i + 1, say: `Lower the threshold to ${f2(a.s, 2)}: this example is really <b>${a.y ? 'positive, so TPR goes up' : 'negative, so FPR goes right'}</b>. Now TPR = ${tp}/${npos} = ${f2(tp / npos, 2)} and FPR = ${fp}/${nneg} = ${f2(fp / nneg, 2)}.` });
+      });
+      fr.push({ P, pts, upto: P.length, area, done: true, say: `The threshold is below every score, so everything is positive: (1, 1). The area under the curve is <b>AUC = ${f2(area, 3)}</b>. It equals the chance that a random positive scores higher than a random negative. 0.5 is guessing, 1 is perfect.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const Pl = plot(z, [10, 10, 330, 310], [0, 1], [0, 1], { dx: 2, dy: 2, xl: 'FPR', yl: 'TPR' });
+      D.line(g, Pl.X(0), Pl.Y(0), Pl.X(1), Pl.Y(1), c.line, 1, [4, 4]);
+      if (f.done) {
+        g.save(); g.beginPath(); g.moveTo(Pl.X(0), Pl.Y(0));
+        f.pts.forEach(q => g.lineTo(Pl.X(q[0]), Pl.Y(q[1])));
+        g.lineTo(Pl.X(1), Pl.Y(0)); g.closePath(); g.globalAlpha = 0.16; g.fillStyle = c.cv; g.fill(); g.restore();
+      }
+      g.save(); g.beginPath();
+      f.pts.forEach((q, i) => (i ? g.lineTo(Pl.X(q[0]), Pl.Y(q[1])) : g.moveTo(Pl.X(q[0]), Pl.Y(q[1]))));
+      g.strokeStyle = c.cv; g.lineWidth = 2.6; g.stroke(); g.restore();
+      f.pts.forEach(q => D.circle(g, Pl.X(q[0]), Pl.Y(q[1]), 3.5, { fill: c.cv }));
+      head(z, 'Sorted by score', 360, 24);
+      f.P.slice(0, 14).forEach((a, i) => {
+        const done = i < (f.upto || 0);
+        D.circle(g, 370, 46 + i * 19, 6, { fill: klass(z, a.y ? 1 : 0) });
+        D.text(g, `${f2(a.s, 2)}  ${a.y ? 'positive' : 'negative'}`, 384, 50 + i * 19, { s: 11, mono: true, b: done, c: done ? c.ink : c.ink2 });
+      });
+      if (f.done) D.text(g, `AUC ${f2(f.area, 3)}`, 500, 300, { s: 15, b: true, c: c.cv });
+    }
+  });
+})();
