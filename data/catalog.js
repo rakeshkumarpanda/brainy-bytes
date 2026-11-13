@@ -8001,6 +8001,30 @@ function mlFoundModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-workflow", title: "The machine learning project: from a question to a working model", emoji: "1.2", page: "content/machine-learning/ml-workflow.html",
+        summary: "framing, the project stages, fair data splits, baselines, error analysis, leakage, deployment and monitoring.",
+        keywords: ["ML workflow", "CRISP-DM", "train test split", "validation set", "stratify", "baseline", "data leakage", "deployment", "monitoring"],
+        minutes: 55, counts: {"lessons": 13, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "frame", title: "Step 1: frame the problem before any code", emoji: "", group: "Lesson", keywords: ["problem framing", "business goal", "metric", "baseline", "success criteria", "do we need ML"] },
+        { id: "stages", title: "The stages of an ML project", emoji: "", group: "Lesson", keywords: ["ML lifecycle", "CRISP-DM", "stages", "deployment", "monitoring", "project workflow"] },
+        { id: "data", title: "Step 2 and 3: get the data and look at it", emoji: "", group: "Lesson", keywords: ["exploratory data analysis", "EDA", "pandas", "describe", "shape", "head", "data quality"] },
+        { id: "split", title: "Step 4: train, validation and test sets", emoji: "", group: "Lesson", keywords: ["train test split", "validation set", "test set", "stratify", "random_state", "time split", "group split"] },
+        { id: "baseline", title: "Step 5: always start with a baseline", emoji: "", group: "Lesson", keywords: ["baseline", "DummyRegressor", "DummyClassifier", "mean absolute error", "majority class"] },
+        { id: "iterate", title: "Step 6 and 7: train, look at errors, improve", emoji: "", group: "Lesson", keywords: ["error analysis", "iteration", "validation", "experiment log", "model improvement"] },
+        { id: "leakage", title: "The silent killer: data leakage", emoji: "", group: "Lesson", keywords: ["data leakage", "target leakage", "train test contamination", "pipeline", "future information"] },
+        { id: "deploy", title: "Step 8 and 9: deploy and monitor", emoji: "", group: "Lesson", keywords: ["deployment", "batch prediction", "online prediction", "API", "monitoring", "data drift", "retraining"] },
+        { id: "versus", title: "Ways of working compared", emoji: "", group: "Lesson", keywords: ["CRISP-DM vs MLOps", "batch vs online", "notebook", "comparison"] },
+        { id: "maths", title: "The maths of splitting and testing", emoji: "", group: "Lesson", keywords: ["split sizes", "standard error", "confidence interval", "MAE", "test set size", "McNemar"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "adaptive overfitting", "distribution shift", "reusable holdout"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "partition", "prefix sum", "shuffle", "Fisher Yates", "split"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

@@ -262,3 +262,150 @@ const MLZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 1.2  the life of an ML project, stage by stage, for a chosen product
+   ===================================================================================================== */
+(() => {
+  const { trace, box, D, wrap, rr } = MLZ;
+  const STAGES = ['Frame the problem', 'Get the data', 'Explore and clean', 'Split the data', 'Baseline', 'Train and tune', 'Evaluate on test', 'Deploy', 'Monitor'];
+  const CASES = {
+    eta: { name: 'Food delivery: predict the arrival time', s: [
+      'Goal: show customers an arrival time they can trust. Output: minutes (a number), so regression. Success: 80% of orders arrive within 5 minutes of the promise.',
+      'Two years of past orders: restaurant, distance, time of day, weather, rider, and the real minutes each took.',
+      'Remove orders with a negative delivery time (clock errors), fill missing weather, and plot minutes against distance. Rush hour is clearly slower.',
+      'Keep the last month as the test set. Time order matters: we must predict the future from the past, so a random split would cheat.',
+      'Baseline: "distance in km times 3 minutes plus 10". Its average error is 9 minutes. Any model must beat that.',
+      'Try linear regression, then gradient boosting with features like hour of day and rain. Tune on a validation month. Best average error: 4.8 minutes.',
+      'One final check on the untouched test month: 5.1 minutes. Close to validation, so the model generalises.',
+      'Put the model behind an API. The app sends the order details and gets minutes back in under 50 milliseconds.',
+      'Watch the error every day. A new city or a festival changes traffic, so the model is retrained when the error drifts up.'] },
+    churn: { name: 'Mobile network: who will leave next month', s: [
+      'Goal: phone the customers likely to leave and offer a better plan. Output: leave or stay, so classification. Success: catch most leavers without calling everyone.',
+      'Twelve months of customer records: plan, bills, dropped calls, support tickets, and whether each customer left.',
+      'Only 5% of customers left, so the classes are imbalanced. Remove test accounts, merge duplicates and turn plan names into numbers.',
+      'Split customers 70 / 15 / 15 into train, validation and test, keeping 5% leavers in each part (a stratified split).',
+      'Baseline: "nobody leaves" is 95% accurate and useless. So we measure recall (leavers caught) and precision (calls that were right) instead.',
+      'Train logistic regression and a random forest. Tune the decision threshold on validation to catch 70% of leavers with 40% precision.',
+      'On the test customers: 68% recall, 39% precision. The business agrees this saves money.',
+      'Run the model every night on all customers and send a call list to the retention team.',
+      'Check every month that the leaver rate and the input data look the same as before. A new competitor would change both.'] }
+  };
+  trace('mlflow', {
+    title: 'The life of a machine learning project',
+    sub: 'Pick a product. Each step adds one stage of the project and says what the team really does in it.',
+    W: 600, H: 330,
+    params: [{ k: 'c', label: 'Project', type: 'select', v: 'eta', opts: Object.keys(CASES).map(k => [k, CASES[k].name]) }],
+    tips: [{ t: 'Compare both projects at the "Split the data" stage: one splits by time, the other keeps the class balance.', set: { c: 'churn' }, play: true }],
+    frames(p) {
+      const C = CASES[p.c];
+      return STAGES.map((s, i) => ({ i, say: `<b>Stage ${i + 1}: ${s}.</b> ${C.s[i]}` })).concat([{ i: 9, done: true, say: 'That is the whole loop. Notice that training the model is only one stage of nine. Real teams spend most of their time on the problem, the data and keeping the model healthy. The arrow from Monitor back to the start means the loop never really ends.' }]);
+    },
+    paint(z, f) {
+      const c = z.col;
+      STAGES.forEach((s, i) => {
+        if (i > f.i) return;
+        const col = i % 3, row = Math.floor(i / 3);
+        const x = 20 + col * 195, y = 20 + row * 100;
+        const on = i === f.i;
+        box(z, x, y, 170, 60, '', { fill: on ? c.cv : c.surf, stroke: on ? c.cv : c.line, w: on ? 2.5 : 1.5 });
+        D.text(z.g, String(i + 1), x + 14, y + 22, { s: 16, b: true, c: on ? '#fff' : c.cv });
+        wrap(z.g, s, x + 32, y + 24, 130, { s: 13, b: true, c: on ? '#fff' : c.ink });
+        if (i < 8 && i < f.i) {
+          if (col < 2) D.arrow(z.g, x + 172, y + 30, x + 193, y + 30, c.ink2, 1.6);
+          else D.arrow(z.g, x + 85, y + 62, x + 85, y + 98, c.ink2, 1.6);
+        }
+      });
+      if (f.done) {
+        D.arrow(z.g, 410, 300, 300, 318, c.green, 2);
+        D.line(z.g, 300, 318, 10, 318, c.green, 2);
+        D.line(z.g, 10, 318, 10, 50, c.green, 2);
+        D.arrow(z.g, 10, 50, 18, 50, c.green, 2);
+        D.text(z.g, 'retrain and improve', 150, 312, { a: 'center', s: 11, b: true, c: c.green });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 1.2  train, validation and test split, with or without stratifying
+   ===================================================================================================== */
+(() => {
+  const { trace, head, D, rr, rng, f2 } = MLZ;
+  trace('mlsplit', {
+    title: 'Splitting data into train, validation and test sets',
+    sub: 'Each square is one example. Orange squares are the rare class (for example "customer left"). Watch how the split is made and how many rare examples land in each part.',
+    W: 600, H: 330,
+    params: [
+      { k: 'n', label: 'Number of examples', type: 'range', v: 40, min: 20, max: 80, step: 10 },
+      { k: 'rare', label: 'Share of the rare class', type: 'range', v: 0.2, min: 0.05, max: 0.5, step: 0.05 },
+      { k: 'val', label: 'Validation share', type: 'range', v: 0.2, min: 0, max: 0.3, step: 0.05 },
+      { k: 'test', label: 'Test share', type: 'range', v: 0.2, min: 0.1, max: 0.4, step: 0.05 },
+      { k: 'strat', label: 'Stratify (keep the class balance in every part)', type: 'check', v: false },
+      { k: 'seed', label: 'Shuffle seed', type: 'range', v: 7, min: 1, max: 30 }
+    ],
+    tips: [
+      { t: 'Set the rare share to 0.1 and play without stratify. Often the test set gets too few or too many rare examples, so its score is unreliable.', set: { rare: 0.1, strat: false }, play: true },
+      { t: 'Now tick Stratify. Every part gets the same share of rare examples as the whole dataset.', set: { rare: 0.1, strat: true }, play: true }
+    ],
+    frames(p) {
+      const n = p.n, R = rng(p.seed);
+      const nr = Math.max(1, Math.round(n * p.rare));
+      const items = [];
+      for (let i = 0; i < n; i++) items.push({ id: i, rare: i < nr });
+      const fr = [];
+      const nt = Math.round(n * p.test), nv = Math.round(n * p.val), ntr = n - nt - nv;
+      if (ntr < 2) throw new Error('Validation and test take almost everything. Make them smaller.');
+      fr.push({ items: items.map(x => ({ ...x, part: 'all' })), say: `We start with ${n} examples in the order they were collected. ${nr} of them (${f2(nr / n * 100, 0)}%) belong to the rare class, shown in orange.` });
+      const sh = items.slice();
+      for (let i = sh.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [sh[i], sh[j]] = [sh[j], sh[i]]; }
+      fr.push({ items: sh.map(x => ({ ...x, part: 'all' })), say: `Shuffle first (seed ${p.seed}). Data is often stored in a pattern, for example by date or by class. Shuffling makes every part a fair sample. (For time series we do not shuffle, we split by time instead.)` });
+      let parts;
+      if (p.strat) {
+        parts = {};
+        const assign = (list) => {
+          const t = Math.round(list.length * p.test), v = Math.round(list.length * p.val);
+          list.forEach((x, k) => { parts[x.id] = k < t ? 'test' : k < t + v ? 'val' : 'train'; });
+        };
+        assign(sh.filter(x => x.rare));
+        assign(sh.filter(x => !x.rare));
+      } else {
+        parts = {};
+        sh.forEach((x, k) => { parts[x.id] = k < nt ? 'test' : k < nt + nv ? 'val' : 'train'; });
+      }
+      const final = sh.map(x => ({ ...x, part: parts[x.id] }));
+      const count = (part) => final.filter(x => x.part === part).length;
+      const rcount = (part) => final.filter(x => x.part === part && x.rare).length;
+      const order = ['test', 'val', 'train'];
+      const names = { train: 'training set', val: 'validation set', test: 'test set' };
+      const why = { test: 'It is locked away and used only once, at the very end, to estimate how the model will do in real life.', val: 'We use it again and again to compare models and settings, so we never touch the test set while choosing.', train: 'The model learns its parameters only from these examples.' };
+      const shown = [];
+      order.forEach(pt => {
+        if (pt === 'val' && !nv) return;
+        shown.push(pt);
+        fr.push({ items: final.map(x => ({ ...x, part: shown.includes(x.part) ? x.part : 'all' })), say: `Cut off the <b>${names[pt]}</b>: ${count(pt)} examples, with ${rcount(pt)} rare ones (${count(pt) ? f2(rcount(pt) / count(pt) * 100, 0) : 0}%). ${why[pt]}` });
+      });
+      const sh2 = order.filter(pt => count(pt)).map(pt => `${names[pt]} ${count(pt) ? f2(rcount(pt) / count(pt) * 100, 0) : 0}%`).join(', ');
+      fr.push({ items: final, done: true, say: `Done. Rare share in each part: ${sh2}, against ${f2(nr / n * 100, 0)}% overall. ${p.strat ? 'With stratifying the shares match, so every score we measure is fair.' : 'Without stratifying the shares can drift apart by luck, especially with few examples. Tick Stratify to fix that.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      const col = { all: c.surf, train: c.cv, val: c.teal || '#0d9488', test: c.ink2 };
+      const groups = { all: [], train: [], val: [], test: [] };
+      f.items.forEach(x => groups[x.part].push(x));
+      const rows = [['all', 'not split yet'], ['train', 'train'], ['val', 'validation'], ['test', 'test']];
+      let y = 16;
+      rows.forEach(([k, lbl]) => {
+        if (!groups[k].length) return;
+        head(z, `${lbl} (${groups[k].length})`, 16, y + 12);
+        groups[k].forEach((x, i) => {
+          const xx = 130 + (i % 30) * 15, yy = y + Math.floor(i / 30) * 16;
+          rr(z.g, xx, yy, 12, 12, 2, { fill: x.rare ? c.orange : col[k], stroke: k === 'all' ? c.line : col[k], w: 1 });
+        });
+        y += Math.ceil(groups[k].length / 30) * 16 + 24;
+      });
+      D.text(z.g, 'orange = rare class', 584, 320, { a: 'right', s: 11, c: c.ink2 });
+    }
+  });
+})();
