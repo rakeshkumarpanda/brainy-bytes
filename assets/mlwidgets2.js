@@ -2461,3 +2461,139 @@ const MLGM = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Unsupervised 3.1  Isolation Forest: random cuts isolate a far point in few steps and a normal point in many
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function data() {
+    const r = rng(51), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < 60; i++) P.push({ x: 5 + 1.1 * g(), y: 5 + 1.1 * g() });
+    P.push({ x: 9.3, y: 1.2 });
+    return P;
+  }
+  function isolate(P, ti, seed) {
+    const r = rng(seed), cuts = [];
+    let idx = P.map((_, i) => i), box = { x0: 0, x1: 10, y0: 0, y1: 10 };
+    while (idx.length > 1 && cuts.length < 40) {
+      const ax = r() < 0.5 ? 'x' : 'y', vals = idx.map(i => P[i][ax]), lo = Math.min(...vals), hi = Math.max(...vals);
+      if (hi - lo < 1e-9) break;
+      const v = lo + (hi - lo) * r(), t = P[ti][ax] < v;
+      idx = idx.filter(i => (P[i][ax] < v) === t);
+      const b = { ...box };
+      if (ax === 'x') { if (t) b.x1 = v; else b.x0 = v; } else { if (t) b.y1 = v; else b.y0 = v; }
+      cuts.push({ ax, v, box: { ...box }, nb: b, left: idx.length });
+      box = b;
+    }
+    return cuts;
+  }
+  const cfun = n => 2 * (Math.log(n - 1) + 0.5772156649) - 2 * (n - 1) / n;
+  trace('mliforest', {
+    title: 'Isolation Forest: unusual points are easy to cut off',
+    sub: 'Pick a feature at random and cut at a random value between its smallest and largest. Keep only the side with our point and cut again, until it stands alone. A far away point needs few cuts. A point inside the crowd needs many. Averaging over many random trees gives the anomaly score.',
+    W: 600, H: 330,
+    params: [
+      { k: 'who', label: 'Point to isolate', type: 'select', v: 'far', opts: [['far', 'The far point (bottom right)'], ['mid', 'A point in the middle of the crowd'], ['edge', 'A point at the edge of the crowd']] },
+      { k: 'seed', label: 'Random tree', type: 'range', v: 1, min: 1, max: 20, step: 1 }
+    ],
+    tips: [
+      { t: 'A point in the middle of the crowd: the cuts keep leaving neighbours on its side, so it takes many more cuts.', set: { who: 'mid' }, play: true },
+      { t: 'Change the random tree: the number of cuts changes from tree to tree, which is why the forest averages many trees.', set: { who: 'far', seed: 7 }, play: true }
+    ],
+    frames(p) {
+      const P = data(), n = P.length;
+      const dist = P.map(q => Math.hypot(q.x - 5, q.y - 5));
+      const ti = p.who === 'far' ? n - 1 : p.who === 'mid' ? dist.slice(0, n - 1).indexOf(Math.min(...dist.slice(0, n - 1))) : dist.slice(0, n - 1).indexOf(Math.max(...dist.slice(0, n - 1)));
+      const cuts = isolate(P, ti, p.seed);
+      const fr = [{ P, ti, say: `${n} points. The highlighted one is the point we want to isolate. No labels and no distances are used, only random cuts.` }];
+      cuts.forEach((c, k) => fr.push({ P, ti, cuts: cuts.slice(0, k + 1), box: c.nb, say: `Cut ${k + 1}: pick ${c.ax} at random and cut at ${c.ax} = ${f2(c.v, 2)}. Keep the side with our point: <b>${c.left}</b> point${c.left === 1 ? '' : 's'} left${c.left === 1 ? ', so it is isolated' : ''}.` }));
+      const depths = [];
+      for (let s = 1; s <= 50; s++) depths.push(isolate(P, ti, 100 + s).length);
+      const avg = depths.reduce((a, b) => a + b, 0) / 50, c = cfun(n), score = Math.pow(2, -avg / c);
+      fr.push({ P, ti, cuts, box: cuts.length ? cuts[cuts.length - 1].nb : null, done: true, avg, score, say: `This tree needed <b>${cuts.length}</b> cut${cuts.length === 1 ? '' : 's'}. Over 50 random trees our point needs <b>${f2(avg, 1)}</b> cuts on average, against c(n) = ${f2(c, 2)} for a typical point in a random tree. Anomaly score 2<sup>&minus;${f2(avg, 1)}/${f2(c, 2)}</sup> = <b>${f2(score, 2)}</b>. ${score > 0.6 ? 'Close to 1 means clearly anomalous.' : score < 0.5 ? 'Below 0.5 means normal.' : 'Around 0.5 means nothing stands out.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 310, 304], [0, 10], [0, 10], { dx: 0, dy: 0 });
+      if (f.box) { g.fillStyle = 'rgba(124,58,237,0.10)'; g.fillRect(P.X(f.box.x0), P.Y(f.box.y1), P.X(f.box.x1) - P.X(f.box.x0), P.Y(f.box.y0) - P.Y(f.box.y1)); }
+      (f.cuts || []).forEach((k, i) => {
+        const last = i === f.cuts.length - 1, col = last ? c.cv : c.ink2;
+        if (k.ax === 'x') D.line(g, P.X(k.v), P.Y(k.box.y0), P.X(k.v), P.Y(k.box.y1), col, last ? 2.2 : 1.2);
+        else D.line(g, P.X(k.box.x0), P.Y(k.v), P.X(k.box.x1), P.Y(k.v), col, last ? 2.2 : 1.2);
+      });
+      f.P.forEach((q, i) => D.circle(g, P.X(q.x), P.Y(q.y), i === f.ti ? 7 : 4, { fill: i === f.ti ? c.red : c.ink2, stroke: i === f.ti ? c.ink : c.surf, w: 1.5 }));
+      head(z, 'Isolation Forest', 335, 24);
+      D.text(g, `cuts so far: ${(f.cuts || []).length}`, 335, 52, { s: 13, b: true, c: c.cv });
+      if (f.done) { D.text(g, `average over 50 trees: ${f2(f.avg, 1)}`, 335, 80, { s: 12, c: c.ink }); D.text(g, `anomaly score: ${f2(f.score, 2)}`, 335, 100, { s: 13, b: true, c: f.score > 0.6 ? c.red : c.green }); }
+      D.text(g, 'shaded box = region still', 335, 250, { s: 11, c: c.ink2 }); D.text(g, 'holding our point', 335, 266, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 3.1  local outlier factor: compare a point's local density with its neighbours' densities
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function data() {
+    const r = rng(61), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < 30; i++) P.push({ x: 2.5 + 0.35 * g(), y: 2.5 + 0.35 * g() });
+    for (let i = 0; i < 30; i++) P.push({ x: 7 + 1.2 * g(), y: 6.5 + 1.2 * g() });
+    P.push({ x: 4.2, y: 2.5 }); P.push({ x: 1, y: 8.5 });
+    return P;
+  }
+  trace('mllof', {
+    title: 'Local outlier factor: unusual compared with its neighbours',
+    sub: 'For a point, measure how crowded its neighbourhood is (local reachability density). Then compare it with how crowded its neighbours’ own neighbourhoods are. LOF near 1 means as crowded as its neighbours. LOF well above 1 means much emptier than its neighbours: a local outlier.',
+    W: 600, H: 330,
+    params: [
+      { k: 'who', label: 'Point to examine', type: 'select', v: 'near', opts: [['near', 'Just outside the tight group'], ['sparse', 'Inside the loose group'], ['far', 'Far from everything']] },
+      { k: 'k', label: 'Neighbours (k)', type: 'range', v: 5, min: 2, max: 15, step: 1 }
+    ],
+    tips: [
+      { t: 'A point inside the loose group is far from its neighbours, but so are they from theirs, so its LOF is close to 1. A plain distance rule would wrongly flag it.', set: { who: 'sparse' }, play: true },
+      { t: 'Far from everything: its neighbours are in the loose group but it is much farther out, so LOF is high.', set: { who: 'far' }, play: true }
+    ],
+    frames(p) {
+      const P = data(), n = P.length, k = p.k;
+      const d = (a, b) => Math.hypot(P[a].x - P[b].x, P[a].y - P[b].y);
+      const knn = P.map((_, i) => P.map((_, j) => j).filter(j => j !== i).sort((a, b) => d(i, a) - d(i, b)).slice(0, k));
+      const kd = knn.map((L, i) => d(i, L[k - 1]));
+      const reach = (i, j) => Math.max(kd[j], d(i, j));
+      const lrd = knn.map((L, i) => 1 / (L.reduce((s, j) => s + reach(i, j), 0) / k));
+      const lof = knn.map((L, i) => L.reduce((s, j) => s + lrd[j], 0) / k / lrd[i]);
+      const ti = p.who === 'near' ? 60 : p.who === 'far' ? 61 : P.slice(30, 60).map((q, i) => [Math.hypot(q.x - 7, q.y - 6.5), i + 30]).sort((a, b) => a[0] - b[0])[0][1];
+      const base = { P, ti, knn, kd };
+      const nl = knn[ti].map(j => lrd[j]), mn = nl.reduce((a, b) => a + b, 0) / k;
+      const fr = [{ ...base, say: `${n} points: a tight group, a loose group, and a few points between. We examine the highlighted point with k = ${k}.` }];
+      fr.push({ ...base, nb: true, say: `Its ${k} nearest neighbours (linked). The farthest of them is <b>${f2(kd[ti])}</b> away: that is its k-distance, the radius of its neighbourhood.` });
+      fr.push({ ...base, nb: true, ring: true, say: `Reachability distance to a neighbour o is max(k-distance of o, actual distance). It smooths out tiny distances inside dense groups. The average reachability distance from our point is ${f2(1 / lrd[ti])}, so its local reachability density is lrd = 1 / ${f2(1 / lrd[ti])} = <b>${f2(lrd[ti], 3)}</b>.` });
+      fr.push({ ...base, nb: true, ring: true, rings: true, say: `Now the neighbours’ own densities (their circles show their k-distances). Their lrd values average <b>${f2(mn, 3)}</b>.` });
+      fr.push({ ...base, nb: true, lof, say: `LOF = average neighbour lrd ÷ own lrd = ${f2(mn, 3)} ÷ ${f2(lrd[ti], 3)} = <b>${f2(lof[ti], 2)}</b>. ${lof[ti] > 1.5 ? 'Well above 1: this point is much emptier than its neighbours, a local outlier.' : 'Close to 1: as crowded as its neighbours, so normal for its region.'}` });
+      const top = lof.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]).slice(0, 3).map(t => t[1]);
+      fr.push({ ...base, all: lof, top, done: true, say: `LOF for every point (bigger, redder circles are higher). The three highest are ${top.map(i => f2(lof[i], 2)).join(', ')}. Only ${lof.slice(30, 60).filter(v => v > 1.5).length} of the 30 points in the loose group pass 1.5, all stragglers at its edge. The rest keep an LOF near 1 although they are far apart, because LOF judges each point against its own neighbourhood, not against one global distance.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 310, 304], [0, 10], [0, 10], { dx: 0, dy: 0 });
+      const q = f.P[f.ti];
+      if (f.nb) f.knn[f.ti].forEach(j => D.line(g, P.X(q.x), P.Y(q.y), P.X(f.P[j].x), P.Y(f.P[j].y), c.cv, 1.4));
+      const sx = P.X(1) - P.X(0);
+      if (f.ring) D.circle(g, P.X(q.x), P.Y(q.y), sx * f.kd[f.ti], { stroke: c.red, w: 1.5 });
+      if (f.rings) f.knn[f.ti].forEach(j => D.circle(g, P.X(f.P[j].x), P.Y(f.P[j].y), sx * f.kd[j], { stroke: c.cv, w: 1 }));
+      f.P.forEach((p2, i) => {
+        if (f.all) { const v = Math.min(4, f.all[i]); D.circle(g, P.X(p2.x), P.Y(p2.y), 3 + 2.5 * (v - 1), { fill: v > 1.5 ? c.red : c.ink2, stroke: c.surf, w: 1 }); return; }
+        D.circle(g, P.X(p2.x), P.Y(p2.y), i === f.ti ? 7 : 4, { fill: i === f.ti ? c.red : c.ink2, stroke: i === f.ti ? c.ink : c.surf, w: 1.5 });
+      });
+      head(z, 'Local outlier factor', 335, 24);
+      D.text(g, `k-distance: ${f2(f.kd[f.ti])}`, 335, 52, { s: 12, mono: true, c: c.ink });
+      if (f.lof) D.text(g, `LOF = ${f2(f.lof[f.ti], 2)}`, 335, 76, { s: 14, b: true, c: f.lof[f.ti] > 1.5 ? c.red : c.green });
+      D.text(g, 'LOF about 1: normal', 335, 250, { s: 11, c: c.ink2 }); D.text(g, 'LOF well above 1: outlier', 335, 266, { s: 11, c: c.ink2 });
+    }
+  });
+})();

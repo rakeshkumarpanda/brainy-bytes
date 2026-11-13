@@ -8559,6 +8559,29 @@ function mlUnsupModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-u3", title: "Patterns, anomalies and recommendations", emoji: "3", step: 3, part: "unsupervised", level: "Intermediate", blurb: "Spot unusual records, find items that go together, and recommend what a person may like next.", topics: [
+      { id: "ml-anomaly", title: "Anomaly detection", emoji: "3.1", page: "content/machine-learning/ml-anomaly.html",
+        summary: "Robust scores, Isolation Forest, LOF, one class SVM and elliptic envelope, and evaluation for rare events.",
+        keywords: ["anomaly detection", "outlier", "Isolation Forest", "local outlier factor", "LOF", "one class SVM", "MAD", "IQR", "novelty detection", "precision at k"],
+        minutes: 50, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-13",
+        sections: [
+        { id: "idea", title: "What makes a point an anomaly", emoji: "", group: "Lesson", keywords: ["anomaly detection", "outlier", "robust statistics", "median absolute deviation", "MAD", "IQR", "masking", "z score"] },
+        { id: "iforest", title: "Isolation Forest", emoji: "", group: "Lesson", keywords: ["Isolation Forest", "IsolationForest", "path length", "anomaly score", "contamination", "random trees"] },
+        { id: "lof", title: "Local outlier factor: anomalies relative to their neighbourhood", emoji: "", group: "Lesson", keywords: ["local outlier factor", "LOF", "local reachability density", "k-distance", "novelty detection", "varying density"] },
+        { id: "others", title: "One class SVM, robust covariance and a fair comparison", emoji: "", group: "Lesson", keywords: ["one class SVM", "nu", "elliptic envelope", "minimum covariance determinant", "Mahalanobis distance", "novelty detection", "outlier detection"] },
+        { id: "evaluate", title: "Evaluating detectors when anomalies are rare", emoji: "", group: "Lesson", keywords: ["PR AUC", "average precision", "precision at k", "rare events", "alert budget", "concept drift"] },
+        { id: "versus", title: "Anomaly detection methods compared", emoji: "", group: "Lesson", keywords: ["choosing an anomaly detector", "supervised vs unsupervised anomaly detection"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["z score", "robust score formula", "Mahalanobis distance", "c(n)", "breakdown point", "masking and swamping"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "deep anomaly detection", "robust covariance"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "XOR", "cycle detection", "hash map", "in place marking", "missing values"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
