@@ -977,3 +977,125 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Deep learning 3.2  GANs: a tiny GAN learning a 1D bell curve, and the saturating against non-saturating generator loss
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rng, plot } = MLZ;
+  const SHOWAT = [0, 25, 50, 100, 200, 300, 600, 1000, 2000, 3000];
+  const sig = t => 1 / (1 + Math.exp(-t));
+
+  function trainGAN(loss, useStd) {
+    const R = rng(5), B = 256;
+    const gs = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+    const sd = xs => { const m = xs.reduce((a, v) => a + v, 0) / xs.length; return Math.sqrt(xs.reduce((a, v) => a + (v - m) ** 2, 0) / xs.length); };
+    const feats = (x, s) => [1, x / 4, (x / 4) ** 2, useStd ? s : 0];
+    const logit = (w, f) => w[0] * f[0] + w[1] * f[1] + w[2] * f[2] + w[3] * f[3];
+    let a = 1, b = 0;
+    const w = [0, 0, 0, 0], shots = [];
+    for (let step = 0; step <= 3000; step++) {
+      for (let k = 0; k < 5; k++) {
+        const real = Array.from({ length: B }, () => 4 + 0.5 * gs()), fake = Array.from({ length: B }, () => a * gs() + b);
+        const sr = sd(real), sf = sd(fake), gw = [0, 0, 0, 0];
+        real.forEach(x => { const f = feats(x, sr), e = sig(logit(w, f)) - 1; f.forEach((v, i) => (gw[i] += e * v)); });
+        fake.forEach(x => { const f = feats(x, sf), e = sig(logit(w, f)); f.forEach((v, i) => (gw[i] += e * v)); });
+        gw.forEach((g, i) => (w[i] -= g / B));
+      }
+      const z = Array.from({ length: B }, gs), fake = z.map(v => a * v + b), sf = sd(fake), sz = sd(z);
+      let ga = 0, gb = 0, gm = 0, dsum = 0;
+      fake.forEach((x, i) => {
+        const d = sig(logit(w, feats(x, sf))), dl = loss === 'sat' ? -d : -(1 - d), dx = (w[1] + 2 * w[2] * x / 4) / 4;
+        ga += dl * dx * z[i]; gb += dl * dx; gm += dl; dsum += d;
+      });
+      ga = ga / B + (gm / B) * w[3] * Math.sign(a) * sz; gb /= B;
+      if (SHOWAT.includes(step)) shots.push({ step, a: Math.abs(a), b, w: w.slice(), sf, dfake: dsum / B });
+      a -= 0.05 * ga; b -= 0.05 * gb;
+    }
+    return shots;
+  }
+
+  trace('mlgan1d', {
+    title: 'A tiny GAN learns a bell curve',
+    sub: 'The real data (blue) is a bell curve centred at 4. The generator (orange) can only shift and stretch random noise. The discriminator (green, dashed) scores each x from 0 (fake) to 1 (real). Each training step improves the discriminator a little, then moves the generator towards whatever the discriminator calls real.',
+    W: 600, H: 330,
+    params: [
+      { k: 'loss', label: 'Training recipe', type: 'select', v: 'ns', opts: [['sat', 'Original minimax loss: minimise log(1 − D)'], ['ns', 'Non saturating loss: minimise −log D'], ['nsstd', 'Non saturating, and D also sees the batch spread']] }
+    ],
+    tips: [
+      { t: 'The original minimax loss: while the discriminator easily rejects the fakes, the generator barely moves, and later its spread collapses towards a single point.', set: { loss: 'sat' }, play: true },
+      { t: 'Let the discriminator see the spread of each batch: now a batch that is too narrow is easy to spot, so the generator learns the right spread of 0.5 as well as the centre.', set: { loss: 'nsstd' }, play: true }
+    ],
+    frames(p) {
+      const shots = trainGAN(p.loss, p.loss === 'nsstd');
+      return shots.map((s, k) => {
+        let say = `Step ${s.step}: the generator makes numbers with mean <b>${f2(s.b, 2)}</b> and spread <b>${f2(s.a, 2)}</b>. The real data has mean 4.00 and spread 0.50. The average score D gives the fakes is ${f2(s.dfake, 2)}.`;
+        if (k === 0) say = 'Step 0: the generator outputs plain noise centred at 0, far from the real data at 4. The discriminator has not learned anything yet.';
+        if (k === shots.length - 1) {
+          if (p.loss === 'sat') say += ' With the original loss the generator moved slowly at first, because log(1 − D) is almost flat when D is near 0, and the spread does not settle at 0.5.';
+          else if (p.loss === 'ns') say += ' The centre is right but the spread is too small: the generator found a narrow band that D likes. Real GANs show the same weakness as <b>mode collapse</b>, less variety than the real data.';
+          else say += ' The centre and the spread both match. Showing D the batch spread (minibatch standard deviation, used in ProGAN and StyleGAN) is one standard fix for mode collapse.';
+        }
+        return { ...s, say };
+      });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 420, 310], [-4, 8], [0, 1.6], { dx: 0, dy: 1, xl: 'x', yl: 'density, and D(x) from 0 to 1' });
+      const pdf = (x, m, s) => Math.min(1.58, Math.exp(-0.5 * ((x - m) / Math.max(s, 1e-3)) ** 2) / (Math.max(s, 1e-3) * Math.sqrt(2 * Math.PI)));
+      const curve = (fy, col, w, dash) => { g.save(); g.beginPath(); for (let k = 0; k <= 480; k++) { const x = -4 + k / 40, y = fy(x); k ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)); } g.strokeStyle = col; g.lineWidth = w; if (dash) g.setLineDash(dash); g.stroke(); g.restore(); };
+      curve(x => pdf(x, 4, 0.5), klass(z, 0), 2.5);
+      curve(x => pdf(x, f.b, f.a), klass(z, 1), 2.5);
+      if (f.step > 0) curve(x => sig(f.w[0] + f.w[1] * x / 4 + f.w[2] * (x / 4) ** 2 + f.w[3] * f.sf), c.green, 2, [6, 4]);
+      head(z, 'Training', 450, 30);
+      D.text(g, `step ${f.step}`, 450, 56, { s: 13, mono: true, b: true, c: c.ink });
+      head(z, 'Generator', 450, 92);
+      D.text(g, `mean ${f2(f.b, 2)}`, 450, 116, { s: 13, mono: true, c: klass(z, 1) });
+      D.text(g, `spread ${f2(f.a, 2)}`, 450, 136, { s: 13, mono: true, c: klass(z, 1) });
+      head(z, 'Real data', 450, 172);
+      D.text(g, 'mean 4.00', 450, 196, { s: 13, mono: true, c: klass(z, 0) });
+      D.text(g, 'spread 0.50', 450, 216, { s: 13, mono: true, c: klass(z, 0) });
+      D.text(g, `average D(fake) ${f2(f.dfake, 2)}`, 450, 252, { s: 12, mono: true, c: c.green });
+      D.text(g, 'blue: real   orange: generator', 450, 290, { s: 10, c: c.ink2 });
+      D.text(g, 'green dashed: discriminator D(x)', 450, 306, { s: 10, c: c.ink2 });
+    }
+  });
+
+  trace('mlganloss', {
+    title: 'Why the generator uses −log D instead of log(1 − D)',
+    sub: 'The generator wants D(G(z)), the score its fake gets, to be high. Both losses below reward that. What matters for learning is the push each loss gives, measured as the gradient with respect to the discriminator’s raw score (its logit) before the sigmoid.',
+    W: 600, H: 330,
+    params: [
+      { k: 'd', label: 'Score the fake gets, D(G(z))', type: 'select', v: '0.01', opts: ['0.01', '0.1', '0.5', '0.9'].map(v => [v, v]) }
+    ],
+    tips: [
+      { t: 'D(G(z)) = 0.01, early in training when the discriminator easily spots fakes: the original loss gives a push of only 0.01, the non saturating loss gives 0.99.', set: { d: '0.01' }, play: true },
+      { t: 'D(G(z)) = 0.9, when the fakes already fool the discriminator: now the original loss pushes harder, but by then the generator is doing well anyway.', set: { d: '0.9' }, play: true }
+    ],
+    frames(p) {
+      const d = +p.d, sat = d, ns = 1 - d;
+      return [
+        { d, step: 0, say: 'The x axis is the score the discriminator gives a fake, from 0 (surely fake) to 1 (surely real). The generator wants to move to the right.' },
+        { d, step: 1, say: `The original minimax loss: minimise <b>log(1 − D)</b> (orange). At D = ${f2(d, 2)} it equals ${f2(Math.log(1 - d), 3)}.` },
+        { d, step: 2, say: `Its push on the logit is <b>D = ${f2(sat, 2)}</b>, because d/dt log(1 − σ(t)) = −σ(t). ${d < 0.2 ? 'Almost nothing: this loss <b>saturates</b> exactly when the generator is bad and most needs to learn.' : 'A useful push here.'}` },
+        { d, step: 3, say: `The non saturating loss: minimise <b>−log D</b> (blue). At D = ${f2(d, 2)} it equals ${f2(-Math.log(d), 3)}. It has the same goal: it is smallest when D is near 1.` },
+        { d, step: 4, say: `Its push on the logit is <b>1 − D = ${f2(ns, 2)}</b>, because d/dt (−log σ(t)) = −(1 − σ(t)). ${d < 0.2 ? 'Strong when the fakes are bad.' : 'Weaker now that the fakes are good, which is fine.'}` },
+        { d, step: 5, say: `${d < 0.5 ? `At D = ${f2(d, 2)} the non saturating loss pushes ${f2(ns / sat, 0)} times harder.` : (d === 0.5 ? 'At D = 0.50 both losses push exactly as hard.' : `At D = ${f2(d, 2)} the original loss pushes ${f2(sat / ns, 0)} times harder, but the fakes already fool D.`)} Bad fakes are the normal state early in training, so Goodfellow and colleagues (2014) recommended −log D, and almost every GAN since uses it.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [0, 1], [-5, 5], { dx: 2, dy: 0, xl: 'D(G(z))', yl: '   loss' });
+      const curve = (fy, col) => { g.beginPath(); for (let k = 1; k < 400; k++) { const x = k / 400, y = Math.max(-5, Math.min(5, fy(x))); k > 1 ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)); } g.strokeStyle = col; g.lineWidth = 2.5; g.stroke(); };
+      D.line(g, P.X(f.d), P.Y(-5), P.X(f.d), P.Y(5), c.ink2, 1, [4, 3]);
+      if (f.step >= 1) { curve(x => Math.log(1 - x), klass(z, 1)); D.circle(g, P.X(f.d), P.Y(Math.max(-5, Math.log(1 - f.d))), 5, { fill: klass(z, 1) }); }
+      if (f.step >= 3) { curve(x => -Math.log(x), klass(z, 0)); D.circle(g, P.X(f.d), P.Y(Math.min(5, -Math.log(f.d))), 5, { fill: klass(z, 0) }); }
+      head(z, 'Push on the logit', 430, 30);
+      const bar = (y, v, col, lab) => { D.text(g, lab, 430, y, { s: 11, c: c.ink2 }); g.fillStyle = col; g.fillRect(430, y + 6, 120 * v, 14); D.text(g, f2(v, 2), 430 + 120 * v + 6, y + 18, { s: 12, mono: true, b: true, c: c.ink }); };
+      if (f.step >= 2) bar(60, f.d, klass(z, 1), 'log(1 − D): push = D');
+      if (f.step >= 4) bar(110, 1 - f.d, klass(z, 0), '−log D: push = 1 − D');
+      D.text(g, 'orange: log(1 − D), original', 430, 290, { s: 10, c: klass(z, 1) });
+      D.text(g, 'blue: −log D, non saturating', 430, 306, { s: 10, c: klass(z, 0) });
+    }
+  });
+})();

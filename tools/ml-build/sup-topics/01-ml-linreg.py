@@ -218,7 +218,7 @@ K.lesson('assume', 'Assumptions and residual checks', f'''
 {table(['What you see in the residuals', 'Meaning', 'Fix'], [
     ['A curve (U shape)', 'The relation is not linear', 'Add x<sup>2</sup>, a log, or use a tree model'],
     ['A funnel (spread grows)', 'Heteroscedasticity', 'Log transform y, weighted least squares, robust errors'],
-    ['A pattern over time', 'Errors are not independent', 'Time series models (MLOps 2.1)'],
+    ['A pattern over time', 'Errors are not independent', 'Time series models'],
     ['A few huge residuals', 'Outliers or data errors', 'Check the rows, use Huber regression']])}
 ''', kw=['assumptions', 'linearity', 'homoscedasticity', 'heteroscedasticity', 'residual analysis', 'independence', 'normal errors'])
 

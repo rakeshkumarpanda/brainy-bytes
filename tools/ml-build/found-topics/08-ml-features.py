@@ -274,7 +274,7 @@ K.lesson('pipeline', 'One pipeline for every column', f'''
     'Categories: SimpleImputer(strategy="most_frequent") if needed, then OneHotEncoder(handle_unknown="ignore").',
     'Join them with ColumnTransformer and add the model at the end of a Pipeline.',
     'Evaluate with cross_val_score on the raw data. No step ever sees a test fold while fitting.',
-    'Save the fitted pipeline with joblib and load it in the serving code (MLOps 1.2).'])}
+    'Save the fitted pipeline with joblib and load it in the serving code (the MLOps subject shows how).'])}
 ''', kw=['ColumnTransformer', 'Pipeline', 'mixed data types', 'get_feature_names_out', 'preprocessing pipeline'])
 
 K.lesson('versus', 'Encodings compared, including target encoding', f'''

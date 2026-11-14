@@ -28,3 +28,13 @@
 .mlp .ml-link b{display:block}
 .mlp .ml-link span{color:var(--ink2); font-size:14.5px}
 .mlp .ml-link a.ck-nb-a{margin-left:auto}
+/* setup steps with one panel per operating system (MLOps subject) */
+.mlp .ml-os{border:1px solid var(--line); border-radius:12px; margin:16px 0; background:var(--surface2); overflow:hidden}
+.mlp .ml-os-h{font-weight:700; padding:10px 14px; border-bottom:1px solid var(--line)}
+.mlp .ml-os details{border-top:1px solid var(--line)}
+.mlp .ml-os details:first-of-type{border-top:0}
+.mlp .ml-os summary{cursor:pointer; padding:9px 14px; font-weight:600; list-style-position:inside}
+.mlp .ml-os details[open] summary{background:var(--surface); color:var(--cv)}
+.mlp .ml-os-b{padding:4px 14px 12px; background:var(--surface)}
+.mlp .ml-os-b ol{margin:6px 0 8px 18px; padding:0}
+.mlp .ml-os-b .pl{margin:8px 0}
