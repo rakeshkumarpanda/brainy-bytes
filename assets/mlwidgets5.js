@@ -877,3 +877,120 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 4.2  revision: the whole subject as one loop, and the three MLOps maturity levels
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box } = MLZ;
+  const CH = [
+    ['1.1', 'Setup', 'One virtual environment per project. PATH decides which python runs.', 'pip freeze &gt; requirements.txt, never commit .venv'],
+    ['1.2', 'Lifecycle', 'Fix seeds, keep a run record and a data fingerprint. Levels 0, 1 and 2.', 'Report the spread over several seeds'],
+    ['2.1', 'Pipelines', 'Fit every step on training rows only and save the whole pipeline.', 'Leaky selection scored 0.85 on noise, honest 0.48'],
+    ['2.2', 'Serving', 'POST /predict returns JSON, 422 for bad input.', 'Workers = request rate &times; latency (Little&rsquo;s law)'],
+    ['2.3', 'Docker, CI/CD', 'Copy requirements before code so the layer cache works. Gate every release.', 'Code change rebuilt in 2.2 s instead of 32 s'],
+    ['3.1', 'Tracking', 'Log every run. Promote or roll back by moving the champion alias.', 'Best of 1000 coin flip models: 0.615 on validation'],
+    ['3.2', 'Monitoring', 'PSI 0.1 watch, 0.25 drift. Accuracy needs labels.', 'Concept drift: accuracy 0.95 to 0.57, input PSI 0.01'],
+    ['3.3', 'Explain, fair', 'Shapley values add up to the prediction. Audit rates by group.', 'Disparate impact 0.52 fails the 0.8 rule'],
+    ['4.1', 'System design', 'Numbers first. Shadow, canary, then an A/B test read once.', 'Peeking raised false alarms from 4.4 to 22 percent']
+  ];
+  const INCIDENT = [
+    [6, 'Alert: the PSI of monthly_bill is 0.33 and the business metric is falling.'],
+    [7, 'SHAP on last week&rsquo;s predictions shows monthly_bill now drives most scores, so the price rise is the cause.'],
+    [5, 'Limit harm first: if the old version copes better, move the champion alias back. One action, no rebuild.'],
+    [2, 'Retrain the same pipeline on recent data, with every step fitted on training rows only.'],
+    [4, 'CI runs the tests, the quality gate and the fairness gate, then builds and pushes a new image.'],
+    [8, 'Release safely: shadow, then a canary with guardrails, and the new version becomes champion.'],
+    [1, 'Write the incident into the run record, and add a drift test so the next price change is caught on day one.']
+  ];
+  const POS = i => i < 5 ? [14 + i * 116, 40] : [14 + (8 - i) * 116 + 58, 124];
+
+  trace('mlrecap', {
+    title: 'The whole MLOps subject in one loop',
+    sub: 'Every chapter is one stage of a model&rsquo;s life. Walk the loop in order to revise, or follow a real incident and see which chapters you use and in what order.',
+    W: 600, H: 330,
+    params: [{ k: 'path', label: 'Walk', type: 'select', v: 'build', opts: [['build', 'Chapter by chapter'], ['incident', 'A drift incident from alert to fix']] }],
+    tips: [
+      { t: 'A drift incident: monitoring raises the alarm, explanations find the cause, the registry limits harm, and the pipeline, CI and canary ship the fix.', set: { path: 'incident' }, play: true },
+      { t: 'Chapter by chapter: one key idea and one number to remember for each.', set: { path: 'build' }, play: true }
+    ],
+    frames(p) {
+      const fr = [{ on: [], cur: -1, say: p.path === 'build' ? 'Nine chapters, one loop: from an empty laptop to a monitored, fair, well designed ML system.' : 'A model has been live for months. Something is going wrong.' }];
+      if (p.path === 'build') CH.forEach((c, i) => fr.push({ on: CH.slice(0, i + 1).map((_, j) => j), cur: i, say: `${c[0]} ${c[1]}: ${c[2]} Remember: ${c[3]}.` }));
+      else INCIDENT.forEach(([i, t], k) => fr.push({ on: INCIDENT.slice(0, k + 1).map(x => x[0]), cur: i, step: k + 1, say: `Step ${k + 1}, chapter ${CH[i][0]}: ${t}` }));
+      return fr.map(x => ({ ...x, path: p.path }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, 'MLOps chapters', 14, 22);
+      CH.forEach((ch, i) => {
+        const [x, y] = POS(i), on = f.on.includes(i), cur = f.cur === i;
+        box(z, x, y, 104, 52, '', { fill: cur ? c.purple : (on ? 'rgba(124,58,237,0.14)' : c.surf), stroke: cur || on ? c.purple : c.line, w: cur ? 2.5 : 1.2 });
+        D.text(g, ch[0], x + 52, y + 21, { a: 'center', s: 13, b: true, c: cur ? '#fff' : c.ink });
+        D.text(g, ch[1], x + 52, y + 40, { a: 'center', s: 11, c: cur ? '#fff' : c.ink2 });
+        if (i < 8) {
+          const [nx, ny] = POS(i + 1);
+          if (i === 4) D.arrow(g, x + 52, y + 52, nx + 52, ny, c.ink2, 1.2, 5);
+          else if (i < 4) D.arrow(g, x + 104, y + 26, nx, ny + 26, c.ink2, 1.2, 5);
+          else D.arrow(g, x, y + 26, nx + 104, ny + 26, c.ink2, 1.2, 5);
+        }
+      });
+      D.arrow(g, POS(8)[0] + 20, POS(8)[1], POS(0)[0] + 52, POS(0)[1] + 52, c.line, 1, 5, [4, 3]);
+      D.text(g, 'retrain and repeat', POS(8)[0] - 6, POS(8)[1] + 70, { s: 10, c: c.ink2 });
+      if (f.cur >= 0) {
+        const ch = CH[f.cur];
+        box(z, 14, 206, 572, 110, '', { fill: c.surf, stroke: c.line });
+        D.text(g, `${ch[0]}  ${ch[1]}`, 28, 230, { s: 14, b: true, c: c.purple });
+        const txt = (f.path === 'build' ? ch[2] : INCIDENT[f.step - 1][1]).replace(/&rsquo;/g, '’'), lines = [''];
+        txt.split(' ').forEach(w => { if ((lines[lines.length - 1] + ' ' + w).length > 86) lines.push(w); else lines[lines.length - 1] = (lines[lines.length - 1] + ' ' + w).trim(); });
+        lines.slice(0, 2).forEach((t, k) => D.text(g, t, 28, 252 + k * 18, { s: 12, c: c.ink }));
+        D.text(g, 'Remember: ' + ch[3].replace(/&gt;/g, '>').replace(/&times;/g, '×').replace(/&rsquo;/g, '’'), 28, 300, { s: 12, b: true, c: c.ink });
+      }
+    }
+  });
+
+  const STEPS = ['get data', 'check data', 'prepare', 'train', 'evaluate', 'validate', 'serve', 'monitor'];
+  const LEVELS = {
+    0: { auto: [0, 0, 0, 0, 0, 0, 1, 0], trigger: 'A person decides to retrain, often months apart.',
+      say: ['A data scientist pulls data by hand.', 'Checks it by eye in a notebook.', 'Prepares features with notebook code.', 'Trains in the notebook.', 'Evaluates in the same notebook.', 'Hands a model file to engineers, with no automatic validation.', 'Engineers deploy the file as a prediction service, the only automated part.', 'Little or no monitoring of model quality.'] },
+    1: { auto: [1, 1, 1, 1, 1, 1, 1, 1], trigger: 'The pipeline retrains by itself on a schedule, on new data or on a drift alert.',
+      say: ['A pipeline step extracts the data.', 'Data validation stops the run if the schema or ranges are wrong.', 'The same tested feature code runs in training and serving.', 'Training runs inside the pipeline, so the whole pipeline is deployed, not just a model.', 'Evaluation is a pipeline step with fixed metrics.', 'Model validation compares with the champion before release.', 'The validated model is delivered to serving automatically.', 'Monitoring feeds triggers back into the pipeline.'] },
+    2: { auto: [1, 1, 1, 1, 1, 1, 1, 1], ci: true, trigger: 'Also a code change: CI builds and tests the pipeline itself, and CD deploys the new pipeline.',
+      say: ['Everything from level 1, plus the pipeline code lives in Git.', 'CI runs unit tests for every pipeline component.', 'CI builds the components into images.', 'CD deploys the new pipeline to the orchestrator.', 'The deployed pipeline trains automatically.', 'Model validation and a registry gate decide promotion.', 'Serving gets the new model through the registry.', 'Monitoring closes the loop, and a feature store and metadata store tie it together.'] }
+  };
+
+  trace('mlmaturity', {
+    title: 'MLOps maturity levels 0, 1 and 2',
+    sub: 'Google Cloud describes three levels. At level 0 people move a model by hand. At level 1 a pipeline retrains and delivers models automatically. At level 2 CI/CD also builds, tests and deploys the pipeline itself. Orange is manual work, green is automated.',
+    W: 600, H: 330,
+    params: [{ k: 'level', label: 'Level', type: 'select', v: '0', opts: [['0', 'Level 0: manual process'], ['1', 'Level 1: pipeline automation'], ['2', 'Level 2: CI/CD pipeline automation']] }],
+    tips: [
+      { t: 'Level 1: every step turns green, and the model retrains by itself when data changes.', set: { level: '1' }, play: true },
+      { t: 'Level 2: a new row appears on top, because code changes now flow through CI/CD too.', set: { level: '2' }, play: true }
+    ],
+    frames(p) {
+      const L = LEVELS[p.level], fr = [{ k: 0, say: `Level ${p.level}: the same eight steps take a model from data to monitoring. Who does them?` }];
+      STEPS.forEach((s, i) => fr.push({ k: i + 1, say: `${s}: ${L.say[i]}` }));
+      fr.push({ k: 8, done: true, say: `What starts a new model at level ${p.level}? ${L.trigger}` });
+      return fr.map(x => ({ ...x, level: p.level }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, L = LEVELS[f.level];
+      head(z, `Level ${f.level}`, 14, 22);
+      if (L.ci) {
+        ['commit', 'CI: test', 'CI: build', 'CD: deploy pipeline'].forEach((t, i) => { box(z, 20 + i * 142, 44, 128, 34, t, { s: 11, b: true, fill: 'rgba(22,163,74,0.18)', stroke: c.green }); if (i < 3) D.arrow(g, 148 + i * 142, 61, 162 + i * 142, 61, c.ink2, 1.2, 5); });
+        D.arrow(g, 510, 78, 510, 118, c.green, 1.5, 6);
+      }
+      STEPS.forEach((s, i) => {
+        const x = 14 + (i % 4) * 146, y = i < 4 ? 124 : 214, shown = i < f.k, auto = L.auto[i];
+        box(z, x, y, 130, 50, '', { fill: shown ? (auto ? 'rgba(22,163,74,0.18)' : 'rgba(234,88,12,0.18)') : c.surf, stroke: shown ? (auto ? c.green : c.orange) : c.line, w: shown ? 2 : 1 });
+        if (shown) { D.text(g, s, x + 65, y + 22, { a: 'center', s: 12, b: true, c: c.ink }); D.text(g, auto ? 'automated' : 'manual', x + 65, y + 40, { a: 'center', s: 10, c: auto ? c.green : c.orange }); }
+        if (i % 4 < 3) D.arrow(g, x + 130, y + 25, x + 146, y + 25, c.line, 1, 5);
+      });
+      const tx = 14 + 3 * 146 + 65;
+      D.line(g, tx, 174, tx, 194, c.line, 1); D.line(g, tx, 194, 79, 194, c.line, 1); D.arrow(g, 79, 194, 79, 214, c.line, 1, 5);
+      if (f.level !== '0') { const rx = 14 + 3 * 146 + 130; D.line(g, rx, 239, 592, 239, c.green, 1.2, [4, 3]); D.line(g, 592, 239, 592, 149, c.green, 1.2, [4, 3]); D.arrow(g, 592, 149, rx, 149, c.green, 1.2, 5); }
+      if (f.done) D.text(g, L.trigger, 14, 316, { s: 11, b: true, c: c.ink });
+    }
+  });
+})();

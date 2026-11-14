@@ -9202,6 +9202,25 @@ function mlopsModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "mlops-revision", title: "MLOps revision and certification practice", emoji: "4.2", page: "content/mlops/mlops-revision.html",
+        summary: "The whole subject as one loop, maturity levels, a release gate across all chapters, a capstone, cloud service mapping and exam practice.",
+        keywords: ["MLOps revision", "maturity levels", "release gate", "capstone", "certification", "Vertex AI", "SageMaker", "Azure ML", "interview"],
+        minutes: 50, counts: {"lessons": 8, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "loop", title: "The whole subject in one loop", emoji: "", group: "Lesson", keywords: ["revision", "MLOps lifecycle", "exam traps", "incident"] },
+        { id: "maturity", title: "MLOps maturity levels", emoji: "", group: "Lesson", keywords: ["maturity level", "level 0", "level 1", "level 2", "continuous training", "CI/CD", "pipeline automation"] },
+        { id: "gate", title: "One release gate that uses every chapter", emoji: "", group: "Lesson", keywords: ["release gate", "promotion", "formula sheet", "quality gate", "fairness gate"] },
+        { id: "capstone", title: "Capstone: the whole lifecycle on your computer", emoji: "", group: "Lesson", keywords: ["capstone", "end to end project", "model card", "TestClient", "champion alias", "data fingerprint"] },
+        { id: "cloud", title: "The same ideas on cloud platforms", emoji: "", group: "Lesson", keywords: ["Vertex AI", "SageMaker", "Azure Machine Learning", "certification", "managed services", "cloud MLOps"] },
+        { id: "interview", title: "Interview questions with model answers", emoji: "", group: "Lesson", keywords: ["interview questions", "take home task", "offline online gap", "reproducibility"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "MLOps platform"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
