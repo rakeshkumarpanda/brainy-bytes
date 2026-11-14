@@ -607,3 +607,136 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Deep learning 2.2  recurrent networks: an RNN unrolled through time, and the gates of an LSTM memory cell
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, plot } = MLZ;
+  const nf = (v, d = 3) => f2(v, d);
+  const SEQS = { pulse: { name: 'One input of 1, then zeros', x: [1, 0, 0, 0, 0, 0, 0, 0] }, steady: { name: 'A steady input of 0.5', x: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5] } };
+
+  trace('mlunroll', {
+    title: 'An RNN unrolled through time, forward and backward',
+    sub: 'A tiny RNN with one hidden number: hₜ = tanh(w·hₜ₋₁ + xₜ). The same w is used at every step. Forward, the state carries information along. Backward, the gradient of h₈ travels back and is multiplied by w·(1 − hₜ²) at every step.',
+    W: 600, H: 330,
+    params: [
+      { k: 'w', label: 'Recurrent weight w', type: 'select', v: '0.5', opts: [['0.5', '0.5'], ['1', '1.0'], ['2', '2.0']] },
+      { k: 'seq', label: 'Inputs', type: 'select', v: 'pulse', opts: Object.keys(SEQS).map(k => [k, SEQS[k].name]) }
+    ],
+    tips: [
+      { t: 'w = 2 with a steady input: the state saturates near 1, where tanh is flat, so 1 − h² is tiny and the gradient vanishes even though w is large.', set: { w: '2', seq: 'steady' }, play: true },
+      { t: 'w = 1 with one pulse: after the first steps the state is small, so most backward factors are close to 1 and the gradient at step 0 ends about 50 times larger than with w = 0.5.', set: { w: '1', seq: 'pulse' }, play: true }
+    ],
+    frames(p) {
+      const w = +p.w, xs = SEQS[p.seq].x, T = xs.length, h = [0];
+      const fr = [{ h: [0], x: xs, g: [], say: `Start with h₀ = 0. The inputs are ${xs.join(', ')}, and the recurrent weight is w = ${w}.` }];
+      for (let t = 1; t <= T; t++) {
+        h.push(Math.tanh(w * h[t - 1] + xs[t - 1]));
+        if (t <= 3 || t === T) fr.push({ h: h.slice(), x: xs, g: [], say: `Step ${t}: h${'₀₁₂₃₄₅₆₇₈'[t]} = tanh(${w} × ${nf(h[t - 1])} + ${xs[t - 1]}) = <b>${nf(h[t])}</b>.${t === 3 && T > 4 ? ' The same rule runs for the remaining steps.' : ''}` });
+      }
+      const g = new Array(T + 1).fill(null); g[T] = 1;
+      fr.push({ h, x: xs, g: g.slice(), say: 'Backward: start with ∂h₈/∂h₈ = 1 at the last step.' });
+      for (let t = T; t >= 1; t--) {
+        const fac = w * (1 - h[t] * h[t]);
+        g[t - 1] = g[t] * fac;
+        if (t >= T - 2 || t === 1) fr.push({ h, x: xs, g: g.slice(), say: `Back from step ${t}: multiply by w(1 − h²) = ${w} × (1 − ${nf(h[t])}²) = ${nf(fac)}, so ∂h₈/∂h${'₀₁₂₃₄₅₆₇₈'[t - 1]} = <b>${g[t - 1] < 1e-3 ? g[t - 1].toExponential(1).replace('-', '−') : nf(g[t - 1])}</b>.` });
+      }
+      const g0 = Math.abs(g[0]);
+      fr.push({ h, x: xs, g, say: `After 8 steps back the gradient is ${g0 < 1e-3 ? g0.toExponential(1).replace('-', '−') : nf(g0)}. ${g0 < 0.01 ? '<b>Vanishing</b>: the first inputs barely affect learning.' : g0 > 10 ? '<b>Exploding</b>: updates would be unstable.' : 'The gradient survives these 8 steps, though longer sequences would still shrink or grow it.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, T = f.x.length, dx = 62, x0 = 70;
+      head(z, 'step', 10, 24);
+      for (let t = 0; t <= T; t++) {
+        const X = x0 + t * dx;
+        D.text(g, String(t), X, 24, { a: 'center', s: 11, c: c.ink2 });
+        if (t > 0) {
+          rr(g, X - 16, 250, 32, 24, 4, { fill: c.surf, stroke: c.line });
+          D.text(g, String(f.x[t - 1]), X, 266, { a: 'center', s: 11, c: c.ink });
+          D.arrow(g, X, 250, X, 166, c.ink2, 1, 6);
+        }
+        const has = t < f.h.length;
+        D.circle(g, X, 140, 22, { fill: has ? `rgba(37,99,235,${0.1 + 0.7 * Math.abs(f.h[t])})` : c.bg, stroke: c.line, w: 1.5 });
+        if (has) D.text(g, nf(f.h[t], 2), X, 145, { a: 'center', s: 11, b: true, c: Math.abs(f.h[t]) > 0.55 ? '#fff' : c.ink });
+        if (t > 0 && has) D.arrow(g, X - dx + 22, 140, X - 24, 140, c.ink2, 1.5, 6);
+        if (f.g[t] !== null && f.g[t] !== undefined) {
+          const v = Math.abs(f.g[t]), hgt = Math.max(2, Math.min(60, 60 * (Math.log10(v + 1e-12) + 4) / 4));
+          rr(g, X - 10, 100 - hgt, 20, hgt, 2, { fill: v < 0.01 ? c.red : klass(z, 1) });
+          D.text(g, v < 0.01 ? v.toExponential(0).replace('-', '−') : f2(v, 2), X, 112 - hgt - 16, { a: 'center', s: 10, b: true, c: c.red });
+        }
+      }
+      D.text(g, 'x (input)', 10, 300, { s: 11, c: c.ink2 });
+      D.text(g, 'circles: hidden state h   orange bars: gradient ∂h₈/∂hₜ on a log scale (red below 0.01)', 10, 318, { s: 10, c: c.ink2 });
+    }
+  });
+
+  const SCEN = {
+    one: { name: 'Store 0.8 at step 1, read at step 12', store: { 1: 0.8 }, noise: [0, 0.3, -0.6, 0.9, -0.2, 0.5, -0.9, 0.4, 0.1, -0.4, 0.7, 0] },
+    two: { name: 'Store 0.8 at step 1, store −0.5 at step 7, read at step 12', store: { 1: 0.8, 7: -0.5 }, noise: [0, 0.3, -0.6, 0.9, -0.2, 0.5, 0, 0.4, 0.1, -0.4, 0.7, 0] }
+  };
+  const sg = z => 1 / (1 + Math.exp(-z));
+
+  trace('mllstm', {
+    title: 'Inside an LSTM cell: three gates and a memory',
+    sub: 'A hand set LSTM with one memory cell c. The input gate i lets a new value in when the store marker is on. The forget gate f decides how much of the memory to keep each step. The output gate o opens at the read step. The blue line is the memory and the dots are the inputs (green: stored). In a trained LSTM the network learns these gate rules from data.',
+    W: 600, H: 330,
+    params: [
+      { k: 'f', label: 'Forget gate when not storing', type: 'select', v: '0.99', opts: [['0.5', '0.5 (forgets fast)'], ['0.9', '0.9'], ['0.99', '0.99 (remembers)']] },
+      { k: 'sc', label: 'Sequence', type: 'select', v: 'one', opts: Object.keys(SCEN).map(k => [k, SCEN[k].name]) }
+    ],
+    tips: [
+      { t: 'Forget gate 0.5: the memory halves every step, so after 11 steps it keeps only 0.5¹¹ ≈ 0.0005 of the stored value and ends close to 0.', set: { f: '0.5', sc: 'one' }, play: true },
+      { t: 'Two stores: at step 7 the forget gate closes and the input gate opens, so the old value is replaced by the new one.', set: { f: '0.99', sc: 'two' }, play: true }
+    ],
+    frames(p) {
+      const S = SCEN[p.sc], fb = Math.log(+p.f / (1 - +p.f));
+      let cc = 0;
+      const rows = [], fr = [{ rows: [], say: `The memory starts empty, c = 0. When nothing is stored, the forget gate is ${p.f}. Inputs without a store marker are distractions the cell should ignore.` }];
+      for (let t = 1; t <= 12; t++) {
+        const m = S.store[t] !== undefined ? 1 : 0, r = t === 12 ? 1 : 0, v = m ? S.store[t] : S.noise[t - 1];
+        const i = sg(10 * m - 5), f = sg(fb - 10 * m), o = sg(10 * r - 5), gg = v;
+        const old = cc;
+        cc = f * old + i * gg;
+        const h = o * Math.tanh(cc);
+        rows.push({ t, v, m, r, i, f, o, c: cc, h });
+        const what = m ? `Store marker on: i = ${nf(i)} lets ${v} in and f = ${nf(f)} wipes the old memory.` : r ? `Read step: o = ${nf(o)} opens, so the cell outputs h = o · tanh(c) = <b>${nf(h)}</b>.` : `No marker: i = ${nf(i)} blocks the input ${v}, and f = ${nf(f)} keeps that share of the memory.`;
+        if (t <= 3 || m || r || t === 6 || t === 9) fr.push({ rows: rows.slice(), say: `Step ${t}. ${what} c = ${nf(f)} × ${nf(old)} + ${nf(i)} × ${v} = <b>${nf(cc)}</b>.` });
+      }
+      const last = rows[rows.length - 1], tgt = S.store[7] !== undefined ? -0.5 : 0.8;
+      fr.push({ rows, say: `Done. The memory holds ${nf(last.c)} at step 12, against the last stored value ${String(tgt).replace("-", "−")}. ${Math.abs(last.c - tgt) < 0.1 ? 'The cell kept it through all the distractions.' : 'Too much leaked away, because the forget gate let the memory fade.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 380, 310], [0, 12], [-1, 1], { dx: 0, dy: 1, xl: 'step', yl: 'memory c' });
+      const S = SCEN[z.p.sc];
+      for (let t = 1; t <= 12; t++) {
+        const m = S.store[t] !== undefined, v = m ? S.store[t] : S.noise[t - 1];
+        if (m) { g.fillStyle = 'rgba(22,163,74,0.15)'; g.fillRect(P.X(t - 0.5), P.Y(1), P.X(1) - P.X(0), P.Y(-1) - P.Y(1)); }
+        D.circle(g, P.X(t), P.Y(v), 3.5, { fill: m ? c.green : c.line });
+      }
+      if (f.rows.length) {
+        g.beginPath(); g.moveTo(P.X(0), P.Y(0)); f.rows.forEach(r => g.lineTo(P.X(r.t), P.Y(r.c))); g.strokeStyle = klass(z, 0); g.lineWidth = 2.5; g.stroke();
+        const L = f.rows[f.rows.length - 1];
+        D.circle(g, P.X(L.t), P.Y(L.c), 5, { fill: klass(z, 0), stroke: c.surf, w: 1.5 });
+      }
+      const L = f.rows[f.rows.length - 1];
+      head(z, L ? `Gates at step ${L.t}` : 'Gates', 410, 30);
+      [['input i', 'i', klass(z, 2)], ['forget f', 'f', klass(z, 1)], ['output o', 'o', klass(z, 3)]].forEach(([lab, k, col], j) => {
+        const y = 60 + j * 50, v = L ? L[k] : 0;
+        D.text(g, lab, 410, y, { s: 12, b: true, c: c.ink });
+        rr(g, 410, y + 8, 160, 14, 4, { fill: c.bg });
+        if (L) rr(g, 410, y + 8, Math.max(2, 160 * v), 14, 4, { fill: col });
+        if (L) D.text(g, nf(v), 570, y, { a: 'right', s: 11, mono: true, c: c.ink });
+      });
+      if (L) {
+        D.text(g, `c = ${nf(L.c)}`, 410, 236, { s: 13, mono: true, b: true, c: c.ink });
+        D.text(g, `h = ${nf(L.h)}`, 410, 258, { s: 13, mono: true, c: c.ink2 });
+      }
+      D.text(g, 'c ← f·c + i·g', 410, 290, { s: 12, mono: true, c: c.ink2 });
+      D.text(g, 'h = o·tanh(c)', 410, 308, { s: 12, mono: true, c: c.ink2 });
+    }
+  });
+})();

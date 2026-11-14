@@ -8913,6 +8913,26 @@ function mlDeepModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-rnn", title: "Recurrent networks, LSTM and GRU", emoji: "2.2", page: "content/machine-learning/ml-rnn.html",
+        summary: "RNNs and BPTT, the long term dependency problem, LSTM and GRU gates, and sequence model variants.",
+        keywords: ["RNN", "LSTM", "GRU", "backpropagation through time", "vanishing gradient", "forget gate", "sequence to sequence", "bidirectional", "hidden state", "teacher forcing"],
+        minutes: 55, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Recurrent networks: one cell reused at every time step", emoji: "", group: "Lesson", keywords: ["recurrent neural network", "RNN", "hidden state", "unrolling", "backpropagation through time", "BPTT", "sequence"] },
+        { id: "longterm", title: "The long term dependency problem", emoji: "", group: "Lesson", keywords: ["long term dependency", "vanishing gradient", "exploding gradient", "gradient clipping", "memory task"] },
+        { id: "lstm", title: "LSTM: a memory cell with gates", emoji: "", group: "Lesson", keywords: ["LSTM", "long short term memory", "cell state", "forget gate", "input gate", "output gate", "forget bias"] },
+        { id: "gru", title: "GRU, bidirectional and sequence to sequence models", emoji: "", group: "Lesson", keywords: ["GRU", "gated recurrent unit", "update gate", "reset gate", "bidirectional RNN", "sequence to sequence", "encoder decoder", "teacher forcing"] },
+        { id: "versus", title: "RNN, LSTM, GRU and transformer compared", emoji: "", group: "Lesson", keywords: ["RNN vs LSTM vs GRU", "RNN vs transformer"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["LSTM equations", "GRU equations", "forget bias", "sequence loss", "state space models", "Mamba"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "sequence modelling"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "stack", "streaming", "sequence alignment", "dynamic programming"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
