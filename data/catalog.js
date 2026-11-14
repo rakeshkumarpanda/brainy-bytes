@@ -9326,6 +9326,28 @@ function cyFoundModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cy-f2", title: "How computers and networks work", emoji: "2", step: 2, part: "foundations", level: "Beginner", blurb: "How operating systems keep users apart, how data moves across networks, and the Python every security person needs.", topics: [
+      { id: "cy-os", title: "Operating systems: users, permissions, processes and logs", emoji: "2.1", page: "content/cyber-security/cy-os.html",
+        summary: "user and kernel mode, accounts and root, chmod octal maths and umask, Windows ACLs, privilege escalation and security logs.",
+        keywords: ["operating system", "kernel", "root", "chmod", "umask", "setuid", "ACL", "privilege escalation", "event 4625", "SELinux"],
+        minutes: 60, counts: {"lessons": 9, "problems": 11, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "What an operating system does for security", emoji: "", group: "Lesson", keywords: ["operating system", "kernel", "user mode", "kernel mode", "system call", "protection rings", "process isolation", "Multics", "Unix"] },
+        { id: "users", title: "Users, groups and the all powerful administrator", emoji: "", group: "Lesson", keywords: ["users", "groups", "root", "UID 0", "Administrator", "SID", "etc passwd", "etc shadow", "SAM", "sudo", "UAC", "docker group"] },
+        { id: "perms", title: "Linux permissions and the octal maths of chmod", emoji: "", group: "Lesson", keywords: ["permissions", "chmod", "octal", "rwx", "owner group other", "umask", "setuid", "setgid", "sticky bit", "777", "644", "600", "ls -l"] },
+        { id: "windows", title: "Windows access control lists", emoji: "", group: "Lesson", keywords: ["Windows", "ACL", "DACL", "ACE", "icacls", "NTFS permissions", "explicit deny", "inheritance", "implicit deny", "canonical order"] },
+        { id: "privesc", title: "Processes and privilege escalation", emoji: "", group: "Lesson", keywords: ["process", "privilege escalation", "vertical", "horizontal", "setuid audit", "cron", "services", "kernel exploit", "least privilege"] },
+        { id: "logs", title: "Where the OS records security events", emoji: "", group: "Lesson", keywords: ["logs", "event log", "4624", "4625", "4672", "4688", "4720", "4740", "1102", "auth.log", "journalctl", "brute force detection"] },
+        { id: "versus", title: "Security models compared", emoji: "", group: "Lesson", keywords: ["DAC", "MAC", "SELinux", "AppArmor", "sandbox", "Android permissions", "iOS", "discretionary", "mandatory", "comparison"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "virtual memory", "containers", "namespaces", "seccomp", "seL4", "Spectre", "Meltdown"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

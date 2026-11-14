@@ -483,3 +483,127 @@ const CYZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 2.1  Linux permissions: decode an octal mode, then decide if a user may read, write or run the file
+   ===================================================================================================== */
+(() => {
+  const { trace, head } = MLZ;
+  const { cbox, D } = CYZ;
+  const WHO = { owner: 'the owner of the file', group: 'a member of the file’s group', other: 'any other user', root: 'root (the administrator)' };
+  const WANT = { r: ['read', 0], w: ['write', 1], x: ['execute', 2] };
+  trace('cychmod', {
+    title: 'File permissions: what does 754 mean, and may this user open the file?',
+    sub: 'Type an octal mode like 640 or 4755. The animation turns each digit into read, write and execute bits for the owner, the group and everyone else, then checks a request the way the Linux kernel does.',
+    W: 600, H: 340,
+    params: [
+      { k: 'mode', label: 'Mode (3 or 4 octal digits)', type: 'text', v: '754' },
+      { k: 'who', label: 'Who asks', type: 'select', v: 'group', opts: Object.keys(WHO).map(k => [k, WHO[k]]) },
+      { k: 'want', label: 'To', type: 'select', v: 'w', opts: Object.keys(WANT).map(k => [k, WANT[k][0]]) }
+    ],
+    tips: [
+      { t: 'Play it. A group member may read and run a 754 file, but not write to it.', play: true },
+      { t: 'Try 604 as the group asking to read. The group digit is 0, so the answer is no, even though "other" may read. Linux uses only the first class that matches you.', set: { mode: '604', who: 'group', want: 'r' }, play: true },
+      { t: 'Try 4755. The extra 4 is the setuid bit: the program runs with its owner’s rights. On a root owned file this is powerful and dangerous.', set: { mode: '4755', who: 'other', want: 'x' }, play: true }
+    ],
+    frames(p) {
+      const m = String(p.mode).trim();
+      if (!/^[0-7]{3,4}$/.test(m)) throw new Error('Use 3 or 4 digits, each from 0 to 7, for example 644 or 4755.');
+      const d = m.padStart(4, '0').split('').map(Number), sp = d[0], cls = d.slice(1);
+      const rwx = v => [(v & 4) ? 'r' : '-', (v & 2) ? 'w' : '-', (v & 1) ? 'x' : '-'];
+      const names = ['owner', 'group', 'other'];
+      const fr = [{ k: 0, say: `The mode <b>${m}</b> is written in octal (base 8). Each digit is 3 bits: read is worth 4, write 2, execute 1. Add the ones you want: 7 = 4 + 2 + 1 = rwx.` }];
+      cls.forEach((v, i) => fr.push({ k: i + 1, say: `${['First', 'Second', 'Third'][i]} digit, for the <b>${names[i]}</b>: ${v} = ${[4, 2, 1].filter(b => v & b).join(' + ') || '0'} = <b>${rwx(v).join('')}</b>.` }));
+      let k = 4;
+      if (m.length === 4) fr.push({ k: k++, sp: true, say: `The extra leading digit ${sp} holds special bits: setuid 4, setgid 2, sticky 1. ${sp & 4 ? '<b>setuid</b> is on: the program runs with the rights of its owner, not of the person who starts it. ' : ''}${sp & 2 ? '<b>setgid</b> is on: it runs with the file’s group. ' : ''}${sp & 1 ? '<b>sticky</b> is on: in a shared folder, only a file’s owner may delete it. ' : ''}${sp ? '' : 'None are set.'}` });
+      const [wname, bit] = WANT[p.want];
+      let ok, why, use = -1;
+      if (p.who === 'root') {
+        if (p.want === 'x') { ok = cls.some(v => v & 1); why = ok ? 'Root may run a file if at least one execute bit is set, and here one is.' : 'Root may run a file only if at least one execute bit is set. None is, so even root is refused.'; }
+        else { ok = true; why = `Root skips the read and write checks, so root may ${wname} it whatever the mode says. That is why the root password is the most valuable secret on a Linux machine.`; }
+      } else {
+        use = names.indexOf(p.who);
+        const v = cls[use];
+        ok = !!(v & [4, 2, 1][bit]);
+        why = `The kernel checks the classes in order: owner, then group, then other, and uses <b>only the first class that matches you</b>. You are ${WHO[p.who]}, so the <b>${names[use]}</b> digit ${v} = ${rwx(v).join('')} decides. Its ${wname} bit is ${ok ? 'on' : 'off'}.`;
+      }
+      fr.push({ k, use, ask: true, say: `Request: ${WHO[p.who]} wants to <b>${wname}</b> the file. ${why}` });
+      fr.push({ k: k + 1, use, ask: true, done: true, ok, say: `Answer: <b>${ok ? 'allowed' : 'permission denied'}</b>. ${ok ? '' : 'A program would get the error EACCES ("Permission denied"). '}In the ls -l listing this file shows as <b>${(m.length === 4 && sp ? spl(cls, sp) : cls.map(v => rwx(v).join('')).join(''))}</b>.` });
+      function spl(c, s) { const a = c.map(v => rwx(v)); if (s & 4) a[0][2] = a[0][2] === 'x' ? 's' : 'S'; if (s & 2) a[1][2] = a[1][2] === 'x' ? 's' : 'S'; if (s & 1) a[2][2] = a[2][2] === 'x' ? 't' : 'T'; return a.map(x => x.join('')).join(''); }
+      return fr.map(x => ({ ...x, cls, sp, m, rwx }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, names = ['owner', 'group', 'other'];
+      head(z, `Mode ${f.m}`, 14, 22);
+      f.cls.forEach((v, i) => {
+        const x = 30 + i * 186, shown = f.k > i, used = f.use === i;
+        cbox(z, x, 34, 170, 30, names[i], { s: 13, b: true, fill: used ? c.cv : c.bg, c: used ? '#fff' : c.ink, stroke: used ? c.cv : c.line });
+        cbox(z, x + 65, 70, 40, 34, String(v), { s: 18, b: true, mono: true, fill: c.surf });
+        if (!shown) return;
+        f.rwx(v).forEach((b, j) => {
+          const on = b !== '-';
+          cbox(z, x + j * 58, 116, 52, 34, b === '-' ? '−' : b, { s: 16, mono: true, b: true, fill: on ? c.green : c.surf, c: on ? '#fff' : c.ink2 });
+          D.text(g, ['4', '2', '1'][j], x + j * 58 + 26, 166, { a: 'center', s: 11, c: c.ink2 });
+        });
+      });
+      if (f.sp !== undefined && f.k >= 4 && f.m.length === 4) {
+        ['setuid 4', 'setgid 2', 'sticky 1'].forEach((t, j) => { const on = f.sp & [4, 2, 1][j]; cbox(z, 30 + j * 186, 182, 170, 28, t, { s: 12, b: !!on, fill: on ? c.orange : c.surf, c: on ? '#fff' : c.ink2 }); });
+      }
+      if (f.ask) {
+        const lbl = { owner: 'owner', group: 'group member', other: 'other user', root: 'root' }[z.p.who];
+        cbox(z, 30, 226, 540, 34, `${lbl} wants to ${{ r: 'read', w: 'write', x: 'execute' }[z.p.want]}`, { s: 14, b: true, fill: c.bg });
+      }
+      if (f.done) cbox(z, 150, 274, 300, 40, f.ok ? 'ALLOWED' : 'PERMISSION DENIED', { s: 18, b: true, fill: f.ok ? c.green : c.red, c: '#fff', stroke: f.ok ? c.green : c.red });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 2.1  user mode and kernel mode: a program asks the kernel to open a file through a system call
+   ===================================================================================================== */
+(() => {
+  const { trace, head } = MLZ;
+  const { cbox, D } = CYZ;
+  const CASES = {
+    own: { name: 'Riya’s editor opens Riya’s own notes', user: 'riya', path: '/home/riya/notes.txt', ok: true, check: 'The file belongs to riya and has mode 600 (rw for the owner only). riya is the owner, so read is allowed.' },
+    shadow: { name: 'Riya’s program tries to read /etc/shadow', user: 'riya', path: '/etc/shadow', ok: false, check: '/etc/shadow holds the password hashes. On Ubuntu it is owned by root, group shadow, with mode 640. riya is not root and not in the shadow group, so read is denied.' },
+    sudo: { name: 'Riya runs sudo to read /etc/shadow', user: 'root (via sudo)', path: '/etc/shadow', ok: true, check: 'sudo asked for riya’s password, checked that riya is allowed in /etc/sudoers, and started the program as root. The kernel sees root, so read is allowed, and the sudo call is written to the log.' },
+    mem: { name: 'A game tries to change a banking app’s memory', user: 'riya', path: 'memory of another process', ok: false, check: 'Each process has its own virtual memory. The game’s addresses simply do not point into the banking app. Writing to another process needs debug rights that a normal program does not have.' }
+  };
+  trace('cyrings', {
+    title: 'User mode and kernel mode: who really opens the file?',
+    sub: 'Programs run in user mode and cannot touch the disk or other programs directly. They must ask the kernel through a system call, and the kernel checks permission every time.',
+    W: 600, H: 330,
+    params: [{ k: 'case', label: 'Request', type: 'select', v: 'shadow', opts: Object.keys(CASES).map(k => [k, CASES[k].name]) }],
+    tips: [
+      { t: 'Play the /etc/shadow case. The program cannot sneak past the kernel, because only the kernel can reach the disk.', play: true },
+      { t: 'Now try the sudo case. The same file opens, because the process now runs as root, and the action is logged.', set: { case: 'sudo' }, play: true }
+    ],
+    frames(p) {
+      const t = CASES[p.case];
+      return [
+        { k: 1, say: `A program runs in <b>user mode</b> (ring 3 on x86 chips) as the user <b>${t.user}</b>. In user mode the CPU refuses to run instructions that touch hardware directly.` },
+        { k: 2, say: `To reach <b>${t.path}</b> the program makes a <b>system call</b> (for example open() on Linux, CreateFile on Windows). This is the only door into the kernel.` },
+        { k: 3, say: 'The CPU switches to <b>kernel mode</b> (ring 0). Now trusted kernel code runs, with full access to the hardware and to every process’s memory.' },
+        { k: 4, say: `The kernel checks permission: ${t.check}` },
+        { k: 5, done: true, ok: t.ok, say: t.ok ? 'The kernel opens the file and hands back a small number called a <b>file descriptor</b>. The CPU drops back to user mode and the program reads through that number. It never touches the disk itself.' : 'The kernel refuses and returns an error (<b>EACCES</b>, permission denied). The CPU drops back to user mode. Because every request passes this check, a bug in one program cannot freely read other users’ data. This is <b>complete mediation</b> in action.' }
+      ].map(x => ({ ...x, t }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, t = f.t;
+      CYZ.rr(g, 10, 10, 580, 140, 10, { fill: c.surf, stroke: c.line });
+      CYZ.rr(g, 10, 166, 580, 150, 10, { fill: 'rgba(124,58,237,0.08)', stroke: c.purple || c.line });
+      head(z, 'USER MODE (ring 3): programs', 578, 30, { a: 'right' });
+      head(z, 'KERNEL MODE (ring 0): the operating system core', 578, 186, { c: c.purple, a: 'right' });
+      cbox(z, 40, 50, 200, 56, ['program', `running as ${t.user}`], { s: 13, b: true, fill: f.k >= 1 ? c.bg : c.surf });
+      if (f.k >= 2) { D.arrow(g, 140, 108, 140, 200, c.orange, 2.5, 9); D.text(g, 'system call', 112, 132, { s: 12, b: true, c: c.orange, a: 'right' }); }
+      if (f.k >= 3) cbox(z, 40, 204, 200, 50, ['kernel code', 'full hardware access'], { s: 12, b: true, fill: c.purple || c.cv, c: '#fff' });
+      if (f.k >= 4) { D.arrow(g, 242, 229, 320, 229, c.ink2, 1.6, 7); cbox(z, 324, 200, 250, 58, ['permission check', t.path], { s: 12, b: true, fill: c.surf }); }
+      if (f.done) {
+        D.arrow(g, 200, 200, 200, 108, f.ok ? c.green : c.red, 2.5, 9);
+        cbox(z, 300, 56, 270, 46, f.ok ? 'file descriptor returned' : 'EACCES: permission denied', { s: 14, b: true, fill: f.ok ? c.green : c.red, c: '#fff', stroke: f.ok ? c.green : c.red });
+        cbox(z, 324, 268, 250, 36, f.ok ? 'allowed' : 'denied', { s: 14, b: true, fill: f.ok ? c.green : c.red, c: '#fff', stroke: f.ok ? c.green : c.red });
+      }
+    }
+  });
+})();
