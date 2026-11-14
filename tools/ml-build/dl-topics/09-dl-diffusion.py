@@ -377,7 +377,7 @@ K.lesson('recap', 'Chapter summary', f'''
     '<b>DDPM</b> samples with 1000 small noisy steps. <b>DDIM</b> jumps deterministically and matched it with 50 steps, but 3 steps blurred the samples.',
     '<b>Classifier free guidance</b> (1 + w) &epsilon;<sub>cond</sub> &minus; w &epsilon;<sub>uncond</sub> follows the condition more closely and narrows the variety (spread 0.27 to 0.13).',
     '<b>Latent diffusion</b> runs in a VAE latent 48 times smaller than the pixels, with a text encoder and a U-Net or DiT. The cosine schedule wastes fewer steps on pure noise.'],
-    'This completes the generative models step. Put models into production in the MLOps subject.')}
+    'Coming next: energy based models, from Hopfield networks and Boltzmann machines to RBMs and deep belief networks.')}
 {files('Three tasks: the alpha bar schedule, a noisy sample in one jump, and classifier free guidance.')}
 ''', kw=['summary', 'recap'])
 
@@ -456,7 +456,7 @@ K.must('Latent diffusion', 'VAE latent (48 times fewer numbers), text encoder, U
 K.must('Theory', f'score = &minus;&epsilon; / &radic;(1 &minus; {AB}<sub>t</sub>). DDPM and score models share one SDE, DDIM follows its ODE. Cosine schedule wastes fewer steps.')
 
 T = K.topic(
-    slug='dl-diffusion', topic='dl-diffusion', step=(3, 'Generative models', 'dl-s3', 'Networks that create new data: autoencoders and variational autoencoders, generative adversarial networks, and diffusion models.', 'Advanced'),
+    slug='dl-diffusion', topic='dl-diffusion', step=(3, 'Generative models', 'dl-s3', 'Networks that create new data: autoencoders and variational autoencoders, generative adversarial networks, diffusion models, and energy based models such as Boltzmann machines.', 'Advanced'),
     title='Diffusion models', short='Diffusion models', badge='3.3', minutes=60,
     lead='Generate data by learning to remove noise: the forward process and its closed form, training by noise prediction, DDPM and DDIM sampling, classifier free guidance, latent diffusion for text to image, and noise schedules.',
     desc='Diffusion model, forward process, reverse process, noise schedule, alpha bar, DDPM, noise prediction, score, DDIM, classifier free guidance, guidance scale, latent diffusion, Stable Diffusion, U-Net, DiT, cosine schedule, SDE, probability flow ODE, flow matching.',

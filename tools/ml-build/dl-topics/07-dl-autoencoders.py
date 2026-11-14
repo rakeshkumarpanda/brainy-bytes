@@ -478,7 +478,7 @@ K.must('KL', '&frac12;&Sigma;(&mu;&sup2; + &sigma;&sup2; &minus; 1 &minus; ln &s
 K.must('Discrete and latent', 'VQ-VAE: nearest codebook index, log<sub>2</sub>(size) bits. Latent spaces make diffusion cheap.')
 
 T = K.topic(
-    slug='dl-autoencoders', topic='dl-autoencoders', step=(3, 'Generative models', 'dl-s3', 'Networks that create new data: autoencoders and variational autoencoders, generative adversarial networks, and diffusion models.', 'Advanced'),
+    slug='dl-autoencoders', topic='dl-autoencoders', step=(3, 'Generative models', 'dl-s3', 'Networks that create new data: autoencoders and variational autoencoders, generative adversarial networks, diffusion models, and energy based models such as Boltzmann machines.', 'Advanced'),
     title='Autoencoders and variational autoencoders', short='Autoencoders and VAEs', badge='3.1', minutes=55,
     lead='Learn compact codes without labels: autoencoders against PCA, denoising and anomaly detection, variational autoencoders with the reparameterisation trick and the ELBO, and discrete codes behind modern generators.',
     desc='autoencoder, encoder, decoder, latent code, bottleneck, reconstruction error, PCA, denoising autoencoder, anomaly detection, variational autoencoder, VAE, reparameterisation trick, KL divergence, ELBO, prior, beta VAE, posterior collapse, VQ-VAE, codebook, latent space.',
