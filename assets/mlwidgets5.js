@@ -665,3 +665,118 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 3.3  explainability and fairness: Shapley values by orderings, and group thresholds
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box } = MLZ;
+  const NAMES = ['income', 'debt ratio', 'age'];
+  /* coalition values v(S) from the chapter's gradient boosting model and 200 background applicants */
+  const APPL = {
+    a: { x: ['38', '0.82', '29'], v: { '': 0.45, 0: 0.3, 1: 0.229, 2: 0.388, '01': 0.12, '02': 0.244, '12': 0.169, '012': 0.083 } },
+    b: { x: ['72', '0.25', '51'], v: { '': 0.45, 0: 0.752, 1: 0.68, 2: 0.466, '01': 0.905, '02': 0.814, '12': 0.687, '012': 0.919 } }
+  };
+  const ORDERS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+  const key = s => s.slice().sort().join('');
+  const sg = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(3);
+
+  trace('mlshapley', {
+    title: 'Shapley values: fair credit for each feature',
+    sub: 'Add the features one at a time in every possible order. Each time a feature joins, note how much the predicted chance of repaying changes. A feature&rsquo;s Shapley value is its average change over all 6 orders. The values come from the chapter&rsquo;s program.',
+    W: 600, H: 330,
+    params: [{ k: 'who', label: 'Applicant', type: 'select', v: 'a', opts: [['a', 'Income 38, debt ratio 0.82, age 29'], ['b', 'Income 72, debt ratio 0.25, age 51']] }],
+    tips: [
+      { t: 'The second applicant: income adds the most, and the total climbs from 0.45 to 0.919.', set: { who: 'b' }, play: true },
+      { t: 'Look at the debt ratio in different orders: what it adds depends on what came before. Averaging over orders is what makes the credit fair.', set: { who: 'a' }, play: true }
+    ],
+    frames(p) {
+      const A = APPL[p.who], v = A.v, phi = [0, 0, 0], fr = [{ A, rows: [], phi: null, say: `Base value: the average prediction over typical applicants is ${v[''].toFixed(3)}. The model says ${v['012'].toFixed(3)} for this applicant.` }];
+      const rows = [];
+      ORDERS.forEach(o => {
+        const seen = [], gains = [];
+        o.forEach(j => { const before = v[key(seen)]; seen.push(j); const g = v[key(seen)] - before; gains.push([j, g]); phi[j] += g / 6; });
+        rows.push(gains);
+        fr.push({ A, rows: rows.slice(), phi: null, say: `Order ${o.map(j => NAMES[j]).join(', ')}: ${gains.map(([j, g]) => `${NAMES[j]} ${sg(g)}`).join(', ')}.` });
+      });
+      fr.push({ A, rows, phi: phi.slice(), say: `Averages: ${phi.map((f, j) => `${NAMES[j]} ${sg(f)}`).join(', ')}. ${v[''].toFixed(3)} plus these is ${(v[''] + phi[0] + phi[1] + phi[2]).toFixed(3)}, exactly the prediction.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, `Applicant: income ${f.A.x[0]}, debt ratio ${f.A.x[1]}, age ${f.A.x[2]}`, 14, 22);
+      D.text(g, 'order', 14, 46, { s: 11, b: true, c: c.ink2 });
+      f.rows.forEach((gains, r) => {
+        const y = 66 + r * 24;
+        gains.forEach(([j, gv], i) => { const x = 14 + i * 98; box(z, x, y - 14, 92, 20, `${NAMES[j]} ${sg(gv)}`, { s: 10, fill: gv >= 0 ? 'rgba(22,163,74,0.14)' : 'rgba(220,38,38,0.12)', stroke: c.line, w: 1 }); });
+      });
+      if (f.phi) {
+        const X0 = 330, W = 250, sc = W / 1, Xv = v => X0 + v * sc;
+        head(z, 'waterfall: from base value to prediction', X0, 46, { s: 11 });
+        let cur = f.A.v[''];
+        D.line(g, Xv(0), 60, Xv(0), 250, c.line, 1); D.line(g, Xv(1), 60, Xv(1), 250, c.line, 1);
+        D.text(g, '0', Xv(0), 266, { a: 'center', s: 10, c: c.ink2 }); D.text(g, '1', Xv(1), 266, { a: 'center', s: 10, c: c.ink2 });
+        D.text(g, `base ${cur.toFixed(3)}`, X0, 76, { s: 11, c: c.ink }); D.line(g, Xv(cur), 82, Xv(cur), 96, c.ink2, 2);
+        f.phi.forEach((ph, j) => {
+          const y = 104 + j * 40, a = Math.min(cur, cur + ph), b = Math.max(cur, cur + ph);
+          g.fillStyle = ph >= 0 ? c.green : c.red; g.fillRect(Xv(a), y, Math.max(2, (b - a) * sc), 22);
+          D.text(g, `${NAMES[j]} ${sg(ph)}`, X0, y + 36, { s: 10, c: c.ink2 }); cur += ph;
+        });
+        D.text(g, `prediction ${cur.toFixed(3)}`, X0, 240, { s: 12, b: true, c: c.ink });
+      }
+      D.text(g, 'green: raises the chance of repaying   red: lowers it', 14, 316, { s: 11, c: c.ink2 });
+    }
+  });
+
+  const erf = x => { const s = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a)); };
+  const above = (t, m, s) => 0.5 * (1 - erf((t - m) / (s * Math.SQRT2)));
+  /* score distributions: positives (would repay) and negatives, per group, and each group's share of positives */
+  const G = { A: { pos: [0.62, 0.13], neg: [0.42, 0.13], base: 0.57 }, B: { pos: [0.52, 0.13], neg: [0.36, 0.13], base: 0.43 } };
+  const stats = (gr, t) => { const q = G[gr], tpr = above(t, ...q.pos), fpr = above(t, ...q.neg); return { tpr, fpr, sel: q.base * tpr + (1 - q.base) * fpr }; };
+  const solve = (f, target) => { let lo = 0, hi = 1; for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; if (f(mid) > target) lo = mid; else hi = mid; } return (lo + hi) / 2; };
+
+  trace('mlthreshold', {
+    title: 'One threshold or one per group',
+    sub: 'Scores of a loan model for two groups. Applicants above the threshold are approved. TPR is the share of people who would repay that get approved. FPR is the share of people who would not repay that get approved. Different fairness goals need different thresholds, and they cannot all hold at once when the groups&rsquo; repayment rates differ.',
+    W: 600, H: 330,
+    params: [{ k: 'rule', label: 'Threshold rule', type: 'select', v: 'single', opts: [['single', 'One threshold of 0.5 for both'], ['eo', 'Equal opportunity: same TPR'], ['dp', 'Demographic parity: same approval rate']] }],
+    tips: [
+      { t: 'Equal opportunity: group B gets a lower threshold so that people who would repay are approved at the same rate in both groups.', set: { rule: 'eo' }, play: true },
+      { t: 'Demographic parity: equal approval rates need an even lower threshold for B, which also approves more people who will not repay.', set: { rule: 'dp' }, play: true }
+    ],
+    frames(p) {
+      const tA = 0.5, sA = stats('A', tA);
+      let tB = 0.5;
+      if (p.rule === 'eo') tB = solve(t => stats('B', t).tpr, sA.tpr);
+      if (p.rule === 'dp') tB = solve(t => stats('B', t).sel, sA.sel);
+      const sB = stats('B', tB), base = { tA, tB, sA, sB };
+      return [
+        { ...base, k: 0, say: 'Two groups. In each, the green curve is people who would repay and the red curve is people who would not. Group B&rsquo;s scores sit lower.' },
+        { ...base, k: 1, say: `Group A threshold ${tA.toFixed(2)}: approves ${(sA.sel * 100).toFixed(0)} percent, TPR ${sA.tpr.toFixed(2)}, FPR ${sA.fpr.toFixed(2)}.` },
+        { ...base, k: 2, say: `Group B threshold ${tB.toFixed(2)}: approves ${(sB.sel * 100).toFixed(0)} percent, TPR ${sB.tpr.toFixed(2)}, FPR ${sB.fpr.toFixed(2)}.` },
+        { ...base, k: 3, say: p.rule === 'single' ? `Same rule, different outcomes: approval ratio B to A is ${(sB.sel / sA.sel).toFixed(2)}, below the 0.8 rule of thumb, and repayers in B are approved less often (TPR gap ${(sA.tpr - sB.tpr).toFixed(2)}).`
+          : p.rule === 'eo' ? `TPR is now equal (${sA.tpr.toFixed(2)}). Approval ratio ${(sB.sel / sA.sel).toFixed(2)}. The FPRs still differ, so equalised odds is not met.`
+            : `Approval rates are equal (ratio 1.00), but B&rsquo;s TPR is now ${sB.tpr.toFixed(2)} against ${sA.tpr.toFixed(2)} and its FPR ${sB.fpr.toFixed(2)}. Each fairness goal moves the others.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      ['A', 'B'].forEach((gr, r) => {
+        const y0 = 120 + r * 130, X = s => 40 + s * 360, q = G[gr], t = gr === 'A' ? f.tA : f.tB, st = gr === 'A' ? f.sA : f.sB;
+        D.line(g, 40, y0, 400, y0, c.ink2, 1); head(z, `group ${gr}`, 40, y0 - 92, { s: 12 });
+        [['pos', c.green, q.base], ['neg', c.red, 1 - q.base]].forEach(([k, col, w]) => {
+          const [m, s] = q[k]; g.save(); g.strokeStyle = col; g.lineWidth = 2; g.beginPath();
+          for (let i = 0; i <= 100; i++) { const x = i / 100, yv = w * Math.exp(-((x - m) ** 2) / (2 * s * s)); i ? g.lineTo(X(x), y0 - yv * 130) : g.moveTo(X(x), y0 - yv * 130); }
+          g.stroke(); g.restore();
+        });
+        D.text(g, '0', X(0), y0 + 14, { a: 'center', s: 10, c: c.ink2 }); D.text(g, '1', X(1), y0 + 14, { a: 'center', s: 10, c: c.ink2 });
+        if ((gr === 'A' && f.k >= 1) || (gr === 'B' && f.k >= 2)) {
+          D.line(g, X(t), y0 - 90, X(t), y0, c.purple, 2, [5, 3]); D.text(g, `t = ${t.toFixed(2)}`, X(t), y0 + 14, { a: 'center', s: 10, b: true, c: c.purple });
+          D.text(g, `approved ${(st.sel * 100).toFixed(0)}%`, 420, y0 - 56, { s: 12, b: true, c: c.ink });
+          D.text(g, `TPR ${st.tpr.toFixed(2)}`, 420, y0 - 36, { s: 12, c: c.green }); D.text(g, `FPR ${st.fpr.toFixed(2)}`, 420, y0 - 16, { s: 12, c: c.red });
+        }
+      });
+      head(z, 'green: would repay   red: would not   purple: threshold', 40, 18, { s: 11 });
+    }
+  });
+})();

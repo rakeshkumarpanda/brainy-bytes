@@ -9162,6 +9162,25 @@ function mlopsModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "mlops-explain-fair", title: "Explainability and fairness", emoji: "3.3", page: "content/mlops/mlops-explain-fair.html",
+        summary: "Permutation importance, Shapley values and SHAP, fairness metrics by group, mitigation, impossibility results and model cards.",
+        keywords: ["explainability", "SHAP", "Shapley values", "permutation importance", "fairness", "disparate impact", "equal opportunity", "Fairlearn", "model card"],
+        minutes: 55, counts: {"lessons": 8, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "global", title: "Which features does the model use?", emoji: "", group: "Lesson", keywords: ["feature importance", "impurity importance", "permutation importance", "Gini importance", "correlated features", "leakage"] },
+        { id: "shap", title: "Shapley values: why this one prediction?", emoji: "", group: "Lesson", keywords: ["Shapley value", "SHAP", "base value", "efficiency property", "TreeExplainer", "local explanation", "counterfactual explanation"] },
+        { id: "fair", title: "Is the model fair to every group?", emoji: "", group: "Lesson", keywords: ["fairness audit", "demographic parity", "disparate impact", "four fifths rule", "equal opportunity", "equalized odds", "proxy feature", "sensitive attribute"] },
+        { id: "tools", title: "SHAP and Fairlearn on your own computer", emoji: "", group: "Lesson", keywords: ["SHAP library", "Fairlearn", "MetricFrame", "ThresholdOptimizer", "beeswarm plot", "waterfall plot", "pip install"] },
+        { id: "tradeoff", title: "Fixing unfairness, and why you cannot have every kind", emoji: "", group: "Lesson", keywords: ["bias mitigation", "pre processing", "in processing", "post processing", "impossibility theorem", "calibration", "base rate", "ExponentiatedGradient"] },
+        { id: "cards", title: "Model cards and responsible release", emoji: "", group: "Lesson", keywords: ["model card", "datasheet", "EU AI Act", "GDPR Article 22", "human oversight", "responsible AI", "fairness gate"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "adverse action reasons"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
