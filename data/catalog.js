@@ -9585,6 +9585,26 @@ function cyCryptoModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-pqc", title: "Post quantum cryptography: Shor, lattices, ML-KEM and ML-DSA", emoji: "1.2", page: "content/cyber-security/cy-pqc.html",
+        summary: "the quantum threat, Shor and Grover, LWE, ML-KEM, ML-DSA and SLH-DSA, hash based signatures, hybrids and migration.",
+        keywords: ["post quantum", "Shor", "Grover", "LWE", "ML-KEM", "ML-DSA", "SLH-DSA", "Lamport", "hybrid", "migration"],
+        minutes: 85, counts: {"lessons": 9, "problems": 13, "quiz": 15, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "The quantum threat and why we must move now", emoji: "", group: "Lesson", keywords: ["post quantum cryptography", "PQC", "Shor", "Grover", "harvest now decrypt later", "Mosca inequality", "quantum threat", "qubits"] },
+        { id: "shor", title: "How Shor’s algorithm breaks RSA", emoji: "", group: "Lesson", keywords: ["Shor algorithm", "period finding", "quantum Fourier transform", "superposition", "factoring", "discrete log", "logical qubits", "Gidney 2025"] },
+        { id: "lwe", title: "Lattices and Learning With Errors", emoji: "", group: "Lesson", keywords: ["lattice", "shortest vector problem", "Learning With Errors", "LWE", "Regev", "Godel Prize", "ring LWE", "module LWE", "BKZ", "noise"] },
+        { id: "mlkem", title: "ML-KEM (Kyber): the new key exchange", emoji: "", group: "Lesson", keywords: ["ML-KEM", "Kyber", "FIPS 203", "key encapsulation", "KEM", "module LWE", "Fujisaki-Okamoto", "X25519MLKEM768", "hybrid", "KyberSlash", "OpenSSH"] },
+        { id: "sigs", title: "Post quantum signatures: ML-DSA, SLH-DSA and FN-DSA", emoji: "", group: "Lesson", keywords: ["ML-DSA", "Dilithium", "FIPS 204", "SLH-DSA", "SPHINCS+", "FIPS 205", "FN-DSA", "Falcon", "Lamport signature", "XMSS", "LMS", "Rainbow", "SIKE", "Fiat-Shamir with aborts"] },
+        { id: "migrate", title: "Migrating to post quantum cryptography", emoji: "", group: "Lesson", keywords: ["migration", "crypto inventory", "crypto agility", "hybrid", "PQXDH", "iMessage PQ3", "CNSA 2.0", "NIST IR 8547", "QKD", "BB84"] },
+        { id: "versus", title: "Post quantum options compared", emoji: "", group: "Lesson", keywords: ["comparison", "lattice", "hash based", "code based", "Classic McEliece", "HQC", "isogeny", "CSIDH", "diversity"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "NTT", "QROM", "BKZ", "core SVP", "masking", "formal verification", "libcrux"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

@@ -1522,3 +1522,169 @@ const CYEC = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Cryptography 3.2  Shor's idea: factoring becomes period finding
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const N0 = CYNUM;
+  trace('cyshor', {
+    title: 'Shor’s algorithm: factoring is finding a period',
+    sub: 'Pick a number a and look at a, a², a³, ... mod N. The values repeat with some period r. A quantum computer finds r fast with the quantum Fourier transform. The rest is ordinary maths: gcd(a^(r/2) ± 1, N) gives the factors.',
+    W: 600, H: 340,
+    params: [
+      { k: 'N', label: 'Number to factor N', type: 'text', v: '15' },
+      { k: 'a', label: 'Random base a', type: 'text', v: '7' }
+    ],
+    tips: [
+      { t: 'Play N = 15, a = 7. The powers repeat every 4 steps, and gcd(7² ± 1, 15) gives 3 and 5.', play: true },
+      { t: 'Try N = 21, a = 2. The period is 6 and the factors are 7 and 3.', set: { N: '21', a: '2' }, play: true },
+      { t: 'Try N = 15, a = 14. The period is 2, but 14¹ ≡ −1, so this a fails and Shor simply picks another.', set: { N: '15', a: '14' }, play: true }
+    ],
+    frames(p) {
+      const N = +p.N, a = +p.a;
+      if (!(N >= 6 && N <= 400 && N % 2 === 1) || N0.isPrime(N)) throw new Error('N must be an odd composite number from 9 to 400.');
+      if (!(a > 1 && a < N)) throw new Error('a must be between 2 and N − 1.');
+      const g = Number(N0.gcd(a, N));
+      const seq = []; let v = 1; for (let x = 0; x < 24; x++) { seq.push(v); v = v * a % N; }
+      let r = 1; while (Number(N0.pw(a, r, N)) !== 1 && r < N) r++;
+      const fr = [{ k: 1, say: `Look at a<sup>x</sup> mod N for x = 0, 1, 2, ... with a = ${a} and N = ${N}. ${g !== 1 ? `Lucky: gcd(${a}, ${N}) = ${g} already is a factor.` : 'The values bounce around, but they must repeat.'}`, show: 0, r }];
+      if (g !== 1) { fr.push({ k: 9, done: true, say: `gcd(a, N) = ${g}, so ${N} = ${g} &times; ${N / g}. In practice this almost never happens for a 2048 bit N.`, show: 0, r }); return fr.map(x => ({ ...x, N, a, seq })); }
+      fr.push({ k: 2, show: Math.min(24, 2 * r + 2), say: `The pattern repeats every <b>r = ${r}</b> steps: a<sup>${r}</sup> &equiv; 1 (mod ${N}). Finding r is the hard part classically, about as hard as factoring. Shor’s quantum circuit puts all x in superposition and the quantum Fourier transform reveals r in polynomial time.`, r });
+      if (r % 2 === 1) { fr.push({ k: 9, done: true, show: Math.min(24, 2 * r + 2), say: `r = ${r} is odd, so a<sup>r/2</sup> is not a whole power. Shor picks another a. At least half of all a work.`, r }); return fr.map(x => ({ ...x, N, a, seq })); }
+      const y = Number(N0.pw(a, r / 2, N));
+      if (y === N - 1) { fr.push({ k: 9, done: true, show: Math.min(24, 2 * r + 2), say: `a<sup>r/2</sup> = ${a}<sup>${r / 2}</sup> &equiv; ${y} &equiv; &minus;1 (mod ${N}). Then gcd(a<sup>r/2</sup> + 1, N) = N gives nothing, so pick another a.`, r, y }); return fr.map(x => ({ ...x, N, a, seq })); }
+      const f1 = Number(N0.gcd(y - 1, N)), f2 = Number(N0.gcd(y + 1, N));
+      fr.push({ k: 3, show: Math.min(24, 2 * r + 2), r, y, say: `r is even, so a<sup>r</sup> &minus; 1 = (a<sup>r/2</sup> &minus; 1)(a<sup>r/2</sup> + 1) &equiv; 0 (mod N). Here a<sup>r/2</sup> = ${a}<sup>${r / 2}</sup> mod ${N} = <b>${y}</b>.` });
+      fr.push({ k: 4, done: true, show: Math.min(24, 2 * r + 2), r, y, f1, f2, say: `gcd(${y} &minus; 1, ${N}) = <b>${f1}</b> and gcd(${y} + 1, ${N}) = <b>${f2}</b>. So ${N} = ${f1} &times; ${f2}. With a large fault tolerant quantum computer the same steps factor a 2048 bit RSA modulus. Estimates in 2025 put that at under a million noisy qubits.` });
+      return fr.map(x => ({ ...x, N, a, seq }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      const n = f.show, W = 23;
+      if (n) {
+        const mx = Math.max(...f.seq.slice(0, n));
+        f.seq.slice(0, n).forEach((v, x) => {
+          const h = 150 * v / Math.max(1, f.N - 1), X = 20 + x * W, Y = 190;
+          const one = v === 1;
+          D.rect(g, X, Y - h, W - 4, Math.max(2, h), { fill: one ? col.green : 'rgba(15,118,110,0.55)' });
+          D.text(g, String(v), X + (W - 4) / 2, Y - h - 4, { a: 'center', s: 9, b: true, c: one ? col.green : col.ink2 });
+          D.text(g, String(x), X + (W - 4) / 2, Y + 12, { a: 'center', s: 9, c: col.ink2 });
+        });
+        D.text(g, 'x →', 20, 216, { s: 10, b: true, c: col.ink2 });
+        if (f.k >= 2) for (let x = 0; x + f.r < n; x += f.r) { const X1 = 20 + x * W + 8, X2 = 20 + (x + f.r) * W + 8; D.line(g, X1, 228, X2, 228, col.orange, 2); D.text(g, 'r = ' + f.r, (X1 + X2) / 2, 242, { a: 'center', s: 10, b: true, c: col.orange }); }
+      }
+      cbox(z, 14, 10, 280, 28, `aˣ mod N   with a = ${f.a}, N = ${f.N}`, { s: 12, b: true, mono: true, fill: col.surf });
+      if (f.k >= 3 && f.y !== undefined) cbox(z, 14, 256, 280, 30, `a^(r/2) mod N = ${f.y}`, { s: 12, b: true, mono: true, fill: col.bg });
+      if (f.k >= 4) cbox(z, 306, 256, 280, 30, `gcd(${f.y}∓1, ${f.N}) = ${f.f1}, ${f.f2}`, { s: 13, b: true, mono: true, fill: col.green, c: '#fff' });
+      if (f.done && f.k === 9) cbox(z, 306, 256, 280, 30, 'this a fails: pick another', { s: 13, b: true, fill: col.orange, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 3.2  Learning With Errors: one bit hidden in noise around a circle mod q
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cylwe', {
+    title: 'Learning With Errors: a bit hidden in small noise',
+    sub: 'The value v − ⟨u, s⟩ lands near 0 for a 0 bit and near q/2 for a 1 bit, pushed off by the sum of small errors. The owner of s decodes by asking which half of the circle it is in. Too much noise and decryption fails.',
+    W: 600, H: 340,
+    params: [
+      { k: 'bit', label: 'Bit to send', type: 'select', v: '1', opts: [['0', '0'], ['1', '1']] },
+      { k: 'e', label: 'Size of each error (max)', type: 'range', v: 1, min: 0, max: 8, step: 1 },
+      { k: 'rows', label: 'Samples added together', type: 'range', v: 10, min: 1, max: 20, step: 1 }
+    ],
+    tips: [
+      { t: 'Play with errors of size 1 and 10 samples. The point lands close to q/2, so the bit 1 is decoded.', play: true },
+      { t: 'Raise the error size to 8. The total noise can pass q/4 and the bit may be decoded wrongly. Real schemes choose sizes so this is astronomically rare.', set: { e: 8, rows: 20 }, play: true },
+      { t: 'Set the error size to 0. Decoding is perfect, but then the public key is just A·s, which linear algebra solves at once.', set: { e: 0 }, play: true }
+    ],
+    frames(p) {
+      const q = 97, bit = +p.bit, E = +p.e, rows = +p.rows;
+      let seed = 2 + E * 31 + rows * 7; const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+      const errs = [...Array(rows)].map(() => Math.round((rnd() * 2 - 1) * E));
+      const noise = errs.reduce((a, b) => a + b, 0), center = bit ? Math.floor(q / 2) : 0, d = ((center + noise) % q + q) % q;
+      const dec = Math.min(d, q - d) < q / 4 ? 0 : 1;
+      const fr = [
+        { k: 1, say: `Work mod q = ${q}, drawn as a circle. The bit ${bit} is placed at ${center} (${bit ? 'half way round, q/2' : 'the top, 0'}).` },
+        { k: 2, say: `Encryption adds ${rows} public samples, and each carries an error between &minus;${E} and ${E}. Their sum is <b>${noise}</b>: ${errs.join(', ')}.` },
+        { k: 3, say: `The owner of s computes v &minus; &lang;u, s&rang; = ${center} + (${noise}) &equiv; <b>${d}</b> (mod ${q}).` },
+        { k: 4, done: true, say: `${d} is ${Math.min(d, q - d) < q / 4 ? 'within q/4 of 0' : 'within q/4 of q/2'}, so the decoded bit is <b>${dec}</b>. ${dec === bit ? 'Correct.' : 'Wrong! The noise pushed it past the boundary at q/4.'} Security comes from the noise: without it, solving for s is easy linear algebra. ML-KEM uses the same idea with polynomials.` }
+      ];
+      return fr.map(x => ({ ...x, q, bit, E, rows, noise, center, d, dec }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, cx = 170, cy = 170, R = 130;
+      const ang = v => -Math.PI / 2 + 2 * Math.PI * v / f.q, P = v => [cx + R * Math.cos(ang(v)), cy + R * Math.sin(ang(v))];
+      D.circle(g, cx, cy, R, { fill: 'rgba(15,118,110,0.06)', stroke: col.line, w: 2 });
+      // decision regions: near 0 (top) decodes 0, near q/2 (bottom) decodes 1
+      const [lx1, ly1] = P(f.q / 4), [lx2, ly2] = P(3 * f.q / 4);
+      D.line(g, lx1, ly1, lx2, ly2, col.red, 1.5, [5, 4]);
+      D.text(g, 'decode 0', cx, cy - 40, { a: 'center', s: 12, b: true, c: col.cv }); D.text(g, 'decode 1', cx, cy + 50, { a: 'center', s: 12, b: true, c: col.orange });
+      [[0, '0'], [Math.floor(f.q / 2), 'q/2 = 48'], [Math.round(f.q / 4), 'q/4'], [Math.round(3 * f.q / 4), '3q/4']].forEach(([v, t]) => { const [x, y] = P(v); D.circle(g, x, y, 3, { fill: col.ink2 }); const [tx, ty] = [cx + (R + 18) * Math.cos(ang(v)), cy + (R + 14) * Math.sin(ang(v))]; D.text(g, t, tx, ty + 4, { a: 'center', s: 10, b: true, c: col.ink2 }); });
+      if (f.k >= 1) { const [x, y] = P(f.center); D.circle(g, x, y, 8, { fill: 'rgba(15,118,110,0.35)', stroke: col.cv, w: 2 }); }
+      if (f.k >= 3) { const [x, y] = P(f.d); D.circle(g, x, y, 7, { fill: f.dec === f.bit ? col.green : col.red, stroke: col.ink, w: 1.5 }); }
+      cbox(z, 340, 20, 246, 30, `q = ${f.q}   bit = ${f.bit}`, { s: 13, b: true, mono: true, fill: col.surf });
+      if (f.k >= 2) cbox(z, 340, 60, 246, 44, [`${f.rows} errors, each ≤ ${f.E}`, `total noise = ${f.noise}`], { s: 12, b: true, mono: true, fill: col.bg });
+      if (f.k >= 3) cbox(z, 340, 114, 246, 30, `v − ⟨u,s⟩ ≡ ${f.d}`, { s: 13, b: true, mono: true, fill: col.bg });
+      if (f.done) cbox(z, 340, 154, 246, 36, `decoded ${f.dec}: ${f.dec === f.bit ? 'correct' : 'WRONG'}`, { s: 14, b: true, fill: f.dec === f.bit ? col.green : col.red, c: '#fff' });
+      if (f.done) cbox(z, 340, 200, 246, 44, ['safe if |noise| < q/4 = 24', 'and secure because noise ≠ 0'], { s: 12, b: true, fill: col.surf });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 3.2  Lamport one time signatures with an 8 bit toy hash
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8 } = CYZ;
+  const h8 = t => sha256(utf8(t))[0];
+  trace('cylamport', {
+    title: 'Lamport signatures: one secret revealed per bit',
+    sub: 'The private key is two random secrets for every bit of the hash. The public key is their hashes. To sign, reveal the secret matching each bit. A toy 8 bit hash keeps the picture small (real keys use 256 bits).',
+    W: 600, H: 340,
+    params: [
+      { k: 'm1', label: 'First message', type: 'text', v: 'pay 10' },
+      { k: 'm2', label: 'Second message signed with the SAME key', type: 'text', v: 'pay 99' }
+    ],
+    tips: [
+      { t: 'Play it. One message reveals 8 of the 16 secrets. A second message reveals more, which lets an attacker mix and match.', play: true },
+      { t: 'Make the two messages the same. Nothing new leaks, which is why only a different second message is dangerous.', set: { m2: 'pay 10' }, play: true }
+    ],
+    frames(p) {
+      const m1 = String(p.m1), m2 = String(p.m2), b1 = h8(m1), b2 = h8(m2);
+      const bits = v => [...Array(8)].map((_, i) => (v >> (7 - i)) & 1);
+      const B1 = bits(b1), B2 = bits(b2), both = B1.filter((v, i) => v !== B2[i]).length;
+      const fr = [
+        { k: 1, say: 'Key generation: 16 random secrets, two per hash bit (row 0 and row 1). The public key is the 16 hashes of those secrets. Only a hash function is needed, so quantum computers do not help an attacker beyond Grover.' },
+        { k: 2, say: `Sign "${m1}": its toy hash is ${B1.join('')}. For each bit, reveal the secret in the matching row. That reveals 8 of the 16 secrets. Anyone checks each revealed secret against the public hash.` },
+        { k: 3, say: `Signing "${m2}" (hash ${B2.join('')}) with the same key reveals the other secret in ${both} positions.` },
+        { k: 4, done: true, say: `Now the attacker knows both secrets in ${both} positions and can sign any message whose hash matches the known secrets, ${2 ** both} possible hashes here. So a Lamport key must sign only one message. XMSS and LMS use a Merkle tree of many one time keys, and SLH-DSA (SPHINCS+) builds a stateless scheme with few time signatures.` }
+      ];
+      return fr.map(x => ({ ...x, B1, B2, m1, m2, both }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, W = 60, X0 = 70;
+      D.text(g, 'bit', 20, 36, { s: 11, b: true, c: col.ink2 });
+      for (let i = 0; i < 8; i++) D.text(g, String(i), X0 + i * W + W / 2 - 3, 36, { a: 'center', s: 11, b: true, c: col.ink2 });
+      [0, 1].forEach(row => {
+        D.text(g, 'row ' + row, 20, 76 + row * 70, { s: 11, b: true, c: col.ink2 });
+        for (let i = 0; i < 8; i++) {
+          const r1 = f.k >= 2 && f.B1[i] === row, r2 = f.k >= 3 && f.B2[i] === row;
+          const fill = r1 && r2 ? col.cv : r1 ? 'rgba(15,118,110,0.45)' : r2 ? 'rgba(234,88,12,0.5)' : col.surf;
+          cbox(z, X0 + i * W, 50 + row * 70, W - 6, 52, [r1 || r2 ? 'secret' : '••••', 'hash ✓'], { s: 10, b: true, fill, c: (r1 && r2) ? '#fff' : col.ink });
+          if (f.k >= 4 && f.B1[i] !== f.B2[i]) D.rect(g, X0 + i * W - 2, 46, W - 2, 132, { stroke: col.red, w: 2 });
+        }
+      });
+      if (f.k >= 2) cbox(z, 14, 200, 280, 30, `"${f.m1.slice(0, 16)}" hash ${f.B1.join('')}`, { s: 12, b: true, mono: true, fill: 'rgba(15,118,110,0.2)' });
+      if (f.k >= 3) cbox(z, 306, 200, 280, 30, `"${f.m2.slice(0, 16)}" hash ${f.B2.join('')}`, { s: 12, b: true, mono: true, fill: 'rgba(234,88,12,0.2)' });
+      if (f.done) cbox(z, 14, 244, 572, 34, `both secrets known in ${f.both} of 8 positions: forgeries possible`, { s: 13, b: true, fill: f.both ? col.red : col.green, c: '#fff' });
+    }
+  });
+})();
