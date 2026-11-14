@@ -9430,6 +9430,27 @@ function cyCryptoModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-aes", title: "Symmetric encryption: AES, GF(2⁸) and modes of operation", emoji: "1.2", page: "content/cyber-security/cy-aes.html",
+        summary: "GF(2⁸), the AES round, ECB, CBC and CTR, padding oracles, AES-GCM and key sizes.",
+        keywords: ["AES", "GF(2^8)", "S-box", "ECB", "CBC", "CTR", "GCM", "padding oracle", "ChaCha20", "Grover"],
+        minutes: 75, counts: {"lessons": 10, "problems": 11, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Symmetric encryption and block ciphers", emoji: "", group: "Lesson", keywords: ["symmetric encryption", "block cipher", "DES", "3DES", "AES", "Rijndael", "Deep Crack", "confusion", "diffusion", "permutation", "ChaCha20"] },
+        { id: "gf", title: "The maths inside AES: the field GF(2<sup>8<\/sup>)", emoji: "", group: "Lesson", keywords: ["GF(2^8)", "finite field", "Galois field", "polynomial", "xtime", "0x11B", "irreducible polynomial", "inverse", "S-box", "linear cryptanalysis", "differential cryptanalysis"] },
+        { id: "aes", title: "How AES works: rounds, state and key schedule", emoji: "", group: "Lesson", keywords: ["AES", "rounds", "state", "SubBytes", "ShiftRows", "MixColumns", "AddRoundKey", "key schedule", "AES-128", "AES-256", "biclique", "AES-NI", "FIPS 197"] },
+        { id: "modes", title: "Modes of operation: ECB, CBC and CTR", emoji: "", group: "Lesson", keywords: ["mode of operation", "ECB", "CBC", "CTR", "GCM", "XTS", "IV", "nonce", "ECB penguin", "BEAST", "Feistel network", "parallel encryption"] },
+        { id: "padding", title: "Padding and the padding oracle attack", emoji: "", group: "Lesson", keywords: ["padding", "PKCS 7", "padding oracle", "Vaudenay", "POODLE", "Lucky Thirteen", "CBC bit flipping", "encrypt then MAC"] },
+        { id: "aead", title: "Authenticated encryption: AES-GCM and ChaCha20-Poly1305", emoji: "", group: "Lesson", keywords: ["AEAD", "authenticated encryption", "AES-GCM", "ChaCha20-Poly1305", "tag", "associated data", "nonce reuse", "forbidden attack", "GCM-SIV", "TLS 1.3", "encrypt then MAC"] },
+        { id: "keysize", title: "Key sizes, brute force and the birthday bound", emoji: "", group: "Lesson", keywords: ["key size", "brute force", "Grover", "quantum", "AES-256", "birthday bound", "block size", "Sweet32", "3DES", "2^128"] },
+        { id: "versus", title: "Symmetric choices compared", emoji: "", group: "Lesson", keywords: ["comparison", "AES-GCM vs ChaCha20", "CBC HMAC", "XTS", "ECB", "WireGuard", "libsodium"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "PRP", "IND-CCA", "side channel", "cache timing", "power analysis", "Ascon", "GCM-SIV", "lightweight cryptography"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
