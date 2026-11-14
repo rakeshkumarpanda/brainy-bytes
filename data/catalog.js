@@ -9284,6 +9284,27 @@ function cyFoundModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-risk", title: "Risk in numbers: matrices, ALE, attack trees and continuity", emoji: "1.2", page: "content/cyber-security/cy-risk.html",
+        summary: "risk matrices, SLE, ARO and ALE, risk responses and control types, STRIDE and attack trees, FAIR simulation, RTO, RPO and the nines.",
+        keywords: ["risk", "risk matrix", "ALE", "SLE", "ARO", "controls", "STRIDE", "attack tree", "FAIR", "RTO RPO"],
+        minutes: 60, counts: {"lessons": 10, "problems": 11, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "What risk is and why we measure it", emoji: "", group: "Lesson", keywords: ["risk", "likelihood", "impact", "risk management", "inherent risk", "residual risk", "risk appetite"] },
+        { id: "matrix", title: "Qualitative risk: the risk matrix", emoji: "", group: "Lesson", keywords: ["qualitative risk", "risk matrix", "heat map", "risk register", "likelihood score", "impact score", "appetite"] },
+        { id: "ale", title: "Quantitative risk: SLE, ARO and ALE", emoji: "", group: "Lesson", keywords: ["quantitative risk", "SLE", "ALE", "ARO", "AV", "EF", "asset value", "exposure factor", "single loss expectancy", "annualised loss expectancy", "cost benefit", "safeguard value"] },
+        { id: "respond", title: "What to do with a risk: four responses and control types", emoji: "", group: "Lesson", keywords: ["risk response", "avoid", "mitigate", "transfer", "accept", "cyber insurance", "control categories", "technical", "managerial", "operational", "physical", "preventive", "detective", "corrective", "deterrent", "compensating", "directive"] },
+        { id: "threat", title: "Threat modelling: STRIDE and attack trees", emoji: "", group: "Lesson", keywords: ["threat modelling", "STRIDE", "spoofing", "tampering", "repudiation", "information disclosure", "denial of service", "elevation of privilege", "attack tree", "Schneier", "AND OR node"] },
+        { id: "simulate", title: "Better numbers: FAIR and Monte Carlo simulation", emoji: "", group: "Lesson", keywords: ["FAIR", "Monte Carlo", "simulation", "loss event frequency", "loss magnitude", "percentile", "loss exceedance", "heavy tail"] },
+        { id: "continuity", title: "Availability numbers: RTO, RPO, MTBF and the nines", emoji: "", group: "Lesson", keywords: ["RTO", "RPO", "MTD", "MTBF", "MTTR", "availability", "nines", "downtime", "business continuity", "redundancy"] },
+        { id: "frameworks", title: "Risk frameworks used in the real world", emoji: "", group: "Lesson", keywords: ["NIST RMF", "SP 800-37", "SP 800-53", "SP 800-30", "ISO 27005", "ISO 27001", "framework", "qualitative vs quantitative", "FAIR"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "value at risk", "correlated risk", "cyber insurance", "externalities", "game theory"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
