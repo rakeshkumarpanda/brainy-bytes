@@ -26,7 +26,50 @@ const CYZ = (() => {
   /* a number as fixed width binary */
   const bin = (v, n = 8) => (v >>> 0).toString(2).padStart(n, '0').slice(-n);
   const hex = (v, n = 2) => (v >>> 0).toString(16).toUpperCase().padStart(n, '0');
-  return { cbox, pairs, pct, bin, hex, D, f2, box, rr, fit, wrap };
+  /* SHA-256 (FIPS 180-4) of a list of byte values, returned as 32 byte values. The round constants are the
+     fractional parts of the cube roots of the first 64 primes, and the start values those of the square roots
+     of the first 8, exactly as the standard defines them. Checked against Node crypto for 300 random inputs. */
+  const sha256 = (() => {
+    const K = [], H0 = [];
+    let n = 2;
+    const frac = x => ((x - Math.floor(x)) * 4294967296) >>> 0;
+    while (K.length < 64) {
+      let prime = true;
+      for (let d = 2; d * d <= n; d++) if (n % d === 0) { prime = false; break; }
+      if (prime) { if (H0.length < 8) H0.push(frac(Math.sqrt(n))); K.push(frac(Math.cbrt(n))); }
+      n++;
+    }
+    const rot = (x, r) => (x >>> r) | (x << (32 - r));
+    return bytes => {
+      const m = Array.from(bytes), bitLen = m.length * 8;
+      m.push(0x80);
+      while (m.length % 64 !== 56) m.push(0);
+      const hi = Math.floor(bitLen / 4294967296), lo = bitLen >>> 0;
+      for (const v of [hi, lo]) for (let s = 24; s >= 0; s -= 8) m.push((v >>> s) & 255);
+      const h = H0.slice(), w = new Array(64);
+      for (let o = 0; o < m.length; o += 64) {
+        for (let i = 0; i < 16; i++) w[i] = ((m[o + 4 * i] << 24) | (m[o + 4 * i + 1] << 16) | (m[o + 4 * i + 2] << 8) | m[o + 4 * i + 3]) >>> 0;
+        for (let i = 16; i < 64; i++) {
+          const s0 = rot(w[i - 15], 7) ^ rot(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+          const s1 = rot(w[i - 2], 17) ^ rot(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+          w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+        }
+        let [a, b, c, d, e, f, g, k] = h;
+        for (let i = 0; i < 64; i++) {
+          const t1 = (k + (rot(e, 6) ^ rot(e, 11) ^ rot(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) >>> 0;
+          const t2 = ((rot(a, 2) ^ rot(a, 13) ^ rot(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+          k = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+        }
+        [a, b, c, d, e, f, g, k].forEach((v, i) => { h[i] = (h[i] + v) >>> 0; });
+      }
+      const out = [];
+      h.forEach(v => { for (let s = 24; s >= 0; s -= 8) out.push((v >>> s) & 255); });
+      return out;
+    };
+  })();
+  /* text to UTF-8 byte values */
+  const utf8 = t => Array.from(new TextEncoder().encode(String(t)));
+  return { cbox, pairs, pct, bin, hex, sha256, utf8, D, f2, box, rr, fit, wrap };
 })();
 
 /* =====================================================================================================
@@ -779,6 +822,230 @@ const CYZ = (() => {
       });
       if (f.k >= 3) D.text(g, 'established', 84, 164, { a: 'right', s: 10, b: true, c: c.green });
       if (f.done) D.text(g, 'closed', 510, 330, { a: 'center', s: 11, b: true, c: c.red });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 2.3  text to bytes: UTF-8 code points, hex, bits and base64 groups of three bytes
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, utf8, bin, hex } = CYZ;
+  const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const X0 = 110, CW = 52;
+  trace('cybytes', {
+    title: 'From text to bytes: UTF-8, hex and base64',
+    sub: 'Computers store bytes, not letters. Type a short word and watch each character become UTF-8 bytes, then hex, then base64, the three forms you meet in every security tool.',
+    W: 600, H: 340,
+    params: [{ k: 'text', label: 'Text (up to 9 bytes)', type: 'text', v: 'café' }],
+    tips: [
+      { t: 'Play it with café. The letters c, a and f take 1 byte each, but é takes 2 bytes: c3 a9.', play: true },
+      { t: 'Try Hi!. Three bytes make exactly one base64 group of four letters, so there is no = padding.', set: { text: 'Hi!' }, play: true },
+      { t: 'Try ₹5. The rupee sign is U+20B9 and needs 3 bytes in UTF-8.', set: { text: '₹5' }, play: true }
+    ],
+    frames(p) {
+      const t = String(p.text);
+      const chars = Array.from(t).map(ch => ({ ch, cp: ch.codePointAt(0), b: utf8(ch) }));
+      const bytes = utf8(t);
+      if (!bytes.length) throw new Error('Type at least one character.');
+      if (bytes.length > 9) throw new Error(`That is ${bytes.length} bytes. Keep it to 9 bytes or fewer so every byte fits on the screen.`);
+      let at = 0;
+      chars.forEach(c => { c.at = at; at += c.b.length; });
+      const fr = [];
+      chars.forEach((c, i) => fr.push({ kc: i + 1, say: `"${c.ch}" is Unicode code point U+${hex(c.cp, 4)} (${c.cp} in decimal). UTF-8 stores it in <b>${c.b.length} byte${c.b.length > 1 ? 's' : ''}</b>: ${c.b.map(v => hex(v).toLowerCase()).join(' ')}. ${c.b.length === 1 ? 'Code points below 128 (plain English letters and digits) take one byte, the same as old ASCII.' : 'Code points from 128 up take 2, 3 or 4 bytes. The first byte says how many follow.'}` }));
+      const hx = bytes.map(v => hex(v).toLowerCase()).join('');
+      fr.push({ kc: chars.length, hexd: true, say: `In hex every byte is two digits from 0 to f. Python: <code>'${t}'.encode().hex()</code> gives <b>${hx}</b>. Hashes, keys and packet dumps are all shown like this.` });
+      const G = Math.ceil(bytes.length / 3), out = [];
+      for (let g = 0; g < G; g++) {
+        const part = bytes.slice(3 * g, 3 * g + 3), n = part.length;
+        const v = (part[0] << 16) | ((part[1] || 0) << 8) | (part[2] || 0);
+        const six = [18, 12, 6, 0].map(s => (v >> s) & 63);
+        const letters = six.map((x, i) => (i <= n ? B64[x] : '='));
+        out.push(...letters);
+        fr.push({ kc: chars.length, hexd: true, g: g + 1, say: `Base64 takes ${n === 3 ? '3 bytes = 24 bits' : `the last ${n} byte${n > 1 ? 's' : ''} (filled up with zero bits)`} and cuts them into 6 bit numbers: ${six.slice(0, n + 1).join(', ')}. Each number picks one of 64 letters (A to Z, a to z, 0 to 9, + and /): <b>${letters.join('')}</b>.${n < 3 ? ` The ${3 - n} missing byte${n === 1 ? 's become' : ' becomes'} "=" padding.` : ''}` });
+      }
+      const b64 = out.join('');
+      fr.push({ kc: chars.length, hexd: true, g: G, done: true, b64, hx, say: `Base64 = <b>${b64}</b>. Length = 4 &times; ceil(${bytes.length} / 3) = ${4 * G} characters. Base64 is an <b>encoding</b>, not encryption: anyone can turn it back. It only makes bytes safe to put in emails, URLs and JSON.` });
+      return fr.map(x => ({ ...x, chars, bytes, b64, hx }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const lab = (t, y) => D.text(g, t, 14, y, { s: 11, b: true, c: c.ink2 });
+      lab('character', 34); lab('UTF-8 (hex)', 72); lab('bits', 103);
+      f.chars.slice(0, f.kc).forEach(ch => {
+        cbox(z, X0 + ch.at * CW, 14, ch.b.length * CW - 4, 32, [ch.ch, 'U+' + hex(ch.cp, 4)], { s: 11, b: true, fill: c.bg });
+        ch.b.forEach((v, j) => {
+          const x = X0 + (ch.at + j) * CW;
+          cbox(z, x, 56, CW - 4, 26, hex(v).toLowerCase(), { s: 13, b: true, mono: true, fill: c.surf });
+          cbox(z, x, 88, CW - 4, 22, bin(v), { s: 9, mono: true, fill: c.surf, c: c.ink2 });
+        });
+      });
+      if (f.g) {
+        lab('6 bit values', 152); lab('base64', 186);
+        for (let gi = 0; gi < f.g; gi++) {
+          const part = f.bytes.slice(3 * gi, 3 * gi + 3), n = part.length;
+          const v = (part[0] << 16) | ((part[1] || 0) << 8) | (part[2] || 0);
+          const gx = X0 + gi * 3 * CW;
+          D.line(g, gx, 120, gx + 3 * CW - 4, 120, c.cv, 2);
+          for (let si = 0; si < 4; si++) {
+            const sx = gx + si * (3 * CW / 4), pad = si > n, val = (v >> (18 - 6 * si)) & 63;
+            cbox(z, sx, 134, 3 * CW / 4 - 4, 26, pad ? '' : String(val), { s: 11, mono: true, fill: c.surf });
+            cbox(z, sx, 168, 3 * CW / 4 - 4, 28, pad ? '=' : B64[val], { s: 15, b: true, mono: true, fill: pad ? 'rgba(234,88,12,0.18)' : 'rgba(15,118,110,0.18)' });
+          }
+        }
+      }
+      if (f.hexd) cbox(z, 14, 214, 572, 30, 'hex   ' + f.hx, { s: 13, b: true, mono: true, fill: c.bg });
+      if (f.done) {
+        cbox(z, 14, 252, 572, 30, 'base64   ' + f.b64, { s: 13, b: true, mono: true, fill: c.bg });
+        cbox(z, 14, 292, 572, 36, `length = 4 × ceil(${f.bytes.length} / 3) = ${f.b64.length}`, { s: 14, b: true, fill: c.cv, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 2.3  the avalanche effect: change one character and about half the bits of SHA-256 flip
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, utf8, sha256 } = CYZ;
+  const X0 = 110;
+  const hexOf = t => sha256(utf8(t)).map(v => v.toString(16).padStart(2, '0')).join('');
+  trace('cyavalanche', {
+    title: 'The avalanche effect: one small change, a completely different hash',
+    sub: 'A good hash such as SHA-256 turns any input into 256 bits. Change one character and about half of those bits flip, so the new hash shows nothing about the old one. The hashes here are real SHA-256 values.',
+    W: 600, H: 340,
+    params: [
+      { k: 'a', label: 'Message A', type: 'text', v: 'pay 100 to Riya' },
+      { k: 'b', label: 'Message B', type: 'text', v: 'pay 900 to Riya' }
+    ],
+    tips: [
+      { t: 'Play it. Only one character differs, yet about 128 of the 256 bits change.', play: true },
+      { t: 'Make B the same as A. Identical inputs always give identical hashes. That is how a download checksum proves a file was not changed.', set: { b: 'pay 100 to Riya' }, play: true },
+      { t: 'Change only upper and lower case: Pay 100 to Riya. To the hash, P and p are different bytes.', set: { b: 'Pay 100 to Riya' }, play: true }
+    ],
+    frames(p) {
+      const a = String(p.a), b = String(p.b), ha = hexOf(a), hb = hexOf(b);
+      let digits = 0, bits = 0;
+      const diff = [];
+      for (let i = 0; i < 64; i++) {
+        if (ha[i] !== hb[i]) digits++;
+        const x = parseInt(ha[i], 16) ^ parseInt(hb[i], 16);
+        for (let s = 3; s >= 0; s--) { const d = (x >> s) & 1; diff.push(d); bits += d; }
+      }
+      const same = a === b;
+      const fr = [
+        { k: 1, say: `SHA-256 of message A, "${a}", written as 64 hex digits (256 bits): <b>${ha.slice(0, 16)}...</b>` },
+        { k: 2, say: `SHA-256 of message B, "${b}": <b>${hb.slice(0, 16)}...</b> ${same ? 'The inputs are identical, so the hashes are identical too.' : 'Look at both rows: they share nothing visible.'}` },
+        { k: 3, say: `Hex digits that differ are orange: <b>${digits} of 64</b>. Two random hex digits match one time in 16, so about 4 of 64 match by luck${same ? ', but identical inputs match everywhere' : ''}.` },
+        { k: 4, say: `Now bit by bit. <b>${bits} of 256 bits</b> are different. For a good hash each bit flips with probability 1/2, so we expect 256 &times; 1/2 = 128, give or take about &radic;(256 &times; 1/4) = 8.` },
+        { k: 5, done: true, say: same ? 'Same input, same hash, every time. This is what makes hashes useful for checking files and storing passwords.' : `${bits} bits changed, close to the expected 128. This is the <b>avalanche effect</b> (strict avalanche criterion, Webster and Tavares, 1985). An attacker cannot nudge a message towards a target hash, and a hash leaks nothing about how close two inputs are.` }
+      ];
+      return fr.map(x => ({ ...x, a, b, ha, hb, diff, bits, digits }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const hexRows = (h, other, y, hl) => {
+        for (let i = 0; i < 64; i++) {
+          const x = X0 + (i % 32) * 15, yy = y + Math.floor(i / 32) * 20;
+          const differ = h[i] !== other[i];
+          cbox(z, x, yy, 14, 18, h[i], { s: 11, mono: true, b: true, r: 2, fill: hl ? (differ ? 'rgba(234,88,12,0.28)' : 'rgba(22,163,74,0.22)') : c.surf });
+        }
+      };
+      if (f.k >= 1) { D.text(g, 'A: "' + f.a + '"', 14, 16, { s: 12, b: true, c: c.ink }); D.text(g, 'SHA-256(A)', 14, 46, { s: 11, b: true, c: c.ink2 }); hexRows(f.ha, f.hb, 26, f.k >= 3); }
+      if (f.k >= 2) { D.text(g, 'B: "' + f.b + '"', 14, 86, { s: 12, b: true, c: c.ink }); D.text(g, 'SHA-256(B)', 14, 116, { s: 11, b: true, c: c.ink2 }); hexRows(f.hb, f.ha, 96, f.k >= 3); }
+      if (f.k >= 4) {
+        D.text(g, 'bits that', 14, 186, { s: 11, b: true, c: c.ink2 }); D.text(g, 'differ', 14, 200, { s: 11, b: true, c: c.ink2 });
+        f.diff.forEach((d, i) => {
+          const x = X0 + (i % 32) * 15, y = 150 + Math.floor(i / 32) * 13;
+          g.fillStyle = d ? c.red : c.surf; g.fillRect(x, y, 13, 11);
+        });
+        cbox(z, X0, 262, 476, 28, `${f.bits} of 256 bits changed (${(f.bits / 2.56).toFixed(1)}%)`, { s: 14, b: true, fill: f.bits ? c.cv : c.green, c: '#fff' });
+      }
+      if (f.done) D.text(g, f.bits ? 'expected 128 ± 8: the hash hides how similar the inputs were' : 'identical inputs: 0 bits differ', X0, 316, { s: 12, b: true, c: c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 2.3  a regular expression reads sshd log lines and counts failed logins per address
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const LINES = [
+    '09:00:01 sshd: Failed password for root from 203.0.113.7 port 51022',
+    '09:00:03 sshd: Failed password for root from 203.0.113.7 port 51023',
+    '09:00:04 sshd: Accepted password for riya from 198.51.100.4 port 50110',
+    '09:00:06 sshd: Failed password for invalid user admin from 203.0.113.7 port 51030',
+    '09:00:09 sshd: Failed password for amit from 198.51.100.23 port 40001',
+    '09:00:11 sshd: Failed password for root from 203.0.113.7 port 51041',
+    '09:00:15 CRON: session opened for user root',
+    '09:00:20 sshd: Failed password for amit from 198.51.100.23 port 40007'
+  ];
+  trace('cyregex', {
+    title: 'Reading logs with a regular expression',
+    sub: 'A regular expression is a search pattern. The parts in brackets are groups that capture text. Step through eight sshd log lines, capture who and where each failed login came from, and count per address.',
+    W: 600, H: 340,
+    params: [
+      { k: 'pat', label: 'Pattern (the last group is counted)', type: 'text', v: 'Failed password for (\\S+) from (\\S+)' },
+      { k: 'lim', label: 'Block at this many failures', type: 'range', v: 3, min: 1, max: 5 }
+    ],
+    tips: [
+      { t: 'Play it. Watch line 4: it is a failed login, but the pattern misses it, so 203.0.113.7 shows only 3 failures instead of 4.', play: true },
+      { t: 'Fix the pattern with an optional part: (?:invalid user )? means "these words may or may not be here". Now line 4 is caught.', set: { pat: 'Failed password for (?:invalid user )?(\\S+) from (\\S+)' }, play: true },
+      { t: 'Keep only the user group to count user names instead of addresses. A spray of many user names is a different attack from many tries on one.', set: { pat: 'Failed password for (?:invalid user )?(\\S+) from' }, play: true }
+    ],
+    frames(p) {
+      let re;
+      try { re = new RegExp(String(p.pat).replace(/\(\?P</g, '(?<')); } catch (e) { throw new Error('That is not a valid regular expression: ' + e.message); }
+      const counts = {}, marks = [], fr = [];
+      LINES.forEach((line, i) => {
+        const m = line.match(re);
+        let say;
+        if (m) {
+          const key = m.length > 1 ? m[m.length - 1] : m[0];
+          counts[key] = (counts[key] || 0) + 1;
+          marks.push(1);
+          const groups = m.slice(1).map((v, j) => `group ${j + 1} = <b>${v}</b>`).join(', ');
+          say = `Line ${i + 1} matches. ${groups || `The whole match is <b>${m[0]}</b>`}. Count for ${key} is now ${counts[key]}.`;
+        } else {
+          marks.push(0);
+          say = /Failed/.test(line)
+            ? `Line ${i + 1} is a failed login too, but the pattern does <b>not</b> match it. After "for" comes "invalid user admin", so "(\\S+) from" cannot fit. Attackers who guess user names that do not exist slip past a careless pattern.`
+            : `Line ${i + 1} does not match, which is right: it is ${/Accepted/.test(line) ? 'a successful login' : 'a scheduled job, not a login'}.`;
+        }
+        fr.push({ i, say, counts: { ...counts }, marks: marks.slice(), m: m ? Array.from(m) : null });
+      });
+      const keys = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+      const bad = keys.filter(k => counts[k] >= p.lim);
+      fr.push({ i: -1, done: true, counts: { ...counts }, marks: marks.slice(), m: null, keys, bad,
+        say: bad.length ? `With a limit of ${p.lim}, <b>${bad.join(', ')}</b> would be blocked. Tools such as fail2ban run exactly this loop on live logs and add a firewall rule.` : `No key reaches the limit of ${p.lim}, so nothing is blocked.` });
+      return fr.map(x => ({ ...x, lim: p.lim }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const shown = f.marks.length;
+      LINES.forEach((line, i) => {
+        const y = 8 + i * 22, cur = i === f.i;
+        if (cur) cbox(z, 40, y, 546, 20, '', { fill: c.bg, stroke: c.orange });
+        D.text(g, line, 46, y + 14, { s: 10, mono: true, c: i < shown ? c.ink : c.ink2 });
+        if (i < shown) cbox(z, 14, y + 1, 20, 18, f.marks[i] ? '✓' : '×', { s: 12, b: true, fill: f.marks[i] ? c.green : c.surf, c: f.marks[i] ? '#fff' : c.red, r: 3 });
+      });
+      if (f.m) cbox(z, 14, 188, 572, 26, f.m.length > 1 ? f.m.slice(1).map((v, j) => `group ${j + 1} = ${v}`).join('     ') : 'match: ' + f.m[0], { s: 12, b: true, mono: true, fill: c.surf });
+      const keys = Object.keys(f.counts).sort((a, b) => f.counts[b] - f.counts[a]).slice(0, 3);
+      keys.forEach((k, r) => {
+        const y = 224 + r * 28, n = f.counts[k], over = n >= f.lim;
+        D.text(g, k, 14, y + 16, { s: 11, b: true, mono: true, c: c.ink });
+        g.fillStyle = over && f.done ? c.red : c.cv; g.fillRect(150, y + 3, Math.min(n, 6) * 66, 18);
+        D.text(g, String(n) + (over && f.done ? '  block' : ''), 156 + Math.min(n, 6) * 66, y + 17, { s: 11, b: true, c: c.ink });
+      });
+      if (keys.length) {
+        const lx = 150 + f.lim * 66;
+        D.line(g, lx, 220, lx, 310, c.red, 2, [4, 3]);
+        D.text(g, 'limit ' + f.lim, lx + 4, 330, { s: 11, b: true, c: c.red });
+      }
     }
   });
 })();

@@ -9368,6 +9368,27 @@ function cyFoundModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-python", title: "Python for security: bytes, hashes, logs, packets and safe code", emoji: "2.3", page: "content/cyber-security/cy-python.html",
+        summary: "bytes, UTF-8, hex and base64, hashlib and hmac, regular expressions for logs, struct and checksums, and safe Python habits.",
+        keywords: ["Python", "bytes", "base64", "hashlib", "regex", "struct", "secrets", "path traversal", "subprocess", "socket"],
+        minutes: 60, counts: {"lessons": 10, "problems": 11, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Why security people learn Python", emoji: "", group: "Lesson", keywords: ["Python for security", "why Python", "Scapy", "Volatility", "sqlmap", "Impacket", "fail2ban", "venv", "pip-audit", "standard library"] },
+        { id: "bytes", title: "Text and bytes: UTF-8, hex and base64", emoji: "", group: "Lesson", keywords: ["bytes", "str", "encode", "decode", "UTF-8", "Unicode", "code point", "ASCII", "hex", "base64", "padding", "EncodedCommand"] },
+        { id: "hashing", title: "Hashes in Python: hashlib and hmac", emoji: "", group: "Lesson", keywords: ["hashlib", "sha256", "hexdigest", "update", "file_digest", "hmac", "compare_digest", "timing attack", "MD5", "SHA-1", "avalanche effect", "birthday bound"] },
+        { id: "regex", title: "Regular expressions for logs", emoji: "", group: "Lesson", keywords: ["regular expression", "re", "search", "groups", "named groups", "raw string", "log parsing", "fail2ban", "ReDoS", "backtracking", "RE2", "grep"] },
+        { id: "struct", title: "Binary data with struct: headers and checksums", emoji: "", group: "Lesson", keywords: ["struct", "pack", "unpack", "network byte order", "big endian", "little endian", "DNS header", "RFC 1035", "checksum", "RFC 1071", "parser bugs"] },
+        { id: "safecode", title: "Writing safe Python: randomness, paths, commands and untrusted data", emoji: "", group: "Lesson", keywords: ["secrets", "random", "Mersenne Twister", "token", "path traversal", "normpath", "command injection", "subprocess", "shell=False", "shlex.quote", "pickle", "yaml safe_load", "eval", "tarfile", "typosquatting", "require-hashes"] },
+        { id: "sockets", title: "Sockets: checking your own services", emoji: "", group: "Lesson", keywords: ["socket", "connect_ex", "TCP", "port check", "localhost", "127.0.0.1", "0.0.0.0", "ss", "netstat", "BSD sockets", "permission"] },
+        { id: "versus", title: "Python compared with other security languages", emoji: "", group: "Lesson", keywords: ["Python vs Bash", "PowerShell", "Go", "Rust", "C", "memory safety", "comparison", "security languages"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Scapy", "Volatility plugin", "fuzzing", "Atheris", "angr", "symbolic execution", "supply chain", "PyPI", "dependency confusion"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
