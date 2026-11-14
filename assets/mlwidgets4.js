@@ -1261,3 +1261,119 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Deep learning 3.4  energy based models: a Hopfield network recalling a letter, and one step of contrastive divergence
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box, rng } = MLZ;
+  const LET = {
+    T: ['#####', '..#..', '..#..', '..#..', '..#..'],
+    L: ['#....', '#....', '#....', '#....', '#####'],
+    X: ['#...#', '.#.#.', '..#..', '.#.#.', '#...#']
+  };
+  const vec = r => r.join('').split('').map(ch => ch === '#' ? 1 : -1);
+  const PATS = Object.fromEntries(Object.entries(LET).map(([k, r]) => [k, vec(r)]));
+  const N = 25, W = Array.from({ length: N }, (_, i) => Array.from({ length: N }, (_, j) => i === j ? 0 : Object.values(PATS).reduce((s, p) => s + p[i] * p[j], 0) / N));
+  const energy = s => { let e = 0; for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) e -= 0.5 * W[i][j] * s[i] * s[j]; return e; };
+  const perm = (R, n) => { const a = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const nameOf = s => { for (const [k, p] of Object.entries(PATS)) if (p.every((v, i) => v === s[i])) return k; return null; };
+
+  trace('mlhopfield', {
+    title: 'A Hopfield network recalls a letter',
+    sub: 'Three letters are stored in the weights with the Hebb rule. A damaged letter is the starting state. Each unit in turn looks at the weighted sum of the others and sets itself to +1 (dark) or &minus;1 (light). The energy can only go down, so the network rolls into the nearest stored memory, or sometimes into a wrong one.',
+    W: 600, H: 330,
+    params: [
+      { k: 'letter', label: 'Stored letter to damage', type: 'select', v: 'T', opts: [['T', 'T'], ['L', 'L'], ['X', 'X']] },
+      { k: 'damage', label: 'Pixels flipped', type: 'select', v: '6', opts: [['3', '3 of 25'], ['6', '6 of 25'], ['11', '11 of 25']] }
+    ],
+    tips: [
+      { t: '11 pixels flipped on T: almost half the image is wrong, and the network settles in a spurious valley that is no stored letter.', set: { letter: 'T', damage: '11' }, play: true },
+      { t: '6 pixels flipped on T: about a quarter of the image is wrong, and one sweep is enough to clean it up.', set: { letter: 'T', damage: '6' }, play: true }
+    ],
+    frames(p) {
+      const R = rng(7), target = PATS[p.letter], s = target.slice(), k = +p.damage;
+      perm(R, N).slice(0, k).forEach(i => { s[i] = -s[i]; });
+      const es = [energy(s)], fr = [{ s: s.slice(), hl: [], es: es.slice(), say: `Start: the letter ${p.letter} with ${k} of its 25 pixels flipped. Energy ${es[0].toFixed(2)}.` }];
+      for (let sweep = 1; sweep <= 3; sweep++) {
+        const order = perm(R, N); let changed = 0;
+        for (let c = 0; c < 5; c++) {
+          const hl = order.slice(c * 5, c * 5 + 5), flips = [];
+          hl.forEach(i => { const h = W[i].reduce((a, w, j) => a + w * s[j], 0), nv = h >= 0 ? 1 : -1; if (nv !== s[i]) { flips.push(i); changed++; } s[i] = nv; });
+          es.push(energy(s));
+          fr.push({ s: s.slice(), hl, flips, es: es.slice(), say: `Sweep ${sweep}, units ${c * 5 + 1} to ${c * 5 + 5} of a random order: ${flips.length} flipped. Energy ${es[es.length - 1].toFixed(2)}.` });
+        }
+        if (!changed) break;
+      }
+      const got = nameOf(s), wrong = s.filter((v, i) => v !== target[i]).length;
+      fr.push({ s: s.slice(), hl: [], es: es.slice(), done: true, say: got === p.letter ? `Stable: no unit wants to flip. The network recalled ${p.letter} exactly, at energy ${es[es.length - 1].toFixed(2)}.` : got ? `Stable, but on the wrong memory: it recalled ${got}, not ${p.letter}. The damaged image was closer to ${got}.` : `Stable on a state that is no stored letter, a spurious memory with ${wrong} pixels different from ${p.letter}. Hopfield networks can have such extra valleys.` });
+      return fr.map(x => ({ ...x, letter: p.letter }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, 'stored memories', 14, 22, { s: 11 });
+      Object.entries(PATS).forEach(([k, pt], m) => pt.forEach((v, i) => { g.fillStyle = v > 0 ? c.ink : c.line; g.fillRect(14 + m * 62 + (i % 5) * 10, 34 + Math.floor(i / 5) * 10, 9, 9); }));
+      head(z, 'network state', 14, 112, { s: 11 });
+      const S = 36, x0 = 14, y0 = 122;
+      f.s.forEach((v, i) => {
+        const x = x0 + (i % 5) * S, y = y0 + Math.floor(i / 5) * S;
+        g.fillStyle = v > 0 ? c.ink : c.surf; g.fillRect(x, y, S - 3, S - 3);
+        g.strokeStyle = f.hl.includes(i) ? (f.flips && f.flips.includes(i) ? c.red : c.purple) : c.line; g.lineWidth = f.hl.includes(i) ? 3 : 1; g.strokeRect(x, y, S - 3, S - 3);
+      });
+      const X0 = 240, Wd = 340, Y = e => 290 - (e + 12) / 12 * 200, n = Math.max(16, f.es.length);
+      head(z, 'energy after each group of 5 updates', X0, 70, { s: 11 });
+      D.line(g, X0, 290, X0 + Wd, 290, c.ink2, 1); D.line(g, X0, 80, X0, 290, c.ink2, 1);
+      [0, -4, -8, -12].forEach(e => D.text(g, String(e), X0 - 6, Y(e) + 4, { a: 'right', s: 10, c: c.ink2 }));
+      g.save(); g.strokeStyle = c.purple; g.lineWidth = 2; g.beginPath();
+      f.es.forEach((e, k) => { const x = X0 + k / (n - 1) * Wd; k ? g.lineTo(x, Y(e)) : g.moveTo(x, Y(e)); }); g.stroke(); g.restore();
+      f.es.forEach((e, k) => D.circle(g, X0 + k / (n - 1) * Wd, Y(e), 3, { fill: c.purple }));
+      D.text(g, 'purple outline: units updated now   red: a unit that flipped', 240, 316, { s: 11, c: c.ink2 });
+    }
+  });
+
+  /* A small RBM with weights set by hand: hidden unit 1 likes the left three pixels, unit 2 the right three. */
+  const RW = [[3, -2, 0.5], [3, -2, 0.5], [3, -2, 0.5], [-2, 3, 0.5], [-2, 3, 0.5], [-2, 3, 0.5]];
+  const RA = [-1, -1, -1, -1, -1, -1], RB = [-2, -2, -1];
+  const sg = x => 1 / (1 + Math.exp(-x));
+  const DATA = { left: [1, 1, 1, 0, 0, 0], noisy: [1, 0, 1, 0, 1, 0] };
+
+  trace('mlcd', {
+    title: 'One step of contrastive divergence (CD-1)',
+    sub: 'An RBM has visible units (the data, bottom) and hidden units (top), with connections only between the layers. Training compares how often each pair is on together when the data is clamped (positive phase) with how often after one round trip of sampling (negative phase). The weights here are set by hand so the numbers are easy to follow.',
+    W: 600, H: 330,
+    params: [{ k: 'ex', label: 'Training image', type: 'select', v: 'left', opts: [['left', 'Left three pixels on'], ['noisy', 'Every other pixel on']] }],
+    tips: [
+      { t: 'A mixed image: the model rebuilds it as the left pattern, so the update weakens the pairs the model switched on by itself, such as visible 2 with hidden 1, and strengthens the pairs that are really in the data.', set: { ex: 'noisy' }, play: true },
+      { t: 'A clean left pattern: hidden unit 1 switches on, the reconstruction matches the data, and the weight change is small.', set: { ex: 'left' }, play: true }
+    ],
+    frames(p) {
+      const R = rng(p.ex === 'left' ? 3 : 1), v0 = DATA[p.ex];
+      const ph = v => RB.map((b, j) => sg(b + v.reduce((a, x, i) => a + x * RW[i][j], 0)));
+      const pv = h => RA.map((a, i) => sg(a + h.reduce((s, x, j) => s + x * RW[i][j], 0)));
+      const ph0 = ph(v0), h0 = ph0.map(q => R() < q ? 1 : 0), pv1 = pv(h0), v1 = pv1.map(q => R() < q ? 1 : 0), ph1 = ph(v1);
+      const dW = RW.map((row, i) => row.map((_, j) => v0[i] * ph0[j] - v1[i] * ph1[j]));
+      let bi = 0, bj = 0; dW.forEach((row, i) => row.forEach((d, j) => { if (Math.abs(d) > Math.abs(dW[bi][bj])) { bi = i; bj = j; } }));
+      const f2 = a => a.map(x => x.toFixed(2)).join(', '), base = { v0, ph0, h0, pv1, v1, ph1, dW };
+      return [
+        { ...base, k: 0, say: 'An RBM with 6 visible and 3 hidden units. Green lines are positive weights, red lines negative.' },
+        { ...base, k: 1, say: `Clamp a training image on the visible units: ${v0.join(' ')}.` },
+        { ...base, k: 2, say: `Positive phase: p(h = 1 | v) = sigmoid(b + vW) gives ${f2(ph0)}. The hidden units are independent given v, so this is one matrix product.` },
+        { ...base, k: 3, say: `Sample the hidden units from those probabilities: ${h0.join(' ')}.` },
+        { ...base, k: 4, say: `Reconstruct: p(v = 1 | h) = sigmoid(a + Wh) gives ${f2(pv1)}, and a sample gives ${v1.join(' ')}.` },
+        { ...base, k: 5, say: `Negative phase: hidden probabilities for the reconstruction are ${f2(ph1)}.` },
+        { ...base, k: 6, say: `Update: &Delta;W = &eta;(v<sub>0</sub>p(h|v<sub>0</sub>) &minus; v<sub>1</sub>p(h|v<sub>1</sub>)). ` + (Math.abs(dW[bi][bj]) < 0.005 ? 'The reconstruction matches the data, so every change is close to 0: the model already explains this image.' : `The biggest change is ${dW[bi][bj] >= 0 ? '+' : '&minus;'}${Math.abs(dW[bi][bj]).toFixed(2)}&eta; on visible ${bi + 1} to hidden ${bj + 1}. Pairs that are on together in the data get stronger, pairs that the model turns on by itself get weaker.`) }
+      ].map(x => ({ ...x, ex: p.ex }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, VX = i => 60 + i * 80, HX = j => 140 + j * 160, VY = 250, HY = 80;
+      RW.forEach((row, i) => row.forEach((w, j) => D.line(g, VX(i), VY - 18, HX(j), HY + 18, w > 0 ? 'rgba(22,163,74,0.55)' : 'rgba(220,38,38,0.45)', Math.abs(w) * 0.9)));
+      const unit = (x, y, val, lab, sub) => { D.circle(g, x, y, 18, { fill: val === null ? c.surf : `rgba(124,58,237,${0.12 + 0.8 * val})`, stroke: c.ink2 }); D.text(g, lab, x, y + 4, { a: 'center', s: 11, b: true, c: val !== null && val > 0.55 ? '#fff' : c.ink }); if (sub) D.text(g, sub, x, y + (y > 150 ? 36 : -26), { a: 'center', s: 10, c: c.ink2 }); };
+      const vis = f.k >= 4 ? f.v1 : (f.k >= 1 ? f.v0 : null), hid = f.k >= 5 ? f.ph1 : (f.k >= 3 ? f.h0 : (f.k >= 2 ? f.ph0 : null));
+      RW.forEach((_, i) => unit(VX(i), VY, vis ? vis[i] : null, `v${i + 1}`, vis ? (f.k >= 4 ? `p ${f.pv1[i].toFixed(2)} → ${f.v1[i]}` : String(f.v0[i])) : ''));
+      RB.forEach((_, j) => unit(HX(j), HY, hid ? hid[j] : null, `h${j + 1}`, hid ? (f.k === 3 || f.k === 4 ? `sample ${f.h0[j]}` : `p ${hid[j].toFixed(2)}`) : ''));
+      head(z, 'hidden units', 14, 30, { s: 11 }); head(z, 'visible units', 14, 312, { s: 11 });
+      const phase = ['', 'data clamped', 'positive phase', 'positive phase', 'reconstruction', 'negative phase', 'update'][f.k];
+      if (phase) D.text(g, phase, 586, 30, { a: 'right', s: 12, b: true, c: c.purple });
+    }
+  });
+})();

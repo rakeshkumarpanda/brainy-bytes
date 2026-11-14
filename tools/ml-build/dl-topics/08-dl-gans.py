@@ -405,7 +405,7 @@ K.must('WGAN', 'Critic outputs real numbers, estimates earth mover distance. Kee
 K.must('Variants and FID', 'DCGAN, conditional, pix2pix, CycleGAN (cycle loss), StyleGAN. FID: feature means and covariances, lower is better.')
 
 T = K.topic(
-    slug='dl-gans', topic='dl-gans', step=(3, 'Generative models', 'dl-s3', 'Networks that create new data: autoencoders and variational autoencoders, generative adversarial networks, and diffusion models.', 'Advanced'),
+    slug='dl-gans', topic='dl-gans', step=(3, 'Generative models', 'dl-s3', 'Networks that create new data: autoencoders and variational autoencoders, generative adversarial networks, diffusion models, and energy based models such as Boltzmann machines.', 'Advanced'),
     title='Generative adversarial networks', short='GANs', badge='3.2', minutes=55,
     lead='Train a generator against a discriminator: the minimax game, the best discriminator and the JS divergence, the non saturating loss, mode collapse, Wasserstein GANs, conditional GANs and StyleGAN, and FID.',
     desc='GAN, generative adversarial network, generator, discriminator, minimax, optimal discriminator, Jensen Shannon divergence, non saturating loss, mode collapse, Wasserstein GAN, critic, gradient penalty, spectral normalisation, DCGAN, conditional GAN, pix2pix, CycleGAN, StyleGAN, FID.',
