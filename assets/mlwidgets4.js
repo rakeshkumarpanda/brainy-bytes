@@ -1099,3 +1099,118 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Deep learning 3.3  diffusion models: the forward noising process, and reverse sampling with DDPM and DDIM
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, rng } = MLZ;
+  const T = 1000, K = 8, SPREAD = 0.15, N = 240;
+  const CENT = Array.from({ length: K }, (_, k) => [2 * Math.cos(2 * Math.PI * k / K), 2 * Math.sin(2 * Math.PI * k / K)]);
+  const SCHED = {};
+  (() => {
+    let p = 1; SCHED.linear = [];
+    for (let t = 1; t <= T; t++) { p *= 1 - (1e-4 + (0.02 - 1e-4) * (t - 1) / (T - 1)); SCHED.linear.push(p); }
+    const s = 0.008, f = t => Math.cos((t / T + s) / (1 + s) * Math.PI / 2) ** 2, f0 = f(0);
+    SCHED.cosine = Array.from({ length: T }, (_, i) => Math.max(f(i + 1) / f0, 0));
+  })();
+  const gauss = R => { const u = Math.max(R(), 1e-12), v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const data = R => Array.from({ length: N }, () => { const c = CENT[Math.floor(R() * K)]; return [c[0] + SPREAD * gauss(R), c[1] + SPREAD * gauss(R)]; });
+  const fmt = v => (v >= 0.001 ? v.toFixed(3) : v.toExponential(1));
+  const S = 300 / 7.4, PX = x => 14 + 150 + x * S, PY = y => 18 + 150 - y * S;
+
+  function cloud(z, pts, col) {
+    const c = z.col, g = z.g;
+    g.save(); g.strokeStyle = c.line; g.lineWidth = 1; g.strokeRect(14, 18, 300, 300); g.restore();
+    CENT.forEach(([a, b]) => D.circle(g, PX(a), PY(b), 9, { fill: 'rgba(147,51,234,0.10)' }));
+    pts.forEach(([a, b]) => { if (Math.abs(a) < 3.7 && Math.abs(b) < 3.7) D.circle(g, PX(a), PY(b), 2.2, { fill: col }); });
+  }
+  function curve(z, ab, t) {
+    const c = z.col, g = z.g, x0 = 350, y0 = 290, w = 230, h = 220;
+    head(z, 'alpha_bar_t: how much of the data is left', x0 - 4, 50, { s: 11 });
+    D.line(g, x0, y0, x0 + w, y0, c.ink2, 1); D.line(g, x0, y0, x0, y0 - h, c.ink2, 1);
+    g.save(); g.strokeStyle = c.cv; g.lineWidth = 2; g.beginPath();
+    ab.forEach((v, i) => { const X = x0 + (i + 1) / T * w, Y = y0 - v * h; i ? g.lineTo(X, Y) : g.moveTo(X, Y); }); g.stroke(); g.restore();
+    D.text(g, '1', x0 - 10, y0 - h + 4, { s: 10, c: c.ink2 }); D.text(g, '0', x0 - 10, y0 + 4, { s: 10, c: c.ink2 });
+    D.text(g, '0', x0, y0 + 16, { s: 10, c: c.ink2, a: 'center' }); D.text(g, '1000', x0 + w, y0 + 16, { s: 10, c: c.ink2, a: 'center' }); D.text(g, 'step t', x0 + w / 2, y0 + 16, { s: 10, c: c.ink2, a: 'center' });
+    if (t > 0) { const v = ab[t - 1], X = x0 + t / T * w, Y = y0 - v * h; D.line(g, X, y0, X, Y, c.orange, 1.5, [3, 3]); D.circle(g, X, Y, 5, { fill: c.orange }); }
+  }
+
+  trace('mlforward', {
+    title: 'The forward process: turning data into noise',
+    sub: 'The data is 240 points in 8 small groups on a circle. Each step keeps a little less of every point and adds a little Gaussian noise. Thanks to a closed form, any step t can be reached in one jump: x<sub>t</sub> = &radic;&#257;<sub>t</sub> x<sub>0</sub> + &radic;(1 &minus; &#257;<sub>t</sub>) &epsilon;.',
+    W: 600, H: 330,
+    params: [{ k: 'sched', label: 'Noise schedule', type: 'select', v: 'linear', opts: [['linear', 'Linear (DDPM, 2020)'], ['cosine', 'Cosine (improved DDPM, 2021)']] }],
+    tips: [
+      { t: 'Cosine schedule: the groups stay visible for much longer, so fewer steps are wasted on pure noise.', set: { sched: 'cosine' }, play: true },
+      { t: 'Linear schedule: by step 500 the circle is almost gone, and the last few hundred steps change very little.', set: { sched: 'linear' }, play: true }
+    ],
+    frames(p) {
+      const R = rng(11), x0 = data(R), eps = x0.map(() => [gauss(R), gauss(R)]), ab = SCHED[p.sched];
+      return [0, 50, 100, 200, 300, 500, 700, 1000].map(t => {
+        const a = t ? ab[t - 1] : 1, pts = x0.map((q, i) => [Math.sqrt(a) * q[0] + Math.sqrt(1 - a) * eps[i][0], Math.sqrt(a) * q[1] + Math.sqrt(1 - a) * eps[i][1]]);
+        const say = t === 0 ? 'Step 0: the clean data x<sub>0</sub>, 8 tight groups on a circle of radius 2.'
+          : `Step ${t}: alpha bar = ${fmt(a)}. Each point keeps ${Math.sqrt(a).toFixed(2)} of its position and gets noise with spread ${Math.sqrt(1 - a).toFixed(2)}.${t === 1000 ? ' Only noise is left: the cloud is a plain N(0, I) blob, which is where sampling will start.' : ''}`;
+        return { t, pts, ab, say };
+      });
+    },
+    paint(z, f) { cloud(z, f.pts, z.col.cv); curve(z, f.ab, f.t); D.text(z.g, `t = ${f.t}`, 20, 34, { s: 12, b: true, c: z.col.ink }); }
+  });
+
+  function epsHat(x, y, t, ab) {
+    const a = ab[t - 1], v = a * SPREAD * SPREAD + 1 - a, sa = Math.sqrt(a);
+    let lw = [], m = -Infinity;
+    for (const [cx, cy] of CENT) { const l = -((x - sa * cx) ** 2 + (y - sa * cy) ** 2) / (2 * v); lw.push(l); if (l > m) m = l; }
+    let tot = 0, sx = 0, sy = 0;
+    lw.forEach((l, k) => { const r = Math.exp(l - m); tot += r; sx += r * -(x - sa * CENT[k][0]) / v; sy += r * -(y - sa * CENT[k][1]) / v; });
+    const q = -Math.sqrt(1 - a) / tot; return [q * sx, q * sy];
+  }
+  const nearShare = pts => pts.filter(([a, b]) => CENT.some(([cx, cy]) => Math.hypot(a - cx, b - cy) < 0.45)).length / pts.length;
+
+  trace('mlreverse', {
+    title: 'Generating: from noise back to data',
+    sub: 'Sampling runs the process backwards. At each step the network predicts the noise in every point, and the sampler removes part of it. DDPM takes all 1000 small steps and adds fresh noise each time. DDIM jumps across the steps with no fresh noise, so it needs far fewer network calls.',
+    W: 600, H: 330,
+    params: [{ k: 'sampler', label: 'Sampler', type: 'select', v: 'ddpm', opts: [['ddpm', 'DDPM, 1000 steps'], ['ddim50', 'DDIM, 50 steps'], ['ddim10', 'DDIM, 10 steps'], ['ddim3', 'DDIM, 3 steps']] }],
+    tips: [
+      { t: 'DDIM with 10 steps: 87 percent of the points land in a group, against 99 percent for DDPM, for 1 percent of the network calls.', set: { sampler: 'ddim10' }, play: true },
+      { t: 'DDIM with only 3 steps: too few. The points end up near the average of the groups, the blurry look of a model sampled too fast.', set: { sampler: 'ddim3' }, play: true }
+    ],
+    frames(p) {
+      const R = rng(23), ab = SCHED.linear;
+      let pts = Array.from({ length: N }, () => [gauss(R), gauss(R)]);
+      const fr = [{ pts: pts.map(q => q.slice()), done: 0, calls: 0, say: 'Start: 240 points of pure Gaussian noise, the same as step 1000 of the forward process.' }];
+      if (p.sampler === 'ddpm') {
+        const show = new Set([800, 600, 400, 300, 200, 100, 50, 1]);
+        for (let t = T; t >= 1; t--) {
+          const b = 1 - ab[t - 1] / (t > 1 ? ab[t - 2] : 1), c1 = b / Math.sqrt(1 - ab[t - 1]);
+          pts = pts.map(([x, y]) => { const [ex, ey] = epsHat(x, y, t, ab); let nx = (x - c1 * ex) / Math.sqrt(1 - b), ny = (y - c1 * ey) / Math.sqrt(1 - b); if (t > 1) { nx += Math.sqrt(b) * gauss(R); ny += Math.sqrt(b) * gauss(R); } return [nx, ny]; });
+          if (show.has(t)) fr.push({ pts: pts.map(q => q.slice()), calls: T - t + 1, say: t > 1 ? `Step ${t}: ${T - t + 1} network calls so far. ${t > 400 ? 'The cloud shrinks and starts to form a ring.' : 'Points gather into the 8 groups.'}` : '' });
+        }
+      } else {
+        const k = { ddim50: 50, ddim10: 10, ddim3: 3 }[p.sampler], ts = Array.from({ length: k }, (_, i) => Math.round(T - (T - 1) * i / (k - 1)));
+        ts.forEach((t, i) => {
+          const s = ts[i + 1];
+          pts = pts.map(([x, y]) => {
+            const [ex, ey] = epsHat(x, y, t, ab), sa = Math.sqrt(ab[t - 1]), sn = Math.sqrt(1 - ab[t - 1]);
+            const hx = (x - sn * ex) / sa, hy = (y - sn * ey) / sa;
+            return s ? [Math.sqrt(ab[s - 1]) * hx + Math.sqrt(1 - ab[s - 1]) * ex, Math.sqrt(ab[s - 1]) * hy + Math.sqrt(1 - ab[s - 1]) * ey] : [hx, hy];
+          });
+          if (k <= 10 || [4, 9, 19, 29, 39, 49].includes(i)) fr.push({ pts: pts.map(q => q.slice()), calls: i + 1, say: s ? `DDIM jump from step ${t} to step ${s}: predict the clean points, then add back the right amount of the same predicted noise.` : '' });
+        });
+      }
+      const last = fr[fr.length - 1], share = nearShare(last.pts);
+      last.done = 1; last.share = share;
+      last.say = `Done after ${last.calls} network calls. ${Math.round(share * 100)} percent of the points sit inside one of the 8 groups. ${share > 0.85 ? 'New samples that look like the data.' : 'Too few steps: many points are stuck between the groups.'}`;
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      cloud(z, f.pts, f.done ? c.green : c.cv);
+      head(z, 'What the sampler is doing', 340, 50, { s: 12 });
+      D.text(g, `network calls: ${f.calls || 0}`, 340, 80, { s: 13, b: true, c: c.ink });
+      if (f.done) D.text(g, `inside a group: ${Math.round(f.share * 100)} percent`, 340, 106, { s: 13, b: true, c: f.share > 0.85 ? c.green : c.red });
+      D.text(g, 'purple circles: where the 8 data groups are', 340, 300, { s: 11, c: c.ink2 });
+    }
+  });
+})();
