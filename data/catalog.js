@@ -461,19 +461,28 @@ window.CATALOG = {
     },
     {
       id: 'cyber-security',
-      title: 'Cyber Security',
+      title: 'Cybersecurity',
       emoji: '🔐',
-      color: '#475569',
-      blurb: 'Networks, cryptography, attacks and defences, explained with safe hands on labs.',
-      intro: 'Learn how systems are attacked and how they are defended. Each topic has an animation and a safe lab you can try in the browser.',
-      tags: ['Networking', 'Cryptography', 'Attacks', 'Defence'],
-      modules: [soonModule([
-        ['Security fundamentals', '🔰', 'Confidentiality, integrity and availability.'],
-        ['Networking for security', '🌐', 'TCP/IP, ports, firewalls and VPNs.'],
-        ['Cryptography', '🔏', 'Hashing, encryption and digital signatures.'],
-        ['Common attacks', '⚠️', 'Phishing, malware, injection and more.'],
-        ['Defence and incident response', '🚨', 'Monitoring, logging and responding to attacks.']
-      ])]
+      color: '#0f766e',
+      layout: 'path',
+      blurb: 'Complete cybersecurity in six sections, from your first security idea to certification level: Foundations, Cryptography, Network and Systems, Application Security, Security Operations and Advanced (attacks on AI, federated learning and privacy).',
+      intro: 'Pick a section at the top, then follow its steps in order. Every chapter explains what each idea is, why it is needed and how it works in simple everyday words, compares it with similar ideas, and shows the maths with formulas and worked problems. Step by step animations start empty and fill in as you press Step, with your own input, and a voice can read each step aloud. Every lesson also has a voice note that tells the background story behind it. Every program runs in your browser with real Python, can be stepped through line by line and downloaded as a .py file. Each chapter ends with quizzes from easy to the level of top university exams, assignments checked by tests and a chapter summary. Every attack is shown on made up data inside the page, never on a real system. For the Python language itself, use the Complete Python subject.',
+      tags: ['CIA triad', 'Risk', 'Cryptography', 'RSA', 'Networks', 'Web security', 'Incident response', 'Federated learning'],
+      parts: [
+        { id: 'foundations', title: 'Foundations', blurb: 'What security protects and from whom, risk in numbers, the maths for security, how operating systems and networks work, and Python for security work.',
+          intro: 'Foundations starts from zero. You learn the CIA triad and the words of security, measure risk in money, pick up the binary, modular and probability maths that security uses, learn how users, files, processes and networks work, and write the small Python tools every security person needs.' },
+        { id: 'crypto', title: 'Cryptography', blurb: 'Classical ciphers, AES and modes, hashing and passwords, the number theory behind public keys, RSA, Diffie-Hellman, ElGamal, elliptic curves, signatures, certificates and TLS, post quantum cryptography, secret sharing and zero knowledge.',
+          intro: 'Cryptography is the maths that keeps secrets. Every cipher is built by hand in plain Python first so you see each step, then you learn how real systems use it and how it breaks when used wrongly.' },
+        { id: 'systems', title: 'Network and Systems', blurb: 'Network attacks, firewalls, IDS and VPNs, wireless security, authentication and MFA, access control models, malware and vulnerability management.',
+          intro: 'Network and Systems Security shows how attackers move through networks and machines, and how defenders filter traffic, prove identity, control access, catch malware and patch the right things first.' },
+        { id: 'appsec', title: 'Application Security', blurb: 'The web and the OWASP Top 10, injection, XSS, CSRF and SSRF, memory safety bugs, the ethical hacking method and social engineering.',
+          intro: 'Application Security teaches how programs and websites are broken and how to write code that cannot be broken that way. Every attack runs against a toy app inside the page.' },
+        { id: 'secops', title: 'Security Operations', blurb: 'Logging and SIEM, incident response, digital forensics, threat intelligence and MITRE ATT&CK, cloud security, governance, risk, compliance and cyber law.',
+          intro: 'Security Operations is the daily work of defending: collecting logs, spotting attacks, responding, collecting evidence, learning from threat intelligence, securing the cloud and meeting laws and standards.' },
+        { id: 'advanced', title: 'Advanced', blurb: 'Machine learning for security, attacks on machine learning, federated learning, its privacy and attacks, differential privacy, and the certification revision.',
+          intro: 'Advanced brings security to research level: models that catch attacks, attacks on models, federated learning with secure aggregation and differential privacy, and a revision chapter mapped to Security+, CEH, CISSP and OSCP.' }
+      ],
+      modules: cyFoundModules().concat(cyCryptoModules(), cySysModules(), cyAppModules(), cyOpsModules(), cyAdvModules(), sheetModule('cyber-security'))
     }
   ]
 };
@@ -1348,6 +1357,7 @@ function sheetModule(sid) {
     'ml-maths': ['content/ml-maths/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Maths for ML chapters on one page, from algebra, logs and functions to vectors, matrices, eigenvalues, SVD and PCA, derivatives, gradients, optimisation, probability, distributions, statistics, loss functions and Bayes. Search it, filter it, print it or download the PDF.', ['dot product', 'cosine similarity', 'matrix multiplication', 'eigenvalues', 'SVD', 'PCA', 'chain rule', 'gradient descent', 'Bayes rule', 'normal distribution', 'cross entropy', 'softmax'], 'eight'],
     'api-manual-testing': ['content/api-testing/cheatsheet.html', 'The key idea of all 38 parts, every rule, table, tip and common mistake of the Manual API Testing course on one page, from HTTP methods, status codes and headers to auth, test design, pagination, rate limits, contracts, the OWASP API Top 10 and AI APIs. Search it, filter it, print it or download the PDF.', ['HTTP methods', 'status codes', 'headers', 'JSON', 'REST', 'Postman', 'JWT', 'OAuth', 'idempotency', 'pagination', 'rate limit', 'OWASP API Top 10', 'contract testing']],
     'api-automation': ['content/api-automation/cheatsheet.html', 'The key idea of every lesson, short code examples, tables, tips and common mistakes of all nine API automation tracks on one page, grouped by language: Rest Assured, Playwright and HttpClient in Java, requests and Playwright in Python, Postman, Playwright and fetch in JavaScript, and Playwright in TypeScript. Search it, filter it, print it or download the PDF.', ['Rest Assured', 'given when then', 'pytest', 'requests', 'Playwright request', 'Postman tests', 'Newman', 'fetch', 'JSON Schema', 'Zod', 'auth token', 'mocking'], 'eight'],
+    'cyber-security': ['content/cyber-security/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from all six sections on one page: Foundations (CIA, risk, the maths, systems and networks), Cryptography (ciphers, AES, hashing, number theory, RSA, Diffie-Hellman, elliptic curves, PKI, post quantum), Network and Systems, Application Security, Security Operations and Advanced (attacks on ML, federated learning, differential privacy). Search it, filter it, print it or download the PDF.', ['CIA triad', 'risk', 'ALE', 'defence in depth', 'XOR', 'modular arithmetic', 'AES', 'SHA-256', 'birthday bound', 'RSA', 'Euler totient', 'Diffie-Hellman', 'elliptic curve', 'TLS', 'subnetting', 'CVSS', 'SQL injection', 'federated averaging', 'differential privacy'], 'fourteen'],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
   }[sid];
   return {
@@ -9247,3 +9257,50 @@ function mlopsModules() {
   ];
 }
 /* ===== end of mlops-build ===== */
+
+/* ===== cy-foundations-build: Cybersecurity chapters. Generated by tools/cyber-build/build.py, edit the topic files instead. ===== */
+function cyFoundModules() {
+  return [
+    { id: "cy-f1", title: "Start here", emoji: "1", step: 1, part: "foundations", level: "Beginner", blurb: "What security protects and from whom, how risk is measured, and the maths every security decision uses.", topics: [
+      { id: "cy-intro", title: "What cybersecurity is: goals, threats and layers", emoji: "1.1", page: "content/cyber-security/cy-intro.html",
+        summary: "the CIA triad, the words of security, attackers and real incidents, defence in depth with its maths, design principles, zero trust and careers.",
+        keywords: ["cybersecurity", "CIA triad", "confidentiality", "integrity", "availability", "threat", "vulnerability", "risk", "defence in depth", "zero trust"],
+        minutes: 60, counts: {"lessons": 12, "problems": 11, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "What cybersecurity is", emoji: "", group: "Lesson", keywords: ["cybersecurity", "definition", "assets", "threats", "vulnerabilities", "controls", "people process technology", "WannaCry"] },
+        { id: "cia", title: "The three goals: confidentiality, integrity and availability", emoji: "", group: "Lesson", keywords: ["CIA triad", "confidentiality", "integrity", "availability", "AAA", "authentication", "authorisation", "accounting", "non repudiation", "Parkerian hexad"] },
+        { id: "words", title: "The words every security person uses", emoji: "", group: "Lesson", keywords: ["asset", "threat", "vulnerability", "exploit", "risk", "control", "safeguard", "attack surface", "zero day", "CVE", "incident"] },
+        { id: "who", title: "Who attacks and why: real incidents", emoji: "", group: "Lesson", keywords: ["attackers", "threat actors", "script kiddies", "cyber criminals", "hacktivists", "nation state", "APT", "insider threat", "Morris worm", "Equifax", "SolarWinds", "Colonial Pipeline", "social engineering"] },
+        { id: "layers", title: "Defence in depth: many layers, not one wall", emoji: "", group: "Lesson", keywords: ["defence in depth", "layered security", "layers", "probability of breach", "at least one", "phishing", "castle"] },
+        { id: "principles", title: "Design principles that last", emoji: "", group: "Lesson", keywords: ["least privilege", "fail safe defaults", "complete mediation", "economy of mechanism", "open design", "separation of privilege", "Saltzer Schroeder", "zero trust", "Kerckhoffs", "security through obscurity"] },
+        { id: "versus", title: "Cybersecurity compared with similar ideas", emoji: "", group: "Lesson", keywords: ["information security", "cybersecurity", "privacy", "safety", "perimeter security", "comparison", "zero trust vs perimeter"] },
+        { id: "maths", title: "The maths of security decisions", emoji: "", group: "Lesson", keywords: ["expected loss", "probability", "complement rule", "independent events", "Gordon Loeb", "security investment", "one over e"] },
+        { id: "careers", title: "Roles and the certification path", emoji: "", group: "Lesson", keywords: ["careers", "SOC analyst", "penetration tester", "red team", "blue team", "forensics", "GRC", "certifications", "Security+", "CEH", "CISSP", "OSCP", "legal"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "threat model", "STRIDE", "attack tree", "Dolev Yao", "security economics", "reduction proof"] },
+        { id: "pylink", title: "Python for this subject", emoji: "", group: "Lesson", keywords: ["Python", "Complete Python subject", "prerequisites"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of cy-foundations-build ===== */
+
+/* placeholder until the first chapter of this section is built by tools/cyber-build/build.py */
+function cyCryptoModules() { return []; }
+
+/* placeholder until the first chapter of this section is built by tools/cyber-build/build.py */
+function cySysModules() { return []; }
+
+/* placeholder until the first chapter of this section is built by tools/cyber-build/build.py */
+function cyAppModules() { return []; }
+
+/* placeholder until the first chapter of this section is built by tools/cyber-build/build.py */
+function cyOpsModules() { return []; }
+
+/* placeholder until the first chapter of this section is built by tools/cyber-build/build.py */
+function cyAdvModules() { return []; }
