@@ -17,7 +17,8 @@
   <span id="brandSlot"></span>
   <nav class="crumbbar" id="crumbbar" aria-label="Breadcrumb"></nav>
   <span class="grow"></span>
-  <button class="ibtn searchpill" data-search title="Search everything (Ctrl+K)">🔎 <span class="lbl">Search</span><kbd class="k">Ctrl K</kbd></button>
+  <button class="ibtn searchpill subjpill" data-subjsearch hidden title="Search inside this subject (press /)">🔎 <span class="lbl">Search in this subject</span><kbd class="k">/</kbd></button>
+  <button class="ibtn searchpill allpill" data-search title="Search every subject (Ctrl+K)">🌐 <span class="lbl">All subjects</span><kbd class="k">Ctrl K</kbd></button>
   <span id="themeSlot"></span>
 </header>
 <div class="layout" id="layout">
@@ -29,5 +30,6 @@
 <script src="assets/portal.js"></script>
 <script src="assets/progress.js"></script>
 <script src="assets/subject.js"></script>
+<script src="assets/subjsearch.js" defer></script>
 </body>
 </html>
