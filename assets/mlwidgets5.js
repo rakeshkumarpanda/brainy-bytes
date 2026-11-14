@@ -397,3 +397,600 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 2.3  Docker and CI/CD: the layer cache, and a CI/CD pipeline that stops at the first failure
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box } = MLZ;
+  /* step times in seconds come from real builds of the chapter's project (python:3.14-slim, 2026) */
+  const ORDERS = {
+    good: [['FROM python:3.14-slim', [], 0], ['WORKDIR /app', [], 0], ['COPY requirements.txt .', ['reqs'], 0], ['RUN pip install -r requirements.txt', [], 18], ['COPY train.py app.py ./', ['code'], 0], ['RUN python train.py', [], 1.6], ['RUN useradd appuser', [], 0.1]],
+    bad: [['FROM python:3.14-slim', [], 0], ['WORKDIR /app', [], 0], ['COPY . .', ['reqs', 'code'], 0.4], ['RUN pip install -r requirements.txt', [], 18.6], ['RUN python train.py', [], 1.2]]
+  };
+  const CH = { code: 'app.py', reqs: 'requirements.txt', none: 'nothing' };
+  const sec = v => (v < 0.05 ? '0 s' : `${v.toFixed(1)} s`);
+
+  trace('mllayers', {
+    title: 'The Docker layer cache',
+    sub: 'Each Dockerfile instruction makes one layer. On a rebuild Docker reuses a layer from its cache unless the instruction or the files it copies changed. Once one layer runs again, every layer above it runs again too. The times come from real builds of this chapter&rsquo;s project.',
+    W: 600, H: 340,
+    params: [
+      { k: 'order', label: 'Dockerfile order', type: 'select', v: 'good', opts: [['good', 'Good: requirements first, code later'], ['bad', 'Bad: COPY . . before pip install']] },
+      { k: 'change', label: 'You changed', type: 'select', v: 'code', opts: [['code', 'app.py (your code)'], ['reqs', 'requirements.txt'], ['none', 'Nothing']] }
+    ],
+    tips: [
+      { t: 'Bad order and a one line code change: COPY . . sees a changed file, so pip install runs again for about 18 seconds.', set: { order: 'bad', change: 'code' }, play: true },
+      { t: 'Changing requirements.txt rebuilds pip install in both orders. That is expected, because the packages really changed.', set: { order: 'good', change: 'reqs' }, play: true }
+    ],
+    frames(p) {
+      const S = ORDERS[p.order], fr = [{ S, n: 0, runs: [], say: `A rebuild after you changed <b>${CH[p.change]}</b>. Docker checks the layers from the bottom up.` }];
+      let dirty = false, total = 0;
+      const runs = [];
+      S.forEach(([ins, deps, t], i) => {
+        const why = deps.includes(p.change) ? 'its files changed' : (dirty ? 'a layer below it ran again' : '');
+        if (why) dirty = true;
+        runs.push(!!why); if (why) total += t;
+        fr.push({ S, n: i + 1, runs: runs.slice(), say: why ? `<b>${ins}</b> runs again because ${why} (${sec(t)}).` : `<b>${ins}</b> is unchanged: CACHED.` });
+      });
+      const end = p.change === 'none' ? 'Nothing changed, so every layer came from the cache and the build finished almost at once.'
+        : `Steps that ran again took about <b>${sec(total)}</b>. ${p.order === 'bad' && p.change === 'code' ? 'One line of code cost a full reinstall. Copy requirements.txt and install first, then copy the code.' : (p.order === 'good' && p.change === 'code' ? 'The slow pip install layer was reused, so a code change rebuilds in seconds.' : 'New packages need a new install whatever the order.')}`;
+      fr.push({ S, n: S.length, runs: runs.slice(), total, done: true, say: end });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, n = f.S.length, H = 36, y0 = 30 + (7 - n) * H;
+      head(z, 'Image layers (the first instruction is at the bottom)', 14, 20);
+      f.S.forEach(([ins, , t], i) => {
+        const y = y0 + (n - 1 - i) * (H + 4), seen = i < f.n, run = f.runs[i];
+        box(z, 14, y, 390, H, ins, { mono: true, s: 12, fill: !seen ? c.surf : (run ? 'rgba(234,88,12,0.18)' : 'rgba(22,163,74,0.15)'), stroke: !seen ? c.line : (run ? c.orange : c.green), w: i === f.n - 1 ? 2.5 : 1.5 });
+        if (seen) D.text(g, run ? `runs again  ${sec(t)}` : 'CACHED', 416, y + H / 2 + 4, { s: 12, b: true, c: run ? c.orange : c.green });
+      });
+      if (f.done) D.text(g, `time for the steps that ran: ${sec(f.total || 0)}`, 14, 326, { s: 13, b: true, c: c.ink });
+    }
+  });
+
+  const STAGES = ['git push', 'Install packages', 'Train the model', 'Run pytest (7 tests)', 'Build the image', 'Smoke test container', 'Push image (main only)', 'Deploy'];
+  trace('mlcipipe', {
+    title: 'A CI/CD pipeline for a model',
+    sub: 'Every push starts the pipeline on a clean machine. Continuous integration (CI) installs, trains and tests. Continuous delivery (CD) builds the image, checks that the container really answers, pushes it to a registry and deploys it. The first failing stage stops everything after it.',
+    W: 600, H: 330,
+    params: [
+      { k: 'run', label: 'What happens in this push', type: 'select', v: 'pass', opts: [['pass', 'Everything is fine'], ['gate', 'The new model is less accurate'], ['smoke', 'The container does not start']] }
+    ],
+    tips: [
+      { t: 'A worse model: the accuracy gate test fails, so no image is built and the old model keeps serving.', set: { run: 'gate' }, play: true },
+      { t: 'All tests pass but the container crashes at start up (for example a missing file). Only the smoke test catches this.', set: { run: 'smoke' }, play: true }
+    ],
+    frames(p) {
+      const fail = { pass: -1, gate: 3, smoke: 5 }[p.run];
+      const say = [
+        'You push a commit. GitHub Actions starts a fresh Ubuntu machine and checks out the code.',
+        'pip install -r requirements-dev.txt installs the pinned versions, the same ones as on your computer.',
+        p.run === 'gate' ? 'python train.py trains the new model. Its test accuracy is 0.84 this time.' : 'python train.py trains the model and saves it with its metadata (test accuracy 0.9111).',
+        p.run === 'gate' ? 'pytest: test_accuracy_gate fails because 0.84 is below the 0.90 gate. The run turns red and the pull request cannot be merged.' : 'pytest: all 7 tests pass (API, bad input, accuracy gate, invariance, direction, latency).',
+        'docker build makes the image. The pip layer comes from the cache when requirements.txt did not change.',
+        p.run === 'smoke' ? 'The smoke test starts the container and calls /health 20 times. It never answers, because the model file is missing from the image. The run turns red.' : 'The smoke test starts the container and calls /health and /predict with curl. Both answer.',
+        'On main only, the image is pushed to the registry, tagged with the commit id, so every version can be found again.',
+        'The deploy step tells the server to run the new image. If it misbehaves, rolling back means running the previous tag.'];
+      const fr = [];
+      for (let i = 0; i < STAGES.length; i++) {
+        fr.push({ k: i, fail, say: say[i] });
+        if (i === fail) break;
+      }
+      fr.push({ k: fail >= 0 ? fail : STAGES.length - 1, fail, done: true, say: fail >= 0 ? `Stopped at <b>${STAGES[fail]}</b>. Nothing after it ran, so the broken version never reached users. Fix it and push again.` : 'Green from push to deploy. The same steps run the same way on every push, which is the point of CI/CD.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      STAGES.forEach((n, i) => {
+        const x = 14 + (i % 4) * 147, y = i < 4 ? 40 : 186, bad = i === f.fail && f.k >= i, ok = i <= f.k && !bad, skip = f.done && f.fail >= 0 && i > f.fail;
+        box(z, x, y, 130, 60, n, { s: 12, b: i === f.k, fill: bad ? 'rgba(220,38,38,0.15)' : (ok ? 'rgba(22,163,74,0.14)' : c.surf), stroke: bad ? c.red : (ok ? c.green : c.line), w: i === f.k ? 2.5 : 1.5, dash: skip ? [4, 4] : undefined });
+        if (ok || bad) D.text(g, bad ? 'failed' : 'passed', x + 65, y + 78, { a: 'center', s: 11, b: true, c: bad ? c.red : c.green });
+        else if (skip) D.text(g, 'skipped', x + 65, y + 78, { a: 'center', s: 11, c: c.ink2 });
+        if (i % 4 !== 3) D.arrow(g, x + 131, y + 30, x + 145, y + 30, c.ink2, 1.5, 5);
+      });
+      D.arrow(g, 14 + 3 * 147 + 65, 128, 14 + 65, 184, c.ink2, 1.5, 6);
+      head(z, 'CI: install, train, test', 14, 30, { s: 11 }); head(z, 'CD: build, check, ship', 170, 182, { s: 11 });
+      if (f.done) D.text(g, f.fail >= 0 ? 'Pipeline red: the change is blocked.' : 'Pipeline green: the new version is live.', 14, 316, { s: 13, b: true, c: f.fail >= 0 ? c.red : c.green });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   MLOps 3.1  experiment tracking and the model registry: the winner's curse, and aliases that move
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box, rng } = MLZ;
+  const gauss = R => { const u = Math.max(R(), 1e-12), v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+  trace('mlruns', {
+    title: 'Many tracked runs and the winner&rsquo;s curse',
+    sub: 'Every dot is one tracked run. Its true quality is hidden. What you see is its score on one validation set, which adds a little luck. Picking the highest dot also picks the luckiest run, so its score on a fresh test set is usually lower.',
+    W: 600, H: 330,
+    params: [{ k: 'n', label: 'Runs compared on one validation set', type: 'select', v: '20', opts: [['5', '5 runs'], ['20', '20 runs'], ['100', '100 runs']] }],
+    tips: [
+      { t: '100 runs: the best validation score climbs, but the same model on fresh data does not. The gap grows with the number of runs.', set: { n: '100' }, play: true },
+      { t: '5 runs: little room for luck, so the winner&rsquo;s validation and test scores are close.', set: { n: '5' }, play: true }
+    ],
+    frames(p) {
+      const n = +p.n, R = rng(9), runs = Array.from({ length: n }, () => { const q = 0.80 + 0.05 * R(); return { q, v: q + 0.02 * gauss(R), t: q }; });
+      const batch = Math.max(1, Math.ceil(n / 6)), fr = [{ runs, k: 0, say: `${n} runs with different settings, all scored on the same validation set.` }];
+      for (let k = batch; k < n + batch; k += batch) { const m = Math.min(k, n); fr.push({ runs, k: m, say: `${m} of ${n} runs logged. The tracker stores the settings and the validation score of each.` }); if (m === n) break; }
+      let b = 0; runs.forEach((r, i) => { if (r.v > runs[b].v) b = i; });
+      fr.push({ runs, k: n, best: b, say: `The best validation score is <b>${runs[b].v.toFixed(3)}</b> (run ${b + 1}). That run becomes the champion.` });
+      fr.push({ runs, k: n, best: b, test: true, say: `On a large fresh test set the same model scores <b>${runs[b].t.toFixed(3)}</b>, a drop of ${(runs[b].v - runs[b].t).toFixed(3)}. Report the champion on untouched test data, once.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, n = f.runs.length, X = i => 50 + (i + 0.5) / n * 530, Y = a => 290 - (a - 0.74) / 0.18 * 260;
+      D.line(g, 50, 290, 580, 290, c.ink2, 1); D.line(g, 50, 290, 50, 30, c.ink2, 1);
+      [0.75, 0.80, 0.85, 0.90].forEach(a => { D.text(g, a.toFixed(2), 44, Y(a) + 4, { a: 'right', s: 10, c: c.ink2 }); D.line(g, 50, Y(a), 580, Y(a), c.line, 0.5); });
+      D.text(g, 'run number', 315, 312, { a: 'center', s: 11, c: c.ink2 }); head(z, 'validation score', 56, 24, { s: 11 });
+      f.runs.slice(0, f.k).forEach((r, i) => D.circle(g, X(i), Y(r.v), n > 50 ? 3 : 5, { fill: i === f.best ? c.green : c.cv }));
+      if (f.best !== undefined) {
+        const r = f.runs[f.best]; g.save(); g.strokeStyle = c.green; g.lineWidth = 2; g.beginPath(); g.arc(X(f.best), Y(r.v), 10, 0, 7); g.stroke(); g.restore();
+        if (f.test) { D.line(g, X(f.best), Y(r.v), X(f.best), Y(r.t), c.orange, 1.5, [3, 3]); g.save(); g.strokeStyle = c.orange; g.lineWidth = 2.5; g.beginPath(); g.arc(X(f.best), Y(r.t), 6, 0, 7); g.stroke(); g.restore();
+          D.text(g, 'green: champion on validation, orange ring: the same model on fresh test data', 56, 44, { s: 11, c: c.ink2 }); }
+      }
+    }
+  });
+
+  const VERS = [{ d: 'tree depth 2', auc: 0.9555 }, { d: 'stump depth 1', auc: 0.8844 }, { d: 'logistic C=1', auc: 0.9942 }];
+  trace('mlregistry', {
+    title: 'A model registry: fixed versions, moving aliases',
+    sub: 'Each registered version is frozen and keeps its number. Aliases such as champion and challenger are labels that point at a version. The service always loads the champion, so promoting or rolling back means moving one label. The scores are holdout AUCs from the chapter&rsquo;s program.',
+    W: 600, H: 330,
+    params: [{ k: 'margin', label: 'Promotion gate: beat the champion by', type: 'select', v: '0.002', opts: [['0.002', '0.002 AUC'], ['0.05', '0.05 AUC (strict)']] }],
+    tips: [
+      { t: 'Strict gate: v3 is better by 0.039, which is less than 0.05, so v1 stays champion. Gates trade safety against progress.', set: { margin: '0.05' }, play: true },
+      { t: 'Normal gate: v3 is promoted, then rolled back after an incident without any retraining.', set: { margin: '0.002' }, play: true }
+    ],
+    frames(p) {
+      const m = +p.margin, fr = [];
+      const st = (n, champ, chall, say, extra = {}) => fr.push({ n, champ, chall, say, ...extra });
+      st(1, 1, 0, 'Register v1 (tree depth 2, AUC 0.9555). There is no champion yet, so v1 becomes champion and the service loads it.');
+      st(2, 1, 2, 'Register v2 (stump, AUC 0.8844) as challenger. It is compared with the champion on the same holdout data.');
+      st(2, 1, 0, `v2 is worse than v1 (0.8844 against 0.9555), so it is not promoted. It stays in the registry for the record.`, { rej: 2 });
+      st(3, 1, 3, 'Register v3 (logistic regression, AUC 0.9942) as challenger.');
+      const ok = 0.9942 >= 0.9555 + m;
+      if (!ok) { st(3, 1, 0, `v3 is better by 0.0387, but the gate asks for ${m}. Not promoted, v1 stays champion. A strict gate also blocks real improvements.`, { rej: 3, done: true }); return fr; }
+      st(3, 3, 0, 'v3 beats v1 by 0.0387, more than the 0.002 gate. The champion alias moves to v3 and the service loads v3 on its next reload.');
+      st(3, 1, 0, 'An incident: v3 misbehaves on live traffic. Rollback is one action: move champion back to v1. Nothing is retrained or rebuilt.', { incident: 3, done: true });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, 'Registered versions of breast-cancer-classifier', 14, 24);
+      VERS.slice(0, f.n).forEach((v, i) => {
+        const x = 24 + i * 192, y = 120, isC = f.champ === i + 1, isCh = f.chall === i + 1, bad = f.rej === i + 1 || f.incident === i + 1;
+        box(z, x, y, 168, 92, '', { fill: isC ? 'rgba(22,163,74,0.14)' : (bad ? 'rgba(220,38,38,0.10)' : c.surf), stroke: isC ? c.green : (isCh ? c.purple : (bad ? c.red : c.line)), w: isC || isCh ? 2.5 : 1.5 });
+        D.text(g, `v${i + 1}`, x + 84, y + 28, { a: 'center', s: 18, b: true, c: c.ink });
+        D.text(g, v.d, x + 84, y + 52, { a: 'center', s: 12, c: c.ink2 });
+        D.text(g, `AUC ${v.auc.toFixed(4)}`, x + 84, y + 74, { a: 'center', s: 12, b: true, c: c.ink });
+        if (isC) { box(z, x + 24, y - 52, 120, 30, 'champion', { s: 13, b: true, fill: c.green, stroke: c.green, c: '#fff' }); D.arrow(g, x + 84, y - 22, x + 84, y - 2, c.green, 2, 6); }
+        if (isCh) { box(z, x + 24, y - 52, 120, 30, 'challenger', { s: 13, b: true, fill: c.purple, stroke: c.purple, c: '#fff' }); D.arrow(g, x + 84, y - 22, x + 84, y - 2, c.purple, 2, 6); }
+        if (f.incident === i + 1) D.text(g, 'incident', x + 84, y + 112, { a: 'center', s: 12, b: true, c: c.red });
+        if (f.rej === i + 1) D.text(g, 'not promoted', x + 84, y + 112, { a: 'center', s: 12, b: true, c: c.red });
+      });
+      D.text(g, `The service loads: models:/breast-cancer-classifier@champion = v${f.champ}`, 14, 300, { s: 13, b: true, mono: true, c: c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   MLOps 3.2  monitoring and drift: the population stability index bin by bin, and concept against data drift
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head } = MLZ;
+  const erf = x => { const s = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a)); };
+  const cdf = (x, m, s) => 0.5 * (1 + erf((x - m) / (s * Math.SQRT2)));
+  const Z = [-Infinity, -1.2816, -0.8416, -0.5244, -0.2533, 0, 0.2533, 0.5244, 0.8416, 1.2816, Infinity];
+  const CASES = { same: [50, 10, 'the same N(50, 10)'], small: [52, 10, 'mean moved to 52'], big: [58, 10, 'mean moved to 58'], wide: [50, 16, 'spread grew to 16'] };
+
+  trace('mlpsi', {
+    title: 'The population stability index, bin by bin',
+    sub: 'Cut the training (reference) values of a feature into 10 bins holding 10 percent each. Count the share of live values in the same bins. Each bin adds (q &minus; p) &middot; ln(q / p). Below 0.1 is stable, 0.1 to 0.25 needs watching, above 0.25 is drift. The shares here are exact, from the normal curve.',
+    W: 600, H: 330,
+    params: [{ k: 'live', label: 'Live data', type: 'select', v: 'big', opts: [['same', 'Same as training'], ['small', 'Mean 50 to 52'], ['big', 'Mean 50 to 58'], ['wide', 'Spread 10 to 16']] }],
+    tips: [
+      { t: 'A wider spread: the middle bins empty out and the two outer bins fill up. The mean did not move, yet PSI still rises.', set: { live: 'wide' }, play: true },
+      { t: 'A small shift of 2: every bin changes a little, and the total stays under 0.1.', set: { live: 'small' }, play: true }
+    ],
+    frames(p) {
+      const [m, s, label] = CASES[p.live], bins = [];
+      for (let i = 0; i < 10; i++) { const lo = 50 + 10 * Z[i], hi = 50 + 10 * Z[i + 1], q = Math.max(cdf(hi, m, s) - cdf(lo, m, s), 1e-4); bins.push({ p: 0.1, q, t: (q - 0.1) * Math.log(q / 0.1) }); }
+      const fr = [{ bins, k: 0, tot: 0, say: `Reference: 10 bins of 10 percent each. Live data: ${label}.` }];
+      let tot = 0;
+      bins.forEach((b, i) => { tot += b.t; fr.push({ bins, k: i + 1, tot, say: `Bin ${i + 1}: live share ${(b.q * 100).toFixed(1)} percent against 10, adds ${b.t.toFixed(3)}. Running PSI ${tot.toFixed(3)}.` }); });
+      fr.push({ bins, k: 10, tot, done: true, say: `PSI = <b>${tot.toFixed(3)}</b>: ${tot < 0.1 ? 'stable.' : tot < 0.25 ? 'watch this feature.' : 'drift. Investigate the data and consider retraining.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, X = i => 40 + i * 54, Y = v => 250 - v / 0.35 * 200;
+      D.line(g, 36, 250, 584, 250, c.ink2, 1);
+      [0.1, 0.2, 0.3].forEach(v => { D.text(g, `${v * 100}%`, 32, Y(v) + 4, { a: 'right', s: 10, c: c.ink2 }); D.line(g, 36, Y(v), 584, Y(v), c.line, 0.5); });
+      f.bins.forEach((b, i) => {
+        g.fillStyle = 'rgba(100,116,139,0.35)'; g.fillRect(X(i) + 4, Y(b.p), 20, 250 - Y(b.p));
+        if (i < f.k) { g.fillStyle = b.t > 0.03 ? c.orange : c.cv; g.fillRect(X(i) + 26, Y(Math.min(b.q, 0.35)), 20, 250 - Y(Math.min(b.q, 0.35))); D.text(g, b.t.toFixed(3), X(i) + 25, 268, { a: 'center', s: 10, c: c.ink2 }); }
+      });
+      head(z, 'grey: training share   coloured: live share   numbers: PSI added by each bin', 40, 24, { s: 11 });
+      D.text(g, `PSI so far: ${f.tot.toFixed(3)}`, 40, 300, { s: 14, b: true, c: f.tot < 0.1 ? c.green : f.tot < 0.25 ? c.orange : c.red });
+    }
+  });
+
+  const SERIES = {
+    concept: { acc: [0.947, 0.918, 0.883, 0.86, 0.828, 0.809, 0.753, 0.732, 0.708, 0.66, 0.648, 0.604, 0.568], acc3: [0.947, 0.918, 0.883, 0.86, 0.908, 0.876, 0.843, 0.918, 0.878, 0.857, 0.918, 0.887, 0.851], psi: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0, 0.01, 0.01, 0.01, 0.01] },
+    data: { acc: [0.947, 0.945, 0.948, 0.944, 0.946, 0.944, 0.944, 0.951, 0.948, 0.951, 0.952, 0.956, 0.952], acc3: [0.947, 0.945, 0.948, 0.944, 0.93, 0.936, 0.94, 0.921, 0.935, 0.94, 0.944, 0.952, 0.95], psi: [0.01, 0.06, 0.28, 0.58, 0.93, 1.5, 1.95, 2.49, 3.39, 4.39, 4.66, 5.34, 6.19] }
+  };
+  trace('mldecay', {
+    title: 'Concept drift against data drift over a year',
+    sub: 'A model is trained in month 0. In concept drift the inputs stay the same but the rule behind the labels turns 6 degrees a month. In data drift the inputs move but the rule holds. Watch both accuracy (needs true labels) and PSI of an input (needs no labels). The numbers come from a simulation like the chapter&rsquo;s program.',
+    W: 600, H: 330,
+    params: [
+      { k: 'kind', label: 'What changes', type: 'select', v: 'concept', opts: [['concept', 'Concept drift: the rule changes'], ['data', 'Data drift: the inputs change']] },
+      { k: 'retrain', label: 'Retraining', type: 'select', v: 'never', opts: [['never', 'Never'], ['q', 'Every 3 months on new labels']] }
+    ],
+    tips: [
+      { t: 'Concept drift, retrained every 3 months: accuracy saws up and down but stays above 0.84.', set: { kind: 'concept', retrain: 'q' }, play: true },
+      { t: 'Data drift: the PSI alarm rings from month 2, yet accuracy stays near 0.95. Drift is a reason to look, not proof of harm.', set: { kind: 'data', retrain: 'never' }, play: true }
+    ],
+    frames(p) {
+      const S = SERIES[p.kind], acc = p.retrain === 'q' ? S.acc3 : S.acc;
+      const psi = S.psi.map((v, m) => (p.retrain === 'q' ? S.psi[m - 3 * Math.floor(m / 3) * (m >= 3 ? 1 : 0)] : v));
+      const fr = [];
+      for (let m = 0; m <= 12; m++) {
+        let say = `Month ${m}: accuracy ${acc[m].toFixed(2)}, PSI of the input ${psi[m].toFixed(2)}.`;
+        if (p.retrain === 'q' && m > 0 && m % 3 === 0) say += ' Retrained on this month&rsquo;s labelled data.';
+        fr.push({ m, acc, psi, say });
+      }
+      const last = fr[12];
+      last.say += p.kind === 'concept' ? (p.retrain === 'q' ? ' Regular retraining keeps up with a slowly turning rule.' : ' Accuracy fell from 0.95 to 0.57 while PSI never moved. Only performance monitoring catches concept drift.')
+        : (p.retrain === 'q' ? ' Each retrain makes the newest data the reference, so PSI drops back to zero, and accuracy held all year.' : ' PSI rose far past 0.25 while accuracy held. The rule still applies to the moved inputs, so this drift did no harm.');
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, X = m => 50 + m * 42, YA = a => 190 - (a - 0.5) / 0.5 * 160;
+      head(z, 'accuracy', 50, 22, { s: 11 });
+      D.line(g, 46, 190, 560, 190, c.ink2, 1);
+      [0.5, 0.75, 1].forEach(a => { D.text(g, a.toFixed(2), 42, YA(a) + 4, { a: 'right', s: 10, c: c.ink2 }); D.line(g, 46, YA(a), 560, YA(a), c.line, 0.5); });
+      g.save(); g.strokeStyle = c.cv; g.lineWidth = 2.5; g.beginPath();
+      for (let m = 0; m <= f.m; m++) { m ? g.lineTo(X(m), YA(f.acc[m])) : g.moveTo(X(m), YA(f.acc[m])); } g.stroke(); g.restore();
+      for (let m = 0; m <= f.m; m++) D.circle(g, X(m), YA(f.acc[m]), 3.5, { fill: c.cv });
+      head(z, 'PSI of an input (bars, capped at 1, threshold 0.25 dashed)', 50, 212, { s: 11 });
+      const YP = v => 300 - Math.min(v, 1) * 70;
+      D.line(g, 46, 300, 560, 300, c.ink2, 1); D.line(g, 46, YP(0.25), 560, YP(0.25), c.red, 1, [4, 3]);
+      for (let m = 0; m <= f.m; m++) { const v = f.psi[m]; g.fillStyle = v >= 0.25 ? c.red : c.green; g.fillRect(X(m) - 9, YP(v), 18, 300 - YP(v)); if (v >= 1) D.text(g, v.toFixed(1), X(m), YP(v) - 3, { a: 'center', s: 9, c: c.ink2 }); }
+      for (let m = 0; m <= 12; m += 2) D.text(g, `${m}`, X(m), 316, { a: 'center', s: 10, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   MLOps 3.3  explainability and fairness: Shapley values by orderings, and group thresholds
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box } = MLZ;
+  const NAMES = ['income', 'debt ratio', 'age'];
+  /* coalition values v(S) from the chapter's gradient boosting model and 200 background applicants */
+  const APPL = {
+    a: { x: ['38', '0.82', '29'], v: { '': 0.45, 0: 0.3, 1: 0.229, 2: 0.388, '01': 0.12, '02': 0.244, '12': 0.169, '012': 0.083 } },
+    b: { x: ['72', '0.25', '51'], v: { '': 0.45, 0: 0.752, 1: 0.68, 2: 0.466, '01': 0.905, '02': 0.814, '12': 0.687, '012': 0.919 } }
+  };
+  const ORDERS = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+  const key = s => s.slice().sort().join('');
+  const sg = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(3);
+
+  trace('mlshapley', {
+    title: 'Shapley values: fair credit for each feature',
+    sub: 'Add the features one at a time in every possible order. Each time a feature joins, note how much the predicted chance of repaying changes. A feature&rsquo;s Shapley value is its average change over all 6 orders. The values come from the chapter&rsquo;s program.',
+    W: 600, H: 330,
+    params: [{ k: 'who', label: 'Applicant', type: 'select', v: 'a', opts: [['a', 'Income 38, debt ratio 0.82, age 29'], ['b', 'Income 72, debt ratio 0.25, age 51']] }],
+    tips: [
+      { t: 'The second applicant: income adds the most, and the total climbs from 0.45 to 0.919.', set: { who: 'b' }, play: true },
+      { t: 'Look at the debt ratio in different orders: what it adds depends on what came before. Averaging over orders is what makes the credit fair.', set: { who: 'a' }, play: true }
+    ],
+    frames(p) {
+      const A = APPL[p.who], v = A.v, phi = [0, 0, 0], fr = [{ A, rows: [], phi: null, say: `Base value: the average prediction over typical applicants is ${v[''].toFixed(3)}. The model says ${v['012'].toFixed(3)} for this applicant.` }];
+      const rows = [];
+      ORDERS.forEach(o => {
+        const seen = [], gains = [];
+        o.forEach(j => { const before = v[key(seen)]; seen.push(j); const g = v[key(seen)] - before; gains.push([j, g]); phi[j] += g / 6; });
+        rows.push(gains);
+        fr.push({ A, rows: rows.slice(), phi: null, say: `Order ${o.map(j => NAMES[j]).join(', ')}: ${gains.map(([j, g]) => `${NAMES[j]} ${sg(g)}`).join(', ')}.` });
+      });
+      fr.push({ A, rows, phi: phi.slice(), say: `Averages: ${phi.map((f, j) => `${NAMES[j]} ${sg(f)}`).join(', ')}. ${v[''].toFixed(3)} plus these is ${(v[''] + phi[0] + phi[1] + phi[2]).toFixed(3)}, exactly the prediction.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, `Applicant: income ${f.A.x[0]}, debt ratio ${f.A.x[1]}, age ${f.A.x[2]}`, 14, 22);
+      D.text(g, 'order', 14, 46, { s: 11, b: true, c: c.ink2 });
+      f.rows.forEach((gains, r) => {
+        const y = 66 + r * 24;
+        gains.forEach(([j, gv], i) => { const x = 14 + i * 98; box(z, x, y - 14, 92, 20, `${NAMES[j]} ${sg(gv)}`, { s: 10, fill: gv >= 0 ? 'rgba(22,163,74,0.14)' : 'rgba(220,38,38,0.12)', stroke: c.line, w: 1 }); });
+      });
+      if (f.phi) {
+        const X0 = 330, W = 250, sc = W / 1, Xv = v => X0 + v * sc;
+        head(z, 'waterfall: from base value to prediction', X0, 46, { s: 11 });
+        let cur = f.A.v[''];
+        D.line(g, Xv(0), 60, Xv(0), 250, c.line, 1); D.line(g, Xv(1), 60, Xv(1), 250, c.line, 1);
+        D.text(g, '0', Xv(0), 266, { a: 'center', s: 10, c: c.ink2 }); D.text(g, '1', Xv(1), 266, { a: 'center', s: 10, c: c.ink2 });
+        D.text(g, `base ${cur.toFixed(3)}`, X0, 76, { s: 11, c: c.ink }); D.line(g, Xv(cur), 82, Xv(cur), 96, c.ink2, 2);
+        f.phi.forEach((ph, j) => {
+          const y = 104 + j * 40, a = Math.min(cur, cur + ph), b = Math.max(cur, cur + ph);
+          g.fillStyle = ph >= 0 ? c.green : c.red; g.fillRect(Xv(a), y, Math.max(2, (b - a) * sc), 22);
+          D.text(g, `${NAMES[j]} ${sg(ph)}`, X0, y + 36, { s: 10, c: c.ink2 }); cur += ph;
+        });
+        D.text(g, `prediction ${cur.toFixed(3)}`, X0, 240, { s: 12, b: true, c: c.ink });
+      }
+      D.text(g, 'green: raises the chance of repaying   red: lowers it', 14, 316, { s: 11, c: c.ink2 });
+    }
+  });
+
+  const erf = x => { const s = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a)); };
+  const above = (t, m, s) => 0.5 * (1 - erf((t - m) / (s * Math.SQRT2)));
+  /* score distributions: positives (would repay) and negatives, per group, and each group's share of positives */
+  const G = { A: { pos: [0.62, 0.13], neg: [0.42, 0.13], base: 0.57 }, B: { pos: [0.52, 0.13], neg: [0.36, 0.13], base: 0.43 } };
+  const stats = (gr, t) => { const q = G[gr], tpr = above(t, ...q.pos), fpr = above(t, ...q.neg); return { tpr, fpr, sel: q.base * tpr + (1 - q.base) * fpr }; };
+  const solve = (f, target) => { let lo = 0, hi = 1; for (let i = 0; i < 50; i++) { const mid = (lo + hi) / 2; if (f(mid) > target) lo = mid; else hi = mid; } return (lo + hi) / 2; };
+
+  trace('mlthreshold', {
+    title: 'One threshold or one per group',
+    sub: 'Scores of a loan model for two groups. Applicants above the threshold are approved. TPR is the share of people who would repay that get approved. FPR is the share of people who would not repay that get approved. Different fairness goals need different thresholds, and they cannot all hold at once when the groups&rsquo; repayment rates differ.',
+    W: 600, H: 330,
+    params: [{ k: 'rule', label: 'Threshold rule', type: 'select', v: 'single', opts: [['single', 'One threshold of 0.5 for both'], ['eo', 'Equal opportunity: same TPR'], ['dp', 'Demographic parity: same approval rate']] }],
+    tips: [
+      { t: 'Equal opportunity: group B gets a lower threshold so that people who would repay are approved at the same rate in both groups.', set: { rule: 'eo' }, play: true },
+      { t: 'Demographic parity: equal approval rates need an even lower threshold for B, which also approves more people who will not repay.', set: { rule: 'dp' }, play: true }
+    ],
+    frames(p) {
+      const tA = 0.5, sA = stats('A', tA);
+      let tB = 0.5;
+      if (p.rule === 'eo') tB = solve(t => stats('B', t).tpr, sA.tpr);
+      if (p.rule === 'dp') tB = solve(t => stats('B', t).sel, sA.sel);
+      const sB = stats('B', tB), base = { tA, tB, sA, sB };
+      return [
+        { ...base, k: 0, say: 'Two groups. In each, the green curve is people who would repay and the red curve is people who would not. Group B&rsquo;s scores sit lower.' },
+        { ...base, k: 1, say: `Group A threshold ${tA.toFixed(2)}: approves ${(sA.sel * 100).toFixed(0)} percent, TPR ${sA.tpr.toFixed(2)}, FPR ${sA.fpr.toFixed(2)}.` },
+        { ...base, k: 2, say: `Group B threshold ${tB.toFixed(2)}: approves ${(sB.sel * 100).toFixed(0)} percent, TPR ${sB.tpr.toFixed(2)}, FPR ${sB.fpr.toFixed(2)}.` },
+        { ...base, k: 3, say: p.rule === 'single' ? `Same rule, different outcomes: approval ratio B to A is ${(sB.sel / sA.sel).toFixed(2)}, below the 0.8 rule of thumb, and repayers in B are approved less often (TPR gap ${(sA.tpr - sB.tpr).toFixed(2)}).`
+          : p.rule === 'eo' ? `TPR is now equal (${sA.tpr.toFixed(2)}). Approval ratio ${(sB.sel / sA.sel).toFixed(2)}. The FPRs still differ, so equalised odds is not met.`
+            : `Approval rates are equal (ratio 1.00), but B&rsquo;s TPR is now ${sB.tpr.toFixed(2)} against ${sA.tpr.toFixed(2)} and its FPR ${sB.fpr.toFixed(2)}. Each fairness goal moves the others.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      ['A', 'B'].forEach((gr, r) => {
+        const y0 = 120 + r * 130, X = s => 40 + s * 360, q = G[gr], t = gr === 'A' ? f.tA : f.tB, st = gr === 'A' ? f.sA : f.sB;
+        D.line(g, 40, y0, 400, y0, c.ink2, 1); head(z, `group ${gr}`, 40, y0 - 92, { s: 12 });
+        [['pos', c.green, q.base], ['neg', c.red, 1 - q.base]].forEach(([k, col, w]) => {
+          const [m, s] = q[k]; g.save(); g.strokeStyle = col; g.lineWidth = 2; g.beginPath();
+          for (let i = 0; i <= 100; i++) { const x = i / 100, yv = w * Math.exp(-((x - m) ** 2) / (2 * s * s)); i ? g.lineTo(X(x), y0 - yv * 130) : g.moveTo(X(x), y0 - yv * 130); }
+          g.stroke(); g.restore();
+        });
+        D.text(g, '0', X(0), y0 + 14, { a: 'center', s: 10, c: c.ink2 }); D.text(g, '1', X(1), y0 + 14, { a: 'center', s: 10, c: c.ink2 });
+        if ((gr === 'A' && f.k >= 1) || (gr === 'B' && f.k >= 2)) {
+          D.line(g, X(t), y0 - 90, X(t), y0, c.purple, 2, [5, 3]); D.text(g, `t = ${t.toFixed(2)}`, X(t), y0 + 14, { a: 'center', s: 10, b: true, c: c.purple });
+          D.text(g, `approved ${(st.sel * 100).toFixed(0)}%`, 420, y0 - 56, { s: 12, b: true, c: c.ink });
+          D.text(g, `TPR ${st.tpr.toFixed(2)}`, 420, y0 - 36, { s: 12, c: c.green }); D.text(g, `FPR ${st.fpr.toFixed(2)}`, 420, y0 - 16, { s: 12, c: c.red });
+        }
+      });
+      head(z, 'green: would repay   red: would not   purple: threshold', 40, 18, { s: 11 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   MLOps 4.1  ML system design: a canary rollout with a guardrail, and why peeking at an A/B test lies
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box, rng } = MLZ;
+  const STAGES = [['shadow', 0], ['canary 1%', 1], ['5%', 5], ['25%', 25], ['50%', 50], ['100%', 100]];
+  const ERR = { good: [0.66, 0.64, 0.62, 0.61, 0.60, 0.60], bad: [0.65, 2.4, 2.4, 2.4, 2.4, 2.4] };
+  const OLD = 0.70, GUARD = 1.2, PER_HOUR = 100000;
+
+  trace('mlrollout', {
+    title: 'A canary rollout with a guardrail',
+    sub: 'A new model version first runs in shadow (it sees every request but its answers are only logged), then serves a growing share of users. After each stage a guardrail compares its error rate with a limit. If the guardrail breaks, traffic goes straight back to the old version. Each stage lasts one hour of 100,000 requests.',
+    W: 600, H: 330,
+    params: [{ k: 'model', label: 'New version v2', type: 'select', v: 'good', opts: [['good', 'A good model'], ['bad', 'A model with a hidden bug']] }],
+    tips: [
+      { t: 'A model with a hidden bug: the guardrail trips at the 1 percent stage, so only about 1,000 requests ever reach it.', set: { model: 'bad' }, play: true },
+      { t: 'A good model: it passes every guardrail and reaches 100 percent in five steps.', set: { model: 'good' }, play: true }
+    ],
+    frames(p) {
+      const e = ERR[p.model], fr = [{ k: -1, share: 0, say: `The old version v1 serves every user. Its error rate is ${OLD.toFixed(2)} percent. The guardrail for v2 is ${GUARD.toFixed(1)} percent.` }];
+      for (let k = 0; k < STAGES.length; k++) {
+        const [name, share] = STAGES[k], n = k === 0 ? PER_HOUR : PER_HOUR * share / 100, bad = e[k] > GUARD;
+        if (k === 0) fr.push({ k, share: 0, say: `Shadow: v2 answers a copy of all ${PER_HOUR.toLocaleString('en')} requests, but users only see v1. v2 error rate on the copies ${e[0].toFixed(2)} percent.${p.model === 'bad' ? ' It looks fine, because this bug only shows when real users act on v2&rsquo;s answers.' : ''}` });
+        else fr.push({ k, share, say: `${name}: ${n.toLocaleString('en')} requests go to v2. Error rate ${e[k].toFixed(2)} percent against the ${GUARD.toFixed(1)} percent guardrail: ${bad ? 'broken' : 'passed'}.` });
+        if (k > 0 && bad) { fr.push({ k, share: 0, rolled: true, say: `Automatic rollback: all traffic returns to v1 within seconds. Only ${n.toLocaleString('en')} requests, ${share} percent of one hour, ever reached the faulty model.` }); return fr.map(x => ({ ...x, model: p.model })); }
+      }
+      fr[fr.length - 1].say += ' v2 is now the only version, and v1 is kept for a quick rollback.';
+      return fr.map(x => ({ ...x, model: p.model }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, e = ERR[f.model];
+      head(z, 'Share of users on each version', 14, 22);
+      const W = 560, x0 = 20, w2 = W * f.share / 100;
+      box(z, x0, 34, W, 34, '', { fill: c.surf, stroke: c.line });
+      if (W - w2 > 0) { g.fillStyle = 'rgba(37,99,235,0.25)'; g.fillRect(x0, 34, W - w2, 34); if (W - w2 > 60) D.text(g, `v1 ${100 - f.share}%`, x0 + (W - w2) / 2, 56, { a: 'center', s: 12, b: true, c: c.ink }); }
+      if (w2 > 0) { g.fillStyle = f.model === 'bad' ? 'rgba(220,38,38,0.35)' : 'rgba(22,163,74,0.35)'; g.fillRect(x0 + W - w2, 34, w2, 34); if (w2 > 50) D.text(g, `v2 ${f.share}%`, x0 + W - w2 / 2, 56, { a: 'center', s: 12, b: true, c: c.ink }); }
+      if (f.k === 0) D.text(g, 'v2 in shadow: sees a copy of every request, answers are logged only', x0, 86, { s: 11, c: c.ink2 });
+      if (f.rolled) D.text(g, 'rolled back to v1', x0, 86, { s: 12, b: true, c: c.red });
+      const Y = v => 290 - v / 3 * 170, X = k => 70 + k * 88;
+      head(z, 'error rate after each stage (percent)', 14, 112, { s: 11 });
+      D.line(g, 50, 290, 580, 290, c.ink2, 1); D.line(g, 50, 290, 50, 116, c.ink2, 1);
+      [0, 1, 2, 3].forEach(v => D.text(g, String(v), 44, Y(v) + 4, { a: 'right', s: 10, c: c.ink2 }));
+      D.line(g, 50, Y(GUARD), 580, Y(GUARD), c.orange, 1.5, [6, 4]); D.text(g, `guardrail ${GUARD}`, 578, Y(GUARD) - 6, { a: 'right', s: 10, b: true, c: c.orange });
+      D.line(g, 50, Y(OLD), 580, Y(OLD), 'rgba(37,99,235,0.8)', 1.5); D.text(g, `v1 ${OLD}`, 578, Y(OLD) + 14, { a: 'right', s: 10, c: c.ink2 });
+      STAGES.forEach(([name], k) => {
+        D.text(g, name, X(k) + 14, 306, { a: 'center', s: 10, c: c.ink2 });
+        if (k <= f.k) { const v = e[k]; g.fillStyle = v > GUARD ? c.red : c.green; g.fillRect(X(k), Y(v), 28, 290 - Y(v)); D.text(g, v.toFixed(2), X(k) + 14, Y(v) - 4, { a: 'center', s: 10, b: true, c: c.ink }); }
+      });
+    }
+  });
+
+  const gauss = R => { const u = Math.max(R(), 1e-12), v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const DAYS = 20, RUNS = 40;
+  const PATHS = (() => { const R = rng(11); return Array.from({ length: RUNS }, () => { let s = 0; return Array.from({ length: DAYS }, (_, d) => { s += gauss(R); return s / Math.sqrt(d + 1); }); }); })();
+  const firstCross = path => path.findIndex(z => Math.abs(z) > 1.96);
+
+  trace('mlpeek', {
+    title: 'Peeking at an A/B test',
+    sub: 'Forty A/A tests: both groups get the same model, so there is no real difference and every significant result is a false alarm. Each line is the z statistic of one test as data arrives over 20 days. Outside the band means p below 0.05.',
+    W: 600, H: 330,
+    params: [{ k: 'rule', label: 'When do you decide?', type: 'select', v: 'peek', opts: [['peek', 'Check every day, stop at the first p < 0.05'], ['end', 'Check once, on day 20']] }],
+    tips: [
+      { t: 'Check once at the end: about 1 test in 20 is a false alarm, which is exactly what p < 0.05 promises.', set: { rule: 'end' }, play: true },
+      { t: 'Check every day: random wandering crosses the band at some point far more often, so many more tests end with a false winner.', set: { rule: 'peek' }, play: true }
+    ],
+    frames(p) {
+      const fr = [{ d: 0, say: `${RUNS} A/A tests start. With no real difference, each z statistic wanders randomly around 0.` }];
+      for (const d of [5, 10, 15, 20]) {
+        const crossed = PATHS.filter(pt => { const k = firstCross(pt); return k >= 0 && k < d; }).length;
+        fr.push({ d, say: p.rule === 'peek' ? `Day ${d}: ${crossed} of ${RUNS} tests have touched p < 0.05 at least once, and a daily checker would already have stopped them and declared a winner.` : `Day ${d}: the lines wander, sometimes outside the band, but you have promised to decide only on day 20.` });
+      }
+      const atEnd = PATHS.filter(pt => Math.abs(pt[DAYS - 1]) > 1.96).length, any = PATHS.filter(pt => firstCross(pt) >= 0).length;
+      fr.push({ d: DAYS, verdict: true, say: p.rule === 'peek' ? `False alarms with daily peeking: <b>${any} of ${RUNS}</b> (${Math.round(any / RUNS * 100)} percent), not 5 percent. Fix it with a fixed sample size or a sequential test built for repeated looks.` : `False alarms when you check once: <b>${atEnd} of ${RUNS}</b> (${Math.round(atEnd / RUNS * 100)} percent), close to the 5 percent you asked for.` });
+      return fr.map(x => ({ ...x, rule: p.rule }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, X = d => 50 + d / DAYS * 520, Y = v => 170 - Math.max(-3.4, Math.min(3.4, v)) / 3.2 * 130;
+      g.fillStyle = 'rgba(22,163,74,0.08)'; g.fillRect(X(0), Y(1.96), 520, Y(-1.96) - Y(1.96));
+      D.line(g, X(0), Y(1.96), X(DAYS), Y(1.96), c.green, 1, [4, 3]); D.line(g, X(0), Y(-1.96), X(DAYS), Y(-1.96), c.green, 1, [4, 3]);
+      D.line(g, X(0), Y(0), X(DAYS), Y(0), c.line, 1); D.line(g, X(0), 30, X(0), 310, c.ink2, 1);
+      [-3, -1.96, 0, 1.96, 3].forEach(v => D.text(g, String(v), 44, Y(v) + 4, { a: 'right', s: 10, c: c.ink2 }));
+      [5, 10, 15, 20].forEach(d => D.text(g, `day ${d}`, X(d), 322, { a: 'center', s: 10, c: c.ink2 }));
+      head(z, 'z statistic', 56, 24, { s: 11 });
+      const peek = f.rule === 'peek';
+      PATHS.forEach(pt => {
+        const k = firstCross(pt), stop = peek && k >= 0 ? Math.min(k + 1, f.d) : f.d;
+        if (stop < 1) return;
+        const flagged = peek ? (k >= 0 && k < f.d) : (f.verdict && Math.abs(pt[DAYS - 1]) > 1.96);
+        g.save(); g.strokeStyle = flagged ? c.red : 'rgba(100,116,139,0.45)'; g.lineWidth = flagged ? 1.8 : 1; g.beginPath(); g.moveTo(X(0), Y(0));
+        for (let d = 0; d < stop; d++) g.lineTo(X(d + 1), Y(pt[d])); g.stroke(); g.restore();
+        if (flagged) { const d = peek ? k : DAYS - 1; D.circle(g, X(d + 1), Y(pt[d]), 4, { fill: c.red }); }
+      });
+      D.text(g, 'band: p above 0.05   red: a false winner', 340, 24, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   MLOps 4.2  revision: the whole subject as one loop, and the three MLOps maturity levels
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box } = MLZ;
+  const CH = [
+    ['1.1', 'Setup', 'One virtual environment per project. PATH decides which python runs.', 'pip freeze &gt; requirements.txt, never commit .venv'],
+    ['1.2', 'Lifecycle', 'Fix seeds, keep a run record and a data fingerprint. Levels 0, 1 and 2.', 'Report the spread over several seeds'],
+    ['2.1', 'Pipelines', 'Fit every step on training rows only and save the whole pipeline.', 'Leaky selection scored 0.85 on noise, honest 0.48'],
+    ['2.2', 'Serving', 'POST /predict returns JSON, 422 for bad input.', 'Workers = request rate &times; latency (Little&rsquo;s law)'],
+    ['2.3', 'Docker, CI/CD', 'Copy requirements before code so the layer cache works. Gate every release.', 'Code change rebuilt in 2.2 s instead of 32 s'],
+    ['3.1', 'Tracking', 'Log every run. Promote or roll back by moving the champion alias.', 'Best of 1000 coin flip models: 0.615 on validation'],
+    ['3.2', 'Monitoring', 'PSI 0.1 watch, 0.25 drift. Accuracy needs labels.', 'Concept drift: accuracy 0.95 to 0.57, input PSI 0.01'],
+    ['3.3', 'Explain, fair', 'Shapley values add up to the prediction. Audit rates by group.', 'Disparate impact 0.52 fails the 0.8 rule'],
+    ['4.1', 'System design', 'Numbers first. Shadow, canary, then an A/B test read once.', 'Peeking raised false alarms from 4.4 to 22 percent']
+  ];
+  const INCIDENT = [
+    [6, 'Alert: the PSI of monthly_bill is 0.33 and the business metric is falling.'],
+    [7, 'SHAP on last week&rsquo;s predictions shows monthly_bill now drives most scores, so the price rise is the cause.'],
+    [5, 'Limit harm first: if the old version copes better, move the champion alias back. One action, no rebuild.'],
+    [2, 'Retrain the same pipeline on recent data, with every step fitted on training rows only.'],
+    [4, 'CI runs the tests, the quality gate and the fairness gate, then builds and pushes a new image.'],
+    [8, 'Release safely: shadow, then a canary with guardrails, and the new version becomes champion.'],
+    [1, 'Write the incident into the run record, and add a drift test so the next price change is caught on day one.']
+  ];
+  const POS = i => i < 5 ? [14 + i * 116, 40] : [14 + (8 - i) * 116 + 58, 124];
+
+  trace('mlrecap', {
+    title: 'The whole MLOps subject in one loop',
+    sub: 'Every chapter is one stage of a model&rsquo;s life. Walk the loop in order to revise, or follow a real incident and see which chapters you use and in what order.',
+    W: 600, H: 330,
+    params: [{ k: 'path', label: 'Walk', type: 'select', v: 'build', opts: [['build', 'Chapter by chapter'], ['incident', 'A drift incident from alert to fix']] }],
+    tips: [
+      { t: 'A drift incident: monitoring raises the alarm, explanations find the cause, the registry limits harm, and the pipeline, CI and canary ship the fix.', set: { path: 'incident' }, play: true },
+      { t: 'Chapter by chapter: one key idea and one number to remember for each.', set: { path: 'build' }, play: true }
+    ],
+    frames(p) {
+      const fr = [{ on: [], cur: -1, say: p.path === 'build' ? 'Nine chapters, one loop: from an empty laptop to a monitored, fair, well designed ML system.' : 'A model has been live for months. Something is going wrong.' }];
+      if (p.path === 'build') CH.forEach((c, i) => fr.push({ on: CH.slice(0, i + 1).map((_, j) => j), cur: i, say: `${c[0]} ${c[1]}: ${c[2]} Remember: ${c[3]}.` }));
+      else INCIDENT.forEach(([i, t], k) => fr.push({ on: INCIDENT.slice(0, k + 1).map(x => x[0]), cur: i, step: k + 1, say: `Step ${k + 1}, chapter ${CH[i][0]}: ${t}` }));
+      return fr.map(x => ({ ...x, path: p.path }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, 'MLOps chapters', 14, 22);
+      CH.forEach((ch, i) => {
+        const [x, y] = POS(i), on = f.on.includes(i), cur = f.cur === i;
+        box(z, x, y, 104, 52, '', { fill: cur ? c.purple : (on ? 'rgba(124,58,237,0.14)' : c.surf), stroke: cur || on ? c.purple : c.line, w: cur ? 2.5 : 1.2 });
+        D.text(g, ch[0], x + 52, y + 21, { a: 'center', s: 13, b: true, c: cur ? '#fff' : c.ink });
+        D.text(g, ch[1], x + 52, y + 40, { a: 'center', s: 11, c: cur ? '#fff' : c.ink2 });
+        if (i < 8) {
+          const [nx, ny] = POS(i + 1);
+          if (i === 4) D.arrow(g, x + 52, y + 52, nx + 52, ny, c.ink2, 1.2, 5);
+          else if (i < 4) D.arrow(g, x + 104, y + 26, nx, ny + 26, c.ink2, 1.2, 5);
+          else D.arrow(g, x, y + 26, nx + 104, ny + 26, c.ink2, 1.2, 5);
+        }
+      });
+      D.arrow(g, POS(8)[0] + 20, POS(8)[1], POS(0)[0] + 52, POS(0)[1] + 52, c.line, 1, 5, [4, 3]);
+      D.text(g, 'retrain and repeat', POS(8)[0] - 6, POS(8)[1] + 70, { s: 10, c: c.ink2 });
+      if (f.cur >= 0) {
+        const ch = CH[f.cur];
+        box(z, 14, 206, 572, 110, '', { fill: c.surf, stroke: c.line });
+        D.text(g, `${ch[0]}  ${ch[1]}`, 28, 230, { s: 14, b: true, c: c.purple });
+        const txt = (f.path === 'build' ? ch[2] : INCIDENT[f.step - 1][1]).replace(/&rsquo;/g, '’'), lines = [''];
+        txt.split(' ').forEach(w => { if ((lines[lines.length - 1] + ' ' + w).length > 86) lines.push(w); else lines[lines.length - 1] = (lines[lines.length - 1] + ' ' + w).trim(); });
+        lines.slice(0, 2).forEach((t, k) => D.text(g, t, 28, 252 + k * 18, { s: 12, c: c.ink }));
+        D.text(g, 'Remember: ' + ch[3].replace(/&gt;/g, '>').replace(/&times;/g, '×').replace(/&rsquo;/g, '’'), 28, 300, { s: 12, b: true, c: c.ink });
+      }
+    }
+  });
+
+  const STEPS = ['get data', 'check data', 'prepare', 'train', 'evaluate', 'validate', 'serve', 'monitor'];
+  const LEVELS = {
+    0: { auto: [0, 0, 0, 0, 0, 0, 1, 0], trigger: 'A person decides to retrain, often months apart.',
+      say: ['A data scientist pulls data by hand.', 'Checks it by eye in a notebook.', 'Prepares features with notebook code.', 'Trains in the notebook.', 'Evaluates in the same notebook.', 'Hands a model file to engineers, with no automatic validation.', 'Engineers deploy the file as a prediction service, the only automated part.', 'Little or no monitoring of model quality.'] },
+    1: { auto: [1, 1, 1, 1, 1, 1, 1, 1], trigger: 'The pipeline retrains by itself on a schedule, on new data or on a drift alert.',
+      say: ['A pipeline step extracts the data.', 'Data validation stops the run if the schema or ranges are wrong.', 'The same tested feature code runs in training and serving.', 'Training runs inside the pipeline, so the whole pipeline is deployed, not just a model.', 'Evaluation is a pipeline step with fixed metrics.', 'Model validation compares with the champion before release.', 'The validated model is delivered to serving automatically.', 'Monitoring feeds triggers back into the pipeline.'] },
+    2: { auto: [1, 1, 1, 1, 1, 1, 1, 1], ci: true, trigger: 'Also a code change: CI builds and tests the pipeline itself, and CD deploys the new pipeline.',
+      say: ['Everything from level 1, plus the pipeline code lives in Git.', 'CI runs unit tests for every pipeline component.', 'CI builds the components into images.', 'CD deploys the new pipeline to the orchestrator.', 'The deployed pipeline trains automatically.', 'Model validation and a registry gate decide promotion.', 'Serving gets the new model through the registry.', 'Monitoring closes the loop, and a feature store and metadata store tie it together.'] }
+  };
+
+  trace('mlmaturity', {
+    title: 'MLOps maturity levels 0, 1 and 2',
+    sub: 'Google Cloud describes three levels. At level 0 people move a model by hand. At level 1 a pipeline retrains and delivers models automatically. At level 2 CI/CD also builds, tests and deploys the pipeline itself. Orange is manual work, green is automated.',
+    W: 600, H: 330,
+    params: [{ k: 'level', label: 'Level', type: 'select', v: '0', opts: [['0', 'Level 0: manual process'], ['1', 'Level 1: pipeline automation'], ['2', 'Level 2: CI/CD pipeline automation']] }],
+    tips: [
+      { t: 'Level 1: every step turns green, and the model retrains by itself when data changes.', set: { level: '1' }, play: true },
+      { t: 'Level 2: a new row appears on top, because code changes now flow through CI/CD too.', set: { level: '2' }, play: true }
+    ],
+    frames(p) {
+      const L = LEVELS[p.level], fr = [{ k: 0, say: `Level ${p.level}: the same eight steps take a model from data to monitoring. Who does them?` }];
+      STEPS.forEach((s, i) => fr.push({ k: i + 1, say: `${s}: ${L.say[i]}` }));
+      fr.push({ k: 8, done: true, say: `What starts a new model at level ${p.level}? ${L.trigger}` });
+      return fr.map(x => ({ ...x, level: p.level }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, L = LEVELS[f.level];
+      head(z, `Level ${f.level}`, 14, 22);
+      if (L.ci) {
+        ['commit', 'CI: test', 'CI: build', 'CD: deploy pipeline'].forEach((t, i) => { box(z, 20 + i * 142, 44, 128, 34, t, { s: 11, b: true, fill: 'rgba(22,163,74,0.18)', stroke: c.green }); if (i < 3) D.arrow(g, 148 + i * 142, 61, 162 + i * 142, 61, c.ink2, 1.2, 5); });
+        D.arrow(g, 510, 78, 510, 118, c.green, 1.5, 6);
+      }
+      STEPS.forEach((s, i) => {
+        const x = 14 + (i % 4) * 146, y = i < 4 ? 124 : 214, shown = i < f.k, auto = L.auto[i];
+        box(z, x, y, 130, 50, '', { fill: shown ? (auto ? 'rgba(22,163,74,0.18)' : 'rgba(234,88,12,0.18)') : c.surf, stroke: shown ? (auto ? c.green : c.orange) : c.line, w: shown ? 2 : 1 });
+        if (shown) { D.text(g, s, x + 65, y + 22, { a: 'center', s: 12, b: true, c: c.ink }); D.text(g, auto ? 'automated' : 'manual', x + 65, y + 40, { a: 'center', s: 10, c: auto ? c.green : c.orange }); }
+        if (i % 4 < 3) D.arrow(g, x + 130, y + 25, x + 146, y + 25, c.line, 1, 5);
+      });
+      const tx = 14 + 3 * 146 + 65;
+      D.line(g, tx, 174, tx, 194, c.line, 1); D.line(g, tx, 194, 79, 194, c.line, 1); D.arrow(g, 79, 194, 79, 214, c.line, 1, 5);
+      if (f.level !== '0') { const rx = 14 + 3 * 146 + 130; D.line(g, rx, 239, 592, 239, c.green, 1.2, [4, 3]); D.line(g, 592, 239, 592, 149, c.green, 1.2, [4, 3]); D.arrow(g, 592, 149, rx, 149, c.green, 1.2, 5); }
+      if (f.done) D.text(g, L.trigger, 14, 316, { s: 11, b: true, c: c.ink });
+    }
+  });
+})();
