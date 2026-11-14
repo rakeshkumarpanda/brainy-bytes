@@ -23,7 +23,16 @@ const CVZ = (() => {
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const def = (name, spec) => { REG[name] = spec; };
 
+  /* Reading the theme colours with getComputedStyle makes the browser work out the styles of the whole page,
+     which is slow on long pages. The colours only change with the theme, so they are read once and kept until
+     the theme changes. */
+  let colCache = null;
   function colours() {
+    if (colCache && colCache.ink) return colCache;
+    colCache = readColours();
+    return colCache;
+  }
+  function readColours() {
     const cs = getComputedStyle(document.documentElement);
     const v = n => cs.getPropertyValue(n).trim();
     return {
@@ -72,9 +81,11 @@ const CVZ = (() => {
     size();
     let timer = null;
     const stopPlay = () => { if (timer) { clearInterval(timer); timer = null; } const b = el.querySelector('.z-ctl .play'); if (b) b.textContent = 'Play'; };
-    function redraw() {
+    /* keep = true means the values have not changed since the steps were last counted, so the trace is not worked
+       out again. Step, Back, Play and a theme change only move through or repaint the steps already worked out. */
+    function redraw(keep) {
       (spec.params || []).forEach(q => { if (q.show) { const c = el.querySelector(`.z-panel [data-k="${q.k}"]`); if (c) c.closest('.z-p').hidden = !q.show(p); } });
-      if (stepped) { z.n = spec.steps(z); if (z.step > z.n) z.step = z.n; }
+      if (stepped && !keep) { z.n = spec.steps(z); if (z.step > z.n) z.step = z.n; }
       z.col = colours();
       z.g.save();
       z.g.clearRect(0, 0, z.W, z.H);
@@ -96,7 +107,7 @@ const CVZ = (() => {
         const o = c.closest('.z-p').querySelector('output'); if (o) o.textContent = fmtv(q, p[q.k]);
       });
       if (stepped) { z.n = spec.steps(z); z.step = spec.startAtZero ? 0 : z.n; }
-      redraw();
+      redraw(true);
     };
     el.querySelector('.z-panel').addEventListener('input', e => {
       const c = e.target.closest('[data-k]');
@@ -113,22 +124,22 @@ const CVZ = (() => {
       stopPlay();
       if (stepped) { z.n = spec.steps(z); z.step = spec.startAtZero ? 0 : z.n; }
       if (spec.change) spec.change(z, q.k);
-      redraw();
+      redraw(!spec.change);
     });
     function play() {
       if (timer) { stopPlay(); return; }
       if (z.step >= z.n) z.step = 0;
       el.querySelector('.z-ctl .play').textContent = 'Pause';
-      redraw();
+      redraw(true);
       timer = setInterval(() => {
         if (!el.isConnected || z.step >= z.n) { stopPlay(); return; }
-        z.step++; redraw();
+        z.step++; redraw(true);
       }, spec.speed ? spec.speed(z) : 700);
     }
     if (stepped) {
       el.querySelector('.z-ctl .play').onclick = play;
-      el.querySelector('.z-ctl .stp').onclick = () => { stopPlay(); if (z.step < z.n) z.step++; redraw(); };
-      el.querySelector('.z-ctl .bk').onclick = () => { stopPlay(); if (z.step > 0) z.step--; redraw(); };
+      el.querySelector('.z-ctl .stp').onclick = () => { stopPlay(); if (z.step < z.n) z.step++; redraw(true); };
+      el.querySelector('.z-ctl .bk').onclick = () => { stopPlay(); if (z.step > 0) z.step--; redraw(true); };
     }
     /* Reset builds the animation again from its starting values, so every value, step and click is undone */
     el.querySelector('.z-ctl .rs').onclick = () => {
@@ -151,12 +162,29 @@ const CVZ = (() => {
     }
     if (spec.init) spec.init(z);
     if (stepped) { z.n = spec.steps(z); z.step = spec.startAtZero ? 0 : z.n; }
-    redraw();
+    redraw(true);
     live.push(z);
   }
-  function mountAll(root = document) { root.querySelectorAll('.cvz[data-viz]').forEach(mount); }
-  new MutationObserver(() => live.forEach(z => z.el.isConnected && z.redraw())).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => live.forEach(z => z.redraw()));
+  /* An animation is built only when it comes near the screen. A long lesson can hold many animations, and building
+     all of them at once (some train a small model first) made the page freeze while it opened. Until it is built,
+     an animation keeps a placeholder height so the page does not jump. Printing builds every animation first. */
+  const near = typeof IntersectionObserver === 'function' ? new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    near.unobserve(e.target);
+    e.target.style.minHeight = '';
+    mount(e.target);
+  }), { rootMargin: '900px 0px' }) : null;
+  function mountAll(root = document) {
+    root.querySelectorAll('.cvz[data-viz]').forEach(el => {
+      if (el.dataset.on) return;
+      if (!near) { mount(el); return; }
+      if (!el.childElementCount) el.style.minHeight = '420px';
+      near.observe(el);
+    });
+  }
+  addEventListener('beforeprint', () => document.querySelectorAll('.cvz[data-viz]').forEach(el => { if (near) near.unobserve(el); el.style.minHeight = ''; mount(el); }));
+  new MutationObserver(() => { colCache = null; live.forEach(z => z.el.isConnected && z.redraw(true)); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { colCache = null; live.forEach(z => z.redraw(true)); });
 
   /* ---------- drawing helpers ---------- */
   const D = {
@@ -196,7 +224,22 @@ const CVZ = (() => {
     /* a grey or colour image (array of rows) drawn as square cells, with optional values written inside */
     image(g, img, x, y, cell, o = {}) {
       const h = img.length, w = img[0].length;
-      for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) {
+      if (w * h >= 400) {
+        /* a big picture is written into a small bitmap once and scaled up with sharp edges. Thousands of
+           separate filled squares made each redraw, and so every dropdown change, slow */
+        const px = new ImageData(w, h), d = px.data;
+        for (let r = 0, k = 0; r < h; r++) for (let c = 0; c < w; c++, k += 4) {
+          const v = img[r][c];
+          if (Array.isArray(v)) { d[k] = v[0]; d[k + 1] = v[1]; d[k + 2] = v[2]; } else { d[k] = d[k + 1] = d[k + 2] = v; }
+          d[k + 3] = 255;
+        }
+        const off = D.image.off || (D.image.off = document.createElement('canvas'));
+        off.width = w; off.height = h;
+        off.getContext('2d').putImageData(px, 0, 0);
+        g.save(); g.imageSmoothingEnabled = false;
+        g.drawImage(off, x, y, w * cell, h * cell);
+        g.restore();
+      } else for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) {
         const v = img[r][c];
         g.fillStyle = Array.isArray(v) ? `rgb(${v[0]},${v[1]},${v[2]})` : `rgb(${v},${v},${v})`;
         g.fillRect(x + c * cell, y + r * cell, Math.ceil(cell), Math.ceil(cell));

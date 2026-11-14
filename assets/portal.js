@@ -3,12 +3,16 @@ const LH = (() => {
   const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-  /* Load data/catalog.js fresh every time, so an edit shows up on the next page load. */
+  /* Load data/catalog.js. On a local copy (localhost or a file) it is loaded fresh every time, so an edit shows up
+     on the next page load. On the live site the browser may keep it: the catalog is over 1 MB, and loading it
+     fresh on every visit to the home and subject pages made them slow. The browser still checks with the server
+     for a newer copy, so a published edit shows up within minutes. */
   function loadCatalog() {
     return new Promise((resolve, reject) => {
       if (window.CATALOG) { resolve(prepare(window.CATALOG)); return; }
       const s = document.createElement('script');
-      s.src = 'data/catalog.js?v=' + Date.now();
+      const local = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|)$/.test(location.hostname);
+      s.src = 'data/catalog.js' + (local ? '?v=' + Date.now() : '');
       s.onload = () => (window.CATALOG ? resolve(prepare(window.CATALOG)) : reject(new Error('data/catalog.js loaded but did not set window.CATALOG')));
       s.onerror = () => reject(new Error('Could not load data/catalog.js'));
       document.head.appendChild(s);
