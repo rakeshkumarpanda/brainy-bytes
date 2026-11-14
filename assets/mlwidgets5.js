@@ -66,13 +66,13 @@
 
   trace('mlvenvs', {
     title: 'One shared install against one environment per project',
-    sub: 'Project A is new and needs NumPy 2.4. Project B is an old model that was trained with NumPy 1.26. Watch what happens to each project when you install the second one’s packages.',
+    sub: 'Project A is new and uses pandas 3.0.2 with NumPy 2.4.6. Project B is an old model that was trained with NumPy 2.3.2. Watch what happens to each project when you install the second one’s packages.',
     W: 600, H: 330,
     params: [
       { k: 'mode', label: 'Where packages go', type: 'select', v: 'global', opts: [['global', 'One shared install for everything'], ['venv', 'A separate .venv in each project']] }
     ],
     tips: [
-      { t: 'One shared install: installing project B’s requirements replaces NumPy 2.4 with 1.26, and project A stops working.', set: { mode: 'global' }, play: true },
+      { t: 'One shared install: installing project B’s requirements replaces NumPy 2.4.6 with 2.3.2, and project A is left with a version conflict.', set: { mode: 'global' }, play: true },
       { t: 'A .venv per project: each project keeps its own NumPy, so both keep working.', set: { mode: 'venv' }, play: true }
     ],
     frames(p) {
@@ -81,11 +81,11 @@
       const fr = [S(null, null, [null, null], g ? 'There is one place for packages, shared by every project on the computer.' : 'Each project folder has its own .venv folder with its own packages.')];
       fr.push(S({ numpy: '2.4.6', pandas: '3.0.2' }, g ? null : {}, [true, null], 'Install project A: <b>pip install numpy==2.4.6 pandas==3.0.2</b>. Project A runs.'));
       if (g) {
-        fr.push(S({ numpy: '1.26.4', pandas: '3.0.2' }, null, [true, true], 'Install project B: <b>pip install numpy==1.26.4</b>. pip removes NumPy 2.4.6 to make room, because one place can hold only one version.', { swap: true }));
-        fr.push(S({ numpy: '1.26.4', pandas: '3.0.2' }, null, [false, true], 'Project B runs, but project A now fails: pandas 3.0 on Python 3.14 needs NumPy 2.3.3 or newer. Fixing A breaks B again. This is called <b>dependency hell</b>.'));
+        fr.push(S({ numpy: '2.3.2', pandas: '3.0.2' }, null, [true, true], 'Install project B: <b>pip install numpy==2.3.2</b>. pip removes NumPy 2.4.6 to make room, because one place can hold only one version, and only prints a warning about pandas.', { swap: true }));
+        fr.push(S({ numpy: '2.3.2', pandas: '3.0.2' }, null, [false, true], 'Project B runs, but project A is now broken: its pandas 3.0.2 requires NumPy 2.3.3 or newer on Python 3.14, so <b>pip check</b> reports a conflict and A runs on a NumPy it was never tested with. Fixing A breaks B again. This is called <b>dependency hell</b>.'));
       } else {
-        fr.push(S({ numpy: '2.4.6', pandas: '3.0.2' }, { numpy: '1.26.4' }, [true, true], 'Activate project B’s .venv and install <b>numpy==1.26.4</b>. It goes into B’s folder only.'));
-        fr.push(S({ numpy: '2.4.6', pandas: '3.0.2' }, { numpy: '1.26.4' }, [true, true], 'Both projects run with the exact versions they need.'));
+        fr.push(S({ numpy: '2.4.6', pandas: '3.0.2' }, { numpy: '2.3.2' }, [true, true], 'Activate project B’s .venv and install <b>numpy==2.3.2</b>. It goes into B’s folder only.'));
+        fr.push(S({ numpy: '2.4.6', pandas: '3.0.2' }, { numpy: '2.3.2' }, [true, true], 'Both projects run with the exact versions they need.'));
       }
       fr.push(S(fr[fr.length - 1].a, fr[fr.length - 1].b, fr[fr.length - 1].ok, g ? 'The fix is a virtual environment per project, plus a requirements.txt so anyone can rebuild the same set.' : 'Write each set down with <b>pip freeze &gt; requirements.txt</b>, so a teammate or a server can rebuild it with pip install -r requirements.txt.', { freeze: !g }));
       return fr;
@@ -95,7 +95,7 @@
       const proj = (x, name, ok) => {
         box(z, x, 20, 200, 60, '', { fill: ok === false ? 'rgba(220,38,38,0.15)' : (ok ? 'rgba(22,163,74,0.15)' : c.surf), stroke: ok === false ? c.red : (ok ? c.green : c.line) });
         D.text(g, name, x + 12, 44, { s: 13, b: true, c: c.ink });
-        D.text(g, ok === null ? 'not installed yet' : (ok ? 'runs' : 'fails to import'), x + 12, 66, { s: 12, mono: true, c: ok === false ? c.red : (ok ? c.green : c.ink2) });
+        D.text(g, ok === null ? 'not installed yet' : (ok ? 'runs' : 'version conflict'), x + 12, 66, { s: 12, mono: true, c: ok === false ? c.red : (ok ? c.green : c.ink2) });
       };
       proj(40, 'Project A (new)', f.ok[0]);
       proj(360, 'Project B (old model)', f.ok[1]);
