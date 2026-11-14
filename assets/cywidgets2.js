@@ -425,3 +425,190 @@ const CYAES = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Cryptography 1.3  a Merkle-Damgard hash chain and the length extension attack on H(secret || message)
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8 } = CYZ;
+  const SECRET = utf8('k3y-sec!'), BS = 8, IV = [0x6a, 0x09, 0xe6, 0x67];
+  const hx = a => a.map(v => v.toString(16).padStart(2, '0')).join('');
+  /* toy compression: 4 byte state, 8 byte blocks, built from real SHA-256 */
+  const f = (st, blk) => sha256(st.concat(blk)).slice(0, 4);
+  const pad = total => { const out = [0x80]; while ((total + out.length + 1) % BS) out.push(0); out.push(total & 255); return out; };
+  const chain = (bytes, st, done) => { const all = bytes.concat(pad(done + bytes.length)), blocks = [], states = [st]; for (let i = 0; i < all.length; i += BS) { blocks.push(all.slice(i, i + BS)); st = f(st, all.slice(i, i + BS)); states.push(st); } return { blocks, states, padded: all }; };
+  const show = (blk, from) => blk.map((v, i) => from + i < 8 ? '•' : (v >= 32 && v < 127 ? String.fromCharCode(v) : '·')).join('');
+  trace('cymd', {
+    title: 'How SHA-256 chains blocks, and the length extension attack',
+    sub: 'Hashes like MD5, SHA-1 and SHA-256 cut the input into blocks and feed each block into a compression function together with the result so far. A toy version with 8 byte blocks shows the chain, and why the final hash lets an attacker keep going.',
+    W: 600, H: 340,
+    params: [
+      { k: 'msg', label: 'Message the server signs', type: 'text', v: 'user=riya&role=reader' },
+      { k: 'ext', label: 'What the attacker adds', type: 'text', v: '&role=admin' }
+    ],
+    tips: [
+      { t: 'Play it. The server signs SHA(secret ‖ message). The attacker never sees the secret (shown as dots) yet produces a valid tag for a longer message.', play: true },
+      { t: 'The fix is HMAC, or SHA-3, whose sponge design hides part of its state, so the output is not a full chaining value.', play: true }
+    ],
+    frames(p) {
+      const msg = utf8(String(p.msg)).slice(0, 24), ext = utf8(String(p.ext)).slice(0, 14);
+      if (!msg.length || !ext.length) throw new Error('Type a message and something to add.');
+      const srv = chain(SECRET.concat(msg), IV, 0);
+      const tag = srv.states[srv.states.length - 1];
+      const glue = srv.padded.slice(SECRET.length + msg.length);
+      const done = srv.padded.length;
+      const atk = chain(ext, tag, done);
+      const forged = atk.states[atk.states.length - 1];
+      const check = chain(SECRET.concat(msg, glue, ext), IV, 0);
+      const real = check.states[check.states.length - 1];
+      const fr = [{ n: 0, say: `The server computes a tag as SHA(secret ‖ message). The secret (8 bytes, hidden as dots) and the message are cut into 8 byte blocks. The last block is padded with 0x80, zeros and the total length. The chain starts from a fixed IV, ${hx(IV)}.` }];
+      srv.blocks.forEach((b, i) => fr.push({ n: i + 1, say: `Block ${i + 1} goes into the compression function f with the state so far: state = f(${hx(srv.states[i])}, block ${i + 1}) = <b>${hx(srv.states[i + 1])}</b>.${i === srv.blocks.length - 1 ? ' This was the padding block.' : ''}` }));
+      fr.push({ n: srv.blocks.length, tag: true, say: `The final state <b>${hx(tag)}</b> is the hash, and the server publishes it as the tag of the message. But the final state is also exactly what f needs to continue the chain.` });
+      fr.push({ n: srv.blocks.length, tag: true, atk: true, say: `The attacker knows the message and guesses the secret length. They start from the tag as if it were the state, and hash "${String.fromCharCode(...ext)}" with new padding: forged tag = <b>${hx(forged)}</b>. No secret needed.` });
+      fr.push({ n: srv.blocks.length, tag: true, atk: true, done: true, ok: hx(real) === hx(forged), say: `The forged message is message ‖ old padding ‖ "${String.fromCharCode(...ext)}". The server checks SHA(secret ‖ forged message) = <b>${hx(real)}</b>, ${hx(real) === hx(forged) ? 'the same as the forged tag, so it accepts' : 'different'}. This broke the Flickr API signatures in 2009. Use HMAC instead.` });
+      return fr.map(x => ({ ...x, srv, atk, tag, forged, real, msgLen: msg.length }));
+    },
+    paint(z, fz) {
+      const c = z.col, g = z.g;
+      const n = fz.srv.blocks.length, W = Math.min(96, 470 / n);
+      D.text(g, 'server', 14, 22, { s: 11, b: true, c: c.ink2 });
+      cbox(z, 14, 104, 72, 26, 'IV ' + hx(IV), { s: 10, b: true, mono: true, fill: c.bg });
+      for (let i = 0; i < fz.n; i++) {
+        const x = 104 + i * W, b = fz.srv.blocks[i];
+        cbox(z, x, 30, W - 10, 30, show(b, i * BS), { s: 11, b: true, mono: true, fill: i === n - 1 ? 'rgba(234,88,12,0.18)' : c.surf });
+        D.arrow(g, x + (W - 10) / 2, 60, x + (W - 10) / 2, 72, c.ink2, 1.5, 5);
+        cbox(z, x, 72, W - 10, 24, 'f', { s: 13, b: true, fill: c.cv, c: '#fff' });
+        D.arrow(g, x - 16, 117, x + (W - 10) / 2 - 4, 98, c.ink2, 1.2, 5);
+        cbox(z, x, 104, W - 10, 26, hx(fz.srv.states[i + 1]), { s: 11, b: true, mono: true, fill: i === n - 1 && fz.tag ? 'rgba(15,118,110,0.25)' : c.bg });
+      }
+      if (fz.tag) D.text(g, 'tag = ' + hx(fz.tag), 104 + (n - 1) * W, 146, { s: 11, b: true, mono: true, c: c.cv });
+      if (fz.atk) {
+        D.text(g, 'attacker (no secret)', 14, 178, { s: 11, b: true, c: c.red });
+        cbox(z, 14, 238, 72, 26, hx(fz.tag), { s: 10, b: true, mono: true, fill: 'rgba(15,118,110,0.25)' });
+        fz.atk.blocks.forEach((b, i) => {
+          const x = 104 + i * 110;
+          cbox(z, x, 186, 100, 30, b.map(v => (v >= 32 && v < 127 ? String.fromCharCode(v) : '·')).join(''), { s: 11, b: true, mono: true, fill: 'rgba(225,29,72,0.15)' });
+          cbox(z, x, 222, 100, 18, 'f', { s: 11, b: true, fill: c.cv, c: '#fff' });
+          cbox(z, x, 246, 100, 24, hx(fz.atk.states[i + 1]), { s: 11, b: true, mono: true, fill: c.bg });
+        });
+        D.text(g, 'forged tag = ' + hx(fz.forged), 104, 290, { s: 12, b: true, mono: true, c: c.red });
+      }
+      if (fz.done) cbox(z, 14, 302, 572, 30, `server checks SHA(secret ‖ msg ‖ pad ‖ ext) = ${hx(fz.real)}  ${fz.ok ? '✓ accepted' : ''}`, { s: 12, b: true, mono: true, fill: fz.ok ? c.red : c.surf, c: fz.ok ? '#fff' : c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 1.3  the birthday paradox: random values in N boxes collide after about the square root of N
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const prob = (n, N) => { let q = 1; for (let i = 0; i < n; i++) q *= (N - i) / N; return 1 - q; };
+  trace('cybirthday', {
+    title: 'The birthday paradox: why collisions come so early',
+    sub: 'Put people (or hash values) one by one into N equally likely boxes. How many until two share a box? Far fewer than N: about the square root of N. This decides how long a hash must be.',
+    W: 600, H: 340,
+    params: [
+      { k: 'N', label: 'Number of boxes N', type: 'select', v: '365', opts: [['365', '365 birthdays'], ['256', '256 (an 8 bit hash)'], ['4096', '4,096 (a 12 bit hash)']] },
+      { k: 'seed', label: 'Random run', type: 'range', v: 5, min: 1, max: 9 }
+    ],
+    tips: [
+      { t: 'Play it with birthdays. With 23 people the chance of a shared birthday is already 50.7%.', play: true },
+      { t: 'Try run 3: a shared birthday after only 8 people. Run 6 needs 49. Single runs vary, but most land near the 50% point.', set: { seed: 3 }, play: true },
+      { t: 'Try the 12 bit hash. 4,096 boxes, yet a collision appears after 82 values here, close to 1.18 × √4096 ≈ 75.', set: { N: '4096', seed: 3 }, play: true }
+    ],
+    frames(p) {
+      const N = +p.N, r = rng(+p.seed * 7919 + N), seen = new Map(), order = [];
+      let hit = null;
+      while (!hit && order.length < N + 1) { const v = Math.floor(r() * N); if (seen.has(v)) hit = { v, a: seen.get(v), b: order.length }; else seen.set(v, order.length); order.push(v); }
+      const step = Math.max(1, Math.ceil(Math.sqrt(N) / 4)), fr = [];
+      for (let n = step; n < order.length; n += step) fr.push({ n, say: `${n} values placed, all in different boxes so far. The chance of a collision by now is 1 &minus; (1 &minus; 1/N)(1 &minus; 2/N)... = <b>${(prob(n, N) * 100).toFixed(1)}%</b>.` });
+      const n50 = Math.ceil(1.1774 * Math.sqrt(N));
+      fr.push({ n: order.length, hit: true, say: `Collision: value number ${hit.b + 1} landed in box ${hit.v}, already taken by value number ${hit.a + 1}. That took ${order.length} values out of ${N} boxes.` });
+      fr.push({ n: order.length, hit: true, done: true, say: `The rule: P(collision) &asymp; 1 &minus; e<sup>&minus;n<sup>2</sup>/2N</sup>, which reaches 50% at n &asymp; 1.18 &radic;N = <b>${n50}</b> for N = ${N}. For an n bit hash, N = 2<sup>n</sup>, so collisions appear after about 2<sup>n/2</sup> tries. That is why SHA-256 gives 128 bit collision resistance.` });
+      return fr.map(x => ({ ...x, N, order, hit, n50 }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, N = f.N;
+      const cols = Math.ceil(Math.sqrt(N * 1.7)), cell = Math.min(12, 290 / cols), rows = Math.ceil(N / cols);
+      const filled = new Map(); f.order.slice(0, f.n).forEach((v, i) => filled.set(v, (filled.get(v) || 0) + 1));
+      for (let i = 0; i < N; i++) {
+        const x = 14 + (i % cols) * cell, y = 30 + Math.floor(i / cols) * cell, k = filled.get(i) || 0;
+        g.fillStyle = k > 1 ? c.red : k ? c.cv : 'rgba(100,116,139,0.15)';
+        g.fillRect(x, y, cell - 1, cell - 1);
+      }
+      D.text(g, `${N} boxes, ${f.n} values`, 14, 22, { s: 11, b: true, c: c.ink2 });
+      const X0 = 340, Y0 = 200, Wd = 240, Hd = 160, nmax = Math.ceil(3 * Math.sqrt(N));
+      g.strokeStyle = c.line; g.lineWidth = 1; g.strokeRect(X0, Y0 - Hd, Wd, Hd);
+      g.beginPath(); for (let n = 0; n <= nmax; n++) { const x = X0 + n / nmax * Wd, y = Y0 - prob(n, N) * Hd; if (n) g.lineTo(x, y); else g.moveTo(x, y); }
+      g.strokeStyle = c.cv; g.lineWidth = 2; g.stroke();
+      D.line(g, X0, Y0 - Hd / 2, X0 + Wd, Y0 - Hd / 2, c.ink2, 1, [4, 3]);
+      D.text(g, '50%', X0 - 4, Y0 - Hd / 2 + 4, { a: 'right', s: 10, c: c.ink2 });
+      D.text(g, 'P(collision) as values are added', X0, Y0 - Hd - 8, { s: 10, b: true, c: c.ink2 });
+      D.text(g, '0', X0, Y0 + 14, { s: 10, c: c.ink2 }); D.text(g, String(nmax), X0 + Wd, Y0 + 14, { a: 'right', s: 10, c: c.ink2 });
+      const nx = X0 + Math.min(f.n, nmax) / nmax * Wd;
+      D.line(g, nx, Y0, nx, Y0 - Hd, c.orange, 2);
+      D.text(g, 'n = ' + f.n, nx + 4, Y0 - 6, { s: 10, b: true, c: c.orange });
+      if (f.done) {
+        const x50 = X0 + f.n50 / nmax * Wd;
+        g.fillStyle = c.green; g.beginPath(); g.arc(x50, Y0 - Hd / 2, 4, 0, 7); g.fill();
+        cbox(z, 14, 232, 572, 30, `P ≈ 1 − e^(−n²/2N)   →   50% at n ≈ 1.18 √N = ${f.n50}`, { s: 13, b: true, mono: true, fill: c.bg });
+        cbox(z, 14, 270, 572, 30, 'n bit hash: N = 2ⁿ, collisions after ≈ 2^(n/2) tries', { s: 13, b: true, fill: c.cv, c: '#fff' });
+      } else if (f.hit) cbox(z, 14, 232, 572, 30, `collision after ${f.n} values`, { s: 13, b: true, fill: c.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 1.3  HMAC-SHA256 step by step: key padding, inner hash with ipad, outer hash with opad
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8 } = CYZ;
+  const hx = (a, n) => a.slice(0, n).map(v => v.toString(16).padStart(2, '0')).join('');
+  trace('cyhmac', {
+    title: 'HMAC: a hash with a key, done twice',
+    sub: 'HMAC turns any hash into a message authentication code: only someone with the key can make or check the tag. These are real HMAC-SHA256 values, the same as Python’s hmac module gives.',
+    W: 600, H: 340,
+    params: [
+      { k: 'key', label: 'Secret key', type: 'text', v: 'shared secret' },
+      { k: 'msg', label: 'Message', type: 'text', v: 'PAY RIYA 100' }
+    ],
+    tips: [
+      { t: 'Play it. Two hashes: the inner one hashes the message with one key mask, the outer one hashes that result with another.', play: true },
+      { t: 'Change 100 to 900. The tag changes completely, and without the key nobody can compute the new one.', set: { msg: 'PAY RIYA 900' }, play: true }
+    ],
+    frames(p) {
+      let key = utf8(String(p.key));
+      const msg = utf8(String(p.msg));
+      if (!key.length) throw new Error('Type a key.');
+      if (key.length > 64) key = sha256(key);
+      const K0 = key.concat(new Array(64 - key.length).fill(0));
+      const ki = K0.map(v => v ^ 0x36), ko = K0.map(v => v ^ 0x5c);
+      const inner = sha256(ki.concat(msg)), tag = sha256(ko.concat(inner));
+      const fr = [
+        { k: 1, say: `Pad the key with zero bytes to the hash block size, 64 bytes for SHA-256 (a longer key is hashed first). K0 starts ${hx(K0, 8)}...` },
+        { k: 2, say: `Inner key: K0 &oplus; ipad, where ipad is the byte 0x36 repeated 64 times. ${hx(K0, 1)} &oplus; 36 = ${hx(ki, 1)}.` },
+        { k: 3, say: `Inner hash = SHA-256( (K0 &oplus; ipad) ‖ message ) = <b>${hx(inner, 8)}...</b>` },
+        { k: 4, say: `Outer key: K0 &oplus; opad, with opad = 0x5c repeated. ${hx(K0, 1)} &oplus; 5c = ${hx(ko, 1)}.` },
+        { k: 5, say: `Tag = SHA-256( (K0 &oplus; opad) ‖ inner hash ) = <b>${hx(tag, 32)}</b>.` },
+        { k: 6, done: true, say: 'Why two hashes: the outer hash hides the inner chaining value, so the length extension trick that breaks SHA(key ‖ message) does not work. HMAC is secure if the hash’s compression function behaves like a random function (Bellare, Canetti and Krawczyk, 1996). Always check tags with hmac.compare_digest.' }
+      ];
+      return fr.map(x => ({ ...x, K0, ki, ko, inner, tag, msgText: String(p.msg) }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const row = (y, label, val, on, col) => { D.text(g, label, 14, y + 18, { s: 11, b: true, c: c.ink2 }); cbox(z, 150, y, 436, 28, val, { s: 12, b: true, mono: true, fill: on ? col : c.surf, c: c.ink }); };
+      if (f.k >= 1) row(12, 'K0 (64 bytes)', hx(f.K0, 16) + '...', f.k === 1, 'rgba(234,88,12,0.18)');
+      if (f.k >= 2) row(52, 'K0 ⊕ ipad (36)', hx(f.ki, 16) + '...', f.k === 2, 'rgba(234,88,12,0.18)');
+      if (f.k >= 3) { row(92, 'inner hash', hx(f.inner, 16) + '...', f.k === 3, 'rgba(15,118,110,0.22)'); D.text(g, `= SHA-256(K0 ⊕ ipad ‖ "${f.msgText.slice(0, 20)}")`, 150, 136, { s: 10, c: c.ink2 }); }
+      if (f.k >= 4) row(146, 'K0 ⊕ opad (5c)', hx(f.ko, 16) + '...', f.k === 4, 'rgba(234,88,12,0.18)');
+      if (f.k >= 5) { row(186, 'tag', hx(f.tag, 16) + '...', true, 'rgba(15,118,110,0.3)'); D.text(g, '= SHA-256(K0 ⊕ opad ‖ inner hash)', 150, 230, { s: 10, c: c.ink2 }); }
+      if (f.k >= 5) cbox(z, 14, 244, 572, 28, 'HMAC(K, m) = H( (K0 ⊕ opad) ‖ H( (K0 ⊕ ipad) ‖ m ) )', { s: 13, b: true, mono: true, fill: c.bg });
+      if (f.done) cbox(z, 14, 282, 572, 40, ['full tag', hx(f.tag, 32)], { s: 11, b: true, mono: true, fill: c.cv, c: '#fff' });
+    }
+  });
+})();

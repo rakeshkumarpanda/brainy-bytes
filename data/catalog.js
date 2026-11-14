@@ -9451,6 +9451,26 @@ function cyCryptoModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-hashing", title: "Hash functions, MACs and password storage", emoji: "1.3", page: "content/cyber-security/cy-hashing.html",
+        summary: "hash properties, the birthday bound, SHA-256 and length extension, HMAC, password hashing and Merkle trees.",
+        keywords: ["hash", "birthday paradox", "SHA-256", "length extension", "HMAC", "salt", "Argon2", "Merkle tree", "collision", "MAC"],
+        minutes: 70, counts: {"lessons": 9, "problems": 11, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Hash functions: a fingerprint for any data", emoji: "", group: "Lesson", keywords: ["hash function", "digest", "preimage resistance", "second preimage", "collision resistance", "MD5", "SHA-1", "SHA-256", "Flame", "one way function"] },
+        { id: "birthday", title: "The birthday paradox and collision maths", emoji: "", group: "Lesson", keywords: ["birthday paradox", "birthday attack", "collision probability", "square root of N", "23 people", "Pollard rho", "2^(n/2)"] },
+        { id: "md", title: "Inside SHA-256: the Merkle-Damgård chain and length extension", emoji: "", group: "Lesson", keywords: ["Merkle-Damgard", "compression function", "SHA-256 internals", "padding", "length extension", "Flickr", "sponge", "SHA-3", "BLAKE2", "SHA-512/256"] },
+        { id: "mac", title: "Message authentication codes and HMAC", emoji: "", group: "Lesson", keywords: ["MAC", "message authentication code", "HMAC", "ipad", "opad", "RFC 2104", "RFC 4231", "JWT", "tag", "compare_digest", "integrity"] },
+        { id: "passwords", title: "Storing passwords: salts and slow hashes", emoji: "", group: "Lesson", keywords: ["password storage", "salt", "pepper", "rainbow table", "Argon2", "scrypt", "bcrypt", "PBKDF2", "OWASP", "LinkedIn breach", "GPU cracking", "memory hard"] },
+        { id: "merkle", title: "Merkle trees: hashing many things at once", emoji: "", group: "Lesson", keywords: ["Merkle tree", "hash tree", "root", "inclusion proof", "Git", "Bitcoin", "Certificate Transparency", "RFC 6962", "log n proof"] },
+        { id: "versus", title: "Hash functions compared", emoji: "", group: "Lesson", keywords: ["comparison", "SHA-256 vs SHA-3", "BLAKE3", "Argon2id", "MD5", "CRC32", "xxHash"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "random oracle", "multicollision", "Joux", "indifferentiability", "chosen prefix collision", "Poseidon", "BHT"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
