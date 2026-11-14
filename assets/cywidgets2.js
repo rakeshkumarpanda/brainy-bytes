@@ -955,3 +955,206 @@ const CYNUM = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Cryptography 2.3  Diffie-Hellman key exchange: two secrets, two public values, one shared key
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const N = CYNUM;
+  const order = (g, p) => { let x = g % p, k = 1; while (x !== 1 && k < p) { x = x * g % p; k++; } return k; };
+  trace('cydh', {
+    title: 'Diffie-Hellman: agree on a secret key in public',
+    sub: 'Alice and Bob agree on a prime p and a generator g in the open. Each keeps one secret number and sends one public value. Both end with the same key, while Eve, who sees everything sent, does not.',
+    W: 600, H: 340,
+    params: [
+      { k: 'p', label: 'Public prime p', type: 'text', v: '23' },
+      { k: 'g', label: 'Public generator g', type: 'text', v: '5' },
+      { k: 'a', label: 'Alice’s secret a', type: 'text', v: '6' },
+      { k: 'b', label: 'Bob’s secret b', type: 'text', v: '15' }
+    ],
+    tips: [
+      { t: 'Play the classic example: A = 8, B = 19 and both sides get the key 2.', play: true },
+      { t: 'Try g = 2 with p = 23. Its powers reach only 11 of the 22 values, so keys are easier to guess.', set: { g: '2' }, play: true },
+      { t: 'Try a bigger prime, p = 1000003 with g = 2, a = 271828 and b = 314159. Eve now has a million values to search.', set: { p: '1000003', g: '2', a: '271828', b: '314159' }, play: true }
+    ],
+    frames(p) {
+      const P = +p.p, G = +p.g, A0 = +p.a, B0 = +p.b;
+      if (!N.isPrime(P) || P < 5 || P > 2000000) throw new Error('p must be a prime from 5 to 2,000,000.');
+      if (!(G > 1 && G < P - 1)) throw new Error(`g must be between 2 and p − 2 = ${P - 2}.`);
+      if (!(A0 > 1 && A0 < P - 1 && B0 > 1 && B0 < P - 1)) throw new Error(`The secrets must be between 2 and p − 2 = ${P - 2}.`);
+      const A = Number(N.pw(G, A0, P)), Bv = Number(N.pw(G, B0, P)), sA = Number(N.pw(Bv, A0, P)), sB = Number(N.pw(A, B0, P)), ord = order(G, P);
+      const gen = ord === P - 1 ? `g = ${G} is a generator: its powers reach all ${P - 1} non zero values.` : `g = ${G} has order ${ord}, so its powers reach only ${ord} of the ${P - 1} values. A generator, or a large prime order subgroup, is better.`;
+      const fr = [
+        { k: 1, say: `Alice and Bob agree in public on the prime p = ${P} and g = ${G}. ${gen}` },
+        { k: 2, say: `Alice picks a secret a = ${A0} and sends A = g<sup>a</sup> mod p = ${G}<sup>${A0}</sup> mod ${P} = <b>${A}</b>.` },
+        { k: 3, say: `Bob picks a secret b = ${B0} and sends B = g<sup>b</sup> mod p = ${G}<sup>${B0}</sup> mod ${P} = <b>${Bv}</b>.` },
+        { k: 4, say: `Eve sees p, g, A = ${A} and B = ${Bv}. To get the key she must find a from A (or b from B). That is the discrete logarithm problem, easy for p = ${P} by search, but hopeless for a 2048 bit p.` },
+        { k: 5, say: `Alice computes B<sup>a</sup> mod p = ${Bv}<sup>${A0}</sup> mod ${P} = <b>${sA}</b>. Bob computes A<sup>b</sup> mod p = ${A}<sup>${B0}</sup> mod ${P} = <b>${sB}</b>.` },
+        { k: 6, done: true, say: `Both keys are ${sA}, because B<sup>a</sup> = (g<sup>b</sup>)<sup>a</sup> = g<sup>ab</sup> = (g<sup>a</sup>)<sup>b</sup> = A<sup>b</sup>. In practice the shared value goes through a key derivation function such as HKDF to make an AES key.` }
+      ];
+      return fr.map(x => ({ ...x, P, G, A0, B0, A, Bv, sA, sB }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      D.text(g, 'Alice', 90, 22, { a: 'center', s: 14, b: true, c: c.cv });
+      D.text(g, 'open network (Eve listens)', 300, 22, { a: 'center', s: 12, b: true, c: c.red });
+      D.text(g, 'Bob', 510, 22, { a: 'center', s: 14, b: true, c: c.cv });
+      cbox(z, 200, 34, 200, 30, `p = ${f.P}   g = ${f.G}`, { s: 13, b: true, mono: true, fill: f.k === 1 ? 'rgba(234,88,12,0.2)' : c.surf });
+      if (f.k >= 2) cbox(z, 14, 80, 152, 44, ['secret a = ' + f.A0, `A = ${f.A}`], { s: 12, b: true, mono: true, fill: f.k === 2 ? 'rgba(234,88,12,0.2)' : 'rgba(225,29,72,0.12)' });
+      if (f.k >= 3) cbox(z, 434, 80, 152, 44, ['secret b = ' + f.B0, `B = ${f.Bv}`], { s: 12, b: true, mono: true, fill: f.k === 3 ? 'rgba(234,88,12,0.2)' : 'rgba(225,29,72,0.12)' });
+      if (f.k >= 4) {
+        D.arrow(g, 168, 146, 430, 146, c.cv, 2, 8); D.text(g, `A = ${f.A}`, 300, 140, { a: 'center', s: 12, b: true, mono: true, c: c.cv });
+        D.arrow(g, 430, 172, 168, 172, c.cv, 2, 8); D.text(g, `B = ${f.Bv}`, 300, 190, { a: 'center', s: 12, b: true, mono: true, c: c.cv });
+        cbox(z, 200, 200, 200, 40, ['Eve knows p, g, A, B', 'needs a = log_g(A)'], { s: 11, b: true, fill: f.k === 4 ? 'rgba(234,88,12,0.2)' : c.bg, c: c.red });
+      }
+      if (f.k >= 5) {
+        cbox(z, 14, 200, 152, 40, [`B^a mod p`, `= ${f.sA}`], { s: 12, b: true, mono: true, fill: c.surf });
+        cbox(z, 434, 200, 152, 40, [`A^b mod p`, `= ${f.sB}`], { s: 12, b: true, mono: true, fill: c.surf });
+      }
+      if (f.k >= 6) {
+        cbox(z, 14, 256, 152, 34, `key = ${f.sA}`, { s: 13, b: true, mono: true, fill: c.green, c: '#fff' });
+        cbox(z, 434, 256, 152, 34, `key = ${f.sB}`, { s: 13, b: true, mono: true, fill: c.green, c: '#fff' });
+        cbox(z, 14, 302, 572, 30, 'Bᵃ = (gᵇ)ᵃ = gᵃᵇ = (gᵃ)ᵇ = Aᵇ  (mod p)', { s: 13, b: true, mono: true, fill: c.cv, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 2.3  Man in the middle on unauthenticated Diffie-Hellman, and how a fingerprint check catches it
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8, hex } = CYZ;
+  const N = CYNUM;
+  const fp = k => Array.from(sha256(utf8('key ' + k))).slice(0, 4).map(v => hex(v)).join('');
+  trace('cymitm', {
+    title: 'Man in the middle: why Diffie-Hellman needs authentication',
+    sub: 'Mallory sits on the network between Alice and Bob. She swaps both public values for her own, so she shares one key with Alice and another with Bob, and reads everything. Comparing a key fingerprint or signing the exchange exposes her.',
+    W: 600, H: 340,
+    params: [
+      { k: 'p', label: 'Public prime p', type: 'text', v: '23' },
+      { k: 'g', label: 'Public generator g', type: 'text', v: '5' },
+      { k: 'a', label: 'Alice’s secret a', type: 'text', v: '6' },
+      { k: 'b', label: 'Bob’s secret b', type: 'text', v: '15' },
+      { k: 'm', label: 'Mallory’s secret m', type: 'text', v: '13' }
+    ],
+    tips: [
+      { t: 'Play it. Alice and Bob each get a key, but they are different keys, and Mallory knows both.', play: true },
+      { t: 'Watch the last step: the fingerprints differ, which is exactly what a safety number check in a messaging app detects.', play: true }
+    ],
+    frames(p) {
+      const P = +p.p, G = +p.g, a = +p.a, b = +p.b, m = +p.m;
+      if (!N.isPrime(P) || P < 5 || P > 2000000) throw new Error('p must be a prime from 5 to 2,000,000.');
+      if (![G, a, b, m].every(v => v > 1 && v < P - 1)) throw new Error(`g and the three secrets must be between 2 and p − 2 = ${P - 2}.`);
+      const A = Number(N.pw(G, a, P)), B = Number(N.pw(G, b, P)), M = Number(N.pw(G, m, P));
+      const K1 = Number(N.pw(M, a, P)), K2 = Number(N.pw(M, b, P));
+      const fr = [
+        { k: 1, say: `Alice sends A = g<sup>a</sup> = <b>${A}</b>. Mallory catches it and forwards her own value M = g<sup>m</sup> = <b>${M}</b> to Bob instead.` },
+        { k: 2, say: `Bob replies with B = g<sup>b</sup> = <b>${B}</b>. Mallory catches that too and sends M = ${M} to Alice.` },
+        { k: 3, say: `Alice computes M<sup>a</sup> = <b>${K1}</b>. Mallory computes A<sup>m</sup> = ${K1}, the same key. Alice thinks she shares it with Bob.` },
+        { k: 4, say: `Bob computes M<sup>b</sup> = <b>${K2}</b>. Mallory computes B<sup>m</sup> = ${K2}. Bob thinks he shares it with Alice.` },
+        { k: 5, say: `Now Mallory decrypts each message from Alice with key ${K1}, reads or changes it, and encrypts it again for Bob with key ${K2}. Neither side sees any error. Plain Diffie-Hellman proves nothing about who is on the other end.` },
+        { k: 6, done: true, say: `The fix is authentication. If Alice and Bob compare a short fingerprint of their keys (${fp(K1)} and ${fp(K2)}) over another channel, they ${K1 === K2 ? 'match, which only happens here by chance' : 'differ, and the attack is exposed'}. TLS does this automatically: the server signs the exchange with the private key in its certificate.` }
+      ];
+      return fr.map(x => ({ ...x, A, B, M, K1, K2, f1: fp(K1), f2: fp(K2) }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      D.text(g, 'Alice', 80, 22, { a: 'center', s: 14, b: true, c: c.cv });
+      D.text(g, 'Mallory', 300, 22, { a: 'center', s: 14, b: true, c: c.red });
+      D.text(g, 'Bob', 520, 22, { a: 'center', s: 14, b: true, c: c.cv });
+      const hi = k => f.k === k ? 'rgba(234,88,12,0.2)' : c.surf;
+      if (f.k >= 1) {
+        D.arrow(g, 130, 50, 236, 50, c.cv, 2, 8); D.text(g, 'A = ' + f.A, 183, 44, { a: 'center', s: 11, b: true, mono: true, c: c.cv });
+        D.arrow(g, 364, 50, 470, 50, c.red, 2, 8); D.text(g, 'M = ' + f.M, 417, 44, { a: 'center', s: 11, b: true, mono: true, c: c.red });
+      }
+      if (f.k >= 2) {
+        D.arrow(g, 470, 86, 364, 86, c.cv, 2, 8); D.text(g, 'B = ' + f.B, 417, 80, { a: 'center', s: 11, b: true, mono: true, c: c.cv });
+        D.arrow(g, 236, 86, 130, 86, c.red, 2, 8); D.text(g, 'M = ' + f.M, 183, 80, { a: 'center', s: 11, b: true, mono: true, c: c.red });
+      }
+      if (f.k >= 3) { cbox(z, 14, 110, 132, 40, ['Mᵃ', `= ${f.K1}`], { s: 12, b: true, mono: true, fill: hi(3) }); cbox(z, 236, 110, 128, 40, ['Aᵐ', `= ${f.K1}`], { s: 12, b: true, mono: true, fill: hi(3) }); }
+      if (f.k >= 4) { cbox(z, 454, 110, 132, 40, ['Mᵇ', `= ${f.K2}`], { s: 12, b: true, mono: true, fill: hi(4) }); cbox(z, 236, 158, 128, 40, ['Bᵐ', `= ${f.K2}`], { s: 12, b: true, mono: true, fill: hi(4) }); }
+      if (f.k >= 5) cbox(z, 14, 214, 572, 40, [`Alice and Mallory share key ${f.K1}     Mallory and Bob share key ${f.K2}`, 'Mallory decrypts, reads, re-encrypts'], { s: 12, b: true, mono: true, fill: f.k === 5 ? 'rgba(225,29,72,0.15)' : c.bg, c: c.red });
+      if (f.k >= 6) {
+        cbox(z, 14, 270, 200, 30, 'Alice: ' + f.f1, { s: 13, b: true, mono: true, fill: c.bg });
+        cbox(z, 386, 270, 200, 30, 'Bob: ' + f.f2, { s: 13, b: true, mono: true, fill: c.bg });
+        cbox(z, 226, 270, 148, 30, f.f1 === f.f2 ? 'same' : 'different!', { s: 13, b: true, fill: f.f1 === f.f2 ? c.green : c.red, c: '#fff' });
+        cbox(z, 14, 306, 572, 28, 'defence: sign the exchange (TLS certificates) or compare fingerprints (safety numbers)', { s: 12, b: true, fill: c.cv, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 2.3  Baby step giant step: solve g^x = h (mod p) in about sqrt(p) steps instead of p
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const N = CYNUM;
+  trace('cybsgs', {
+    title: 'Baby step, giant step: a square root attack on the discrete log',
+    sub: 'To find x with g^x = h (mod p), write x = i·m + j with m about √p. Store the baby steps g^j, then take giant steps h·g^(−m·i) until one lands in the table. About 2√p work instead of p.',
+    W: 600, H: 340,
+    params: [
+      { k: 'p', label: 'Prime p (up to 400 here)', type: 'text', v: '101' },
+      { k: 'g', label: 'Generator g', type: 'text', v: '2' },
+      { k: 'h', label: 'Target h = g^x mod p', type: 'text', v: '48' }
+    ],
+    tips: [
+      { t: 'Play it: with m = 10, the giant step i = 7 meets the baby step j = 3, so x = 73.', play: true },
+      { t: 'Try h = 1. The answer x = 0 is found at the very first giant step.', set: { h: '1' }, play: true },
+      { t: 'Try p = 383, g = 5, h = 100. m = 20, and at most 40 steps replace up to 382.', set: { p: '383', g: '5', h: '100' }, play: true }
+    ],
+    frames(p) {
+      const P = +p.p, G = +p.g, Hh = +p.h;
+      if (!N.isPrime(P) || P < 5 || P > 400) throw new Error('p must be a prime from 5 to 400 in this animation.');
+      if (!(G > 1 && G < P && Hh > 0 && Hh < P)) throw new Error('Use 1 < g < p and 0 < h < p.');
+      const m = Math.ceil(Math.sqrt(P - 1));
+      const baby = []; let v = 1;
+      for (let j = 0; j < m; j++) { baby.push(v); v = v * G % P; }
+      const step = Number(N.inv(Number(N.pw(G, m, P)), P));
+      const fr = [
+        { k: 1, say: `Find x with ${G}<sup>x</sup> &equiv; ${Hh} (mod ${P}). Brute force could take up to ${P - 1} tries. Instead set m = &lceil;&radic;${P - 1}&rceil; = <b>${m}</b> and write x = i&middot;m + j with 0 &le; i, j &lt; m.`, baby: 0, giant: [] },
+        { k: 2, say: `Baby steps: store g<sup>j</sup> for j = 0 to ${m - 1} in a table. That is ${m} multiplications and ${m} memory slots.`, baby: m, giant: [] }
+      ];
+      const giant = []; let y = Hh, hit = null;
+      for (let i = 0; i < m && !hit; i++) {
+        const j = baby.indexOf(y);
+        giant.push(y);
+        if (j >= 0) hit = { i, j, x: i * m + j };
+        fr.push({ k: 3, say: `Giant step i = ${i}: h &middot; g<sup>&minus;${m}&middot;${i}</sup> mod p = <b>${y}</b>. ${j >= 0 ? `It is in the table at j = ${j}. A match!` : 'Not in the table, so take another giant step.'}`, baby: m, giant: giant.slice(), hit });
+        y = y * step % P;
+      }
+      if (hit) fr.push({ k: 4, done: true, say: `x = i&middot;m + j = ${hit.i}&middot;${m} + ${hit.j} = <b>${hit.x}</b>. Check: ${G}<sup>${hit.x}</sup> mod ${P} = ${Number(N.pw(G, hit.x, P))}. It took ${m} baby steps and ${hit.i + 1} giant steps. For a 2048 bit p, &radic;p is still about 2<sup>1024</sup>, so this attack is hopeless there, but it is why groups must be large.`, baby: m, giant, hit });
+      else fr.push({ k: 4, done: true, say: `No match: ${Hh} is not a power of ${G} mod ${P}, because g is not a generator.`, baby: m, giant, hit: null });
+      return fr.map(x => ({ ...x, P, G, Hh, m, B: baby }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const W = 56, per = 10;
+      D.text(g, `g = ${f.G}   h = ${f.Hh}   p = ${f.P}   m = ${f.m}`, 14, 20, { s: 13, b: true, mono: true, c: c.ink });
+      if (f.baby) {
+        D.text(g, 'baby steps gʲ (table)', 14, 44, { s: 11, b: true, c: c.ink2 });
+        f.B.forEach((v, j) => {
+          const r = Math.floor(j / per), x = 14 + (j % per) * (W + 1), y = 50 + r * 40;
+          const win = f.hit && f.hit.j === j;
+          cbox(z, x, y, W, 36, [`j=${j}`, String(v)], { s: 11, b: true, mono: true, fill: win ? c.green : c.surf, c: win ? '#fff' : c.ink });
+        });
+      }
+      const top = 50 + Math.ceil(f.m / per) * 40 + 14;
+      if (f.giant.length) {
+        D.text(g, 'giant steps h·g^(−m·i)', 14, top, { s: 11, b: true, c: c.ink2 });
+        f.giant.forEach((v, i) => {
+          const r = Math.floor(i / per), x = 14 + (i % per) * (W + 1), y = top + 6 + r * 40;
+          const win = f.hit && f.hit.i === i;
+          cbox(z, x, y, W, 36, [`i=${i}`, String(v)], { s: 11, b: true, mono: true, fill: win ? c.green : i === f.giant.length - 1 ? 'rgba(234,88,12,0.2)' : c.bg, c: win ? '#fff' : c.ink });
+        });
+      }
+      if (f.done && f.hit) cbox(z, 14, 300, 572, 32, `x = ${f.hit.i}·${f.m} + ${f.hit.j} = ${f.hit.x}     work ≈ 2√p instead of p`, { s: 13, b: true, mono: true, fill: c.cv, c: '#fff' });
+    }
+  });
+})();

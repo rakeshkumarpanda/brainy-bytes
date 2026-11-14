@@ -9518,6 +9518,28 @@ function cyCryptoModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-dh", title: "Diffie-Hellman, ElGamal and the discrete logarithm", emoji: "2.3", page: "content/cyber-security/cy-dh.html",
+        summary: "groups and safe primes, the exchange, CDH and DDH, DLP attacks, Pohlig-Hellman and validation, MITM, ElGamal, forward secrecy and HKDF.",
+        keywords: ["Diffie-Hellman", "discrete log", "safe prime", "baby step giant step", "Pohlig-Hellman", "man in the middle", "ElGamal", "forward secrecy", "HKDF", "Logjam"],
+        minutes: 85, counts: {"lessons": 11, "problems": 13, "quiz": 15, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "The key exchange problem and Diffie-Hellman", emoji: "", group: "Lesson", keywords: ["Diffie-Hellman", "key exchange", "key distribution", "Merkle puzzles", "Williamson", "GCHQ", "New Directions in Cryptography", "Turing Award", "discrete logarithm"] },
+        { id: "groups", title: "Groups, generators and safe primes", emoji: "", group: "Lesson", keywords: ["group", "cyclic group", "generator", "order", "Lagrange theorem", "safe prime", "subgroup", "RFC 3526", "primitive root"] },
+        { id: "exchange", title: "The exchange step by step", emoji: "", group: "Lesson", keywords: ["Diffie-Hellman exchange", "shared secret", "CDH", "DDH", "Eve", "RFC 3526 group 14", "worked example"] },
+        { id: "dlp", title: "The discrete logarithm problem and how it is attacked", emoji: "", group: "Lesson", keywords: ["discrete logarithm problem", "DLP", "baby step giant step", "Shanks", "Pollard rho", "index calculus", "number field sieve", "Logjam", "Shoup generic bound", "export grade"] },
+        { id: "pohlig", title: "Small subgroups: Pohlig-Hellman and bad public values", emoji: "", group: "Lesson", keywords: ["Pohlig-Hellman", "smooth order", "small subgroup attack", "Lim Lee", "public key validation", "safe prime", "Raccoon attack", "CVE-2016-0701"] },
+        { id: "mitm", title: "Man in the middle and authenticated key exchange", emoji: "", group: "Lesson", keywords: ["man in the middle", "MITM", "authenticated key exchange", "Station to Station", "certificate", "safety number", "fingerprint", "SSH known_hosts", "TLS CertificateVerify"] },
+        { id: "elgamal", title: "ElGamal encryption", emoji: "", group: "Lesson", keywords: ["ElGamal", "Taher Elgamal", "randomized encryption", "homomorphic", "malleable", "nonce reuse", "IND-CPA", "DDH", "electronic voting"] },
+        { id: "forward", title: "Forward secrecy, key derivation and TLS 1.3", emoji: "", group: "Lesson", keywords: ["forward secrecy", "ephemeral Diffie-Hellman", "DHE", "HKDF", "key derivation", "TLS 1.3", "Snowden", "double ratchet", "Signal"] },
+        { id: "versus", title: "Diffie-Hellman compared", emoji: "", group: "Lesson", keywords: ["comparison", "DHE vs ECDHE", "X25519", "RSA key transport", "pre shared key", "ML-KEM", "hybrid key exchange", "ffdhe"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "generic group model", "SIGMA", "Canetti Krawczyk", "Tamarin", "ProVerif", "SIKE", "isogeny", "Castryck Decru"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
