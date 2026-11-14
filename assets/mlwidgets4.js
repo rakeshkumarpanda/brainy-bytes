@@ -284,3 +284,191 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Deep learning 1.3  training in practice: optimisers in a narrow valley, and regularisation against overfitting
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, rng, plot } = MLZ;
+  const KAP = 100, START = [-4, 1.5];
+  const lossAt = p => 0.5 * (p[0] * p[0] + KAP * p[1] * p[1]);
+  const OPTS = ['SGD', 'Momentum', 'RMSprop', 'Adam'];
+  const LRS = { tuned: { SGD: 0.019, Momentum: 0.01, RMSprop: 0.1, Adam: 0.1 }, same: { SGD: 0.021, Momentum: 0.021, RMSprop: 0.021, Adam: 0.021 } };
+  const SHOW = [0, 1, 2, 3, 5, 8, 12, 20, 30, 45, 60];
+  const fe = v => (!isFinite(v) || v > 1e6 ? 'diverged' : v < 1e-3 ? v.toExponential(1).replace('-', '−') : f2(v, 3));
+
+  function path(name, lr) {
+    let p = START.slice(), v = [0, 0], s = [0, 0];
+    const out = [p.slice()];
+    for (let t = 1; t <= 60; t++) {
+      const g = [p[0], KAP * p[1]];
+      for (let i = 0; i < 2; i++) {
+        if (name === 'SGD') p[i] -= lr * g[i];
+        else if (name === 'Momentum') { v[i] = 0.9 * v[i] + g[i]; p[i] -= lr * v[i]; }
+        else if (name === 'RMSprop') { s[i] = 0.9 * s[i] + 0.1 * g[i] * g[i]; p[i] -= lr * g[i] / (Math.sqrt(s[i]) + 1e-8); }
+        else { v[i] = 0.9 * v[i] + 0.1 * g[i]; s[i] = 0.999 * s[i] + 0.001 * g[i] * g[i]; p[i] -= lr * (v[i] / (1 - 0.9 ** t)) / (Math.sqrt(s[i] / (1 - 0.999 ** t)) + 1e-8); }
+      }
+      out.push(p.slice());
+    }
+    return out;
+  }
+
+  trace('mloptim', {
+    title: 'Optimisers in a long, narrow valley',
+    sub: 'The loss f = ½(x² + 100y²) is a valley 100 times more curved across (y) than along (x). Every optimiser starts at (−4, 1.5) and aims for the minimum at (0, 0). Watch how each one moves over 60 steps.',
+    W: 600, H: 330,
+    params: [
+      { k: 'show', label: 'Optimisers', type: 'select', v: 'all', opts: [['all', 'All four'], ...OPTS.map(o => [o, o + ' only'])] },
+      { k: 'lr', label: 'Learning rates', type: 'select', v: 'tuned', opts: [['tuned', 'Tuned for each (SGD 0.019, Momentum 0.01, RMSprop and Adam 0.1)'], ['same', 'All 0.021, just above the SGD limit 2/100']] }
+    ],
+    tips: [
+      { t: 'All at 0.021: plain SGD crosses the valley further each step and diverges, because its rate is above 2/100. Momentum, RMSprop and Adam stay stable at the same rate.', set: { show: 'all', lr: 'same' }, play: true },
+      { t: 'SGD only: with the largest safe rate it zigzags across the steep y direction while crawling along the shallow x direction.', set: { show: 'SGD', lr: 'tuned' }, play: true }
+    ],
+    frames(p) {
+      const names = p.show === 'all' ? OPTS : [p.show], lr = LRS[p.lr];
+      const paths = {}; names.forEach(n => (paths[n] = path(n, lr[n])));
+      return SHOW.map((t, k) => {
+        const L = names.map(n => [n, lossAt(paths[n][t])]);
+        let say;
+        if (t === 0) say = `Step 0. Every optimiser starts at (−4, 1.5), where the loss is ${f2(lossAt(START), 1)}. ${p.lr === 'same' ? 'All use learning rate 0.021.' : 'Each uses its own tuned learning rate.'}`;
+        else if (k < SHOW.length - 1) say = `After ${t} step${t > 1 ? 's' : ''}: ` + L.map(([n, v]) => `${n} ${fe(v)}`).join(', ') + '.';
+        else {
+          const ok = L.filter(([, v]) => isFinite(v) && v < 1e6).sort((a, b) => a[1] - b[1]);
+          say = `After 60 steps: ` + L.map(([n, v]) => `${n} <b>${fe(v)}</b>`).join(', ') + '.' + (ok.length > 1 ? ` Lowest: ${ok[0][0]}.` : '') + (L.some(([, v]) => !(v < 1e6)) ? ' A diverged run has a learning rate too large for the steep direction.' : '');
+        }
+        return { t, names, paths, say };
+      });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-5, 5], [-2, 2], { dx: 1, dy: 0, xl: 'x', yl: 'y' });
+      g.save(); g.beginPath(); g.rect(P.x0 + 26, P.y0 + 10, P.w - 36, P.h - 30); g.clip();
+      [0.5, 2, 5, 10, 20, 40, 80, 120].forEach(lv => {
+        g.beginPath();
+        for (let a = 0; a <= 64; a++) { const th = a / 64 * 2 * Math.PI, x = Math.sqrt(2 * lv) * Math.cos(th), y = Math.sqrt(2 * lv / KAP) * Math.sin(th); a ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)); }
+        g.strokeStyle = c.line; g.lineWidth = 1; g.stroke();
+      });
+      f.names.forEach(n => {
+        const col = klass(z, OPTS.indexOf(n)), pts = f.paths[n].slice(0, f.t + 1);
+        const inside = q => Math.abs(q[0]) < 6 && Math.abs(q[1]) < 3, last = pts.findIndex(q => !inside(q));
+        g.beginPath(); pts.slice(0, last < 0 ? pts.length : last + 1).forEach((q, i) => { const X = P.X(Math.max(-6, Math.min(6, q[0]))), Y = P.Y(Math.max(-3, Math.min(3, q[1]))); i ? g.lineTo(X, Y) : g.moveTo(X, Y); });
+        g.strokeStyle = col; g.lineWidth = 2; g.stroke();
+        const q = pts[pts.length - 1];
+        if (Math.abs(q[0]) < 5 && Math.abs(q[1]) < 2.5) D.circle(g, P.X(q[0]), P.Y(q[1]), 5, { fill: col, stroke: c.surf, w: 1.5 });
+      });
+      g.restore();
+      D.circle(g, P.X(0), P.Y(0), 3, { fill: c.ink });
+      head(z, `Loss after ${f.t} step${f.t === 1 ? '' : 's'}`, 428, 30);
+      f.names.forEach((n, i) => {
+        const v = lossAt(f.paths[n][f.t]), y = 58 + i * 58;
+        rr(g, 428, y - 16, 12, 12, 3, { fill: klass(z, OPTS.indexOf(n)) });
+        D.text(g, n, 446, y - 6, { s: 13, b: true, c: c.ink });
+        D.text(g, fe(v), 446, y + 14, { s: 13, mono: true, c: v < 1e6 ? c.ink2 : c.red });
+      });
+      D.text(g, 'grey ovals: equal loss', 428, 318, { s: 10, c: c.ink2 });
+    }
+  });
+
+  /* a 1 → 24 → 24 → 1 tanh network trained with Adam on 16 noisy points of sin(x) */
+  const DATA = (() => {
+    const R = rng(11), gs = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+    const tr = [], va = [];
+    for (let i = 0; i < 16; i++) { const x = -3 + 6 * R(); tr.push([x, Math.sin(x) + 0.3 * gs()]); }
+    for (let i = 0; i < 60; i++) { const x = -3 + 6 * (i + 0.5) / 60; va.push([x, Math.sin(x) + 0.3 * gs()]); }
+    return { tr, va };
+  })();
+  const REG = { none: 'no regularisation', decay: 'weight decay 0.01', dropout: 'dropout, keep 0.8', early: 'early stopping, patience 200' };
+  const CHECK = [0, 50, 150, 400, 1000, 2000];
+  let baseVa = null;
+  const base = () => { if (baseVa === null) { const sh = trainNet('none').shots; baseVa = sh[sh.length - 1].va; } return baseVa; };
+
+  function trainNet(reg) {
+    const R = rng(5), H = 24, sizes = [1, H, H, 1];
+    const gs = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+    const W = sizes.slice(1).map((b, l) => Array.from({ length: sizes[l] }, () => Array.from({ length: b }, () => gs() / Math.sqrt(sizes[l]))));
+    const B = sizes.slice(1).map(b => new Array(b).fill(0));
+    const params = [...W.flatMap(m => m), ...B];
+    const M = params.map(r => new Array(r.length).fill(0)), V = params.map(r => new Array(r.length).fill(0));
+    const keep = reg === 'dropout' ? 0.8 : 1, decay = reg === 'decay' ? 0.01 : 0;
+    const fwd = (x, drop) => {
+      const hs = [[x]], raw = [], masks = [];
+      for (let l = 0; l < 2; l++) {
+        const prev = hs[l], h = B[l].map((b, j) => Math.tanh(prev.reduce((a, v, i) => a + v * W[l][i][j], b)));
+        const m = h.map(() => (drop ? (R() < keep ? 1 / keep : 0) : 1));
+        raw.push(h); masks.push(m); hs.push(h.map((v, j) => v * m[j]));
+      }
+      return { hs, raw, masks, out: hs[2].reduce((a, v, i) => a + v * W[2][i][0], B[2][0]) };
+    };
+    const mse = set => set.reduce((a, [x, y]) => a + (fwd(x, false).out - y) ** 2, 0) / set.length;
+    const curve = () => Array.from({ length: 61 }, (_, i) => { const x = -3 + i / 10; return [x, fwd(x, false).out]; });
+    const snap = () => JSON.stringify([W, B]);
+    const hist = [], shots = [];
+    let best = Infinity, bestEp = 0, bestState = null, stopped = 0;
+    for (let ep = 0; ep <= 2000; ep++) {
+      if (ep % 10 === 0 || CHECK.includes(ep)) hist.push([ep, mse(DATA.tr), mse(DATA.va)]);
+      if (reg === 'early') {
+        const va = mse(DATA.va);
+        if (va < best) { best = va; bestEp = ep; bestState = snap(); }
+        else if (ep - bestEp >= 200) { const s = JSON.parse(bestState); s[0].forEach((m, l) => m.forEach((r, i) => r.forEach((v, j) => (W[l][i][j] = v)))); s[1].forEach((r, l) => r.forEach((v, j) => (B[l][j] = v))); stopped = ep; shots.push({ ep, bestEp, curve: curve(), tr: mse(DATA.tr), va: mse(DATA.va), hist: hist.slice() }); break; }
+      }
+      if (CHECK.includes(ep)) shots.push({ ep, curve: curve(), tr: mse(DATA.tr), va: mse(DATA.va), hist: hist.slice() });
+      if (ep === 2000) break;
+      const gW = W.map(m => m.map(r => r.map(() => 0))), gB = B.map(r => r.map(() => 0));
+      DATA.tr.forEach(([x, y]) => {
+        const { hs, raw, masks, out } = fwd(x, true);
+        let d = [2 * (out - y) / DATA.tr.length];
+        for (let l = 2; l >= 0; l--) {
+          hs[l].forEach((v, i) => d.forEach((dj, j) => (gW[l][i][j] += v * dj)));
+          d.forEach((dj, j) => (gB[l][j] += dj));
+          if (l > 0) d = hs[l].map((_, i) => d.reduce((a, dj, j) => a + dj * W[l][i][j], 0) * masks[l - 1][i] * (1 - raw[l - 1][i] ** 2));
+        }
+      });
+      const grads = [...gW.flatMap((m, l) => m.map((r, i) => r.map((v, j) => v + decay * W[l][i][j]))), ...gB];
+      const t = ep + 1;
+      params.forEach((r, k) => r.forEach((_, j) => {
+        M[k][j] = 0.9 * M[k][j] + 0.1 * grads[k][j]; V[k][j] = 0.999 * V[k][j] + 0.001 * grads[k][j] ** 2;
+        r[j] -= 0.01 * (M[k][j] / (1 - 0.9 ** t)) / (Math.sqrt(V[k][j] / (1 - 0.999 ** t)) + 1e-8);
+      }));
+    }
+    return { shots, stopped };
+  }
+
+  trace('mlfitreg', {
+    title: 'Overfitting, and three ways to stop it',
+    sub: 'A network with two hidden layers of 24 tanh units learns from 16 noisy points of sin(x) (blue dots). Its fit (orange) is checked against 60 fresh validation points (grey). The dashed line is the true sin(x). The right panel tracks training and validation error as training goes on.',
+    W: 600, H: 330,
+    params: [{ k: 'reg', label: 'Regularisation', type: 'select', v: 'none', opts: Object.keys(REG).map(k => [k, REG[k]]) }],
+    tips: [
+      { t: 'No regularisation: training error keeps falling towards 0 while validation error turns upwards. The curve bends to pass through the noise.', set: { reg: 'none' }, play: true },
+      { t: 'Early stopping: training halts once validation error has not improved for 200 epochs, and the weights from the best epoch are restored.', set: { reg: 'early' }, play: true }
+    ],
+    frames(p) {
+      const { shots, stopped } = trainNet(p.reg);
+      if (p.reg === 'none') baseVa = shots[shots.length - 1].va;
+      return shots.map((s, k) => {
+        let say;
+        if (s.ep === 0) say = `Epoch 0 with ${REG[p.reg]}. The network starts from random weights and has learned nothing yet. Training error ${f2(s.tr, 3)}, validation error ${f2(s.va, 3)}. The noise alone gives about 0.09.`;
+        else if (s.bestEp !== undefined) say = `Validation error has not improved for 200 epochs, so training <b>stops at epoch ${s.ep}</b> and the weights from epoch ${s.bestEp} come back. Training error ${f2(s.tr, 3)}, validation error <b>${f2(s.va, 3)}</b>.`;
+        else say = `Epoch ${s.ep}: training error ${f2(s.tr, 3)}, validation error <b>${f2(s.va, 3)}</b>.` + (k === shots.length - 1 && !stopped ? (p.reg === 'none' ? ` Training error is ${f2(s.va / s.tr, 0)} times smaller than validation error: the network has <b>overfitted</b> the noise.` : ` Without regularisation the validation error ends at ${f2(base(), 3)}, so ${p.reg === 'decay' ? 'weight decay' : 'dropout'} ${s.va < base() ? 'lowers' : 'does not lower'} it here.`) : '');
+        return { ...s, reg: p.reg, say };
+      });
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 330, 310], [-3, 3], [-2, 2], { dx: 1, dy: 0, xl: 'x', yl: 'y' });
+      g.save(); g.beginPath(); g.rect(P.x0 + 26, P.y0 + 10, P.w - 36, P.h - 30); g.clip();
+      g.beginPath(); for (let i = 0; i <= 60; i++) { const x = -3 + i / 10; i ? g.lineTo(P.X(x), P.Y(Math.sin(x))) : g.moveTo(P.X(x), P.Y(Math.sin(x))); }
+      g.setLineDash([4, 4]); g.strokeStyle = c.ink2; g.lineWidth = 1; g.stroke(); g.setLineDash([]);
+      DATA.va.forEach(([x, y]) => D.circle(g, P.X(x), P.Y(y), 2, { fill: c.line }));
+      g.beginPath(); f.curve.forEach(([x, y], i) => (i ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)))); g.strokeStyle = klass(z, 1); g.lineWidth = 2.5; g.stroke();
+      g.restore();
+      DATA.tr.forEach(([x, y]) => D.circle(g, P.X(x), P.Y(y), 4, { fill: klass(z, 0), stroke: c.surf, w: 1 }));
+      const Q = plot(z, [350, 10, 240, 310], [0, 2000], [-3, 1], { dx: 0, dy: 0, xl: 'epoch', yl: 'log₁₀ error' });
+      const line = (k, col) => { g.beginPath(); f.hist.forEach((h, i) => { const X = Q.X(h[0]), Y = Q.Y(Math.max(-3, Math.min(1, Math.log10(h[k] + 1e-9)))); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }); g.strokeStyle = col; g.lineWidth = 2; g.stroke(); };
+      line(1, klass(z, 0)); line(2, klass(z, 1));
+      D.text(g, 'blue: training', 580, 40, { a: 'right', s: 11, b: true, c: klass(z, 0) });
+      D.text(g, 'orange: validation', 580, 56, { a: 'right', s: 11, b: true, c: klass(z, 1) });
+    }
+  });
+})();

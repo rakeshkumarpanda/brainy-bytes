@@ -8869,6 +8869,27 @@ function mlDeepModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-training", title: "Training deep networks: optimisers, normalisation and regularisation", emoji: "1.3", page: "content/machine-learning/ml-training.html",
+        summary: "Optimisers, schedules, normalisation, regularisation and a practical recipe for training deep networks.",
+        keywords: ["optimiser", "Adam", "momentum", "learning rate schedule", "batch normalisation", "layer normalisation", "dropout", "weight decay", "early stopping", "overfitting"],
+        minutes: 55, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Optimisers: SGD, momentum, RMSprop and Adam", emoji: "", group: "Lesson", keywords: ["optimiser", "SGD", "momentum", "RMSprop", "Adam", "AdamW", "learning rate", "ill conditioning"] },
+        { id: "schedules", title: "Mini batches and learning rate schedules", emoji: "", group: "Lesson", keywords: ["mini batch", "epoch", "batch size", "learning rate schedule", "step decay", "cosine decay", "warm up", "linear scaling rule"] },
+        { id: "normalise", title: "Batch normalisation and layer normalisation", emoji: "", group: "Lesson", keywords: ["batch normalisation", "layer normalisation", "gamma beta", "running mean", "internal covariate shift", "eval mode"] },
+        { id: "regular", title: "Regularisation: weight decay, dropout and early stopping", emoji: "", group: "Lesson", keywords: ["regularisation", "overfitting", "weight decay", "L2", "AdamW", "dropout", "early stopping", "validation set"] },
+        { id: "recipe", title: "A practical recipe for training a network", emoji: "", group: "Lesson", keywords: ["training recipe", "overfit one batch", "learning rate finder", "baseline", "debugging neural networks", "tuning"] },
+        { id: "versus", title: "Optimisers compared", emoji: "", group: "Lesson", keywords: ["SGD vs Adam", "optimiser comparison", "AdamW"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["learning rate limit", "condition number", "momentum maths", "bias correction", "sharp minima", "flat minima"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "training dynamics"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "binary search on the answer", "prefix sum", "greedy"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
