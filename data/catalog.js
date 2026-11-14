@@ -9047,6 +9047,26 @@ function mlopsModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "mlops-s2", title: "Build and ship", emoji: "2", step: 2, level: "Intermediate", blurb: "Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, put it in a Docker container and ship it with CI/CD.", topics: [
+      { id: "mlops-pipelines", title: "Pipelines and saving models", emoji: "2.1", page: "content/mlops/mlops-pipelines.html",
+        summary: "Leak free scikit-learn pipelines, saving with joblib and metadata, file formats, and input contracts.",
+        keywords: ["Pipeline", "ColumnTransformer", "data leakage", "joblib", "model persistence", "ONNX", "skops", "input validation", "handle_unknown", "metadata"],
+        minutes: 45, counts: {"lessons": 7, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "pipe", title: "One pipeline from raw columns to prediction", emoji: "", group: "Lesson", keywords: ["Pipeline", "ColumnTransformer", "fit", "transform", "SimpleImputer", "StandardScaler", "OneHotEncoder", "handle_unknown"] },
+        { id: "leak", title: "Leakage: why every learning step belongs inside the pipeline", emoji: "", group: "Lesson", keywords: ["data leakage", "target leakage", "cross validation", "feature selection", "time split", "GroupKFold"] },
+        { id: "save", title: "Saving and loading a trained pipeline", emoji: "", group: "Lesson", keywords: ["model persistence", "joblib", "pickle", "metadata", "skops", "ONNX", "version match", "security"] },
+        { id: "contract", title: "An input contract for the model", emoji: "", group: "Lesson", keywords: ["input validation", "schema", "contract", "status 422", "pydantic", "data tests"] },
+        { id: "versus", title: "Ways to save a model compared", emoji: "", group: "Lesson", keywords: ["joblib vs ONNX", "skops", "pickle security"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "feature store", "training serving skew"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

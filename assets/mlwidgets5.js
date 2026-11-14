@@ -220,3 +220,101 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 2.1  pipelines: one row flowing through fitted steps, and leakage when a step sees the test rows
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, box } = MLZ;
+  const nf = v => f2(v, 2).replace('-', '−');
+  const TRAIN = [[2, 'basic'], [10, 'plus'], [null, 'premium'], [30, 'basic'], [18, 'plus']];
+  const ROWS = { a: [4, 'basic'], b: [null, 'plus'], c: [40, 'student'] };
+  const W = { b: 0.3, t: -1.1, basic: 0.9, plus: -0.3, premium: -0.6 };
+
+  trace('mlpipeflow', {
+    title: 'A pipeline learns on training rows, then applies the same steps to every new row',
+    sub: 'The pipeline has three steps before the model: fill a missing tenure with the median, scale it to a z score, and one hot encode the plan. fit learns the median, mean, spread and list of plans from the training rows only. predict reuses them.',
+    W: 600, H: 330,
+    params: [
+      { k: 'row', label: 'New customer', type: 'select', v: 'a', opts: [['a', 'tenure 4 months, plan basic'], ['b', 'tenure missing, plan plus'], ['c', 'tenure 40 months, plan student (never seen)']] }
+    ],
+    tips: [
+      { t: 'A missing tenure: the imputer fills in the training median, 14, so the model still gets a number.', set: { row: 'b' }, play: true },
+      { t: 'An unseen plan: with handle_unknown set to ignore, every plan column becomes 0 instead of crashing the service.', set: { row: 'c' }, play: true }
+    ],
+    frames(p) {
+      const known = TRAIN.map(r => r[0]).filter(v => v !== null).sort((a, b) => a - b);
+      const med = (known[1] + known[2]) / 2;
+      const filled = TRAIN.map(r => (r[0] === null ? med : r[0])), mean = filled.reduce((a, v) => a + v, 0) / filled.length;
+      const sd = Math.sqrt(filled.reduce((a, v) => a + (v - mean) ** 2, 0) / filled.length), plans = ['basic', 'plus', 'premium'];
+      const [t, plan] = ROWS[p.row], t1 = t === null ? med : t, z = (t1 - mean) / sd, oh = plans.map(q => (q === plan ? 1 : 0));
+      const logit = W.b + W.t * z + W.basic * oh[0] + W.plus * oh[1] + W.premium * oh[2], prob = 1 / (1 + Math.exp(-logit));
+      const S = (st, say, extra = {}) => ({ st, med, mean, sd, plans, t, plan, t1, z, oh, logit, prob, say, ...extra });
+      return [
+        S(0, 'Five training rows. One tenure is missing. Nothing has been learned yet.'),
+        S(1, `fit, step 1: the imputer learns the <b>median</b> of the known tenures (2, 10, 18, 30) = <b>${f2(med, 0)}</b>.`),
+        S(2, `fit, step 2: the scaler learns the mean <b>${f2(mean, 1)}</b> and the spread <b>${f2(sd, 2)}</b> of the filled tenures.`),
+        S(3, 'fit, step 3: the encoder learns the plans it has seen: basic, plus, premium. Then the model is trained on the transformed rows (here its weights are fixed so the numbers are easy to follow).'),
+        S(4, `predict: a new customer arrives with tenure ${t === null ? 'missing' : t} and plan ${plan}.`),
+        S(5, t === null ? `Impute: the missing tenure becomes the training median, <b>${f2(med, 0)}</b>.` : `Impute: tenure ${t} is present, so it passes through unchanged.`),
+        S(6, `Scale: z = (${f2(t1, 0)} − ${f2(mean, 1)}) / ${f2(sd, 2)} = <b>${nf(z)}</b>, using the training mean and spread, never statistics of the new row.`),
+        S(7, plans.includes(plan) ? `One hot: plan ${plan} becomes [${oh.join(', ')}].` : `One hot: “${plan}” was never seen in training. With handle_unknown='ignore' it becomes [0, 0, 0] instead of an error.`),
+        S(8, `Model: logit = ${nf(logit)}, so the churn probability is <b>${f2(prob, 2)}</b>. One saved pipeline object did all of this, so training and serving cannot drift apart.`)
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, 'Training rows (tenure, plan)', 14, 24);
+      TRAIN.forEach((r, i) => D.text(g, `${r[0] === null ? 'NaN' : r[0]}  ${r[1]}`, 18, 46 + i * 18, { s: 12, mono: true, c: r[0] === null ? c.red : c.ink }));
+      const steps = [['Impute', f.st >= 1 ? `median = ${f2(f.med, 0)}` : 'not fitted'], ['Scale', f.st >= 2 ? `mean ${f2(f.mean, 1)}, sd ${f2(f.sd, 2)}` : 'not fitted'], ['One hot', f.st >= 3 ? 'basic plus premium' : 'not fitted'], ['Model', f.st >= 3 ? 'trained' : 'not fitted']];
+      steps.forEach(([n, s], i) => {
+        const x = 14 + i * 146, on = f.st >= 5 && f.st - 5 === i;
+        box(z, x, 150, 132, 56, '', { fill: on ? 'rgba(14,116,144,0.15)' : c.surf, stroke: on ? c.cv : c.line, w: on ? 2.5 : 1.5 });
+        D.text(g, n, x + 10, 170, { s: 13, b: true, c: c.ink });
+        D.text(g, s, x + 10, 192, { s: 10, mono: true, c: f.st >= i + 1 || (i === 3 && f.st >= 3) ? c.green : c.ink2 });
+        if (i < 3) D.arrow(g, x + 134, 178, x + 144, 178, c.ink2, 1.5, 5);
+      });
+      if (f.st >= 4) {
+        head(z, 'New row as it moves through', 14, 236);
+        const vals = [`tenure ${f.t === null ? 'missing' : f.t}, ${f.plan}`, `tenure ${f2(f.t1, 0)}`, `z = ${nf(f.z)}`, `[${f.oh.join(', ')}]`, `p = ${f2(f.prob, 2)}`];
+        vals.forEach((v, i) => { if (f.st >= 4 + i) box(z, 14 + i * 116, 250, 108, 34, v, { s: 11, mono: true, fill: i === 4 ? c.bg : c.surf }); });
+      }
+      D.text(g, 'fit learns from training rows only', 360, 40, { s: 11, c: c.ink2 });
+      D.text(g, 'predict reuses what fit learned', 360, 58, { s: 11, c: c.ink2 });
+    }
+  });
+
+  trace('mlleak', {
+    title: 'Leakage: a step that sees the test rows makes noise look useful',
+    sub: '100 rows of pure random numbers in 5000 columns, with random labels, so no model can honestly beat 50 percent. Choosing the 20 “best” columns is a step that learns from labels. Watch which rows it is allowed to see in 5 fold cross validation.',
+    W: 600, H: 330,
+    params: [
+      { k: 'way', label: 'Where the column choice happens', type: 'select', v: 'wrong', opts: [['wrong', 'Before cross validation, on all rows'], ['right', 'Inside the pipeline, on each training fold']] }
+    ],
+    tips: [
+      { t: 'Choosing columns on all rows first: the test rows helped pick the columns, so the score is a fantasy.', set: { way: 'wrong' }, play: true },
+      { t: 'Inside the pipeline: each fold picks its own columns from its 80 training rows, and the honest score of about 50 percent appears.', set: { way: 'right' }, play: true }
+    ],
+    frames(p) {
+      const wrong = p.way === 'wrong', fr = [{ k: -1, wrong, say: 'The 100 rows are split into 5 folds of 20. Each fold takes one turn as the test set.' }];
+      if (wrong) fr.push({ k: -1, sel: true, wrong, say: 'First, SelectKBest looks at <b>all 100 rows</b> and their labels, and keeps the 20 columns that happen to match the labels best.' });
+      for (let k = 0; k < 5; k++) fr.push({ k, wrong, sel: wrong, say: wrong ? `Fold ${k + 1}: train on 80 rows, test on 20. But the 20 test rows already helped choose the columns.` : `Fold ${k + 1}: the pipeline chooses 20 columns using only the 80 training rows (blue), then tests on the 20 unseen rows (orange).` });
+      fr.push({ k: 5, wrong, sel: wrong, say: wrong ? 'Average accuracy <b>0.85</b> on pure noise (from the program below). The model learned nothing real, the selection step peeked at the answers.' : 'Average accuracy <b>0.48</b> (from the program below): the honest answer for random data. Put every step that learns from data inside the pipeline.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, '100 rows in 5 folds', 14, 24);
+      for (let k = 0; k < 5; k++) {
+        const y = 40 + k * 44, test = k === f.k, train = f.k >= 0 && f.k < 5 && !test;
+        box(z, 14, y, 200, 34, `rows ${k * 20 + 1} to ${k * 20 + 20}`, { s: 12, fill: test ? 'rgba(234,88,12,0.2)' : (train ? 'rgba(37,99,235,0.15)' : c.surf), stroke: test ? c.orange : (train ? c.accent : c.line) });
+      }
+      box(z, 260, 60, 320, 70, '', { fill: c.bg });
+      D.text(g, 'Column choice (SelectKBest, k = 20)', 272, 82, { s: 12, b: true, c: c.ink });
+      D.text(g, f.sel ? 'learned from: all 100 rows, test rows included' : (f.k >= 0 && f.k < 5 ? 'learned from: the 80 training rows of this fold' : 'learned from: not yet'), 272, 108, { s: 11, c: f.sel ? c.red : c.ink2 });
+      if (f.k === 5) box(z, 260, 160, 320, 60, `cross validation accuracy ${f.wrong ? '0.85' : '0.48'}`, { s: 15, b: true, mono: true, fill: f.wrong ? 'rgba(220,38,38,0.15)' : 'rgba(22,163,74,0.15)', stroke: f.wrong ? c.red : c.green });
+      D.text(g, 'blue: training rows   orange: test rows', 260, 300, { s: 10, c: c.ink2 });
+      D.text(g, 'honest accuracy on random labels: about 0.5', 260, 316, { s: 10, c: c.ink2 });
+    }
+  });
+})();
