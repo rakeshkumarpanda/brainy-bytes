@@ -72,6 +72,20 @@ def header(T, what):
             '# Every attack here runs on made up data on your own computer. Never point it at a system you do not own.\n')
 
 
+def drop_placeholder(fn):
+    """data/catalog.js holds an empty cyXModules() for every section that has no chapters yet, so the subject entry
+    works from the start. Once a section gets its first chapter the builder writes the real function, and the empty
+    one is removed here so that the name is declared only once."""
+    if not fn:
+        return
+    path = os.path.join(B.ROOT, 'data', 'catalog.js')
+    text = open(path, encoding='utf-8').read()
+    stub = ('\n/* placeholder until the first chapter of this section is built by tools/cyber-build/build.py */\n'
+            f'function {fn}() {{ return []; }}\n')
+    if stub in text:
+        open(path, 'w', encoding='utf-8').write(text.replace(stub, ''))
+
+
 def main():
     args = sys.argv[1:]
     only, fast = None, False
@@ -96,6 +110,7 @@ def main():
             for T in chs:
                 T['part'], T['part_name'] = P['part'], P['part_name']
         else:
+            drop_placeholder(P['func'])
             chs = B.build(args)
             pyfiles.write_all([T for T in chs if not args or T['slug'] in args], os.path.join(B.ROOT, 'content', BASE['subject'], 'files'))
         every += chs
