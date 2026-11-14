@@ -780,3 +780,100 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 4.1  ML system design: a canary rollout with a guardrail, and why peeking at an A/B test lies
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box, rng } = MLZ;
+  const STAGES = [['shadow', 0], ['canary 1%', 1], ['5%', 5], ['25%', 25], ['50%', 50], ['100%', 100]];
+  const ERR = { good: [0.66, 0.64, 0.62, 0.61, 0.60, 0.60], bad: [0.65, 2.4, 2.4, 2.4, 2.4, 2.4] };
+  const OLD = 0.70, GUARD = 1.2, PER_HOUR = 100000;
+
+  trace('mlrollout', {
+    title: 'A canary rollout with a guardrail',
+    sub: 'A new model version first runs in shadow (it sees every request but its answers are only logged), then serves a growing share of users. After each stage a guardrail compares its error rate with a limit. If the guardrail breaks, traffic goes straight back to the old version. Each stage lasts one hour of 100,000 requests.',
+    W: 600, H: 330,
+    params: [{ k: 'model', label: 'New version v2', type: 'select', v: 'good', opts: [['good', 'A good model'], ['bad', 'A model with a hidden bug']] }],
+    tips: [
+      { t: 'A model with a hidden bug: the guardrail trips at the 1 percent stage, so only about 1,000 requests ever reach it.', set: { model: 'bad' }, play: true },
+      { t: 'A good model: it passes every guardrail and reaches 100 percent in five steps.', set: { model: 'good' }, play: true }
+    ],
+    frames(p) {
+      const e = ERR[p.model], fr = [{ k: -1, share: 0, say: `The old version v1 serves every user. Its error rate is ${OLD.toFixed(2)} percent. The guardrail for v2 is ${GUARD.toFixed(1)} percent.` }];
+      for (let k = 0; k < STAGES.length; k++) {
+        const [name, share] = STAGES[k], n = k === 0 ? PER_HOUR : PER_HOUR * share / 100, bad = e[k] > GUARD;
+        if (k === 0) fr.push({ k, share: 0, say: `Shadow: v2 answers a copy of all ${PER_HOUR.toLocaleString('en')} requests, but users only see v1. v2 error rate on the copies ${e[0].toFixed(2)} percent.${p.model === 'bad' ? ' It looks fine, because this bug only shows when real users act on v2&rsquo;s answers.' : ''}` });
+        else fr.push({ k, share, say: `${name}: ${n.toLocaleString('en')} requests go to v2. Error rate ${e[k].toFixed(2)} percent against the ${GUARD.toFixed(1)} percent guardrail: ${bad ? 'broken' : 'passed'}.` });
+        if (k > 0 && bad) { fr.push({ k, share: 0, rolled: true, say: `Automatic rollback: all traffic returns to v1 within seconds. Only ${n.toLocaleString('en')} requests, ${share} percent of one hour, ever reached the faulty model.` }); return fr.map(x => ({ ...x, model: p.model })); }
+      }
+      fr[fr.length - 1].say += ' v2 is now the only version, and v1 is kept for a quick rollback.';
+      return fr.map(x => ({ ...x, model: p.model }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, e = ERR[f.model];
+      head(z, 'Share of users on each version', 14, 22);
+      const W = 560, x0 = 20, w2 = W * f.share / 100;
+      box(z, x0, 34, W, 34, '', { fill: c.surf, stroke: c.line });
+      if (W - w2 > 0) { g.fillStyle = 'rgba(37,99,235,0.25)'; g.fillRect(x0, 34, W - w2, 34); if (W - w2 > 60) D.text(g, `v1 ${100 - f.share}%`, x0 + (W - w2) / 2, 56, { a: 'center', s: 12, b: true, c: c.ink }); }
+      if (w2 > 0) { g.fillStyle = f.model === 'bad' ? 'rgba(220,38,38,0.35)' : 'rgba(22,163,74,0.35)'; g.fillRect(x0 + W - w2, 34, w2, 34); if (w2 > 50) D.text(g, `v2 ${f.share}%`, x0 + W - w2 / 2, 56, { a: 'center', s: 12, b: true, c: c.ink }); }
+      if (f.k === 0) D.text(g, 'v2 in shadow: sees a copy of every request, answers are logged only', x0, 86, { s: 11, c: c.ink2 });
+      if (f.rolled) D.text(g, 'rolled back to v1', x0, 86, { s: 12, b: true, c: c.red });
+      const Y = v => 290 - v / 3 * 170, X = k => 70 + k * 88;
+      head(z, 'error rate after each stage (percent)', 14, 112, { s: 11 });
+      D.line(g, 50, 290, 580, 290, c.ink2, 1); D.line(g, 50, 290, 50, 116, c.ink2, 1);
+      [0, 1, 2, 3].forEach(v => D.text(g, String(v), 44, Y(v) + 4, { a: 'right', s: 10, c: c.ink2 }));
+      D.line(g, 50, Y(GUARD), 580, Y(GUARD), c.orange, 1.5, [6, 4]); D.text(g, `guardrail ${GUARD}`, 578, Y(GUARD) - 6, { a: 'right', s: 10, b: true, c: c.orange });
+      D.line(g, 50, Y(OLD), 580, Y(OLD), 'rgba(37,99,235,0.8)', 1.5); D.text(g, `v1 ${OLD}`, 578, Y(OLD) + 14, { a: 'right', s: 10, c: c.ink2 });
+      STAGES.forEach(([name], k) => {
+        D.text(g, name, X(k) + 14, 306, { a: 'center', s: 10, c: c.ink2 });
+        if (k <= f.k) { const v = e[k]; g.fillStyle = v > GUARD ? c.red : c.green; g.fillRect(X(k), Y(v), 28, 290 - Y(v)); D.text(g, v.toFixed(2), X(k) + 14, Y(v) - 4, { a: 'center', s: 10, b: true, c: c.ink }); }
+      });
+    }
+  });
+
+  const gauss = R => { const u = Math.max(R(), 1e-12), v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+  const DAYS = 20, RUNS = 40;
+  const PATHS = (() => { const R = rng(11); return Array.from({ length: RUNS }, () => { let s = 0; return Array.from({ length: DAYS }, (_, d) => { s += gauss(R); return s / Math.sqrt(d + 1); }); }); })();
+  const firstCross = path => path.findIndex(z => Math.abs(z) > 1.96);
+
+  trace('mlpeek', {
+    title: 'Peeking at an A/B test',
+    sub: 'Forty A/A tests: both groups get the same model, so there is no real difference and every significant result is a false alarm. Each line is the z statistic of one test as data arrives over 20 days. Outside the band means p below 0.05.',
+    W: 600, H: 330,
+    params: [{ k: 'rule', label: 'When do you decide?', type: 'select', v: 'peek', opts: [['peek', 'Check every day, stop at the first p < 0.05'], ['end', 'Check once, on day 20']] }],
+    tips: [
+      { t: 'Check once at the end: about 1 test in 20 is a false alarm, which is exactly what p < 0.05 promises.', set: { rule: 'end' }, play: true },
+      { t: 'Check every day: random wandering crosses the band at some point far more often, so many more tests end with a false winner.', set: { rule: 'peek' }, play: true }
+    ],
+    frames(p) {
+      const fr = [{ d: 0, say: `${RUNS} A/A tests start. With no real difference, each z statistic wanders randomly around 0.` }];
+      for (const d of [5, 10, 15, 20]) {
+        const crossed = PATHS.filter(pt => { const k = firstCross(pt); return k >= 0 && k < d; }).length;
+        fr.push({ d, say: p.rule === 'peek' ? `Day ${d}: ${crossed} of ${RUNS} tests have touched p < 0.05 at least once, and a daily checker would already have stopped them and declared a winner.` : `Day ${d}: the lines wander, sometimes outside the band, but you have promised to decide only on day 20.` });
+      }
+      const atEnd = PATHS.filter(pt => Math.abs(pt[DAYS - 1]) > 1.96).length, any = PATHS.filter(pt => firstCross(pt) >= 0).length;
+      fr.push({ d: DAYS, verdict: true, say: p.rule === 'peek' ? `False alarms with daily peeking: <b>${any} of ${RUNS}</b> (${Math.round(any / RUNS * 100)} percent), not 5 percent. Fix it with a fixed sample size or a sequential test built for repeated looks.` : `False alarms when you check once: <b>${atEnd} of ${RUNS}</b> (${Math.round(atEnd / RUNS * 100)} percent), close to the 5 percent you asked for.` });
+      return fr.map(x => ({ ...x, rule: p.rule }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, X = d => 50 + d / DAYS * 520, Y = v => 170 - Math.max(-3.4, Math.min(3.4, v)) / 3.2 * 130;
+      g.fillStyle = 'rgba(22,163,74,0.08)'; g.fillRect(X(0), Y(1.96), 520, Y(-1.96) - Y(1.96));
+      D.line(g, X(0), Y(1.96), X(DAYS), Y(1.96), c.green, 1, [4, 3]); D.line(g, X(0), Y(-1.96), X(DAYS), Y(-1.96), c.green, 1, [4, 3]);
+      D.line(g, X(0), Y(0), X(DAYS), Y(0), c.line, 1); D.line(g, X(0), 30, X(0), 310, c.ink2, 1);
+      [-3, -1.96, 0, 1.96, 3].forEach(v => D.text(g, String(v), 44, Y(v) + 4, { a: 'right', s: 10, c: c.ink2 }));
+      [5, 10, 15, 20].forEach(d => D.text(g, `day ${d}`, X(d), 322, { a: 'center', s: 10, c: c.ink2 }));
+      head(z, 'z statistic', 56, 24, { s: 11 });
+      const peek = f.rule === 'peek';
+      PATHS.forEach(pt => {
+        const k = firstCross(pt), stop = peek && k >= 0 ? Math.min(k + 1, f.d) : f.d;
+        if (stop < 1) return;
+        const flagged = peek ? (k >= 0 && k < f.d) : (f.verdict && Math.abs(pt[DAYS - 1]) > 1.96);
+        g.save(); g.strokeStyle = flagged ? c.red : 'rgba(100,116,139,0.45)'; g.lineWidth = flagged ? 1.8 : 1; g.beginPath(); g.moveTo(X(0), Y(0));
+        for (let d = 0; d < stop; d++) g.lineTo(X(d + 1), Y(pt[d])); g.stroke(); g.restore();
+        if (flagged) { const d = peek ? k : DAYS - 1; D.circle(g, X(d + 1), Y(pt[d]), 4, { fill: c.red }); }
+      });
+      D.text(g, 'band: p above 0.05   red: a false winner', 340, 24, { s: 11, c: c.ink2 });
+    }
+  });
+})();

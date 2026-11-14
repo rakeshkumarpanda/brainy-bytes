@@ -9182,6 +9182,27 @@ function mlopsModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "mlops-s4", title: "Design and certify", emoji: "4", step: 4, level: "Expert", blurb: "Design a complete ML system from requirements to rollout, and revise every MLOps chapter for interviews and certification exams.", topics: [
+      { id: "mlops-system-design", title: "Designing an ML system end to end", emoji: "4.1", page: "content/mlops/mlops-system-design.html",
+        summary: "Sizing with QPS and Little's law, serving modes, skew, shadow and canary releases, A/B test sample size and peeking, and a local load test.",
+        keywords: ["ML system design", "capacity planning", "Little's law", "feature store", "training-serving skew", "canary release", "A/B testing", "load testing"],
+        minutes: 60, counts: {"lessons": 8, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "frame", title: "Start with the problem, then size the system", emoji: "", group: "Lesson", keywords: ["ML system design", "requirements", "capacity planning", "QPS", "Little's law", "replicas", "back of the envelope"] },
+        { id: "serve", title: "Batch, online and streaming predictions", emoji: "", group: "Lesson", keywords: ["batch prediction", "online prediction", "streaming", "training-serving skew", "feature store", "parity test", "retrieval and ranking"] },
+        { id: "rollout", title: "Shadow, canary and rollback", emoji: "", group: "Lesson", keywords: ["shadow deployment", "canary release", "guardrail metric", "rollback", "blue-green deployment", "multi-armed bandit"] },
+        { id: "abtest", title: "A/B testing a new model", emoji: "", group: "Lesson", keywords: ["A/B test", "minimum detectable effect", "sample size", "statistical power", "z test", "peeking", "A/A test", "sequential testing"] },
+        { id: "load", title: "Load test your model service on your own computer", emoji: "", group: "Lesson", keywords: ["load test", "throughput", "saturation", "latency percentiles", "concurrency", "ThreadPoolExecutor"] },
+        { id: "case", title: "Worked design: real time fraud detection", emoji: "", group: "Lesson", keywords: ["fraud detection", "case study", "class imbalance", "real time features", "fallback rules", "design interview"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "CUPED", "sequential testing"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
