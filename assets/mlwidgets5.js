@@ -397,3 +397,102 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 2.3  Docker and CI/CD: the layer cache, and a CI/CD pipeline that stops at the first failure
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box } = MLZ;
+  /* step times in seconds come from real builds of the chapter's project (python:3.14-slim, 2026) */
+  const ORDERS = {
+    good: [['FROM python:3.14-slim', [], 0], ['WORKDIR /app', [], 0], ['COPY requirements.txt .', ['reqs'], 0], ['RUN pip install -r requirements.txt', [], 18], ['COPY train.py app.py ./', ['code'], 0], ['RUN python train.py', [], 1.6], ['RUN useradd appuser', [], 0.1]],
+    bad: [['FROM python:3.14-slim', [], 0], ['WORKDIR /app', [], 0], ['COPY . .', ['reqs', 'code'], 0.4], ['RUN pip install -r requirements.txt', [], 18.6], ['RUN python train.py', [], 1.2]]
+  };
+  const CH = { code: 'app.py', reqs: 'requirements.txt', none: 'nothing' };
+  const sec = v => (v < 0.05 ? '0 s' : `${v.toFixed(1)} s`);
+
+  trace('mllayers', {
+    title: 'The Docker layer cache',
+    sub: 'Each Dockerfile instruction makes one layer. On a rebuild Docker reuses a layer from its cache unless the instruction or the files it copies changed. Once one layer runs again, every layer above it runs again too. The times come from real builds of this chapter&rsquo;s project.',
+    W: 600, H: 340,
+    params: [
+      { k: 'order', label: 'Dockerfile order', type: 'select', v: 'good', opts: [['good', 'Good: requirements first, code later'], ['bad', 'Bad: COPY . . before pip install']] },
+      { k: 'change', label: 'You changed', type: 'select', v: 'code', opts: [['code', 'app.py (your code)'], ['reqs', 'requirements.txt'], ['none', 'Nothing']] }
+    ],
+    tips: [
+      { t: 'Bad order and a one line code change: COPY . . sees a changed file, so pip install runs again for about 18 seconds.', set: { order: 'bad', change: 'code' }, play: true },
+      { t: 'Changing requirements.txt rebuilds pip install in both orders. That is expected, because the packages really changed.', set: { order: 'good', change: 'reqs' }, play: true }
+    ],
+    frames(p) {
+      const S = ORDERS[p.order], fr = [{ S, n: 0, runs: [], say: `A rebuild after you changed <b>${CH[p.change]}</b>. Docker checks the layers from the bottom up.` }];
+      let dirty = false, total = 0;
+      const runs = [];
+      S.forEach(([ins, deps, t], i) => {
+        const why = deps.includes(p.change) ? 'its files changed' : (dirty ? 'a layer below it ran again' : '');
+        if (why) dirty = true;
+        runs.push(!!why); if (why) total += t;
+        fr.push({ S, n: i + 1, runs: runs.slice(), say: why ? `<b>${ins}</b> runs again because ${why} (${sec(t)}).` : `<b>${ins}</b> is unchanged: CACHED.` });
+      });
+      const end = p.change === 'none' ? 'Nothing changed, so every layer came from the cache and the build finished almost at once.'
+        : `Steps that ran again took about <b>${sec(total)}</b>. ${p.order === 'bad' && p.change === 'code' ? 'One line of code cost a full reinstall. Copy requirements.txt and install first, then copy the code.' : (p.order === 'good' && p.change === 'code' ? 'The slow pip install layer was reused, so a code change rebuilds in seconds.' : 'New packages need a new install whatever the order.')}`;
+      fr.push({ S, n: S.length, runs: runs.slice(), total, done: true, say: end });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, n = f.S.length, H = 36, y0 = 30 + (7 - n) * H;
+      head(z, 'Image layers (the first instruction is at the bottom)', 14, 20);
+      f.S.forEach(([ins, , t], i) => {
+        const y = y0 + (n - 1 - i) * (H + 4), seen = i < f.n, run = f.runs[i];
+        box(z, 14, y, 390, H, ins, { mono: true, s: 12, fill: !seen ? c.surf : (run ? 'rgba(234,88,12,0.18)' : 'rgba(22,163,74,0.15)'), stroke: !seen ? c.line : (run ? c.orange : c.green), w: i === f.n - 1 ? 2.5 : 1.5 });
+        if (seen) D.text(g, run ? `runs again  ${sec(t)}` : 'CACHED', 416, y + H / 2 + 4, { s: 12, b: true, c: run ? c.orange : c.green });
+      });
+      if (f.done) D.text(g, `time for the steps that ran: ${sec(f.total || 0)}`, 14, 326, { s: 13, b: true, c: c.ink });
+    }
+  });
+
+  const STAGES = ['git push', 'Install packages', 'Train the model', 'Run pytest (7 tests)', 'Build the image', 'Smoke test container', 'Push image (main only)', 'Deploy'];
+  trace('mlcipipe', {
+    title: 'A CI/CD pipeline for a model',
+    sub: 'Every push starts the pipeline on a clean machine. Continuous integration (CI) installs, trains and tests. Continuous delivery (CD) builds the image, checks that the container really answers, pushes it to a registry and deploys it. The first failing stage stops everything after it.',
+    W: 600, H: 330,
+    params: [
+      { k: 'run', label: 'What happens in this push', type: 'select', v: 'pass', opts: [['pass', 'Everything is fine'], ['gate', 'The new model is less accurate'], ['smoke', 'The container does not start']] }
+    ],
+    tips: [
+      { t: 'A worse model: the accuracy gate test fails, so no image is built and the old model keeps serving.', set: { run: 'gate' }, play: true },
+      { t: 'All tests pass but the container crashes at start up (for example a missing file). Only the smoke test catches this.', set: { run: 'smoke' }, play: true }
+    ],
+    frames(p) {
+      const fail = { pass: -1, gate: 3, smoke: 5 }[p.run];
+      const say = [
+        'You push a commit. GitHub Actions starts a fresh Ubuntu machine and checks out the code.',
+        'pip install -r requirements-dev.txt installs the pinned versions, the same ones as on your computer.',
+        p.run === 'gate' ? 'python train.py trains the new model. Its test accuracy is 0.84 this time.' : 'python train.py trains the model and saves it with its metadata (test accuracy 0.9111).',
+        p.run === 'gate' ? 'pytest: test_accuracy_gate fails because 0.84 is below the 0.90 gate. The run turns red and the pull request cannot be merged.' : 'pytest: all 7 tests pass (API, bad input, accuracy gate, invariance, direction, latency).',
+        'docker build makes the image. The pip layer comes from the cache when requirements.txt did not change.',
+        p.run === 'smoke' ? 'The smoke test starts the container and calls /health 20 times. It never answers, because the model file is missing from the image. The run turns red.' : 'The smoke test starts the container and calls /health and /predict with curl. Both answer.',
+        'On main only, the image is pushed to the registry, tagged with the commit id, so every version can be found again.',
+        'The deploy step tells the server to run the new image. If it misbehaves, rolling back means running the previous tag.'];
+      const fr = [];
+      for (let i = 0; i < STAGES.length; i++) {
+        fr.push({ k: i, fail, say: say[i] });
+        if (i === fail) break;
+      }
+      fr.push({ k: fail >= 0 ? fail : STAGES.length - 1, fail, done: true, say: fail >= 0 ? `Stopped at <b>${STAGES[fail]}</b>. Nothing after it ran, so the broken version never reached users. Fix it and push again.` : 'Green from push to deploy. The same steps run the same way on every push, which is the point of CI/CD.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      STAGES.forEach((n, i) => {
+        const x = 14 + (i % 4) * 147, y = i < 4 ? 40 : 186, bad = i === f.fail && f.k >= i, ok = i <= f.k && !bad, skip = f.done && f.fail >= 0 && i > f.fail;
+        box(z, x, y, 130, 60, n, { s: 12, b: i === f.k, fill: bad ? 'rgba(220,38,38,0.15)' : (ok ? 'rgba(22,163,74,0.14)' : c.surf), stroke: bad ? c.red : (ok ? c.green : c.line), w: i === f.k ? 2.5 : 1.5, dash: skip ? [4, 4] : undefined });
+        if (ok || bad) D.text(g, bad ? 'failed' : 'passed', x + 65, y + 78, { a: 'center', s: 11, b: true, c: bad ? c.red : c.green });
+        else if (skip) D.text(g, 'skipped', x + 65, y + 78, { a: 'center', s: 11, c: c.ink2 });
+        if (i % 4 !== 3) D.arrow(g, x + 131, y + 30, x + 145, y + 30, c.ink2, 1.5, 5);
+      });
+      D.arrow(g, 14 + 3 * 147 + 65, 128, 14 + 65, 184, c.ink2, 1.5, 6);
+      head(z, 'CI: install, train, test', 14, 30, { s: 11 }); head(z, 'CD: build, check, ship', 170, 182, { s: 11 });
+      if (f.done) D.text(g, f.fail >= 0 ? 'Pipeline red: the change is blocked.' : 'Pipeline green: the new version is live.', 14, 316, { s: 13, b: true, c: f.fail >= 0 ? c.red : c.green });
+    }
+  });
+})();

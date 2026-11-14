@@ -467,7 +467,7 @@ K.must('Production servers', 'Gunicorn on macOS and Linux, Waitress on Windows, 
 K.must('Capacity', 'L = &lambda;W. Workers = &lambda; &times; latency / target use. M/M/1: W = 1/(&mu; &minus; &lambda;) explodes near capacity.')
 
 T = K.topic(
-    slug='mlops-serving', topic='mlops-serving', step=(2, 'Build and ship', 'mlops-s2', 'Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, and run it on a production server.', 'Intermediate'),
+    slug='mlops-serving', topic='mlops-serving', step=(2, 'Build and ship', 'mlops-s2', 'Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, put it in a Docker container and ship it with CI/CD.', 'Intermediate'),
     title='Serving models with Flask, FastAPI and Django', short='Serving models', badge='2.2', minutes=55,
     lead='Turn a saved pipeline into a web API with Flask, FastAPI and Django, call it from every operating system, choose between online and batch prediction, and run it on a production server with enough workers.',
     desc='Model API, HTTP, JSON, routes, status codes 200 405 422, Flask, FastAPI, Pydantic, Django, JsonResponse, test client, curl, Invoke-RestMethod, online prediction, batch prediction, Gunicorn, Waitress, Uvicorn, WSGI, ASGI, workers, Little\'s law, M/M/1 queue.',

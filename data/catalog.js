@@ -9048,7 +9048,7 @@ function mlopsModules() {
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
-    { id: "mlops-s2", title: "Build and ship", emoji: "2", step: 2, level: "Intermediate", blurb: "Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, and run it on a production server.", topics: [
+    { id: "mlops-s2", title: "Build and ship", emoji: "2", step: 2, level: "Intermediate", blurb: "Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, put it in a Docker container and ship it with CI/CD.", topics: [
       { id: "mlops-pipelines", title: "Pipelines and saving models", emoji: "2.1", page: "content/mlops/mlops-pipelines.html",
         summary: "Leak free scikit-learn pipelines, saving with joblib and metadata, file formats, and input contracts.",
         keywords: ["Pipeline", "ColumnTransformer", "data leakage", "joblib", "model persistence", "ONNX", "skops", "input validation", "handle_unknown", "metadata"],
@@ -9080,6 +9080,24 @@ function mlopsModules() {
         { id: "production", title: "From the development server to production", emoji: "", group: "Lesson", keywords: ["development server", "production server", "Gunicorn", "Waitress", "Uvicorn", "WSGI", "ASGI", "workers", "reverse proxy", "HTTPS", "Little's law", "rate limit"] },
         { id: "versus", title: "Flask, FastAPI, Django and model servers compared", emoji: "", group: "Lesson", keywords: ["Flask vs FastAPI", "Django", "BentoML", "TorchServe", "KServe", "model server"] },
         { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "capacity planning", "tail latency"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "mlops-docker", title: "Docker and CI/CD for models", emoji: "2.3", page: "content/mlops/mlops-docker.html",
+        summary: "A real Dockerfile and Compose file for a model API, per OS build steps, model behaviour tests and a GitHub Actions pipeline.",
+        keywords: ["Docker", "Dockerfile", "container", "docker compose", "CI/CD", "GitHub Actions", "model testing", "quality gate", "smoke test", "container registry"],
+        minutes: 60, counts: {"lessons": 7, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "docker", title: "Containers, images and the Dockerfile", emoji: "", group: "Lesson", keywords: ["Docker", "image", "container", "Dockerfile", "layer", "build cache", "registry", "tag", "port mapping", "non root user", "HEALTHCHECK"] },
+        { id: "build", title: "Build and run the model container on your computer", emoji: "", group: "Lesson", keywords: ["make_project", "docker build", "docker run", "docker logs", "docker compose", "Docker Desktop", "WSL 2", "Apple silicon", "arm64", "amd64", "docker group"] },
+        { id: "tests", title: "Testing a model, not only the code", emoji: "", group: "Lesson", keywords: ["model testing", "quality gate", "invariance test", "directional test", "pytest", "TestClient", "ML Test Score", "CheckList", "flaky test"] },
+        { id: "ci", title: "CI/CD with GitHub Actions", emoji: "", group: "Lesson", keywords: ["CI/CD", "continuous integration", "continuous delivery", "GitHub Actions", "workflow", "smoke test", "branch protection", "GHCR", "secrets", "canary", "rollback"] },
+        { id: "versus", title: "Virtual environment, container or virtual machine", emoji: "", group: "Lesson", keywords: ["venv vs Docker", "container vs virtual machine"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Kubernetes", "continuous training", "image signing"] },
         { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
         { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
