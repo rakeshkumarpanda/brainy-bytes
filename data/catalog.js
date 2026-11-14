@@ -8891,6 +8891,29 @@ function mlDeepModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-d2", title: "Architectures", emoji: "2", step: 2, part: "deep", level: "Advanced", blurb: "The three big families of deep networks: convolutional networks for images, recurrent networks for sequences, and transformers built on attention.", topics: [
+      { id: "ml-cnn", title: "Convolutional neural networks", emoji: "2.1", page: "content/machine-learning/ml-cnn.html",
+        summary: "Convolution, pooling, receptive fields, a hand built CNN, ResNet and transfer learning.",
+        keywords: ["CNN", "convolution", "pooling", "receptive field", "ResNet", "residual connection", "transfer learning", "data augmentation", "stride", "padding"],
+        minutes: 60, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Convolution: a small filter slid over the image", emoji: "", group: "Lesson", keywords: ["convolution", "filter", "kernel", "feature map", "stride", "padding", "weight sharing", "local connectivity"] },
+        { id: "pool", title: "Channels, pooling and the receptive field", emoji: "", group: "Lesson", keywords: ["channels", "max pooling", "average pooling", "receptive field", "dilation", "downsampling", "translation invariance"] },
+        { id: "train", title: "Training a CNN on handwritten digits", emoji: "", group: "Lesson", keywords: ["CNN training", "im2col", "convolution gradient", "max pool gradient", "digits", "LeNet"] },
+        { id: "arch", title: "Famous architectures and residual connections", emoji: "", group: "Lesson", keywords: ["ResNet", "residual connection", "skip connection", "AlexNet", "VGG", "GoogLeNet", "Inception", "EfficientNet", "vision transformer", "ImageNet"] },
+        { id: "transfer", title: "Transfer learning and data augmentation", emoji: "", group: "Lesson", keywords: ["transfer learning", "fine tuning", "feature extraction", "pretrained model", "data augmentation", "ImageNet"] },
+        { id: "versus", title: "CNN, dense network and vision transformer compared", emoji: "", group: "Lesson", keywords: ["CNN vs MLP", "CNN vs vision transformer", "inductive bias"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["output size formula", "parameter count", "FLOPs", "equivariance", "inductive bias", "depthwise separable"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "architecture design"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "matrix", "sliding window", "prefix sum 2D", "monotonic stack"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

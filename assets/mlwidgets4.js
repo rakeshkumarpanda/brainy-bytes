@@ -472,3 +472,138 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Deep learning 2.1  convolutional networks: a kernel sliding over an image, and how far each unit can see
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr } = MLZ;
+  const nf = v => String(Math.round(v * 100) / 100).replace('-', '−');
+  const IMGS = {
+    edge: { name: 'Dark left half, bright right half', px: Array.from({ length: 7 }, () => [0, 0, 0, 9, 9, 9, 9]) },
+    square: { name: 'A bright 3 × 3 square', px: Array.from({ length: 7 }, (_, i) => Array.from({ length: 7 }, (_, j) => (i >= 2 && i <= 4 && j >= 2 && j <= 4 ? 9 : 0))) },
+    cross: { name: 'A plus sign', px: Array.from({ length: 7 }, (_, i) => Array.from({ length: 7 }, (_, j) => (i === 3 || j === 3 ? 9 : 0))) }
+  };
+  const KERNELS = {
+    vert: { name: 'Vertical edge', k: [[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]] },
+    horiz: { name: 'Horizontal edge', k: [[-1, -1, -1], [0, 0, 0], [1, 1, 1]] },
+    blur: { name: 'Blur (average)', k: [[1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9], [1 / 9, 1 / 9, 1 / 9]] },
+    sharpen: { name: 'Sharpen', k: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]] }
+  };
+  const kshow = v => (Math.abs(v - 1 / 9) < 1e-9 ? '1/9' : nf(v));
+
+  trace('mlconv', {
+    title: 'A convolution: one small filter slides over the image',
+    sub: 'The 3 × 3 filter (middle) sits on a patch of the image (left). Multiply the 9 pairs of numbers and add them up: that sum is one output value (right). Then slide the filter by the stride and repeat. Padding adds a border of zeros.',
+    W: 600, H: 330,
+    params: [
+      { k: 'img', label: 'Image', type: 'select', v: 'edge', opts: Object.keys(IMGS).map(k => [k, IMGS[k].name]) },
+      { k: 'ker', label: 'Filter', type: 'select', v: 'vert', opts: Object.keys(KERNELS).map(k => [k, KERNELS[k].name]) },
+      { k: 's', label: 'Stride', type: 'select', v: '1', opts: [['1', '1'], ['2', '2']] },
+      { k: 'p', label: 'Padding', type: 'select', v: '0', opts: [['0', '0 (no border)'], ['1', '1 (border of zeros)']] }
+    ],
+    tips: [
+      { t: 'The horizontal edge filter on the left and right halves: the picture has no horizontal edges, so every output is 0.', set: { img: 'edge', ker: 'horiz', s: '1', p: '0' }, play: true },
+      { t: 'Padding 1 with stride 1 keeps the output the same size as the input, 7 × 7, which is why most modern networks pad.', set: { img: 'square', ker: 'vert', s: '1', p: '1' }, play: true },
+      { t: 'Stride 2 skips every other position, so a 7 × 7 image gives only a 3 × 3 output.', set: { img: 'cross', ker: 'blur', s: '2', p: '0' }, play: true }
+    ],
+    frames(p) {
+      const pad = +p.p, s = +p.s, K = KERNELS[p.ker].k, src = IMGS[p.img].px, n = 7 + 2 * pad;
+      const img = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => { const a = i - pad, b = j - pad; return a >= 0 && a < 7 && b >= 0 && b < 7 ? src[a][b] : 0; }));
+      const m = Math.floor((n - 3) / s) + 1, out = Array.from({ length: m }, () => new Array(m).fill(null));
+      const fr = [{ img, out: out.map(r => r.slice()), m, pad, say: `The image is 7 × 7${pad ? ', padded with zeros to 9 × 9' : ''}. With a 3 × 3 filter and stride ${s}, the output is (${n} − 3) / ${s} + 1 = <b>${m} × ${m}</b>. It starts empty.` }];
+      let shown = 0;
+      for (let i = 0; i < m; i++) {
+        for (let j = 0; j < m; j++) {
+          let sum = 0; const terms = [];
+          for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) { const v = img[i * s + a][j * s + b], w = K[a][b]; sum += v * w; if (v !== 0 && w !== 0) terms.push(`${v} × ${kshow(w)}`); }
+          out[i][j] = sum;
+          if (shown < 5) { shown++; fr.push({ img, out: out.map(r => r.slice()), m, pad, cur: [i, j], s, say: `Output (${i + 1}, ${j + 1}): the filter covers rows ${i * s + 1} to ${i * s + 3} and columns ${j * s + 1} to ${j * s + 3}. ${terms.length ? `The non zero products are ${terms.slice(0, 6).join(' + ')}${terms.length > 6 ? ' + …' : ''}` : 'Every product is 0'}, so the sum is <b>${nf(sum)}</b>.` }); }
+        }
+        if (shown >= 5 && (i + 1) * m > 5) fr.push({ img, out: out.map(r => r.slice()), m, pad, cur: [i, m - 1], s, say: `Row ${i + 1} of the output is done: ${out[i].map(nf).join(', ')}.` });
+      }
+      const flat = out.flat(), mx = Math.max(...flat.map(Math.abs));
+      fr.push({ img, out, m, pad, say: `Done: ${m * m} outputs from the same 9 weights. ${mx < 1e-9 ? 'Every output is 0: the filter found nothing it responds to.' : `The largest response is ${nf(Math.max(...flat))} and the smallest ${nf(Math.min(...flat))}. Big values mark where the image matches the filter’s pattern.`}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, n = f.img.length, cs = n > 7 ? 24 : 28, x0 = 12, y0 = 40;
+      head(z, f.pad ? 'Image with padding' : 'Image', x0, 26);
+      f.img.forEach((r, i) => r.forEach((v, j) => {
+        const isPad = f.pad && (i === 0 || j === 0 || i === n - 1 || j === n - 1);
+        const t = v / 9;
+        rr(g, x0 + j * cs, y0 + i * cs, cs - 2, cs - 2, 3, { fill: isPad ? c.bg : `rgba(37,99,235,${0.08 + 0.8 * t})`, stroke: c.line });
+        D.text(g, String(v), x0 + j * cs + cs / 2 - 1, y0 + i * cs + cs / 2 + 4, { a: 'center', s: 11, c: t > 0.5 ? '#fff' : c.ink2 });
+      }));
+      if (f.cur) { const [i, j] = f.cur; g.save(); g.strokeStyle = klass(z, 1); g.lineWidth = 3; g.strokeRect(x0 + j * f.s * cs - 1, y0 + i * f.s * cs - 1, 3 * cs, 3 * cs); g.restore(); }
+      const K = KERNELS[z.p.ker].k, kx = 262, ky = 120;
+      head(z, 'Filter', kx, ky - 14);
+      K.forEach((r, i) => r.forEach((w, j) => { rr(g, kx + j * 28, ky + i * 28, 26, 26, 3, { fill: c.surf, stroke: klass(z, 1), w: 1.5 }); D.text(g, kshow(w), kx + j * 28 + 13, ky + i * 28 + 17, { a: 'center', s: kshow(w).length > 2 ? 10 : 12, b: true, c: c.ink }); }));
+      const oc = f.m > 5 ? 28 : 36, ox = 368, oy = 40;
+      head(z, `Output ${f.m} × ${f.m}`, ox, 26);
+      const mx = Math.max(1e-9, ...f.out.flat().filter(v => v !== null).map(Math.abs));
+      f.out.forEach((r, i) => r.forEach((v, j) => {
+        const cur = f.cur && f.cur[0] === i && f.cur[1] === j;
+        const fill = v === null ? c.bg : v >= 0 ? `rgba(37,99,235,${0.08 + 0.7 * v / mx})` : `rgba(234,88,12,${0.08 + 0.7 * -v / mx})`;
+        rr(g, ox + j * oc, oy + i * oc, oc - 2, oc - 2, 3, { fill, stroke: cur ? klass(z, 1) : c.line, w: cur ? 2.5 : 1 });
+        if (v !== null) D.text(g, nf(v), ox + j * oc + oc / 2 - 1, oy + i * oc + oc / 2 + 4, { a: 'center', s: nf(v).length > 3 ? 9 : 11, c: Math.abs(v) / mx > 0.6 ? '#fff' : c.ink });
+      }));
+      D.text(g, 'blue: positive   orange: negative', ox, 318, { s: 10, c: c.ink2 });
+    }
+  });
+
+  const ARCH = {
+    three: { name: 'Three 3 × 3 convolutions', layers: [['conv 3×3', 3, 1, 1], ['conv 3×3', 3, 1, 1], ['conv 3×3', 3, 1, 1]] },
+    big: { name: 'One 7 × 7 convolution', layers: [['conv 7×7', 7, 1, 1]] },
+    pool: { name: 'conv, pool, conv, pool, conv', layers: [['conv 3×3', 3, 1, 1], ['max pool 2×2', 2, 2, 1], ['conv 3×3', 3, 1, 1], ['max pool 2×2', 2, 2, 1], ['conv 3×3', 3, 1, 1]] },
+    dilated: { name: 'Dilated 3 × 3 convolutions (dilation 1, 2, 4)', layers: [['conv 3×3, dilation 1', 3, 1, 1], ['conv 3×3, dilation 2', 3, 1, 2], ['conv 3×3, dilation 4', 3, 1, 4]] }
+  };
+  const GRID = 21;
+
+  trace('mlreceptive', {
+    title: 'The receptive field: how much of the image one unit can see',
+    sub: 'Each unit in a convolutional layer looks at a small window of the layer below. Stack layers and the window, measured in input pixels, grows. The shaded square is what one unit in the top layer can see.',
+    W: 600, H: 330,
+    params: [{ k: 'a', label: 'Layers', type: 'select', v: 'three', opts: Object.keys(ARCH).map(k => [k, ARCH[k].name]) }],
+    tips: [
+      { t: 'One 7 × 7 convolution sees the same 7 × 7 window as three 3 × 3 layers, but needs 49 weights per input and output channel pair instead of 27, and has only one ReLU instead of three. This is the idea behind VGG.', set: { a: 'big' }, play: true },
+      { t: 'Dilated convolutions space out the 9 taps of the filter, so three layers see 15 × 15 pixels with no pooling and no loss of resolution.', set: { a: 'dilated' }, play: true }
+    ],
+    frames(p) {
+      const A = ARCH[p.a];
+      let r = 1, j = 1, w = 0;
+      const rows = [], fr = [{ r, rows: [], say: 'Start at the input: one pixel sees only itself, so the receptive field is 1 × 1. The jump (distance in input pixels between neighbouring units) is 1.' }];
+      A.layers.forEach(([name, k, s, d]) => {
+        const add = (k - 1) * d * j, r0 = r;
+        r += add; j *= s; if (name.startsWith('conv')) w += k * k;
+        rows.push([name, r, j]);
+        fr.push({ r, rows: rows.slice(), say: `${name}: the window grows by (k − 1) × dilation × jump = (${k} − 1) × ${d} × ${j / s} = ${add}, from ${r0} to <b>${r} × ${r}</b>.${s > 1 ? ` The stride ${s} multiplies the jump to ${j}, so every later layer grows the window faster.` : ''}` });
+      });
+      const lastConv = A.layers.filter(l => l[0].startsWith('conv'));
+      fr.push({ r, rows, say: `Top unit sees <b>${r} × ${r}</b> input pixels after ${A.layers.length} layer${A.layers.length > 1 ? 's' : ''}, using ${w} weights per input and output channel pair in its ${lastConv.length} convolution${lastConv.length > 1 ? 's' : ''}.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, cs = 13, x0 = 20, y0 = 30, mid = Math.floor(GRID / 2);
+      head(z, `Input pixels (${GRID} × ${GRID})`, x0, 22);
+      const lo = mid - Math.floor((f.r - 1) / 2), hi = lo + f.r - 1;
+      for (let i = 0; i < GRID; i++) for (let jj = 0; jj < GRID; jj++) {
+        const inside = i >= lo && i <= hi && jj >= lo && jj <= hi;
+        g.fillStyle = inside ? 'rgba(37,99,235,0.45)' : 'rgba(148,163,184,0.22)'; g.fillRect(x0 + jj * cs, y0 + i * cs, cs - 1, cs - 1);
+      }
+      g.fillStyle = klass(z, 1); g.fillRect(x0 + mid * cs + 2, y0 + mid * cs + 2, cs - 5, cs - 5);
+      D.text(g, `${f.r} × ${f.r}`, x0 + GRID * cs / 2, y0 + GRID * cs + 18, { a: 'center', s: 13, b: true, c: c.ink });
+      head(z, 'Layer', 330, 40); head(z, 'sees', 480, 40); head(z, 'jump', 540, 40);
+      D.text(g, 'input', 330, 66, { s: 12, c: c.ink2 }); D.text(g, '1', 480, 66, { s: 12, mono: true, c: c.ink2 }); D.text(g, '1', 540, 66, { s: 12, mono: true, c: c.ink2 });
+      f.rows.forEach(([name, r, j], i) => {
+        const y = 92 + i * 26;
+        D.text(g, name, 330, y, { s: 12, b: i === f.rows.length - 1, c: c.ink });
+        D.text(g, `${r} × ${r}`, 480, y, { s: 12, mono: true, c: c.ink });
+        D.text(g, String(j), 540, y, { s: 12, mono: true, c: c.ink });
+      });
+      D.text(g, 'r ← r + (k − 1) · dilation · jump', 330, 270, { s: 12, mono: true, c: c.ink2 });
+      D.text(g, 'jump ← jump · stride', 330, 290, { s: 12, mono: true, c: c.ink2 });
+      D.text(g, 'orange: the unit itself', 330, 316, { s: 10, c: c.ink2 });
+    }
+  });
+})();
