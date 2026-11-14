@@ -350,9 +350,9 @@ window.CATALOG = {
       emoji: '🤖',
       color: '#7c3aed',
       layout: 'path',
-      blurb: 'Complete machine learning in six sections, from your first model to certification level: Foundations, Supervised, Unsupervised, Reinforcement, Deep Learning, and MLOps with model serving in Flask, FastAPI and Django.',
-      intro: 'Pick a section at the top, then follow its steps in order. Every chapter explains what each idea is, why it is needed and how it works in simple everyday words, compares it with similar methods, and shows the maths with formulas and worked problems. Step by step animations start empty and fill in as you press Step, with your own input, and a voice can read each step and each lesson aloud. Every program runs in your browser with real Python (NumPy, pandas and scikit-learn included), can be stepped through line by line and downloaded as a .py file. Each chapter ends with quizzes from easy to the level of top university exams, assignments checked by tests, LeetCode problems with downloadable solutions and a chapter summary. For the Python language itself, Django, Flask and API handling, use the Complete Python subject.',
-      tags: ['NumPy', 'pandas', 'scikit-learn', 'Regression', 'Classification', 'Trees and ensembles', 'Clustering', 'PCA', 'Reinforcement learning', 'Neural networks', 'CNN', 'Transformers', 'MLOps', 'Flask', 'FastAPI'],
+      blurb: 'Complete machine learning in four sections, from your first model to certification level: Foundations, Supervised, Unsupervised and Reinforcement. Neural networks continue in the Deep Learning subject and putting models into production in the MLOps subject.',
+      intro: 'Pick a section at the top, then follow its steps in order. Every chapter explains what each idea is, why it is needed and how it works in simple everyday words, compares it with similar methods, and shows the maths with formulas and worked problems. Step by step animations start empty and fill in as you press Step, with your own input, and a voice can read each step and each lesson aloud. Every program runs in your browser with real Python (NumPy, pandas and scikit-learn included), can be stepped through line by line and downloaded as a .py file. Each chapter ends with quizzes from easy to the level of top university exams, assignments checked by tests, LeetCode problems with downloadable solutions and a chapter summary. For the Python language itself, Django, Flask and API handling, use the Complete Python subject. Neural networks, CNNs, transformers and generative models are in the Deep Learning subject, and pipelines, model serving, monitoring and the setup of your own computer are in the MLOps subject.',
+      tags: ['NumPy', 'pandas', 'scikit-learn', 'Regression', 'Classification', 'Trees and ensembles', 'Clustering', 'PCA', 'Reinforcement learning', 'Q learning'],
       parts: [
         { id: 'foundations', title: 'Foundations', blurb: 'What machine learning is, how an ML project runs, the Python tools (NumPy, pandas, scikit-learn), the maths you need, and cleaning and preparing data.',
           intro: 'Foundations starts from zero. You learn what machine learning is and how a machine learns from examples, walk through a whole project from the question to a working model, learn NumPy, pandas and the scikit-learn API, pick up the linear algebra, calculus and probability that every model uses, and learn to clean data and build good features without leaking answers.' },
@@ -361,13 +361,9 @@ window.CATALOG = {
         { id: 'unsupervised', title: 'Unsupervised', blurb: 'Finding structure without labels: k means, hierarchical clustering, DBSCAN, Gaussian mixtures, PCA, t-SNE and UMAP, anomaly detection, association rules and recommender systems.',
           intro: 'Unsupervised learning finds groups, directions and unusual points in data that has no answers. You build k means, hierarchical clustering, DBSCAN and Gaussian mixtures, reduce dimensions with PCA and t-SNE, catch anomalies, mine shopping baskets and build a small recommender.' },
         { id: 'reinforcement', title: 'Reinforcement', blurb: 'Learning by trial and reward: agents and Markov decision processes, multi armed bandits, value and policy iteration, Monte Carlo, temporal difference, Q learning and SARSA, and deep reinforcement learning.',
-          intro: 'Reinforcement learning teaches an agent to act. You start with rewards, returns and the Markov decision process, balance exploring and exploiting with bandits, solve small worlds exactly with dynamic programming, learn from experience with Q learning and SARSA, and finish with DQN, policy gradients, PPO and RLHF.' },
-        { id: 'deep', title: 'Deep Learning', blurb: 'Neural networks from one neuron to transformers: perceptrons, backpropagation, optimisers and regularisation, CNNs, RNNs and LSTMs, attention and transformers, and generative models.',
-          intro: 'Deep learning builds models out of layers of simple neurons. You build a neuron and a small network by hand, see backpropagation number by number, learn the tricks that make training work, and then meet the main architectures: CNNs for images, RNNs and LSTMs for sequences, transformers for language, and autoencoders, GANs and diffusion for generating new data.' },
-        { id: 'mlops', title: 'MLOps', blurb: 'From notebook to product: pipelines and saving models, serving models with Flask, FastAPI and Django, MLOps and monitoring, explainability and fairness, time series, ML system design and the certification revision.',
-          intro: 'A model only helps when it runs reliably for real users. You package preprocessing and the model into one pipeline, save it, serve it as a REST API with Flask, FastAPI and Django, track experiments, watch for data drift, explain predictions and check fairness, forecast time series, design whole ML systems the way interviews ask, and revise everything for a certification exam.' }
+          intro: 'Reinforcement learning teaches an agent to act. You start with rewards, returns and the Markov decision process, balance exploring and exploiting with bandits, solve small worlds exactly with dynamic programming, learn from experience with Q learning and SARSA, and finish with DQN, policy gradients, PPO and RLHF.' }
       ],
-      modules: mlFoundModules().concat(mlSupModules(), mlUnsupModules(), mlRlModules(), mlDeepModules(), mlOpsModules(), sheetModule('machine-learning'))
+      modules: mlFoundModules().concat(mlSupModules(), mlUnsupModules(), mlRlModules(), sheetModule('machine-learning'))
     },
     {
       id: 'neural-networks',
@@ -390,16 +386,22 @@ window.CATALOG = {
       title: 'Deep Learning',
       emoji: '🧬',
       color: '#9333ea',
-      blurb: 'Deep networks with PyTorch: CNNs, RNNs, transformers and transfer learning.',
-      intro: 'Go from a simple network to the models used in industry today. You will train models in PyTorch and see what each layer learns.',
-      tags: ['PyTorch', 'CNN', 'RNN', 'Transformers'],
-      modules: [soonModule([
-        ['Deep learning with PyTorch', '🔥', 'Tensors, autograd and a first training loop.'],
-        ['Convolutional networks', '🖼️', 'Filters, pooling and image models.'],
-        ['Recurrent networks', '🔁', 'Sequences, LSTM and GRU.'],
-        ['Transformers and attention', '👀', 'Self attention and the transformer block.'],
-        ['Transfer learning', '🎁', 'Reuse pretrained models for new tasks.']
-      ])]
+      layout: 'path',
+      blurb: 'Neural networks from one neuron to transformers and generative models: backpropagation, training tricks, CNNs, RNNs and LSTMs, attention, autoencoders and GANs. Diffusion models come next.',
+      intro: 'Follow the steps in order. You build a neuron and a small network by hand, see backpropagation number by number, learn the tricks that make training work, and then meet the main architectures: CNNs for images, RNNs and LSTMs for sequences, transformers for language, and autoencoders and GANs for generating new data. A chapter on diffusion models is on the way. Every chapter explains what each idea is, why it is needed and how it works in simple words, shows the maths with formulas and worked problems, and has step by step animations with a voice that can read each step aloud. Every program runs in your browser with real Python and NumPy, and can be downloaded as a .py file. Each chapter ends with quizzes up to top university exam level, assignments checked by tests, LeetCode problems with downloadable solutions and a chapter summary. Start with the Machine Learning subject if gradient descent and logistic regression are new to you.',
+      tags: ['Neural networks', 'Backpropagation', 'Optimisers', 'CNN', 'RNN', 'LSTM', 'Transformers', 'Autoencoders', 'VAE', 'GANs'],
+      modules: dlModules().concat(sheetModule('deep-learning'))
+    },
+    {
+      id: 'mlops',
+      title: 'MLOps',
+      emoji: '🚀',
+      color: '#0f766e',
+      layout: 'path',
+      blurb: 'Take a model from a notebook to a product: set up your computer on macOS, Windows, Linux or ChromeOS, build leak free pipelines, save models safely, and serve them as web APIs with Flask, FastAPI and Django. Docker, CI/CD, tracking, monitoring and fairness chapters come next.',
+      intro: 'Follow the steps in order. The first chapter sets up your own computer, with separate steps for macOS, Windows, Linux and ChromeOS. Then you package preprocessing and the model into one pipeline, save it, serve it as a REST API with Flask, FastAPI and Django, and run it on a production server. Chapters on Docker and CI/CD, experiment tracking, drift monitoring, explainability and fairness, and ML system design are on the way. Programs that can run in the browser run there with real Python, and programs that need a real computer (web servers, Docker) show the output of a real run and can be downloaded. Each chapter ends with quizzes, worked problems, assignments and a chapter summary. Build the models themselves in the Machine Learning and Deep Learning subjects, and learn Flask, Django and APIs in full in the Complete Python subject.',
+      tags: ['Setup', 'macOS', 'Windows', 'Linux', 'ChromeOS', 'Reproducibility', 'Pipelines', 'joblib', 'Flask', 'FastAPI', 'Django', 'Gunicorn'],
+      modules: mlopsModules().concat(sheetModule('mlops'))
     },
     {
       id: 'computer-vision',
@@ -1333,7 +1335,9 @@ function sheetModule(sid) {
     'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. Core AI runs from agents and BFS to A*, local search, CSPs, minimax and alpha beta, logic and resolution, planning, Bayesian networks, causality and reinforcement learning. Advanced AI runs from preferences and utility to expected utility, risk, discounting, games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['A*', 'admissible heuristic', 'alpha beta', 'arc consistency', 'resolution', 'unification', 'STRIPS', 'Bayes rule', 'd-separation', 'Bellman equation', 'Q learning', 'utility', 'expected utility', 'IESDS']],
     'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
-    'machine-learning': ['content/machine-learning/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from all six sections on one page: Foundations (the learning loop, NumPy, pandas, the maths and data preparation), Supervised (regression, classification, trees, ensembles, metrics and tuning), Unsupervised (clustering, PCA, anomalies, recommenders), Reinforcement (MDPs, Bellman, Q learning), Deep Learning (backpropagation, optimisers, CNNs, RNNs, transformers) and MLOps (pipelines, serving, drift, fairness). Search it, filter it, print it or download the PDF.', ['mean squared error', 'gradient descent', 'normal equation', 'sigmoid', 'log loss', 'entropy', 'gini', 'precision recall', 'ROC AUC', 'bias variance', 'k means', 'PCA', 'Bellman equation', 'Q learning', 'backpropagation', 'Adam', 'convolution', 'attention', 'data drift'], 'eighteen'],
+    'machine-learning': ['content/machine-learning/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from all four sections on one page: Foundations (the learning loop, NumPy, pandas, the maths and data preparation), Supervised (regression, classification, trees, ensembles, metrics and tuning), Unsupervised (clustering, PCA, anomalies, recommenders) and Reinforcement (MDPs, Bellman, Q learning, policy gradients). Search it, filter it, print it or download the PDF.', ['mean squared error', 'gradient descent', 'normal equation', 'sigmoid', 'log loss', 'entropy', 'gini', 'precision recall', 'ROC AUC', 'bias variance', 'k means', 'PCA', 'Bellman equation', 'Q learning', 'policy gradient'], 'eighteen'],
+    'deep-learning': ['content/deep-learning/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Deep Learning chapters on one page, from the perceptron and backpropagation to optimisers, normalisation, CNNs, RNNs and LSTMs, attention and transformers, autoencoders, VAEs and GANs. Search it, filter it, print it or download the PDF.', ['perceptron', 'backpropagation', 'chain rule', 'Adam', 'dropout', 'batch normalisation', 'convolution output size', 'receptive field', 'LSTM gates', 'attention', 'positional encoding', 'VAE', 'ELBO', 'KL divergence'], 'eight'],
+    'mlops': ['content/mlops/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the MLOps chapters on one page, from setting up Python, Git and Docker on macOS, Windows, Linux and ChromeOS to reproducible projects, leak free pipelines, saving models and serving them with Flask, FastAPI and Django. Search it, filter it, print it or download the PDF.', ['virtual environment', 'pip', 'uv', 'random seed', 'data versioning', 'Pipeline', 'data leakage', 'joblib', 'Flask', 'FastAPI', 'Django', 'Gunicorn', "Little's law"], 'eight'],
     'python': ['content/python/cheatsheet.html', 'Every key idea, formula, table, memory aid and common mistake from all three sections on one page. Core Python runs from print() and types to strings, lists, dictionaries, functions, exceptions, files and classes. Advanced Python runs from magic methods, decorators and metaclasses to generators, testing, complexity, regular expressions and concurrency. Web and APIs runs from HTTP and REST to requests, Flask, Django, DRF, FastAPI and JWT. Search it, filter it, print it or download the PDF.', ['print sep end', 'integer division', 'operator precedence', 'slicing', 'list methods', 'dict methods', 'LEGB', '*args **kwargs', 'try except finally', 'file modes', 'MRO', 'magic methods', 'decorators', 'generators', 'big O', 'regex', 'GIL', 'HTTP status codes', 'Flask routes', 'Django ORM', 'FastAPI', 'JWT']],
     'dsa': ['content/dsa/cheatsheet.html', 'The key idea of every lesson, every complexity formula and rule, every comparison table, tip and common mistake from the DSA chapters on one page, from Big O and recurrences to arrays, strings, linked lists, stacks, queues, trees and graphs. Search it, filter it, print it or download the PDF.', ['big O', 'time complexity', 'master theorem', 'binary search', 'two pointers', 'sliding window', 'linked list', 'stack', 'queue', 'BST', 'heap', 'BFS', 'DFS', 'dijkstra'], 'eight'],
     'manual-testing': ['content/manual-testing/cheatsheet.html', 'The key idea of every lesson, every rule, table, tip and common mistake from the Manual Testing chapters on one page, from the seven testing principles, SDLC and STLC to test design techniques, the bug life cycle, test plans, metrics, Agile, DevOps and AI in testing. Search it, filter it, print it or download the PDF.', ['seven principles', 'STLC', 'equivalence partitioning', 'boundary value analysis', 'decision table', 'state transition', 'bug life cycle', 'severity and priority', 'test plan', 'RTM', 'regression'], 'eight'],
@@ -8826,11 +8830,11 @@ function mlRlModules() {
 }
 /* ===== end of ml-rl-build ===== */
 
-/* ===== ml-deep-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
-function mlDeepModules() {
+/* ===== dl-build: Deep Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function dlModules() {
   return [
-    { id: "ml-d1", title: "Neural network basics", emoji: "1", step: 1, part: "deep", level: "Intermediate", blurb: "Build neural networks from single neurons: perceptrons and multilayer networks, backpropagation, and the tricks that make deep networks train well.", topics: [
-      { id: "ml-neural-nets", title: "Neural networks: from perceptrons to MLPs", emoji: "1.1", page: "content/machine-learning/ml-neural-nets.html",
+    { id: "dl-s1", title: "Neural network basics", emoji: "1", step: 1, level: "Intermediate", blurb: "Build neural networks from single neurons: perceptrons and multilayer networks, backpropagation, and the tricks that make deep networks train well.", topics: [
+      { id: "dl-neural-nets", title: "Neural networks: from perceptrons to MLPs", emoji: "1.1", page: "content/deep-learning/dl-neural-nets.html",
         summary: "Neurons, the perceptron and XOR, multilayer networks, activations and scikit-learn MLPs.",
         keywords: ["neural network", "perceptron", "MLP", "XOR", "activation function", "ReLU", "sigmoid", "softmax", "universal approximation", "MLPClassifier"],
         minutes: 50, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
@@ -8850,7 +8854,7 @@ function mlDeepModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] },
-      { id: "ml-backprop", title: "Backpropagation and automatic differentiation", emoji: "1.2", page: "content/machine-learning/ml-backprop.html",
+      { id: "dl-backprop", title: "Backpropagation and automatic differentiation", emoji: "1.2", page: "content/deep-learning/dl-backprop.html",
         summary: "The chain rule on graphs, autodiff, matrix backprop with gradient checks, and gradient flow through depth.",
         keywords: ["backpropagation", "chain rule", "automatic differentiation", "autograd", "gradient check", "vanishing gradient", "exploding gradient", "He initialisation", "Xavier initialisation", "computational graph"],
         minutes: 50, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
@@ -8870,7 +8874,7 @@ function mlDeepModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] },
-      { id: "ml-training", title: "Training deep networks: optimisers, normalisation and regularisation", emoji: "1.3", page: "content/machine-learning/ml-training.html",
+      { id: "dl-training", title: "Training deep networks: optimisers, normalisation and regularisation", emoji: "1.3", page: "content/deep-learning/dl-training.html",
         summary: "Optimisers, schedules, normalisation, regularisation and a practical recipe for training deep networks.",
         keywords: ["optimiser", "Adam", "momentum", "learning rate schedule", "batch normalisation", "layer normalisation", "dropout", "weight decay", "early stopping", "overfitting"],
         minutes: 55, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
@@ -8892,8 +8896,8 @@ function mlDeepModules() {
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
-    { id: "ml-d2", title: "Architectures", emoji: "2", step: 2, part: "deep", level: "Advanced", blurb: "The three big families of deep networks: convolutional networks for images, recurrent networks for sequences, and transformers built on attention.", topics: [
-      { id: "ml-cnn", title: "Convolutional neural networks", emoji: "2.1", page: "content/machine-learning/ml-cnn.html",
+    { id: "dl-s2", title: "Architectures", emoji: "2", step: 2, level: "Advanced", blurb: "The three big families of deep networks: convolutional networks for images, recurrent networks for sequences, and transformers built on attention.", topics: [
+      { id: "dl-cnn", title: "Convolutional neural networks", emoji: "2.1", page: "content/deep-learning/dl-cnn.html",
         summary: "Convolution, pooling, receptive fields, a hand built CNN, ResNet and transfer learning.",
         keywords: ["CNN", "convolution", "pooling", "receptive field", "ResNet", "residual connection", "transfer learning", "data augmentation", "stride", "padding"],
         minutes: 60, counts: {"lessons": 10, "problems": 10, "quiz": 14, "assign": 3},
@@ -8914,7 +8918,7 @@ function mlDeepModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] },
-      { id: "ml-rnn", title: "Recurrent networks, LSTM and GRU", emoji: "2.2", page: "content/machine-learning/ml-rnn.html",
+      { id: "dl-rnn", title: "Recurrent networks, LSTM and GRU", emoji: "2.2", page: "content/deep-learning/dl-rnn.html",
         summary: "RNNs and BPTT, the long term dependency problem, LSTM and GRU gates, and sequence model variants.",
         keywords: ["RNN", "LSTM", "GRU", "backpropagation through time", "vanishing gradient", "forget gate", "sequence to sequence", "bidirectional", "hidden state", "teacher forcing"],
         minutes: 55, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
@@ -8934,7 +8938,7 @@ function mlDeepModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] },
-      { id: "ml-transformers", title: "Attention and transformers", emoji: "2.3", page: "content/machine-learning/ml-transformers.html",
+      { id: "dl-transformers", title: "Attention and transformers", emoji: "2.3", page: "content/deep-learning/dl-transformers.html",
         summary: "Attention, multi head attention, the transformer block, positional encoding, BERT, GPT and decoding.",
         keywords: ["transformer", "attention", "self attention", "multi head attention", "positional encoding", "BERT", "GPT", "causal mask", "perplexity", "temperature"],
         minutes: 60, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
@@ -8954,13 +8958,135 @@ function mlDeepModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "dl-s3", title: "Generative models", emoji: "3", step: 3, level: "Advanced", blurb: "Networks that create new data: autoencoders and variational autoencoders, generative adversarial networks, and diffusion models.", topics: [
+      { id: "dl-autoencoders", title: "Autoencoders and variational autoencoders", emoji: "3.1", page: "content/deep-learning/dl-autoencoders.html",
+        summary: "Autoencoders, denoising and anomaly detection, VAEs with the ELBO, and discrete latent codes.",
+        keywords: ["autoencoder", "VAE", "variational autoencoder", "reparameterisation", "KL divergence", "ELBO", "anomaly detection", "denoising", "latent space", "VQ-VAE"],
+        minutes: 55, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Autoencoders: compress, then rebuild", emoji: "", group: "Lesson", keywords: ["autoencoder", "encoder", "decoder", "latent code", "bottleneck", "reconstruction error", "PCA"] },
+        { id: "uses", title: "Denoising and anomaly detection", emoji: "", group: "Lesson", keywords: ["denoising autoencoder", "anomaly detection", "reconstruction error", "threshold", "sparse autoencoder"] },
+        { id: "vae", title: "Variational autoencoders", emoji: "", group: "Lesson", keywords: ["variational autoencoder", "VAE", "reparameterisation trick", "KL divergence", "ELBO", "prior", "latent space", "beta VAE"] },
+        { id: "discrete", title: "Discrete codes and latent spaces in modern models", emoji: "", group: "Lesson", keywords: ["VQ-VAE", "codebook", "vector quantisation", "discrete latent", "latent space", "tokens"] },
+        { id: "versus", title: "Autoencoder, VAE and PCA compared", emoji: "", group: "Lesson", keywords: ["PCA vs autoencoder", "autoencoder vs VAE", "VQ-VAE"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["ELBO derivation", "Jensen inequality", "KL formula", "posterior collapse", "disentanglement", "hierarchical VAE"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "latent variable models"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "encoding", "compression", "bit manipulation", "serialisation"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "dl-gans", title: "Generative adversarial networks", emoji: "3.2", page: "content/deep-learning/dl-gans.html",
+        summary: "The GAN game, its theory and failures, Wasserstein GANs, conditional GANs and StyleGAN, and FID.",
+        keywords: ["GAN", "generator", "discriminator", "minimax", "mode collapse", "Wasserstein GAN", "gradient penalty", "conditional GAN", "StyleGAN", "FID"],
+        minutes: 55, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "The GAN game: a generator against a discriminator", emoji: "", group: "Lesson", keywords: ["GAN", "generative adversarial network", "generator", "discriminator", "minimax", "noise vector", "adversarial training"] },
+        { id: "trouble", title: "The best discriminator, the right loss, and mode collapse", emoji: "", group: "Lesson", keywords: ["optimal discriminator", "Jensen Shannon divergence", "non saturating loss", "mode collapse", "vanishing gradient", "minibatch standard deviation", "training instability"] },
+        { id: "wgan", title: "Wasserstein GANs and other stable losses", emoji: "", group: "Lesson", keywords: ["Wasserstein GAN", "WGAN", "critic", "earth mover distance", "Lipschitz", "gradient penalty", "WGAN-GP", "spectral normalisation"] },
+        { id: "family", title: "DCGAN, conditional GANs, StyleGAN, and measuring quality", emoji: "", group: "Lesson", keywords: ["DCGAN", "conditional GAN", "pix2pix", "CycleGAN", "StyleGAN", "FID", "Frechet Inception Distance", "transposed convolution"] },
+        { id: "versus", title: "GANs compared with other generative models", emoji: "", group: "Lesson", keywords: ["GAN vs VAE", "GAN vs diffusion", "autoregressive", "mode coverage"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["optimal discriminator derivation", "JS divergence", "Nash equilibrium", "TTUR", "R1 penalty", "f-GAN"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "game dynamics"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "game theory", "minimax", "dynamic programming"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
-/* ===== end of ml-deep-build ===== */
+/* ===== end of dl-build ===== */
 
-/* ===== ml-ops-build: Machine Learning chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
-function mlOpsModules() {
-  return [];
+/* ===== mlops-build: MLOps chapters. Generated by tools/ml-build/build.py, edit the topic files instead. ===== */
+function mlopsModules() {
+  return [
+    { id: "mlops-s1", title: "Set up and plan", emoji: "1", step: 1, level: "Beginner", blurb: "Get your computer ready on macOS, Windows, Linux or ChromeOS, and learn what MLOps is and how to make a project reproducible.", topics: [
+      { id: "mlops-setup", title: "Set up your computer for machine learning", emoji: "1.1", page: "content/mlops/mlops-setup.html",
+        summary: "Python, virtual environments, Git, VS Code, Docker and GPUs set up on macOS, Windows, Linux and ChromeOS.",
+        keywords: ["setup", "install Python", "virtual environment", "pip", "uv", "requirements.txt", "Docker", "WSL 2", "ChromeOS Linux", "GPU"],
+        minutes: 50, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "tools", title: "What you need and why", emoji: "", group: "Lesson", keywords: ["setup", "Python", "terminal", "PATH", "virtual environment", "pip", "uv", "Git", "VS Code", "Docker", "GPU"] },
+        { id: "python", title: "Install Python and open a terminal", emoji: "", group: "Lesson", keywords: ["install Python", "terminal", "PowerShell", "python3", "py launcher", "PATH", "PEP 668", "externally managed", "ChromeOS Linux", "Homebrew", "winget"] },
+        { id: "venv", title: "Virtual environments and packages", emoji: "", group: "Lesson", keywords: ["virtual environment", "venv", "activate", "site-packages", "pip", "uv", "requirements.txt", "pip freeze", "dependency hell", "reproducibility"] },
+        { id: "gitcode", title: "Git, VS Code and Jupyter", emoji: "", group: "Lesson", keywords: ["Git", "git config", "gitignore", "VS Code", "Python extension", "interpreter", "Jupyter", "JupyterLab", "ipykernel"] },
+        { id: "docker", title: "Docker on each system", emoji: "", group: "Lesson", keywords: ["Docker", "Docker Desktop", "Docker Engine", "container", "image", "WSL 2", "hello-world", "docker group"] },
+        { id: "gpu", title: "GPUs, the cloud and common problems", emoji: "", group: "Lesson", keywords: ["GPU", "CUDA", "nvidia-smi", "MPS", "Apple silicon", "Google Colab", "Kaggle", "troubleshooting", "python -m pip"] },
+        { id: "versus", title: "venv, uv, conda and Docker compared", emoji: "", group: "Lesson", keywords: ["venv vs conda", "uv vs pip", "Docker vs virtual environment"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "reproducible environments"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "mlops-lifecycle", title: "The MLOps lifecycle and reproducible projects", emoji: "1.2", page: "content/mlops/mlops-lifecycle.html",
+        summary: "The MLOps loop and maturity levels, seeds and run records, data and model versioning, and project layout.",
+        keywords: ["MLOps", "lifecycle", "maturity levels", "reproducibility", "random seed", "run record", "data versioning", "DVC", "model registry", "lineage"],
+        minutes: 45, counts: {"lessons": 7, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "what", title: "What MLOps is", emoji: "", group: "Lesson", keywords: ["MLOps", "DevOps", "lifecycle", "maturity levels", "continuous training", "technical debt", "pipeline"] },
+        { id: "repro", title: "Reproducibility: seeds and run records", emoji: "", group: "Lesson", keywords: ["reproducibility", "random seed", "random_state", "run record", "experiment tracking", "variance across seeds"] },
+        { id: "versions", title: "Versioning data and models", emoji: "", group: "Lesson", keywords: ["data versioning", "fingerprint", "hash", "DVC", "model registry", "lineage", "rollback"] },
+        { id: "project", title: "A project layout that grows into production", emoji: "", group: "Lesson", keywords: ["project structure", "cookiecutter", "configs", "notebooks vs scripts", "ML test score", "data tests", "model tests"] },
+        { id: "versus", title: "DevOps, MLOps and DataOps compared", emoji: "", group: "Lesson", keywords: ["DevOps vs MLOps", "DataOps", "comparison"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "ML platform"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "mlops-s2", title: "Build and ship", emoji: "2", step: 2, level: "Intermediate", blurb: "Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, and run it on a production server.", topics: [
+      { id: "mlops-pipelines", title: "Pipelines and saving models", emoji: "2.1", page: "content/mlops/mlops-pipelines.html",
+        summary: "Leak free scikit-learn pipelines, saving with joblib and metadata, file formats, and input contracts.",
+        keywords: ["Pipeline", "ColumnTransformer", "data leakage", "joblib", "model persistence", "ONNX", "skops", "input validation", "handle_unknown", "metadata"],
+        minutes: 45, counts: {"lessons": 7, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "pipe", title: "One pipeline from raw columns to prediction", emoji: "", group: "Lesson", keywords: ["Pipeline", "ColumnTransformer", "fit", "transform", "SimpleImputer", "StandardScaler", "OneHotEncoder", "handle_unknown"] },
+        { id: "leak", title: "Leakage: why every learning step belongs inside the pipeline", emoji: "", group: "Lesson", keywords: ["data leakage", "target leakage", "cross validation", "feature selection", "time split", "GroupKFold"] },
+        { id: "save", title: "Saving and loading a trained pipeline", emoji: "", group: "Lesson", keywords: ["model persistence", "joblib", "pickle", "metadata", "skops", "ONNX", "version match", "security"] },
+        { id: "contract", title: "An input contract for the model", emoji: "", group: "Lesson", keywords: ["input validation", "schema", "contract", "status 422", "pydantic", "data tests"] },
+        { id: "versus", title: "Ways to save a model compared", emoji: "", group: "Lesson", keywords: ["joblib vs ONNX", "skops", "pickle security"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "feature store", "training serving skew"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "mlops-serving", title: "Serving models with Flask, FastAPI and Django", emoji: "2.2", page: "content/mlops/mlops-serving.html",
+        summary: "Model APIs in Flask, FastAPI and Django, calling them on each OS, online against batch, and production servers sized with Little's law.",
+        keywords: ["model serving", "Flask", "FastAPI", "Django", "REST API", "batch prediction", "online prediction", "Gunicorn", "Waitress", "Uvicorn", "Little's law"],
+        minutes: 55, counts: {"lessons": 8, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "api", title: "A model behind a web API", emoji: "", group: "Lesson", keywords: ["model API", "HTTP", "JSON", "route", "status code", "422", "Flask", "test client", "curl", "Invoke-RestMethod", "port"] },
+        { id: "fastapi", title: "FastAPI: the input contract written as a class", emoji: "", group: "Lesson", keywords: ["FastAPI", "Pydantic", "BaseModel", "Field", "response_model", "/docs", "TestClient", "batch route", "async"] },
+        { id: "django", title: "Django: when the model joins a full web application", emoji: "", group: "Lesson", keywords: ["Django", "JsonResponse", "settings.configure", "require_POST", "csrf_exempt", "WSGI", "runserver"] },
+        { id: "modes", title: "Online against batch prediction", emoji: "", group: "Lesson", keywords: ["online prediction", "batch prediction", "real time", "chunksize", "latency", "freshness"] },
+        { id: "production", title: "From the development server to production", emoji: "", group: "Lesson", keywords: ["development server", "production server", "Gunicorn", "Waitress", "Uvicorn", "WSGI", "ASGI", "workers", "reverse proxy", "HTTPS", "Little's law", "rate limit"] },
+        { id: "versus", title: "Flask, FastAPI, Django and model servers compared", emoji: "", group: "Lesson", keywords: ["Flask vs FastAPI", "Django", "BentoML", "TorchServe", "KServe", "model server"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "capacity planning", "tail latency"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
 }
-/* ===== end of ml-ops-build ===== */
+/* ===== end of mlops-build ===== */
