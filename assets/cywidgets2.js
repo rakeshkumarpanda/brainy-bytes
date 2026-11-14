@@ -761,3 +761,197 @@ const CYAES = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Cryptography 2.2  RSA from two primes: n, phi, e, d, then encrypt and decrypt one number
+   ===================================================================================================== */
+const CYNUM = (() => {
+  /* small number tools shared by the RSA, Diffie-Hellman and elliptic curve animations (BigInt for safety) */
+  const B = BigInt;
+  const mod = (a, n) => ((a % n) + n) % n;
+  const pw = (b, e, n) => { let r = 1n, x = mod(B(b), B(n)), k = B(e); const m = B(n); while (k > 0n) { if (k & 1n) r = r * x % m; x = x * x % m; k >>= 1n; } return r; };
+  const gcd = (a, b) => { a = B(a); b = B(b); while (b) { [a, b] = [b, a % b]; } return a < 0n ? -a : a; };
+  const inv = (a, n) => { let [r0, r1, s0, s1] = [B(a), B(n), 1n, 0n]; while (r1) { const q = r0 / r1; [r0, r1] = [r1, r0 - q * r1]; [s0, s1] = [s1, s0 - q * s1]; } return r0 === 1n ? mod(s0, B(n)) : null; };
+  const isPrime = n => { n = Number(n); if (n < 2 || n !== Math.floor(n)) return false; for (let d = 2; d * d <= n; d++) if (n % d === 0) return false; return true; };
+  return { mod, pw, gcd, inv, isPrime };
+})();
+
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const N = CYNUM;
+  trace('cyrsa', {
+    title: 'RSA step by step: keys, encryption and decryption',
+    sub: 'Pick two primes and a public exponent. RSA builds a public key (n, e) that anyone may use to encrypt, and a private key d that only the owner has. The classic textbook numbers are filled in.',
+    W: 600, H: 340,
+    params: [
+      { k: 'p', label: 'Prime p', type: 'text', v: '61' },
+      { k: 'q', label: 'Prime q', type: 'text', v: '53' },
+      { k: 'e', label: 'Public exponent e', type: 'text', v: '17' },
+      { k: 'm', label: 'Message as a number m (less than n)', type: 'text', v: '65' }
+    ],
+    tips: [
+      { t: 'Play the textbook example: n = 3233, d = 2753, and the message 65 encrypts to 2790.', play: true },
+      { t: 'Try e = 6. It shares the factor 2 with φ(n) = 3120, so no d exists and RSA refuses the key.', set: { e: '6' }, play: true },
+      { t: 'Try m = 61, a message that shares a factor with n. Decryption still works, as the proof in this chapter shows.', set: { m: '61', e: '17' }, play: true }
+    ],
+    frames(p) {
+      const P = +p.p, Q = +p.q, E = +p.e, M = +p.m;
+      if (!N.isPrime(P) || !N.isPrime(Q) || P === Q || P > 10000 || Q > 10000) throw new Error('p and q must be two different primes below 10,000.');
+      const n = P * Q, phi = (P - 1) * (Q - 1);
+      if (!(E > 1 && E < phi)) throw new Error(`e must be between 2 and φ(n) − 1 = ${phi - 1}.`);
+      if (!(M >= 0 && M < n && M === Math.floor(M))) throw new Error(`m must be a whole number from 0 to n − 1 = ${n - 1}.`);
+      const g = Number(N.gcd(E, phi)), d = N.inv(E, phi);
+      const fr = [
+        { k: 1, say: `Multiply the primes: n = p &times; q = ${P} &times; ${Q} = <b>${n}</b>. n is public. Finding p and q from n is the hard problem that protects RSA.` },
+        { k: 2, say: `Euler’s phi: &phi;(n) = (p &minus; 1)(q &minus; 1) = ${P - 1} &times; ${Q - 1} = <b>${phi}</b>. Only someone who knows p and q can compute this.` },
+        { k: 3, say: `Check the public exponent: gcd(e, &phi;(n)) = gcd(${E}, ${phi}) = <b>${g}</b>. ${g === 1 ? 'It is 1, so e has an inverse.' : 'It is not 1, so e has no inverse and this key cannot work. Choose another e.'}` }
+      ];
+      if (d === null) return fr.map(x => ({ ...x, P, Q, n, phi, E, M, bad: true }));
+      const dn = Number(d), c = Number(N.pw(M, E, n)), back = Number(N.pw(c, dn, n));
+      fr.push({ k: 4, say: `Private exponent: d = e<sup>&minus;1</sup> mod &phi;(n) = <b>${dn}</b>, because ${E} &times; ${dn} = ${E * dn} = ${Math.floor(E * dn / phi)} &times; ${phi} + 1. Publish (n, e) = (${n}, ${E}). Keep d, p and q secret.` });
+      fr.push({ k: 5, say: `Anyone can encrypt: c = m<sup>e</sup> mod n = ${M}<sup>${E}</sup> mod ${n} = <b>${c}</b>, using square and multiply.` });
+      fr.push({ k: 6, done: true, say: `Only the owner can decrypt: m = c<sup>d</sup> mod n = ${c}<sup>${dn}</sup> mod ${n} = <b>${back}</b>. It works because e d = 1 + k&phi;(n), so m<sup>ed</sup> = m &middot; (m<sup>&phi;(n)</sup>)<sup>k</sup> &equiv; m (mod n) by Euler’s theorem.` });
+      return fr.map(x => ({ ...x, P, Q, n, phi, E, M, d: dn, c, back }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const line = (y, label, val, on) => { D.text(g, label, 14, y + 19, { s: 12, b: true, c: c.ink2 }); cbox(z, 150, y, 200, 28, val, { s: 14, b: true, mono: true, fill: on ? 'rgba(234,88,12,0.2)' : c.surf }); };
+      if (f.k >= 1) line(12, 'n = p × q', `${f.P} × ${f.Q} = ${f.n}`, f.k === 1);
+      if (f.k >= 2) line(48, 'φ(n)', `${f.P - 1} × ${f.Q - 1} = ${f.phi}`, f.k === 2);
+      if (f.k >= 3) line(84, 'gcd(e, φ)', `gcd(${f.E}, ${f.phi}) = ${f.bad ? 'not 1' : 1}`, f.k === 3);
+      if (f.bad) { cbox(z, 14, 130, 572, 34, 'e shares a factor with φ(n): no private key exists', { s: 13, b: true, fill: c.red, c: '#fff' }); return; }
+      if (f.k >= 4) {
+        line(120, 'd = e⁻¹ mod φ', String(f.d), f.k === 4);
+        cbox(z, 380, 12, 206, 60, ['public key', `(n, e) = (${f.n}, ${f.E})`], { s: 13, b: true, mono: true, fill: 'rgba(15,118,110,0.2)' });
+        cbox(z, 380, 80, 206, 60, ['private key', `d = ${f.d}`], { s: 13, b: true, mono: true, fill: 'rgba(225,29,72,0.15)' });
+      }
+      if (f.k >= 5) {
+        cbox(z, 14, 186, 120, 40, ['message', 'm = ' + f.M], { s: 12, b: true, mono: true, fill: c.bg });
+        D.arrow(g, 136, 206, 224, 206, c.cv, 2, 8); D.text(g, 'mᵉ mod n', 180, 198, { a: 'center', s: 11, b: true, c: c.cv });
+        cbox(z, 228, 186, 140, 40, ['ciphertext', 'c = ' + f.c], { s: 12, b: true, mono: true, fill: 'rgba(15,118,110,0.2)' });
+      }
+      if (f.k >= 6) {
+        D.arrow(g, 370, 206, 458, 206, c.red, 2, 8); D.text(g, 'cᵈ mod n', 414, 198, { a: 'center', s: 11, b: true, c: c.red });
+        cbox(z, 462, 186, 124, 40, ['decrypted', 'm = ' + f.back], { s: 12, b: true, mono: true, fill: c.bg });
+        cbox(z, 14, 250, 572, 30, `e·d = ${f.E}·${f.d} = ${f.E * f.d} ≡ 1 (mod ${f.phi})   so   m^(ed) ≡ m (mod n)`, { s: 13, b: true, mono: true, fill: c.cv, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 2.2  RSA signatures: sign the hash with d, anyone verifies with e
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8 } = CYZ;
+  const N = CYNUM;
+  const P = 61, Q = 53, n = 3233, E = 17, Dk = 2753;
+  const H = t => { const h = sha256(utf8(t)); return ((h[0] << 8) | h[1]) % n; };
+  trace('cyrsasign', {
+    title: 'RSA signatures: sign with the private key, check with the public key',
+    sub: 'The owner hashes the message and raises the hash to the private exponent d. Anyone can raise the signature to e and compare with the hash. A toy hash (two bytes of SHA-256, reduced mod n) keeps the numbers small.',
+    W: 600, H: 340,
+    params: [
+      { k: 'msg', label: 'Message the owner signs', type: 'text', v: 'Pay Riya 100 rupees' },
+      { k: 'fake', label: 'Message the attacker sends instead', type: 'text', v: 'Pay Riya 900 rupees' }
+    ],
+    tips: [
+      { t: 'Play it. The signature checks for the real message and fails for the changed one.', play: true },
+      { t: 'Make the two messages the same. Then the check passes, because nothing was changed.', set: { fake: 'Pay Riya 100 rupees' }, play: true }
+    ],
+    frames(p) {
+      const msg = String(p.msg), fake = String(p.fake);
+      const h = H(msg), s = Number(N.pw(h, Dk, n)), v = Number(N.pw(s, E, n)), h2 = H(fake);
+      const fr = [
+        { k: 1, say: `The owner’s keys: public (n, e) = (${n}, ${E}), private d = ${Dk}. First hash the message: h = H("${msg}") mod n = <b>${h}</b>. Signing the short hash instead of the message is faster and blocks algebra tricks.` },
+        { k: 2, say: `Sign: s = h<sup>d</sup> mod n = ${h}<sup>${Dk}</sup> mod ${n} = <b>${s}</b>. Only the holder of d can do this.` },
+        { k: 3, say: `Verify the real message: s<sup>e</sup> mod n = ${s}<sup>${E}</sup> mod ${n} = <b>${v}</b>, and H(message) = ${h}. ${v === h ? 'They match: the signature is valid.' : 'They differ.'}` },
+        { k: 4, done: true, say: `An attacker sends "${fake}" with the same signature. Its hash is ${h2}, but s<sup>e</sup> mod n is still ${v}. ${h2 === v ? 'They match, because the message was not changed.' : 'They do not match, so the change is caught.'} Real systems use full 256 bit hashes and the PSS padding, so no forgery is practical.` }
+      ];
+      return fr.map(x => ({ ...x, msg, fake, h, s, v, h2 }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      cbox(z, 14, 12, 270, 30, `public (n, e) = (${n}, ${E})`, { s: 12, b: true, mono: true, fill: 'rgba(15,118,110,0.2)' });
+      cbox(z, 316, 12, 270, 30, `private d = ${Dk}`, { s: 12, b: true, mono: true, fill: 'rgba(225,29,72,0.15)' });
+      D.text(g, 'owner', 14, 66, { s: 11, b: true, c: c.ink2 });
+      cbox(z, 14, 74, 220, 40, [`"${f.msg.slice(0, 24)}"`, `h = ${f.h}`], { s: 11, b: true, mono: true, fill: c.surf });
+      if (f.k >= 2) { D.arrow(g, 236, 94, 300, 94, c.red, 2, 8); D.text(g, 'hᵈ mod n', 268, 86, { a: 'center', s: 10, b: true, c: c.red }); cbox(z, 304, 74, 140, 40, ['signature', 's = ' + f.s], { s: 12, b: true, mono: true, fill: 'rgba(225,29,72,0.15)' }); }
+      if (f.k >= 3) {
+        D.text(g, 'anyone checks', 14, 148, { s: 11, b: true, c: c.ink2 });
+        cbox(z, 14, 156, 300, 34, `sᵉ mod n = ${f.v}   H(msg) = ${f.h}`, { s: 12, b: true, mono: true, fill: c.bg });
+        cbox(z, 326, 156, 120, 34, f.v === f.h ? 'valid ✓' : 'invalid', { s: 13, b: true, fill: f.v === f.h ? c.green : c.red, c: '#fff' });
+      }
+      if (f.k >= 4) {
+        D.text(g, 'attacker changes the message', 14, 222, { s: 11, b: true, c: c.red });
+        cbox(z, 14, 230, 300, 40, [`"${f.fake.slice(0, 28)}"`, `sᵉ mod n = ${f.v}   H = ${f.h2}`], { s: 11, b: true, mono: true, fill: c.bg });
+        cbox(z, 326, 236, 120, 34, f.v === f.h2 ? 'valid ✓' : 'rejected ✗', { s: 13, b: true, fill: f.v === f.h2 ? c.green : c.red, c: '#fff' });
+        cbox(z, 14, 290, 572, 30, 'sign: s = H(m)ᵈ mod n      verify: sᵉ mod n = H(m)', { s: 13, b: true, mono: true, fill: c.cv, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 2.2  Wiener's attack: a small private exponent d appears among the convergents of e / n
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const isqrt = v => { if (v < 0n) return -1n; if (v < 2n) return v; let x = BigInt(Math.floor(Math.sqrt(Number(v)))); while (x * x > v) x--; while ((x + 1n) * (x + 1n) <= v) x++; return x; };
+  trace('cywiener', {
+    title: 'Wiener’s attack: when the private exponent is too small',
+    sub: 'If d is small (below n^¼ / 3), the fraction e / n is extremely close to k / d for some small k. The continued fraction of e / n lists the best such fractions, so d shows up after a few steps and n is factored.',
+    W: 600, H: 340,
+    params: [
+      { k: 'n', label: 'Public modulus n', type: 'text', v: '90581' },
+      { k: 'e', label: 'Public exponent e', type: 'text', v: '17993' }
+    ],
+    tips: [
+      { t: 'Play the classic example n = 90581, e = 17993. The second convergent 1/5 gives d = 5 and the factors 379 and 239.', play: true },
+      { t: 'Try n = 3233, e = 17 from the textbook key. Its d = 2753 is large, so no convergent works and the attack fails.', set: { n: '3233', e: '17' }, play: true }
+    ],
+    frames(p) {
+      const n = BigInt(String(p.n).trim()), e = BigInt(String(p.e).trim());
+      if (n < 6n || e < 2n || n > 10n ** 15n) throw new Error('Use n from 6 to 10^15 and e of at least 2.');
+      const cf = []; let a = e, b = n;
+      while (b !== 0n && cf.length < 14) { cf.push(a / b); [a, b] = [b, a % b]; }
+      const conv = []; let [h1, h0, k1, k0] = [1n, 0n, 0n, 1n];
+      cf.forEach(q => { const h = q * h1 + h0, k = q * k1 + k0; conv.push([h, k]); [h0, h1, k0, k1] = [h1, h, k1, k]; });
+      const fr = [{ i: -1, say: `Expand e / n = ${e} / ${n} as a continued fraction: [${cf.join('; ')}]. Each prefix gives a convergent, a fraction that approximates e / n better than any fraction with a smaller bottom.`, conv: [] }];
+      let found = null;
+      for (let i = 0; i < conv.length && !found; i++) {
+        const [k, d] = conv[i];
+        let say = `Convergent ${i + 1}: k / d = ${k} / ${d}. `;
+        if (k === 0n) { say += 'k = 0, skip it.'; fr.push({ i, say, conv }); continue; }
+        if ((e * d - 1n) % k !== 0n) { say += `(e&middot;d &minus; 1) / k = ${(e * d - 1n)} / ${k} is not a whole number, so this is not it.`; fr.push({ i, say, conv }); continue; }
+        const phi = (e * d - 1n) / k, s = n - phi + 1n, disc = s * s - 4n * n, r = isqrt(disc);
+        if (r >= 0n && r * r === disc && (s + r) % 2n === 0n) {
+          const pp = (s + r) / 2n, qq = (s - r) / 2n;
+          found = { d, k, phi, pp, qq };
+          say += `&phi; = (e&middot;d &minus; 1) / k = ${phi}. Then p and q are roots of x<sup>2</sup> &minus; (n &minus; &phi; + 1)x + n = x<sup>2</sup> &minus; ${s}x + ${n} = 0, and the roots are whole numbers: <b>${pp}</b> and <b>${qq}</b>.`;
+        } else say += `&phi; would be ${phi}, but x<sup>2</sup> &minus; ${s}x + ${n} has no whole number roots, so this is not it.`;
+        fr.push({ i, say, conv, found });
+      }
+      fr.push({ i: found ? fr.length - 2 : conv.length, done: true, conv, found, say: found ? `Broken: d = ${found.d} and n = ${found.pp} &times; ${found.qq}. Wiener (1990) proved this always works when d &lt; n<sup>1/4</sup> / 3, and Boneh and Durfee (1999) pushed the bound to d &lt; n<sup>0.292</sup> with lattices. Never choose a small d to speed up decryption.` : 'No convergent gave whole number roots. d is too large for Wiener’s attack, which is the normal, safe situation.' });
+      return fr.map(x => ({ ...x, n, e, cf }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      D.text(g, `e / n = ${f.e} / ${f.n} = [${f.cf.join('; ')}]`, 14, 22, { s: 12, b: true, mono: true, c: c.ink });
+      const shown = f.conv.slice(0, Math.min(f.conv.length, f.i + 1));
+      shown.slice(0, 8).forEach(([k, d], i) => {
+        const win = f.found && f.found.d === d && f.found.k === k;
+        cbox(z, 14 + i * 71, 40, 65, 44, [`${k}/${d}`, `d = ${d}`], { s: 11, b: true, mono: true, fill: win ? c.green : i === f.i ? 'rgba(234,88,12,0.2)' : c.surf, c: win ? '#fff' : c.ink });
+      });
+      if (f.found) {
+        cbox(z, 14, 110, 572, 30, `φ = (e·d − 1) / k = ${f.found.phi}`, { s: 13, b: true, mono: true, fill: c.bg });
+        cbox(z, 14, 148, 572, 30, `x² − (n − φ + 1)x + n = 0   →   p = ${f.found.pp},  q = ${f.found.qq}`, { s: 13, b: true, mono: true, fill: c.bg });
+      }
+      if (f.done) cbox(z, 14, 196, 572, 40, f.found ? [`private key found: d = ${f.found.d}`, `check: ${f.found.pp} × ${f.found.qq} = ${f.found.pp * f.found.qq}`] : 'attack failed: d is not small', { s: 13, b: true, mono: true, fill: f.found ? c.red : c.green, c: '#fff' });
+      if (f.done) cbox(z, 14, 250, 572, 30, 'safe when d > n^(1/4) / 3, and in practice d is about as large as n', { s: 12, b: true, fill: c.surf });
+    }
+  });
+})();

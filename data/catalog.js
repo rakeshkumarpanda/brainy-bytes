@@ -9495,6 +9495,29 @@ function cyCryptoModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-rsa", title: "RSA: keys, proofs, signatures and attacks", emoji: "2.2", page: "content/cyber-security/cy-rsa.html",
+        summary: "key generation, encryption, correctness proof, signatures, CRT and faults, textbook attacks, Wiener, OAEP and PSS, key sizes.",
+        keywords: ["RSA", "key generation", "correctness proof", "signature", "RSA-CRT", "Bellcore", "Hastad", "Wiener", "OAEP", "Bleichenbacher"],
+        minutes: 90, counts: {"lessons": 12, "problems": 13, "quiz": 15, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "What RSA is and where it came from", emoji: "", group: "Lesson", keywords: ["RSA", "Rivest", "Shamir", "Adleman", "Clifford Cocks", "GCHQ", "public key", "private key", "RSA-129", "Martin Gardner", "patent"] },
+        { id: "keygen", title: "Making a key, encrypting and decrypting", emoji: "", group: "Lesson", keywords: ["RSA key generation", "encrypt", "decrypt", "modulus", "public exponent", "65537", "private exponent", "Carmichael lambda", "FIPS 186-5"] },
+        { id: "proof", title: "Why decryption always works: the proof", emoji: "", group: "Lesson", keywords: ["RSA correctness", "proof", "Euler theorem", "Fermat little theorem", "Chinese remainder theorem", "gcd(m, n)", "lambda"] },
+        { id: "sign", title: "RSA signatures", emoji: "", group: "Lesson", keywords: ["RSA signature", "hash then sign", "PSS", "existential forgery", "multiplicative property", "code signing", "certificate"] },
+        { id: "crt", title: "Fast decryption with CRT, and the fault attack", emoji: "", group: "Lesson", keywords: ["RSA-CRT", "Garner", "dp dq qinv", "Bellcore attack", "fault attack", "Boneh DeMillo Lipton", "Lenstra", "blinding", "timing attack", "side channel"] },
+        { id: "attacks", title: "Attacks on textbook RSA", emoji: "", group: "Lesson", keywords: ["textbook RSA", "deterministic", "malleability", "small exponent attack", "cube root", "Hastad broadcast", "shared prime", "gcd attack", "Fermat factoring", "ROCA", "Infineon"] },
+        { id: "wiener", title: "Wiener’s attack on a small private exponent", emoji: "", group: "Lesson", keywords: ["Wiener attack", "small private exponent", "continued fraction", "convergent", "Boneh Durfee", "lattice", "Legendre"] },
+        { id: "padding", title: "Padding: OAEP, PKCS #1 v1.5, Bleichenbacher and PSS", emoji: "", group: "Lesson", keywords: ["OAEP", "PKCS1 v1.5", "Bleichenbacher", "million message attack", "ROBOT", "padding oracle", "PSS", "TLS 1.3", "hybrid encryption", "IND-CCA2"] },
+        { id: "sizes", title: "Key sizes, speed and the quantum deadline", emoji: "", group: "Lesson", keywords: ["RSA key size", "2048", "3072", "NIST SP 800-57", "NIST IR 8547", "Shor algorithm", "harvest now decrypt later", "post quantum", "quantum computer"] },
+        { id: "versus", title: "RSA compared with other public key systems", emoji: "", group: "Lesson", keywords: ["RSA vs ECC", "RSA vs Diffie-Hellman", "forward secrecy", "ML-KEM", "ML-DSA", "X25519", "Ed25519", "hybrid key exchange"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "IND-CCA2", "random oracle model", "Coppersmith", "LLL", "partial key exposure", "RSA assumption", "Manger attack"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
