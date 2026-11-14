@@ -9540,6 +9540,28 @@ function cyCryptoModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-ecc", title: "Elliptic curve cryptography: ECDH, X25519, ECDSA and Ed25519", emoji: "2.4", page: "content/cyber-security/cy-ecc.html",
+        summary: "curves over F_p, the group law, scalar multiplication and ECDLP, ECDH and X25519, ECDSA and its nonce, Ed25519, attacks and curve choice.",
+        keywords: ["elliptic curve", "point addition", "ECDLP", "ECDH", "X25519", "ECDSA", "nonce reuse", "Ed25519", "invalid curve", "secp256k1"],
+        minutes: 90, counts: {"lessons": 11, "problems": 13, "quiz": 15, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Why elliptic curves", emoji: "", group: "Lesson", keywords: ["elliptic curve cryptography", "ECC", "Koblitz", "Miller", "ECDLP", "key size", "Suite B", "secp256k1", "Curve25519"] },
+        { id: "curves", title: "Elliptic curves over a finite field", emoji: "", group: "Lesson", keywords: ["elliptic curve", "Weierstrass", "finite field", "point at infinity", "Hasse theorem", "Schoof", "cofactor", "P-256", "secp256k1", "Curve25519"] },
+        { id: "add", title: "Adding points: the group law", emoji: "", group: "Lesson", keywords: ["point addition", "point doubling", "chord and tangent", "group law", "slope lambda", "associativity", "abelian group"] },
+        { id: "scalar", title: "Scalar multiplication and the ECDLP", emoji: "", group: "Lesson", keywords: ["scalar multiplication", "double and add", "ECDLP", "Pollard rho", "ECDH", "Montgomery ladder", "point compression", "public key"] },
+        { id: "x25519", title: "X25519: Diffie-Hellman done safely", emoji: "", group: "Lesson", keywords: ["X25519", "Curve25519", "Bernstein", "Montgomery ladder", "clamping", "cofactor", "RFC 7748", "WireGuard", "TLS 1.3"] },
+        { id: "ecdsa", title: "ECDSA signatures and the nonce rule", emoji: "", group: "Lesson", keywords: ["ECDSA", "nonce", "nonce reuse", "PlayStation 3", "fail0verflow", "RFC 6979", "deterministic nonce", "Minerva", "TPM-Fail", "lattice attack", "signature malleability"] },
+        { id: "eddsa", title: "Schnorr signatures and Ed25519", emoji: "", group: "Lesson", keywords: ["Schnorr signature", "Ed25519", "EdDSA", "twisted Edwards", "RFC 8032", "deterministic", "Taproot", "multi signature", "patent"] },
+        { id: "attacks", title: "Attacks on careless ECC and on curve choice", emoji: "", group: "Lesson", keywords: ["invalid curve attack", "small subgroup", "twist", "MOV attack", "anomalous curve", "Dual EC DRBG", "backdoor", "CurveBall", "CVE-2020-0601", "SafeCurves", "side channel"] },
+        { id: "versus", title: "Elliptic curves compared", emoji: "", group: "Lesson", keywords: ["comparison", "X25519", "Ed25519", "P-256", "secp256k1", "Ed448", "P-384", "quantum", "Roetteler"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Schoof", "projective coordinates", "pairing", "BLS12-381", "hidden number problem", "Fiat Cryptography", "isogeny"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

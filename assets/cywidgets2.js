@@ -1158,3 +1158,192 @@ const CYNUM = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Cryptography 2.4  Elliptic curves over a small prime field: the points, adding two points, and ECDH
+   ===================================================================================================== */
+const CYEC = (() => {
+  /* exact small curve arithmetic with plain numbers (p stays below 100 in the animations) */
+  const { D } = CYZ;
+  const md = (v, p) => ((v % p) + p) % p;
+  const inv = (v, p) => { v = md(v, p); for (let i = 1; i < p; i++) if (v * i % p === 1) return i; return null; };
+  const on = (P, c) => P === null || md(P[1] * P[1] - (P[0] ** 3 + c.a * P[0] + c.b), c.p) === 0;
+  const add = (P, Q, c) => {
+    if (P === null) return Q; if (Q === null) return P;
+    const p = c.p, [x1, y1] = P, [x2, y2] = Q;
+    if (x1 === x2 && md(y1 + y2, p) === 0) return null;
+    const lam = (x1 === x2 && y1 === y2) ? md((3 * x1 * x1 + c.a) * inv(2 * y1, p), p) : md((y2 - y1) * inv(x2 - x1, p), p);
+    const x3 = md(lam * lam - x1 - x2, p);
+    return [x3, md(lam * (x1 - x3) - y1, p)];
+  };
+  const mul = (k, P, c) => { let R = null; for (let i = 0; i < k; i++) R = add(R, P, c); return R; };
+  const points = c => { const out = []; for (let x = 0; x < c.p; x++) for (let y = 0; y < c.p; y++) if (on([x, y], c)) out.push([x, y]); return out; };
+  const pt = s => { const m = String(s).match(/-?\d+/g); if (!m || m.length !== 2) throw new Error('Write a point as x,y for example 5,1.'); return [+m[0], +m[1]]; };
+  const curve = (p0, a0, b0) => {
+    const p = +p0, a = +a0, b = +b0;
+    if (!CYNUM.isPrime(p) || p < 5 || p > 61) throw new Error('p must be a prime from 5 to 61 in this animation.');
+    if (md(4 * a ** 3 + 27 * b * b, p) === 0) throw new Error('4a³ + 27b² is 0 mod p, so this curve is singular. Change a or b.');
+    return { p, a: md(a, p), b: md(b, p) };
+  };
+  const name = P => P === null ? 'O' : `(${P[0]}, ${P[1]})`;
+  function grid(z, c, f) {
+    /* the field drawn as a p by p grid on the left, origin at the bottom */
+    const col = z.col, g = z.g, L = 34, T = 12, S = 310, cell = S / c.p;
+    const X = x => L + (x + 0.5) * cell, Y = y => T + S - (y + 0.5) * cell;
+    D.line(g, L, T + S, L + S, T + S, col.line, 1); D.line(g, L, T, L, T + S, col.line, 1);
+    const step = c.p > 31 ? 10 : 5;
+    for (let v = 0; v < c.p; v += step) { D.text(g, String(v), X(v), T + S + 12, { a: 'center', s: 9, c: col.ink2 }); D.text(g, String(v), L - 6, Y(v) + 3, { a: 'right', s: 9, c: col.ink2 }); }
+    return { X, Y, cell, dot: (P, r, fill, stroke) => D.circle(g, X(P[0]), Y(P[1]), r, { fill, stroke: stroke || col.surf, w: 1.2 }) };
+  }
+  return { md, inv, on, add, mul, points, pt, curve, name, grid };
+})();
+
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const E = CYEC;
+  trace('cycurve', {
+    title: 'An elliptic curve over a finite field: just a set of points',
+    sub: 'Over the real numbers, y² = x³ + ax + b is a smooth curve. Modulo a prime p it becomes a scattered set of grid points, plus one extra point O “at infinity”. These points are what elliptic curve cryptography computes with.',
+    W: 600, H: 340,
+    params: [
+      { k: 'p', label: 'Prime p', type: 'text', v: '17' },
+      { k: 'a', label: 'a', type: 'text', v: '2' },
+      { k: 'b', label: 'b', type: 'text', v: '2' }
+    ],
+    tips: [
+      { t: 'Play the textbook curve y² = x³ + 2x + 2 mod 17. It has 18 grid points plus O, 19 in all, a prime.', play: true },
+      { t: 'Try p = 61, a = 0, b = 7, a small version of Bitcoin’s curve. Notice the mirror symmetry. It has exactly 61 points, the same as p, which makes it an anomalous (weak) curve.', set: { p: '61', a: '0', b: '7' }, play: true },
+      { t: 'Try a = 0, b = 0. The curve is singular (it has a cusp) and the builder refuses it.', set: { p: '17', a: '0', b: '0' }, play: true }
+    ],
+    frames(p) {
+      const c = E.curve(p.p, p.a, p.b), all = E.points(c), parts = 4, per = Math.ceil(c.p / parts);
+      const fr = [{ k: 0, upto: -1, say: `The curve y<sup>2</sup> = x<sup>3</sup> + ${c.a}x + ${c.b} mod ${c.p}. First check 4a<sup>3</sup> + 27b<sup>2</sup> mod p = ${E.md(4 * c.a ** 3 + 27 * c.b * c.b, c.p)}, which is not 0, so the curve is smooth (no cusp or crossing).` }];
+      for (let i = 0; i < parts; i++) {
+        const lo = i * per, hi = Math.min(c.p - 1, (i + 1) * per - 1); if (lo > hi) break;
+        const got = all.filter(P => P[0] >= lo && P[0] <= hi);
+        fr.push({ k: 1, upto: hi, lo, say: `For x = ${lo} to ${hi}, compute x<sup>3</sup> + ${c.a}x + ${c.b} mod ${c.p} and ask whether it is a square mod ${c.p}. Each square gives two points (x, y) and (x, p &minus; y). Found: ${got.length ? got.map(E.name).join(', ') : 'none'}.` });
+      }
+      const n = all.length + 1, lo = c.p + 1 - 2 * Math.sqrt(c.p), hi = c.p + 1 + 2 * Math.sqrt(c.p);
+      fr.push({ k: 2, done: true, upto: c.p, say: `${all.length} grid points plus the point at infinity O make <b>${n}</b> points. Hasse’s theorem says the count is within 2&radic;p of p + 1, here between ${lo.toFixed(1)} and ${hi.toFixed(1)}. The points come in mirror pairs about the line y = p/2, because y and &minus;y give the same y<sup>2</sup>.` });
+      return fr.map(x => ({ ...x, c, all, n }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, G = E.grid(z, f.c, f);
+      f.all.filter(P => P[0] <= f.upto).forEach(P => G.dot(P, Math.max(3, Math.min(6, G.cell * 0.32)), f.k === 1 && P[0] >= f.lo ? col.orange : col.cv));
+      if (f.k === 1) { const x0 = G.X(f.lo) - G.cell / 2, x1 = G.X(f.upto) + G.cell / 2; D.rect(g, x0, 12, x1 - x0, 310, { fill: 'rgba(234,88,12,0.08)' }); }
+      if (f.done) D.line(g, 34, G.Y((f.c.p - 1) / 2), 344, G.Y((f.c.p - 1) / 2), col.red, 1, [4, 4]);
+      cbox(z, 366, 12, 220, 44, [`y² = x³ + ${f.c.a}x + ${f.c.b}`, `mod ${f.c.p}`], { s: 13, b: true, mono: true, fill: col.surf });
+      cbox(z, 366, 66, 220, 30, `4a³ + 27b² ≡ ${E.md(4 * f.c.a ** 3 + 27 * f.c.b ** 2, f.c.p)} ≠ 0`, { s: 12, b: true, mono: true, fill: col.bg });
+      if (f.k >= 1) cbox(z, 366, 106, 220, 30, `points so far: ${f.all.filter(P => P[0] <= f.upto).length}`, { s: 12, b: true, mono: true, fill: col.bg });
+      if (f.done) {
+        cbox(z, 366, 146, 220, 44, [`#E = ${f.all.length} + 1 (O)`, `= ${f.n}`], { s: 13, b: true, mono: true, fill: col.cv, c: '#fff' });
+        cbox(z, 366, 200, 220, 44, ['Hasse: |#E − (p + 1)|', `≤ 2√p ≈ ${(2 * Math.sqrt(f.c.p)).toFixed(2)}`], { s: 12, b: true, mono: true, fill: col.surf });
+        cbox(z, 366, 254, 220, 30, 'dashed line: mirror y ↔ p − y', { s: 11, b: true, fill: col.bg, c: col.red });
+      }
+    }
+  });
+
+  trace('cyecadd', {
+    title: 'Adding two points: chord and tangent, done modulo p',
+    sub: 'To add P and Q, draw the line through them. It meets the curve in a third point. Reflect that point in the x axis to get P + Q. Modulo p the “line” is a set of grid points that wraps round, and the same formulas still work.',
+    W: 600, H: 340,
+    params: [
+      { k: 'p', label: 'Prime p', type: 'text', v: '17' },
+      { k: 'a', label: 'a', type: 'text', v: '2' },
+      { k: 'b', label: 'b', type: 'text', v: '2' },
+      { k: 'P', label: 'Point P (x,y)', type: 'text', v: '5,1' },
+      { k: 'Q', label: 'Point Q (x,y)', type: 'text', v: '6,3' }
+    ],
+    tips: [
+      { t: 'Play P = (5, 1) plus Q = (6, 3). The answer is (10, 6), that is G + 2G = 3G.', play: true },
+      { t: 'Set Q = P = (5, 1). Now the line is the tangent, and the answer is 2G = (6, 3).', set: { P: '5,1', Q: '5,1' }, play: true },
+      { t: 'Try Q = (5, 16), the mirror of P. The line is vertical and P + Q = O, the point at infinity.', set: { P: '5,1', Q: '5,16' }, play: true }
+    ],
+    frames(p) {
+      const c = E.curve(p.p, p.a, p.b), P = E.pt(p.P).map(v => E.md(v, c.p)), Q = E.pt(p.Q).map(v => E.md(v, c.p));
+      if (!E.on(P, c) || !E.on(Q, c)) throw new Error(`Both points must be on the curve. Try the tips, or pick points from the first animation.`);
+      const all = E.points(c), dbl = P[0] === Q[0] && P[1] === Q[1], R = E.add(P, Q, c);
+      const fr = [{ k: 1, say: `P = ${E.name(P)} and Q = ${E.name(Q)} are on y<sup>2</sup> = x<sup>3</sup> + ${c.a}x + ${c.b} mod ${c.p}.` }];
+      if (R === null) {
+        fr.push({ k: 9, done: true, say: dbl ? 'P has y = 0, so its tangent is vertical and 2P = O.' : `Q is the mirror of P (same x, y values add to ${c.p}). The line is vertical, meets no third point, and P + Q = <b>O</b>, the point at infinity. So Q = &minus;P.` });
+        return fr.map(x => ({ ...x, c, all, P, Q, R }));
+      }
+      const lam = dbl ? E.md((3 * P[0] * P[0] + c.a) * E.inv(2 * P[1], c.p), c.p) : E.md((Q[1] - P[1]) * E.inv(Q[0] - P[0], c.p), c.p);
+      const lamSay = dbl ? `Doubling, so use the tangent slope: &lambda; = (3x<sub>1</sub><sup>2</sup> + a) / (2y<sub>1</sub>) = (3&middot;${P[0]}<sup>2</sup> + ${c.a}) &middot; (2&middot;${P[1]})<sup>&minus;1</sup> mod ${c.p} = <b>${lam}</b>.`
+        : `Slope of the chord: &lambda; = (y<sub>2</sub> &minus; y<sub>1</sub>) / (x<sub>2</sub> &minus; x<sub>1</sub>) = (${Q[1]} &minus; ${P[1]}) &middot; (${Q[0]} &minus; ${P[0]})<sup>&minus;1</sup> mod ${c.p} = <b>${lam}</b>. Division means multiplying by the inverse mod p.`;
+      fr.push({ k: 2, lam, say: lamSay + ' The orange dots are the line y = y<sub>1</sub> + &lambda;(x &minus; x<sub>1</sub>) mod p, wrapping round the grid.' });
+      const negR = [R[0], E.md(-R[1], c.p)];
+      fr.push({ k: 3, lam, negR, say: `x<sub>3</sub> = &lambda;<sup>2</sup> &minus; x<sub>1</sub> &minus; x<sub>2</sub> = ${lam}<sup>2</sup> &minus; ${P[0]} &minus; ${Q[0]} mod ${c.p} = <b>${R[0]}</b>. The line meets the curve again at ${E.name(negR)}.` });
+      fr.push({ k: 4, done: true, lam, negR, say: `Reflect: y<sub>3</sub> = &lambda;(x<sub>1</sub> &minus; x<sub>3</sub>) &minus; y<sub>1</sub> = <b>${R[1]}</b>, so P + Q = <b>${E.name(R)}</b>. With these rules the points form a group: O is the zero, &minus;(x, y) = (x, &minus;y), and the order of adding does not matter.` });
+      return fr.map(x => ({ ...x, c, all, P, Q, R }));
+    },
+    paint(z, f) {
+      const col = z.col, G = E.grid(z, f.c, f), r = Math.max(3, Math.min(6, G.cell * 0.3));
+      f.all.forEach(P => G.dot(P, r * 0.7, col.line));
+      if (f.k >= 2 && f.lam !== undefined) for (let x = 0; x < f.c.p; x++) { const y = E.md(f.P[1] + f.lam * (x - f.P[0]), f.c.p); G.dot([x, y], r * 0.55, 'rgba(234,88,12,0.65)'); }
+      G.dot(f.P, r + 1, col.cv); G.dot(f.Q, r + 1, col.cv);
+      if (f.k >= 3 && f.negR) G.dot(f.negR, r + 1, col.orange, col.ink);
+      if (f.k >= 4 && f.R) { D.line(z.g, G.X(f.R[0]), G.Y(f.negR[1]), G.X(f.R[0]), G.Y(f.R[1]), col.red, 1.5, [4, 3]); G.dot(f.R, r + 2, col.red, col.ink); }
+      cbox(z, 366, 12, 220, 30, `P = ${E.name(f.P)}   Q = ${E.name(f.Q)}`, { s: 12, b: true, mono: true, fill: col.surf });
+      if (f.k >= 2 && f.lam !== undefined) cbox(z, 366, 52, 220, 30, `λ = ${f.lam}`, { s: 13, b: true, mono: true, fill: f.k === 2 ? 'rgba(234,88,12,0.2)' : col.bg });
+      if (f.k >= 3 && f.negR) cbox(z, 366, 92, 220, 30, `third point ${E.name(f.negR)}`, { s: 12, b: true, mono: true, fill: f.k === 3 ? 'rgba(234,88,12,0.2)' : col.bg });
+      if (f.done) cbox(z, 366, 132, 220, 36, `P + Q = ${E.name(f.R)}`, { s: 14, b: true, mono: true, fill: col.red, c: '#fff' });
+      if (f.done && f.R) {
+        cbox(z, 366, 186, 220, 30, 'x₃ = λ² − x₁ − x₂', { s: 12, b: true, mono: true, fill: col.surf });
+        cbox(z, 366, 222, 220, 30, 'y₃ = λ(x₁ − x₃) − y₁', { s: 12, b: true, mono: true, fill: col.surf });
+      }
+    }
+  });
+
+  trace('cyecdh', {
+    title: 'Scalar multiplication and ECDH: jumping round the curve',
+    sub: 'Adding G to itself again and again visits the points in an order that looks random. Going forward (k to kG) is fast, but going back (kG to k) is the elliptic curve discrete log problem. ECDH uses exactly this.',
+    W: 600, H: 340,
+    params: [
+      { k: 'p', label: 'Prime p', type: 'text', v: '17' },
+      { k: 'a', label: 'a', type: 'text', v: '2' },
+      { k: 'b', label: 'b', type: 'text', v: '2' },
+      { k: 'G', label: 'Base point G (x,y)', type: 'text', v: '5,1' },
+      { k: 'ka', label: 'Alice’s secret a', type: 'text', v: '3' },
+      { k: 'kb', label: 'Bob’s secret b', type: 'text', v: '10' }
+    ],
+    tips: [
+      { t: 'Play it: A = 3G = (10, 6), B = 10G = (7, 11), and both get 30G = 11G = (13, 10).', play: true },
+      { t: 'Try a = 18. Then A = 18G = (5, 16) = −G, the mirror of G.', set: { ka: '18' }, play: true },
+      { t: 'Try p = 61, a = 0, b = 7, G = (2, 25) with secrets 25 and 40. This toy curve has order 61, the same as p, so it is anomalous and weak, as the attacks lesson explains.', set: { p: '61', a: '0', b: '7', G: '2,25', ka: '25', kb: '40' }, play: true }
+    ],
+    frames(p) {
+      const c = E.curve(p.p, p.a, p.b), Gp = E.pt(p.G).map(v => E.md(v, c.p)), ka = +p.ka, kb = +p.kb;
+      if (!E.on(Gp, c)) throw new Error('G must be a point on the curve.');
+      const path = []; let R = Gp; while (R !== null && path.length < 200) { path.push(R); R = E.add(R, Gp, c); }
+      const n = path.length + 1;
+      if (!(ka >= 1 && kb >= 1 && ka < n && kb < n)) throw new Error(`The secrets must be from 1 to ${n - 1}, because G has order ${n}.`);
+      const A = path[ka - 1], B = path[kb - 1], s = (ka * kb) % n, K = s === 0 ? null : path[s - 1];
+      const fr = [
+        { k: 1, show: Math.min(path.length, 6), say: `Start at G = ${E.name(Gp)}. Adding G again and again gives 2G = ${E.name(path[1] || null)}, 3G = ${E.name(path[2] || null)}, and so on. The points jump around with no visible pattern.` },
+        { k: 1, show: path.length, say: `After ${path.length} additions we reach ${n}G = O, so G has order <b>${n}</b>. Every multiple kG is one of these ${path.length} points, and real curves use an order of about 2<sup>256</sup>.` },
+        { k: 2, show: path.length, say: `Alice picks secret a = ${ka} and publishes A = aG = <b>${E.name(A)}</b>. Software uses double and add, about 2 log<sub>2</sub> a steps, not a additions.` },
+        { k: 3, show: path.length, say: `Bob picks secret b = ${kb} and publishes B = bG = <b>${E.name(B)}</b>.` },
+        { k: 4, show: path.length, done: true, say: `Alice computes aB and Bob computes bA. Both equal abG = ${ka * kb}G = ${s}G = <b>${E.name(K)}</b> (because ${ka * kb} mod ${n} = ${s}). An eavesdropper must find a from A, the elliptic curve discrete log problem, which takes about &radic;n steps with Pollard rho, so 2<sup>128</sup> for a 256 bit curve.` }
+      ];
+      return fr.map(x => ({ ...x, c, Gp, path, n, A, B, K, ka, kb, s }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, G = E.grid(z, f.c, f), r = Math.max(3, Math.min(6, G.cell * 0.3));
+      const pts = f.path.slice(0, f.show);
+      for (let i = 1; i < pts.length; i++) D.line(g, G.X(pts[i - 1][0]), G.Y(pts[i - 1][1]), G.X(pts[i][0]), G.Y(pts[i][1]), 'rgba(15,118,110,0.25)', 1);
+      pts.forEach((P, i) => { G.dot(P, r, i === 0 ? col.ink : col.cv); if (f.c.p <= 23) D.text(g, String(i + 1), G.X(P[0]) + r + 1, G.Y(P[1]) - r, { s: 9, b: true, c: col.ink2 }); });
+      if (f.k >= 2) G.dot(f.A, r + 3, 'rgba(225,29,72,0.0)', col.red), G.dot(f.A, r + 1, col.red);
+      if (f.k >= 3) G.dot(f.B, r + 1, col.orange);
+      if (f.k >= 4 && f.K) G.dot(f.K, r + 3, col.green, col.ink);
+      cbox(z, 366, 12, 220, 30, `G = ${E.name(f.Gp)}   order n = ${f.n}`, { s: 12, b: true, mono: true, fill: col.surf });
+      if (f.k >= 2) cbox(z, 366, 52, 220, 30, `A = ${f.ka}G = ${E.name(f.A)}`, { s: 12, b: true, mono: true, fill: 'rgba(225,29,72,0.15)' });
+      if (f.k >= 3) cbox(z, 366, 92, 220, 30, `B = ${f.kb}G = ${E.name(f.B)}`, { s: 12, b: true, mono: true, fill: 'rgba(234,88,12,0.2)' });
+      if (f.k >= 4) {
+        cbox(z, 366, 132, 220, 44, [`aB = bA = ${f.s}G`, `= ${E.name(f.K)}`], { s: 13, b: true, mono: true, fill: col.green, c: '#fff' });
+        cbox(z, 366, 186, 220, 44, ['Eve sees G, A, B', 'needs a from A = aG'], { s: 12, b: true, fill: col.bg, c: col.red });
+      }
+    }
+  });
+})();
