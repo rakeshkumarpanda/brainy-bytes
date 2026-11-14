@@ -2,7 +2,7 @@
    Every animation is a step by step trace. It starts empty. Each press of Step adds one piece of the picture and
    explains that piece in plain words under it, until the picture is complete. Play runs the steps, Back undoes one,
    and Reset puts every value back to how the page first showed it. Every trace is worked out again from the
-   reader's own input whenever a value changes. assets/mlvoice.js can read each step aloud.
+   reader's own input whenever a value changes. assets/voiceteach.js can read each step aloud.
 
    MLZ.trace(name, spec) wraps CVZ.def (assets/cvviz.js):
      spec.frames(p) -> [ { say: 'what happens in this step', ...anything paint needs } ]

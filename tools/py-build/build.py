@@ -503,6 +503,7 @@ const PAGE = {js(page)};
 PYPLAY.page({{ title: {js(T["title"])}, subject: {js(SUBJECT)}, tracer: {js(open(TRACER, encoding="utf-8").read())} }});
 </script>
 <script src="../../assets/pypath.js"></script>
+<script src="../../assets/voiceteach.js"></script>
 </body>
 </html>
 '''

@@ -344,6 +344,7 @@ def page(T, chs, steps_by_id):
 <script src="../../assets/learn.js"></script>
 <script src="../../assets/pyplay.js"></script>
 {scripts}
+<script src="../../assets/voiceteach.js"></script>
 <script src="../../assets/cv.js"></script>
 </body>
 </html>
