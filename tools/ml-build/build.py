@@ -18,7 +18,8 @@ The pages use the same layout, checks and tabs as the Complete Python and Artifi
 file only changes the settings in tools/cv-build/build.py and runs it once per section. Topic files use the kits in
 tools/cv-build/cvkit.py, tools/ai-build/coreaikit.py and tools/python-build/pykit.py (download links, LeetCode tables).
 The animations live in assets/mlwidgets*.js on top of assets/cvviz.js. Every animation starts empty and adds one step
-each time Step is pressed, with a plain English line for that step. assets/mlvoice.js reads those lines aloud when the
+each time Step is pressed, with a plain English line for that step. assets/voiceteach.js (added to every chapter page by tools/cv-build)
+reads those lines aloud when the
 reader turns the voice on, and adds a "Listen to this lesson" button to every lesson.
 
 Downloads (written by tools/python-build/pyfiles.py into content/<subject>/files/<slug>/):
@@ -47,7 +48,7 @@ sys.path.append(os.path.join(TOOLS, 'ai-build'))
 sys.path.append(os.path.join(TOOLS, 'python-build'))
 sys.path.append(HERE)  # after the import above, so that 'build' still means the Computer Vision builder
 
-WIDGETS = ['cvviz.js', 'aiwidgets.js', 'mlwidgets.js', 'mlwidgets2.js', 'mlwidgets3.js', 'mlwidgets4.js', 'mlwidgets5.js', 'mlvoice.js']
+WIDGETS = ['cvviz.js', 'aiwidgets.js', 'mlwidgets.js', 'mlwidgets2.js', 'mlwidgets3.js', 'mlwidgets4.js', 'mlwidgets5.js']
 COMMON = {'builder': 'tools/ml-build/build.py', 'css': ['cv.css', 'ai.css', 'python.css', 'ml.css'],
           'body': 'cvp aip caip pyp mlp', 'widgets': WIDGETS}
 SUBJECTS = [

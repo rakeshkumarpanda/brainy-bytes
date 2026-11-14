@@ -8,7 +8,8 @@ links, a comic, the parts (section.jsec), Real life, Practice, Quiz and Number c
   2. reads every chapter page and counts its lessons, quiz questions, worked problems, practice tasks and minutes,
      and writes them into the pathMeta() block of data/catalog.js, so the learning path shows the same numbers
      as the Python one
-  3. adds assets/pathskin.css and assets/pathskin.js to every chapter page. They switch the page to the Python
+  3. adds assets/pathskin.css, assets/pathskin.js and assets/voiceteach.js (Listen bar and animation voice) to
+     every chapter page. pathskin switches the page to the Python
      chapter layout (tabs, one lesson at a time) and the script tag tells it the step, the level and the link to
      the chapter on the cheatsheet
   4. writes the full and compact cheatsheets with their PDFs through tools/cv-build/cheatsheet.py, from what the
@@ -337,7 +338,7 @@ def inject(path, kicker, sheet_href):
     s = re.sub(r'\n?' + re.escape(MARK) + r'[^\n]*', '', s)
     css = f'{MARK}<link rel="stylesheet" href="../../assets/pathskin.css">'
     data = f' data-kicker="{html.escape(kicker, quote=True)}"' + (f' data-sheet="{sheet_href}"' if sheet_href else '')
-    js = f'{MARK}<script src="../../assets/pathskin.js"{data}></script>'
+    js = f'{MARK}<script src="../../assets/pathskin.js"{data}></script>\n{MARK}<script src="../../assets/voiceteach.js"></script>'
     s = s.replace('</head>', css + '\n</head>', 1)
     i = s.rfind('</body>')
     s = s[:i] + js + '\n' + s[i:]
