@@ -8933,6 +8933,26 @@ function mlDeepModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ml-transformers", title: "Attention and transformers", emoji: "2.3", page: "content/machine-learning/ml-transformers.html",
+        summary: "Attention, multi head attention, the transformer block, positional encoding, BERT, GPT and decoding.",
+        keywords: ["transformer", "attention", "self attention", "multi head attention", "positional encoding", "BERT", "GPT", "causal mask", "perplexity", "temperature"],
+        minutes: 60, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Attention: every word looks at every other word", emoji: "", group: "Lesson", keywords: ["attention", "self attention", "query", "key", "value", "scaled dot product attention", "softmax", "causal mask"] },
+        { id: "block", title: "Multi head attention and the transformer block", emoji: "", group: "Lesson", keywords: ["multi head attention", "transformer block", "feed forward network", "residual connection", "layer normalisation", "positional encoding", "pre norm"] },
+        { id: "why", title: "Why attention beats recurrence on long distances", emoji: "", group: "Lesson", keywords: ["path length", "long range dependency", "parallelism", "quadratic cost", "FlashAttention", "attention vs RNN"] },
+        { id: "llm", title: "BERT, GPT and how text is generated", emoji: "", group: "Lesson", keywords: ["BERT", "GPT", "language model", "pretraining", "fine tuning", "temperature", "top k", "top p", "perplexity", "decoding"] },
+        { id: "versus", title: "Transformer families compared", emoji: "", group: "Lesson", keywords: ["encoder vs decoder", "vision transformer", "T5", "transformer families"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["attention formula", "KV cache", "induction heads", "scaling laws", "RoPE", "grouped query attention"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "large language models"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "hash map", "trie", "heap", "binary search"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

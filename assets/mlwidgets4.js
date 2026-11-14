@@ -740,3 +740,107 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Deep learning 2.3  transformers: scaled dot product attention for one query, and sinusoidal positional encoding
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, plot } = MLZ;
+  const TOK = ['the', 'cat', 'sat', 'on', 'mat'];
+  const KEYS = [[0.2, 0.1], [1.5, 0.3], [0.2, 1.5], [-0.3, 0.4], [1.2, -0.4]];
+  const QRY = [[1.0, 0.0], [0.3, 1.2], [1.4, 0.2], [0.9, -0.9], [0.0, 1.0]];
+  const SC = { '1': 'divide by √2 (standard)', '0': 'do not scale', '4': 'scores × 4 (sharper)' };
+
+  trace('mlattn', {
+    title: 'Attention for one word: score, softmax, weighted sum',
+    sub: 'Each word has a query (what it looks for) and a key (what it offers), here 2D vectors picked by hand. The chosen word scores every key with a dot product, turns the scores into weights with softmax, and outputs the weighted average of the values. To keep the picture simple, each value equals its key.',
+    W: 600, H: 330,
+    params: [
+      { k: 'q', label: 'Query word', type: 'select', v: '2', opts: TOK.map((t, i) => [String(i), t]) },
+      { k: 'mask', label: 'Causal mask', type: 'select', v: 'off', opts: [['off', 'Off: see every word (encoder, BERT)'], ['on', 'On: see only earlier words (decoder, GPT)']] },
+      { k: 'sc', label: 'Scaling', type: 'select', v: '1', opts: Object.keys(SC).map(k => [k, SC[k]]) }
+    ],
+    tips: [
+      { t: 'Query "cat" with the causal mask on: it may only look at "the" and itself, so the verb "sat" it would like to find is blocked.', set: { q: '1', mask: 'on', sc: '1' }, play: true },
+      { t: 'Scores × 4: the same ranking, but softmax puts almost all the weight on the best match. Large unscaled dot products do this in big models, which is why scores are divided by √d.', set: { q: '2', mask: 'off', sc: '4' }, play: true }
+    ],
+    frames(p) {
+      const qi = +p.q, q = QRY[qi], scale = p.sc === '1' ? 1 / Math.SQRT2 : p.sc === '4' ? 4 : 1;
+      const allowed = TOK.map((_, j) => p.mask === 'off' || j <= qi);
+      const raw = KEYS.map(k => q[0] * k[0] + q[1] * k[1]);
+      const fr = [{ qi, shown: 0, say: `The query for "${TOK[qi]}" is (${f2(q[0], 1)}, ${f2(q[1], 1)}). It will be compared with the key of every word${p.mask === 'on' ? ' up to itself, because the causal mask hides later words' : ''}.` }];
+      TOK.forEach((t, j) => fr.push({ qi, shown: j + 1, raw, allowed, say: allowed[j] ? `Score for "${t}": q · k = ${f2(q[0], 1)} × ${f2(KEYS[j][0], 1)} + ${f2(q[1], 1)} × ${f2(KEYS[j][1], 1)} = <b>${f2(raw[j], 2)}</b>.` : `"${t}" comes later, so the mask sets its score to −∞ and its weight will be 0.` }));
+      const s = raw.map((v, j) => (allowed[j] ? v * scale : -Infinity)), mx = Math.max(...s), e = s.map(v => Math.exp(v - mx)), Z = e.reduce((a, b) => a + b, 0), w = e.map(v => v / Z);
+      const best = w.indexOf(Math.max(...w));
+      fr.push({ qi, shown: 5, raw, allowed, w, say: `${p.sc === '1' ? 'Divide each score by √2, then apply' : p.sc === '4' ? 'Multiply each score by 4, then apply' : 'Apply'} softmax: the weights are ${TOK.map((t, j) => `${t} ${f2(w[j], 2)}`).join(', ')}. They add up to 1, and "${TOK[best]}" gets the most.` });
+      const out = [0, 1].map(d => w.reduce((a, wj, j) => a + wj * KEYS[j][d], 0));
+      fr.push({ qi, shown: 5, raw, allowed, w, out, say: `Output = Σ weight × value = (<b>${f2(out[0], 2)}, ${f2(out[1], 2)}</b>), shown in green. The new vector for "${TOK[qi]}" mixes in information from the words it attended to.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 300, 310], [-0.6, 1.8], [-0.6, 1.8], { dx: 1, dy: 1 });
+      KEYS.forEach((k, j) => {
+        const hot = f.w ? f.w[j] : 0, blocked = f.allowed && !f.allowed[j];
+        D.arrow(g, P.X(0), P.Y(0), P.X(k[0]), P.Y(k[1]), blocked ? c.line : klass(z, 0), 1.5 + 4 * hot, 7);
+        D.text(g, TOK[j], P.X(k[0]) + 6, P.Y(k[1]) - 6, { s: 12, b: true, c: blocked ? c.ink2 : c.ink });
+      });
+      const q = QRY[f.qi];
+      D.arrow(g, P.X(0), P.Y(0), P.X(q[0]), P.Y(q[1]), klass(z, 1), 2.5, 8);
+      D.text(g, 'query', P.X(q[0]) + 6, P.Y(q[1]) - 8, { s: 11, b: true, c: klass(z, 1) });
+      if (f.out) { D.arrow(g, P.X(0), P.Y(0), P.X(f.out[0]), P.Y(f.out[1]), c.green, 3, 8); D.text(g, 'output', P.X(f.out[0]) + 6, P.Y(f.out[1]) + 16, { s: 11, b: true, c: c.green }); }
+      D.text(g, 'blue: keys   orange: query', 304, 26, { a: 'right', s: 10, c: c.ink2 });
+      head(z, `Query word: "${TOK[f.qi]}"`, 330, 30);
+      head(z, 'word', 330, 56); head(z, 'q · k', 390, 56); head(z, 'weight', 455, 56);
+      TOK.forEach((t, j) => {
+        const y = 84 + j * 34;
+        D.text(g, t, 330, y, { s: 13, b: j === f.qi, c: c.ink });
+        if (j < f.shown) D.text(g, f.allowed[j] ? f2(f.raw[j], 2) : '−∞', 390, y, { s: 12, mono: true, c: f.allowed[j] ? c.ink : c.ink2 });
+        rr(g, 455, y - 11, 110, 14, 4, { fill: c.bg });
+        if (f.w) { rr(g, 455, y - 11, Math.max(1, 110 * f.w[j]), 14, 4, { fill: klass(z, 0) }); D.text(g, f2(f.w[j], 2), 570, y, { a: 'right', s: 10, mono: true, c: c.ink }); }
+      });
+      D.text(g, 'weight = softmax(q · k / √d)', 330, 268, { s: 12, mono: true, c: c.ink2 });
+      D.text(g, 'output = Σ weight · value', 330, 288, { s: 12, mono: true, c: c.ink2 });
+    }
+  });
+
+  trace('mlposenc', {
+    title: 'Sinusoidal positional encoding',
+    sub: 'Attention alone ignores word order, so each position gets a vector of sines and cosines added to its embedding. Every pair of dimensions is a wave with its own wavelength, from fast to very slow. Rows are dimensions, columns are positions: blue is positive, orange negative.',
+    W: 600, H: 330,
+    params: [{ k: 'd', label: 'Model size d', type: 'select', v: '32', opts: [['16', '16'], ['32', '32'], ['64', '64']] }],
+    tips: [
+      { t: 'd = 64: the slowest waves barely change across 50 positions, so they act like a coarse clock while the fast ones tell neighbours apart.', set: { d: '64' }, play: true }
+    ],
+    frames(p) {
+      const d = +p.d, pairs = d / 2, N = 50;
+      const pe = Array.from({ length: N }, (_, pos) => Array.from({ length: d }, (_, j) => { const i = Math.floor(j / 2), ang = pos / Math.pow(10000, 2 * i / d); return j % 2 ? Math.cos(ang) : Math.sin(ang); }));
+      const wl = i => 2 * Math.PI * Math.pow(10000, 2 * i / d);
+      const fr = [{ pe, upto: 0, d, say: `Each of 50 positions will get a vector of ${d} numbers. Dimension pair i uses sin and cos of position / 10000^(2i/${d}). Nothing is drawn yet.` }];
+      const marks = [1, 2, Math.ceil(pairs / 4), Math.ceil(pairs / 2), pairs].filter((v, k, a) => a.indexOf(v) === k);
+      marks.forEach(u => fr.push({ pe, upto: u, d, say: `${u === 1 ? 'Pair 0 drawn' : `Pairs 0 to ${u - 1} drawn`}. Pair ${u - 1} has wavelength 2π × 10000^(${2 * (u - 1)}/${d}) ≈ <b>${wl(u - 1) < 1000 ? f2(wl(u - 1), 1) : Math.round(wl(u - 1)).toLocaleString('en')}</b> positions.${u === 1 ? ' The fastest wave repeats about every 6 positions.' : ''}` }));
+      const dot = (a, b) => a.reduce((s, v, j) => s + v * b[j], 0);
+      const sim = pe.map(r => dot(r, pe[10]) / pairs);
+      fr.push({ pe, upto: pairs, d, sim, say: `The orange line is the dot product of position 10’s vector with every other position, divided by ${pairs}. It is exactly 1 at position 10 and ${sim[0] < sim[9] && sim[49] < sim[11] ? 'lower further away' : 'changes with distance'}, ${f2(sim[11], 2)} one step away and ${f2(sim[49], 2)} at position 49. The dot product depends only on the distance between positions, so attention can learn relative position.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, d = f.d, N = 50, x0 = 40, y0 = 30, cw = 10, ch = Math.min(6, 150 / d);
+      head(z, 'position →', x0, 22);
+      for (let j = 0; j < d; j++) for (let pos = 0; pos < N; pos++) {
+        const on = Math.floor(j / 2) < f.upto, v = f.pe[pos][j];
+        g.fillStyle = !on ? 'rgba(148,163,184,0.15)' : v >= 0 ? `rgba(37,99,235,${0.1 + 0.85 * v})` : `rgba(234,88,12,${0.1 + 0.85 * -v})`;
+        g.fillRect(x0 + pos * cw, y0 + j * ch, cw - 1, Math.max(1, ch - 0.5));
+      }
+      D.text(g, 'dim 0', x0 - 4, y0 + 8, { a: 'right', s: 9, c: c.ink2 });
+      D.text(g, `dim ${d - 1}`, x0 - 4, y0 + d * ch, { a: 'right', s: 9, c: c.ink2 });
+      [0, 10, 20, 30, 40, 49].forEach(pos => D.text(g, String(pos), x0 + pos * cw + 4, y0 + d * ch + 14, { a: 'center', s: 9, c: c.ink2 }));
+      if (f.sim) {
+        const top = y0 + d * ch + 24, hgt = 290 - top;
+        g.beginPath(); f.sim.forEach((v, pos) => { const X = x0 + pos * cw + 4, Y = top + hgt * (1 - (v + 0.2) / 1.2); pos ? g.lineTo(X, Y) : g.moveTo(X, Y); }); g.strokeStyle = klass(z, 1); g.lineWidth = 2; g.stroke();
+        D.text(g, 'similarity to position 10', x0 + 505, top + 10, { a: 'right', s: 10, b: true, c: klass(z, 1) });
+      }
+      D.text(g, 'PE(pos, 2i) = sin(pos / 10000^(2i/d))', 40, 312, { s: 11, mono: true, c: c.ink2 });
+    }
+  });
+})();
