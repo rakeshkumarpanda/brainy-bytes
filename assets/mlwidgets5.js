@@ -318,3 +318,82 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 2.2  serving: one HTTP request through a model API, and online against batch prediction
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, box } = MLZ;
+  const REQ = {
+    good: { body: '{"features": [5.9, 3.0, 5.1, 1.8]}', ok: true, out: '{"class": "virginica", "probability": 0.703}' },
+    text: { body: '{"features": [5.9, "wide"]}', ok: false, out: '{"error": "send {\\"features\\": [four numbers]}"}' },
+    get: { body: '(GET, no body)', ok: false, method: 'GET', out: '405 Method Not Allowed' }
+  };
+
+  trace('mlrequest', {
+    title: 'One request through a model API',
+    sub: 'A client (a website, an app or another service) sends JSON over HTTP. The web framework routes it to a function, the input is checked, the pipeline that was loaded once at start up predicts, and JSON goes back with a status code.',
+    W: 600, H: 330,
+    params: [
+      { k: 'req', label: 'Request', type: 'select', v: 'good', opts: [['good', 'POST /predict with four numbers'], ['text', 'POST /predict with a word instead of a number'], ['get', 'GET /predict']] }
+    ],
+    tips: [
+      { t: 'A word instead of a number: validation stops it with status 422 before the model is called.', set: { req: 'text' }, play: true },
+      { t: 'GET instead of POST: the route only accepts POST, so the framework answers 405 without running your code.', set: { req: 'get' }, play: true }
+    ],
+    frames(p) {
+      const R = REQ[p.req], S = (k, say, extra = {}) => ({ k, R, say, ...extra });
+      const fr = [S(0, 'At start up the server loads the saved pipeline into memory once, not on every request.'),
+        S(1, `The client sends <b>${R.method || 'POST'} /predict</b> with body ${R.body}.`)];
+      if (R.method === 'GET') { fr.push(S(2, 'The router finds /predict but it only allows POST, so it answers <b>405 Method Not Allowed</b>.', { stop: 2, code: 405 })); return fr; }
+      fr.push(S(2, 'The router matches POST /predict and calls the predict function.'));
+      if (!R.ok) { fr.push(S(3, 'Validation: "wide" is not a number and there are only 2 values. The function returns <b>422</b> with an error message. The model never sees bad data.', { stop: 3, code: 422 })); return fr; }
+      fr.push(S(3, 'Validation passes: four numbers.'));
+      fr.push(S(4, 'The pipeline scales the four numbers and the model computes class probabilities in well under a millisecond.'));
+      fr.push(S(5, `The function returns <b>200</b> with ${R.out}.`, { code: 200 }));
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, names = ['Load model at start up', 'Client sends JSON', 'Router', 'Validate input', 'Pipeline predicts', 'JSON response'];
+      names.forEach((n, i) => {
+        const x = 14 + (i % 3) * 196, y = i < 3 ? 40 : 150, seen = i <= f.k, on = i === f.k, bad = f.stop === i;
+        box(z, x, y, 176, 60, n, { s: 12, b: on, fill: bad ? 'rgba(220,38,38,0.15)' : (seen ? 'rgba(22,163,74,0.12)' : c.surf), stroke: bad ? c.red : (on ? c.cv : c.line), w: on ? 2.5 : 1.5 });
+        if (i < 5 && i !== 2) D.arrow(g, x + 178, y + 30, x + 194, y + 30, c.ink2, 1.5, 5);
+      });
+      D.arrow(g, 14 + 2 * 196 + 88, 102, 14 + 88, 148, c.ink2, 1.5, 6);
+      if (f.k >= 1) { head(z, 'Request', 14, 246); D.text(g, `${f.R.method || 'POST'} /predict  ${f.R.body}`, 14, 268, { s: 11, mono: true, c: c.ink }); }
+      if (f.code) { head(z, 'Response', 14, 294); D.text(g, `${f.code}  ${f.code === 200 ? f.R.out : (f.code === 405 ? 'Method Not Allowed' : f.R.out)}`, 14, 316, { s: 11, mono: true, b: true, c: f.code === 200 ? c.green : c.red }); }
+    }
+  });
+
+  trace('mlservemodes', {
+    title: 'Online against batch prediction',
+    sub: 'Online serving answers each request the moment it arrives. Batch serving collects the work and scores everything in one run, for example at 2 am, and stores the answers for later. Eight customer events arrive during the day.',
+    W: 600, H: 330,
+    params: [
+      { k: 'mode', label: 'Serving mode', type: 'select', v: 'online', opts: [['online', 'Online: a web API answers each request'], ['batch', 'Batch: score everything at night']] }
+    ],
+    tips: [
+      { t: 'Online: each answer is ready in milliseconds and uses the newest data, but a server must be running all the time.', set: { mode: 'online' }, play: true },
+      { t: 'Batch: the answers wait until the nightly run, but one big run is cheaper and simpler to operate.', set: { mode: 'batch' }, play: true }
+    ],
+    frames(p) {
+      const times = [8.5, 9.25, 11, 12.5, 14, 15.75, 18, 21.5], fr = [{ n: 0, mode: p.mode, say: 'A day from 6 am to 6 am the next morning. Each dot is a customer event that needs a prediction.' }];
+      times.forEach((t, i) => fr.push({ n: i + 1, mode: p.mode, times, say: p.mode === 'online' ? `Event at ${Math.floor(t)}:${t % 1 ? String(Math.round((t % 1) * 60)).padStart(2, '0') : '00'}: the API answers about 20 milliseconds later.` : `Event at ${Math.floor(t)}:${t % 1 ? String(Math.round((t % 1) * 60)).padStart(2, '0') : '00'}: it is stored and waits for the nightly run.` }));
+      fr.push({ n: 8, mode: p.mode, times, night: p.mode === 'batch', say: p.mode === 'online' ? 'Every answer came almost at once. Use online serving when the answer is needed during the visit: fraud checks, search ranking, recommendations on the page.' : 'At 2:00 one job scores all 8 events together and writes the answers to a table. The 8:30 event waited about 17.5 hours. Use batch when tomorrow is soon enough: churn lists, weekly forecasts, email campaigns.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, X = h => 30 + (h - 6) / 24 * 540;
+      D.line(g, X(6), 150, X(30), 150, c.ink2, 2);
+      [6, 9, 12, 15, 18, 21, 24, 27, 30].forEach(h => { D.line(g, X(h), 145, X(h), 155, c.ink2, 1); D.text(g, `${h % 24}:00`, X(h), 172, { a: 'center', s: 10, c: c.ink2 }); });
+      if (f.mode === 'batch') { D.line(g, X(26), 60, X(26), 240, c.purple, 2, [5, 4]); D.text(g, 'nightly run 2:00', X(26), 52, { a: 'center', s: 11, b: true, c: c.purple }); }
+      (f.times || []).slice(0, f.n).forEach((t, i) => {
+        D.circle(g, X(t), 150, 6, { fill: c.cv });
+        if (f.mode === 'online') { D.line(g, X(t), 150, X(t), 100, c.green, 2); D.text(g, 'answer', X(t), 94 - (i % 2) * 14, { a: 'center', s: 9, c: c.green }); }
+        else if (f.night) { g.save(); g.strokeStyle = c.orange; g.lineWidth = 1.2; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(X(t), 158); g.quadraticCurveTo((X(t) + X(26)) / 2, 230 + i * 6, X(26), 160); g.stroke(); g.restore(); }
+      });
+      D.text(g, f.mode === 'online' ? 'green: answer within milliseconds' : 'orange: waiting time until the nightly run', 30, 300, { s: 11, c: c.ink2 });
+    }
+  });
+})();

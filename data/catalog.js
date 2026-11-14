@@ -9066,6 +9066,25 @@ function mlopsModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "mlops-serving", title: "Serving models with Flask, FastAPI and Django", emoji: "2.2", page: "content/mlops/mlops-serving.html",
+        summary: "Model APIs in Flask, FastAPI and Django, calling them on each OS, online against batch, and production servers sized with Little's law.",
+        keywords: ["model serving", "Flask", "FastAPI", "Django", "REST API", "batch prediction", "online prediction", "Gunicorn", "Waitress", "Uvicorn", "Little's law"],
+        minutes: 55, counts: {"lessons": 8, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "api", title: "A model behind a web API", emoji: "", group: "Lesson", keywords: ["model API", "HTTP", "JSON", "route", "status code", "422", "Flask", "test client", "curl", "Invoke-RestMethod", "port"] },
+        { id: "fastapi", title: "FastAPI: the input contract written as a class", emoji: "", group: "Lesson", keywords: ["FastAPI", "Pydantic", "BaseModel", "Field", "response_model", "/docs", "TestClient", "batch route", "async"] },
+        { id: "django", title: "Django: when the model joins a full web application", emoji: "", group: "Lesson", keywords: ["Django", "JsonResponse", "settings.configure", "require_POST", "csrf_exempt", "WSGI", "runserver"] },
+        { id: "modes", title: "Online against batch prediction", emoji: "", group: "Lesson", keywords: ["online prediction", "batch prediction", "real time", "chunksize", "latency", "freshness"] },
+        { id: "production", title: "From the development server to production", emoji: "", group: "Lesson", keywords: ["development server", "production server", "Gunicorn", "Waitress", "Uvicorn", "WSGI", "ASGI", "workers", "reverse proxy", "HTTPS", "Little's law", "rate limit"] },
+        { id: "versus", title: "Flask, FastAPI, Django and model servers compared", emoji: "", group: "Lesson", keywords: ["Flask vs FastAPI", "Django", "BentoML", "TorchServe", "KServe", "model server"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "capacity planning", "tail latency"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
