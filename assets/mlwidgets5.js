@@ -115,3 +115,108 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 1.2  the lifecycle at three automation levels, and why a fixed random seed makes runs repeatable
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, box, rng, klass } = MLZ;
+  const STAGES = ['Define the problem', 'Get and version data', 'Train and track', 'Evaluate', 'Register the model', 'Deploy', 'Monitor', 'Retrain'];
+  const AUTO = { // which stages run without a person, per maturity level (Google Cloud MLOps levels 0, 1, 2)
+    '0': [false, false, false, false, false, false, false, false],
+    '1': [false, true, true, true, true, false, true, true],
+    '2': [false, true, true, true, true, true, true, true]
+  };
+  const NOTE = {
+    '0': ['A person writes down the goal and the success metric.', 'Someone exports a CSV by hand.', 'A data scientist runs a notebook.', 'They check the score by eye.', 'The model file is emailed or copied to a shared drive.', 'An engineer rewrites the code for production.', 'Nobody watches the model after launch.', 'Retraining happens months later, when someone notices.'],
+    '1': ['A person writes down the goal and the success metric.', 'A pipeline pulls fresh data and records its version.', 'The pipeline trains and logs parameters and metrics.', 'Automatic checks compare the new model with the current one.', 'Passing models go into a model registry.', 'Release is still started by a person.', 'Dashboards and alerts watch inputs and accuracy.', 'Drift or a schedule triggers the training pipeline again.'],
+    '2': ['A person writes down the goal and the success metric.', 'Data arrives through tested, versioned pipelines.', 'Training runs as a tested pipeline, built and shipped by CI.', 'Quality gates block worse models.', 'The registry keeps every version for rollback.', 'CD rolls the model out, often to a small share of users first.', 'Monitoring compares live data with the training data.', 'Retraining, testing and release run end to end.']
+  };
+
+  trace('mllifecycle', {
+    title: 'The MLOps lifecycle at three levels of automation',
+    sub: 'A model goes round the same loop again and again. The difference between a hobby project and a reliable product is how much of the loop runs automatically. Green stages run without a person, grey stages need one.',
+    W: 600, H: 330,
+    params: [
+      { k: 'level', label: 'Maturity level', type: 'select', v: '0', opts: [['0', 'Level 0: everything by hand'], ['1', 'Level 1: automated training pipeline'], ['2', 'Level 2: CI/CD for the whole pipeline']] }
+    ],
+    tips: [
+      { t: 'Level 0: every stage needs a person, so the model is rarely retrained and quietly gets worse.', set: { level: '0' }, play: true },
+      { t: 'Level 2: only defining the problem needs a person. New code and new data both flow to production through tested pipelines.', set: { level: '2' }, play: true }
+    ],
+    frames(p) {
+      const a = AUTO[p.level], fr = [{ k: -1, a, say: `Level ${p.level}. The loop has ${STAGES.length} stages. Press Step to walk round it.` }];
+      STAGES.forEach((s, k) => fr.push({ k, a, say: `<b>${s}</b>: ${NOTE[p.level][k]} ${a[k] ? '(automatic)' : '(by hand)'}` }));
+      const n = a.filter(Boolean).length;
+      fr.push({ k: 8, a, say: `${n} of ${STAGES.length} stages run automatically. ${p.level === '0' ? 'Most teams start here. The first goal is level 1: make training a repeatable pipeline.' : (p.level === '1' ? 'The model retrains itself, but changes to the pipeline code still go out by hand.' : 'This is where large ML products aim to be. Changes to code, data and model all go through tests.')}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, cx = 222, cy = 165, RX = 150, RY = 138;
+      const at = k => { const t = -Math.PI / 2 + k * 2 * Math.PI / STAGES.length; return [cx + RX * Math.cos(t), cy + RY * Math.sin(t)]; };
+      STAGES.forEach((s, k) => {
+        const [x1, y1] = at(k), [x2, y2] = at(k + 1), dx = x2 - x1, dy = y2 - y1;
+        D.arrow(g, x1 + dx * 0.32, y1 + dy * 0.32, x1 + dx * 0.68, y1 + dy * 0.68, c.ink2, 1.5, 6);
+      });
+      STAGES.forEach((s, k) => {
+        const [x, y] = at(k), seen = k <= f.k, on = k === f.k;
+        box(z, x - 60, y - 15, 120, 30, s, { s: 11, b: on, fill: seen ? (f.a[k] ? 'rgba(22,163,74,0.18)' : c.bg) : c.surf, stroke: on ? c.cv : (seen && f.a[k] ? c.green : c.line), w: on ? 2.5 : 1.2 });
+      });
+      head(z, 'Automatic so far', 450, 40);
+      const n = f.a.slice(0, Math.max(0, Math.min(8, f.k + 1))).filter(Boolean).length;
+      D.text(g, `${n} / ${Math.max(0, Math.min(8, f.k + 1))}`, 450, 72, { s: 22, mono: true, b: true, c: c.ink });
+      D.text(g, 'green: runs without a person', 450, 290, { s: 10, c: c.green });
+      D.text(g, 'grey: needs a person', 450, 306, { s: 10, c: c.ink2 });
+    }
+  });
+
+  // 40 fixed points in two overlapping groups, used by every run
+  const PTS = (() => { const R = rng(17), out = []; const gs = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+    for (let i = 0; i < 40; i++) { const y = i % 2; out.push([y * 1.2 + gs() * 0.8, y * 0.9 + gs() * 0.8, y]); } return out; })();
+  function runOnce(seed) {
+    const R = rng(seed), idx = PTS.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    const tr = idx.slice(0, 30), te = idx.slice(30), cen = [0, 1].map(c => { const m = tr.filter(i => PTS[i][2] === c); return [m.reduce((a, i) => a + PTS[i][0], 0) / m.length, m.reduce((a, i) => a + PTS[i][1], 0) / m.length]; });
+    const pred = i => ((PTS[i][0] - cen[0][0]) ** 2 + (PTS[i][1] - cen[0][1]) ** 2 <= (PTS[i][0] - cen[1][0]) ** 2 + (PTS[i][1] - cen[1][1]) ** 2 ? 0 : 1);
+    return { te, acc: te.filter(i => pred(i) === PTS[i][2]).length / te.length };
+  }
+
+  trace('mlseeds', {
+    title: 'Same code, same data, different score: the random seed',
+    sub: 'Each run shuffles the same 40 points, trains a nearest centroid classifier on 30 and tests on the other 10 (circled). The shuffle uses a random number generator. Fix its seed and every run repeats exactly.',
+    W: 600, H: 330,
+    params: [
+      { k: 'seed', label: 'Random seed', type: 'select', v: 'none', opts: [['none', 'Not set: a new seed every run'], ['fixed', 'Fixed: seed = 42 every run']] }
+    ],
+    tips: [
+      { t: 'No seed: five runs of identical code give different test accuracies, so you cannot tell whether a change helped.', set: { seed: 'none' }, play: true },
+      { t: 'Seed fixed at 42: every run picks the same test points and gets the same score, so results can be repeated and compared.', set: { seed: 'fixed' }, play: true }
+    ],
+    frames(p) {
+      const fr = [{ runs: [], cur: null, say: 'The data never changes: 40 points in two groups. Only the random split changes between runs.' }], runs = [];
+      for (let r = 0; r < 5; r++) {
+        const seed = p.seed === 'fixed' ? 42 : 1000 + 37 * r, out = runOnce(seed);
+        runs.push(out.acc);
+        fr.push({ runs: runs.slice(), cur: out, say: `Run ${r + 1} (seed ${seed}${p.seed === 'fixed' ? '' : ', different each time'}): test accuracy <b>${f2(out.acc * 100, 0)} percent</b>.` });
+      }
+      const lo = Math.min(...runs), hi = Math.max(...runs);
+      fr.push({ runs, cur: fr[fr.length - 1].cur, say: hi === lo ? `All five runs agree exactly at ${f2(lo * 100, 0)} percent. A fixed seed makes results repeatable, not better: this split happens to be harder than most. Record the seed with the code, and report the spread over several seeds as the honest uncertainty.` : `The scores range from ${f2(lo * 100, 0)} to ${f2(hi * 100, 0)} percent with nothing changed. A 10 point “improvement” could be pure luck.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, X = v => 30 + (v + 2.5) / 6 * 330, Y = v => 300 - (v + 2.5) / 5.5 * 270;
+      g.strokeStyle = c.line; g.strokeRect(20, 20, 350, 290);
+      PTS.forEach((q, i) => {
+        D.circle(g, X(q[0]), Y(q[1]), 4, { fill: klass(z, q[2]) });
+        if (f.cur && f.cur.te.includes(i)) D.circle(g, X(q[0]), Y(q[1]), 8, { stroke: c.ink, w: 1.5 });
+      });
+      head(z, 'Test accuracy per run', 400, 30);
+      f.runs.forEach((a, r) => {
+        D.text(g, `run ${r + 1}`, 400, 60 + r * 30, { s: 12, c: c.ink2 });
+        g.fillStyle = c.cv; g.fillRect(450, 48 + r * 30, a * 100, 16);
+        D.text(g, `${f2(a * 100, 0)}%`, 456 + a * 100, 61 + r * 30, { s: 12, mono: true, b: true, c: c.ink });
+      });
+      D.text(g, 'circled: the 10 test points of the latest run', 400, 306, { s: 10, c: c.ink2 });
+    }
+  });
+})();

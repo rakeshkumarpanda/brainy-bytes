@@ -9028,6 +9028,24 @@ function mlopsModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "mlops-lifecycle", title: "The MLOps lifecycle and reproducible projects", emoji: "1.2", page: "content/mlops/mlops-lifecycle.html",
+        summary: "The MLOps loop and maturity levels, seeds and run records, data and model versioning, and project layout.",
+        keywords: ["MLOps", "lifecycle", "maturity levels", "reproducibility", "random seed", "run record", "data versioning", "DVC", "model registry", "lineage"],
+        minutes: 45, counts: {"lessons": 7, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "what", title: "What MLOps is", emoji: "", group: "Lesson", keywords: ["MLOps", "DevOps", "lifecycle", "maturity levels", "continuous training", "technical debt", "pipeline"] },
+        { id: "repro", title: "Reproducibility: seeds and run records", emoji: "", group: "Lesson", keywords: ["reproducibility", "random seed", "random_state", "run record", "experiment tracking", "variance across seeds"] },
+        { id: "versions", title: "Versioning data and models", emoji: "", group: "Lesson", keywords: ["data versioning", "fingerprint", "hash", "DVC", "model registry", "lineage", "rollback"] },
+        { id: "project", title: "A project layout that grows into production", emoji: "", group: "Lesson", keywords: ["project structure", "cookiecutter", "configs", "notebooks vs scripts", "ML test score", "data tests", "model tests"] },
+        { id: "versus", title: "DevOps, MLOps and DataOps compared", emoji: "", group: "Lesson", keywords: ["DevOps vs MLOps", "DataOps", "comparison"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "ML platform"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
