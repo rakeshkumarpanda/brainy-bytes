@@ -612,3 +612,152 @@ const CYAES = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Cryptography 2.1  the extended Euclidean algorithm: gcd, Bezout coefficients and the modular inverse
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const COLS = [['i', 30, 40], ['q', 90, 60], ['r', 165, 80], ['s', 245, 70], ['t', 325, 80], ['check: s·a + t·b', 480, 220]];
+  trace('cyeuclid', {
+    title: 'The extended Euclidean algorithm',
+    sub: 'Euclid’s algorithm finds the greatest common divisor by repeated division. Keeping two extra columns, s and t, also writes the gcd as s·a + t·b, which gives modular inverses, the key step of RSA.',
+    W: 600, H: 340,
+    params: [
+      { k: 'a', label: 'a', type: 'text', v: '3120' },
+      { k: 'b', label: 'b', type: 'text', v: '17' }
+    ],
+    tips: [
+      { t: 'Play it with 3120 and 17. The last t is the inverse of 17 modulo 3120, which is the RSA private exponent in the classic textbook example: d = 2753.', play: true },
+      { t: 'Try 240 and 46. The gcd is 2, so 46 has no inverse modulo 240.', set: { a: '240', b: '46' }, play: true },
+      { t: 'Try two Fibonacci numbers, 144 and 89. They need the most steps for their size (Lamé, 1844).', set: { a: '144', b: '89' }, play: true }
+    ],
+    frames(p) {
+      const a = Math.floor(+p.a), b = Math.floor(+p.b);
+      if (!(a > 0 && b > 0) || a > 1e9 || b > 1e9) throw new Error('Type two whole numbers from 1 to 1,000,000,000.');
+      const rows = [{ i: 0, q: '', r: a, s: 1, t: 0 }, { i: 1, q: '', r: b, s: 0, t: 1 }];
+      while (rows[rows.length - 1].r !== 0) {
+        const x = rows[rows.length - 2], y = rows[rows.length - 1], q = Math.floor(x.r / y.r);
+        rows.push({ i: rows.length, q, r: x.r - q * y.r, s: x.s - q * y.s, t: x.t - q * y.t });
+      }
+      const fr = [{ n: 2, say: `Start with two rows: r = a = ${a} written as 1·a + 0·b, and r = b = ${b} written as 0·a + 1·b.` }];
+      for (let k = 2; k < rows.length; k++) {
+        const x = rows[k - 2], y = rows[k - 1], R = rows[k];
+        fr.push({ n: k + 1, say: `q = floor(${x.r} / ${y.r}) = ${R.q}. New row = row ${k - 2} &minus; ${R.q} &times; row ${k - 1}: r = ${x.r} &minus; ${R.q}·${y.r} = <b>${R.r}</b>, s = ${R.s}, t = ${R.t}.${R.r === 0 ? ' The remainder is 0, so we stop.' : ''}` });
+      }
+      const g = rows[rows.length - 2];
+      const inv = g.r === 1 ? ((g.t % a) + a) % a : null;
+      fr.push({ n: rows.length, done: true, say: `gcd(${a}, ${b}) = <b>${g.r}</b> = (${g.s})·${a} + (${g.t})·${b}. ${inv !== null ? `Since the gcd is 1, ${b} has an inverse modulo ${a}: t mod ${a} = <b>${inv}</b>, and ${b} &times; ${inv} mod ${a} = 1.` : `The gcd is not 1, so ${b} has no inverse modulo ${a}.`}` });
+      return fr.map(x => ({ ...x, rows, a, b, g, inv }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      COLS.forEach(([h, x]) => D.text(g, h, x, 22, { a: 'center', s: 12, b: true, c: c.ink2 }));
+      const shown = f.rows.slice(0, f.n), start = Math.max(0, shown.length - 9);
+      shown.slice(start).forEach((R, j) => {
+        const y = 32 + j * 26, last = R.i === f.n - 1 && !f.done, gcdRow = f.done && R.i === f.g.i;
+        const vals = [R.i, R.q, R.r, R.s, R.t, `${R.s}·${f.a} + ${R.t}·${f.b} = ${R.s * f.a + R.t * f.b}`];
+        vals.forEach((v, k) => cbox(z, COLS[k][1] - COLS[k][2] / 2, y, COLS[k][2] - 4, 22, String(v), { s: 12, b: true, mono: true, fill: gcdRow ? 'rgba(15,118,110,0.25)' : last ? 'rgba(234,88,12,0.2)' : c.surf }));
+      });
+      if (f.done) cbox(z, 14, 272, 572, 52, [`gcd = ${f.g.r} = (${f.g.s})·${f.a} + (${f.g.t})·${f.b}`, f.inv !== null ? `inverse of ${f.b} mod ${f.a} = ${f.inv}` : 'no inverse (gcd ≠ 1)'], { s: 13, b: true, mono: true, fill: c.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 2.1  square and multiply: b^e mod n with about 2 log2(e) multiplications
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cypowmod', {
+    title: 'Fast modular powers: square and multiply',
+    sub: 'RSA needs numbers like m^65537 mod n. Multiplying 65,536 times is far too slow. Instead read the exponent in binary: square for every bit, and also multiply when the bit is 1.',
+    W: 600, H: 340,
+    params: [
+      { k: 'b', label: 'Base b', type: 'text', v: '4' },
+      { k: 'e', label: 'Exponent e', type: 'text', v: '13' },
+      { k: 'n', label: 'Modulus n', type: 'text', v: '497' }
+    ],
+    tips: [
+      { t: 'Play it with 4^13 mod 497. 13 = 1101 in binary. The first bit just sets r = 4, then 3 squarings and 2 multiplications give 445.', play: true },
+      { t: 'Try the exponent 65537, the usual RSA public exponent. It is 2^16 + 1, so only 16 squarings and 1 extra multiplication.', set: { e: '65537', b: '7', n: '991' }, play: true }
+    ],
+    frames(p) {
+      const b = Math.floor(+p.b), e = Math.floor(+p.e), n = Math.floor(+p.n);
+      if (!(b >= 0 && e >= 1 && n >= 2) || n > 1e6 || e > 1e7) throw new Error('Use b ≥ 0, e from 1 to 10,000,000 and n from 2 to 1,000,000.');
+      const bits = e.toString(2), log = [];
+      let r = 1, muls = 0;
+      const fr = [{ k: -1, r, log: [], say: `Write e = ${e} in binary: <b>${bits}</b>. Start with r = 1 and read the bits from left to right.` }];
+      for (let i = 0; i < bits.length; i++) {
+        const before = r;
+        r = (r * r) % n; if (i) muls++;
+        log.push(`bit ${bits[i]}: square  ${before}² mod ${n} = ${r}`);
+        let say = `Bit ${i + 1} is ${bits[i]}. Square: r = ${before}² mod ${n} = <b>${r}</b>.`;
+        if (bits[i] === '1') { const sq = r; r = (r * (b % n)) % n; if (i) muls++; log.push(`         multiply ${sq}·${b} mod ${n} = ${r}`); say += ` The bit is 1, so multiply by b: r = ${sq} &times; ${b} mod ${n} = <b>${r}</b>.`; }
+        fr.push({ k: i, r, log: log.slice(), say });
+      }
+      fr.push({ k: bits.length, r, log: log.slice(), done: true, muls, say: `${b}<sup>${e}</sup> mod ${n} = <b>${r}</b>, using ${muls} multiplications instead of ${e - 1}. The cost grows with the number of bits, about 2 log<sub>2</sub> e, so even 2048 bit exponents need only a few thousand steps. Taking the remainder after every step keeps the numbers small.` });
+      return fr.map(x => ({ ...x, b, e, n, bits }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, L = f.bits.length, w = Math.min(34, 560 / L);
+      D.text(g, `e = ${f.e} in binary`, 14, 20, { s: 11, b: true, c: c.ink2 });
+      for (let i = 0; i < L; i++) cbox(z, 14 + i * w, 28, w - 3, 30, f.bits[i], { s: 15, b: true, mono: true, fill: i === f.k ? c.orange : i < f.k || f.done ? 'rgba(15,118,110,0.25)' : c.surf, c: i === f.k ? '#fff' : c.ink });
+      const lines = f.log.slice(-8);
+      lines.forEach((t, i) => D.text(g, t, 18, 86 + i * 20, { s: 12, mono: true, c: c.ink }));
+      cbox(z, 420, 76, 166, 60, ['r =', String(f.r)], { s: 18, b: true, mono: true, fill: c.bg });
+      if (f.done) {
+        cbox(z, 14, 252, 572, 30, `${f.b}^${f.e} mod ${f.n} = ${f.r}`, { s: 15, b: true, mono: true, fill: c.cv, c: '#fff' });
+        cbox(z, 14, 290, 572, 30, `${f.muls} multiplications instead of ${(f.e - 1).toLocaleString('en-US')}`, { s: 13, b: true, fill: c.surf });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 2.1  the Chinese remainder theorem as a sieve, then the formula that builds the answer
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const inv = (a, m) => { for (let x = 1; x < m; x++) if ((a * x) % m === 1) return x; return 1; };
+  trace('cycrt', {
+    title: 'The Chinese remainder theorem',
+    sub: 'Sun Zi asked, about 1,600 years ago: a number leaves 2 when divided by 3, 3 when divided by 5, and 2 when divided by 7. What is it? Cross out the numbers that fail each condition and one survives.',
+    W: 600, H: 340,
+    params: [{ k: 'sys', label: 'Conditions (remainder mod modulus)', type: 'text', v: '2 mod 3, 3 mod 5, 2 mod 7' }],
+    tips: [
+      { t: 'Play Sun Zi’s puzzle. Exactly one number from 0 to 104 survives: 23.', play: true },
+      { t: 'Try 1 mod 4, 2 mod 9, 3 mod 5. The moduli share no factor, so there is again exactly one answer below 4 × 9 × 5 = 180.', set: { sys: '1 mod 4, 2 mod 9, 3 mod 5' }, play: true }
+    ],
+    frames(p) {
+      const parts = String(p.sys).split(',').map(s => s.trim().match(/^(\d+)\s*mod\s*(\d+)$/i));
+      if (parts.length < 2 || parts.length > 3 || parts.some(m => !m)) throw new Error('Write 2 or 3 conditions like "2 mod 3, 3 mod 5, 2 mod 7".');
+      const A = parts.map(m => +m[1]), Mo = parts.map(m => +m[2]);
+      for (let i = 0; i < Mo.length; i++) for (let j = i + 1; j < Mo.length; j++) if (gcd(Mo[i], Mo[j]) !== 1) throw new Error(`${Mo[i]} and ${Mo[j]} share a factor. The theorem needs moduli with no common factor.`);
+      const M = Mo.reduce((x, y) => x * y, 1);
+      if (M > 200 || Mo.some(m => m < 2)) throw new Error('Keep the product of the moduli at 200 or less so the grid fits.');
+      const ans = [...Array(M).keys()].find(x => A.every((a, i) => x % Mo[i] === a % Mo[i]));
+      const terms = Mo.map((m, i) => { const Mi = M / m, yi = inv(Mi % m, m); return { m, a: A[i] % m, Mi, yi }; });
+      const fr = [{ k: 0, say: `Any answer repeats every ${Mo.join(' &times; ')} = <b>${M}</b>, so look at 0 to ${M - 1}.` }];
+      Mo.forEach((m, i) => fr.push({ k: i + 1, say: `Keep only numbers with remainder ${A[i] % m} when divided by ${m}. ${i === Mo.length - 1 ? `One number is left: <b>${ans}</b>.` : `Every ${m}th number survives.`}` }));
+      fr.push({ k: Mo.length, done: true, say: `The formula builds it directly: for each condition take M<sub>i</sub> = M / m<sub>i</sub> and its inverse y<sub>i</sub> mod m<sub>i</sub>, then x = &Sigma; a<sub>i</sub> M<sub>i</sub> y<sub>i</sub> mod M = ${terms.map(t => `${t.a}·${t.Mi}·${t.yi}`).join(' + ')} mod ${M} = <b>${ans}</b>. RSA uses this to decrypt about 4 times faster.` });
+      return fr.map(x => ({ ...x, A, Mo, M, ans, terms }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const cols = f.M <= 105 ? 15 : Math.ceil(f.M / 10), rows = Math.ceil(f.M / cols), w = 572 / cols, h = Math.min(26, 200 / rows);
+      for (let x = 0; x < f.M; x++) {
+        const alive = f.A.slice(0, f.k).every((a, i) => x % f.Mo[i] === a % f.Mo[i]);
+        const win = alive && f.k === f.Mo.length;
+        cbox(z, 14 + (x % cols) * w, 14 + Math.floor(x / cols) * h, w - 2, h - 2, String(x), { s: 10, b: alive, mono: true, fill: win ? c.cv : alive ? 'rgba(15,118,110,0.18)' : 'rgba(100,116,139,0.08)', c: win ? '#fff' : alive ? c.ink : 'rgba(100,116,139,0.45)', r: 3 });
+      }
+      const y0 = 30 + rows * h;
+      f.Mo.forEach((m, i) => cbox(z, 14 + i * 150, y0, 140, 26, `x ≡ ${f.A[i] % m} (mod ${m})`, { s: 12, b: true, mono: true, fill: i < f.k ? 'rgba(15,118,110,0.22)' : c.surf }));
+      if (f.done) cbox(z, 14, y0 + 36, 572, 30, `x = Σ aᵢ·Mᵢ·yᵢ mod ${f.M} = ${f.ans}`, { s: 14, b: true, mono: true, fill: c.cv, c: '#fff' });
+    }
+  });
+})();

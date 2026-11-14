@@ -9472,6 +9472,30 @@ function cyCryptoModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cy-c2", title: "Public key cryptography and its maths", emoji: "2", step: 2, part: "crypto", level: "Advanced", blurb: "The number theory behind public keys, then RSA, Diffie-Hellman and elliptic curves, each with its proofs and its attacks.", topics: [
+      { id: "cy-numtheory", title: "Number theory for cryptography: modular arithmetic to primes", emoji: "2.1", page: "content/cyber-security/cy-numtheory.html",
+        summary: "modular arithmetic, Euclid and inverses, fast powers, Fermat and Euler, CRT, primes and Miller-Rabin, hard problems.",
+        keywords: ["modular arithmetic", "gcd", "extended Euclid", "inverse", "square and multiply", "Euler phi", "Fermat", "CRT", "Miller-Rabin", "factoring"],
+        minutes: 80, counts: {"lessons": 11, "problems": 11, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Why public key cryptography needs number theory", emoji: "", group: "Lesson", keywords: ["public key cryptography", "number theory", "one way function", "trapdoor", "Diffie-Hellman", "RSA", "GCHQ", "Hardy", "hard problems"] },
+        { id: "modular", title: "Modular arithmetic", emoji: "", group: "Lesson", keywords: ["modular arithmetic", "congruence", "mod", "remainder", "Gauss", "clock arithmetic", "generator", "cyclic group"] },
+        { id: "gcd", title: "Euclid’s algorithm and the extended version", emoji: "", group: "Lesson", keywords: ["gcd", "Euclid algorithm", "extended Euclidean algorithm", "Bezout identity", "Lame theorem", "Fibonacci", "modular inverse"] },
+        { id: "inverse", title: "Modular inverses and when they exist", emoji: "", group: "Lesson", keywords: ["modular inverse", "gcd 1", "coprime", "pow(a, -1, n)", "units", "Z_n star", "group"] },
+        { id: "powmod", title: "Fast powers: square and multiply", emoji: "", group: "Lesson", keywords: ["square and multiply", "modular exponentiation", "binary exponentiation", "pow", "timing attack", "Kocher", "Montgomery ladder", "65537"] },
+        { id: "euler", title: "Fermat’s little theorem, Euler’s phi and Euler’s theorem", emoji: "", group: "Lesson", keywords: ["Fermat little theorem", "Euler phi", "totient", "Euler theorem", "Carmichael function", "lambda", "reduce exponents", "RSA correctness"] },
+        { id: "crt", title: "The Chinese remainder theorem", emoji: "", group: "Lesson", keywords: ["Chinese remainder theorem", "CRT", "Sun Zi", "pairwise coprime", "RSA-CRT", "Bellcore attack", "fault attack", "Garner"] },
+        { id: "primes", title: "Primes: how many there are and how to find them", emoji: "", group: "Lesson", keywords: ["prime", "prime number theorem", "Miller-Rabin", "Fermat test", "Carmichael number", "561", "AKS", "IIT Kanpur", "prime generation", "shared primes"] },
+        { id: "hard", title: "The hard problems: factoring and discrete logarithms", emoji: "", group: "Lesson", keywords: ["factoring", "discrete logarithm", "number field sieve", "GNFS", "RSA-250", "key size", "NIST SP 800-57", "Shor", "hardness assumption"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "group theory", "Lagrange theorem", "primitive root", "Pollard rho", "quadratic sieve", "index calculus", "Coppersmith", "LLL", "Shor resource estimates"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
