@@ -9347,6 +9347,27 @@ function cyFoundModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-networks", title: "Networks for security: layers, addresses, subnets, TCP and DNS", emoji: "2.2", page: "content/cyber-security/cy-networks.html",
+        summary: "layers and encapsulation, addresses and private ranges, subnet maths, ports, TCP and UDP, the handshake, DNS, ARP, DHCP and HTTP.",
+        keywords: ["network", "OSI", "TCP/IP", "IP address", "subnet", "CIDR", "ports", "TCP handshake", "DNS", "ARP spoofing"],
+        minutes: 65, counts: {"lessons": 10, "problems": 11, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "How computers talk: packets and layers", emoji: "", group: "Lesson", keywords: ["network", "packet", "packet switching", "layers", "OSI model", "TCP/IP model", "encapsulation", "header", "ARPANET"] },
+        { id: "address", title: "Addresses: MAC, IPv4, IPv6, private ranges and NAT", emoji: "", group: "Lesson", keywords: ["MAC address", "IP address", "IPv4", "IPv6", "private addresses", "RFC 1918", "loopback", "localhost", "NAT", "link local", "port"] },
+        { id: "subnet", title: "Subnet maths with CIDR", emoji: "", group: "Lesson", keywords: ["subnet", "subnetting", "CIDR", "subnet mask", "prefix", "network address", "broadcast address", "hosts formula", "block size"] },
+        { id: "ports", title: "Ports, TCP and UDP", emoji: "", group: "Lesson", keywords: ["ports", "well known ports", "TCP", "UDP", "SSH 22", "HTTPS 443", "SMB 445", "RDP 3389", "DNS 53", "port ranges", "TCP vs UDP"] },
+        { id: "tcp", title: "The TCP handshake and reading a packet", emoji: "", group: "Lesson", keywords: ["TCP handshake", "SYN", "SYN-ACK", "ACK", "sequence number", "acknowledgement", "SYN flood", "IPv4 header", "checksum", "tcpdump", "Wireshark", "Mitnick"] },
+        { id: "dns", title: "DNS, ARP and DHCP: the helpers that trust too much", emoji: "", group: "Lesson", keywords: ["DNS", "DNS records", "A record", "MX", "TXT", "CNAME", "DNSSEC", "cache poisoning", "ARP", "ARP spoofing", "DHCP", "DORA", "rogue DHCP", "DNS tunnelling", "amplification"] },
+        { id: "http", title: "HTTP and HTTPS in one page", emoji: "", group: "Lesson", keywords: ["HTTP", "HTTPS", "request", "response", "methods", "status codes", "headers", "cookies", "Secure HttpOnly SameSite", "401 vs 403"] },
+        { id: "versus", title: "Comparing the models and protocols", emoji: "", group: "Lesson", keywords: ["OSI vs TCP/IP", "IPv4 vs IPv6", "layer 7", "neighbour discovery", "comparison"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "BGP", "prefix hijack", "RPKI", "QUIC", "HTTP/3", "DNS over HTTPS", "traffic analysis", "Tor", "Kaminsky"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

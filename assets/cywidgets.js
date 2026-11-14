@@ -607,3 +607,178 @@ const CYZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 2.2  encapsulation: each layer wraps the data in its own header, and the receiver unwraps it
+   ===================================================================================================== */
+(() => {
+  const { trace, head } = MLZ;
+  const { cbox, D, rr } = CYZ;
+  const LAYERS = [
+    { n: 'Application', osi: '7', hdr: 'HTTP', col: 'green', what: 'the browser writes a request: GET /index.html, Host: shop.example' },
+    { n: 'Transport', osi: '4', hdr: 'TCP', col: 'orange', what: 'adds source port {sp}, destination port {dp}, sequence number and flags, so the data reaches the right program and arrives in order' },
+    { n: 'Internet', osi: '3', hdr: 'IP', col: 'purple', what: 'adds source IP {sip} and destination IP {dip} and a time to live, so routers can pass it across networks' },
+    { n: 'Link', osi: '2', hdr: 'Ethernet', col: 'accent', what: 'adds the MAC addresses of this computer and the next hop (the home router), plus a checksum at the end, for the trip across one cable or Wi-Fi link' }
+  ];
+  trace('cyencap', {
+    title: 'Encapsulation: how one web request is wrapped for its journey',
+    sub: 'Each layer puts the data from the layer above inside its own header, like letters inside envelopes. The receiver opens the envelopes in the reverse order.',
+    W: 600, H: 340,
+    params: [
+      { k: 'dp', label: 'Destination port', type: 'select', v: '443', opts: [['443', '443 (HTTPS)'], ['80', '80 (HTTP)'], ['22', '22 (SSH)']] },
+      { k: 'dip', label: 'Server IP', type: 'text', v: '203.0.113.10' }
+    ],
+    tips: [
+      { t: 'Play it to the end. The data is wrapped four times on the way down and unwrapped four times on the way up.', play: true },
+      { t: 'Switch to port 22. Only the TCP header changes: the port says which program on the server gets the data.', set: { dp: '22' }, play: true }
+    ],
+    frames(p) {
+      const v = { sp: '51514', dp: p.dp, sip: '192.168.1.20', dip: String(p.dip).trim() };
+      if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(v.dip) || v.dip.split('.').some(x => +x > 255)) throw new Error('Type an IPv4 address such as 203.0.113.10.');
+      const fill = s => s.replace(/\{(\w+)\}/g, (_, k) => v[k]);
+      const fr = [];
+      LAYERS.forEach((L, i) => fr.push({ down: i + 1, say: `Layer ${L.n} (OSI layer ${L.osi}): ${fill(L.what)}.${i === 0 ? '' : ` The whole block from above becomes the <b>payload</b> of the ${L.hdr} ${i === 3 ? 'frame' : i === 2 ? 'packet' : 'segment'}.`}` }));
+      fr.push({ down: 4, wire: true, say: `The frame travels as bits over the wire or radio. Every router on the way reads only the IP header to choose the next hop, and builds a new Ethernet header for each link. The ${p.dp === '80' ? 'HTTP request inside is readable by anyone on the path, because port 80 is not encrypted' : 'application data inside is encrypted by TLS or SSH, so routers see addresses and ports but not the content'}.` });
+      [3, 2, 1, 0].forEach((i, j) => fr.push({ down: 4, up: j + 1, say: `The server’s ${LAYERS[i].n} layer checks and removes the ${LAYERS[i].hdr} ${i === 0 ? 'data and hands the request to the web server program' : 'header and passes the rest up'}.` }));
+      fr[fr.length - 1].done = true;
+      return fr.map(x => ({ ...x, v }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, 'Your computer (sending)', 14, 20);
+      head(z, 'Server (receiving)', 586, 20, { a: 'right' });
+      LAYERS.forEach((L, i) => {
+        const y = 32 + i * 58, shown = f.down > i;
+        cbox(z, 14, y, 90, 46, [L.n, 'layer ' + L.osi], { s: 11, b: true, fill: shown ? c.bg : c.surf });
+        if (!shown) return;
+        const W = { HTTP: 70, TCP: 44, IP: 34, Ethernet: 72 };
+        let xx = 116;
+        for (let j = i; j >= 0; j--) {
+          const h = LAYERS[j].hdr, ww = W[h];
+          rr(g, xx, y + 6, ww - 2, 34, 5, { fill: c[LAYERS[j].col] || c.cv });
+          D.text(g, h, xx + (ww - 2) / 2, y + 27, { a: 'center', s: 10, b: true, c: '#fff' });
+          xx += ww;
+        }
+        if (i === 3) { rr(g, xx, y + 6, 26, 34, 5, { fill: c.accent || c.cv }); D.text(g, 'FCS', xx + 13, y + 27, { a: 'center', s: 9, b: true, c: '#fff' }); }
+      });
+      if (f.wire) { D.arrow(g, 300, 210, 360, 210, c.ink2, 2, 8); D.text(g, 'bits on the wire', 330, 230, { a: 'center', s: 11, c: c.ink2 }); }
+      if (f.up) {
+        LAYERS.forEach((L, i) => {
+          const y = 32 + i * 58;
+          const removed = (3 - i) < f.up;
+          cbox(z, 496, y, 90, 46, [L.n, removed ? 'opened' : 'waiting'], { s: 11, b: true, fill: removed ? c.green : c.surf, c: removed ? '#fff' : c.ink2 });
+        });
+      }
+      if (f.done) D.text(g, 'Down the stack: add headers.  Up the stack: remove them.', 14, 330, { s: 12, b: true, c: c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 2.2  subnet maths: network, broadcast, host range and host count from an address and a prefix
+   ===================================================================================================== */
+(() => {
+  const { trace, head } = MLZ;
+  const { cbox, D } = CYZ;
+  const ip2n = s => s.split('.').reduce((a, b) => a * 256 + +b, 0);
+  const n2ip = n => [24, 16, 8, 0].map(s => Math.floor(n / 2 ** s) % 256).join('.');
+  const bits = n => n.toString(2).padStart(32, '0').replace(/(.{8})(?!$)/g, '$1.');
+  trace('cysubnet', {
+    title: 'Subnet maths: which network is this address in?',
+    sub: 'Type an IPv4 address with a prefix such as /24 or /27. The animation writes it in binary, builds the mask, and finds the network, the broadcast address and how many devices fit.',
+    W: 600, H: 340,
+    params: [{ k: 'cidr', label: 'Address / prefix', type: 'text', v: '192.168.10.77/26' }],
+    tips: [
+      { t: 'Play it with /26. The mask is 26 ones, so 6 bits are left for devices: 2⁶ − 2 = 62 hosts.', play: true },
+      { t: 'Try 10.0.0.5/8, a huge private network with over 16 million host addresses.', set: { cidr: '10.0.0.5/8' }, play: true },
+      { t: 'Try 172.16.5.4/30, the tiny network used for a link between two routers: exactly 2 hosts.', set: { cidr: '172.16.5.4/30' }, play: true }
+    ],
+    frames(p) {
+      const m = String(p.cidr).trim().match(/^(\d{1,3}(?:\.\d{1,3}){3})\/(\d{1,2})$/);
+      if (!m || m[1].split('.').some(x => +x > 255) || +m[2] > 32 || +m[2] < 1) throw new Error('Type an address and a prefix, for example 192.168.10.77/26 (prefix from 1 to 32).');
+      const ip = ip2n(m[1]), pre = +m[2], hostBits = 32 - pre;
+      const mask = pre === 0 ? 0 : (2 ** 32 - 2 ** hostBits), net = ip - ip % 2 ** hostBits, bc = net + 2 ** hostBits - 1;
+      const hosts = hostBits >= 2 ? 2 ** hostBits - 2 : (hostBits === 1 ? 2 : 1);
+      const fr = [
+        { k: 1, say: `The address <b>${m[1]}</b> in binary is ${bits(ip)}. Four bytes, 32 bits.` },
+        { k: 2, say: `The prefix <b>/${pre}</b> means the first ${pre} bits name the <b>network</b> and the last ${hostBits} bits name a <b>device</b> (host) in it. The mask is ${pre} ones then ${hostBits} zeros = <b>${n2ip(mask)}</b>.` },
+        { k: 3, say: `Network address = address AND mask. Keep the network bits, set the host bits to 0: <b>${n2ip(net)}</b>.` },
+        { k: 4, say: `Broadcast address = set every host bit to 1: <b>${n2ip(bc)}</b>. A message sent here goes to every device on this network.` },
+        { k: 5, done: true, say: hostBits >= 2 ? `Usable hosts = 2<sup>${hostBits}</sup> − 2 = <b>${hosts}</b>, from ${n2ip(net + 1)} to ${n2ip(bc - 1)}. We subtract 2 because the network and broadcast addresses cannot be given to a device. A firewall rule for "${n2ip(net)}/${pre}" covers exactly this range.` : `With ${hostBits} host bit${hostBits === 1 ? '' : 's'} this is a special case: ${hostBits === 1 ? '/31 links use both addresses for the two routers (RFC 3021)' : '/32 names exactly one host, often used in firewall rules'}.` }
+      ];
+      return fr.map(x => ({ ...x, ip, pre, mask, net, bc, hosts, hostBits, addr: m[1] }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const row = (label, n, y, hl) => {
+        D.text(g, label, 14, y + 10, { s: 11, b: true, c: c.ink2 });
+        D.text(g, n2ip(n), 14, y + 23, { s: 9, b: true, mono: true, c: c.ink });
+        const b = n.toString(2).padStart(32, '0');
+        for (let i = 0; i < 32; i++) {
+          const x = 110 + i * 14 + Math.floor(i / 8) * 6, net = i < f.pre;
+          cbox(z, x, y, 13, 24, b[i], { s: 10, mono: true, b: true, fill: hl ? (net ? 'rgba(15,118,110,0.22)' : 'rgba(234,88,12,0.2)') : c.surf, c: c.ink, r: 3 });
+        }
+      };
+      if (f.k >= 1) row('address', f.ip, 20, f.k >= 2);
+      if (f.k >= 2) { row('mask /' + f.pre, f.mask, 54, true); D.line(g, 110 + f.pre * 14 + Math.floor((f.pre - 0.01) / 8) * 6 - 1, 14, 110 + f.pre * 14 + Math.floor((f.pre - 0.01) / 8) * 6 - 1, 84 + (f.k >= 3 ? 34 : 0) + (f.k >= 4 ? 34 : 0), c.red, 2, [4, 3]); }
+      if (f.k >= 3) row('network', f.net, 88, true);
+      if (f.k >= 4) row('broadcast', f.bc, 122, true);
+      if (f.k >= 2) { D.text(g, 'network bits', 110, 172, { s: 11, b: true, c: c.cv }); D.text(g, 'host bits', 560, 172, { a: 'right', s: 11, b: true, c: c.orange }); }
+      if (f.done) {
+        cbox(z, 14, 196, 572, 34, `${n2ip(f.net)}/${f.pre}   network ${n2ip(f.net)}   broadcast ${n2ip(f.bc)}`, { s: 13, b: true, mono: true, fill: c.bg });
+        cbox(z, 14, 240, 572, 34, f.hostBits >= 2 ? `usable hosts ${n2ip(f.net + 1)} to ${n2ip(f.bc - 1)}` : 'special small network', { s: 13, b: true, mono: true, fill: c.surf });
+        cbox(z, 14, 284, 572, 40, `hosts = 2^${f.hostBits} − 2 = ${f.hostBits >= 2 ? f.hosts.toLocaleString('en-US') : '(special case)'}`, { s: 15, b: true, fill: c.cv, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 2.2  the TCP three way handshake with sequence and acknowledgement numbers, data, and closing
+   ===================================================================================================== */
+(() => {
+  const { trace, head } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cytcp', {
+    title: 'The TCP handshake: SYN, SYN-ACK, ACK',
+    sub: 'Before any data flows, TCP agrees on starting sequence numbers in three messages. Then each side acknowledges the bytes it got. Pick the two starting numbers and the size of the request.',
+    W: 600, H: 340,
+    params: [
+      { k: 'x', label: 'Client starting sequence number', type: 'range', v: 1000, min: 0, max: 9000, step: 100 },
+      { k: 'y', label: 'Server starting sequence number', type: 'range', v: 5000, min: 0, max: 9000, step: 100 },
+      { k: 'len', label: 'Bytes the client sends', type: 'range', v: 120, min: 1, max: 1400 }
+    ],
+    tips: [
+      { t: 'Play it. Every acknowledgement number is "the next byte I expect", which is one more than the SYN, or the sequence number plus the bytes received.', play: true },
+      { t: 'Real systems pick random starting numbers (RFC 6528). If they were easy to guess, an attacker could fake packets in someone else’s connection.', set: { x: 4200, y: 8700 }, play: true }
+    ],
+    frames(p) {
+      const x = p.x, y = p.y, L = p.len;
+      const msgs = [
+        { from: 'c', flags: 'SYN', seq: x, ack: null, say: `<b>SYN</b>: the client says "let us talk, my first sequence number is ${x}". A SYN uses up one sequence number.` },
+        { from: 's', flags: 'SYN-ACK', seq: y, ack: x + 1, say: `<b>SYN-ACK</b>: the server agrees, picks its own number ${y}, and acknowledges ${x + 1}, meaning "I got your SYN, I expect byte ${x + 1} next". The server now keeps a half open connection in memory.` },
+        { from: 'c', flags: 'ACK', seq: x + 1, ack: y + 1, say: `<b>ACK</b>: the client acknowledges ${y + 1}. The connection is <b>established</b>. This three message start is called the three way handshake.` },
+        { from: 'c', flags: 'PSH, ACK', seq: x + 1, ack: y + 1, data: L, say: `Data: the client sends ${L} bytes numbered ${x + 1} to ${x + L}.` },
+        { from: 's', flags: 'ACK', seq: y + 1, ack: x + 1 + L, say: `The server acknowledges ${x + 1 + L} = ${x + 1} + ${L}: "I have every byte up to ${x + L}". Lost bytes would not be acknowledged, so the client would send them again.` },
+        { from: 'c', flags: 'FIN, ACK', seq: x + 1 + L, ack: y + 1, say: '<b>FIN</b>: the client has nothing more to send. Each side closes its direction with a FIN and an ACK.' },
+        { from: 's', flags: 'FIN, ACK', seq: y + 1, ack: x + 2 + L, done: true, say: `The server sends its own FIN and acknowledges the client’s FIN (${x + 2 + L}). After the client’s last ACK the connection is closed. A <b>SYN flood</b> attack sends many SYNs and never the third ACK, filling the server with half open connections.` }
+      ];
+      return msgs.map((m, i) => ({ ...m, k: i + 1, all: msgs }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      cbox(z, 30, 8, 120, 30, 'Client', { s: 14, b: true, fill: c.bg });
+      cbox(z, 450, 8, 120, 30, 'Server', { s: 14, b: true, fill: c.bg });
+      D.line(g, 90, 38, 90, 330, c.line, 2); D.line(g, 510, 38, 510, 330, c.line, 2);
+      f.all.slice(0, f.k).forEach((m, i) => {
+        const y = 52 + i * 40, cur = i === f.k - 1;
+        const [x1, x2] = m.from === 'c' ? [92, 508] : [508, 92];
+        D.arrow(g, x1, y, x2, y + 22, cur ? c.orange : c.ink2, cur ? 2.5 : 1.5, 8);
+        const lbl = `${m.flags}  seq=${m.seq}${m.ack !== null ? '  ack=' + m.ack : ''}${m.data ? '  len=' + m.data : ''}`;
+        cbox(z, 150, y - 4, 300, 20, lbl, { s: 11, mono: true, b: cur, fill: cur ? c.bg : c.surf, stroke: cur ? c.orange : c.line });
+      });
+      if (f.k >= 3) D.text(g, 'established', 84, 164, { a: 'right', s: 10, b: true, c: c.green });
+      if (f.done) D.text(g, 'closed', 510, 330, { a: 'center', s: 11, b: true, c: c.red });
+    }
+  });
+})();
