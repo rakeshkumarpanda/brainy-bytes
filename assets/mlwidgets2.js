@@ -524,3 +524,2367 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Supervised 2.3  naive Bayes on words: prior times one likelihood per word
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, rr, list } = MLZ;
+  trace('mlnbspam', {
+    title: 'Naive Bayes spam filter: multiply the clues',
+    sub: 'Training messages are counted word by word. For a new message we start from the prior and multiply in P(word | class) for every word, for spam and for not spam (ham), then compare.',
+    W: 600, H: 330,
+    params: [
+      { k: 'spam', label: 'Spam messages (one per line)', type: 'area', v: 'win money now\nwin a free prize\nfree money offer\nclaim your prize now' },
+      { k: 'ham', label: 'Ham messages (one per line)', type: 'area', v: 'meeting at noon\nlunch money for friday\nproject meeting now\nsee you at lunch' },
+      { k: 'msg', label: 'New message', type: 'text', v: 'free money now' },
+      { k: 'alpha', label: 'Smoothing α', type: 'range', v: 1, min: 0, max: 2, step: 0.5 }
+    ],
+    tips: [
+      { t: 'α = 0 and a word never seen in ham ("free"): P(free | ham) = 0 wipes out the whole ham score. Smoothing prevents that.', set: { alpha: 0 }, play: true },
+      { t: 'A friendly message: "lunch meeting now".', set: { msg: 'lunch meeting now', alpha: 1 }, play: true }
+    ],
+    frames(p) {
+      const lines = s => String(s).split(/\n+/).map(t => t.trim().toLowerCase()).filter(Boolean);
+      const S = lines(p.spam), H = lines(p.ham);
+      if (!S.length || !H.length) throw new Error('Give at least one spam and one ham message');
+      const count = M => { const c = {}; let t = 0; M.forEach(m => m.split(/\s+/).forEach(w => { c[w] = (c[w] || 0) + 1; t++; })); return [c, t]; };
+      const [sc, st] = count(S), [hc, ht] = count(H);
+      const V = new Set([...Object.keys(sc), ...Object.keys(hc)]).size;
+      const words = list(String(p.msg).toLowerCase()).slice(0, 6);
+      if (!words.length) throw new Error('Type a new message');
+      const a = p.alpha;
+      const pw = (w, c, t) => (t + a * V) ? ((c[w] || 0) + a) / (t + a * V) : 0;
+      let ps = S.length / (S.length + H.length), ph = 1 - ps;
+      const rows = [];
+      const fr = [{ rows: [], ps, ph, say: `Training: ${S.length} spam and ${H.length} ham messages, ${V} different words. The prior is P(spam) = ${f2(ps, 3)} and P(ham) = ${f2(ph, 3)}: before reading the new message, that is all we know.` }];
+      words.forEach(w => {
+        const a1 = pw(w, sc, st), b1 = pw(w, hc, ht);
+        ps *= a1; ph *= b1;
+        rows.push({ w, a1, b1 });
+        fr.push({ rows: rows.slice(), ps, ph, say: `Word "${w}": seen ${sc[w] || 0} times in ${st} spam words and ${hc[w] || 0} times in ${ht} ham words. With smoothing α = ${a}, P(${w} | spam) = (${sc[w] || 0} + ${a}) ÷ (${st} + ${a} × ${V}) = ${f2(a1, 4)} and P(${w} | ham) = ${f2(b1, 4)}. Multiply them in.` });
+      });
+      const tot = ps + ph;
+      fr.push({ rows, ps, ph, done: true, post: tot ? ps / tot : 0.5, say: tot ? `Scores: spam ${ps.toExponential(2)}, ham ${ph.toExponential(2)}. Divide each by their sum: <b>P(spam | message) = ${f2(ps / tot, 3)}</b>. "Naive" means we multiplied the words as if they were independent, which is not true, but the ranking is usually still right.` : 'Both scores are 0 because a word is missing from both classes and α = 0. Raise α.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, 'Word', 20, 26); head(z, 'P(word | spam)', 130, 26); head(z, 'P(word | ham)', 300, 26);
+      f.rows.forEach((r, i) => {
+        const y = 44 + i * 30;
+        D.text(g, r.w, 20, y + 13, { s: 14, b: true, mono: true, c: c.ink });
+        const bar = (x, v, col) => { rr(g, x, y, Math.max(2, v * 900), 16, 3, { fill: col }); D.text(g, f2(v, 4), x + Math.max(2, v * 900) + 4, y + 13, { s: 11, mono: true, c: col, b: v === 0 }); };
+        bar(130, Math.min(r.a1, 0.15), c.orange); bar(300, Math.min(r.b1, 0.15), c.cv);
+      });
+      const y0 = 240;
+      head(z, 'Running score (prior × word probabilities)', 20, y0);
+      D.text(g, `spam  ${f.ps.toExponential(3)}`, 20, y0 + 26, { s: 13, mono: true, b: true, c: c.orange });
+      D.text(g, `ham   ${f.ph.toExponential(3)}`, 20, y0 + 48, { s: 13, mono: true, b: true, c: c.cv });
+      if (f.done) {
+        rr(g, 330, y0 + 8, 240, 26, 6, { fill: c.bg });
+        rr(g, 330, y0 + 8, 240 * f.post, 26, 6, { fill: c.orange });
+        D.text(g, `P(spam) = ${f2(f.post, 3)}`, 340, y0 + 26, { s: 13, b: true, c: f.post > 0.5 ? '#fff' : c.ink });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.3  Gaussian naive Bayes on one feature
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, nums, klass } = MLZ;
+  const pdf = (x, m, v) => Math.exp(-((x - m) ** 2) / (2 * v)) / Math.sqrt(2 * Math.PI * v);
+  trace('mlgnb', {
+    title: 'Gaussian naive Bayes: a bell curve per class',
+    sub: 'Two classes measured on one feature. The model fits a normal curve to each class, then for a new value compares prior × curve height.',
+    W: 600, H: 320,
+    params: [
+      { k: 'a', label: 'Class A values', type: 'text', v: '1.4, 1.5, 1.3, 1.6, 1.4, 1.7, 1.5' },
+      { k: 'b', label: 'Class B values', type: 'text', v: '4.2, 4.7, 3.9, 4.5, 5.1, 4.0' },
+      { k: 'x', label: 'New value', type: 'range', v: 3, min: 0, max: 8, step: 0.1 }
+    ],
+    tips: [{ t: 'Try x = 2.4: much closer to A in distance, yet B can win because B has a much wider curve.', set: { x: 2.4 }, play: true }],
+    frames(p) {
+      const A = nums(p.a), B = nums(p.b);
+      if (A.length < 2 || B.length < 2) throw new Error('Give each class at least two values');
+      const st = v => { const m = v.reduce((s, t) => s + t, 0) / v.length; return [m, Math.max(1e-3, v.reduce((s, t) => s + (t - m) ** 2, 0) / v.length)]; };
+      const [ma, va] = st(A), [mb, vb] = st(B), pa = A.length / (A.length + B.length), pb = 1 - pa;
+      const la = pdf(p.x, ma, va), lb = pdf(p.x, mb, vb), sa = pa * la, sb = pb * lb, tot = sa + sb || 1;
+      const base = { A, B, ma, va, mb, vb };
+      return [
+        { ...base, st: 1, say: `Class A has ${A.length} values and class B has ${B.length}. The prior P(A) = ${f2(pa, 3)}, P(B) = ${f2(pb, 3)}.` },
+        { ...base, st: 2, say: `Fit a normal curve to A: mean ${f2(ma)}, variance ${f2(va, 3)}.` },
+        { ...base, st: 3, say: `Fit a normal curve to B: mean ${f2(mb)}, variance ${f2(vb, 3)}. B is spread out much more${vb > va ? '' : ' (or less)'}.` },
+        { ...base, st: 4, say: `New value x = ${p.x}. Curve heights: p(x | A) = ${la.toExponential(2)}, p(x | B) = ${lb.toExponential(2)}.` },
+        { ...base, st: 5, x: p.x, post: sa / tot, say: `Multiply by the priors and normalise: <b>P(A | x) = ${f2(sa / tot, 3)}</b>, P(B | x) = ${f2(sb / tot, 3)}. Predict <b>${sa >= sb ? 'A' : 'B'}</b>. With several features, Gaussian naive Bayes multiplies one such curve per feature.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 300], [0, 8], [0, Math.max(pdf(f.ma, f.ma, f.va), pdf(f.mb, f.mb, f.vb)) * 1.1], { dx: 0, dy: 1 });
+      const curve = (m, v, col) => { g.save(); g.beginPath(); for (let i = 0; i <= 200; i++) { const x = 8 * i / 200; i ? g.lineTo(P.X(x), P.Y(pdf(x, m, v))) : g.moveTo(P.X(x), P.Y(pdf(x, m, v))); } g.strokeStyle = col; g.lineWidth = 2.5; g.stroke(); g.restore(); };
+      f.A.forEach(v => D.circle(g, P.X(v), P.Y(0) - 6, 4.5, { fill: klass(z, 0) }));
+      f.B.forEach(v => D.circle(g, P.X(v), P.Y(0) - 16, 4.5, { fill: klass(z, 1) }));
+      if (f.st >= 2) curve(f.ma, f.va, klass(z, 0));
+      if (f.st >= 3) curve(f.mb, f.vb, klass(z, 1));
+      if (f.st >= 4) D.line(g, P.X(z.p.x), P.Y(0), P.X(z.p.x), P.y0 + 12, c.red, 2, [5, 4]);
+      head(z, 'Class A', 425, 30, { c: klass(z, 0) }); D.text(g, `mean ${f2(f.ma)}  var ${f2(f.va, 3)}`, 425, 50, { s: 12, mono: true, c: c.ink });
+      if (f.st >= 3) { head(z, 'Class B', 425, 84, { c: klass(z, 1) }); D.text(g, `mean ${f2(f.mb)}  var ${f2(f.vb, 3)}`, 425, 104, { s: 12, mono: true, c: c.ink }); }
+      if (f.st >= 5) { head(z, `P(A | x = ${z.p.x})`, 425, 150); D.text(g, f2(f.post, 3), 425, 184, { s: 26, b: true, mono: true, c: f.post >= 0.5 ? klass(z, 0) : klass(z, 1) }); }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.4  the widest street: a hard margin linear SVM, found by trying every direction
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, points, D, f2, head, klass } = MLZ;
+  /* the gap between the classes when every point is projected onto the direction at angle t */
+  function gap(P, t) {
+    const ux = Math.cos(t), uy = Math.sin(t);
+    let hiA = -Infinity, loB = Infinity;
+    P.forEach(a => { const s = a.x * ux + a.y * uy; if (a.s < 0) hiA = Math.max(hiA, s); else loB = Math.min(loB, s); });
+    return { g: loB - hiA, mid: (loB + hiA) / 2, t, ux, uy };
+  }
+  function widest(P) {
+    let best = null;
+    const ok = [];
+    for (let i = 0; i < 1440; i++) {
+      const r = gap(P, i * Math.PI / 720);
+      if (r.g > 0) ok.push(r);
+      if (!best || r.g > best.g) best = r;
+    }
+    let lo = best.t - Math.PI / 720, hi = best.t + Math.PI / 720;
+    for (let i = 0; i < 60; i++) {
+      const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3;
+      if (gap(P, m1).g < gap(P, m2).g) lo = m1; else hi = m2;
+    }
+    return { best: gap(P, (lo + hi) / 2), ok };
+  }
+  /* draw the line ux x + uy y = k inside the plot */
+  function uline(z, P, ux, uy, k, col, w, dash) {
+    const g = z.g;
+    g.save(); g.beginPath(); g.rect(P.x0, P.y0, P.w, P.h); g.clip();
+    if (Math.abs(uy) > Math.abs(ux)) {
+      const ya = (k - ux * P.xr[0]) / uy, yb = (k - ux * P.xr[1]) / uy;
+      D.line(g, P.X(P.xr[0]), P.Y(ya), P.X(P.xr[1]), P.Y(yb), col, w, dash);
+    } else {
+      const xa = (k - uy * P.yr[0]) / ux, xb = (k - uy * P.yr[1]) / ux;
+      D.line(g, P.X(xa), P.Y(P.yr[0]), P.X(xb), P.Y(P.yr[1]), col, w, dash);
+    }
+    g.restore();
+  }
+  trace('mlsvm', {
+    title: 'Support vector machine: find the widest street',
+    sub: 'Type points of two classes (x y class). Many straight lines separate them. The SVM picks the one with the widest empty street on both sides, and only the points on the edge of the street matter.',
+    W: 600, H: 330,
+    params: [{ k: 'pts', label: 'Points (x y class)', type: 'area', v: '1 1 A; 2 1 A; 1 2 A; 4 4 B; 5 4 B; 4 5 B' }],
+    tips: [
+      { t: 'Add a far away point such as 0 0 A: it is not on the street, so the boundary does not move.', set: { pts: '1 1 A; 2 1 A; 1 2 A; 0 0 A; 4 4 B; 5 4 B; 4 5 B' }, play: true },
+      { t: 'Move one B point closer (3 3 B): the street gets narrower and the support vectors change.', set: { pts: '1 1 A; 2 1 A; 1 2 A; 3 3 B; 5 4 B; 4 5 B' }, play: true },
+      { t: 'Put a B point among the A points: no straight line separates them, so a hard margin is impossible.', set: { pts: '1 1 A; 2 1 A; 1 2 A; 1.5 1.5 B; 4 4 B; 5 4 B; 4 5 B' }, play: true }
+    ],
+    frames(p) {
+      const raw = points(p.pts, true).slice(0, 30);
+      const classes = [...new Set(raw.map(a => a.c))].sort();
+      if (classes.length !== 2) throw new Error('Use exactly two class names, for example A and B');
+      const P = raw.map(a => ({ ...a, s: a.c === classes[0] ? -1 : 1 }));
+      const nA = P.filter(a => a.s < 0).length;
+      const b0 = { P, classes };
+      const fr = [{ ...b0, st: 1, say: `${nA} points of class ${classes[0]} and ${P.length - nA} of class ${classes[1]}. We want a straight line that puts the two classes on different sides.` }];
+      const { best, ok } = widest(P);
+      if (best.g <= 0) {
+        fr.push({ ...b0, st: 1, say: 'No straight line can separate these two classes: every direction leaves the classes overlapping. A hard margin SVM has no answer here. The soft margin version (with C) allows a few points on the wrong side, and a kernel can bend the boundary.' });
+        return fr;
+      }
+      const cand = [ok[Math.floor(ok.length * 0.15)], ok[Math.floor(ok.length * 0.8)]].filter(r => r && Math.abs(r.t - best.t) > 0.05);
+      cand.forEach((r, i) => fr.push({ ...b0, st: 2, cand: cand.slice(0, i + 1), say: `${i ? 'Another' : 'One'} line that separates the classes. The empty street around it is only <b>${f2(r.g)}</b> wide. ${i ? 'Both lines get every training point right, so which one should we trust?' : 'It gets every training point right, but it passes close to some points.'}` }));
+      const half = best.g / 2;
+      const w = [best.ux / half, best.uy / half], b = -best.mid / half;
+      const sv = P.filter(a => Math.abs(a.s * (w[0] * a.x + w[1] * a.y + b) - 1) < 1e-3);
+      const base = { ...b0, best, w, b, sv };
+      fr.push({ ...base, st: 3, say: `The SVM chooses the line with the <b>widest street</b>: width <b>${f2(best.g, 3)}</b>. A wide street means new points can land a little off from the training points and still be classified correctly.` });
+      fr.push({ ...base, st: 4, say: `The ${sv.length} circled points touch the edges of the street. They are the <b>support vectors</b>. Move or delete any other point and the line does not change at all.` });
+      fr.push({ ...base, st: 5, say: `Scale the line so that w·x + b = +1 and −1 on the two edges: <b>w = (${f2(w[0], 3)}, ${f2(w[1], 3)})</b>, <b>b = ${f2(b, 3)}</b>. Then the width is 2 ÷ |w| = 2 ÷ ${f2(Math.hypot(w[0], w[1]), 3)} = ${f2(2 / Math.hypot(w[0], w[1]), 3)}. Making the street wide is the same as making |w| small.` });
+      fr.push({ ...base, st: 6, say: 'Every point has y(w·x + b) ≥ 1, and the support vectors have exactly 1. So training an SVM means: minimise ½|w|² subject to y(w·x + b) ≥ 1 for every point. With noisy data the soft margin version lets some points inside the street and pays a penalty C for each.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.P.map(a => a.x), ys = f.P.map(a => a.y);
+      let [xl, xh] = [Math.min(...xs), Math.max(...xs)], [yl, yh] = [Math.min(...ys), Math.max(...ys)];
+      const s = Math.max((xh - xl + 2) / 354, (yh - yl + 2) / 280), cx = (xl + xh) / 2, cy = (yl + yh) / 2;
+      const P = plot(z, [10, 10, 390, 310], [cx - 177 * s, cx + 177 * s], [cy - 140 * s, cy + 140 * s], { dx: 1, dy: 1 });
+      const col = a => klass(z, a.s < 0 ? 0 : 1);
+      (f.cand || []).forEach((r, i) => {
+        if (f.st > 2) return;
+        uline(z, P, r.ux, r.uy, r.mid, c.ink2, 1.6, [6, 4]);
+        uline(z, P, r.ux, r.uy, r.mid - r.g / 2, c.line, 1, [2, 3]);
+        uline(z, P, r.ux, r.uy, r.mid + r.g / 2, c.line, 1, [2, 3]);
+      });
+      if (f.st >= 3) {
+        const r = f.best;
+        g.save(); g.beginPath(); g.rect(P.x0, P.y0, P.w, P.h); g.clip();
+        const k1 = r.mid - r.g / 2, k2 = r.mid + r.g / 2, L = 1e3;
+        const px = -r.uy, py = r.ux;
+        const pt = (k, t) => [P.X(r.ux * k + px * t), P.Y(r.uy * k + py * t)];
+        g.beginPath();
+        [[k1, -L], [k1, L], [k2, L], [k2, -L]].forEach(([k, t], i) => { const [X, Y] = pt(k, t); i ? g.lineTo(X, Y) : g.moveTo(X, Y); });
+        g.closePath(); g.globalAlpha = 0.14; g.fillStyle = c.cv; g.fill();
+        g.restore();
+        uline(z, P, r.ux, r.uy, r.mid, c.ink, 2.4);
+        uline(z, P, r.ux, r.uy, k1, klass(z, 0), 1.4, [6, 4]);
+        uline(z, P, r.ux, r.uy, k2, klass(z, 1), 1.4, [6, 4]);
+      }
+      f.P.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 6, { fill: col(a) }));
+      if (f.st >= 4) f.sv.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 11, { stroke: c.ink, w: 2 }));
+      f.P.forEach(a => D.text(g, a.c, P.X(a.x) + 12, P.Y(a.y) - 10, { a: 'center', s: 10, b: true, c: c.ink2 }));
+      if (f.st === 2) {
+        head(z, 'Street width', 418, 24);
+        f.cand.forEach((r, i) => D.text(g, `line ${i + 1}: ${f2(r.g)}`, 418, 50 + i * 22, { s: 12, mono: true, c: c.ink2 }));
+      }
+      if (f.st >= 3) {
+        head(z, 'Widest street', 418, 24);
+        D.text(g, `width ${f2(f.best.g, 3)}`, 418, 48, { s: 14, b: true, c: c.cv });
+        if (f.st >= 4) D.text(g, `${f.sv.length} support vectors`, 418, 72, { s: 12, b: true, c: c.ink });
+        if (f.st >= 5) {
+          D.text(g, `w = (${f2(f.w[0], 2)}, ${f2(f.w[1], 2)})`, 418, 100, { s: 12, mono: true, c: c.ink });
+          D.text(g, `b = ${f2(f.b, 2)}`, 418, 120, { s: 12, mono: true, c: c.ink });
+          D.text(g, 'y(w·x + b) per point', 418, 146, { s: 11, b: true, c: c.ink2 });
+          f.P.slice(0, 8).forEach((a, i) => {
+            const m = a.s * (f.w[0] * a.x + f.w[1] * a.y + f.b);
+            D.text(g, `(${a.x}, ${a.y})  ${f2(m, 2)}`, 418, 166 + i * 18, { s: 11, mono: true, b: Math.abs(m - 1) < 1e-3, c: Math.abs(m - 1) < 1e-3 ? c.ink : c.ink2 });
+          });
+        }
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 2.4  the kernel trick: add a feature x², then a straight cut works
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, nums, D, f2, head, klass } = MLZ;
+  trace('mlkernel', {
+    title: 'The kernel trick: lift the points, then cut straight',
+    sub: 'Class A sits in the middle of the number line and class B on both sides, so no single cut point separates them. Adding the feature x² lifts the points onto a curve where a straight line does.',
+    W: 600, H: 330,
+    params: [
+      { k: 'a', label: 'Class A values', type: 'text', v: '-1, -0.5, 0, 0.6, 1.1' },
+      { k: 'b', label: 'Class B values', type: 'text', v: '-3, -2.4, -2, 2, 2.6, 3.2' }
+    ],
+    tips: [{ t: 'Put B only on the right (2, 2.6, 3.2): one cut point is already enough, no lifting needed.', set: { b: '2, 2.6, 3.2' }, play: true }],
+    frames(p) {
+      const A = nums(p.a).slice(0, 15), B = nums(p.b).slice(0, 15);
+      if (!A.length || !B.length) throw new Error('Type some numbers for both classes');
+      const all = A.map(x => ({ x, c: 0 })).concat(B.map(x => ({ x, c: 1 })));
+      const xs = all.map(a => a.x).sort((u, v) => u - v);
+      let bestErr = Infinity, bestCut = 0;
+      for (let i = 0; i <= xs.length; i++) {
+        const cut = i === 0 ? xs[0] - 1 : i === xs.length ? xs[xs.length - 1] + 1 : (xs[i - 1] + xs[i]) / 2;
+        for (const left of [0, 1]) {
+          const e = all.filter(a => (a.x < cut ? left : 1 - left) !== a.c).length;
+          if (e < bestErr) { bestErr = e; bestCut = cut; }
+        }
+      }
+      const hiA = Math.max(...A.map(x => x * x)), loB = Math.min(...B.map(x => x * x));
+      const sep = hiA < loB, t = (hiA + loB) / 2, r = Math.sqrt(t);
+      const b = { all, bestCut, bestErr, hiA, loB, sep, t, r };
+      const fr = [
+        { ...b, st: 1, say: `${A.length} points of class A and ${B.length} of class B on one number line (one feature x).` },
+        { ...b, st: 2, say: bestErr === 0 ? `One cut at x = ${f2(bestCut)} already separates them, so a plain linear model works.` : `The best single cut point (x = ${f2(bestCut)}) still gets <b>${bestErr}</b> point${bestErr > 1 ? 's' : ''} wrong. A linear classifier on x alone cannot do better.` },
+        { ...b, st: 3, say: 'Add a second feature, x². Every point moves up to the height x² on the curve. Points far from 0 rise a lot, points near 0 hardly move.' }
+      ];
+      if (!sep) { fr.push({ ...b, st: 3, say: 'Here even the lifted points overlap (some A point is further from 0 than some B point), so x² alone is not enough. An RBF kernel can still bend the boundary around each group.' }); return fr; }
+      fr.push({ ...b, st: 4, say: `In the new space (x, x²) the straight line <b>x² = ${f2(t)}</b> separates the classes: every A point is below it and every B point above.` });
+      fr.push({ ...b, st: 5, say: `Back on the original line that straight cut becomes <b>two</b> cut points, x = −${f2(r)} and x = +${f2(r)}. Between them is A, outside is B. A linear model in the lifted space is a curved model in the original space.` });
+      fr.push({ ...b, st: 6, say: 'The trick: the SVM only needs dot products between points. For the feature x², φ(x)·φ(z) = x²z² = (xz)², so the kernel K(x, z) = (xz)² gives the lifted dot product without building the new feature. The RBF kernel exp(−γ(x − z)²) works like infinitely many such features.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.all.map(a => a.x), lo = Math.min(...xs), hi = Math.max(...xs), pad = (hi - lo) * 0.1 + 0.3;
+      const top = Math.max(...xs.map(x => x * x)) * 1.1 + 0.5;
+      const lifted = f.st >= 3;
+      const P = plot(z, [10, 10, 400, 310], [lo - pad, hi + pad], lifted ? [-top * 0.08, top] : [-1, 1], { dx: 1, dy: lifted ? 1 : 0, xl: 'x', yl: lifted ? 'x²' : '' });
+      if (lifted) {
+        g.save(); g.beginPath();
+        for (let i = 0; i <= 120; i++) { const x = lo - pad + (hi - lo + 2 * pad) * i / 120; const X = P.X(x), Y = P.Y(Math.min(x * x, top)); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+        g.strokeStyle = c.line; g.lineWidth = 1.5; g.stroke(); g.restore();
+      }
+      const base = lifted ? 0 : 0;
+      D.line(g, P.X(lo - pad), P.Y(base), P.X(hi + pad), P.Y(base), c.ink2, 1.2);
+      if (f.st === 2 && f.bestErr > 0) D.line(g, P.X(f.bestCut), P.Y(lifted ? 0 : -0.8), P.X(f.bestCut), P.Y(lifted ? top : 0.8), c.red || '#dc2626', 1.6, [5, 4]);
+      if (f.st >= 4 && f.sep) D.line(g, P.X(lo - pad), P.Y(f.t), P.X(hi + pad), P.Y(f.t), c.cv, 2.2);
+      if (f.st >= 5 && f.sep) [-f.r, f.r].forEach(x => {
+        D.line(g, P.X(x), P.Y(f.t), P.X(x), P.Y(0), c.cv, 1.4, [4, 3]);
+        D.circle(g, P.X(x), P.Y(0), 4, { fill: c.cv });
+      });
+      f.all.forEach(a => {
+        const y = lifted ? a.x * a.x : 0;
+        if (lifted) D.line(g, P.X(a.x), P.Y(0), P.X(a.x), P.Y(y), c.line, 1, [2, 3]);
+        D.circle(g, P.X(a.x), P.Y(y), 6, { fill: klass(z, a.c) });
+      });
+      head(z, 'Features', 425, 24);
+      D.text(g, lifted ? 'x and x²' : 'x only', 425, 46, { s: 13, b: true, c: c.ink });
+      D.text(g, 'A', 425, 76, { s: 12, b: true, c: klass(z, 0) }); D.text(g, 'B', 455, 76, { s: 12, b: true, c: klass(z, 1) });
+      if (f.st >= 2) D.text(g, `best single cut: ${f.bestErr} wrong`, 425, 104, { s: 11, c: c.ink2 });
+      if (f.st >= 4 && f.sep) D.text(g, `line x² = ${f2(f.t)}: 0 wrong`, 425, 126, { s: 11, b: true, c: c.cv });
+      if (f.st >= 5 && f.sep) D.text(g, `cuts at ±${f2(f.r)}`, 425, 148, { s: 11, b: true, c: c.cv });
+      if (f.st >= 6) D.text(g, 'K(x, z) = (x z)²', 425, 180, { s: 13, mono: true, b: true, c: c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 3.1  choosing a split: try every cut point and keep the lowest weighted Gini
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rr } = MLZ;
+  const gini = L => { if (!L.length) return 0; const n = {}; L.forEach(c => { n[c] = (n[c] || 0) + 1; }); return 1 - Object.values(n).reduce((s, k) => s + (k / L.length) ** 2, 0); };
+  trace('mlgini', {
+    title: 'Decision tree split: try every cut, keep the purest',
+    sub: 'Type values with a class (value class). A tree tries a cut between every pair of neighbouring values, measures how mixed each side is with the Gini impurity, and keeps the cut with the lowest weighted Gini.',
+    W: 600, H: 330,
+    params: [{ k: 'pts', label: 'Values (value class)', type: 'area', v: '1 no; 2 no; 3 no; 4 no; 5 yes; 6 no; 7 yes; 8 yes' }],
+    tips: [
+      { t: 'Perfectly separable values: the best cut gives Gini 0 on both sides.', set: { pts: '1 no; 2 no; 3 no; 6 yes; 7 yes; 8 yes' }, play: true },
+      { t: 'Three classes: Gini works the same way, 1 minus the sum of squared shares.', set: { pts: '1 a; 2 a; 3 b; 4 b; 5 b; 6 c; 7 c; 8 a' }, play: true }
+    ],
+    frames(p) {
+      const P = String(p.pts).split(/[\n;]+/).map(s => s.trim()).filter(Boolean).map(s => { const t = s.replace(/−/g, '-').split(/[\s,]+/); return { x: +t[0], c: t[1] || 'A' }; }).filter(a => !isNaN(a.x)).sort((a, b) => a.x - b.x).slice(0, 14);
+      if (P.length < 2) throw new Error('Type at least two values with a class, for example 3 yes');
+      const classes = [...new Set(P.map(a => a.c))].sort();
+      const g0 = gini(P.map(a => a.c));
+      const cuts = [];
+      for (let i = 1; i < P.length; i++) {
+        if (P[i].x === P[i - 1].x) continue;
+        const cut = (P[i - 1].x + P[i].x) / 2, L = P.filter(a => a.x < cut).map(a => a.c), R = P.filter(a => a.x >= cut).map(a => a.c);
+        cuts.push({ cut, nl: L.length, nr: R.length, gl: gini(L), gr: gini(R), w: (L.length * gini(L) + R.length * gini(R)) / P.length });
+      }
+      let best = 0; cuts.forEach((c, i) => { if (c.w < cuts[best].w - 1e-12) best = i; });
+      const b = { P, classes, g0, cuts };
+      const share = classes.map(c => `${c} ${P.filter(a => a.c === c).length}`).join(', ');
+      const fr = [{ ...b, st: 1, say: `${P.length} examples (${share}). Before any split the Gini impurity is 1 − Σ(share)² = <b>${f2(g0, 3)}</b>. 0 would mean one class only.` }];
+      cuts.forEach((c, i) => fr.push({ ...b, st: 2, upto: i, say: `Cut at ${f2(c.cut)}: left ${c.nl} example${c.nl === 1 ? "" : "s"} with Gini ${f2(c.gl, 3)}, right ${c.nr} with Gini ${f2(c.gr, 3)}. Weighted Gini = (${c.nl} × ${f2(c.gl, 3)} + ${c.nr} × ${f2(c.gr, 3)}) ÷ ${P.length} = <b>${f2(c.w, 3)}</b>.` }));
+      fr.push({ ...b, st: 3, upto: cuts.length - 1, best, say: `The best cut is at <b>${f2(cuts[best].cut)}</b> with weighted Gini ${f2(cuts[best].w, 3)}, a drop of ${f2(g0 - cuts[best].w, 3)} from ${f2(g0, 3)}. The tree asks "value < ${f2(cuts[best].cut)}?" and then repeats the same search inside each side.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.P.map(a => a.x), lo = Math.min(...xs), hi = Math.max(...xs), pad = (hi - lo) * 0.08 + 0.5;
+      const P = plot(z, [10, 10, 580, 130], [lo - pad, hi + pad], [-1, 1], { dx: 1, dy: 0, grid: false });
+      D.line(g, P.X(lo - pad), P.Y(0), P.X(hi + pad), P.Y(0), c.line, 1.2);
+      const cur = f.st === 3 ? f.cuts[f.best] : f.st === 2 ? f.cuts[f.upto] : null;
+      if (cur) D.line(g, P.X(cur.cut), P.Y(0.9), P.X(cur.cut), P.Y(-0.9), f.st === 3 ? c.cv : c.ink2, 2, f.st === 3 ? undefined : [5, 4]);
+      f.P.forEach((a, i) => {
+        const k = f.classes.indexOf(a.c), same = f.P.filter((q, j) => j < i && q.x === a.x).length;
+        D.circle(g, P.X(a.x), P.Y(0) - same * 14, 7, { fill: klass(z, k) });
+        D.text(g, a.c, P.X(a.x), P.Y(0) - 14 - same * 14, { a: 'center', s: 10, b: true, c: c.ink2 });
+        D.text(g, f2(a.x, 1), P.X(a.x), P.Y(0) + 20, { a: 'center', s: 10, c: c.ink2 });
+      });
+      if (f.st >= 2) {
+        head(z, 'Weighted Gini for each cut (lower is purer)', 16, 166);
+        const n = f.cuts.length, bw = Math.min(56, 540 / n - 6), mx = Math.max(f.g0, ...f.cuts.map(t => t.w)) || 1;
+        f.cuts.forEach((t, i) => {
+          if (i > f.upto) return;
+          const x = 30 + i * (540 / n), h = t.w / mx * 110;
+          rr(g, x, 300 - h, bw, Math.max(2, h), 3, { fill: f.st === 3 && i === f.best ? c.cv : klass(z, 1) });
+          D.text(g, f2(t.w, 3), x + bw / 2, 294 - h, { a: 'center', s: 10, b: true, c: c.ink });
+          D.text(g, f2(t.cut, 1), x + bw / 2, 316, { a: 'center', s: 10, c: c.ink2 });
+        });
+        D.line(g, 24, 300 - f.g0 / mx * 110, 580, 300 - f.g0 / mx * 110, c.ink2, 1, [3, 3]);
+        D.text(g, `before split ${f2(f.g0, 3)}`, 580, 296 - f.g0 / mx * 110, { a: 'right', s: 10, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 3.1  growing a tree: each split cuts one box in two, parallel to an axis
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  function data(kind, seed) {
+    const r = rng(seed), P = [];
+    for (let i = 0; i < 70; i++) {
+      const x = r() * 10, y = r() * 10;
+      let c;
+      if (kind === 'diag') c = y > x + (r() - 0.5) * 1.2 ? 1 : 0;
+      else if (kind === 'ring') c = Math.hypot(x - 5, y - 5) < 3 + (r() - 0.5) * 0.8 ? 1 : 0;
+      else c = (x > 4 && y > 5.5) || (x > 7.5) ? 1 : 0;
+      if (r() < 0.04) c = 1 - c;
+      P.push({ x, y, c });
+    }
+    return P;
+  }
+  const gini = (P, I) => { if (!I.length) return 0; const k = I.filter(i => P[i].c === 1).length / I.length; return 2 * k * (1 - k); };
+  function bestSplit(P, I) {
+    let best = null;
+    ['x', 'y'].forEach(ax => {
+      const v = [...new Set(I.map(i => P[i][ax]))].sort((a, b) => a - b);
+      for (let j = 1; j < v.length; j++) {
+        const t = (v[j - 1] + v[j]) / 2, L = I.filter(i => P[i][ax] <= t), R = I.filter(i => P[i][ax] > t);
+        const w = (L.length * gini(P, L) + R.length * gini(P, R)) / I.length;
+        if (!best || w < best.w - 1e-12) best = { ax, t, L, R, w };
+      }
+    });
+    return best;
+  }
+  trace('mltreegrow', {
+    title: 'Growing a decision tree, one split at a time',
+    sub: 'Each step finds the best question "x ≤ t?" or "y ≤ t?" for one box and cuts it in two. Every box (leaf) predicts its majority class. Cuts are always parallel to an axis.',
+    W: 600, H: 330,
+    params: [
+      { k: 'kind', label: 'Data', type: 'select', v: 'blocks', opts: [['blocks', 'Blocks (easy for trees)'], ['diag', 'Diagonal boundary'], ['ring', 'Ring']] },
+      { k: 'depth', label: 'Maximum depth', type: 'range', v: 3, min: 1, max: 6, step: 1 }
+    ],
+    tips: [
+      { t: 'The diagonal: a tree needs a staircase of many cuts for one slanted line.', set: { kind: 'diag', depth: 5 }, play: true },
+      { t: 'Depth 6 on the blocks: the extra cuts chase the few noisy points (overfitting).', set: { kind: 'blocks', depth: 6 }, play: true }
+    ],
+    frames(p) {
+      const P = data(p.kind, 7);
+      const all = P.map((_, i) => i);
+      const maj = I => (I.filter(i => P[i].c === 1).length * 2 > I.length ? 1 : 0);
+      let leaves = [{ I: all, b: [0, 10, 0, 10], d: 0, m: maj(all) }];
+      const cuts = [];
+      const acc = () => leaves.reduce((s, l) => s + l.I.filter(i => P[i].c === l.m).length, 0) / P.length;
+      const fr = [{ P, leaves: leaves.slice(), cuts: [], acc: acc(), say: `${P.length} training points, two classes. Before any question the tree is one leaf that predicts the majority class everywhere: training accuracy ${f2(acc() * 100, 1)}%.` }];
+      let q = 0;
+      while (q < leaves.length && cuts.length < 24) {
+        const l = leaves[q];
+        if (l.d >= p.depth || gini(P, l.I) === 0 || l.I.length < 2) { q++; continue; }
+        const s = bestSplit(P, l.I);
+        if (!s) { q++; continue; }
+        const [x0, x1, y0, y1] = l.b;
+        const A = { I: s.L, b: s.ax === 'x' ? [x0, s.t, y0, y1] : [x0, x1, y0, s.t], d: l.d + 1, m: maj(s.L) };
+        const B = { I: s.R, b: s.ax === 'x' ? [s.t, x1, y0, y1] : [x0, x1, s.t, y1], d: l.d + 1, m: maj(s.R) };
+        leaves.splice(q, 1, A, B);
+        cuts.push({ ax: s.ax, t: s.t, b: l.b, d: l.d + 1 });
+        fr.push({ P, leaves: leaves.slice(), cuts: cuts.slice(), acc: acc(), say: `Split ${cuts.length} (depth ${l.d + 1}): in a box with ${l.I.length} points, ask <b>${s.ax} ≤ ${f2(s.t)}</b>. Weighted Gini falls from ${f2(gini(P, l.I), 3)} to ${f2(s.w, 3)}. Training accuracy is now ${f2(acc() * 100, 1)}%.` });
+        q = 0;
+        leaves.sort((u, v) => u.d - v.d);
+      }
+      fr.push({ P, leaves, cuts, acc: acc(), done: true, say: `Finished: ${cuts.length} questions, ${leaves.length} leaves, training accuracy <b>${f2(acc() * 100, 1)}%</b>. ${p.kind === 'diag' ? 'A slanted boundary needs a staircase of axis parallel cuts. A linear model would need one line.' : 'Limit the depth (or prune) so the tree does not grow tiny boxes around single noisy points.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [0, 10], [0, 10], { dx: 0, dy: 0 });
+      g.save(); g.globalAlpha = 0.18;
+      f.leaves.forEach(l => { g.fillStyle = klass(z, l.m); g.fillRect(P.X(l.b[0]), P.Y(l.b[3]), P.X(l.b[1]) - P.X(l.b[0]), P.Y(l.b[2]) - P.Y(l.b[3])); });
+      g.restore();
+      f.cuts.forEach((s, i) => {
+        const last = i === f.cuts.length - 1 && !f.done;
+        if (s.ax === 'x') D.line(g, P.X(s.t), P.Y(s.b[2]), P.X(s.t), P.Y(s.b[3]), last ? c.cv : c.ink, last ? 3 : 1.6);
+        else D.line(g, P.X(s.b[0]), P.Y(s.t), P.X(s.b[1]), P.Y(s.t), last ? c.cv : c.ink, last ? 3 : 1.6);
+      });
+      f.P.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 4, { fill: klass(z, a.c), stroke: c.surf, w: 1 }));
+      head(z, 'The tree so far', 425, 24);
+      D.text(g, `questions: ${f.cuts.length}`, 425, 48, { s: 12, mono: true, c: c.ink });
+      D.text(g, `leaves: ${f.leaves.length}`, 425, 68, { s: 12, mono: true, c: c.ink });
+      D.text(g, `train accuracy: ${f2(f.acc * 100, 1)}%`, 425, 88, { s: 12, mono: true, b: true, c: c.cv });
+      f.cuts.slice(0, 10).forEach((s, i) => D.text(g, `${' '.repeat(2 * (s.d - 1))}${s.ax} ≤ ${f2(s.t, 1)}`, 425, 116 + i * 18, { s: 11, mono: true, c: i === f.cuts.length - 1 ? c.cv : c.ink2 }));
+      if (f.cuts.length > 10) D.text(g, `… ${f.cuts.length - 10} more`, 425, 116 + 10 * 18, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 3.2  a bootstrap sample: draw rows with replacement, some repeat and some are left out
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, rng, rr, klass } = MLZ;
+  trace('mlbootstrap', {
+    title: 'Bootstrap sample: draw rows with replacement',
+    sub: 'Each tree in a random forest trains on a bootstrap sample: as many rows as the data has, drawn at random with replacement. Some rows come up twice or more, others not at all (out of bag).',
+    W: 600, H: 330,
+    params: [
+      { k: 'n', label: 'Rows in the data', type: 'range', v: 10, min: 5, max: 15, step: 1 },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 3, min: 1, max: 30, step: 1 }
+    ],
+    tips: [{ t: 'Change the seed: a different tree gets a different sample, with different rows out of bag.', set: { seed: 11 }, play: true }],
+    frames(p) {
+      const r = rng(p.seed * 7 + 1), n = p.n, draws = [];
+      for (let i = 0; i < n; i++) draws.push(1 + Math.floor(r() * n));
+      const b = { n, draws };
+      const fr = [{ ...b, upto: 0, say: `The training data has ${n} rows, numbered 1 to ${n}. We will draw ${n} times, and after each draw the row goes back in the bag.` }];
+      draws.forEach((d, i) => {
+        const before = draws.slice(0, i).filter(x => x === d).length;
+        fr.push({ ...b, upto: i + 1, say: `Draw ${i + 1}: row <b>${d}</b>${before ? `, already drawn ${before === 1 ? 'once' : before + ' times'} before. Repeats are normal with replacement.` : '.'}` });
+      });
+      const uniq = new Set(draws).size, oob = [];
+      for (let k = 1; k <= n; k++) if (!draws.includes(k)) oob.push(k);
+      fr.push({ ...b, upto: n, done: true, uniq, oob, say: `The sample has ${uniq} different rows out of ${n} (${f2(100 * uniq / n, 0)}%). Rows ${oob.join(', ') || 'none'} were never drawn: they are <b>out of bag</b> for this tree and can test it for free. On average a bootstrap sample holds 1 − 1/e ≈ 63.2% of the rows.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const cnt = {};
+      f.draws.slice(0, f.upto).forEach(d => { cnt[d] = (cnt[d] || 0) + 1; });
+      head(z, 'Original rows (the bag)', 16, 24);
+      const bw = Math.min(36, 560 / f.n - 4);
+      for (let k = 1; k <= f.n; k++) {
+        const x = 16 + (k - 1) * (bw + 4), used = cnt[k] || 0, oob = f.done && !used;
+        rr(g, x, 36, bw, 34, 5, { fill: oob ? c.surf : used ? klass(z, 0) : c.bg, stroke: oob ? klass(z, 1) : c.line, w: oob ? 2 : 1 });
+        D.text(g, String(k), x + bw / 2, 58, { a: 'center', s: 13, b: true, c: used ? '#fff' : c.ink });
+        if (used > 1) D.text(g, `×${used}`, x + bw / 2, 86, { a: 'center', s: 11, b: true, c: c.ink });
+        if (oob) D.text(g, 'OOB', x + bw / 2, 86, { a: 'center', s: 10, b: true, c: klass(z, 1) });
+      }
+      head(z, 'Bootstrap sample (in the order drawn)', 16, 124);
+      f.draws.slice(0, f.upto).forEach((d, i) => {
+        const x = 16 + i * (bw + 4), rep = f.draws.slice(0, i).includes(d);
+        rr(g, x, 136, bw, 34, 5, { fill: rep ? klass(z, 1) : klass(z, 0) });
+        D.text(g, String(d), x + bw / 2, 158, { a: 'center', s: 13, b: true, c: '#fff' });
+      });
+      if (f.done) {
+        D.text(g, `different rows: ${f.uniq} of ${f.n}`, 16, 214, { s: 14, b: true, c: c.ink });
+        D.text(g, `out of bag: ${f.oob.length ? f.oob.join(', ') : 'none'}`, 16, 240, { s: 14, b: true, c: klass(z, 1) });
+        D.text(g, 'orange boxes in the sample are repeats', 16, 270, { s: 12, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 3.2  a random forest: many different trees, one majority vote
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  function moons(n, noise, seed) {
+    const r = rng(seed), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < n; i++) {
+      const t = Math.PI * r(), up = i % 2 === 0;
+      P.push({ x: (up ? Math.cos(t) : 1 - Math.cos(t)) + noise * g(), y: (up ? Math.sin(t) : 0.5 - Math.sin(t)) + noise * g(), c: up ? 0 : 1 });
+    }
+    return P;
+  }
+  const gini = (P, I) => { if (!I.length) return 0; const k = I.filter(i => P[i].c === 1).length / I.length; return 2 * k * (1 - k); };
+  function grow(P, I, d, r, maxd, randomFeature) {
+    const ones = I.filter(i => P[i].c === 1).length;
+    const leaf = { leaf: true, m: ones * 2 > I.length ? 1 : 0 };
+    if (d >= maxd || I.length < 4 || ones === 0 || ones === I.length) return leaf;
+    const axes = randomFeature ? [r() < 0.5 ? 'x' : 'y'] : ['x', 'y'];
+    let best = null;
+    axes.forEach(ax => {
+      const v = [...new Set(I.map(i => P[i][ax]))].sort((a, b) => a - b);
+      for (let j = 1; j < v.length; j++) {
+        const t = (v[j - 1] + v[j]) / 2, L = I.filter(i => P[i][ax] <= t), R = I.filter(i => P[i][ax] > t);
+        const w = L.length * gini(P, L) + R.length * gini(P, R);
+        if (!best || w < best.w) best = { ax, t, L, R, w };
+      }
+    });
+    if (!best) return leaf;
+    return { ax: best.ax, t: best.t, l: grow(P, best.L, d + 1, r, maxd, randomFeature), r: grow(P, best.R, d + 1, r, maxd, randomFeature) };
+  }
+  const pred = (T, x, y) => { let n = T; while (!n.leaf) n = (n.ax === 'x' ? x : y) <= n.t ? n.l : n.r; return n.m; };
+  trace('mlforestvote', {
+    title: 'Random forest: many different trees vote',
+    sub: 'Each tree trains on its own bootstrap sample and picks a random feature at every split, so the trees differ. Each one alone is jagged. Their majority vote is smoother and more accurate.',
+    W: 600, H: 330,
+    params: [
+      { k: 'trees', label: 'Number of trees', type: 'range', v: 7, min: 1, max: 15, step: 2 },
+      { k: 'depth', label: 'Depth of each tree', type: 'range', v: 6, min: 2, max: 10, step: 1 }
+    ],
+    tips: [
+      { t: 'One tree only: the forest is just a single jagged tree.', set: { trees: 1 }, play: true },
+      { t: 'Shallow trees (depth 2): each tree underfits, and voting cannot fix bias.', set: { depth: 2 }, play: true }
+    ],
+    frames(p) {
+      const tr = moons(120, 0.3, 5), te = moons(300, 0.3, 77), r = rng(41);
+      const forest = [], accs = [];
+      const acc = f => te.filter(a => f(a.x, a.y) === a.c).length / te.length;
+      const fr = [{ tr, say: '120 training points from two noisy moon shaped classes. We will grow several trees and let them vote.' }];
+      for (let b = 0; b < p.trees; b++) {
+        const I = tr.map(() => Math.floor(r() * tr.length));
+        const T = grow(tr, I, 0, r, p.depth, true);
+        forest.push(T);
+        const a = acc((x, y) => pred(T, x, y));
+        accs.push(a);
+        fr.push({ tr, show: T, k: b + 1, accs: accs.slice(), say: `Tree ${b + 1}: trained on a bootstrap sample (${new Set(I).size} different rows), random feature at each split. Alone it scores <b>${f2(a * 100, 1)}%</b> on 300 test points. Its regions are boxy and full of mistakes.` });
+      }
+      const vote = (x, y) => (forest.reduce((s, T) => s + pred(T, x, y), 0) * 2 > forest.length ? 1 : 0);
+      const fa = acc(vote), mean = accs.reduce((s, a) => s + a, 0) / accs.length;
+      fr.push({ tr, forest, vote: true, accs, fa, say: `Now let all ${forest.length} trees vote. The forest scores <b>${f2(fa * 100, 1)}%</b>, while the single trees average ${f2(mean * 100, 1)}%. Their mistakes are in different places, so the vote cancels many of them.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1.5, 2.5], [-1.2, 1.7], { dx: 1, dy: 1, grid: false });
+      const fn = f.vote ? (x, y) => (f.forest.reduce((s, T) => s + pred(T, x, y), 0) * 2 > f.forest.length ? 1 : 0) : f.show ? (x, y) => pred(f.show, x, y) : null;
+      if (fn) {
+        const cell = 7;
+        g.save(); g.globalAlpha = 0.22;
+        for (let px = P.x0 + 26; px < P.x0 + P.w - 10; px += cell) for (let py = P.y0 + 10; py < P.y0 + P.h - 20; py += cell) {
+          const x = -1.5 + (px + cell / 2 - P.x0 - 26) / (P.w - 36) * 4, y = -1.2 + (P.y0 + P.h - 20 - (py + cell / 2)) / (P.h - 30) * 2.9;
+          g.fillStyle = klass(z, fn(x, y)); g.fillRect(px, py, cell, cell);
+        }
+        g.restore();
+      }
+      f.tr.forEach(a => D.circle(g, P.X(a.x), P.Y(a.y), 4, { fill: klass(z, a.c), stroke: c.surf, w: 1 }));
+      if (f.accs) {
+        head(z, 'Test accuracy', 425, 24);
+        f.accs.slice(0, 10).forEach((a, i) => D.text(g, `tree ${String(i + 1).padStart(2)}  ${f2(a * 100, 1)}%`, 425, 48 + i * 19, { s: 11, mono: true, b: !f.vote && i === f.accs.length - 1, c: !f.vote && i === f.accs.length - 1 ? c.ink : c.ink2 }));
+        if (f.accs.length > 10) D.text(g, `… ${f.accs.length - 10} more`, 425, 48 + 10 * 19, { s: 11, c: c.ink2 });
+        if (f.vote) D.text(g, `forest  ${f2(f.fa * 100, 1)}%`, 425, 270, { s: 15, b: true, c: c.cv });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 3.3  gradient boosting: each small tree fits what the model still gets wrong
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  function stump(x, r) {
+    let best = null;
+    for (let i = 1; i < x.length; i++) {
+      const t = (x[i - 1] + x[i]) / 2;
+      let sl = 0, nl = 0, sr = 0, nr = 0;
+      for (let j = 0; j < x.length; j++) { if (x[j] < t) { sl += r[j]; nl++; } else { sr += r[j]; nr++; } }
+      const ml = sl / nl, mr = sr / nr;
+      let e = 0; for (let j = 0; j < x.length; j++) e += (r[j] - (x[j] < t ? ml : mr)) ** 2;
+      if (!best || e < best.e) best = { t, ml, mr, e };
+    }
+    return best;
+  }
+  trace('mlboostres', {
+    title: 'Gradient boosting: fit the leftovers, step by step',
+    sub: 'Start from the average. Each round fits a one question tree (a stump) to the residuals, what the model still gets wrong, and adds a small step of it. The fit improves round by round.',
+    W: 600, H: 330,
+    params: [
+      { k: 'lr', label: 'Learning rate', type: 'range', v: 0.5, min: 0.1, max: 1, step: 0.1 },
+      { k: 'rounds', label: 'Rounds', type: 'range', v: 8, min: 1, max: 20, step: 1 }
+    ],
+    tips: [
+      { t: 'Learning rate 1: big steps, fast progress, but each tree’s noise is added at full size.', set: { lr: 1 }, play: true },
+      { t: 'Learning rate 0.1: tiny careful steps, so many more rounds are needed.', set: { lr: 0.1, rounds: 20 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(11), n = 40, x = [], y = [];
+      for (let i = 0; i < n; i++) x.push(6 * i / (n - 1) + 0.05 * (r() - 0.5));
+      x.forEach(v => { let s = 0; for (let k = 0; k < 6; k++) s += r(); y.push(Math.sin(v) + 0.18 * (s - 3) * Math.SQRT2); });
+      const mse = f => f.reduce((s, v, i) => s + (y[i] - v) ** 2, 0) / n;
+      let F = Array(n).fill(y.reduce((s, v) => s + v, 0) / n);
+      const hist = [mse(F)], stumps = [];
+      const fr = [{ x, y, F: F.slice(), hist: hist.slice(), say: `Round 0: the model predicts the average, ${f2(F[0], 2)}, everywhere. Mean squared error ${f2(hist[0], 4)}.` }];
+      for (let m = 1; m <= p.rounds; m++) {
+        const res = y.map((v, i) => v - F[i]);
+        const s = stump(x, res);
+        fr.push({ x, y, F: F.slice(), res, s, hist: hist.slice(), m, say: `Round ${m}: the residuals y − F(x) (red) show what is still wrong. A stump fitted to them asks "x < ${f2(s.t)}?" and predicts ${f2(s.ml, 2)} on the left, ${f2(s.mr, 2)} on the right.` });
+        F = F.map((v, i) => v + p.lr * (x[i] < s.t ? s.ml : s.mr));
+        stumps.push(s); hist.push(mse(F));
+        fr.push({ x, y, F: F.slice(), hist: hist.slice(), m, say: `Add ${p.lr} × that stump to the model. Mean squared error falls to <b>${f2(hist[m], 4)}</b>. The model is now the average plus ${m} small step${m > 1 ? 's' : ''}.` });
+      }
+      fr.push({ x, y, F, hist, done: true, say: `After ${p.rounds} rounds the error went from ${f2(hist[0], 4)} to <b>${f2(hist[p.rounds], 4)}</b>. Each stump alone is a crude two step function, but added up they follow the curve. With too many rounds the model starts to fit the noise, so real projects stop early using a validation set.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [0, 6], [-1.8, 1.8], { dx: 0, dy: 1 });
+      if (f.res) f.x.forEach((v, i) => D.line(g, P.X(v), P.Y(f.y[i]), P.X(v), P.Y(f.F[i]), c.red || '#dc2626', 1.4));
+      f.x.forEach((v, i) => D.circle(g, P.X(v), P.Y(f.y[i]), 3.5, { fill: klass(z, 0) }));
+      g.save(); g.beginPath();
+      f.x.forEach((v, i) => { const X = P.X(v), Y = P.Y(f.F[i]); if (!i) g.moveTo(X, Y); else { g.lineTo(X, P.Y(f.F[i - 1])); g.lineTo(X, Y); } });
+      g.strokeStyle = klass(z, 1); g.lineWidth = 2.6; g.stroke(); g.restore();
+      if (f.s) {
+        D.line(g, P.X(f.s.t), P.Y(-1.8), P.X(f.s.t), P.Y(1.8), c.cv, 1.4, [5, 4]);
+        D.text(g, `x < ${f2(f.s.t, 2)}?`, P.X(f.s.t) + 4, P.Y(1.6), { s: 11, b: true, c: c.cv });
+      }
+      head(z, 'Error by round', 425, 24);
+      const mx = f.hist[0] || 1;
+      f.hist.slice(0, 21).forEach((h, i) => {
+        const bw = 150 / Math.max(f.hist.length, 8);
+        g.fillStyle = i === f.hist.length - 1 ? klass(z, 1) : c.line;
+        g.fillRect(430 + i * bw, 200 - h / mx * 150, Math.max(2, bw - 2), h / mx * 150);
+      });
+      D.line(g, 428, 200, 590, 200, c.ink2, 1);
+      D.text(g, `MSE ${f2(f.hist[f.hist.length - 1], 4)}`, 425, 226, { s: 13, b: true, c: klass(z, 1) });
+      D.text(g, 'orange line: the model F(x)', 425, 254, { s: 11, c: c.ink2 });
+      D.text(g, 'blue dots: the data', 425, 272, { s: 11, c: c.ink2 });
+      if (f.res) D.text(g, 'red: residuals y − F(x)', 425, 290, { s: 11, c: c.red || '#dc2626' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 3.3  AdaBoost: wrong points get heavier, the next stump focuses on them
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass } = MLZ;
+  trace('mladaboost', {
+    title: 'AdaBoost: make the hard points heavier',
+    sub: 'Eight points on a line, labelled + or −. Each round picks the stump (one cut) with the lowest weighted error, gives it a say α, and then makes the points it got wrong heavier so the next stump pays attention to them.',
+    W: 600, H: 330,
+    params: [
+      { k: 'labels', label: 'Labels for x = 1 to 8', type: 'text', v: '+ + - - + + - -' },
+      { k: 'rounds', label: 'Rounds', type: 'range', v: 3, min: 1, max: 6, step: 1 }
+    ],
+    tips: [{ t: 'Labels a single cut can split: one stump is enough and its error is 0, so we stop.', set: { labels: '+ + + + - - - -' }, play: true }],
+    frames(p) {
+      const y = String(p.labels).replace(/−/g, '-').split(/[\s,]+/).filter(Boolean).slice(0, 8).map(s => (s[0] === '-' ? -1 : 1));
+      while (y.length < 8) y.push(1);
+      const x = [1, 2, 3, 4, 5, 6, 7, 8];
+      let w = Array(8).fill(1 / 8);
+      const st = [];
+      const fr = [{ x, y, w: w.slice(), st: [], say: 'Every point starts with the same weight, 1/8 = 0.125 (dot size shows weight).' }];
+      for (let m = 1; m <= p.rounds; m++) {
+        let best = null;
+        [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5].forEach(cut => [1, -1].forEach(sg => {
+          const pr = x.map(v => (v < cut ? sg : -sg));
+          const e = pr.reduce((s, q, i) => s + (q !== y[i] ? w[i] : 0), 0);
+          if (!best || e < best.e - 1e-12) best = { cut, sg, pr, e };
+        }));
+        if (best.e < 1e-9) { st.push({ ...best, a: Infinity }); fr.push({ x, y, w: w.slice(), st: st.slice(), say: `Round ${m}: the stump x &lt; ${best.cut} gets every point right (error 0). It decides alone, so boosting stops here.` }); break; }
+        const a = 0.5 * Math.log((1 - best.e) / best.e);
+        st.push({ ...best, a });
+        fr.push({ x, y, w: w.slice(), st: st.slice(), cur: best, say: `Round ${m}: best stump "x &lt; ${best.cut} → ${best.sg > 0 ? '+' : '−'}, else ${best.sg > 0 ? '−' : '+'}". Weighted error ε = ${f2(best.e, 3)}. Its say α = ½ ln((1 − ε)/ε) = <b>${f2(a, 3)}</b>.` });
+        w = w.map((v, i) => v * Math.exp(-a * y[i] * best.pr[i]));
+        const s = w.reduce((u, v) => u + v, 0); w = w.map(v => v / s);
+        const wrong = x.filter((_, i) => best.pr[i] !== y[i]);
+        fr.push({ x, y, w: w.slice(), st: st.slice(), cur: best, say: `Reweight: multiply wrong points by e<sup>α</sup> and right points by e<sup>−α</sup>, then rescale to sum 1. Points x = ${wrong.join(', ')} were wrong and now weigh ${f2(w[x.indexOf(wrong[0])], 3)} each.` });
+      }
+      const score = x.map((_, i) => st.reduce((s, t) => s + (isFinite(t.a) ? t.a : 1e3) * t.pr[i], 0));
+      const ok = score.filter((s, i) => Math.sign(s) === y[i]).length;
+      fr.push({ x, y, w, st, score, say: `Final model: add up α × prediction of every stump and take the sign. ${ok} of 8 points are right. ${ok === 8 && st.length > 1 ? 'No single stump could do that, but the weighted vote of several can.' : ''}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 580, 150], [0.5, 8.5], [-1, 1], { dx: 0, dy: 0, grid: false });
+      D.line(g, P.X(0.5), P.Y(0), P.X(8.5), P.Y(0), c.line, 1.2);
+      if (f.cur) {
+        D.line(g, P.X(f.cur.cut), P.Y(0.95), P.X(f.cur.cut), P.Y(-0.95), c.cv, 2);
+        D.text(g, f.cur.sg > 0 ? '+ side' : '− side', P.X(f.cur.cut) - 6, P.Y(0.8), { a: 'right', s: 11, b: true, c: c.cv });
+      }
+      f.x.forEach((v, i) => {
+        const r = 4 + Math.sqrt(f.w[i] / 0.125) * 7, wrong = f.cur && f.cur.pr[i] !== f.y[i];
+        D.circle(g, P.X(v), P.Y(0), r, { fill: klass(z, f.y[i] > 0 ? 0 : 1), stroke: wrong ? c.ink : undefined, w: 2.5 });
+        D.text(g, f.y[i] > 0 ? '+' : '−', P.X(v), P.Y(0) + 5, { a: 'center', s: 14, b: true, c: '#fff' });
+        D.text(g, f2(f.w[i], 3), P.X(v), P.Y(0) + 40, { a: 'center', s: 10, mono: true, c: c.ink2 });
+      });
+      head(z, 'Stumps so far', 16, 186);
+      f.st.forEach((t, i) => D.text(g, `${i + 1}. x < ${t.cut} → ${t.sg > 0 ? '+' : '−'}   ε = ${f2(t.e, 3)}   α = ${isFinite(t.a) ? f2(t.a, 3) : '∞'}`, 16, 210 + i * 18, { s: 12, mono: true, c: c.ink }));
+      if (f.score) {
+        head(z, 'Final score Σ α × prediction', 330, 186);
+        f.score.forEach((s, i) => D.text(g, `x=${i + 1}: ${f2(Math.max(-99, Math.min(99, s)), 2)} → ${s > 0 ? '+' : '−'}`, 330 + (i % 2) * 130, 210 + Math.floor(i / 2) * 18, { s: 11, mono: true, b: Math.sign(s) === f.y[i], c: Math.sign(s) === f.y[i] ? c.ink : (c.red || '#dc2626') }));
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 4.1  the confusion matrix at a threshold, and the ROC curve from sweeping it
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rr, box } = MLZ;
+  const DEF = '0.95 1; 0.9 1; 0.8 0; 0.75 1; 0.7 1; 0.6 0; 0.55 1; 0.4 0; 0.35 1; 0.3 0; 0.2 0; 0.1 0';
+  function parse(s) {
+    const P = String(s).split(/[\n;]+/).map(t => t.trim()).filter(Boolean).map(t => { const q = t.split(/[\s,]+/); return { s: +q[0], y: +q[1] === 1 ? 1 : 0 }; }).filter(a => !isNaN(a.s)).slice(0, 20);
+    if (P.length < 2 || !P.some(a => a.y) || P.every(a => a.y)) throw new Error('Type scores with labels 1 and 0, for example 0.8 1; 0.3 0');
+    return P;
+  }
+  function counts(P, t) {
+    const c = { tp: 0, fp: 0, fn: 0, tn: 0 };
+    P.forEach(a => { const p = a.s >= t; if (p && a.y) c.tp++; else if (p) c.fp++; else if (a.y) c.fn++; else c.tn++; });
+    return c;
+  }
+  function scoreLine(z, f, t, y0) {
+    const c = z.col, g = z.g;
+    const X = v => 30 + v * 540;
+    D.line(g, X(0), y0, X(1), y0, c.line, 1.2);
+    [0, 0.25, 0.5, 0.75, 1].forEach(v => D.text(g, f2(v, 2), X(v), y0 + 30, { a: 'center', s: 10, c: c.ink2 }));
+    D.text(g, 'model score →', X(1), y0 + 46, { a: 'right', s: 10, c: c.ink2 });
+    if (t !== undefined) { D.line(g, X(t), y0 - 40, X(t), y0 + 18, c.cv, 2.2); D.text(g, `threshold ${f2(t, 2)}`, X(t) + 4, y0 - 30, { s: 11, b: true, c: c.cv }); }
+    const seen = {};
+    f.P.forEach(a => {
+      const k = Math.round(a.s * 100); seen[k] = (seen[k] || 0) + 1;
+      const yy = y0 - (seen[k] - 1) * 16;
+      D.circle(g, X(a.s), yy, 7, { fill: klass(z, a.y ? 1 : 0), stroke: f.hl && f.hl(a) ? c.ink : undefined, w: 2.5 });
+      D.text(g, a.y ? '1' : '0', X(a.s), yy + 4, { a: 'center', s: 9, b: true, c: '#fff' });
+    });
+  }
+  trace('mlconfusion', {
+    title: 'Confusion matrix: what a threshold turns into',
+    sub: 'Each dot is a test example placed at its model score (orange = really positive, blue = really negative). Everything at or above the threshold is predicted positive. Count the four kinds of outcome, then compute precision and recall.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Scores and true labels (score label)', type: 'area', v: DEF },
+      { k: 't', label: 'Threshold', type: 'range', v: 0.5, min: 0.05, max: 0.95, step: 0.05 }
+    ],
+    tips: [
+      { t: 'Threshold 0.25: almost every positive is caught (high recall), but more false alarms (lower precision).', set: { t: 0.25 }, play: true },
+      { t: 'Threshold 0.85: few false alarms (high precision), but many positives are missed.', set: { t: 0.85 }, play: true }
+    ],
+    frames(p) {
+      const P = parse(p.pts), t = p.t, c = counts(P, t);
+      const prec = c.tp + c.fp ? c.tp / (c.tp + c.fp) : 0, rec = c.tp / (c.tp + c.fn), f1 = prec + rec ? 2 * prec * rec / (prec + rec) : 0;
+      const b = { P, t, c, prec, rec, f1 };
+      return [
+        { ...b, st: 1, say: `${P.length} test examples, ${P.filter(a => a.y).length} really positive (orange) and ${P.filter(a => !a.y).length} really negative (blue), placed at the score the model gave them.` },
+        { ...b, st: 2, say: `Draw the threshold at ${f2(t, 2)}. The model says <b>positive</b> for every dot at or to the right of the line, negative for the rest.` },
+        { ...b, st: 3, hl: a => a.s >= t && a.y, say: `<b>True positives (TP) = ${c.tp}</b>: really positive and predicted positive.` },
+        { ...b, st: 4, hl: a => a.s >= t && !a.y, say: `<b>False positives (FP) = ${c.fp}</b>: really negative but predicted positive, false alarms.` },
+        { ...b, st: 5, hl: a => a.s < t && a.y, say: `<b>False negatives (FN) = ${c.fn}</b>: really positive but predicted negative, misses.` },
+        { ...b, st: 6, hl: a => a.s < t && !a.y, say: `<b>True negatives (TN) = ${c.tn}</b>: really negative and predicted negative. Accuracy = (TP + TN) ÷ all = ${c.tp + c.tn} ÷ ${P.length} = ${f2((c.tp + c.tn) / P.length, 3)}.` },
+        { ...b, st: 7, say: `<b>Precision</b> = TP ÷ (TP + FP) = ${c.tp} ÷ ${c.tp + c.fp} = ${f2(prec, 3)}: how many alarms are real. <b>Recall</b> = TP ÷ (TP + FN) = ${c.tp} ÷ ${c.tp + c.fn} = ${f2(rec, 3)}: how many positives we caught. <b>F1</b> = ${f2(f1, 3)}. Move the threshold to trade one against the other.` }
+      ];
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      scoreLine(z, f, f.st >= 2 ? f.t : undefined, 90);
+      if (f.st >= 3) {
+        head(z, 'Confusion matrix', 30, 160);
+        D.text(g, 'predicted 1', 175, 178, { a: 'center', s: 11, b: true, c: c.ink2 });
+        D.text(g, 'predicted 0', 275, 178, { a: 'center', s: 11, b: true, c: c.ink2 });
+        D.text(g, 'actual 1', 115, 210, { a: 'right', s: 11, b: true, c: c.ink2 });
+        D.text(g, 'actual 0', 115, 260, { a: 'right', s: 11, b: true, c: c.ink2 });
+        const cell = (x, y, label, v, on, col) => box(z, x, y, 96, 44, on ? `${label} ${v}` : label, { fill: on ? col : c.surf, c: on ? '#fff' : c.ink2, s: 13, b: true, r: 6 });
+        cell(127, 188, 'TP', f.c.tp, f.st >= 3, c.green || '#16a34a');
+        cell(227, 238, 'TN', f.c.tn, f.st >= 6, c.green || '#16a34a');
+        cell(127, 238, 'FP', f.c.fp, f.st >= 4, c.red || '#dc2626');
+        cell(227, 188, 'FN', f.c.fn, f.st >= 5, c.red || '#dc2626');
+      }
+      if (f.st >= 7) {
+        head(z, 'Scores', 370, 160);
+        [['precision', f.prec], ['recall', f.rec], ['F1', f.f1]].forEach(([n, v], i) => {
+          D.text(g, n, 370, 196 + i * 32, { s: 12, b: true, c: c.ink });
+          rr(g, 450, 184 + i * 32, Math.max(2, v * 100), 16, 3, { fill: c.cv });
+          D.text(g, f2(v, 3), 556, 197 + i * 32, { s: 12, mono: true, b: true, c: c.ink });
+        });
+      }
+    }
+  });
+  trace('mlroc', {
+    title: 'ROC curve: sweep the threshold from high to low',
+    sub: 'Start with a threshold above every score (nothing predicted positive) and lower it past one example at a time. Each step adds a point (false positive rate, true positive rate). The area under the curve is the AUC.',
+    W: 600, H: 330,
+    params: [{ k: 'pts', label: 'Scores and true labels (score label)', type: 'area', v: DEF }],
+    tips: [
+      { t: 'A perfect model: every positive scores above every negative, so the curve hugs the top left corner and AUC = 1.', set: { pts: '0.9 1; 0.8 1; 0.7 1; 0.4 0; 0.3 0; 0.2 0' }, play: true },
+      { t: 'A useless model: labels mixed evenly along the scores, so the curve follows the diagonal, AUC about 0.5.', set: { pts: '0.9 1; 0.8 0; 0.7 1; 0.6 0; 0.5 1; 0.4 0; 0.3 1; 0.2 0' }, play: true }
+    ],
+    frames(p) {
+      const P = parse(p.pts).sort((a, b) => b.s - a.s);
+      const npos = P.filter(a => a.y).length, nneg = P.length - npos;
+      let tp = 0, fp = 0;
+      const pts = [[0, 0]];
+      const fr = [{ P, pts: pts.slice(), say: `${npos} positives and ${nneg} negatives, sorted by score. Threshold above every score: nothing is predicted positive, so TPR = 0 and FPR = 0.` }];
+      let area = 0;
+      P.forEach((a, i) => {
+        if (a.y) tp++; else fp++;
+        const prev = pts[pts.length - 1], cur = [fp / nneg, tp / npos];
+        area += (cur[0] - prev[0]) * (cur[1] + prev[1]) / 2;
+        pts.push(cur);
+        fr.push({ P, pts: pts.slice(), upto: i + 1, say: `Lower the threshold to ${f2(a.s, 2)}: this example is really <b>${a.y ? 'positive, so TPR goes up' : 'negative, so FPR goes right'}</b>. Now TPR = ${tp}/${npos} = ${f2(tp / npos, 2)} and FPR = ${fp}/${nneg} = ${f2(fp / nneg, 2)}.` });
+      });
+      fr.push({ P, pts, upto: P.length, area, done: true, say: `The threshold is below every score, so everything is positive: (1, 1). The area under the curve is <b>AUC = ${f2(area, 3)}</b>. It equals the chance that a random positive scores higher than a random negative. 0.5 is guessing, 1 is perfect.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const Pl = plot(z, [10, 10, 330, 310], [0, 1], [0, 1], { dx: 2, dy: 2, xl: 'FPR', yl: 'TPR' });
+      D.line(g, Pl.X(0), Pl.Y(0), Pl.X(1), Pl.Y(1), c.line, 1, [4, 4]);
+      if (f.done) {
+        g.save(); g.beginPath(); g.moveTo(Pl.X(0), Pl.Y(0));
+        f.pts.forEach(q => g.lineTo(Pl.X(q[0]), Pl.Y(q[1])));
+        g.lineTo(Pl.X(1), Pl.Y(0)); g.closePath(); g.globalAlpha = 0.16; g.fillStyle = c.cv; g.fill(); g.restore();
+      }
+      g.save(); g.beginPath();
+      f.pts.forEach((q, i) => (i ? g.lineTo(Pl.X(q[0]), Pl.Y(q[1])) : g.moveTo(Pl.X(q[0]), Pl.Y(q[1]))));
+      g.strokeStyle = c.cv; g.lineWidth = 2.6; g.stroke(); g.restore();
+      f.pts.forEach(q => D.circle(g, Pl.X(q[0]), Pl.Y(q[1]), 3.5, { fill: c.cv }));
+      head(z, 'Sorted by score', 360, 24);
+      f.P.slice(0, 14).forEach((a, i) => {
+        const done = i < (f.upto || 0);
+        D.circle(g, 370, 46 + i * 19, 6, { fill: klass(z, a.y ? 1 : 0) });
+        D.text(g, `${f2(a.s, 2)}  ${a.y ? 'positive' : 'negative'}`, 384, 50 + i * 19, { s: 11, mono: true, b: done, c: done ? c.ink : c.ink2 });
+      });
+      if (f.done) D.text(g, `AUC ${f2(f.area, 3)}`, 500, 300, { s: 15, b: true, c: c.cv });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 4.2  cross validation splits: plain, stratified, grouped and time ordered
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, rr, klass, box } = MLZ;
+  const N = 20;
+  const label = i => (i >= 16 ? 1 : 0);
+  const patient = i => i % 5;
+  function folds(mode) {
+    const F = [];
+    const all = [...Array(N).keys()];
+    if (mode === 'kfold') for (let k = 0; k < 5; k++) { const v = all.slice(k * 4, k * 4 + 4); F.push({ val: v, train: all.filter(i => !v.includes(i)) }); }
+    if (mode === 'strat') {
+      const neg = all.filter(i => !label(i)), pos = all.filter(i => label(i));
+      for (let k = 0; k < 5; k++) { const v = neg.slice(k * 3.2 | 0, (k + 1) * 3.2 | 0).concat(pos[k] !== undefined ? [pos[k]] : []); F.push({ val: v, train: all.filter(i => !v.includes(i)) }); }
+    }
+    if (mode === 'group') for (let k = 0; k < 5; k++) { const v = all.filter(i => patient(i) === k); F.push({ val: v, train: all.filter(i => !v.includes(i)) }); }
+    if (mode === 'time') for (let k = 1; k <= 4; k++) F.push({ train: all.slice(0, 4 * k), val: all.slice(4 * k, 4 * k + 4) });
+    return F;
+  }
+  const NAMES = { kfold: 'KFold (no shuffle)', strat: 'StratifiedKFold', group: 'GroupKFold', time: 'TimeSeriesSplit' };
+  trace('mlkfold', {
+    title: 'Cross validation: every row gets a turn in validation',
+    sub: 'Twenty rows in their stored order (4 positives at the end, rows of 5 patients mixed together). Each step shows one split: blue rows train the model, the purple rows score it. Change the splitter to see how each one chooses its folds.',
+    W: 600, H: 330,
+    params: [{ k: 'mode', label: 'Splitter', type: 'select', v: 'kfold', opts: [['kfold', 'KFold without shuffling'], ['strat', 'StratifiedKFold'], ['group', 'GroupKFold (by patient)'], ['time', 'TimeSeriesSplit']] }],
+    tips: [
+      { t: 'StratifiedKFold: every validation fold gets one of the 4 positives.', set: { mode: 'strat' }, play: true },
+      { t: 'TimeSeriesSplit: always train on the past and validate on the next block, never the other way round.', set: { mode: 'time' }, play: true }
+    ],
+    frames(p) {
+      const F = folds(p.mode);
+      const fr = [{ F, mode: p.mode, say: `${N} rows. Rows 17 to 20 are the positives (orange). The letter under each row is its patient (A to E). The splitter is <b>${NAMES[p.mode]}</b>.` }];
+      F.forEach((f, k) => {
+        const pos = f.val.filter(label).length, pats = [...new Set(f.val.map(patient))].length;
+        let extra = '';
+        if (p.mode === 'kfold') extra = pos === 0 ? ' This validation fold has <b>no positives</b>, so recall cannot even be measured here.' : pos === 4 ? ' All 4 positives sit in this fold and none are left for training.' : '';
+        if (p.mode === 'strat') extra = ` It holds ${pos} positive, the same share as the whole data.`;
+        if (p.mode === 'group') extra = ` Every row of patient ${'ABCDE'[k]} is here and none in training, so the model is scored on a person it has never seen.`;
+        if (p.mode === 'time') extra = ` Train on rows 1 to ${f.train.length}, validate on the next ${f.val.length}. The future is never used to predict the past.`;
+        fr.push({ F, mode: p.mode, k, say: `Split ${k + 1} of ${F.length}: ${f.train.length} rows train the model and ${f.val.length} score it (${pats} patient${pats > 1 ? 's' : ''} in validation).${extra}` });
+      });
+      const msg = {
+        kfold: 'Without shuffling, sorted data gives lopsided folds. Shuffle (KFold(shuffle=True)) or, for classification, use StratifiedKFold.',
+        strat: 'Stratified folds keep the class balance in every fold, so every score is measured on comparable data. It is the default for classifiers in cross_val_score.',
+        group: 'Grouped folds stop the model from recognising a patient it already saw. Use GroupKFold whenever rows from the same person, device or session can appear more than once.',
+        time: 'Time ordered splits mimic deployment: the model only ever knows the past. Shuffled folds on time series give scores that are too optimistic.'
+      };
+      fr.push({ F, mode: p.mode, done: true, say: `Every row was used for validation ${p.mode === 'time' ? 'at most' : 'exactly'} once. The cross validation score is the mean of the ${F.length} fold scores. ${msg[p.mode]}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, NAMES[f.mode], 16, 24);
+      const cw = 26, x0 = 30;
+      for (let i = 0; i < N; i++) {
+        D.text(g, String(i + 1), x0 + i * cw + 11, 46, { a: 'center', s: 9, c: c.ink2 });
+        D.circle(g, x0 + i * cw + 11, 60, 6, { fill: klass(z, label(i) ? 1 : 0) });
+        D.text(g, 'ABCDE'[patient(i)], x0 + i * cw + 11, 82, { a: 'center', s: 10, b: true, c: c.ink2 });
+      }
+      f.F.forEach((s, k) => {
+        const y = 100 + k * 34, active = f.k === k || f.done;
+        D.text(g, `${k + 1}`, 16, y + 17, { s: 11, b: true, c: active ? c.ink : c.ink2 });
+        for (let i = 0; i < N; i++) {
+          const inV = s.val.includes(i), inT = s.train.includes(i);
+          const fill = !active ? c.bg : inV ? c.cv : inT ? klass(z, 0) : c.surf;
+          rr(g, x0 + i * cw, y, cw - 3, 24, 4, { fill, stroke: c.line, w: 0.6 });
+        }
+      });
+      if (f.k !== undefined || f.done) {
+        rr(g, 30, 290, 14, 14, 3, { fill: klass(z, 0) }); D.text(g, 'train', 50, 302, { s: 11, c: c.ink2 });
+        rr(g, 100, 290, 14, 14, 3, { fill: c.cv }); D.text(g, 'validation', 120, 302, { s: 11, c: c.ink2 });
+        rr(g, 200, 290, 14, 14, 3, { fill: c.surf, stroke: c.line }); D.text(g, 'not used', 220, 302, { s: 11, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 4.2  learning curves: does more data help? (polynomial regression of growing degree)
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  function fit(xs, ys, d) {
+    const m = d + 1, A = Array.from({ length: m }, () => Array(m + 1).fill(0));
+    xs.forEach((x, n) => { const pw = [1]; for (let j = 1; j < m; j++) pw.push(pw[j - 1] * x); for (let i = 0; i < m; i++) { for (let j = 0; j < m; j++) A[i][j] += pw[i] * pw[j]; A[i][m] += pw[i] * ys[n]; } });
+    for (let i = 0; i < m; i++) A[i][i] += 1e-6;
+    for (let i = 0; i < m; i++) {
+      let piv = i; for (let r = i + 1; r < m; r++) if (Math.abs(A[r][i]) > Math.abs(A[piv][i])) piv = r;
+      [A[i], A[piv]] = [A[piv], A[i]];
+      for (let r = 0; r < m; r++) if (r !== i) { const q = A[r][i] / A[i][i]; for (let cc = i; cc <= m; cc++) A[r][cc] -= q * A[i][cc]; }
+    }
+    const w = A.map((row, i) => row[m] / row[i]);
+    return x => { let s = 0, pw = 1; for (let j = 0; j < m; j++) { s += w[j] * pw; pw *= x; } return s; };
+  }
+  function sample(n, seed) {
+    const r = rng(seed), P = [];
+    for (let i = 0; i < n; i++) { const x = 2 * r() - 1; let s = 0; for (let k = 0; k < 6; k++) s += r(); P.push({ x, y: Math.sin(Math.PI * x) + 0.3 * (s - 3) * Math.SQRT2 }); }
+    return P;
+  }
+  trace('mllearncurve', {
+    title: 'Learning curve: train and validation error as data grows',
+    sub: 'Fit a polynomial of the chosen degree to more and more training points and measure the error on the training points and on 200 fresh validation points. The shape of the two curves says whether more data or a different model will help.',
+    W: 600, H: 330,
+    params: [{ k: 'deg', label: 'Polynomial degree (model complexity)', type: 'range', v: 1, min: 1, max: 9, step: 1 }],
+    tips: [
+      { t: 'Degree 3: both curves meet low, near the noise level. A good fit.', set: { deg: 3 }, play: true },
+      { t: 'Degree 9: with 8 or 12 points the validation error is huge (high variance), then the gap closes as data grows.', set: { deg: 9 }, play: true }
+    ],
+    frames(p) {
+      const pool = sample(80, 5), val = sample(200, 901);
+      const mse = (f, S) => S.reduce((s, q) => s + (q.y - f(q.x)) ** 2, 0) / S.length;
+      const res = [];
+      const fr = [{ res: [], say: `We fit a degree ${p.deg} polynomial. The noise in the data has variance 0.09, so no model can get a validation error much below about 0.09.` }];
+      [8, 12, 16, 24, 32, 48, 64, 80].forEach(n => {
+        const S = pool.slice(0, n), f = fit(S.map(q => q.x), S.map(q => q.y), p.deg);
+        const t = mse(f, S), v = mse(f, val);
+        res.push({ n, t, v });
+        fr.push({ res: res.slice(), f, S, say: `${n} training points: training error ${f2(t, 3)}, validation error <b>${f2(v, 3)}</b>${t < 0.02 && v > 0.5 ? '. The curve passes almost exactly through the training points but swings wildly between them.' : '.'}` });
+      });
+      const last = res[res.length - 1], gap = last.v - last.t;
+      const diag = last.v > 0.2 && gap < 0.08 ? `<b>High bias</b>: both errors are high and close together (${f2(last.t, 3)} and ${f2(last.v, 3)}). More data will not help. Use a more flexible model.`
+        : gap > 0.04 ? `<b>Some variance left</b>: validation error ${f2(last.v, 3)} is still above training error ${f2(last.t, 3)}. More data or regularisation would help.`
+        : res[0].v - res[0].t > 0.3 ? `<b>High variance with little data</b>: at 8 points the gap was ${res[0].v - res[0].t > 10 ? 'over 10' : f2(res[0].v - res[0].t, 2)}, by 80 points it has closed to ${f2(gap, 3)}. For this flexible model, more data was the cure.`
+        : `<b>A good fit</b>: both errors end close to the noise level (${f2(last.t, 3)} and ${f2(last.v, 3)}).`;
+      fr.push({ res, f: fr[fr.length - 1].f, S: pool, done: true, say: diag });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const top = Math.min(1.2, Math.max(0.3, ...f.res.map(r => Math.min(r.v, 1.2)), 0.3));
+      const P = plot(z, [10, 10, 300, 310], [0, 80], [0, top], { dx: 0, dy: 2, xl: 'training points', yl: 'error' });
+      D.line(g, P.X(0), P.Y(0.09), P.X(80), P.Y(0.09), c.line, 1, [4, 4]);
+      D.text(g, 'noise 0.09', P.X(78), P.Y(0.09) - 4, { a: 'right', s: 9, c: c.ink2 });
+      [['t', klass(z, 0), 'train'], ['v', klass(z, 1), 'validation']].forEach(([k, col, name], j) => {
+        g.save(); g.beginPath();
+        f.res.forEach((r, i) => { const X = P.X(r.n), Y = P.Y(Math.min(r[k], top)); i ? g.lineTo(X, Y) : g.moveTo(X, Y); });
+        g.strokeStyle = col; g.lineWidth = 2.4; g.stroke(); g.restore();
+        f.res.forEach(r => D.circle(g, P.X(r.n), P.Y(Math.min(r[k], top)), 3.5, { fill: col }));
+        D.text(g, name, 230, 30 + j * 16, { s: 11, b: true, c: col });
+      });
+      if (f.f) {
+        const Q = plot(z, [320, 10, 270, 310], [-1, 1], [-2, 2], { dx: 1, dy: 0 });
+        f.S.forEach(q => D.circle(g, Q.X(q.x), Q.Y(q.y), 3, { fill: klass(z, 0) }));
+        g.save(); g.beginPath(); g.rect(Q.x0, Q.y0, Q.w, Q.h); g.clip(); g.beginPath();
+        for (let i = 0; i <= 120; i++) { const x = -1 + 2 * i / 120, X = Q.X(x), Y = Q.Y(Math.max(-3, Math.min(3, f.f(x)))); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+        g.strokeStyle = klass(z, 1); g.lineWidth = 2.2; g.stroke(); g.restore();
+        D.text(g, 'the fitted curve', 330, 30, { s: 11, b: true, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 4.3  grid search against random search when only one setting really matters
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  const score = (x, y) => 0.6 + 0.35 * Math.exp(-(((x - 0.63) / 0.07) ** 2)) + 0.03 * y;
+  trace('mlgridrandom', {
+    title: 'Grid search or random search?',
+    sub: 'Two settings on a 0 to 1 scale. The score (shading) depends a lot on the first setting and hardly at all on the second. Both searches get 9 tries. Watch how many different values of the important setting each one tests.',
+    W: 600, H: 330,
+    params: [{ k: 'seed', label: 'Random seed', type: 'range', v: 4, min: 1, max: 30, step: 1 }],
+    tips: [{ t: 'Try other seeds: random search is not always better, but on average it covers the important setting far more finely.', set: { seed: 12 }, play: true }],
+    frames(p) {
+      const G = [], R = [], r = rng(p.seed * 13 + 5);
+      [1 / 6, 0.5, 5 / 6].forEach(x => [1 / 6, 0.5, 5 / 6].forEach(y => G.push({ x, y, s: score(x, y) })));
+      for (let i = 0; i < 9; i++) { const x = r(), y = r(); R.push({ x, y, s: score(x, y) }); }
+      const bg = G.reduce((a, b) => (b.s > a.s ? b : a)), br = R.reduce((a, b) => (b.s > a.s ? b : a));
+      const fr = [{ G: [], R: [], say: 'Darker means a better score. The best region is a narrow band around 0.63 on the first setting. The second setting barely matters, but we do not know that in advance.' }];
+      for (let i = 3; i <= 9; i += 3) fr.push({ G: G.slice(0, i), R: [], say: `Grid search, tries ${i - 2} to ${i}: a 3 × 3 grid. ${i === 9 ? `All 9 tries test only <b>3 different values</b> of the important setting (0.17, 0.5, 0.83). Best score ${f2(bg.s, 3)}.` : 'Each column repeats the same value of the first setting.'}` });
+      for (let i = 3; i <= 9; i += 3) fr.push({ G, R: R.slice(0, i), say: `Random search, tries ${i - 2} to ${i}: each try picks both settings at random. ${i === 9 ? `9 tries test <b>9 different values</b> of the important setting. Best score ${f2(br.s, 3)}${br.s > bg.s ? ', better than the grid' : ''}.` : ''}` });
+      fr.push({ G, R, bg, br, done: true, say: `Grid best ${f2(bg.s, 3)} at first setting ${f2(bg.x, 2)}, random best ${f2(br.s, 3)} at ${f2(br.x, 2)}. When only a few settings matter, which is usual, random search explores each of them more finely for the same cost (Bergstra and Bengio, 2012).` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 330, 310], [0, 1], [0, 1], { dx: 1, dy: 1, xl: 'setting 1 (matters)', yl: 'setting 2' });
+      const cell = 8;
+      g.save();
+      for (let px = P.X(0); px < P.X(1); px += cell) for (let py = P.Y(1); py < P.Y(0); py += cell) {
+        const x = (px + cell / 2 - P.X(0)) / (P.X(1) - P.X(0)), y = (P.Y(0) - py - cell / 2) / (P.Y(0) - P.Y(1));
+        g.globalAlpha = Math.max(0, (score(x, y) - 0.58) / 0.42) * 0.55; g.fillStyle = c.cv; g.fillRect(px, py, cell, cell);
+      }
+      g.restore();
+      f.G.forEach(q => { D.circle(g, P.X(q.x), P.Y(q.y), 7, { fill: klass(z, 0), stroke: c.surf, w: 1.5 }); D.line(g, P.X(q.x), P.Y(0), P.X(q.x), P.Y(0) + 8, klass(z, 0), 3); });
+      f.R.forEach(q => { D.circle(g, P.X(q.x), P.Y(q.y), 7, { fill: klass(z, 1), stroke: c.surf, w: 1.5 }); D.line(g, P.X(q.x), P.Y(0) + 4, P.X(q.x), P.Y(0) + 12, klass(z, 1), 3); });
+      head(z, 'Best score found', 360, 24);
+      const best = S => (S.length ? S.reduce((a, b) => (b.s > a.s ? b : a)).s : null);
+      D.text(g, 'grid search', 360, 52, { s: 12, b: true, c: klass(z, 0) });
+      D.text(g, best(f.G) === null ? '...' : f2(best(f.G), 3), 500, 52, { s: 13, mono: true, b: true, c: c.ink });
+      D.text(g, 'random search', 360, 76, { s: 12, b: true, c: klass(z, 1) });
+      D.text(g, best(f.R) === null ? '...' : f2(best(f.R), 3), 500, 76, { s: 13, mono: true, b: true, c: c.ink });
+      D.text(g, 'ticks under the plot show which', 360, 120, { s: 11, c: c.ink2 });
+      D.text(g, 'values of setting 1 were tested', 360, 136, { s: 11, c: c.ink2 });
+      D.text(g, `grid: ${new Set(f.G.map(q => q.x)).size} values`, 360, 166, { s: 12, mono: true, c: klass(z, 0) });
+      D.text(g, `random: ${f.R.length} values`, 360, 186, { s: 12, mono: true, c: klass(z, 1) });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Supervised 4.3  calibration: does "70% sure" really mean right 70% of the time?
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, rng, klass } = MLZ;
+  const sig = t => 1 / (1 + Math.exp(-t)), logit = p => Math.log(p / (1 - p));
+  trace('mlcalib', {
+    title: 'Calibration: are the probabilities honest?',
+    sub: 'An overconfident model scores 600 examples. Group the predictions into bins, and in each bin compare the average predicted probability with how often the label really was 1. Then fit Platt scaling and check again.',
+    W: 600, H: 330,
+    params: [{ k: 'over', label: 'How overconfident the model is', type: 'range', v: 2.5, min: 0.5, max: 4, step: 0.5 }],
+    tips: [
+      { t: 'Overconfidence 1: the model is already honest, the points sit on the diagonal.', set: { over: 1 }, play: true },
+      { t: 'Overconfidence 0.5: an underconfident model (too close to 0.5), the curve is too steep.', set: { over: 0.5 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(23), D0 = [];
+      for (let i = 0; i < 600; i++) { const q = 0.03 + 0.94 * r(); D0.push({ q, y: r() < q ? 1 : 0, p: sig(p.over * logit(q)) }); }
+      const bins = ps => [0, 1, 2, 3, 4].map(b => { const S = D0.filter((d, i) => Math.min(4, Math.floor(ps[i] * 5)) === b); return S.length ? { m: S.reduce((s, d, j) => s + ps[D0.indexOf(d)], 0) / S.length, o: S.reduce((s, d) => s + d.y, 0) / S.length, n: S.length } : null; }).filter(Boolean);
+      const brier = ps => D0.reduce((s, d, i) => s + (ps[i] - d.y) ** 2, 0) / D0.length;
+      const raw = D0.map(d => d.p), B1 = bins(raw);
+      let a = 1, b = 0;
+      for (let it = 0; it < 600; it++) {
+        let ga = 0, gb = 0;
+        D0.forEach(d => { const t = logit(Math.min(0.999, Math.max(0.001, d.p))), e = sig(a * t + b) - d.y; ga += e * t; gb += e; });
+        a -= 0.5 * ga / D0.length; b -= 0.5 * gb / D0.length;
+      }
+      const cal = D0.map(d => sig(a * logit(Math.min(0.999, Math.max(0.001, d.p))) + b)), B2 = bins(cal);
+      const fr = [{ B1: [], say: 'The dashed diagonal is perfect calibration: among predictions of 0.7, exactly 70% should really be 1.' }];
+      B1.forEach((q, i) => fr.push({ B1: B1.slice(0, i + 1), say: `Bin ${i + 1}: ${q.n} predictions with average probability ${f2(q.m, 2)}. The label was really 1 in <b>${f2(q.o * 100, 0)}%</b> of them. ${Math.abs(q.m - q.o) < 0.05 ? 'Close to honest.' : q.m > q.o ? 'The model predicts too high here.' : 'The model predicts too low here.'}` }));
+      fr.push({ B1, bri1: brier(raw), say: `Brier score ${f2(brier(raw), 4)}. ${p.over > 1.2 ? 'The points form an S that is too flat: when the model says 0.95 it is right much less often. Typical for naive Bayes and boosted trees.' : p.over < 0.9 ? 'The points are too steep: the model hedges towards 0.5. Typical for random forests and SVM scores.' : 'The points follow the diagonal.'}` });
+      fr.push({ B1, B2, bri1: brier(raw), bri2: brier(cal), a, b, say: `<b>Platt scaling</b> fits p' = sigmoid(A × logit(p) + B), in practice on held out data. Here A = ${f2(a, 2)}, B = ${f2(b, 2)}. The calibrated points (green) sit on the diagonal and the Brier score ${brier(cal) < brier(raw) - 0.002 ? 'drops to' : 'stays at'} <b>${f2(brier(cal), 4)}</b>. The ranking, and so the AUC, does not change.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 330, 310], [0, 1], [0, 1], { dx: 1, dy: 1, xl: 'predicted probability', yl: 'observed share of 1s' });
+      D.line(g, P.X(0), P.Y(0), P.X(1), P.Y(1), c.ink2, 1.2, [5, 4]);
+      const draw = (B, col) => {
+        g.save(); g.beginPath(); B.forEach((q, i) => (i ? g.lineTo(P.X(q.m), P.Y(q.o)) : g.moveTo(P.X(q.m), P.Y(q.o)))); g.strokeStyle = col; g.lineWidth = 2.4; g.stroke(); g.restore();
+        B.forEach(q => D.circle(g, P.X(q.m), P.Y(q.o), 5, { fill: col }));
+      };
+      draw(f.B1, klass(z, 1));
+      if (f.B2) draw(f.B2, c.green || '#16a34a');
+      head(z, 'Reliability', 360, 24);
+      D.text(g, 'model as it is', 360, 50, { s: 12, b: true, c: klass(z, 1) });
+      if (f.bri1 !== undefined) D.text(g, `Brier ${f2(f.bri1, 4)}`, 480, 50, { s: 12, mono: true, c: c.ink });
+      if (f.B2) {
+        D.text(g, 'after Platt scaling', 360, 74, { s: 12, b: true, c: c.green || '#16a34a' });
+        D.text(g, `Brier ${f2(f.bri2, 4)}`, 480, 74, { s: 12, mono: true, c: c.ink });
+        D.text(g, `A = ${f2(f.a, 2)}, B = ${f2(f.b, 2)}`, 360, 104, { s: 12, mono: true, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 1.1  k-means: assign every point to the nearest centre, move each centre to its points' mean
+   ===================================================================================================== */
+const MLKM = (() => {
+  const { rng } = MLZ;
+  function blobs(n, centres, sd, seed) {
+    const r = rng(seed), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < n; i++) { const c = centres[i % centres.length]; P.push({ x: c[0] + sd * g(), y: c[1] + sd * g(), t: i % centres.length }); }
+    return P;
+  }
+  const d2 = (a, c) => (a.x - c.x) ** 2 + (a.y - c.y) ** 2;
+  function seedCentres(P, k, how, seed) {
+    const r = rng(seed);
+    if (how === 'random') { const C = []; while (C.length < k) { const q = P[Math.floor(r() * P.length)]; if (!C.includes(q)) C.push(q); } return C.map(q => ({ x: q.x, y: q.y })); }
+    const C = [P[Math.floor(r() * P.length)]];
+    while (C.length < k) {
+      const w = P.map(a => Math.min(...C.map(c => d2(a, c)))), s = w.reduce((u, v) => u + v, 0);
+      let t = r() * s, i = 0; while (t > w[i] && i < P.length - 1) { t -= w[i]; i++; }
+      C.push(P[i]);
+    }
+    return C.map(q => ({ x: q.x, y: q.y }));
+  }
+  function run(P, C) {
+    const hist = [];
+    for (let it = 0; it < 20; it++) {
+      const lab = P.map(a => { let b = 0; C.forEach((c, j) => { if (d2(a, c) < d2(a, C[b])) b = j; }); return b; });
+      const inertia = P.reduce((s, a, i) => s + d2(a, C[lab[i]]), 0);
+      const N = C.map((c, j) => { const S = P.filter((_, i) => lab[i] === j); return S.length ? { x: S.reduce((s, a) => s + a.x, 0) / S.length, y: S.reduce((s, a) => s + a.y, 0) / S.length } : c; });
+      hist.push({ C: C.map(c => ({ ...c })), lab, inertia, N });
+      const moved = N.reduce((s, c, j) => s + Math.hypot(c.x - C[j].x, c.y - C[j].y), 0);
+      C = N;
+      if (moved < 1e-9) break;
+    }
+    return hist;
+  }
+  return { blobs, seedCentres, run, d2 };
+})();
+(() => {
+  const { trace, plot, D, f2, head, klass } = MLZ;
+  const DATA = { three: [[2, 2], [7, 3], [4.5, 7.5]], four: [[2, 2], [7, 2], [2, 7], [7, 7]], close: [[3, 3], [5, 4], [8, 8]] };
+  trace('mlkmeans', {
+    title: 'k-means: assign, update, repeat',
+    sub: 'Pick k starting centres. Then repeat two steps until nothing changes: give every point to its nearest centre, and move every centre to the mean of its points. Each round can only lower the total squared distance (inertia).',
+    W: 600, H: 330,
+    params: [
+      { k: 'data', label: 'Data', type: 'select', v: 'three', opts: [['three', 'Three groups'], ['four', 'Four groups'], ['close', 'Two groups close together']] },
+      { k: 'k', label: 'k (number of clusters)', type: 'range', v: 3, min: 2, max: 5, step: 1 },
+      { k: 'init', label: 'Starting centres', type: 'select', v: 'random', opts: [['random', 'Random points'], ['pp', 'k-means++ (spread out)']] },
+      { k: 'seed', label: 'Random seed', type: 'range', v: 3, min: 1, max: 20, step: 1 }
+    ],
+    tips: [
+      { t: 'Four groups but k = 3: k-means must merge two of them. It always returns exactly k clusters.', set: { data: 'four', k: 3 }, play: true },
+      { t: 'Try seeds with random starts on four groups and k = 4: some runs get stuck with two centres in one group.', set: { data: 'four', k: 4, init: 'random', seed: 6 }, play: true }
+    ],
+    frames(p) {
+      const P = MLKM.blobs(60, DATA[p.data], 0.9, 11), C0 = MLKM.seedCentres(P, p.k, p.init, p.seed);
+      const H = MLKM.run(P, C0);
+      const fr = [{ P, say: `${P.length} points with no labels. We ask k-means for <b>${p.k}</b> clusters.` }];
+      fr.push({ P, C: H[0].C, say: `Choose ${p.k} starting centres (crosses) ${p.init === 'pp' ? 'with k-means++: the first at random, each next one far from those already chosen' : 'by picking random points'}.` });
+      H.forEach((h, i) => {
+        fr.push({ P, C: h.C, lab: h.lab, inertia: h.inertia, say: `Round ${i + 1}, assign: every point joins its nearest centre. Inertia (sum of squared distances to the centres) = <b>${f2(h.inertia, 1)}</b>.` });
+        if (i < H.length - 1) fr.push({ P, C: h.N, old: h.C, lab: h.lab, inertia: h.inertia, say: `Round ${i + 1}, update: move each centre to the mean of its points (the arrows).` });
+      });
+      const last = H[H.length - 1];
+      fr.push({ P, C: last.C, lab: last.lab, inertia: last.inertia, done: true, say: `No point changed cluster, so k-means has converged after ${H.length} rounds with inertia <b>${f2(last.inertia, 1)}</b>. This is a local minimum: a different start can end somewhere else, which is why KMeans runs n_init starts and keeps the best.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1, 10.5], [-1, 10.5], { dx: 0, dy: 0 });
+      f.P.forEach((a, i) => D.circle(g, P.X(a.x), P.Y(a.y), 4.5, { fill: f.lab ? klass(z, f.lab[i]) : c.ink2, stroke: c.surf, w: 1 }));
+      if (f.old) f.old.forEach((o, j) => D.arrow ? D.arrow(g, P.X(o.x), P.Y(o.y), P.X(f.C[j].x), P.Y(f.C[j].y), c.ink, 1.6) : D.line(g, P.X(o.x), P.Y(o.y), P.X(f.C[j].x), P.Y(f.C[j].y), c.ink, 1.6));
+      (f.C || []).forEach((q, j) => {
+        const X = P.X(q.x), Y = P.Y(q.y), col = klass(z, j);
+        D.line(g, X - 9, Y - 9, X + 9, Y + 9, c.ink, 5); D.line(g, X - 9, Y + 9, X + 9, Y - 9, c.ink, 5);
+        D.line(g, X - 8, Y - 8, X + 8, Y + 8, col, 3); D.line(g, X - 8, Y + 8, X + 8, Y - 8, col, 3);
+      });
+      head(z, 'k-means', 425, 24);
+      if (f.inertia !== undefined) D.text(g, `inertia ${f2(f.inertia, 1)}`, 425, 50, { s: 14, b: true, c: c.cv });
+      if (f.lab) (f.C || []).forEach((q, j) => D.text(g, `cluster ${j + 1}: ${f.lab.filter(l => l === j).length} points`, 425, 80 + j * 20, { s: 12, mono: true, c: klass(z, j) }));
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 1.1  choosing k: the elbow of the inertia curve and the silhouette score
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass } = MLZ;
+  trace('mlelbow', {
+    title: 'Choosing k: elbow and silhouette',
+    sub: 'Run k-means for k = 1 to 8 on the same points. Inertia always falls as k grows, so look for the bend (elbow). The silhouette score measures how much closer points are to their own cluster than to the next one, higher is better.',
+    W: 600, H: 330,
+    params: [{ k: 'groups', label: 'True number of groups in the data', type: 'range', v: 4, min: 2, max: 6, step: 1 }],
+    tips: [{ t: 'Two true groups: the elbow and the silhouette both point clearly at k = 2.', set: { groups: 2 }, play: true }],
+    frames(p) {
+      const centres = [[2, 2], [8, 2], [2, 8], [8, 8], [5, 5], [5, 9]].slice(0, p.groups);
+      const P = MLKM.blobs(150, centres, 0.8, 21);
+      const res = [];
+      const sil = lab => {
+        let tot = 0;
+        P.forEach((a, i) => {
+          const by = {};
+          P.forEach((b, j) => { if (i !== j) { const d = Math.sqrt(MLKM.d2(a, b)); (by[lab[j]] = by[lab[j]] || []).push(d); } });
+          const own = by[lab[i]] ? by[lab[i]].reduce((s, v) => s + v, 0) / by[lab[i]].length : 0;
+          const other = Math.min(...Object.keys(by).filter(k => +k !== lab[i]).map(k => by[k].reduce((s, v) => s + v, 0) / by[k].length));
+          tot += isFinite(other) ? (other - own) / Math.max(own, other) : 0;
+        });
+        return tot / P.length;
+      };
+      const fr = [{ P, res: [], say: `150 points. In truth there are ${p.groups} groups, but k-means does not know that. We try every k from 1 to 8.` }];
+      for (let k = 1; k <= 8; k++) {
+        let best = null;
+        for (let s = 1; s <= 3; s++) { const H = MLKM.run(P, MLKM.seedCentres(P, k, 'pp', s * 7 + k)); const h = H[H.length - 1]; if (!best || h.inertia < best.inertia) best = h; }
+        const sv = k > 1 ? sil(best.lab) : null;
+        res.push({ k, inertia: best.inertia, sil: sv, lab: best.lab, C: best.C });
+        fr.push({ P, res: res.slice(), show: res[k - 1], say: `k = ${k}: inertia <b>${f2(best.inertia, 0)}</b>${sv === null ? ' (silhouette needs at least 2 clusters)' : `, silhouette <b>${f2(sv, 3)}</b>`}.${k > 1 ? ` Inertia fell by ${f2(100 * (1 - best.inertia / res[k - 2].inertia), 0)}% from k = ${k - 1}.` : ''}` });
+      }
+      const bs = res.filter(r => r.sil !== null).reduce((a, b) => (b.sil > a.sil ? b : a));
+      fr.push({ P, res, show: bs, done: true, bs, say: `The inertia curve bends sharply around k = ${p.groups}, and after that each extra cluster helps little. The silhouette is highest at <b>k = ${bs.k}</b>. When the two disagree, or the data has no clear groups, choose k by what the clusters will be used for.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const mx = f.res.length ? f.res[0].inertia : 1;
+      const P = plot(z, [10, 10, 280, 310], [0, 8], [0, mx * 1.05 || 1], { dx: 0, dy: 0, xl: 'k', yl: 'inertia' });
+      g.save(); g.beginPath(); f.res.forEach((r, i) => (i ? g.lineTo(P.X(r.k), P.Y(r.inertia)) : g.moveTo(P.X(r.k), P.Y(r.inertia)))); g.strokeStyle = c.cv; g.lineWidth = 2.4; g.stroke(); g.restore();
+      f.res.forEach(r => D.circle(g, P.X(r.k), P.Y(r.inertia), 4, { fill: c.cv }));
+      f.res.forEach(r => { if (r.sil !== null) { const h = Math.max(0, r.sil) * 120; g.fillStyle = f.bs && r.k === f.bs.k ? klass(z, 1) : c.line; g.fillRect(P.X(r.k) - 6, P.Y(0) - h, 12, h); } });
+      D.text(g, 'bars: silhouette', 200, 30, { s: 10, b: true, c: klass(z, 1) });
+      const Q = plot(z, [300, 10, 290, 310], [-1, 11], [-1, 11], { dx: 0, dy: 0, grid: false });
+      f.P.forEach((a, i) => D.circle(g, Q.X(a.x), Q.Y(a.y), 3.5, { fill: f.show ? klass(z, f.show.lab[i]) : c.ink2 }));
+      if (f.show) D.text(g, `k = ${f.show.k}`, 310, 30, { s: 13, b: true, c: c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 1.2  agglomerative clustering: merge the two closest clusters and grow a dendrogram
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, points, D, f2, head, klass } = MLZ;
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  function link(A, B, P, how) {
+    if (how === 'ward') {
+      const m = S => ({ x: S.reduce((s, i) => s + P[i].x, 0) / S.length, y: S.reduce((s, i) => s + P[i].y, 0) / S.length });
+      return Math.sqrt(2 * A.length * B.length / (A.length + B.length)) * dist(m(A), m(B));
+    }
+    const ds = [];
+    A.forEach(i => B.forEach(j => ds.push(dist(P[i], P[j]))));
+    if (how === 'single') return Math.min(...ds);
+    if (how === 'complete') return Math.max(...ds);
+    return ds.reduce((s, v) => s + v, 0) / ds.length;
+  }
+  const NAME = { single: 'single linkage (closest pair)', complete: 'complete linkage (farthest pair)', average: 'average linkage (mean of all pairs)', ward: 'Ward (smallest rise in squared error)' };
+  trace('mldendro', {
+    title: 'Agglomerative clustering and the dendrogram',
+    sub: 'Start with every point as its own cluster. Again and again, merge the two closest clusters. The dendrogram on the right records every merge at the height of its distance. Cut it where the jump is biggest.',
+    W: 600, H: 330,
+    params: [
+      { k: 'pts', label: 'Points (x y)', type: 'area', v: '1 1; 1.6 2; 2.2 1.2; 6 6; 6.6 7.2; 7.4 6.2; 8 1.5; 8.8 2.2' },
+      { k: 'how', label: 'Linkage (distance between clusters)', type: 'select', v: 'single', opts: [['single', 'Single (closest pair)'], ['complete', 'Complete (farthest pair)'], ['average', 'Average'], ['ward', 'Ward']] }
+    ],
+    tips: [
+      { t: 'A chain of points with single linkage: each point is close to the next, so the chain merges early, one link at a time.', set: { pts: '1 1; 2 1.6; 3 2.2; 4 2.8; 5 3.4; 8.5 8.5; 9.2 8; 8.6 7.6', how: 'single' }, play: true },
+      { t: 'Same chain with complete linkage: the far ends make the chain look wide, so its pieces join much higher up the tree than with single linkage.', set: { pts: '1 1; 2 1.6; 3 2.2; 4 2.8; 5 3.4; 8.5 8.5; 9.2 8; 8.6 7.6', how: 'complete' }, play: true },
+      { t: 'Two groups with stray points between them: single linkage hops across the strays, so the two groups join at a low height. Switch to Ward and they join much higher.', set: { pts: '1 1; 1.6 2; 2.2 1.2; 6 6; 6.6 7.2; 7.4 6.2; 3.2 3; 4.6 4.6', how: 'single' }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 12);
+      if (P.length < 3) throw new Error('Type at least three points');
+      let C = P.map((_, i) => ({ m: [i], id: i }));
+      const merges = [];
+      let next = P.length;
+      while (C.length > 1) {
+        let best = null;
+        for (let i = 0; i < C.length; i++) for (let j = i + 1; j < C.length; j++) {
+          const d = link(C[i].m, C[j].m, P, p.how);
+          if (!best || d < best.d - 1e-12) best = { d, i, j };
+        }
+        const a = C[best.i], b = C[best.j], nc = { m: a.m.concat(b.m), id: next++, a, b, h: best.d };
+        merges.push(nc);
+        C = C.filter((_, k) => k !== best.i && k !== best.j).concat([nc]);
+      }
+      const order = []; (function walk(n) { if (n.a) { walk(n.a); walk(n.b); } else order.push(n.id); })(C[0]);
+      let gap = 0, cut = 0;
+      for (let k = 1; k < merges.length; k++) { const g2 = merges[k].h - merges[k - 1].h; if (g2 > gap) { gap = g2; cut = k; } }
+      const cutH = (merges[cut - 1].h + merges[cut].h) / 2, nClus = merges.length - cut + 1;
+      const groupsAt = k => { let G = P.map((_, i) => [i]); merges.slice(0, k).forEach(mg => { G = G.filter(g => !mg.a.m.includes(g[0]) && !mg.b.m.includes(g[0])); G.push(mg.m); }); return G; };
+      const fr = [{ P, merges, order, k: 0, G: groupsAt(0), say: `${P.length} points, each starting as its own cluster. Distance between clusters: <b>${NAME[p.how]}</b>.` }];
+      merges.forEach((mg, k) => {
+        fr.push({ P, merges, order, k: k + 1, G: groupsAt(k + 1), last: mg, say: `Merge ${k + 1}: the closest two clusters (${mg.a.m.length} and ${mg.b.m.length} point${mg.b.m.length > 1 ? 's' : ''}) are ${f2(mg.h, 2)} apart, so they join into one cluster of ${mg.m.length}. ${C.length === 1 && k === merges.length - 1 ? 'Everything is now one cluster.' : `${P.length - k - 1} clusters remain.`}` });
+      });
+      fr.push({ P, merges, order, k: merges.length, G: groupsAt(cut), cutH, done: true, say: `The biggest jump in merge height is between ${f2(merges[cut - 1].h, 2)} and ${f2(merges[cut].h, 2)}. Cutting the tree at height ${f2(cutH, 2)} (dashed line) gives <b>${nClus} clusters</b>. You never had to choose k in advance: the tree holds every answer from ${P.length} clusters down to 1.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const xs = f.P.map(q => q.x), ys = f.P.map(q => q.y);
+      const lo = Math.min(...xs, ...ys) - 1, hi = Math.max(...xs, ...ys) + 1;
+      const P = plot(z, [10, 10, 280, 310], [lo, hi], [lo, hi], { dx: 0, dy: 0 });
+      const gid = i => f.G.findIndex(G => G.includes(i));
+      f.merges.slice(0, f.k).forEach(mg => {
+        let best = null;
+        mg.a.m.forEach(i => mg.b.m.forEach(j => { const d = dist(f.P[i], f.P[j]); if (!best || d < best.d) best = { d, i, j }; }));
+        D.line(g, P.X(f.P[best.i].x), P.Y(f.P[best.i].y), P.X(f.P[best.j].x), P.Y(f.P[best.j].y), f.last === mg ? c.cv : c.ink2, f.last === mg ? 2 : 1, [4, 3]);
+      });
+      f.P.forEach((q, i) => {
+        const G = f.G[gid(i)], col = G.length > 1 ? klass(z, gid(i)) : c.ink2;
+        D.circle(g, P.X(q.x), P.Y(q.y), f.last && f.last.m.includes(i) ? 7 : 5, { fill: col, stroke: f.last && f.last.m.includes(i) ? c.ink : c.surf, w: 1.5 });
+        D.text(g, String(i + 1), P.X(q.x) + 7, P.Y(q.y) - 6, { s: 10, c: c.ink2 });
+      });
+      const top = f.merges[f.merges.length - 1].h * 1.08 || 1;
+      const Q = plot(z, [300, 10, 290, 310], [-0.5, f.P.length - 0.5], [0, top], { dx: 0, dy: 2, grid: false });
+      const pos = {}, hgt = {};
+      f.order.forEach((id, k) => { pos[id] = k; hgt[id] = 0; D.text(g, String(id + 1), Q.X(k), Q.Y(0) + 14, { a: 'center', s: 10, c: c.ink2 }); });
+      D.line(g, Q.X(-0.5), Q.Y(0), Q.X(f.P.length - 0.5), Q.Y(0), c.line, 1);
+      for (let t = 0; t <= 4; t++) { const v = top * t / 4; D.text(g, f2(v, 1), Q.x0 + 22, Q.Y(v) + 3, { a: 'right', s: 10, c: c.ink2 }); }
+      f.merges.forEach((mg, k) => {
+        pos[mg.id] = (pos[mg.a.id] + pos[mg.b.id]) / 2; hgt[mg.id] = mg.h;
+        if (k >= f.k) return;
+        const col = f.last === mg ? c.cv : c.ink;
+        D.line(g, Q.X(pos[mg.a.id]), Q.Y(hgt[mg.a.id]), Q.X(pos[mg.a.id]), Q.Y(mg.h), col, 1.8);
+        D.line(g, Q.X(pos[mg.b.id]), Q.Y(hgt[mg.b.id]), Q.X(pos[mg.b.id]), Q.Y(mg.h), col, 1.8);
+        D.line(g, Q.X(pos[mg.a.id]), Q.Y(mg.h), Q.X(pos[mg.b.id]), Q.Y(mg.h), col, 1.8);
+      });
+      if (f.cutH) { D.line(g, Q.X(-0.5), Q.Y(f.cutH), Q.X(f.P.length - 0.5), Q.Y(f.cutH), c.red, 1.6, [6, 4]); D.text(g, 'cut', Q.X(f.P.length - 0.5) - 2, Q.Y(f.cutH) - 5, { a: 'right', s: 11, b: true, c: c.red }); }
+      D.text(g, 'merge height', 340, 26, { s: 11, b: true, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 1.2  DBSCAN: core points, growing clusters through dense regions, border points and noise
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function data(kind) {
+    const r = rng(kind === 'moons' ? 5 : kind === 'blobs' ? 9 : 13), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    if (kind === 'moons') for (let i = 0; i < 160; i++) { const t = Math.PI * r(); P.push(i % 2 ? { x: Math.cos(t) + 0.06 * g(), y: Math.sin(t) + 0.06 * g() } : { x: 1 - Math.cos(t) + 0.06 * g(), y: 0.5 - Math.sin(t) + 0.06 * g() }); }
+    if (kind === 'blobs') { [[-0.6, 0.1, 0.12, 60], [1.6, 0.2, 0.3, 60], [0.6, 1.4, 0.2, 40]].forEach(([cx, cy, s, n]) => { for (let i = 0; i < n; i++) P.push({ x: cx + s * g(), y: cy + s * g() }); }); }
+    if (kind === 'ring') for (let i = 0; i < 160; i++) { const t = 2 * Math.PI * r(), rad = i % 3 ? 1.3 : 0.35; P.push({ x: 0.5 + rad * Math.cos(t) + 0.05 * g(), y: 0.5 + rad * Math.sin(t) + 0.05 * g() }); }
+    for (let i = 0; i < 12; i++) P.push({ x: -1.5 + 4 * r(), y: -1 + 3 * r() });
+    return P;
+  }
+  trace('mldbscan', {
+    title: 'DBSCAN: clusters are dense regions',
+    sub: 'A point with at least minPts points within distance eps (itself included) is a core point. Clusters grow from core point to core point. Points near a cluster but not core are border points. Everything else is noise.',
+    W: 600, H: 330,
+    params: [
+      { k: 'data', label: 'Data', type: 'select', v: 'moons', opts: [['moons', 'Two moons plus noise'], ['blobs', 'Blobs of different spread'], ['ring', 'A ring around a blob']] },
+      { k: 'eps', label: 'eps (neighbourhood radius)', type: 'range', v: 0.2, min: 0.05, max: 0.6, step: 0.05 },
+      { k: 'mp', label: 'minPts', type: 'range', v: 5, min: 2, max: 12, step: 1 }
+    ],
+    tips: [
+      { t: 'eps too small: most points are noise and the moons break into pieces.', set: { data: 'moons', eps: 0.1 }, play: true },
+      { t: 'eps too large: the two moons touch and become one cluster.', set: { data: 'moons', eps: 0.45 }, play: true },
+      { t: 'Blobs of different spread: one eps cannot suit the tight blob and the wide blob at the same time.', set: { data: 'blobs', eps: 0.15, mp: 5 }, play: true }
+    ],
+    frames(p) {
+      const P = data(p.data), n = P.length;
+      const near = P.map(a => P.map((b, j) => j).filter(j => Math.hypot(a.x - P[j].x, a.y - P[j].y) <= p.eps + 1e-12));
+      const core = near.map(N => N.length >= p.mp);
+      const nc = core.filter(Boolean).length;
+      const ex = core.findIndex(Boolean) >= 0 ? core.findIndex(Boolean) : 0;
+      const lab = new Array(n).fill(-1);
+      const fr = [{ P, lab: lab.slice(), say: `${n} points, no labels. DBSCAN needs two settings: eps = <b>${f2(p.eps, 2)}</b> and minPts = <b>${p.mp}</b>. It does not need the number of clusters.` }];
+      fr.push({ P, lab: lab.slice(), ring: ex, eps: p.eps, say: `Look at one point: ${near[ex].length} points lie within eps of it (the circle), counting itself. ${near[ex].length >= p.mp ? `That is at least ${p.mp}, so it is a <b>core point</b>.` : `That is fewer than ${p.mp}, so it is not a core point.`}` });
+      fr.push({ P, lab: lab.slice(), core, say: `Do the same count for every point. <b>${nc}</b> of ${n} points are core points (outlined). The rest are not dense enough on their own.` });
+      let k = 0, shown = 0;
+      for (let i = 0; i < n; i++) {
+        if (!core[i] || lab[i] !== -1) continue;
+        lab[i] = k; let front = [i], waves = 0;
+        while (front.length) {
+          const nf = [];
+          front.forEach(q => near[q].forEach(j => { if (lab[j] === -1) { lab[j] = k; if (core[j]) nf.push(j); } }));
+          front = nf; waves++;
+          if (shown < 3 && k < 2 && (waves === 2 || waves === 6)) fr.push({ P, lab: lab.slice(), core, say: `Cluster ${k + 1} is growing: from each core point, add every point within eps, and keep going from the new core points (${lab.filter(l => l === k).length} points so far).` });
+        }
+        const size = lab.filter(l => l === k).length, border = lab.map((l, j) => l === k && !core[j]).filter(Boolean).length;
+        if (k < 6) fr.push({ P, lab: lab.slice(), core, say: `Cluster ${k + 1} cannot grow any more: <b>${size} points</b>, of which ${border} are border points (reached from a core point but not core themselves).` });
+        k++; shown++;
+      }
+      const noise = lab.filter(l => l === -1).length;
+      fr.push({ P, lab: lab.slice(), core, done: true, say: `Done: <b>${k} cluster${k === 1 ? '' : 's'}</b> and <b>${noise} noise points</b> (grey crosses). ${k > 6 ? 'Many tiny clusters usually mean eps is too small. ' : ''}${k === 1 && p.data !== 'blobs' ? 'One big cluster usually means eps is too large. ' : ''}The clusters can have any shape, because they follow the dense regions.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-1.6, 2.6], [-1.1, 2.13], { dx: 1, dy: 1 });
+      const sx = (P.X(1) - P.X(0));
+      if (f.ring !== undefined) { const q = f.P[f.ring]; D.circle(g, P.X(q.x), P.Y(q.y), sx * f.eps, { fill: 'rgba(124,58,237,0.12)', stroke: c.cv, w: 1.5 }); }
+      f.P.forEach((q, i) => {
+        const X = P.X(q.x), Y = P.Y(q.y), l = f.lab[i];
+        if (f.done && l === -1) { D.line(g, X - 3.5, Y - 3.5, X + 3.5, Y + 3.5, c.ink2, 1.6); D.line(g, X - 3.5, Y + 3.5, X + 3.5, Y - 3.5, c.ink2, 1.6); return; }
+        D.circle(g, X, Y, f.core && f.core[i] ? 4.2 : 3, f.core && f.core[i] ? { fill: l >= 0 ? klass(z, l) : c.line, stroke: c.ink, w: 1 } : { fill: l >= 0 ? klass(z, l) : c.ink2 });
+      });
+      head(z, 'DBSCAN', 425, 24);
+      const k = Math.max(-1, ...f.lab) + 1, noise = f.lab.filter(l => l === -1).length;
+      D.text(g, `clusters so far: ${k}`, 425, 50, { s: 13, b: true, c: c.cv });
+      for (let j = 0; j < Math.min(k, 8); j++) D.text(g, `cluster ${j + 1}: ${f.lab.filter(l => l === j).length}`, 425, 76 + j * 18, { s: 12, mono: true, c: klass(z, j) });
+      if (k > 8) D.text(g, `and ${k - 8} more`, 425, 76 + 8 * 18, { s: 12, c: c.ink2 });
+      D.text(g, `${f.done ? 'noise' : 'not yet in a cluster'}: ${noise}`, 425, 250, { s: 12, mono: true, c: c.ink2 });
+      if (f.core) D.text(g, 'outlined = core point', 425, 272, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 1.3  EM for a 1D Gaussian mixture: E step responsibilities, M step new means, spreads, weights
+   ===================================================================================================== */
+const MLGM = (() => {
+  const npdf = (x, m, s) => Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * Math.sqrt(2 * Math.PI));
+  function em1(x, mu, sd, w, rounds) {
+    const H = [];
+    for (let it = 0; it < rounds; it++) {
+      const R = x.map(v => { const d = mu.map((m, k) => w[k] * npdf(v, m, sd[k])); const s = d.reduce((a, b) => a + b, 0) || 1e-300; return { r: d.map(q => q / s), s }; });
+      const ll = R.reduce((a, q) => a + Math.log(q.s), 0);
+      const nk = mu.map((_, k) => R.reduce((a, q) => a + q.r[k], 0));
+      const nmu = mu.map((_, k) => R.reduce((a, q, i) => a + q.r[k] * x[i], 0) / (nk[k] || 1e-12));
+      const nsd = mu.map((_, k) => Math.max(0.05, Math.sqrt(R.reduce((a, q, i) => a + q.r[k] * (x[i] - nmu[k]) ** 2, 0) / (nk[k] || 1e-12))));
+      const nw = nk.map(n => n / x.length);
+      H.push({ mu: mu.slice(), sd: sd.slice(), w: w.slice(), R: R.map(q => q.r), ll, nmu, nsd, nw });
+      const move = nmu.reduce((a, m, k) => a + Math.abs(m - mu[k]) + Math.abs(nsd[k] - sd[k]), 0);
+      mu = nmu; sd = nsd; w = nw;
+      if (move < 1e-3) break;
+    }
+    return H;
+  }
+  return { npdf, em1 };
+})();
+(() => {
+  const { trace, plot, nums, D, f2, head, klass, span } = MLZ;
+  trace('mlem', {
+    title: 'EM for a Gaussian mixture, one round at a time',
+    sub: 'Each point gets a probability of belonging to each bell curve (E step). Then each curve moves to fit the points it is responsible for, weighted by those probabilities (M step). Repeat until nothing changes.',
+    W: 600, H: 330,
+    params: [
+      { k: 'x', label: 'Data values', type: 'area', v: '150 152 155 157 160 170 174 176 179 182' },
+      { k: 'k', label: 'Number of bell curves', type: 'range', v: 2, min: 2, max: 3, step: 1 },
+      { k: 'start', label: 'Starting means', type: 'select', v: 'close', opts: [['close', 'Close together'], ['spread', 'Spread over the range']] }
+    ],
+    tips: [
+      { t: 'Starting means spread over the range: EM reaches the same answer in fewer rounds.', set: { start: 'spread' }, play: true },
+      { t: 'Three tight groups with three curves: each curve settles on one group and the weights match the group sizes.', set: { x: '1 1.3 1.5 1.8 5 5.2 5.5 9 9.2 9.4 9.5 9.8', k: 3, start: 'spread' }, play: true }
+    ],
+    frames(p) {
+      const x = nums(p.x).slice(0, 40);
+      if (x.length < 4) throw new Error('Type at least four numbers');
+      const lo = Math.min(...x), hi = Math.max(...x), rg = hi - lo || 1, mean = x.reduce((a, b) => a + b, 0) / x.length;
+      const sd0 = Math.sqrt(x.reduce((a, v) => a + (v - mean) ** 2, 0) / x.length) || 1;
+      const K = p.k;
+      const mu0 = Array.from({ length: K }, (_, k) => p.start === 'close' ? mean + (k - (K - 1) / 2) * 0.5 * sd0 : lo + rg * (k + 0.5) / K);
+      const H = MLGM.em1(x, mu0, mu0.map(() => sd0), mu0.map(() => 1 / K), 100);
+      const xr = span(x, 0.25), base = { x, xr };
+      const fmt = h => h.mu.map((m, k) => `curve ${k + 1}: mean ${f2(m, 1)}, sd ${f2(h.sd[k], 1)}, weight ${f2(h.w[k], 2)}`).join('. ');
+      const fr = [{ ...base, say: `${x.length} values and no labels. We believe they come from <b>${K}</b> bell curves (Gaussians), but we do not know where the curves are, how wide they are, or which value came from which.` }];
+      fr.push({ ...base, mu: H[0].mu, sd: H[0].sd, w: H[0].w, say: `Start with a guess. ${fmt(H[0])}.` });
+      const show = H.length <= 8 ? H.map((_, i) => i) : [0, 1, 2, 3, 5, 8, 12, 20, H.length - 1].filter((v, i, a) => v < H.length && a.indexOf(v) === i);
+      show.forEach(i => {
+        const h = H[i];
+        const ex = x.reduce((b, v, j) => (Math.max(...h.R[j]) < Math.max(...h.R[b]) ? j : b), 0);
+        fr.push({ ...base, mu: h.mu, sd: h.sd, w: h.w, R: h.R, ll: h.ll, mark: ex, say: `Round ${i + 1}, E step: for each value, the share of the bars says how likely each curve produced it. The value ${f2(x[ex], 1)} is the most uncertain: ${h.R[ex].map((r, k) => `${f2(100 * r, 0)}% curve ${k + 1}`).join(', ')}. Log likelihood of the data under these curves: <b>${f2(h.ll, 3)}</b>.` });
+        fr.push({ ...base, mu: h.nmu, sd: h.nsd, w: h.nw, old: h.mu, R: h.R, ll: h.ll, say: `Round ${i + 1}, M step: each curve moves to the weighted mean of the values, using those probabilities as weights. ${fmt({ mu: h.nmu, sd: h.nsd, w: h.nw })}.` });
+      });
+      const L = H[H.length - 1];
+      fr.push({ ...base, mu: L.nmu, sd: L.nsd, w: L.nw, R: L.R, ll: L.ll, done: true, say: `${H.length < 100 ? `Converged after ${H.length} rounds: the curves stopped moving and the log likelihood stopped rising (it never falls in EM).` : 'Stopped after 100 rounds, still creeping: the log likelihood rises a little each round but has not settled. A different start would converge faster.'} Every value keeps a probability for every curve, which is a <b>soft</b> clustering. k-means would give each value to exactly one group.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const ymax = f.mu ? Math.max(...f.mu.map((m, k) => f.w[k] * MLGM.npdf(m, m, f.sd[k]))) * 1.15 : 1;
+      const P = plot(z, [10, 10, 580, 310], f.xr, [-0.45 * ymax, ymax], { dx: 0, dy: 3 });
+      D.line(g, P.X(f.xr[0]), P.Y(0), P.X(f.xr[1]), P.Y(0), c.line, 1);
+      if (f.mu) f.mu.forEach((m, k) => {
+        g.save(); g.beginPath();
+        for (let i = 0; i <= 200; i++) { const v = f.xr[0] + (f.xr[1] - f.xr[0]) * i / 200, y = f.w[k] * MLGM.npdf(v, m, f.sd[k]); i ? g.lineTo(P.X(v), P.Y(y)) : g.moveTo(P.X(v), P.Y(y)); }
+        g.strokeStyle = klass(z, k); g.lineWidth = 2.4; g.stroke(); g.restore();
+        D.line(g, P.X(m), P.Y(0), P.X(m), P.Y(f.w[k] * MLGM.npdf(m, m, f.sd[k])), klass(z, k), 1, [3, 3]);
+        if (f.old) D.line(g, P.X(f.old[k]), P.Y(-0.04 * ymax), P.X(m), P.Y(-0.04 * ymax), klass(z, k), 2);
+      });
+      const bh = P.Y(-0.4 * ymax) - P.Y(-0.1 * ymax);
+      f.x.forEach((v, j) => {
+        const X = P.X(v);
+        if (f.R) { let y0 = P.Y(-0.1 * ymax); f.R[j].forEach((r, k) => { g.fillStyle = klass(z, k); g.fillRect(X - 3, y0, 6, bh * r); y0 += bh * r; }); }
+        D.circle(g, X, P.Y(0), f.mark === j ? 6 : 4, { fill: c.ink, stroke: f.mark === j ? c.red : c.surf, w: f.mark === j ? 2 : 1 });
+      });
+      if (f.R) D.text(g, 'bars: probability of each curve', 590 - 8, 26, { a: 'right', s: 11, b: true, c: c.ink2 });
+      if (f.ll !== undefined) D.text(g, `log likelihood ${f2(f.ll, 3)}`, 590 - 8, 44, { a: 'right', s: 12, b: true, c: c.cv });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 1.3  a 2D Gaussian mixture fitted by EM: ellipses, soft assignments, compared with k-means
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  const SETS = {
+    flat: [[[0, 0], [[6, 0], [0, 0.3]], 90], [[0, 2.5], [[6, 0], [0, 0.3]], 90]],
+    tilted: [[[-2.5, 1], [[3, 2.4], [2.4, 3]], 90], [[3.5, 1], [[0.4, 0], [0, 2.5]], 90]],
+    blobs: [[[-3, 0], [[0.5, 0], [0, 0.5]], 60], [[2, -1], [[1.5, 0], [0, 1.5]], 60], [[1, 4], [[0.8, 0.5], [0.5, 0.8]], 60]]
+  };
+  function make(kind) {
+    const r = rng(17), n = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    SETS[kind].forEach(([m, S, cnt], t) => {
+      const a = Math.sqrt(S[0][0]), b = S[1][0] / a, cc = Math.sqrt(Math.max(1e-9, S[1][1] - b * b));
+      for (let i = 0; i < cnt; i++) { const u = n(), v = n(); P.push({ x: m[0] + a * u, y: m[1] + b * u + cc * v, t }); }
+    });
+    return P;
+  }
+  const gpdf = (p, m, S) => {
+    const det = S[0] * S[2] - S[1] * S[1], dx = p.x - m.x, dy = p.y - m.y;
+    const q = (S[2] * dx * dx - 2 * S[1] * dx * dy + S[0] * dy * dy) / det;
+    return Math.exp(-0.5 * q) / (2 * Math.PI * Math.sqrt(det));
+  };
+  function em(P, K, seed) {
+    const r = rng(seed);
+    let M = []; while (M.length < K) { const q = P[Math.floor(r() * P.length)]; if (!M.includes(q)) M.push(q); }
+    M = M.map(q => ({ x: q.x, y: q.y }));
+    let S = M.map(() => [1, 0, 1]), W = M.map(() => 1 / K);
+    const H = [];
+    for (let it = 0; it < 150; it++) {
+      let ll = 0;
+      const R = P.map(p => { const d = M.map((m, k) => W[k] * gpdf(p, m, S[k])); const s = d.reduce((a, b) => a + b, 0) || 1e-300; ll += Math.log(s); return d.map(v => v / s); });
+      H.push({ M: M.map(m => ({ ...m })), S: S.map(s => s.slice()), W: W.slice(), R, ll });
+      const nk = M.map((_, k) => R.reduce((a, q) => a + q[k], 0) + 1e-9);
+      const NM = M.map((_, k) => ({ x: R.reduce((a, q, i) => a + q[k] * P[i].x, 0) / nk[k], y: R.reduce((a, q, i) => a + q[k] * P[i].y, 0) / nk[k] }));
+      S = NM.map((m, k) => {
+        let a = 0, b = 0, d = 0;
+        P.forEach((p, i) => { const w = R[i][k], dx = p.x - m.x, dy = p.y - m.y; a += w * dx * dx; b += w * dx * dy; d += w * dy * dy; });
+        return [a / nk[k] + 1e-3, b / nk[k], d / nk[k] + 1e-3];
+      });
+      W = nk.map(v => v / P.length);
+      if (it > 0 && Math.abs(ll - H[it - 1].ll) < 1e-4) break;
+      M = NM;
+    }
+    return H;
+  }
+  trace('mlgmm2d', {
+    title: 'A Gaussian mixture in 2D: ellipses instead of circles',
+    sub: 'Each cluster is a Gaussian with its own mean, its own shape and tilt (covariance), and its own weight. EM fits them all. The ellipses show where each Gaussian holds most of its points, and the colour strength shows how sure the model is.',
+    W: 600, H: 330,
+    params: [
+      { k: 'data', label: 'Data', type: 'select', v: 'flat', opts: [['flat', 'Two long flat clusters'], ['tilted', 'A tilted and a tall cluster'], ['blobs', 'Three blobs of different size']] },
+      { k: 'k', label: 'Number of components', type: 'range', v: 2, min: 1, max: 4, step: 1 },
+      { k: 'seed', label: 'Random start', type: 'range', v: 5, min: 1, max: 12, step: 1 }
+    ],
+    tips: [
+      { t: 'A tilted and a tall cluster: k-means could only cut them with a straight line between centres, but the ellipses follow each shape.', set: { data: 'tilted', k: 2, seed: 2 }, play: true },
+      { t: 'Another random start on the flat clusters: EM crawls for many rounds and ends in a worse local maximum with a lower log likelihood. That is why GaussianMixture has n_init.', set: { data: 'flat', k: 2, seed: 2 }, play: true }
+    ],
+    frames(p) {
+      const P = make(p.data), H = em(P, p.k, p.seed);
+      const fr = [{ P, say: `${P.length} points. We fit a mixture of <b>${p.k}</b> Gaussian${p.k > 1 ? 's' : ''}, each with a mean, a 2 by 2 covariance (its shape and tilt) and a weight.` }];
+      const show = H.length <= 10 ? H.map((_, i) => i) : [0, 1, 2, 3, 5, 8, 12, 18, 26, 40, 60, 90, 120, H.length - 1].filter((v, i, a) => v < H.length && a.indexOf(v) === i);
+      show.forEach((i, j) => {
+        const h = H[i];
+        fr.push({ P, h, say: i === 0 ? `Start: ${p.k} means at random points, round covariances, equal weights. The colours are the first E step: each point’s colour mixes the components by probability. Log likelihood <b>${f2(h.ll, 1)}</b>.` : `Round ${i + 1}: the M step refitted each mean, covariance and weight, then the E step recomputed the probabilities. Log likelihood <b>${f2(h.ll, 1)}</b>${i > show[j - 1] + 1 ? ` (${i - show[j - 1] - 1 === 1 ? `round ${i}` : `rounds ${show[j - 1] + 2} to ${i}`} skipped here)` : ''}.` });
+      });
+      const L = H[H.length - 1];
+      const unsure = L.R.filter(r => Math.max(...r) < 0.9).length;
+      fr.push({ P, h: L, done: true, say: `${H.length < 150 ? 'Converged' : 'Stopped'} after ${H.length} rounds with log likelihood <b>${f2(L.ll, 1)}</b>. Weights: ${L.W.map(w => f2(w, 2)).join(', ')}. ${unsure} point${unsure === 1 ? ' is less than 90% sure of its' : 's are less than 90% sure of their'} component (pale colours), mostly where the ellipses overlap.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-7, 7], [-4.2, 6.6], { dx: 0, dy: 0 });
+      const mixc = r => { let R2 = 0, G2 = 0, B2 = 0; r.forEach((v, k) => { const h = klass(z, k).replace('#', ''); R2 += v * parseInt(h.slice(0, 2), 16); G2 += v * parseInt(h.slice(2, 4), 16); B2 += v * parseInt(h.slice(4, 6), 16); }); return `rgb(${R2 | 0},${G2 | 0},${B2 | 0})`; };
+      f.P.forEach((q, i) => {
+        const r = f.h ? f.h.R[i] : null, sure = r ? Math.max(...r) : 1;
+        g.globalAlpha = r && r.length > 1 ? 0.35 + 0.65 * (sure - 1 / r.length) / (1 - 1 / r.length) : 1;
+        D.circle(g, P.X(q.x), P.Y(q.y), 3.5, { fill: r && /^#/.test(klass(z, 0)) ? mixc(r) : r ? klass(z, r.indexOf(sure)) : c.ink2 });
+        g.globalAlpha = 1;
+      });
+      if (f.h) f.h.M.forEach((m, k) => {
+        const [a, b, d] = f.h.S[k], tr = a + d, dt = a * d - b * b, l1 = tr / 2 + Math.sqrt(Math.max(0, tr * tr / 4 - dt)), l2 = Math.max(1e-9, tr / 2 - Math.sqrt(Math.max(0, tr * tr / 4 - dt)));
+        const th = Math.abs(b) < 1e-12 ? (a >= d ? 0 : Math.PI / 2) : Math.atan2(l1 - a, b);
+        const v1 = [Math.cos(th), Math.sin(th)], v2 = [-Math.sin(th), Math.cos(th)];
+        g.save(); g.beginPath();
+        for (let i = 0; i <= 72; i++) { const t = 2 * Math.PI * i / 72, u = 2 * Math.sqrt(l1) * Math.cos(t), v = 2 * Math.sqrt(l2) * Math.sin(t); const X = P.X(m.x + u * v1[0] + v * v2[0]), Y = P.Y(m.y + u * v1[1] + v * v2[1]); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+        g.strokeStyle = klass(z, k); g.lineWidth = 2.4; g.stroke(); g.restore();
+        D.circle(g, P.X(m.x), P.Y(m.y), 5, { fill: klass(z, k), stroke: c.ink, w: 1.5 });
+      });
+      head(z, 'Gaussian mixture', 425, 24);
+      if (f.h) {
+        D.text(g, `log likelihood ${f2(f.h.ll, 1)}`, 425, 50, { s: 13, b: true, c: c.cv });
+        f.h.W.forEach((w, k) => D.text(g, `component ${k + 1}: weight ${f2(w, 2)}`, 425, 76 + 18 * k, { s: 12, mono: true, c: klass(z, k) }));
+        D.text(g, 'ellipse = 2 standard deviations', 425, 250, { s: 11, c: c.ink2 });
+        D.text(g, 'pale point = unsure', 425, 268, { s: 11, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 2.1  PCA: centre, search for the direction of most variance, project onto it
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, points, D, f2, head, klass } = MLZ;
+  trace('mlpca', {
+    title: 'PCA: find the direction where the data spreads most',
+    sub: 'Centre the points, then look for the line through the centre along which the projected points spread out the most. That line is the first principal component. Keeping only the position along it turns two numbers per point into one.',
+    W: 600, H: 330,
+    params: [{ k: 'pts', label: 'Points (x y)', type: 'area', v: '1 2; 2 3; 3 3.5; 4 5; 5 5.5; 6 7; 2.5 4.5; 4.5 3.8' }],
+    tips: [
+      { t: 'Points almost on a line: the first component keeps nearly all the variance, so one number per point loses almost nothing.', set: { pts: '1 1; 2 2.1; 3 2.9; 4 4.2; 5 5; 6 5.9' }, play: true },
+      { t: 'A round cloud: every direction spreads about the same, so no single component is much better than another.', set: { pts: '0 1; 1 0; 0 -1; -1 0; 0.7 0.7; -0.7 0.7; 0.7 -0.7; -0.7 -0.7' }, play: true }
+    ],
+    frames(p) {
+      const P = points(p.pts).slice(0, 30);
+      if (P.length < 3) throw new Error('Type at least three points');
+      const n = P.length, mx = P.reduce((a, q) => a + q.x, 0) / n, my = P.reduce((a, q) => a + q.y, 0) / n;
+      const C = P.map(q => ({ x: q.x - mx, y: q.y - my }));
+      const sxx = C.reduce((a, q) => a + q.x * q.x, 0) / (n - 1), syy = C.reduce((a, q) => a + q.y * q.y, 0) / (n - 1), sxy = C.reduce((a, q) => a + q.x * q.y, 0) / (n - 1);
+      const varAt = th => sxx * Math.cos(th) ** 2 + 2 * sxy * Math.sin(th) * Math.cos(th) + syy * Math.sin(th) ** 2;
+      const best = 0.5 * Math.atan2(2 * sxy, sxx - syy), l1 = varAt(best), l2 = varAt(best + Math.PI / 2), tot = l1 + l2;
+      const deg = th => f2(((th * 180 / Math.PI) % 180 + 180) % 180, 0);
+      const base = { C, sxx, syy, sxy };
+      const fr = [{ ...base, raw: P, say: `${n} points with two features each. We want one new axis that keeps as much of their spread as possible.` }];
+      fr.push({ ...base, say: `Centre the data first. Subtract the mean (${f2(mx)}, ${f2(my)}) from every point, so the cloud sits around (0, 0). PCA always works on centred data.` });
+      fr.push({ ...base, say: `The covariance matrix summarises the spread: variance of x = ${f2(sxx)}, variance of y = ${f2(syy)}, covariance = ${f2(sxy)}. The total variance is ${f2(sxx + syy)}.` });
+      [0, 45, 90, 135].forEach(a => { const th = a * Math.PI / 180; fr.push({ ...base, th, proj: true, say: `Try the line at ${a} degrees. Drop each point onto it (dashed lines). The projected points have variance <b>${f2(varAt(th))}</b>, which is ${f2(100 * varAt(th) / tot, 0)}% of the total.` }); });
+      fr.push({ ...base, th: best, proj: true, pc1: true, say: `The best line is at ${deg(best)} degrees: the top eigenvector of the covariance matrix. Its variance is the top eigenvalue, <b>${f2(l1)}</b>, which is <b>${f2(100 * l1 / tot, 1)}%</b> of the total. This is principal component 1.` });
+      fr.push({ ...base, th: best, pc1: true, pc2: true, say: `Principal component 2 is perpendicular to it (${deg(best + Math.PI / 2)} degrees) and holds the remaining variance, ${f2(l2)} (${f2(100 * l2 / tot, 1)}%). Components are always at right angles and their variances add up to the total.` });
+      fr.push({ ...base, th: best, pc1: true, flat: true, done: true, say: `Keep only component 1: each point becomes one number, its position along the line (the dots on it). We kept ${f2(100 * l1 / tot, 1)}% of the variance${l1 / tot > 0.8 ? ' and lost only the small distances to the line' : ', which is not much: the distances to the line are large, so one component is not enough for this data'}. With many features, PCA does the same in many dimensions at once.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const pts = f.raw || f.C, R = Math.max(1, ...pts.map(q => Math.max(Math.abs(q.x - (f.raw ? pts.reduce((a, b) => a + b.x, 0) / pts.length : 0)), Math.abs(q.y - (f.raw ? pts.reduce((a, b) => a + b.y, 0) / pts.length : 0))))) * 1.3;
+      const cx = f.raw ? pts.reduce((a, b) => a + b.x, 0) / pts.length : 0, cy = f.raw ? pts.reduce((a, b) => a + b.y, 0) / pts.length : 0;
+      const P = plot(z, [10, 10, 310, 304], [cx - R, cx + R], [cy - R, cy + R], { dx: 1, dy: 1 });
+      if (!f.raw) { D.line(g, P.X(-R), P.Y(0), P.X(R), P.Y(0), c.line, 1); D.line(g, P.X(0), P.Y(-R), P.X(0), P.Y(R), c.line, 1); }
+      const line = (th, col, w) => { const u = Math.cos(th), v = Math.sin(th); D.line(g, P.X(-R * u), P.Y(-R * v), P.X(R * u), P.Y(R * v), col, w); };
+      if (f.th !== undefined) {
+        line(f.th, f.pc1 ? klass(z, 0) : c.cv, 2.4);
+        const u = Math.cos(f.th), v = Math.sin(f.th);
+        f.C.forEach(q => { const t = q.x * u + q.y * v; if (f.proj || f.flat) { D.line(g, P.X(q.x), P.Y(q.y), P.X(t * u), P.Y(t * v), c.ink2, 1, [3, 3]); D.circle(g, P.X(t * u), P.Y(t * v), 3.5, { fill: f.pc1 ? klass(z, 0) : c.cv }); } });
+      }
+      if (f.pc2) line(f.th + Math.PI / 2, klass(z, 1), 2.4);
+      pts.forEach(q => D.circle(g, P.X(q.x), P.Y(q.y), 5, { fill: f.flat ? c.line : c.ink, stroke: c.surf, w: 1.5 }));
+      head(z, 'PCA', 335, 24);
+      if (!f.raw) {
+        D.text(g, `var(x) = ${f2(f.sxx)}`, 335, 52, { s: 12, mono: true, c: c.ink2 });
+        D.text(g, `var(y) = ${f2(f.syy)}`, 335, 70, { s: 12, mono: true, c: c.ink2 });
+        D.text(g, `cov(x, y) = ${f2(f.sxy)}`, 335, 88, { s: 12, mono: true, c: c.ink2 });
+      }
+      if (f.th !== undefined) {
+        const vt = f.sxx * Math.cos(f.th) ** 2 + 2 * f.sxy * Math.sin(f.th) * Math.cos(f.th) + f.syy * Math.sin(f.th) ** 2;
+        D.text(g, `variance along line: ${f2(vt)}`, 335, 120, { s: 13, b: true, c: f.pc1 ? klass(z, 0) : c.cv });
+        D.text(g, `share of total: ${f2(100 * vt / (f.sxx + f.syy), 1)}%`, 335, 140, { s: 12, c: c.ink2 });
+      }
+      if (f.pc1) D.text(g, 'blue line = PC1', 335, 180, { s: 12, b: true, c: klass(z, 0) });
+      if (f.pc2) D.text(g, 'orange line = PC2', 335, 198, { s: 12, b: true, c: klass(z, 1) });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 2.1  scree plot: how much variance each component explains, and how many to keep
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function eig(A) {
+    const n = A.length, M = A.map(r => r.slice());
+    for (let sweep = 0; sweep < 60; sweep++) {
+      let off = 0;
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) off += M[i][j] ** 2;
+      if (off < 1e-12) break;
+      for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+        if (Math.abs(M[p][q]) < 1e-15) continue;
+        const th = 0.5 * Math.atan2(2 * M[p][q], M[q][q] - M[p][p]), cs = Math.cos(th), sn = Math.sin(th);
+        for (let k = 0; k < n; k++) { const a = M[k][p], b = M[k][q]; M[k][p] = cs * a - sn * b; M[k][q] = sn * a + cs * b; }
+        for (let k = 0; k < n; k++) { const a = M[p][k], b = M[q][k]; M[p][k] = cs * a - sn * b; M[q][k] = sn * a + cs * b; }
+      }
+    }
+    return M.map((r, i) => r[i]).sort((a, b) => b - a);
+  }
+  trace('mlscree', {
+    title: 'The scree plot: how many components to keep',
+    sub: 'Ten features are made from a few hidden signals plus noise. PCA sorts the components by the variance they explain. The bars drop sharply after the real signals, and the cumulative line shows how much you keep with the first k components.',
+    W: 600, H: 330,
+    params: [
+      { k: 'r', label: 'Hidden signals behind the 10 features', type: 'range', v: 3, min: 1, max: 6, step: 1 },
+      { k: 'noise', label: 'Noise level', type: 'range', v: 0.5, min: 0.1, max: 2, step: 0.1 }
+    ],
+    tips: [
+      { t: 'Lots of noise: the drop after the real signals is much less clear, and you need many components to reach 90%.', set: { r: 3, noise: 1.6 }, play: true },
+      { t: 'One hidden signal with little noise: the first component explains nearly everything.', set: { r: 1, noise: 0.2 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(31), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+      const d = 10, n = 300;
+      const W = Array.from({ length: p.r }, () => Array.from({ length: d }, () => g()));
+      const X = Array.from({ length: n }, () => { const zz = W.map(() => g()); return Array.from({ length: d }, (_, j) => zz.reduce((a, v, k) => a + v * W[k][j], 0) + p.noise * g()); });
+      const mean = Array.from({ length: d }, (_, j) => X.reduce((a, row) => a + row[j], 0) / n);
+      const C = Array.from({ length: d }, (_, i) => Array.from({ length: d }, (_, j) => X.reduce((a, row) => a + (row[i] - mean[i]) * (row[j] - mean[j]), 0) / (n - 1)));
+      const L = eig(C), tot = L.reduce((a, b) => a + b, 0), ratio = L.map(v => v / tot);
+      const cum = ratio.map((_, i) => ratio.slice(0, i + 1).reduce((a, b) => a + b, 0));
+      const k90 = cum.findIndex(v => v >= 0.9) + 1;
+      const fr = [{ ratio, cum, k: 0, say: `${n} rows with ${d} features. Behind them are ${p.r} hidden signal${p.r > 1 ? 's' : ''} mixed together, plus noise of size ${f2(p.noise, 1)}. PCA does not know that. Let us see what it finds.` }];
+      for (let k = 1; k <= d; k++) fr.push({ ratio, cum, k, say: `Component ${k} explains <b>${f2(100 * ratio[k - 1], 1)}%</b> of the variance (eigenvalue ${f2(L[k - 1], 2)}). ${k > 1 ? ` The first ${k} together keep <b>${f2(100 * cum[k - 1], 1)}%</b>.` : ''}${k === p.r + 1 ? ` Notice the drop: from here on the components mostly hold noise.` : ''}` });
+      fr.push({ ratio, cum, k: d, k90, done: true, say: `To keep 90% of the variance you need <b>${k90}</b> component${k90 > 1 ? 's' : ''}. There ${p.r > 1 ? `were ${p.r} hidden signals, so the components after the first ${p.r}` : 'was 1 hidden signal, so the components after the first'} mostly hold noise${p.r < 10 && ratio[p.r - 1] < 3 * ratio[p.r] ? ', although with this much noise the drop is hard to see' : ''}. Choose k from the elbow of the bars, from a variance target such as 90% or 95%, or from how well the next model does.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 580, 310], [0.3, 10.7], [0, 1], { dx: 0, dy: 2, grid: false });
+      for (let t = 0; t <= 4; t++) { const v = t / 4; D.line(g, P.X(0.3), P.Y(v), P.X(10.7), P.Y(v), c.line, 0.6, [2, 3]); D.text(g, `${t * 25}%`, P.x0 + 22, P.Y(v) + 3, { a: 'right', s: 10, c: c.ink2 }); }
+      for (let k = 1; k <= 10; k++) D.text(g, String(k), P.X(k), P.y0 + P.h - 6, { a: 'center', s: 10, c: c.ink2 });
+      for (let k = 1; k <= f.k; k++) { const h = P.Y(0) - P.Y(f.ratio[k - 1]); g.fillStyle = f.k90 && k <= f.k90 ? klass(z, 0) : c.line; g.fillRect(P.X(k) - 16, P.Y(0) - h, 32, h); D.text(g, `${f2(100 * f.ratio[k - 1], 0)}%`, P.X(k), P.Y(f.ratio[k - 1]) - 4, { a: 'center', s: 10, c: c.ink2 }); }
+      if (f.k) { g.save(); g.beginPath(); for (let k = 1; k <= f.k; k++) { k === 1 ? g.moveTo(P.X(k), P.Y(f.cum[0])) : g.lineTo(P.X(k), P.Y(f.cum[k - 1])); } g.strokeStyle = klass(z, 1); g.lineWidth = 2.4; g.stroke(); g.restore(); for (let k = 1; k <= f.k; k++) D.circle(g, P.X(k), P.Y(f.cum[k - 1]), 3.5, { fill: klass(z, 1) }); }
+      D.line(g, P.X(0.3), P.Y(0.9), P.X(10.7), P.Y(0.9), c.red, 1.2, [6, 4]);
+      D.text(g, '90%', P.X(10.7) - 4, P.Y(0.9) - 5, { a: 'right', s: 11, b: true, c: c.red });
+      D.text(g, 'bars: share of each component', 330, 200, { s: 11, b: true, c: c.ink2 }); D.text(g, 'orange line: cumulative share', 330, 218, { s: 11, b: true, c: klass(z, 1) });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 2.2  Isomap idea: distance along the data (shortest path in a neighbour graph) versus straight line
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const grad = (t, z) => { const a = hex(/^#/.test(klass(z, 0)) ? klass(z, 0) : '#2563eb'), b = hex(/^#/.test(klass(z, 1)) ? klass(z, 1) : '#ea580c'); return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`; };
+  trace('mlgeodesic', {
+    title: 'Distance along the data: the idea behind Isomap',
+    sub: 'Points lie on a spiral. Two points can be close in a straight line but far apart along the spiral. Isomap links each point to its nearest neighbours and measures distance as the shortest path through those links, then lays the points out by that distance.',
+    W: 600, H: 330,
+    params: [
+      { k: 'k', label: 'Neighbours per point (k)', type: 'range', v: 4, min: 1, max: 10, step: 1 },
+      { k: 'noise', label: 'Noise', type: 'range', v: 0.1, min: 0, max: 0.6, step: 0.05 }
+    ],
+    tips: [
+      { t: 'Too many neighbours: links jump across the gap between turns of the spiral, a short circuit, and the path distance becomes almost the straight line distance.', set: { k: 10, noise: 0.3 }, play: true },
+      { t: 'Only one neighbour: the graph breaks into pieces, so some points cannot be reached at all.', set: { k: 1 }, play: true }
+    ],
+    frames(p) {
+      const r = rng(23), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+      const n = 70, P = [];
+      for (let i = 0; i < n; i++) { const t = 1.5 * Math.PI + 3 * Math.PI * i / (n - 1); P.push({ x: t * Math.cos(t) / 3 + p.noise * g(), y: t * Math.sin(t) / 3 + p.noise * g(), t: i / (n - 1) }); }
+      const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+      const nb = P.map((a, i) => P.map((b, j) => [dist(a, b), j]).filter(q => q[1] !== i).sort((u, v) => u[0] - v[0]).slice(0, p.k).map(q => q[1]));
+      const adj = P.map(() => new Map());
+      nb.forEach((L, i) => L.forEach(j => { const d = dist(P[i], P[j]); adj[i].set(j, d); adj[j].set(i, d); }));
+      const edges = []; adj.forEach((m, i) => m.forEach((d, j) => { if (i < j) edges.push([i, j]); }));
+      const A = 6;
+      let B = -1, bd = Infinity;
+      P.forEach((q, j) => { if (Math.abs(j - A) > n / 4) { const d = dist(P[A], q); if (d < bd) { bd = d; B = j; } } });
+      const dj = P.map(() => Infinity), prev = P.map(() => -1), done = P.map(() => false); dj[A] = 0;
+      for (let it = 0; it < n; it++) { let u = -1; dj.forEach((d, i) => { if (!done[i] && (u < 0 || d < dj[u])) u = i; }); if (u < 0 || dj[u] === Infinity) break; done[u] = true; adj[u].forEach((w, v) => { if (dj[u] + w < dj[v]) { dj[v] = dj[u] + w; prev[v] = u; } }); }
+      const path = []; if (dj[B] < Infinity) for (let v = B; v >= 0; v = prev[v]) path.unshift(v);
+      const reach = dj.filter(d => d < Infinity).length;
+      const base = { P, edges, A, B };
+      const fr = [{ ...base, say: `${n} points lying on a spiral in 2D. The spiral is really a one dimensional curve: one number (how far along it you are) is enough to describe each point.` }];
+      fr.push({ ...base, line: true, say: `Take two points, A and B, on neighbouring turns of the spiral. In a straight line they are only <b>${f2(bd)}</b> apart, so PCA and plain distances treat them as close.` });
+      fr.push({ ...base, graph: true, say: `Link every point to its ${p.k} nearest neighbour${p.k > 1 ? 's' : ''}. This neighbour graph has ${edges.length} links. Short links follow the curve, as long as k is small enough.` });
+      if (path.length) {
+        const half = path.slice(0, Math.ceil(path.length / 2));
+        fr.push({ ...base, graph: true, path: half, say: `Find the shortest path from A to B through the links (Dijkstra’s algorithm). Halfway there, it has taken ${half.length - 1} links.` });
+        const ratio = dj[B] / bd;
+        fr.push({ ...base, graph: true, path, line: true, say: `The path takes ${path.length - 1} links and has length <b>${f2(dj[B])}</b>, which is ${f2(ratio, 1)} times the straight line. ${ratio > 2 ? 'That is the distance along the spiral, the geodesic distance.' : 'The path is barely longer than the straight line: some links jump across the gap between turns (a short circuit), so this k is too large for this data.'}` });
+      } else {
+        fr.push({ ...base, graph: true, say: `There is <b>no path</b> from A to B: with k = ${p.k} the graph falls apart into pieces, and only ${reach} of ${n} points can be reached from A. Isomap would fail here, so k must be larger.` });
+      }
+      fr.push({ ...base, graph: true, geo: dj, done: true, say: reach === n ? `Now give every point its path distance from A and lay the points out on a line in that order (right). ${dj[B] / bd > 2 ? 'The spiral unrolls into a straight strip, with colours in order: one number per point keeps the structure.' : 'Because of the short circuits, points from different turns land side by side and the order is mixed up.'} Isomap does this with all pairs of points and then runs classical MDS.` : `Only ${reach} of ${n} points are connected to A, so the layout cannot be made. Raise k until the graph is connected, but keep it small enough to avoid short circuits.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 310, 304], [-5.3, 5.3], [-5.3, 5.3], { dx: 0, dy: 0, grid: false });
+      if (f.graph) f.edges.forEach(([i, j]) => D.line(g, P.X(f.P[i].x), P.Y(f.P[i].y), P.X(f.P[j].x), P.Y(f.P[j].y), c.line, 1));
+      if (f.path) for (let i = 1; i < f.path.length; i++) { const a = f.P[f.path[i - 1]], b = f.P[f.path[i]]; D.line(g, P.X(a.x), P.Y(a.y), P.X(b.x), P.Y(b.y), c.cv, 3); }
+      if (f.line) D.line(g, P.X(f.P[f.A].x), P.Y(f.P[f.A].y), P.X(f.P[f.B].x), P.Y(f.P[f.B].y), c.red, 2, [6, 4]);
+      const mx = f.geo ? Math.max(...f.geo.filter(d => d < Infinity)) || 1 : 1;
+      f.P.forEach((q, i) => D.circle(g, P.X(q.x), P.Y(q.y), i === f.A || i === f.B ? 6 : 4, { fill: f.geo ? (f.geo[i] < Infinity ? grad(f.geo[i] / mx, z) : c.line) : grad(q.t, z), stroke: i === f.A || i === f.B ? c.ink : c.surf, w: 1.5 }));
+      D.text(g, 'A', P.X(f.P[f.A].x) + 8, P.Y(f.P[f.A].y) - 6, { s: 12, b: true, c: c.ink });
+      D.text(g, 'B', P.X(f.P[f.B].x) + 8, P.Y(f.P[f.B].y) - 6, { s: 12, b: true, c: c.ink });
+      head(z, 'Isomap idea', 335, 24);
+      D.text(g, 'colour = position along the spiral', 335, 46, { s: 11, c: c.ink2 });
+      if (f.geo) {
+        D.text(g, 'laid out by path distance from A', 335, 76, { s: 11, b: true, c: c.cv });
+        D.line(g, 360, 92, 360, 300, c.line, 1.5);
+        f.P.forEach((q, i) => { if (f.geo[i] < Infinity) D.circle(g, 360 + (i % 2 ? 10 : -10) * 0, 92 + 208 * f.geo[i] / mx, 4, { fill: grad(q.t, z) }); });
+        D.text(g, 'A', 372, 96, { s: 11, b: true, c: c.ink }); D.text(g, 'far end', 372, 300, { s: 11, c: c.ink2 });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 2.2  t-SNE: neighbour probabilities in high dimensions, a Student t map in 2D, gradient steps
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function data(kind) {
+    const r = rng(41), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const C = [[0, 0, 0, 0, 0], [6, 0, 0, 0, 0], [0, 6, 0, 0, 0]], S = kind === 'spread' ? [0.3, 1.5, 0.6] : [0.7, 0.7, 0.7];
+    const X = [], lab = [];
+    for (let k = 0; k < 3; k++) for (let i = 0; i < 20; i++) { X.push(C[k].map(v => v + S[k] * g())); lab.push(k); }
+    return { X, lab, S };
+  }
+  function affinities(X, perp) {
+    const n = X.length, P = X.map(() => new Array(n).fill(0));
+    const D2 = X.map(a => X.map(b => a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0)));
+    for (let i = 0; i < n; i++) {
+      let lo = 1e-4, hi = 1e4, beta = 1;
+      for (let t = 0; t < 60; t++) {
+        beta = Math.sqrt(lo * hi);
+        let sum = 0, H = 0; const row = D2[i].map((d, j) => (j === i ? 0 : Math.exp(-d * beta)));
+        row.forEach(v => { sum += v; }); sum = sum || 1e-300;
+        row.forEach((v, j) => { const p = v / sum; if (p > 1e-300) H -= p * Math.log(p); P[i][j] = p; });
+        if (Math.exp(H) > perp) lo = beta; else hi = beta;
+      }
+    }
+    const Q = P.map((row, i) => row.map((v, j) => (v + P[j][i]) / (2 * n)));
+    return Q;
+  }
+  function tsne(P, seed, iters) {
+    const n = P.length, r = rng(seed), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    let Y = P.map(() => [1e-2 * g(), 1e-2 * g()]), V = P.map(() => [0, 0]);
+    const snaps = {}, want = new Set([0, 10, 25, 50, 100, 200, iters]);
+    const kl = () => { const W = Y.map(a => Y.map(b => 1 / (1 + (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2))); let Z = 0; W.forEach((row, i) => row.forEach((w, j) => { if (i !== j) Z += w; })); let s = 0; P.forEach((row, i) => row.forEach((p, j) => { if (i !== j && p > 1e-12) s += p * Math.log(p / (W[i][j] / Z)); })); return s; };
+    for (let it = 0; it <= iters; it++) {
+      if (want.has(it)) snaps[it] = { Y: Y.map(y => y.slice()), kl: kl() };
+      if (it === iters) break;
+      const ex = it < 50 ? 4 : 1, mom = it < 50 ? 0.5 : 0.8, lr = 50;
+      const W = Y.map(a => Y.map(b => 1 / (1 + (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)));
+      let Z = 0; W.forEach((row, i) => row.forEach((w, j) => { if (i !== j) Z += w; }));
+      const G = Y.map((a, i) => { let gx = 0, gy = 0; for (let j = 0; j < n; j++) { if (j === i) continue; const m = (ex * P[i][j] - W[i][j] / Z) * W[i][j]; gx += 4 * m * (a[0] - Y[j][0]); gy += 4 * m * (a[1] - Y[j][1]); } return [gx, gy]; });
+      V = V.map((v, i) => [mom * v[0] - lr * G[i][0], mom * v[1] - lr * G[i][1]]);
+      Y = Y.map((y, i) => [y[0] + V[i][0], y[1] + V[i][1]]);
+    }
+    return snaps;
+  }
+  trace('mltsne', {
+    title: 't-SNE: keep neighbours together in a 2D map',
+    sub: '60 points live in 5 dimensions, in three groups. t-SNE turns distances into neighbour probabilities with a chosen perplexity, places the points randomly in 2D, and moves them step by step so that 2D neighbours match high dimensional neighbours.',
+    W: 600, H: 330,
+    params: [
+      { k: 'data', label: 'Data', type: 'select', v: 'blobs', opts: [['blobs', 'Three equal groups'], ['spread', 'Three groups of different spread']] },
+      { k: 'perp', label: 'Perplexity (about how many neighbours count)', type: 'range', v: 10, min: 2, max: 30, step: 1 },
+      { k: 'seed', label: 'Random start', type: 'range', v: 1, min: 1, max: 10, step: 1 }
+    ],
+    tips: [
+      { t: 'Groups of very different spread: t-SNE draws them at similar sizes. Sizes in a t-SNE map do not mean anything.', set: { data: 'spread', perp: 10 }, play: true },
+      { t: 'Perplexity 2: each point only cares about one or two neighbours, so groups can break into small islands.', set: { data: 'blobs', perp: 2 }, play: true }
+    ],
+    frames(p) {
+      const { X, lab, S } = data(p.data), P = affinities(X, p.perp), snaps = tsne(P, p.seed, 300);
+      const mx = Math.max(...P.flat()), top = P[0].map((v, j) => [v, j]).sort((a, b) => b[0] - a[0]).slice(0, 3);
+      const fr = [{ lab, say: `60 points in 5 dimensions: three groups of 20${p.data === 'spread' ? ` with spreads ${S.join(', ')}` : ', all with the same spread'}. We cannot draw 5 dimensions, so t-SNE will make a 2D map.` }];
+      fr.push({ lab, P, say: `For every point, t-SNE turns distances into probabilities of being neighbours, using a bell curve whose width is set so that the perplexity is <b>${p.perp}</b> (roughly the number of neighbours that matter). Point 1’s three most likely neighbours are points ${top.map(t => t[1] + 1).join(', ')}${top.every(t => lab[t[1]] === lab[0]) ? ', all in its own group' : ''}. The square shows all 60 by 60 probabilities.` });
+      Object.keys(snaps).map(Number).sort((a, b) => a - b).forEach(it => {
+        const s = snaps[it];
+        fr.push({ lab, Y: s.Y, it, kl: s.kl, say: it === 0 ? `Start: put the 60 points at random, very close to (0, 0). The colours show the true groups, which t-SNE never sees. KL divergence (how badly 2D neighbours match) = <b>${f2(s.kl, 3)}</b>.` : `After ${it} steps of gradient descent${it <= 50 ? ', with early exaggeration that pulls neighbours together strongly at first' : ''}: KL divergence = <b>${f2(s.kl, 3)}</b>. Each step pulls true neighbours together and pushes everything else apart.` });
+      });
+      const L = snaps[300];
+      fr.push({ lab, Y: L.Y, it: 300, kl: L.kl, done: true, say: `Final map with KL divergence <b>${f2(L.kl, 3)}</b>. Points that were neighbours in 5D are neighbours here. But the sizes of groups and the gaps between them are not reliable, and a different random start gives a rotated or rearranged map.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      if (f.Y) {
+        const xs = f.Y.map(y => y[0]), ys = f.Y.map(y => y[1]);
+        const R = Math.max(1e-3, ...xs.map(Math.abs), ...ys.map(Math.abs)) * 1.15;
+        const P = plot(z, [10, 10, 310, 304], [-R, R], [-R, R], { dx: R < 1 ? 2 : 0, dy: R < 1 ? 2 : 0 });
+        f.Y.forEach((y, i) => D.circle(g, P.X(y[0]), P.Y(y[1]), 4.5, { fill: klass(z, f.lab[i]), stroke: c.surf, w: 1 }));
+      } else if (f.P) {
+        const cell = 4.4; const x0 = 30, y0 = 30;
+        const mx = Math.max(...f.P.flat());
+        f.P.forEach((row, i) => row.forEach((v, j) => { g.fillStyle = c.cv; g.globalAlpha = Math.min(1, Math.sqrt(v / mx)); g.fillRect(x0 + j * cell, y0 + i * cell, cell, cell); }));
+        g.globalAlpha = 1;
+        D.text(g, 'neighbour probabilities, 60 by 60', 30, 22, { s: 11, b: true, c: c.ink2 });
+        D.text(g, 'darker = more likely neighbours', 30, 310, { s: 11, c: c.ink2 });
+      } else {
+        D.text(g, '5 dimensions cannot be drawn directly', 160, 160, { a: 'center', s: 13, c: c.ink2 });
+      }
+      head(z, 't-SNE', 335, 24);
+      if (f.it !== undefined) { D.text(g, `step ${f.it}`, 335, 50, { s: 13, b: true, c: c.ink }); D.text(g, `KL divergence ${f2(f.kl, 3)}`, 335, 70, { s: 13, b: true, c: c.cv }); }
+      [0, 1, 2].forEach(k => D.text(g, `true group ${k + 1}`, 335, 110 + 18 * k, { s: 12, mono: true, c: klass(z, k) }));
+      D.text(g, 'colours are only for you:', 335, 180, { s: 11, c: c.ink2 });
+      D.text(g, 't-SNE never sees the groups', 335, 196, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 3.1  Isolation Forest: random cuts isolate a far point in few steps and a normal point in many
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function data() {
+    const r = rng(51), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < 60; i++) P.push({ x: 5 + 1.1 * g(), y: 5 + 1.1 * g() });
+    P.push({ x: 9.3, y: 1.2 });
+    return P;
+  }
+  function isolate(P, ti, seed) {
+    const r = rng(seed), cuts = [];
+    let idx = P.map((_, i) => i), box = { x0: 0, x1: 10, y0: 0, y1: 10 };
+    while (idx.length > 1 && cuts.length < 40) {
+      const ax = r() < 0.5 ? 'x' : 'y', vals = idx.map(i => P[i][ax]), lo = Math.min(...vals), hi = Math.max(...vals);
+      if (hi - lo < 1e-9) break;
+      const v = lo + (hi - lo) * r(), t = P[ti][ax] < v;
+      idx = idx.filter(i => (P[i][ax] < v) === t);
+      const b = { ...box };
+      if (ax === 'x') { if (t) b.x1 = v; else b.x0 = v; } else { if (t) b.y1 = v; else b.y0 = v; }
+      cuts.push({ ax, v, box: { ...box }, nb: b, left: idx.length });
+      box = b;
+    }
+    return cuts;
+  }
+  const cfun = n => 2 * (Math.log(n - 1) + 0.5772156649) - 2 * (n - 1) / n;
+  trace('mliforest', {
+    title: 'Isolation Forest: unusual points are easy to cut off',
+    sub: 'Pick a feature at random and cut at a random value between its smallest and largest. Keep only the side with our point and cut again, until it stands alone. A far away point needs few cuts. A point inside the crowd needs many. Averaging over many random trees gives the anomaly score.',
+    W: 600, H: 330,
+    params: [
+      { k: 'who', label: 'Point to isolate', type: 'select', v: 'far', opts: [['far', 'The far point (bottom right)'], ['mid', 'A point in the middle of the crowd'], ['edge', 'A point at the edge of the crowd']] },
+      { k: 'seed', label: 'Random tree', type: 'range', v: 1, min: 1, max: 20, step: 1 }
+    ],
+    tips: [
+      { t: 'A point in the middle of the crowd: the cuts keep leaving neighbours on its side, so it takes many more cuts.', set: { who: 'mid' }, play: true },
+      { t: 'Change the random tree: the number of cuts changes from tree to tree, which is why the forest averages many trees.', set: { who: 'far', seed: 7 }, play: true }
+    ],
+    frames(p) {
+      const P = data(), n = P.length;
+      const dist = P.map(q => Math.hypot(q.x - 5, q.y - 5));
+      const ti = p.who === 'far' ? n - 1 : p.who === 'mid' ? dist.slice(0, n - 1).indexOf(Math.min(...dist.slice(0, n - 1))) : dist.slice(0, n - 1).indexOf(Math.max(...dist.slice(0, n - 1)));
+      const cuts = isolate(P, ti, p.seed);
+      const fr = [{ P, ti, say: `${n} points. The highlighted one is the point we want to isolate. No labels and no distances are used, only random cuts.` }];
+      cuts.forEach((c, k) => fr.push({ P, ti, cuts: cuts.slice(0, k + 1), box: c.nb, say: `Cut ${k + 1}: pick ${c.ax} at random and cut at ${c.ax} = ${f2(c.v, 2)}. Keep the side with our point: <b>${c.left}</b> point${c.left === 1 ? '' : 's'} left${c.left === 1 ? ', so it is isolated' : ''}.` }));
+      const depths = [];
+      for (let s = 1; s <= 50; s++) depths.push(isolate(P, ti, 100 + s).length);
+      const avg = depths.reduce((a, b) => a + b, 0) / 50, c = cfun(n), score = Math.pow(2, -avg / c);
+      fr.push({ P, ti, cuts, box: cuts.length ? cuts[cuts.length - 1].nb : null, done: true, avg, score, say: `This tree needed <b>${cuts.length}</b> cut${cuts.length === 1 ? '' : 's'}. Over 50 random trees our point needs <b>${f2(avg, 1)}</b> cuts on average, against c(n) = ${f2(c, 2)} for a typical point in a random tree. Anomaly score 2<sup>&minus;${f2(avg, 1)}/${f2(c, 2)}</sup> = <b>${f2(score, 2)}</b>. ${score > 0.6 ? 'Close to 1 means clearly anomalous.' : score < 0.5 ? 'Below 0.5 means normal.' : 'Around 0.5 means nothing stands out.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 310, 304], [0, 10], [0, 10], { dx: 0, dy: 0 });
+      if (f.box) { g.fillStyle = 'rgba(124,58,237,0.10)'; g.fillRect(P.X(f.box.x0), P.Y(f.box.y1), P.X(f.box.x1) - P.X(f.box.x0), P.Y(f.box.y0) - P.Y(f.box.y1)); }
+      (f.cuts || []).forEach((k, i) => {
+        const last = i === f.cuts.length - 1, col = last ? c.cv : c.ink2;
+        if (k.ax === 'x') D.line(g, P.X(k.v), P.Y(k.box.y0), P.X(k.v), P.Y(k.box.y1), col, last ? 2.2 : 1.2);
+        else D.line(g, P.X(k.box.x0), P.Y(k.v), P.X(k.box.x1), P.Y(k.v), col, last ? 2.2 : 1.2);
+      });
+      f.P.forEach((q, i) => D.circle(g, P.X(q.x), P.Y(q.y), i === f.ti ? 7 : 4, { fill: i === f.ti ? c.red : c.ink2, stroke: i === f.ti ? c.ink : c.surf, w: 1.5 }));
+      head(z, 'Isolation Forest', 335, 24);
+      D.text(g, `cuts so far: ${(f.cuts || []).length}`, 335, 52, { s: 13, b: true, c: c.cv });
+      if (f.done) { D.text(g, `average over 50 trees: ${f2(f.avg, 1)}`, 335, 80, { s: 12, c: c.ink }); D.text(g, `anomaly score: ${f2(f.score, 2)}`, 335, 100, { s: 13, b: true, c: f.score > 0.6 ? c.red : c.green }); }
+      D.text(g, 'shaded box = region still', 335, 250, { s: 11, c: c.ink2 }); D.text(g, 'holding our point', 335, 266, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 3.1  local outlier factor: compare a point's local density with its neighbours' densities
+   ===================================================================================================== */
+(() => {
+  const { trace, plot, D, f2, head, klass, rng } = MLZ;
+  function data() {
+    const r = rng(61), g = () => { let s = 0; for (let i = 0; i < 6; i++) s += r(); return (s - 3) * Math.SQRT2; };
+    const P = [];
+    for (let i = 0; i < 30; i++) P.push({ x: 2.5 + 0.35 * g(), y: 2.5 + 0.35 * g() });
+    for (let i = 0; i < 30; i++) P.push({ x: 7 + 1.2 * g(), y: 6.5 + 1.2 * g() });
+    P.push({ x: 4.2, y: 2.5 }); P.push({ x: 1, y: 8.5 });
+    return P;
+  }
+  trace('mllof', {
+    title: 'Local outlier factor: unusual compared with its neighbours',
+    sub: 'For a point, measure how crowded its neighbourhood is (local reachability density). Then compare it with how crowded its neighbours’ own neighbourhoods are. LOF near 1 means as crowded as its neighbours. LOF well above 1 means much emptier than its neighbours: a local outlier.',
+    W: 600, H: 330,
+    params: [
+      { k: 'who', label: 'Point to examine', type: 'select', v: 'near', opts: [['near', 'Just outside the tight group'], ['sparse', 'Inside the loose group'], ['far', 'Far from everything']] },
+      { k: 'k', label: 'Neighbours (k)', type: 'range', v: 5, min: 2, max: 15, step: 1 }
+    ],
+    tips: [
+      { t: 'A point inside the loose group is far from its neighbours, but so are they from theirs, so its LOF is close to 1. A plain distance rule would wrongly flag it.', set: { who: 'sparse' }, play: true },
+      { t: 'Far from everything: its neighbours are in the loose group but it is much farther out, so LOF is high.', set: { who: 'far' }, play: true }
+    ],
+    frames(p) {
+      const P = data(), n = P.length, k = p.k;
+      const d = (a, b) => Math.hypot(P[a].x - P[b].x, P[a].y - P[b].y);
+      const knn = P.map((_, i) => P.map((_, j) => j).filter(j => j !== i).sort((a, b) => d(i, a) - d(i, b)).slice(0, k));
+      const kd = knn.map((L, i) => d(i, L[k - 1]));
+      const reach = (i, j) => Math.max(kd[j], d(i, j));
+      const lrd = knn.map((L, i) => 1 / (L.reduce((s, j) => s + reach(i, j), 0) / k));
+      const lof = knn.map((L, i) => L.reduce((s, j) => s + lrd[j], 0) / k / lrd[i]);
+      const ti = p.who === 'near' ? 60 : p.who === 'far' ? 61 : P.slice(30, 60).map((q, i) => [Math.hypot(q.x - 7, q.y - 6.5), i + 30]).sort((a, b) => a[0] - b[0])[0][1];
+      const base = { P, ti, knn, kd };
+      const nl = knn[ti].map(j => lrd[j]), mn = nl.reduce((a, b) => a + b, 0) / k;
+      const fr = [{ ...base, say: `${n} points: a tight group, a loose group, and a few points between. We examine the highlighted point with k = ${k}.` }];
+      fr.push({ ...base, nb: true, say: `Its ${k} nearest neighbours (linked). The farthest of them is <b>${f2(kd[ti])}</b> away: that is its k-distance, the radius of its neighbourhood.` });
+      fr.push({ ...base, nb: true, ring: true, say: `Reachability distance to a neighbour o is max(k-distance of o, actual distance). It smooths out tiny distances inside dense groups. The average reachability distance from our point is ${f2(1 / lrd[ti])}, so its local reachability density is lrd = 1 / ${f2(1 / lrd[ti])} = <b>${f2(lrd[ti], 3)}</b>.` });
+      fr.push({ ...base, nb: true, ring: true, rings: true, say: `Now the neighbours’ own densities (their circles show their k-distances). Their lrd values average <b>${f2(mn, 3)}</b>.` });
+      fr.push({ ...base, nb: true, lof, say: `LOF = average neighbour lrd ÷ own lrd = ${f2(mn, 3)} ÷ ${f2(lrd[ti], 3)} = <b>${f2(lof[ti], 2)}</b>. ${lof[ti] > 1.5 ? 'Well above 1: this point is much emptier than its neighbours, a local outlier.' : 'Close to 1: as crowded as its neighbours, so normal for its region.'}` });
+      const top = lof.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]).slice(0, 3).map(t => t[1]);
+      fr.push({ ...base, all: lof, top, done: true, say: `LOF for every point (bigger, redder circles are higher). The three highest are ${top.map(i => f2(lof[i], 2)).join(', ')}. Only ${lof.slice(30, 60).filter(v => v > 1.5).length} of the 30 points in the loose group pass 1.5, all stragglers at its edge. The rest keep an LOF near 1 although they are far apart, because LOF judges each point against its own neighbourhood, not against one global distance.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 310, 304], [0, 10], [0, 10], { dx: 0, dy: 0 });
+      const q = f.P[f.ti];
+      if (f.nb) f.knn[f.ti].forEach(j => D.line(g, P.X(q.x), P.Y(q.y), P.X(f.P[j].x), P.Y(f.P[j].y), c.cv, 1.4));
+      const sx = P.X(1) - P.X(0);
+      if (f.ring) D.circle(g, P.X(q.x), P.Y(q.y), sx * f.kd[f.ti], { stroke: c.red, w: 1.5 });
+      if (f.rings) f.knn[f.ti].forEach(j => D.circle(g, P.X(f.P[j].x), P.Y(f.P[j].y), sx * f.kd[j], { stroke: c.cv, w: 1 }));
+      f.P.forEach((p2, i) => {
+        if (f.all) { const v = Math.min(4, f.all[i]); D.circle(g, P.X(p2.x), P.Y(p2.y), 3 + 2.5 * (v - 1), { fill: v > 1.5 ? c.red : c.ink2, stroke: c.surf, w: 1 }); return; }
+        D.circle(g, P.X(p2.x), P.Y(p2.y), i === f.ti ? 7 : 4, { fill: i === f.ti ? c.red : c.ink2, stroke: i === f.ti ? c.ink : c.surf, w: 1.5 });
+      });
+      head(z, 'Local outlier factor', 335, 24);
+      D.text(g, `k-distance: ${f2(f.kd[f.ti])}`, 335, 52, { s: 12, mono: true, c: c.ink });
+      if (f.lof) D.text(g, `LOF = ${f2(f.lof[f.ti], 2)}`, 335, 76, { s: 14, b: true, c: f.lof[f.ti] > 1.5 ? c.red : c.green });
+      D.text(g, 'LOF about 1: normal', 335, 250, { s: 11, c: c.ink2 }); D.text(g, 'LOF well above 1: outlier', 335, 266, { s: 11, c: c.ink2 });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 3.2  association rules: support, confidence and lift read straight off the baskets
+   ===================================================================================================== */
+const MLBASKETS = [['bread', 'milk'], ['bread', 'butter', 'milk'], ['bread', 'butter'], ['milk', 'tea'], ['bread', 'butter', 'jam'],
+  ['bread', 'milk', 'butter'], ['tea', 'biscuits'], ['bread', 'jam'], ['milk', 'biscuits', 'tea'], ['bread', 'butter', 'milk', 'jam']];
+(() => {
+  const { trace, D, f2, head, klass, rr } = MLZ;
+  const ITEMS = ['biscuits', 'bread', 'butter', 'jam', 'milk', 'tea'];
+  trace('mlrules', {
+    title: 'Support, confidence and lift on real baskets',
+    sub: 'Ten shopping baskets. For a rule "if A then B", support is the share of baskets with both, confidence is the share of A baskets that also have B, and lift compares that confidence with how common B is anyway.',
+    W: 600, H: 330,
+    params: [
+      { k: 'a', label: 'If the basket has (A)', type: 'select', v: 'bread', opts: ITEMS.map(i => [i, i]) },
+      { k: 'b', label: 'then it also has (B)', type: 'select', v: 'butter', opts: ITEMS.map(i => [i, i]) }
+    ],
+    tips: [
+      { t: 'If bread then milk: the confidence looks decent, but milk is in most baskets anyway, so the lift is about 1 and there is no real link.', set: { a: 'bread', b: 'milk' }, play: true },
+      { t: 'If tea then biscuits: rare items, but they go together strongly, so the lift is high.', set: { a: 'tea', b: 'biscuits' }, play: true }
+    ],
+    frames(p) {
+      if (p.a === p.b) throw new Error('Choose two different items');
+      const B = MLBASKETS, n = B.length;
+      const hasA = B.map(b => b.includes(p.a)), hasB = B.map(b => b.includes(p.b)), both = B.map((b, i) => hasA[i] && hasB[i]);
+      const nA = hasA.filter(Boolean).length, nB = hasB.filter(Boolean).length, nAB = both.filter(Boolean).length;
+      const sA = nA / n, sB = nB / n, sAB = nAB / n, conf = nA ? nAB / nA : 0, lift = sB ? conf / sB : 0;
+      const base = { a: p.a, b: p.b };
+      const fr = [{ ...base, say: `Ten baskets. The rule to test is <b>if ${p.a} then ${p.b}</b>.` }];
+      fr.push({ ...base, mA: hasA, say: `${nA} of ${n} baskets contain ${p.a} (outlined). Support of ${p.a} = ${nA} / ${n} = <b>${f2(sA, 2)}</b>.` });
+      fr.push({ ...base, mA: hasA, mB: hasB, say: `${nB} of ${n} baskets contain ${p.b}. Support of ${p.b} = <b>${f2(sB, 2)}</b>. This is how often ${p.b} is bought anyway.` });
+      fr.push({ ...base, mA: hasA, mB: hasB, mAB: both, say: `${nAB} baskets contain both (filled rows). Support of the rule = ${nAB} / ${n} = <b>${f2(sAB, 2)}</b>: how often the pair happens at all.` });
+      fr.push({ ...base, mA: hasA, mB: hasB, mAB: both, focus: true, say: `Confidence = baskets with both ÷ baskets with ${p.a} = ${nAB} / ${nA} = <b>${f2(conf, 3)}</b>. Among people who buy ${p.a}, that share also buy ${p.b}.` });
+      fr.push({ ...base, mA: hasA, mB: hasB, mAB: both, focus: true, done: true, lift, say: `Lift = confidence ÷ support of ${p.b} = ${f2(conf, 3)} / ${f2(sB, 2)} = <b>${f2(lift, 2)}</b>. ${lift > 1.05 ? `Above 1: buying ${p.a} makes ${p.b} more likely than usual, a real link.` : lift < 0.95 ? `Below 1: people who buy ${p.a} buy ${p.b} less often than everyone else does, so this rule is misleading however high its confidence.` : `About 1: the two items are independent.`}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      MLBASKETS.forEach((b, i) => {
+        const y = 14 + i * 30, inA = f.mA && f.mA[i], inAB = f.mAB && f.mAB[i];
+        rr(g, 10, y, 370, 26, 6, { fill: inAB ? 'rgba(124,58,237,0.16)' : c.surf, stroke: inA ? c.cv : c.line, w: inA ? 2 : 1 });
+        D.text(g, `basket ${i + 1}`, 18, y + 17, { s: 11, c: c.ink2 });
+        b.forEach((it, j) => {
+          const x = 90 + j * 72, isA = it === f.a && f.mA, isB = it === f.b && f.mB;
+          rr(g, x, y + 4, 66, 18, 4, { fill: isA ? klass(z, 0) : isB ? klass(z, 1) : c.line });
+          D.text(g, it, x + 33, y + 17, { a: 'center', s: 11, b: isA || isB, c: isA || isB ? '#fff' : c.ink });
+        });
+      });
+      head(z, 'Rule', 400, 24);
+      D.text(g, `if ${f.a}`, 400, 48, { s: 13, b: true, c: klass(z, 0) });
+      D.text(g, `then ${f.b}`, 400, 68, { s: 13, b: true, c: klass(z, 1) });
+      const n = MLBASKETS.length, cnt = m => (m ? m.filter(Boolean).length : null);
+      const rows = [['baskets with A', cnt(f.mA)], ['baskets with B', cnt(f.mB)], ['baskets with both', cnt(f.mAB)]];
+      rows.forEach(([t, v], k) => { if (v !== null) D.text(g, `${t}: ${v} of ${n}`, 400, 100 + 20 * k, { s: 12, mono: true, c: c.ink }); });
+      if (f.focus) D.text(g, `confidence ${f2(cnt(f.mAB) / (cnt(f.mA) || 1), 3)}`, 400, 172, { s: 13, b: true, c: c.cv });
+      if (f.done) D.text(g, `lift ${f2(f.lift, 2)}`, 400, 194, { s: 15, b: true, c: f.lift > 1.05 ? c.green : f.lift < 0.95 ? c.red : c.ink });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 3.2  Apriori: count small itemsets, keep the frequent ones, build bigger candidates only from them
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr } = MLZ;
+  trace('mlapriori', {
+    title: 'Apriori: grow frequent itemsets level by level',
+    sub: 'Count single items and keep those in at least min count baskets. Join the survivors into pairs, but skip any pair that contains an infrequent item, then count. Repeat for triples. If a set is rare, every bigger set containing it is rare too, which saves a lot of counting.',
+    W: 600, H: 330,
+    params: [{ k: 'min', label: 'Minimum count (baskets out of 10)', type: 'range', v: 3, min: 1, max: 6, step: 1 }],
+    tips: [
+      { t: 'A minimum count of 2: more itemsets survive, so there are more candidates to count at every level.', set: { min: 2 }, play: true },
+      { t: 'A minimum count of 5: only the most common items survive, and the search stops early.', set: { min: 5 }, play: true }
+    ],
+    frames(p) {
+      const B = MLBASKETS.map(b => new Set(b)), items = [...new Set(MLBASKETS.flat())].sort();
+      const count = s => B.filter(b => s.every(i => b.has(i))).length, key = s => s.join(' + ');
+      const levels = [];
+      let cand = items.map(i => [i]), k = 1;
+      const fr = [{ levels: [], min: p.min, say: `10 baskets with ${items.length} different items. An itemset is frequent if it appears in at least <b>${p.min}</b> baskets.` }];
+      while (cand.length && k <= 4) {
+        const counted = cand.map(s => ({ s, n: count(s) }));
+        const keep = counted.filter(x => x.n >= p.min);
+        levels.push({ k, counted, pruned: [] });
+        fr.push({ levels: levels.map(l => ({ ...l })), min: p.min, say: `Size ${k}: count ${cand.length} candidate${cand.length === 1 ? '' : 's'}. <b>${keep.length}</b> reach${keep.length === 1 ? 'es' : ''} ${p.min} (green): ${keep.map(x => `${key(x.s)} (${x.n})`).join(', ') || 'none'}.` });
+        const ks = new Set(keep.map(x => key(x.s)));
+        const joined = new Map();
+        keep.forEach(a => keep.forEach(b => { const u = [...new Set(a.s.concat(b.s))].sort(); if (u.length === k + 1) joined.set(key(u), u); }));
+        const next = [], pruned = [];
+        joined.forEach(u => { const ok = u.every((_, i) => ks.has(key(u.filter((__, j) => j !== i)))); (ok ? next : pruned).push(u); });
+        if (pruned.length) { levels[levels.length - 1].prunedNext = pruned; fr.push({ levels: levels.map(l => ({ ...l })), min: p.min, say: `Joining the frequent size ${k} sets gives ${joined.size} size ${k + 1} sets, but ${pruned.length} of them (${pruned.map(key).join(', ')}) contain a size ${k} subset that is not frequent, so they are dropped without counting. That is the Apriori rule.` }); }
+        cand = next; k++;
+      }
+      const total = levels.reduce((a, l) => a + l.counted.filter(x => x.n >= p.min).length, 0), work = levels.reduce((a, l) => a + l.counted.length, 0);
+      const all = Math.pow(2, items.length) - 1;
+      fr.push({ levels: levels.map(l => ({ ...l })), min: p.min, done: true, say: `Done: <b>${total}</b> frequent itemsets. Apriori counted only ${work} candidates, out of ${all} possible non empty itemsets of ${items.length} items. With thousands of items the saving is enormous.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, RH = 18, MAXR = 15;
+      f.levels.forEach((l, col) => {
+        const x = 10 + col * 146;
+        D.text(g, `size ${l.k}`, x, 16, { s: 12, b: true, c: c.ink });
+        l.counted.slice(0, MAXR).forEach((it, r) => {
+          const y = 24 + r * RH, ok = it.n >= f.min;
+          rr(g, x, y, 138, RH - 3, 4, { fill: ok ? c.green : c.line });
+          D.text(g, it.s.join(' + '), x + 5, y + 11, { s: 10, b: ok, c: ok ? '#fff' : c.ink2 });
+          D.text(g, String(it.n), x + 132, y + 11, { a: 'right', s: 10, b: true, c: ok ? '#fff' : c.ink2 });
+        });
+        if (l.counted.length > MAXR) D.text(g, `and ${l.counted.length - MAXR} more`, x, 24 + MAXR * RH + 10, { s: 10, c: c.ink2 });
+        if (l.prunedNext) {
+          const nx = 10 + (col + 1) * 146, base = 24 + Math.min(MAXR, (f.levels[col + 1] ? f.levels[col + 1].counted.length : 0)) * RH + 22;
+          D.text(g, 'skipped by the Apriori rule', nx, base - 6, { s: 10, b: true, c: c.red });
+          l.prunedNext.slice(0, 6).forEach((u, r) => { rr(g, nx, base + r * RH, 138, RH - 3, 4, { stroke: c.red, w: 1.2 }); D.text(g, u.join(' + '), nx + 5, base + r * RH + 11, { s: 10, c: c.red }); });
+        }
+      });
+      D.text(g, `min count ${f.min}`, 590, 16, { a: 'right', s: 12, b: true, c: c.cv });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Unsupervised 3.3  recommender systems: user based collaborative filtering and matrix factorisation
+   ===================================================================================================== */
+const MLRATINGS = '5 4 0 1 0; 4 5 1 0 1; 1 0 5 4 5; 0 1 4 5 4; 5 5 0 2 1';
+const MLFILMS = ['Space', 'Star', 'Haunt', 'Ghost', 'Fog'];
+function mlParseRatings(s) {
+  const R = String(s).split(/[;\n]+/).map(r => r.trim()).filter(Boolean).map(r => r.split(/[\s,]+/).map(Number));
+  if (R.length < 2 || R.length > 7) throw new Error('Type 2 to 7 rows of ratings, one row per user');
+  const m = R[0].length;
+  if (m < 2 || m > 7) throw new Error('Each row needs 2 to 7 ratings, one per film');
+  R.forEach(r => { if (r.length !== m || r.some(v => isNaN(v) || v < 0 || v > 5)) throw new Error('Every row needs the same number of ratings from 0 to 5 (0 = not rated)'); });
+  return R;
+}
+(() => {
+  const { trace, D, f2, head, klass, rr, box } = MLZ;
+  const filmName = j => (j < MLFILMS.length ? MLFILMS[j] : 'film ' + j);
+  function drawGrid(z, f, o) {
+    const c = z.col, g = z.g, n = f.R.length, m = f.R[0].length, cw = 40, ch = 30, x0 = 62, y0 = 30;
+    MLFILMS.slice(0, m).forEach((t, j) => D.text(g, t, x0 + j * cw + cw / 2 - 1, y0 - 8, { a: 'center', s: 10, b: true, c: c.ink2 }));
+    for (let j = MLFILMS.length; j < m; j++) D.text(g, 'film ' + j, x0 + j * cw + cw / 2 - 1, y0 - 8, { a: 'center', s: 10, b: true, c: c.ink2 });
+    if (o.means) D.text(g, 'mean', x0 + m * cw + 22, y0 - 8, { a: 'center', s: 10, b: true, c: c.ink2 });
+    for (let u = 0; u < n; u++) {
+      const y = y0 + u * ch, mark = o.rowCol ? o.rowCol(u) : null;
+      D.text(g, 'user ' + u, x0 - 8, y + 19, { a: 'right', s: 11, b: !!mark, c: mark || c.ink });
+      for (let j = 0; j < m; j++) {
+        const v = f.R[u][j], hl = o.hl ? o.hl(u, j) : null, pv = o.pred ? o.pred(u, j) : null;
+        let txt = v ? String(v) : '';
+        if (!v && pv !== null && pv !== undefined) txt = f2(pv, 1);
+        box(z, x0 + j * cw, y, cw - 3, ch - 3, txt, { fill: hl || (v ? c.surf : c.bg), c: hl ? '#fff' : v ? c.ink : klass(z, 3), s: 12, mono: true, r: 4, b: !!hl || (!v && pv !== null && pv !== undefined) });
+      }
+      if (o.means) D.text(g, f2(f.mean[u], 2), x0 + m * cw + 22, y + 19, { a: 'center', s: 11, mono: true, c: c.ink2 });
+      if (o.side && o.side(u)) D.text(g, o.side(u)[0], x0 + m * cw + 50, y + 19, { s: 11, mono: true, b: true, c: o.side(u)[1] });
+    }
+    return y0 + n * ch;
+  }
+
+  trace('mlcf', {
+    title: 'User based collaborative filtering: ask people with similar taste',
+    sub: 'A grid of film ratings from 1 to 5, where 0 means not rated. To guess one missing rating we centre each user’s ratings, find the users whose taste matches best on films they both rated, and take a weighted average of how they rated the missing film.',
+    W: 600, H: 330,
+    params: [
+      { k: 'R', label: 'Ratings (one row per user, 0 = not rated)', type: 'area', v: MLRATINGS },
+      { k: 'u', label: 'User', type: 'range', v: 0, min: 0, max: 6 },
+      { k: 'j', label: 'Film (column, from 0)', type: 'range', v: 2, min: 0, max: 6 },
+      { k: 'k', label: 'Neighbours to use', type: 'range', v: 2, min: 1, max: 4 }
+    ],
+    tips: [
+      { t: 'User 4 and film 2: the most similar user hated the film, so the guess is low.', set: { R: MLRATINGS, u: 4, j: 2, k: 2 }, play: true },
+      { t: 'User 3 and film 0: a user who agrees with user 3 disliked it, and a user who disagrees loved it. Both pull the guess down.', set: { R: MLRATINGS, u: 3, j: 0, k: 2 }, play: true }
+    ],
+    frames(p) {
+      const R = mlParseRatings(p.R), n = R.length, m = R[0].length, u = +p.u, j = +p.j;
+      if (u >= n) throw new Error(`There are only ${n} users (0 to ${n - 1})`);
+      if (j >= m) throw new Error(`There are only ${m} films (0 to ${m - 1})`);
+      if (R[u][j]) throw new Error('Pick a cell that is 0 (not rated yet), so there is something to predict');
+      const mean = R.map(r => { const s = r.filter(v => v > 0); return s.length ? s.reduce((a, b) => a + b, 0) / s.length : 0; });
+      if (!R[u].some(v => v > 0)) throw new Error('This user has no ratings at all, so there is no taste to compare. That is the cold start problem.');
+      const Cc = R.map((r, a) => r.map(v => (v > 0 ? v - mean[a] : 0)));
+      const sim = v => {
+        let xy = 0, xx = 0, yy = 0, both = 0;
+        for (let t = 0; t < m; t++) if (R[u][t] > 0 && R[v][t] > 0) { both++; xy += Cc[u][t] * Cc[v][t]; xx += Cc[u][t] ** 2; yy += Cc[v][t] ** 2; }
+        return { s: xx && yy ? xy / Math.sqrt(xx * yy) : 0, both };
+      };
+      const cand = [];
+      for (let v = 0; v < n; v++) if (v !== u && R[v][j] > 0) cand.push({ v, ...sim(v) });
+      if (!cand.length) throw new Error('Nobody has rated this film yet, so collaborative filtering cannot predict it');
+      const base = { R, mean, u, j, sims: {} };
+      const fr = [{ ...base, st: 1, say: `We want to guess how <b>user ${u}</b> would rate <b>${filmName(j)}</b> (the outlined empty cell). ${cand.length} other user${cand.length > 1 ? 's have' : ' has'} rated that film.` }];
+      fr.push({ ...base, st: 2, say: `Some people rate everything high and some rate everything low. So we work with each rating minus that user’s own mean. User ${u}’s mean is <b>${f2(mean[u], 2)}</b>.` });
+      const sims = {};
+      cand.forEach(c => {
+        sims[c.v] = c.s;
+        fr.push({ ...base, st: 3, cur: c.v, sims: { ...sims }, say: `User ${c.v} and user ${u} both rated ${c.both} film${c.both === 1 ? '' : 's'} (shaded). The cosine of their centred ratings on those films is <b>${f2(c.s, 3)}</b>. ${c.s > 0.3 ? 'Similar taste.' : c.s < -0.3 ? 'Opposite taste.' : 'Little in common.'}` });
+      });
+      const K = Math.min(+p.k, cand.length), top = cand.slice().sort((a, b) => b.s - a.s).slice(0, K);
+      fr.push({ ...base, st: 4, sims, top: top.map(t => t.v), say: `Keep the ${K} user${K > 1 ? 's' : ''} with the highest similarity: <b>${top.map(t => 'user ' + t.v).join(' and ')}</b>.` });
+      const num = top.reduce((a, t) => a + t.s * Cc[t.v][j], 0), den = top.reduce((a, t) => a + Math.abs(t.s), 0);
+      const pred = den ? mean[u] + num / den : mean[u];
+      const parts = top.map(t => `${t.s < 0 ? '(' + f2(t.s, 2) + ')' : f2(t.s, 2)} × (${R[t.v][j]} − ${f2(mean[t.v], 2)})`).join(' + ');
+      fr.push({ ...base, st: 5, sims, top: top.map(t => t.v), pred, say: `Prediction = user ${u}’s mean + weighted average of the neighbours’ centred ratings = ${f2(mean[u], 2)} + [${parts}] ÷ ${f2(den, 2)} = <b>${f2(Math.min(5, Math.max(1, pred)), 2)}</b>${pred > 5 || pred < 1 ? ' (clipped to the 1 to 5 scale)' : ''}.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, m = f.R[0].length;
+      const inTop = v => f.top && f.top.includes(v);
+      const yEnd = drawGrid(z, f, {
+        means: f.st >= 2,
+        rowCol: v => (v === f.u ? klass(z, 0) : inTop(v) ? klass(z, 2) : f.cur === v ? klass(z, 1) : null),
+        hl: (v, t) => (f.cur !== undefined && f.st === 3 && (v === f.u || v === f.cur) && f.R[f.u][t] > 0 && f.R[f.cur][t] > 0 ? klass(z, 1) : f.st >= 4 && inTop(v) && t === f.j ? klass(z, 2) : null),
+        pred: (v, t) => (f.pred !== undefined && v === f.u && t === f.j ? Math.min(5, Math.max(1, f.pred)) : null),
+        side: v => (f.sims[v] !== undefined ? [`sim ${f2(f.sims[v], 2)}`, f.sims[v] > 0 ? c.green : c.red] : null)
+      });
+      const x0 = 62, cw = 40, ch = 30;
+      rr(g, x0 + f.j * cw - 2, 30 + f.u * ch - 2, cw + 1, ch + 1, 6, { stroke: klass(z, 0), w: 2.5 });
+      const y = Math.max(yEnd + 26, 230);
+      if (f.st >= 2) D.text(g, 'centred rating = rating − that user’s mean', 20, y, { s: 11, c: c.ink2 });
+      if (f.st >= 5) {
+        D.text(g, 'r̂ = mean(u) + Σ sim · (r − mean(v)) ÷ Σ |sim|', 20, y + 22, { s: 12, mono: true, b: true, c: c.cv });
+        D.text(g, `guess for user ${f.u}: ${f2(Math.min(5, Math.max(1, f.pred)), 2)}`, 20, y + 46, { s: 14, b: true, c: klass(z, 3) });
+      }
+      head(z, 'Key', 470, 24);
+      [[klass(z, 0), 'target user'], [klass(z, 1), 'films both rated'], [klass(z, 2), 'chosen neighbours']].forEach(([col, t], i) => { rr(g, 470, 36 + i * 20, 12, 12, 3, { fill: col }); D.text(g, t, 488, 46 + i * 20, { s: 11, c: c.ink }); });
+    }
+  });
+
+  trace('mlmf', {
+    title: 'Matrix factorisation: learn hidden tastes and fill the whole grid',
+    sub: 'Each user and each film gets a short list of k hidden numbers. A rating is guessed as the overall mean plus a user bias plus a film bias plus the dot product of the two lists. Stochastic gradient descent nudges all of them to fit the known ratings, and the same numbers then fill every empty cell.',
+    W: 600, H: 330,
+    params: [
+      { k: 'R', label: 'Ratings (one row per user, 0 = not rated)', type: 'area', v: MLRATINGS },
+      { k: 'k', label: 'Hidden factors k', type: 'range', v: 2, min: 1, max: 3 },
+      { k: 'reg', label: 'Regularisation λ', type: 'range', v: 0.05, min: 0, max: 1, step: 0.05 },
+      { k: 'lr', label: 'Learning rate', type: 'range', v: 0.05, min: 0.01, max: 0.1, step: 0.01 }
+    ],
+    tips: [
+      { t: 'A strong penalty λ = 1 keeps the hidden numbers small: the fit to known ratings is worse and the guesses stay close to the averages.', set: { R: MLRATINGS, k: 2, reg: 1, lr: 0.05 }, play: true },
+      { t: 'A tiny learning rate: training crawls, and after 200 epochs the error is still several times higher than with the default rate of 0.05.', set: { R: MLRATINGS, k: 2, reg: 0.05, lr: 0.01 }, play: true }
+    ],
+    frames(p) {
+      const R = mlParseRatings(p.R), n = R.length, m = R[0].length, K = +p.k, lam = +p.reg, lr = +p.lr;
+      const known = [];
+      R.forEach((r, u) => r.forEach((v, j) => { if (v > 0) known.push([u, j, v]); }));
+      if (known.length < 3) throw new Error('Type at least 3 known ratings');
+      const mu = known.reduce((a, t) => a + t[2], 0) / known.length;
+      const rnd = MLZ.rng(7), gauss = () => (rnd() + rnd() + rnd() - 1.5) * 0.2;
+      const P = R.map(() => Array.from({ length: K }, gauss)), Q = R[0].map(() => Array.from({ length: K }, gauss));
+      const bu = R.map(() => 0), bi = R[0].map(() => 0);
+      const guess = (u, j) => mu + bu[u] + bi[j] + P[u].reduce((a, x, t) => a + x * Q[j][t], 0);
+      const rmse = () => Math.sqrt(known.reduce((a, [u, j, v]) => a + (v - guess(u, j)) ** 2, 0) / known.length);
+      const snap = () => R.map((r, u) => r.map((v, j) => guess(u, j)));
+      const show = [0, 1, 2, 5, 10, 20, 50, 100, 200], hist = [[0, rmse()]];
+      const base = { R, mu, K, lam };
+      const fr = [{ ...base, st: 0, G: null, hist: [], say: `${known.length} known ratings in a ${n} × ${m} grid. Each user and each film gets ${K} hidden number${K > 1 ? 's' : ''}, started at small random values. The overall mean rating μ is <b>${f2(mu, 2)}</b>.` }];
+      fr.push({ ...base, st: 1, G: snap(), hist: hist.slice(), ep: 0, say: `Before any training every guess is about μ = ${f2(mu, 2)}, shown in purple in the empty cells. The error on the known ratings is RMSE <b>${f2(hist[0][1], 3)}</b>.` });
+      const order = known.map((_, i) => i);
+      for (let ep = 1; ep <= 200; ep++) {
+        for (let i = order.length - 1; i > 0; i--) { const s = Math.floor(rnd() * (i + 1)); [order[i], order[s]] = [order[s], order[i]]; }
+        order.forEach(i => {
+          const [u, j, v] = known[i], e = v - guess(u, j);
+          bu[u] += lr * (e - lam * bu[u]); bi[j] += lr * (e - lam * bi[j]);
+          for (let t = 0; t < K; t++) { const pu = P[u][t], qi = Q[j][t]; P[u][t] += lr * (e * qi - lam * pu); Q[j][t] += lr * (e * pu - lam * qi); }
+        });
+        hist.push([ep, rmse()]);
+        if (show.includes(ep)) {
+          const r = hist[ep][1];
+          const say = ep === 1 ? `One epoch: for every known rating, find the error e = r − r̂ and move the biases and the hidden numbers a little to shrink it, with a pull λ = ${lam} back towards 0. RMSE is now <b>${f2(r, 3)}</b>.`
+            : ep < 200 ? `After ${ep} epochs the RMSE on known ratings is <b>${f2(r, 3)}</b>. Watch the purple guesses settle as the hidden tastes take shape.`
+              : `After 200 epochs RMSE is <b>${f2(r, 3)}</b>. ${r < 0.3 ? 'The known ratings are fitted closely' : 'The known ratings are only roughly fitted'}, and every empty cell now holds a guess. High guesses are the films to recommend. A model that fits the known cells perfectly may still guess badly, so in practice λ is tuned on held out ratings.`;
+          fr.push({ ...base, st: 2, G: snap(), hist: hist.slice(), ep, say });
+        }
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const yEnd = drawGrid(z, f, { pred: f.G ? (u, j) => Math.min(5, Math.max(1, f.G[u][j])) : null });
+      D.text(g, 'r̂ = μ + bᵤ + bᵢ + pᵤ · qᵢ', 20, Math.max(yEnd + 30, 240), { s: 13, mono: true, b: true, c: c.cv });
+      D.text(g, 'black: known rating   purple: model guess', 20, Math.max(yEnd + 54, 264), { s: 11, c: c.ink2 });
+      if (f.hist && f.hist.length) {
+        const Pl = MLZ.plot(z, [360, 130, 230, 190], [0, 200], [0, Math.max(1.2, f.hist[0][1] * 1.1)], { dx: 0, dy: 1, yl: 'RMSE by epoch' });
+        for (let i = 1; i < f.hist.length; i++) D.line(g, Pl.X(f.hist[i - 1][0]), Pl.Y(f.hist[i - 1][1]), Pl.X(f.hist[i][0]), Pl.Y(f.hist[i][1]), klass(z, 0), 2);
+      }
+      head(z, 'Training', 360, 24);
+      D.text(g, `k = ${f.K}   λ = ${f.lam}`, 360, 50, { s: 12, mono: true, c: c.ink });
+      if (f.ep !== undefined) D.text(g, `epoch ${f.ep}`, 360, 74, { s: 13, b: true, c: c.ink });
+      if (f.hist && f.hist.length) D.text(g, `RMSE ${f2(f.hist[f.hist.length - 1][1], 3)}`, 360, 98, { s: 14, b: true, c: klass(z, 0) });
+    }
+  });
+})();
