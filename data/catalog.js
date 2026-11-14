@@ -9125,6 +9125,26 @@ function mlopsModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "mlops-s3", title: "Operate and improve", emoji: "3", step: 3, level: "Advanced", blurb: "Track experiments, register model versions, watch for drift and decay, and explain and audit predictions.", topics: [
+      { id: "mlops-tracking", title: "Experiment tracking and the model registry", emoji: "3.1", page: "content/mlops/mlops-tracking.html",
+        summary: "Tracking runs, MLflow with per OS steps, the winner's curse, and a model registry with promotion and rollback.",
+        keywords: ["experiment tracking", "MLflow", "model registry", "model alias", "champion challenger", "selection bias", "random search", "rollback", "lineage", "reproducibility"],
+        minutes: 50, counts: {"lessons": 7, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "track", title: "Experiment tracking: a record of every run", emoji: "", group: "Lesson", keywords: ["experiment tracking", "parameters", "metrics", "artifacts", "run", "experiment", "data fingerprint", "reproducibility"] },
+        { id: "mlflow", title: "MLflow on your own computer", emoji: "", group: "Lesson", keywords: ["MLflow", "mlflow ui", "start_run", "log_params", "log_metrics", "log_model", "search_runs", "tracking server", "SQLite backend"] },
+        { id: "curse", title: "Choosing the best run without fooling yourself", emoji: "", group: "Lesson", keywords: ["selection bias", "winner's curse", "test set", "random search", "model selection", "multiple comparisons"] },
+        { id: "registry", title: "The model registry: versions, aliases and promotion", emoji: "", group: "Lesson", keywords: ["model registry", "model version", "alias", "champion", "challenger", "promotion", "rollback", "lineage"] },
+        { id: "versus", title: "Tracking tools compared", emoji: "", group: "Lesson", keywords: ["MLflow vs Weights and Biases", "DVC", "TensorBoard"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "lineage", "audit"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

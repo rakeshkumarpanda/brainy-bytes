@@ -496,3 +496,84 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 3.1  experiment tracking and the model registry: the winner's curse, and aliases that move
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head, box, rng } = MLZ;
+  const gauss = R => { const u = Math.max(R(), 1e-12), v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+  trace('mlruns', {
+    title: 'Many tracked runs and the winner&rsquo;s curse',
+    sub: 'Every dot is one tracked run. Its true quality is hidden. What you see is its score on one validation set, which adds a little luck. Picking the highest dot also picks the luckiest run, so its score on a fresh test set is usually lower.',
+    W: 600, H: 330,
+    params: [{ k: 'n', label: 'Runs compared on one validation set', type: 'select', v: '20', opts: [['5', '5 runs'], ['20', '20 runs'], ['100', '100 runs']] }],
+    tips: [
+      { t: '100 runs: the best validation score climbs, but the same model on fresh data does not. The gap grows with the number of runs.', set: { n: '100' }, play: true },
+      { t: '5 runs: little room for luck, so the winner&rsquo;s validation and test scores are close.', set: { n: '5' }, play: true }
+    ],
+    frames(p) {
+      const n = +p.n, R = rng(9), runs = Array.from({ length: n }, () => { const q = 0.80 + 0.05 * R(); return { q, v: q + 0.02 * gauss(R), t: q }; });
+      const batch = Math.max(1, Math.ceil(n / 6)), fr = [{ runs, k: 0, say: `${n} runs with different settings, all scored on the same validation set.` }];
+      for (let k = batch; k < n + batch; k += batch) { const m = Math.min(k, n); fr.push({ runs, k: m, say: `${m} of ${n} runs logged. The tracker stores the settings and the validation score of each.` }); if (m === n) break; }
+      let b = 0; runs.forEach((r, i) => { if (r.v > runs[b].v) b = i; });
+      fr.push({ runs, k: n, best: b, say: `The best validation score is <b>${runs[b].v.toFixed(3)}</b> (run ${b + 1}). That run becomes the champion.` });
+      fr.push({ runs, k: n, best: b, test: true, say: `On a large fresh test set the same model scores <b>${runs[b].t.toFixed(3)}</b>, a drop of ${(runs[b].v - runs[b].t).toFixed(3)}. Report the champion on untouched test data, once.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, n = f.runs.length, X = i => 50 + (i + 0.5) / n * 530, Y = a => 290 - (a - 0.74) / 0.18 * 260;
+      D.line(g, 50, 290, 580, 290, c.ink2, 1); D.line(g, 50, 290, 50, 30, c.ink2, 1);
+      [0.75, 0.80, 0.85, 0.90].forEach(a => { D.text(g, a.toFixed(2), 44, Y(a) + 4, { a: 'right', s: 10, c: c.ink2 }); D.line(g, 50, Y(a), 580, Y(a), c.line, 0.5); });
+      D.text(g, 'run number', 315, 312, { a: 'center', s: 11, c: c.ink2 }); head(z, 'validation score', 56, 24, { s: 11 });
+      f.runs.slice(0, f.k).forEach((r, i) => D.circle(g, X(i), Y(r.v), n > 50 ? 3 : 5, { fill: i === f.best ? c.green : c.cv }));
+      if (f.best !== undefined) {
+        const r = f.runs[f.best]; g.save(); g.strokeStyle = c.green; g.lineWidth = 2; g.beginPath(); g.arc(X(f.best), Y(r.v), 10, 0, 7); g.stroke(); g.restore();
+        if (f.test) { D.line(g, X(f.best), Y(r.v), X(f.best), Y(r.t), c.orange, 1.5, [3, 3]); g.save(); g.strokeStyle = c.orange; g.lineWidth = 2.5; g.beginPath(); g.arc(X(f.best), Y(r.t), 6, 0, 7); g.stroke(); g.restore();
+          D.text(g, 'green: champion on validation, orange ring: the same model on fresh test data', 56, 44, { s: 11, c: c.ink2 }); }
+      }
+    }
+  });
+
+  const VERS = [{ d: 'tree depth 2', auc: 0.9555 }, { d: 'stump depth 1', auc: 0.8844 }, { d: 'logistic C=1', auc: 0.9942 }];
+  trace('mlregistry', {
+    title: 'A model registry: fixed versions, moving aliases',
+    sub: 'Each registered version is frozen and keeps its number. Aliases such as champion and challenger are labels that point at a version. The service always loads the champion, so promoting or rolling back means moving one label. The scores are holdout AUCs from the chapter&rsquo;s program.',
+    W: 600, H: 330,
+    params: [{ k: 'margin', label: 'Promotion gate: beat the champion by', type: 'select', v: '0.002', opts: [['0.002', '0.002 AUC'], ['0.05', '0.05 AUC (strict)']] }],
+    tips: [
+      { t: 'Strict gate: v3 is better by 0.039, which is less than 0.05, so v1 stays champion. Gates trade safety against progress.', set: { margin: '0.05' }, play: true },
+      { t: 'Normal gate: v3 is promoted, then rolled back after an incident without any retraining.', set: { margin: '0.002' }, play: true }
+    ],
+    frames(p) {
+      const m = +p.margin, fr = [];
+      const st = (n, champ, chall, say, extra = {}) => fr.push({ n, champ, chall, say, ...extra });
+      st(1, 1, 0, 'Register v1 (tree depth 2, AUC 0.9555). There is no champion yet, so v1 becomes champion and the service loads it.');
+      st(2, 1, 2, 'Register v2 (stump, AUC 0.8844) as challenger. It is compared with the champion on the same holdout data.');
+      st(2, 1, 0, `v2 is worse than v1 (0.8844 against 0.9555), so it is not promoted. It stays in the registry for the record.`, { rej: 2 });
+      st(3, 1, 3, 'Register v3 (logistic regression, AUC 0.9942) as challenger.');
+      const ok = 0.9942 >= 0.9555 + m;
+      if (!ok) { st(3, 1, 0, `v3 is better by 0.0387, but the gate asks for ${m}. Not promoted, v1 stays champion. A strict gate also blocks real improvements.`, { rej: 3, done: true }); return fr; }
+      st(3, 3, 0, 'v3 beats v1 by 0.0387, more than the 0.002 gate. The champion alias moves to v3 and the service loads v3 on its next reload.');
+      st(3, 1, 0, 'An incident: v3 misbehaves on live traffic. Rollback is one action: move champion back to v1. Nothing is retrained or rebuilt.', { incident: 3, done: true });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      head(z, 'Registered versions of breast-cancer-classifier', 14, 24);
+      VERS.slice(0, f.n).forEach((v, i) => {
+        const x = 24 + i * 192, y = 120, isC = f.champ === i + 1, isCh = f.chall === i + 1, bad = f.rej === i + 1 || f.incident === i + 1;
+        box(z, x, y, 168, 92, '', { fill: isC ? 'rgba(22,163,74,0.14)' : (bad ? 'rgba(220,38,38,0.10)' : c.surf), stroke: isC ? c.green : (isCh ? c.purple : (bad ? c.red : c.line)), w: isC || isCh ? 2.5 : 1.5 });
+        D.text(g, `v${i + 1}`, x + 84, y + 28, { a: 'center', s: 18, b: true, c: c.ink });
+        D.text(g, v.d, x + 84, y + 52, { a: 'center', s: 12, c: c.ink2 });
+        D.text(g, `AUC ${v.auc.toFixed(4)}`, x + 84, y + 74, { a: 'center', s: 12, b: true, c: c.ink });
+        if (isC) { box(z, x + 24, y - 52, 120, 30, 'champion', { s: 13, b: true, fill: c.green, stroke: c.green, c: '#fff' }); D.arrow(g, x + 84, y - 22, x + 84, y - 2, c.green, 2, 6); }
+        if (isCh) { box(z, x + 24, y - 52, 120, 30, 'challenger', { s: 13, b: true, fill: c.purple, stroke: c.purple, c: '#fff' }); D.arrow(g, x + 84, y - 22, x + 84, y - 2, c.purple, 2, 6); }
+        if (f.incident === i + 1) D.text(g, 'incident', x + 84, y + 112, { a: 'center', s: 12, b: true, c: c.red });
+        if (f.rej === i + 1) D.text(g, 'not promoted', x + 84, y + 112, { a: 'center', s: 12, b: true, c: c.red });
+      });
+      D.text(g, `The service loads: models:/breast-cancer-classifier@champion = v${f.champ}`, 14, 300, { s: 13, b: true, mono: true, c: c.ink });
+    }
+  });
+})();
