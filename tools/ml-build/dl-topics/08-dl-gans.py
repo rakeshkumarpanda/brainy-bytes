@@ -318,7 +318,7 @@ K.lesson('recap', 'Chapter summary', f'''
     'Use the <b>non saturating</b> loss &minus;ln D(G(z)), because ln(1 &minus; D) gives almost no gradient while the fakes are bad. Fight <b>mode collapse</b> with batch level features and stable losses.',
     'The <b>Wasserstein GAN</b> critic estimates the earth mover&rsquo;s distance, which keeps giving gradients when the distributions do not overlap. Keep the critic smooth with a <b>gradient penalty</b> or spectral normalisation.',
     '<b>Conditional</b> GANs (pix2pix, CycleGAN) give control, <b>StyleGAN</b> gives photorealistic faces, and <b>FID</b> compares feature means and covariances to score quality and variety.'],
-    'Deep learning 3.3 covers diffusion models, which now lead image generation.')}
+    'Diffusion models, which now lead image generation, are the next chapter on the way.')}
 {files('Three tasks: the discriminator loss, both generator losses, and the Fr&eacute;chet distance in one dimension.')}
 ''', kw=['summary', 'recap'])
 

@@ -316,7 +316,7 @@ K.must('Formats', 'joblib for own Python services, skops for safe sharing, ONNX 
 K.must('Input contract', 'Check presence, type, range, unknown categories, extra fields. Reject with 422.')
 
 T = K.topic(
-    slug='mlops-pipelines', topic='mlops-pipelines', step=(2, 'Build and ship', 'mlops-s2', 'Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, put it in a Docker container and ship it with CI/CD.', 'Intermediate'),
+    slug='mlops-pipelines', topic='mlops-pipelines', step=(2, 'Build and ship', 'mlops-s2', 'Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, and run it on a production server.', 'Intermediate'),
     title='Pipelines and saving models', short='Pipelines and saving', badge='2.1', minutes=45,
     lead='Put every preprocessing step and the model into one scikit-learn pipeline, keep it free of leakage, save it with its metadata, and check every input against a contract before it reaches the model.',
     desc='Pipeline, ColumnTransformer, fit, transform, SimpleImputer, StandardScaler, OneHotEncoder, handle_unknown, data leakage, target leakage, time split, joblib, pickle, metadata, skops, ONNX, input validation, status 422.',

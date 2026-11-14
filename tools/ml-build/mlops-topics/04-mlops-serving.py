@@ -267,18 +267,18 @@ PROD_MAC = ('<p>Gunicorn runs Flask and Django with several worker processes. Uv
                     'gunicorn -w 2 -b 127.0.0.1:8000 flask_serve:app            # Flask: file flask_serve.py, object app',
                     'gunicorn -w 2 -b 127.0.0.1:8000 django_serve:application   # Django: the WSGI application object',
                     'uvicorn fastapi_serve:app --host 127.0.0.1 --port 8000 --workers 2   # FastAPI'], 'Terminal (macOS)'))
-PROD_WIN = ('<p><b>Gunicorn does not run on Windows</b>, because it depends on Unix process features. Use <b>Waitress</b>, a pure Python production server, for Flask and Django. Uvicorn works on Windows as it is. A second choice is to run the Linux commands inside WSL (MLOps 1.1), or inside Docker (MLOps 2.3).</p>'
+PROD_WIN = ('<p><b>Gunicorn does not run on Windows</b>, because it depends on Unix process features. Use <b>Waitress</b>, a pure Python production server, for Flask and Django. Uvicorn works on Windows as it is. A second choice is to run the Linux commands inside WSL (MLOps 1.1), or inside Docker, which a coming chapter covers.</p>'
             + term(['pip install waitress "uvicorn[standard]"', '',
                     'waitress-serve --listen=127.0.0.1:8000 flask_serve:app            # Flask',
                     'waitress-serve --listen=127.0.0.1:8000 django_serve:application   # Django',
                     'uvicorn fastapi_serve:app --host 127.0.0.1 --port 8000 --workers 2   # FastAPI'], 'PowerShell (Windows)')
             + '<p>Waitress uses threads instead of processes (4 by default, change it with <code>--threads=8</code>).</p>')
-PROD_LINUX = ('<p>The same commands as macOS. On a Linux server, a <b>systemd</b> service keeps the command running and restarts it after a crash or a reboot. MLOps 2.3 shows the more common choice today, a Docker container.</p>'
+PROD_LINUX = ('<p>The same commands as macOS. On a Linux server, a <b>systemd</b> service keeps the command running and restarts it after a crash or a reboot. The more common choice today is a Docker container, which a coming chapter covers.</p>'
               + term(['pip install gunicorn "uvicorn[standard]"', '',
                       'gunicorn -w 2 -b 127.0.0.1:8000 flask_serve:app',
                       'gunicorn -w 2 -b 127.0.0.1:8000 django_serve:application',
                       'uvicorn fastapi_serve:app --host 127.0.0.1 --port 8000 --workers 2'], 'Terminal (Linux)'))
-PROD_CHROME = ('<p>Use the Linux commands inside the Linux development environment. A Chromebook is fine for learning and testing, but a real service runs on a server or in the cloud, usually in a Docker container (MLOps 2.3).</p>'
+PROD_CHROME = ('<p>Use the Linux commands inside the Linux development environment. A Chromebook is fine for learning and testing, but a real service runs on a server or in the cloud, usually in a Docker container.</p>'
                + term(['pip install gunicorn "uvicorn[standard]"', 'gunicorn -w 2 -b 127.0.0.1:8000 flask_serve:app'], 'Terminal (ChromeOS Linux)'))
 
 K.lesson('api', 'A model behind a web API', f'''
@@ -383,7 +383,7 @@ K.lesson('recap', 'Chapter summary', f'''
     'Test with the framework&rsquo;s test client, then call the running server with curl, or with Invoke-RestMethod in Windows PowerShell.',
     '<b>Online</b> prediction answers during the visit. <b>Batch</b> prediction scores everything on a schedule, cheaper but less fresh.',
     'Production uses Gunicorn (macOS, Linux), Waitress (Windows, any system) or Uvicorn (FastAPI, any system) with several workers, sized with <b>Little&rsquo;s law</b>.'],
-    'MLOps 2.3 puts this service in a Docker container and tests and ships it with CI/CD.')}
+    'Coming next: putting this service in a Docker container and testing and shipping it with CI/CD.')}
 {files('Three tasks: validate a request body, size a pool of workers, and split a big file into chunks.')}
 ''', kw=['summary', 'recap'])
 
@@ -467,7 +467,7 @@ K.must('Production servers', 'Gunicorn on macOS and Linux, Waitress on Windows, 
 K.must('Capacity', 'L = &lambda;W. Workers = &lambda; &times; latency / target use. M/M/1: W = 1/(&mu; &minus; &lambda;) explodes near capacity.')
 
 T = K.topic(
-    slug='mlops-serving', topic='mlops-serving', step=(2, 'Build and ship', 'mlops-s2', 'Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, put it in a Docker container and ship it with CI/CD.', 'Intermediate'),
+    slug='mlops-serving', topic='mlops-serving', step=(2, 'Build and ship', 'mlops-s2', 'Package a model as one pipeline, serve it as a web API with Flask, FastAPI and Django, and run it on a production server.', 'Intermediate'),
     title='Serving models with Flask, FastAPI and Django', short='Serving models', badge='2.2', minutes=55,
     lead='Turn a saved pipeline into a web API with Flask, FastAPI and Django, call it from every operating system, choose between online and batch prediction, and run it on a production server with enough workers.',
     desc='Model API, HTTP, JSON, routes, status codes 200 405 422, Flask, FastAPI, Pydantic, Django, JsonResponse, test client, curl, Invoke-RestMethod, online prediction, batch prediction, Gunicorn, Waitress, Uvicorn, WSGI, ASGI, workers, Little\'s law, M/M/1 queue.',
