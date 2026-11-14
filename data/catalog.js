@@ -9305,6 +9305,26 @@ function cyFoundModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-maths", title: "The maths for security: bits, XOR, mod, counting, probability and entropy", emoji: "1.3", page: "content/cyber-security/cy-maths.html",
+        summary: "binary and hex, XOR, modular arithmetic, key spaces, the birthday bound, the base rate trap and entropy.",
+        keywords: ["binary", "hex", "XOR", "modular arithmetic", "key space", "brute force", "birthday paradox", "Bayes rule", "base rate", "entropy"],
+        minutes: 65, counts: {"lessons": 9, "problems": 11, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "bits", title: "Bits, bytes, binary and hex", emoji: "", group: "Lesson", keywords: ["bit", "byte", "binary", "hexadecimal", "hex", "ASCII", "Unicode", "UTF-8", "Base64", "encoding", "place value"] },
+        { id: "xor", title: "XOR: the most important operation in cryptography", emoji: "", group: "Lesson", keywords: ["XOR", "exclusive or", "truth table", "one time pad", "Vernam", "key reuse", "stream cipher"] },
+        { id: "mod", title: "Modular arithmetic: maths on a clock", emoji: "", group: "Lesson", keywords: ["modular arithmetic", "mod", "remainder", "congruence", "clock arithmetic", "Caesar", "square and multiply", "Gauss"] },
+        { id: "count", title: "Counting keys and passwords: how big is big enough?", emoji: "", group: "Lesson", keywords: ["key space", "brute force", "password strength", "bits of security", "combinatorics", "rate limit", "128 bit"] },
+        { id: "prob", title: "Probability traps: the birthday paradox and the base rate", emoji: "", group: "Lesson", keywords: ["birthday paradox", "birthday bound", "collision", "base rate fallacy", "Bayes rule", "false positive", "intrusion detection", "Axelsson"] },
+        { id: "entropy", title: "Entropy: measuring surprise and randomness", emoji: "", group: "Lesson", keywords: ["entropy", "Shannon", "information theory", "randomness", "min entropy", "password entropy", "passphrase", "packed malware"] },
+        { id: "versus", title: "Encoding, encryption and hashing compared", emoji: "", group: "Lesson", keywords: ["encoding vs encryption vs hashing", "Base64 is not encryption", "comparison", "where maths is used"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "finite field", "GF(2^8)", "advantage", "Sweet32", "switching lemma"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

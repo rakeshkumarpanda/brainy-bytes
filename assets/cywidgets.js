@@ -305,3 +305,181 @@ const CYZ = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Foundations 1.3  decimal to binary by repeated division, then binary to hex by groups of four bits
+   ===================================================================================================== */
+(() => {
+  const { trace, head } = MLZ;
+  const { cbox, D, bin, hex } = CYZ;
+  trace('cybinary', {
+    title: 'Decimal to binary and hex, the way a computer stores it',
+    sub: 'Type a number from 0 to 4095. The animation divides it by 2 again and again, reads the remainders from the bottom up to get binary, then groups the bits in fours to get hexadecimal.',
+    W: 600, H: 340,
+    params: [{ k: 'n', label: 'Number (0 to 4095)', type: 'text', v: '202' }, { k: 'ch', label: 'Or a single character (leave the number empty)', type: 'text', v: '' }],
+    tips: [
+      { t: 'Play it with 202. You get 11001010 in binary and CA in hex.', play: true },
+      { t: 'Clear the number and type the letter A. Characters are stored as numbers too: A is 65.', set: { n: '', ch: 'A' }, play: true },
+      { t: 'Try 255, the biggest value of one byte: eight ones, and FF in hex.', set: { n: '255', ch: '' }, play: true }
+    ],
+    frames(p) {
+      let n, from = '';
+      if (String(p.n).trim() === '') {
+        const ch = String(p.ch);
+        if (ch.length !== 1) throw new Error('Type a number, or clear it and type exactly one character.');
+        n = ch.codePointAt(0); from = `The character "${ch}" is stored as the number <b>${n}</b> (its Unicode code point). `;
+        if (n > 4095) throw new Error('That character has a code above 4095. Try a letter, digit or symbol from the keyboard.');
+      } else {
+        n = Number(String(p.n).trim());
+        if (!Number.isInteger(n) || n < 0 || n > 4095) throw new Error('Use a whole number from 0 to 4095.');
+      }
+      const rows = [];
+      let q = n;
+      if (q === 0) rows.push([0, 0, 0]);
+      while (q > 0) { rows.push([q, Math.floor(q / 2), q % 2]); q = Math.floor(q / 2); }
+      const bits = n.toString(2), width = Math.max(4, Math.ceil(bits.length / 4) * 4), padded = bits.padStart(width, '0');
+      const fr = [{ k: 0, say: `${from}We want <b>${n}</b> in base 2 (binary). Binary uses only 0 and 1. The trick: divide by 2 and keep the remainder, again and again.` }];
+      rows.forEach((r, i) => fr.push({ k: 1 + i, say: `${r[0]} ÷ 2 = ${r[1]} remainder <b>${r[2]}</b>. ${r[1] === 0 ? 'The quotient is 0, so we stop.' : `Carry on with ${r[1]}.`}` }));
+      fr.push({ k: rows.length + 1, read: true, say: `Read the remainders from the <b>bottom up</b>: ${n} = <b>${bits}</b> in binary. Check: ${bits.split('').map((b, i) => b === '1' ? 2 ** (bits.length - 1 - i) : null).filter(v => v !== null).join(' + ') || '0'} = ${n}.` });
+      const groups = padded.match(/.{4}/g);
+      fr.push({ k: rows.length + 2, read: true, groups, say: `For hex, pad to ${width} bits and cut into groups of four: ${groups.join(' ')}. Each group of four is one hex digit from 0 to F.` });
+      fr.push({ k: rows.length + 3, read: true, groups, done: true, say: `${groups.map(g => `${g} = ${parseInt(g, 2)} = <b>${parseInt(g, 2).toString(16).toUpperCase()}</b>`).join(', ')}. So ${n} = <b>0x${hex(n, groups.length)}</b>. Hex is popular in security because one byte is always exactly two hex digits.` });
+      return fr.map(x => ({ ...x, rows, n, bits, groups: x.groups }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, rowH = Math.min(22, 250 / f.rows.length);
+      head(z, 'Divide by 2', 20, 22);
+      f.rows.slice(0, f.k).forEach((r, i) => {
+        const y = 32 + i * rowH;
+        D.text(g, `${r[0]} ÷ 2 = ${r[1]}`, 20, y + rowH * 0.7, { s: 13, mono: true, c: c.ink });
+        cbox(z, 190, y + 1, 30, rowH - 3, String(r[2]), { s: 13, b: true, mono: true, fill: f.read ? c.cv : c.bg, c: f.read ? '#fff' : c.ink });
+      });
+      if (f.read && f.rows.length > 1) { const y1 = 32 + (f.rows.length - 1) * rowH + rowH / 2, y2 = 40; D.arrow(g, 236, y1, 236, y2, c.orange, 2, 8); D.text(g, 'read up', 244, (y1 + y2) / 2, { s: 11, b: true, c: c.orange }); }
+      if (f.read) {
+        head(z, 'Binary', 320, 22);
+        const b = f.bits, cw = Math.min(22, 250 / b.length);
+        b.split('').forEach((d, i) => { cbox(z, 320 + i * cw, 32, cw - 2, 30, d, { s: 14, b: true, mono: true, fill: d === '1' ? c.cv : c.surf, c: d === '1' ? '#fff' : c.ink }); D.text(g, String(2 ** (b.length - 1 - i)), 320 + i * cw + cw / 2 - 1, 76, { a: 'center', s: 8, c: c.ink2 }); });
+      }
+      if (f.groups) {
+        head(z, 'Groups of four bits', 320, 110);
+        f.groups.forEach((gp, i) => {
+          const x = 320 + i * 88;
+          cbox(z, x, 120, 80, 30, gp, { s: 14, mono: true, b: true, fill: c.bg });
+          if (f.done) { D.arrow(g, x + 40, 152, x + 40, 178, c.ink2, 1.4, 6); cbox(z, x + 15, 182, 50, 34, parseInt(gp, 2).toString(16).toUpperCase(), { s: 18, mono: true, b: true, fill: c.orange, c: '#fff' }); }
+        });
+        if (f.done) D.text(g, `${f.n} = 0b${f.bits} = 0x${f.groups.map(x => parseInt(x, 2).toString(16).toUpperCase()).join('')}`, 320, 250, { s: 13, b: true, mono: true, c: c.ink });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 1.3  XOR, bit by bit: encrypt with a key, then XOR again with the same key to get the message back
+   ===================================================================================================== */
+(() => {
+  const { trace, head } = MLZ;
+  const { cbox, D, bin, hex } = CYZ;
+  trace('cyxor', {
+    title: 'XOR: the switch that undoes itself',
+    sub: 'Type a short message and a key. Each letter becomes 8 bits. XOR gives 1 where the two bits differ and 0 where they match. XOR with the same key again brings the message back.',
+    W: 600, H: 340,
+    params: [{ k: 'msg', label: 'Message (1 to 6 letters)', type: 'text', v: 'HI' }, { k: 'key', label: 'Key (repeats if shorter)', type: 'text', v: 'K' }],
+    tips: [
+      { t: 'Play it. Watch each bit flip where the key has a 1 and stay where the key has a 0.', play: true },
+      { t: 'Make the key the same as the message. Every bit matches, so the result is all zeros. That is why a⊕a = 0.', set: { msg: 'CAT', key: 'CAT' }, play: true },
+      { t: 'Use a one letter key on a longer message. The same key byte repeats, and that repetition is what codebreakers hunt for.', set: { msg: 'AAAAAA', key: 'Z' }, play: true }
+    ],
+    frames(p) {
+      const m = String(p.msg), k = String(p.key);
+      if (m.length < 1 || m.length > 6) throw new Error('Use a message of 1 to 6 characters.');
+      if (!k.length) throw new Error('The key needs at least one character.');
+      if ([...m + k].some(ch => ch.charCodeAt(0) > 255)) throw new Error('Use plain keyboard characters.');
+      const cols = [...m].map((ch, i) => { const a = ch.charCodeAt(0), b = k.charCodeAt(i % k.length); return { ch, kc: k[i % k.length], a, b, x: a ^ b }; });
+      const fr = [{ k: 0, say: `Message <b>${m}</b>, key <b>${k}</b>. Computers store each character as a byte, 8 bits. XOR compares two bits: <b>different gives 1, same gives 0</b>.` }];
+      cols.forEach((cl, i) => fr.push({ k: i + 1, say: `"${cl.ch}" = ${cl.a} = ${bin(cl.a)}. Key "${cl.kc}" = ${cl.b} = ${bin(cl.b)}. XOR bit by bit = <b>${bin(cl.x)}</b> = 0x${hex(cl.x)}. ${cl.x === 0 ? 'All bits matched, so the result is zero.' : `${bin(cl.a ^ cl.b).split('').filter(v => v === '1').length} bits flipped.`}` }));
+      fr.push({ k: cols.length + 1, dec: true, say: `The encrypted bytes are <b>${cols.map(c => hex(c.x)).join(' ')}</b> (hex). They look like noise. Now XOR them with the same key again: (m ⊕ k) ⊕ k = m ⊕ (k ⊕ k) = m ⊕ 0 = <b>m</b>. The message <b>${m}</b> comes back. This is the heart of stream ciphers and the one time pad.` });
+      return fr.map(x => ({ ...x, cols }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, cols = f.cols, cw = Math.min(92, 470 / cols.length), x0 = 110;
+      const rows = [['message', 26], ['bits', 60], ['key', 96], ['key bits', 130], ['XOR', 172], ['hex', 206]];
+      rows.forEach(([t, y]) => D.text(g, t, 14, y + 18, { s: 12, b: true, c: c.ink2 }));
+      D.line(g, x0 - 6, 162, x0 + cols.length * cw, 162, c.line, 1.5);
+      cols.forEach((cl, i) => {
+        if (i >= f.k) return;
+        const x = x0 + i * cw, w = cw - 6;
+        cbox(z, x, 26, w, 26, cl.ch, { s: 14, b: true, fill: c.bg });
+        cbox(z, x, 60, w, 26, bin(cl.a), { s: 11, mono: true });
+        cbox(z, x, 96, w, 26, cl.kc, { s: 14, b: true, fill: c.bg });
+        cbox(z, x, 130, w, 26, bin(cl.b), { s: 11, mono: true });
+        cbox(z, x, 172, w, 26, bin(cl.x), { s: 11, mono: true, b: true, fill: c.cv, c: '#fff' });
+        cbox(z, x, 206, w, 26, '0x' + hex(cl.x), { s: 12, mono: true, b: true, fill: c.orange, c: '#fff' });
+      });
+      if (f.dec) {
+        head(z, 'Decrypt: XOR the result with the same key', 14, 262);
+        cols.forEach((cl, i) => { const x = x0 + i * cw; cbox(z, x, 272, cw - 6, 26, `${hex(cl.x)}⊕${hex(cl.b)}=${String.fromCharCode(cl.x ^ cl.b)}`, { s: 11, mono: true, b: true, fill: c.green, c: '#fff' }); });
+        D.text(g, 'a ⊕ a = 0   and   a ⊕ 0 = a', 14, 324, { s: 13, b: true, mono: true, c: c.ink });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Foundations 1.3  the base rate trap: why most alarms are false even with a good detector (Bayes rule)
+   ===================================================================================================== */
+(() => {
+  const { trace, head } = MLZ;
+  const { cbox, D, f2, pct } = CYZ;
+  trace('cybayes', {
+    title: 'Why most security alarms are false: the base rate trap',
+    sub: 'A detector catches most attacks and rarely raises a false alarm. Yet when attacks are rare, most of its alarms are still false. Follow 10,000 events through the detector to see why.',
+    W: 600, H: 340,
+    params: [
+      { k: 'base', label: 'Real attacks per 10,000 events', type: 'range', v: 10, min: 1, max: 2000 },
+      { k: 'tpr', label: 'Detection rate (share of attacks caught)', type: 'range', v: 0.99, min: 0.5, max: 1, step: 0.01 },
+      { k: 'fpr', label: 'False alarm rate (share of normal events flagged)', type: 'range', v: 0.01, min: 0, max: 0.2, step: 0.001 }
+    ],
+    tips: [
+      { t: 'Play it. A detector that catches 99% of attacks, yet only about 1 alarm in 11 is a real attack.', play: true },
+      { t: 'Cut the false alarm rate to 0.001. Now about half the alarms are real. Lowering false alarms helps far more than catching a few more attacks.', set: { fpr: 0.001 }, play: true },
+      { t: 'Make attacks common, 2000 in 10,000. The same detector now looks excellent, because the base rate changed.', set: { base: 2000 }, play: true }
+    ],
+    frames(p) {
+      const N = 10000, A = p.base, B = N - A, TP = A * p.tpr, FN = A - TP, FP = B * p.fpr, TN = B - FP;
+      const post = TP + FP ? TP / (TP + FP) : 0;
+      const fr = [];
+      fr.push({ k: 1, say: `Start with <b>${N}</b> events, for example logins in a day.` });
+      fr.push({ k: 2, say: `Only <b>${A}</b> are real attacks (the <b>base rate</b> is ${pct(A / N)}). The other <b>${B}</b> are normal.` });
+      fr.push({ k: 3, say: `The detector catches ${pct(p.tpr)} of attacks: <b>${f2(TP, 1)}</b> true alarms, and ${f2(FN, 1)} attacks are missed.` });
+      fr.push({ k: 4, say: `It wrongly flags ${pct(p.fpr)} of normal events: <b>${f2(FP, 1)}</b> false alarms. A small rate times a huge number of normal events gives many false alarms.` });
+      fr.push({ k: 5, done: true, post, say: `Total alarms = ${f2(TP, 1)} + ${f2(FP, 1)} = ${f2(TP + FP, 1)}. Chance an alarm is a real attack = ${f2(TP, 1)} ÷ ${f2(TP + FP, 1)} = <b>${pct(post)}</b>. This is Bayes rule. Analysts drown in false alarms when attacks are rare, which is why lowering the false alarm rate matters so much.` });
+      return fr.map(x => ({ ...x, N, A, B, TP, FN, FP, TN }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, n = v => f2(v, Math.abs(v - Math.round(v)) < 1e-9 ? 0 : 1);
+      if (f.k >= 1) cbox(z, 220, 12, 160, 40, [`${f.N} events`], { s: 14, b: true, fill: c.bg });
+      if (f.k >= 2) {
+        D.line(g, 300, 52, 150, 92, c.line, 1.5); D.line(g, 300, 52, 450, 92, c.line, 1.5);
+        cbox(z, 70, 92, 160, 44, [`${f.A} attacks`, 'base rate'], { s: 13, b: true, fill: 'rgba(220,38,38,0.12)', stroke: c.red });
+        cbox(z, 370, 92, 160, 44, [`${f.B} normal`], { s: 13, b: true, fill: c.surf });
+      }
+      if (f.k >= 3) {
+        D.line(g, 150, 136, 85, 176, c.line, 1.5); D.line(g, 150, 136, 215, 176, c.line, 1.5);
+        cbox(z, 20, 176, 130, 44, ['alarm', `${n(f.TP)} true`], { s: 12, b: true, fill: c.red, c: '#fff', stroke: c.red });
+        cbox(z, 160, 176, 120, 44, ['missed', n(f.FN)], { s: 12, fill: c.surf });
+      }
+      if (f.k >= 4) {
+        D.line(g, 450, 136, 385, 176, c.line, 1.5); D.line(g, 450, 136, 515, 176, c.line, 1.5);
+        cbox(z, 320, 176, 130, 44, ['alarm', `${n(f.FP)} false`], { s: 12, b: true, fill: c.orange, c: '#fff', stroke: c.orange });
+        cbox(z, 460, 176, 120, 44, ['quiet', n(f.TN)], { s: 12, fill: c.surf });
+      }
+      if (f.done) {
+        head(z, 'Of all alarms, how many are real?', 20, 250);
+        const tot = f.TP + f.FP || 1, w = 560;
+        CYZ.rr(g, 20, 262, w * f.TP / tot, 28, 4, { fill: c.red });
+        CYZ.rr(g, 20 + w * f.TP / tot, 262, w * f.FP / tot, 28, 4, { fill: c.orange });
+        D.text(g, `P(attack | alarm) = TP / (TP + FP) = ${pct(f.post)}`, 20, 316, { s: 14, b: true, c: c.ink });
+      }
+    }
+  });
+})();
