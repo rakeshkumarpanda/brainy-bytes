@@ -577,3 +577,91 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   MLOps 3.2  monitoring and drift: the population stability index bin by bin, and concept against data drift
+   ===================================================================================================== */
+(() => {
+  const { trace, D, head } = MLZ;
+  const erf = x => { const s = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a)); };
+  const cdf = (x, m, s) => 0.5 * (1 + erf((x - m) / (s * Math.SQRT2)));
+  const Z = [-Infinity, -1.2816, -0.8416, -0.5244, -0.2533, 0, 0.2533, 0.5244, 0.8416, 1.2816, Infinity];
+  const CASES = { same: [50, 10, 'the same N(50, 10)'], small: [52, 10, 'mean moved to 52'], big: [58, 10, 'mean moved to 58'], wide: [50, 16, 'spread grew to 16'] };
+
+  trace('mlpsi', {
+    title: 'The population stability index, bin by bin',
+    sub: 'Cut the training (reference) values of a feature into 10 bins holding 10 percent each. Count the share of live values in the same bins. Each bin adds (q &minus; p) &middot; ln(q / p). Below 0.1 is stable, 0.1 to 0.25 needs watching, above 0.25 is drift. The shares here are exact, from the normal curve.',
+    W: 600, H: 330,
+    params: [{ k: 'live', label: 'Live data', type: 'select', v: 'big', opts: [['same', 'Same as training'], ['small', 'Mean 50 to 52'], ['big', 'Mean 50 to 58'], ['wide', 'Spread 10 to 16']] }],
+    tips: [
+      { t: 'A wider spread: the middle bins empty out and the two outer bins fill up. The mean did not move, yet PSI still rises.', set: { live: 'wide' }, play: true },
+      { t: 'A small shift of 2: every bin changes a little, and the total stays under 0.1.', set: { live: 'small' }, play: true }
+    ],
+    frames(p) {
+      const [m, s, label] = CASES[p.live], bins = [];
+      for (let i = 0; i < 10; i++) { const lo = 50 + 10 * Z[i], hi = 50 + 10 * Z[i + 1], q = Math.max(cdf(hi, m, s) - cdf(lo, m, s), 1e-4); bins.push({ p: 0.1, q, t: (q - 0.1) * Math.log(q / 0.1) }); }
+      const fr = [{ bins, k: 0, tot: 0, say: `Reference: 10 bins of 10 percent each. Live data: ${label}.` }];
+      let tot = 0;
+      bins.forEach((b, i) => { tot += b.t; fr.push({ bins, k: i + 1, tot, say: `Bin ${i + 1}: live share ${(b.q * 100).toFixed(1)} percent against 10, adds ${b.t.toFixed(3)}. Running PSI ${tot.toFixed(3)}.` }); });
+      fr.push({ bins, k: 10, tot, done: true, say: `PSI = <b>${tot.toFixed(3)}</b>: ${tot < 0.1 ? 'stable.' : tot < 0.25 ? 'watch this feature.' : 'drift. Investigate the data and consider retraining.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, X = i => 40 + i * 54, Y = v => 250 - v / 0.35 * 200;
+      D.line(g, 36, 250, 584, 250, c.ink2, 1);
+      [0.1, 0.2, 0.3].forEach(v => { D.text(g, `${v * 100}%`, 32, Y(v) + 4, { a: 'right', s: 10, c: c.ink2 }); D.line(g, 36, Y(v), 584, Y(v), c.line, 0.5); });
+      f.bins.forEach((b, i) => {
+        g.fillStyle = 'rgba(100,116,139,0.35)'; g.fillRect(X(i) + 4, Y(b.p), 20, 250 - Y(b.p));
+        if (i < f.k) { g.fillStyle = b.t > 0.03 ? c.orange : c.cv; g.fillRect(X(i) + 26, Y(Math.min(b.q, 0.35)), 20, 250 - Y(Math.min(b.q, 0.35))); D.text(g, b.t.toFixed(3), X(i) + 25, 268, { a: 'center', s: 10, c: c.ink2 }); }
+      });
+      head(z, 'grey: training share   coloured: live share   numbers: PSI added by each bin', 40, 24, { s: 11 });
+      D.text(g, `PSI so far: ${f.tot.toFixed(3)}`, 40, 300, { s: 14, b: true, c: f.tot < 0.1 ? c.green : f.tot < 0.25 ? c.orange : c.red });
+    }
+  });
+
+  const SERIES = {
+    concept: { acc: [0.947, 0.918, 0.883, 0.86, 0.828, 0.809, 0.753, 0.732, 0.708, 0.66, 0.648, 0.604, 0.568], acc3: [0.947, 0.918, 0.883, 0.86, 0.908, 0.876, 0.843, 0.918, 0.878, 0.857, 0.918, 0.887, 0.851], psi: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0, 0.01, 0.01, 0.01, 0.01] },
+    data: { acc: [0.947, 0.945, 0.948, 0.944, 0.946, 0.944, 0.944, 0.951, 0.948, 0.951, 0.952, 0.956, 0.952], acc3: [0.947, 0.945, 0.948, 0.944, 0.93, 0.936, 0.94, 0.921, 0.935, 0.94, 0.944, 0.952, 0.95], psi: [0.01, 0.06, 0.28, 0.58, 0.93, 1.5, 1.95, 2.49, 3.39, 4.39, 4.66, 5.34, 6.19] }
+  };
+  trace('mldecay', {
+    title: 'Concept drift against data drift over a year',
+    sub: 'A model is trained in month 0. In concept drift the inputs stay the same but the rule behind the labels turns 6 degrees a month. In data drift the inputs move but the rule holds. Watch both accuracy (needs true labels) and PSI of an input (needs no labels). The numbers come from a simulation like the chapter&rsquo;s program.',
+    W: 600, H: 330,
+    params: [
+      { k: 'kind', label: 'What changes', type: 'select', v: 'concept', opts: [['concept', 'Concept drift: the rule changes'], ['data', 'Data drift: the inputs change']] },
+      { k: 'retrain', label: 'Retraining', type: 'select', v: 'never', opts: [['never', 'Never'], ['q', 'Every 3 months on new labels']] }
+    ],
+    tips: [
+      { t: 'Concept drift, retrained every 3 months: accuracy saws up and down but stays above 0.84.', set: { kind: 'concept', retrain: 'q' }, play: true },
+      { t: 'Data drift: the PSI alarm rings from month 2, yet accuracy stays near 0.95. Drift is a reason to look, not proof of harm.', set: { kind: 'data', retrain: 'never' }, play: true }
+    ],
+    frames(p) {
+      const S = SERIES[p.kind], acc = p.retrain === 'q' ? S.acc3 : S.acc;
+      const psi = S.psi.map((v, m) => (p.retrain === 'q' ? S.psi[m - 3 * Math.floor(m / 3) * (m >= 3 ? 1 : 0)] : v));
+      const fr = [];
+      for (let m = 0; m <= 12; m++) {
+        let say = `Month ${m}: accuracy ${acc[m].toFixed(2)}, PSI of the input ${psi[m].toFixed(2)}.`;
+        if (p.retrain === 'q' && m > 0 && m % 3 === 0) say += ' Retrained on this month&rsquo;s labelled data.';
+        fr.push({ m, acc, psi, say });
+      }
+      const last = fr[12];
+      last.say += p.kind === 'concept' ? (p.retrain === 'q' ? ' Regular retraining keeps up with a slowly turning rule.' : ' Accuracy fell from 0.95 to 0.57 while PSI never moved. Only performance monitoring catches concept drift.')
+        : (p.retrain === 'q' ? ' Each retrain makes the newest data the reference, so PSI drops back to zero, and accuracy held all year.' : ' PSI rose far past 0.25 while accuracy held. The rule still applies to the moved inputs, so this drift did no harm.');
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, X = m => 50 + m * 42, YA = a => 190 - (a - 0.5) / 0.5 * 160;
+      head(z, 'accuracy', 50, 22, { s: 11 });
+      D.line(g, 46, 190, 560, 190, c.ink2, 1);
+      [0.5, 0.75, 1].forEach(a => { D.text(g, a.toFixed(2), 42, YA(a) + 4, { a: 'right', s: 10, c: c.ink2 }); D.line(g, 46, YA(a), 560, YA(a), c.line, 0.5); });
+      g.save(); g.strokeStyle = c.cv; g.lineWidth = 2.5; g.beginPath();
+      for (let m = 0; m <= f.m; m++) { m ? g.lineTo(X(m), YA(f.acc[m])) : g.moveTo(X(m), YA(f.acc[m])); } g.stroke(); g.restore();
+      for (let m = 0; m <= f.m; m++) D.circle(g, X(m), YA(f.acc[m]), 3.5, { fill: c.cv });
+      head(z, 'PSI of an input (bars, capped at 1, threshold 0.25 dashed)', 50, 212, { s: 11 });
+      const YP = v => 300 - Math.min(v, 1) * 70;
+      D.line(g, 46, 300, 560, 300, c.ink2, 1); D.line(g, 46, YP(0.25), 560, YP(0.25), c.red, 1, [4, 3]);
+      for (let m = 0; m <= f.m; m++) { const v = f.psi[m]; g.fillStyle = v >= 0.25 ? c.red : c.green; g.fillRect(X(m) - 9, YP(v), 18, 300 - YP(v)); if (v >= 1) D.text(g, v.toFixed(1), X(m), YP(v) - 3, { a: 'center', s: 9, c: c.ink2 }); }
+      for (let m = 0; m <= 12; m += 2) D.text(g, `${m}`, X(m), 316, { a: 'center', s: 10, c: c.ink2 });
+    }
+  });
+})();

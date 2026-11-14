@@ -9144,6 +9144,24 @@ function mlopsModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "mlops-monitoring", title: "Monitoring and drift", emoji: "3.2", page: "content/mlops/mlops-monitoring.html",
+        summary: "What to monitor, PSI and KS drift tests, concept against data drift, retraining, and a scheduled drift job on every OS.",
+        keywords: ["model monitoring", "data drift", "concept drift", "PSI", "KS test", "SLO", "p99 latency", "retraining", "cron", "Task Scheduler"],
+        minutes: 55, counts: {"lessons": 7, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "what", title: "What to watch once a model is live", emoji: "", group: "Lesson", keywords: ["monitoring", "SLO", "latency percentile", "p99", "error budget", "burn rate", "observability"] },
+        { id: "drift", title: "Drift: when live data stops looking like training data", emoji: "", group: "Lesson", keywords: ["data drift", "covariate shift", "label shift", "concept drift", "PSI", "KS test", "chi square", "p value"] },
+        { id: "decay", title: "Concept drift, label delay and retraining", emoji: "", group: "Lesson", keywords: ["concept drift", "label delay", "performance monitoring", "retraining", "proxy metrics", "continual learning"] },
+        { id: "schedule", title: "Run a drift check every day on your computer", emoji: "", group: "Lesson", keywords: ["scheduled job", "cron", "launchd", "Task Scheduler", "schtasks", "systemd timer", "GitHub Actions schedule", "exit code"] },
+        { id: "respond", title: "When an alert fires", emoji: "", group: "Lesson", keywords: ["incident response", "playbook", "Wasserstein distance", "Evidently", "Prometheus", "Grafana"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "embedding drift"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
