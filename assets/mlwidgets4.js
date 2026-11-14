@@ -859,7 +859,16 @@
   })();
   const SHOWAT = [0, 100, 300, 1000, 3000];
 
+  /* Each data set and model is trained once and kept, so Step, Back, Play and switching back do not train it again */
+  const AE_DONE = new Map();
   function trainAE(pts, nonlin) {
+    const name = pts === DATA.arc ? 'arc' : pts === DATA.line ? 'line' : '';
+    if (!name) return trainAEonce(pts, nonlin);
+    const key = name + (nonlin ? '+nonlin' : '');
+    if (!AE_DONE.has(key)) AE_DONE.set(key, trainAEonce(pts, nonlin));
+    return AE_DONE.get(key);
+  }
+  function trainAEonce(pts, nonlin) {
     const R = rng(4), H = nonlin ? 12 : 0;
     const gs = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
     const sizes = nonlin ? [2, H, 1, H, 2] : [2, 1, 2];
@@ -875,18 +884,36 @@
       return { it, rec, curve, mse: rec.reduce((a, r, i) => a + (r[0] - pts[i][0]) ** 2 + (r[1] - pts[i][1]) ** 2, 0) / pts.length };
     };
     const shots = [snap(0)];
+    /* The training loop uses plain loops and reuses its arrays. It adds the numbers in exactly the same order as the
+       map and reduce version, so the result is the same, but it runs several times faster. */
+    const L = W.length, gW = W.map(m => m.map(r => r.map(() => 0))), gB = B.map(r => r.map(() => 0));
+    const G = [...gW.flatMap(m => m), ...gB];
+    const hs = sizes.map(n => new Array(n).fill(0));
+    let dA = new Array(Math.max(...sizes)).fill(0), dB = new Array(Math.max(...sizes)).fill(0);
     for (let it = 1; it <= 3000; it++) {
-      const gW = W.map(m => m.map(r => r.map(() => 0))), gB = B.map(r => r.map(() => 0));
-      pts.forEach(x => {
-        const hs = fwd(x); let d = hs[hs.length - 1].map((v, j) => 2 * (v - x[j]) / pts.length);
-        for (let l = W.length - 1; l >= 0; l--) {
-          if (act(l)) d = d.map((dj, j) => dj * (1 - hs[l + 1][j] ** 2));
-          hs[l].forEach((v, i) => d.forEach((dj, j) => (gW[l][i][j] += v * dj)));
-          d.forEach((dj, j) => (gB[l][j] += dj));
-          d = hs[l].map((_, i) => d.reduce((a, dj, j) => a + dj * W[l][i][j], 0));
+      for (let l = 0; l < L; l++) { gB[l].fill(0); gW[l].forEach(r => r.fill(0)); }
+      for (let n = 0; n < pts.length; n++) {
+        const x = pts[n];
+        hs[0][0] = x[0]; hs[0][1] = x[1];
+        for (let l = 0; l < L; l++) {
+          const Wl = W[l], hin = hs[l], hout = hs[l + 1], tanh = act(l);
+          for (let j = 0; j < hout.length; j++) {
+            let a = B[l][j];
+            for (let i = 0; i < hin.length; i++) a = a + hin[i] * Wl[i][j];
+            hout[j] = tanh ? Math.tanh(a) : a;
+          }
         }
-      });
-      const G = [...gW.flatMap(m => m), ...gB];
+        const top = hs[L];
+        for (let j = 0; j < top.length; j++) dA[j] = 2 * (top[j] - x[j]) / pts.length;
+        for (let l = L - 1; l >= 0; l--) {
+          const nOut = sizes[l + 1], nIn = sizes[l], hin = hs[l], hout = hs[l + 1], Wl = W[l], gl = gW[l];
+          if (act(l)) for (let j = 0; j < nOut; j++) dA[j] = dA[j] * (1 - hout[j] ** 2);
+          for (let i = 0; i < nIn; i++) for (let j = 0; j < nOut; j++) gl[i][j] += hin[i] * dA[j];
+          for (let j = 0; j < nOut; j++) gB[l][j] += dA[j];
+          for (let i = 0; i < nIn; i++) { let a = 0; for (let j = 0; j < nOut; j++) a = a + dA[j] * Wl[i][j]; dB[i] = a; }
+          const t = dA; dA = dB; dB = t;
+        }
+      }
       P.forEach((r, k) => r.forEach((_, j) => { M[k][j] = 0.9 * M[k][j] + 0.1 * G[k][j]; V[k][j] = 0.999 * V[k][j] + 0.001 * G[k][j] ** 2; r[j] -= 0.01 * (M[k][j] / (1 - 0.9 ** it)) / (Math.sqrt(V[k][j] / (1 - 0.999 ** it)) + 1e-8); }));
       if (SHOWAT.includes(it)) shots.push(snap(it));
     }
@@ -986,32 +1013,52 @@
   const SHOWAT = [0, 25, 50, 100, 200, 300, 600, 1000, 2000, 3000];
   const sig = t => 1 / (1 + Math.exp(-t));
 
+  /* The training below gives exactly the same numbers as the plain version with arrays and forEach, but it reuses
+     typed arrays instead of building thousands of small arrays, so it runs many times faster. Each recipe is
+     trained once and kept, so Step, Back, Play and switching back to a recipe do not train it again.
+     Training is fixed by the seed, so GAN_DONE starts filled with the exact output of trainGAN for the three
+     recipes. Even the fast version takes close to a second per recipe, and this way the page and the recipe
+     dropdown answer at once. If you change trainGAN or SHOWAT, set GAN_DONE to {} so the recipes train live, and
+     paste JSON.stringify of the new results back in. */
+  const GAN_DONE = {"sat":[{"step":0,"a":1,"b":0,"w":[-0.8302920172478176,1.3126719605583603,1.2229811239816157,0],"sf":1.0954026807945694,"dfake":0.3227049203781053},{"step":25,"a":1.1713230836605106,"b":0.12284519511768202,"w":[-4.662790826133351,4.3546130260438245,4.744403614351932,0],"sf":1.1587185241935758,"dfake":0.03883585263689733},{"step":50,"a":1.5137444197968677,"b":0.3019439656475586,"w":[-6.017767860533328,4.6205070107628226,5.443758767011658,0],"sf":1.479919008154196,"dfake":0.05858823105236374},{"step":100,"a":2.7893177731404095,"b":1.135283336707678,"w":[-2.9005919575740156,5.272711290014193,-1.477352245689766,0],"sf":2.8125186546729286,"dfake":0.29327625273982233},{"step":200,"a":2.766064102484085,"b":1.825276673219861,"w":[-5.523469436258202,11.985240392072035,-5.451847660189101,0],"sf":2.967272019855923,"dfake":0.3025919647278669},{"step":300,"a":2.452954935804487,"b":2.423492928026754,"w":[-7.401280521804582,15.873958487168808,-7.554780626170995,0],"sf":2.4268772255062805,"dfake":0.31523879526024334},{"step":600,"a":0.049344636558389,"b":4.029493357480301,"w":[-9.839773752688776,19.6703638301279,-9.773840041751214,0],"sf":0.0489813306315964,"dfake":0.5139113484438171},{"step":1000,"a":0.000055833381223827475,"b":4.029746368177371,"w":[-6.8454529830316,13.686403572838062,-6.791038033739952,0],"sf":0.00005257651617767641,"dfake":0.5125755546814993},{"step":2000,"a":0.0003676895345284369,"b":4.034223340458325,"w":[0.10217505053071957,-0.13741314671185312,0.036147893023781866,0],"sf":0.00034881240292288374,"dfake":0.5000888815288647},{"step":3000,"a":1.5068445368094956,"b":3.718461878310038,"w":[-2.7920732026222024,6.038471826446031,-3.025468136064559,0],"sf":1.5246709728472483,"dfake":0.45207434219250886}],"ns":[{"step":0,"a":1,"b":0,"w":[-0.8302920172478176,1.3126719605583603,1.2229811239816157,0],"sf":1.0954026807945694,"dfake":0.3227049203781053},{"step":25,"a":1.3445363240182537,"b":1.0947992041787893,"w":[-5.275047741597987,3.7785043710433244,4.517328355228753,0],"sf":1.3300678240049355,"dfake":0.10236231159366778},{"step":50,"a":1.3509000939667284,"b":2.640767090367234,"w":[-4.9026333373421656,3.412455706164001,2.203028060440474,0],"sf":1.3207135240484855,"dfake":0.2795335313020402},{"step":100,"a":0.8832782575484277,"b":3.845833263160748,"w":[-2.732474954510216,4.716179196056009,-1.8916899138690666,0],"sf":0.8906251559229927,"dfake":0.49115701850179416},{"step":200,"a":0.3821340615655662,"b":4.010951349088303,"w":[-2.6040922226610363,5.197070883869719,-2.546655195773215,0],"sf":0.4099311030785952,"dfake":0.5050480358540478},{"step":300,"a":0.183641106520092,"b":4.028674925405912,"w":[-2.0656639900767595,4.1960163043046395,-2.1287429151692105,0],"sf":0.18168879198517274,"dfake":0.4992127948331769},{"step":600,"a":0.06187999227681841,"b":4.03383610525672,"w":[-0.17120210600453062,0.3617314978337143,-0.2126503533578105,0],"sf":0.06142439325913293,"dfake":0.4943214145125644},{"step":1000,"a":0.22782692974690102,"b":4.023531209877378,"w":[2.207947475376503,-4.46268404118291,2.22949429148911,0],"sf":0.214537360893982,"dfake":0.4952949891603123},{"step":2000,"a":0.15991048694058754,"b":4.029611823317367,"w":[1.0025770548357367,-1.9358342818138685,0.928537355903847,0],"sf":0.1517007038937194,"dfake":0.49899766622116326},{"step":3000,"a":0.1788811360508352,"b":4.028710605340282,"w":[0.21930339641603833,-0.46712654597335035,0.2808629041428075,0],"sf":0.18099735511144413,"dfake":0.508553449391976}],"nsstd+std":[{"step":0,"a":1,"b":0,"w":[-0.3500821206021484,1.3654281520335956,1.3008462004780095,-1.1209839617685762],"sf":1.0954026807945694,"dfake":0.18867682248253106},{"step":25,"a":0.06259979287154285,"b":1.428937692722023,"w":[-4.993466359305966,4.887475039978477,5.377516634136939,-1.4664786391825975],"sf":0.06192615907837853,"dfake":0.06683615855502169},{"step":50,"a":0.6847459184530409,"b":4.187842954604992,"w":[-7.467284024994887,2.7925936584323767,2.294202776390094,2.878020050823747],"sf":0.6694449123786985,"dfake":0.48196871498749144},{"step":100,"a":0.43378564973023215,"b":3.922952851490664,"w":[-2.3243370853868086,3.7283506282311705,-1.9389702744495094,1.363739169814758],"sf":0.43739377554752357,"dfake":0.5101123623569256},{"step":200,"a":0.4363469447520773,"b":4.009228654080008,"w":[-1.9507656840320304,3.8511039286512454,-1.976551249788602,0.29172913410387324],"sf":0.46808751791026415,"dfake":0.5081051134772123},{"step":300,"a":0.49521483897123836,"b":4.004476735821373,"w":[-1.870414203082239,3.827047750623706,-1.9061022666442484,-0.13129254782254537],"sf":0.48995014009007865,"dfake":0.48939111500380333},{"step":600,"a":0.49978299866973436,"b":3.99869611527344,"w":[-1.8521454686731613,3.548514136930241,-1.7967550483631096,0.254629849463716],"sf":0.4961032851650652,"dfake":0.49959127065737785},{"step":1000,"a":0.48168976449121614,"b":3.9981879987524476,"w":[-1.7172796104929424,3.3081406994538476,-1.6100789675024956,0.11951017708372164],"sf":0.45359190398778976,"dfake":0.5034067526741779},{"step":2000,"a":0.4916150050452091,"b":4.001733115171102,"w":[-1.333603971843078,2.7379266438048733,-1.4048177846354635,0.019751710288211315],"sf":0.4663755563309688,"dfake":0.4973100115331206},{"step":3000,"a":0.5052736588725676,"b":4.0047154717793125,"w":[-1.1202868794632634,2.3391339782373284,-1.0148372861014565,-0.28135721787014484],"sf":0.5112512022364799,"dfake":0.5107809337311714}]};
   function trainGAN(loss, useStd) {
+    const key = loss + (useStd ? '+std' : '');
+    if (GAN_DONE[key]) return GAN_DONE[key];
     const R = rng(5), B = 256;
     const gs = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
-    const sd = xs => { const m = xs.reduce((a, v) => a + v, 0) / xs.length; return Math.sqrt(xs.reduce((a, v) => a + (v - m) ** 2, 0) / xs.length); };
-    const feats = (x, s) => [1, x / 4, (x / 4) ** 2, useStd ? s : 0];
-    const logit = (w, f) => w[0] * f[0] + w[1] * f[1] + w[2] * f[2] + w[3] * f[3];
+    const sd = xs => { let m = 0; for (let i = 0; i < xs.length; i++) m += xs[i]; m /= xs.length; let q = 0; for (let i = 0; i < xs.length; i++) q += (xs[i] - m) ** 2; return Math.sqrt(q / xs.length); };
+    const real = new Float64Array(B), fake = new Float64Array(B), z = new Float64Array(B);
     let a = 1, b = 0;
     const w = [0, 0, 0, 0], shots = [];
     for (let step = 0; step <= 3000; step++) {
       for (let k = 0; k < 5; k++) {
-        const real = Array.from({ length: B }, () => 4 + 0.5 * gs()), fake = Array.from({ length: B }, () => a * gs() + b);
-        const sr = sd(real), sf = sd(fake), gw = [0, 0, 0, 0];
-        real.forEach(x => { const f = feats(x, sr), e = sig(logit(w, f)) - 1; f.forEach((v, i) => (gw[i] += e * v)); });
-        fake.forEach(x => { const f = feats(x, sf), e = sig(logit(w, f)); f.forEach((v, i) => (gw[i] += e * v)); });
-        gw.forEach((g, i) => (w[i] -= g / B));
+        for (let i = 0; i < B; i++) real[i] = 4 + 0.5 * gs();
+        for (let i = 0; i < B; i++) fake[i] = a * gs() + b;
+        const sr = useStd ? sd(real) : 0, sf = useStd ? sd(fake) : 0;
+        let g0 = 0, g1 = 0, g2 = 0, g3 = 0;
+        for (let i = 0; i < B; i++) {
+          const f1 = real[i] / 4, f2 = f1 ** 2, e = sig(w[0] * 1 + w[1] * f1 + w[2] * f2 + w[3] * sr) - 1;
+          g0 += e * 1; g1 += e * f1; g2 += e * f2; g3 += e * sr;
+        }
+        for (let i = 0; i < B; i++) {
+          const f1 = fake[i] / 4, f2 = f1 ** 2, e = sig(w[0] * 1 + w[1] * f1 + w[2] * f2 + w[3] * sf);
+          g0 += e * 1; g1 += e * f1; g2 += e * f2; g3 += e * sf;
+        }
+        w[0] -= g0 / B; w[1] -= g1 / B; w[2] -= g2 / B; w[3] -= g3 / B;
       }
-      const z = Array.from({ length: B }, gs), fake = z.map(v => a * v + b), sf = sd(fake), sz = sd(z);
+      for (let i = 0; i < B; i++) z[i] = gs();
+      for (let i = 0; i < B; i++) fake[i] = a * z[i] + b;
+      const sf = sd(fake), sz = sd(z), s4 = useStd ? sf : 0;
       let ga = 0, gb = 0, gm = 0, dsum = 0;
-      fake.forEach((x, i) => {
-        const d = sig(logit(w, feats(x, sf))), dl = loss === 'sat' ? -d : -(1 - d), dx = (w[1] + 2 * w[2] * x / 4) / 4;
+      for (let i = 0; i < B; i++) {
+        const x = fake[i], f1 = x / 4, d = sig(w[0] * 1 + w[1] * f1 + w[2] * f1 ** 2 + w[3] * s4), dl = loss === 'sat' ? -d : -(1 - d), dx = (w[1] + 2 * w[2] * x / 4) / 4;
         ga += dl * dx * z[i]; gb += dl * dx; gm += dl; dsum += d;
-      });
+      }
       ga = ga / B + (gm / B) * w[3] * Math.sign(a) * sz; gb /= B;
       if (SHOWAT.includes(step)) shots.push({ step, a: Math.abs(a), b, w: w.slice(), sf, dfake: dsum / B });
       a -= 0.05 * ga; b -= 0.05 * gb;
     }
+    GAN_DONE[key] = shots;
     return shots;
   }
 
