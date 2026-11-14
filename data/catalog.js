@@ -9563,6 +9563,29 @@ function cyCryptoModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cy-c3", title: "Applied and modern cryptography", emoji: "3", step: 3, part: "crypto", level: "Advanced", blurb: "Certificates and TLS 1.3, the move to post quantum cryptography, and advanced tools: secret sharing, zero knowledge proofs and homomorphic encryption.", topics: [
+      { id: "cy-tls", title: "Certificates, PKI and TLS 1.3", emoji: "1.1", page: "content/cyber-security/cy-tls.html",
+        summary: "PKI, X.509, chain verification, revocation and CT, the TLS 1.3 handshake and key schedule, TLS attacks, HTTPS deployment.",
+        keywords: ["PKI", "X.509", "certificate chain", "revocation", "Certificate Transparency", "TLS 1.3", "key schedule", "Heartbleed", "HSTS", "ACME"],
+        minutes: 85, counts: {"lessons": 10, "problems": 13, "quiz": 15, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Why we need PKI", emoji: "", group: "Lesson", keywords: ["PKI", "public key infrastructure", "certificate authority", "CA", "root store", "X.509", "SSL", "DigiNotar", "TLS versions"] },
+        { id: "certs", title: "X.509 certificates", emoji: "", group: "Lesson", keywords: ["X.509", "certificate", "ASN.1", "DER", "PEM", "subject alternative name", "basic constraints", "key usage", "wildcard", "ACME", "Let us Encrypt", "certificate lifetime"] },
+        { id: "chain", title: "Chains of trust and how browsers verify them", emoji: "", group: "Lesson", keywords: ["chain of trust", "root CA", "intermediate CA", "certificate verification", "trust store", "goto fail", "CurveBall", "verify=False", "ssl module"] },
+        { id: "revoke", title: "Revocation and Certificate Transparency", emoji: "", group: "Lesson", keywords: ["revocation", "CRL", "OCSP", "OCSP stapling", "CRLite", "Certificate Transparency", "CT log", "Merkle tree", "SCT", "inclusion proof"] },
+        { id: "tls13", title: "The TLS 1.3 handshake", emoji: "", group: "Lesson", keywords: ["TLS 1.3", "handshake", "ClientHello", "ServerHello", "key share", "CertificateVerify", "Finished", "0-RTT", "replay", "cipher suites", "downgrade"] },
+        { id: "keys", title: "The TLS 1.3 key schedule", emoji: "", group: "Lesson", keywords: ["key schedule", "HKDF-Expand-Label", "early secret", "handshake secret", "master secret", "transcript hash", "RFC 8448", "formal verification"] },
+        { id: "attacks", title: "A history of TLS attacks", emoji: "", group: "Lesson", keywords: ["BEAST", "CRIME", "BREACH", "Lucky Thirteen", "Heartbleed", "POODLE", "FREAK", "Logjam", "DROWN", "ROBOT", "testssl.sh", "SSL Labs"] },
+        { id: "deploy", title: "Deploying TLS well", emoji: "", group: "Lesson", keywords: ["deployment", "HSTS", "preload", "ACME", "certbot", "mutual TLS", "mTLS", "certificate pinning", "HPKP", "X25519MLKEM768", "QUIC", "crt.sh"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "formal analysis", "Project Everest", "Encrypted Client Hello", "ECH", "Symantec distrust", "Merkle tree certificates"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

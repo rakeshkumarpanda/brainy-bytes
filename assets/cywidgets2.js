@@ -1347,3 +1347,178 @@ const CYEC = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Cryptography 3.1  How a browser checks a certificate chain, one test at a time
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const CASES = {
+    ok: 'Everything correct',
+    name: 'Wrong host name',
+    expired: 'Expired certificate',
+    unknown: 'Self made root, not in the store',
+    tampered: 'Certificate changed after signing',
+    revoked: 'Revoked certificate'
+  };
+  trace('cychain', {
+    title: 'Checking a certificate chain like a browser',
+    sub: 'A website sends its certificate and an intermediate one. The browser links them to a root it already trusts, checks each signature, the dates, the name and the revocation status, and stops at the first failure.',
+    W: 600, H: 340,
+    params: [{ k: 'c', label: 'Case', type: 'select', v: 'ok', opts: Object.keys(CASES).map(k => [k, CASES[k]]) }],
+    tips: [
+      { t: 'Play the correct chain for shop.example. Every check passes and the padlock appears.', play: true },
+      { t: 'Choose "Wrong host name": the certificate is valid but for another site, so the browser refuses it.', set: { c: 'name' }, play: true },
+      { t: 'Choose "Certificate changed after signing": one changed byte breaks the issuer’s signature.', set: { c: 'tampered' }, play: true }
+    ],
+    frames(p) {
+      const c = p.c;
+      const steps = [
+        ['build', 'Build the path: shop.example was issued by "Example Issuing CA", which was issued by "Example Root CA". The browser looks for Example Root CA in its own root store.', c === 'unknown' ? 'Example Root CA is not in the store. A self made or unknown root fails here, which is why a home made certificate shows a warning.' : null],
+        ['sig1', 'Check the leaf: verify the signature on shop.example’s certificate with the public key inside the intermediate certificate.', c === 'tampered' ? 'The signature does not match: someone changed the certificate (for example added a name) after the CA signed it.' : null],
+        ['sig2', 'Check the intermediate: verify its signature with Example Root CA’s public key, and check it is marked as a CA (Basic Constraints: CA = true).', null],
+        ['dates', 'Check the dates: today, 14 November 2026, must lie between Not Before and Not After for every certificate.', c === 'expired' ? 'The leaf expired on 30 October 2026. Expired certificates are refused, even if nothing else is wrong.' : null],
+        ['name', 'Check the name: the address typed, shop.example, must be listed in the Subject Alternative Name extension.', c === 'name' ? 'The user visited bank.example, but this certificate only lists shop.example and www.shop.example.' : null],
+        ['rev', 'Check revocation: the server stapled a fresh OCSP response signed by the CA, saying "good".', c === 'revoked' ? 'The OCSP response says "revoked": the private key was reported stolen, so the certificate must not be trusted.' : null]
+      ];
+      const fr = [{ k: 0, say: 'The server sends two certificates: its own (the leaf) and the intermediate CA’s. The root is not sent. The browser must already have it.', st: {} }];
+      const st = {};
+      for (const [id, say, fail] of steps) {
+        if (fail) { st[id] = 'fail'; fr.push({ k: 1, say: say + ' ' + fail, st: { ...st }, cur: id }); fr.push({ k: 2, done: true, bad: true, say: `Verdict: <b>not trusted</b>. The browser shows a full page warning instead of the site. Clicking through it defeats the whole point of TLS.`, st: { ...st } }); return fr; }
+        st[id] = 'ok'; fr.push({ k: 1, say: say + ' Passed.', st: { ...st }, cur: id });
+      }
+      fr.push({ k: 2, done: true, bad: false, say: 'Verdict: <b>trusted</b>. The key in the leaf certificate really belongs to shop.example, so the browser can check the server’s handshake signature and show the padlock.', st: { ...st } });
+      return fr.map(x => ({ ...x, c }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      const tone = id => f.st[id] === 'ok' ? col.green : f.st[id] === 'fail' ? col.red : col.surf;
+      const txt = id => (f.st[id] ? '#fff' : col.ink);
+      const certs = [
+        ['Example Root CA', 'in the browser’s root store', 'self signed, CA', 12, f.c === 'unknown' ? 'Self Made Root (not trusted)' : null],
+        ['Example Issuing CA', 'issuer: Example Root CA', 'CA = true, valid to 2027', 112, null],
+        ['shop.example', 'issuer: Example Issuing CA', f.c === 'expired' ? 'valid to 30 Oct 2026' : 'valid to 30 Nov 2026', 212, null]
+      ];
+      certs.forEach(([nm, iss, ext, y, alt], i) => {
+        const fill = i === 0 ? (f.st.build === 'fail' ? col.red : f.st.build ? 'rgba(15,118,110,0.2)' : col.surf) : col.surf;
+        cbox(z, 14, y, 250, 76, [alt || nm, iss, ext], { s: 12, b: true, fill, c: i === 0 && f.st.build === 'fail' ? '#fff' : col.ink });
+        if (i < 2) { D.arrow(g, 139, y + 98, 139, y + 80, col.cv, 2, 7); D.text(g, 'signs', 150, y + 92, { s: 10, b: true, c: col.cv }); }
+      });
+      const checks = [['build', 'path to a trusted root'], ['sig1', 'leaf signature'], ['sig2', 'intermediate signature, CA flag'], ['dates', 'validity dates'], ['name', 'host name in SAN'], ['rev', 'not revoked (OCSP)']];
+      checks.forEach(([id, label], i) => cbox(z, 300, 12 + i * 40, 286, 32, (f.st[id] === 'ok' ? '✓ ' : f.st[id] === 'fail' ? '✗ ' : '') + label, { s: 12, b: true, fill: f.cur === id && !f.st[id] ? 'rgba(234,88,12,0.2)' : tone(id), c: txt(id) }));
+      if (f.done) cbox(z, 300, 262, 286, 40, f.bad ? 'not trusted: warning page' : 'trusted: padlock shown', { s: 14, b: true, fill: f.bad ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 3.1  The TLS 1.3 handshake, message by message
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const FLOWS = {
+    full: { name: 'Full handshake (1-RTT)', msgs: [
+      ['c', 'ClientHello + key_share (X25519)', false, 'The client sends random bytes, the cipher suites it supports, and a key share: its ephemeral X25519 public key. It guesses the group, so no extra round trip is needed.'],
+      ['s', 'ServerHello + key_share', false, 'The server picks TLS_AES_128_GCM_SHA256 and sends its own X25519 share. Both sides now compute the ECDHE secret and derive handshake keys with HKDF. Everything after this is encrypted.'],
+      ['s', 'EncryptedExtensions', true, 'Settings such as ALPN (for example h2 for HTTP/2). In TLS 1.2 these travelled in the clear.'],
+      ['s', 'Certificate', true, 'The server’s certificate chain, now hidden from eavesdroppers, unlike TLS 1.2.'],
+      ['s', 'CertificateVerify', true, 'A signature over the whole handshake so far, made with the certificate’s private key. This proves the server owns the certificate and stops a man in the middle.'],
+      ['s', 'Finished', true, 'An HMAC over the handshake transcript, so any change to an earlier message is detected.'],
+      ['c', 'Finished', true, 'The client checks the chain and the signature, then sends its own Finished.'],
+      ['c', 'HTTP request (application data)', true, 'One round trip after the first message, the client sends real data. TLS 1.2 needed two round trips.']] },
+    hrr: { name: 'Server wants another group (HelloRetryRequest)', msgs: [
+      ['c', 'ClientHello + key_share (X25519)', false, 'The client guesses X25519.'],
+      ['s', 'HelloRetryRequest (use P-256)', false, 'The server does not accept X25519 and asks for P-256 instead. This costs one extra round trip.'],
+      ['c', 'ClientHello + key_share (P-256)', false, 'The client sends a P-256 key share. The transcript keeps both hellos, so a downgrade would be detected.'],
+      ['s', 'ServerHello + key_share', false, 'From here the handshake continues as in the full case.'],
+      ['s', 'Certificate, CertificateVerify, Finished', true, 'All encrypted under handshake keys.'],
+      ['c', 'Finished, then application data', true, 'Two round trips in total. Clients try to guess well to avoid this.']] },
+    psk: { name: 'Resumption with 0-RTT early data', msgs: [
+      ['c', 'ClientHello + PSK + key_share + early data', false, 'A returning client uses a session ticket from an earlier visit as a pre shared key and sends a request straight away, encrypted with early keys.'],
+      ['c', 'GET /news (0-RTT data)', true, 'Zero round trips before data. But early data has no protection against replay: an attacker can resend it. Servers must only accept it for safe, repeatable requests.'],
+      ['s', 'ServerHello + PSK accepted + key_share', false, 'The server accepts the ticket. A fresh ECDHE exchange still runs, so later data keeps forward secrecy.'],
+      ['s', 'EncryptedExtensions, Finished', true, 'No certificate is needed: the PSK already proves the server is the same one.'],
+      ['c', 'EndOfEarlyData, Finished', true, 'The client switches from early keys to full keys.'],
+      ['c', 'Application data', true, 'Normal protected traffic.']] }
+  };
+  trace('cytls13', {
+    title: 'The TLS 1.3 handshake, message by message',
+    sub: 'Client and server agree on keys with ephemeral Diffie-Hellman, the server proves its identity with its certificate, and everything after the ServerHello is encrypted. Pick a flow to compare.',
+    W: 600, H: 340,
+    params: [{ k: 'f', label: 'Flow', type: 'select', v: 'full', opts: Object.keys(FLOWS).map(k => [k, FLOWS[k].name]) }],
+    tips: [
+      { t: 'Play the full handshake. Data flows after one round trip, and the lock marks encrypted messages.', play: true },
+      { t: 'Choose the HelloRetryRequest flow. A wrong key share guess costs one extra round trip.', set: { f: 'hrr' }, play: true },
+      { t: 'Choose 0-RTT resumption. Data is sent at once, but it can be replayed by an attacker.', set: { f: 'psk' }, play: true }
+    ],
+    frames(p) {
+      const F = FLOWS[p.f] || FLOWS.full;
+      const fr = [{ k: 0, n: 0, say: `${F.name}. The client on the left, the server on the right. Each Next adds one message.` }];
+      F.msgs.forEach((m, i) => fr.push({ k: 1, n: i + 1, say: `<b>${m[1]}</b>. ${m[3]}`, done: i === F.msgs.length - 1 }));
+      return fr.map(x => ({ ...x, F }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 100, R = 500;
+      D.text(g, 'Client', L, 18, { a: 'center', s: 14, b: true, c: col.cv }); D.text(g, 'Server', R, 18, { a: 'center', s: 14, b: true, c: col.cv });
+      D.line(g, L, 26, L, 334, col.line, 2); D.line(g, R, 26, R, 334, col.line, 2);
+      const gap = Math.min(38, 300 / f.F.msgs.length);
+      f.F.msgs.slice(0, f.n).forEach((m, i) => {
+        const y = 46 + i * gap, toS = m[0] === 'c', cur = i === f.n - 1;
+        const c = m[2] ? col.green : col.cv;
+        D.arrow(g, toS ? L + 4 : R - 4, y + 10, toS ? R - 6 : L + 6, y + 10, cur ? col.orange : c, cur ? 2.5 : 1.8, 8);
+        D.text(g, (m[2] ? '🔒 ' : '') + m[1], 300, y + 4, { a: 'center', s: 11, b: true, c: cur ? col.ink : col.ink2 });
+      });
+      if (f.done) cbox(z, 14, 300, 70, 30, 'keys ✓', { s: 12, b: true, fill: col.green, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 3.1  Certificate Transparency: a Merkle tree log and an inclusion proof
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8, hex } = CYZ;
+  const H = (pre, bytes) => sha256([pre, ...bytes]);
+  const short = h => Array.from(h).slice(0, 2).map(v => hex(v)).join('');
+  trace('cyctlog', {
+    title: 'Certificate Transparency: proving a certificate is in the public log',
+    sub: 'Every public certificate is added to append only logs built as Merkle trees. The log signs only the root. Anyone can then check that a certificate is in the log with just log₂(n) hashes, so a CA cannot issue certificates in secret.',
+    W: 600, H: 340,
+    params: [{ k: 'i', label: 'Which certificate to prove (0 to 7)', type: 'range', v: 5, min: 0, max: 7, step: 1 }],
+    tips: [
+      { t: 'Play the proof for certificate 5. Only the three green sibling hashes are needed.', play: true },
+      { t: 'Move the slider to certificate 0 and play again. The proof path changes, but it is still three hashes for eight entries.', set: { i: 0 }, play: true }
+    ],
+    frames(p) {
+      const idx = Math.max(0, Math.min(7, Math.round(+p.i)));
+      const leaves = [...Array(8)].map((_, i) => H(0, utf8(`cert ${i}`)));
+      const lv = [leaves]; while (lv[lv.length - 1].length > 1) { const prev = lv[lv.length - 1], nx = []; for (let i = 0; i < prev.length; i += 2) nx.push(H(1, [...prev[i], ...prev[i + 1]])); lv.push(nx); }
+      const path = []; let j = idx; for (let l = 0; l < 3; l++) { path.push([l, j ^ 1]); j >>= 1; }
+      const fr = [
+        { k: 1, lvl: 0, say: 'Eight certificates are in the log. Each leaf is SHA-256(0x00 &#8214; certificate). The 0x00 prefix stops a leaf being confused with an inner node.' },
+        { k: 1, lvl: 2, say: 'Inner nodes are SHA-256(0x01 &#8214; left &#8214; right), built level by level.' },
+        { k: 2, lvl: 3, say: `The root ${short(lv[3][0])}... is signed by the log as a Signed Tree Head and shared with browsers and monitors. Every certificate in Chrome and Safari must carry proof (SCTs) that it was logged.` },
+        { k: 3, lvl: 3, say: `To prove certificate ${idx} is included, the log sends only the sibling hashes on the way up: ${path.map(([l, s]) => short(lv[l][s])).join(', ')}.`, path },
+        { k: 4, lvl: 3, done: true, say: `The checker hashes certificate ${idx}, combines it with the three siblings, and gets the signed root. 3 hashes for 8 entries, about 30 for a billion. Domain owners also watch the logs to spot any certificate issued for their names without permission.`, path }
+      ];
+      return fr.map(x => ({ ...x, lv, idx }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      const pos = (l, i) => { const n = 8 >> l, w = 560 / n; return [20 + w * i + w / 2, 290 - l * 78]; };
+      const onPath = new Set(); if (f.k >= 4) { let j = f.idx; for (let l = 0; l <= 3; l++) { onPath.add(l + ':' + j); j >>= 1; } }
+      const sib = new Set((f.path || []).map(([l, s]) => l + ':' + s));
+      for (let l = 0; l <= Math.min(3, f.lvl); l++) f.lv[l].forEach((h, i) => {
+        const [x, y] = pos(l, i);
+        if (l > 0) { const [x1, y1] = pos(l - 1, 2 * i), [x2, y2] = pos(l - 1, 2 * i + 1); D.line(g, x, y + 14, x1, y1 - 14, col.line, 1.2); D.line(g, x, y + 14, x2, y2 - 14, col.line, 1.2); }
+        const key = l + ':' + i, fill = sib.has(key) ? col.green : onPath.has(key) ? 'rgba(234,88,12,0.35)' : l === 3 ? 'rgba(15,118,110,0.2)' : col.surf;
+        cbox(z, x - 30, y - 14, 60, 28, short(h), { s: 11, b: true, mono: true, fill, c: sib.has(key) ? '#fff' : col.ink });
+        if (l === 0) D.text(g, 'cert ' + i, x, y + 28, { a: 'center', s: 10, b: i === f.idx, c: i === f.idx ? col.orange : col.ink2 });
+      });
+      if (f.k >= 2) D.text(g, 'signed root (STH)', pos(3, 0)[0] + 40, 56, { s: 11, b: true, c: col.cv });
+    }
+  });
+})();
