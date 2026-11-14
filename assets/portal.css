@@ -363,3 +363,31 @@ body.pathmode .drawerbtn{display:none !important}
   .lp-topic{flex-wrap:wrap}
   .lp-st{margin-left:50px}
 }
+
+/* ===== search inside one subject (assets/subjsearch.js) ===== */
+.searchpill.subjpill{flex:none; min-width:0; border-color:color-mix(in srgb, var(--c, var(--accent)) 55%, var(--line)); color:var(--ink)}
+.searchpill.subjpill[hidden]{display:none}
+body.subj .hdr .brand{flex:none}
+.searchpill.subjpill .lbl{max-width:220px; overflow:hidden; text-overflow:ellipsis}
+.searchpill.allpill{flex:none; min-width:0}
+@media (max-width:1500px){ .searchpill.allpill .k{display:none} }
+@media (max-width:1180px){ .searchpill.allpill .lbl{display:none} }
+.ssmodal .sres{text-decoration:none}
+.ssmodal .sres .tl{overflow-wrap:anywhere}
+.ssmodal .ss-tp{color:var(--ink2); font-weight:800}
+.ssmodal .sres .snip{overflow-wrap:anywhere; line-height:1.5}
+.ss-chips{flex:none; display:flex; gap:6px; padding:8px 12px; overflow-x:auto; border-bottom:1px solid var(--line); scrollbar-width:thin}
+.ss-chips[hidden]{display:none}
+.ss-chip{flex:none; border:1.5px solid var(--line); background:var(--surface2); color:var(--ink); border-radius:999px; padding:3px 10px; font-weight:800; font-size:12.5px; cursor:pointer; white-space:nowrap}
+.ss-chip:hover{border-color:var(--accent)}
+.ss-chip.on{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.ss-chip .cnt{display:inline-block; min-width:18px; padding:0 5px; margin-left:3px; border-radius:999px; background:color-mix(in srgb, currentColor 16%, transparent); font-size:11px; text-align:center}
+.ss-more{margin:8px auto 4px; display:flex}
+.ssmodal .sfoot{flex-wrap:wrap; row-gap:4px}
+.ssmodal .sfoot .ss-all{margin-left:auto; color:var(--accent-deep); font-weight:800; text-decoration:none}
+.ssmodal .shint a{color:var(--accent-deep); font-weight:800}
+.ssmodal .shint .qchip{margin-left:4px}
+@media (max-width:640px){
+  .ssmodal .sfoot span{display:none}
+  .ssmodal .sfoot .ss-all{margin-left:0}
+}
