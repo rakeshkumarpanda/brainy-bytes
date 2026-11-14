@@ -844,3 +844,136 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Deep learning 3.1  autoencoders: squeezing 2D points through a 1 number code, and the VAE's reparameterisation and KL term
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, head, klass, rr, rng, plot } = MLZ;
+  const DATA = (() => {
+    const R = rng(21), out = {};
+    const gs = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+    out.arc = Array.from({ length: 60 }, (_, i) => { const t = Math.PI * (0.1 + 0.8 * i / 59); return [Math.cos(t) * 1.4 + 0.05 * gs(), Math.sin(t) * 1.4 - 0.7 + 0.05 * gs()]; });
+    out.line = Array.from({ length: 60 }, (_, i) => { const t = -1.4 + 2.8 * i / 59; return [t + 0.05 * gs(), 0.5 * t + 0.08 * gs()]; });
+    return out;
+  })();
+  const SHOWAT = [0, 100, 300, 1000, 3000];
+
+  function trainAE(pts, nonlin) {
+    const R = rng(4), H = nonlin ? 12 : 0;
+    const gs = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+    const sizes = nonlin ? [2, H, 1, H, 2] : [2, 1, 2];
+    const W = sizes.slice(1).map((b, l) => Array.from({ length: sizes[l] }, () => Array.from({ length: b }, () => gs() / Math.sqrt(sizes[l]))));
+    const B = sizes.slice(1).map(b => new Array(b).fill(0));
+    const act = l => nonlin && (l === 0 || l === 2);
+    const P = [...W.flatMap(m => m), ...B], M = P.map(r => r.map(() => 0)), V = P.map(r => r.map(() => 0));
+    const fwd = x => { const hs = [x]; W.forEach((Wl, l) => { const h = B[l].map((b, j) => hs[l].reduce((a, v, i) => a + v * Wl[i][j], b)); hs.push(act(l) ? h.map(Math.tanh) : h); }); return hs; };
+    const dec = zz => { let h = [zz]; for (let l = sizes.length >= 5 ? 2 : 1; l < W.length; l++) { const o = B[l].map((b, j) => h.reduce((a, v, i) => a + v * W[l][i][j], b)); h = act(l) ? o.map(Math.tanh) : o; } return h; };
+    const snap = it => {
+      const hs = pts.map(fwd), rec = hs.map(h => h[h.length - 1]), codes = hs.map(h => h[nonlin ? 2 : 1][0]);
+      const lo = Math.min(...codes), hi = Math.max(...codes), curve = Array.from({ length: 41 }, (_, k) => dec(lo + (hi - lo) * k / 40));
+      return { it, rec, curve, mse: rec.reduce((a, r, i) => a + (r[0] - pts[i][0]) ** 2 + (r[1] - pts[i][1]) ** 2, 0) / pts.length };
+    };
+    const shots = [snap(0)];
+    for (let it = 1; it <= 3000; it++) {
+      const gW = W.map(m => m.map(r => r.map(() => 0))), gB = B.map(r => r.map(() => 0));
+      pts.forEach(x => {
+        const hs = fwd(x); let d = hs[hs.length - 1].map((v, j) => 2 * (v - x[j]) / pts.length);
+        for (let l = W.length - 1; l >= 0; l--) {
+          if (act(l)) d = d.map((dj, j) => dj * (1 - hs[l + 1][j] ** 2));
+          hs[l].forEach((v, i) => d.forEach((dj, j) => (gW[l][i][j] += v * dj)));
+          d.forEach((dj, j) => (gB[l][j] += dj));
+          d = hs[l].map((_, i) => d.reduce((a, dj, j) => a + dj * W[l][i][j], 0));
+        }
+      });
+      const G = [...gW.flatMap(m => m), ...gB];
+      P.forEach((r, k) => r.forEach((_, j) => { M[k][j] = 0.9 * M[k][j] + 0.1 * G[k][j]; V[k][j] = 0.999 * V[k][j] + 0.001 * G[k][j] ** 2; r[j] -= 0.01 * (M[k][j] / (1 - 0.9 ** it)) / (Math.sqrt(V[k][j] / (1 - 0.999 ** it)) + 1e-8); }));
+      if (SHOWAT.includes(it)) shots.push(snap(it));
+    }
+    return shots;
+  }
+
+  trace('mlbottleneck', {
+    title: 'An autoencoder squeezes points through a single number',
+    sub: 'Each 2D point (blue) is encoded into one number, then decoded back to 2D (orange). The grey line joins each point to its rebuild. The green curve is everything the decoder can produce: the shape the autoencoder has learned.',
+    W: 600, H: 330,
+    params: [
+      { k: 'data', label: 'Data', type: 'select', v: 'arc', opts: [['arc', 'Points along an arc'], ['line', 'Points along a straight line']] },
+      { k: 'model', label: 'Autoencoder', type: 'select', v: 'nonlin', opts: [['lin', 'Linear: 2 → 1 → 2 (same as PCA)'], ['nonlin', 'Nonlinear: 2 → 12 → 1 → 12 → 2, tanh']] }
+    ],
+    tips: [
+      { t: 'Linear autoencoder on the arc: its decoder can only draw a straight line, so the best it can do is the PCA direction and the ends of the arc rebuild poorly.', set: { data: 'arc', model: 'lin' }, play: true },
+      { t: 'Linear autoencoder on the straight line: a single number is enough, and the linear model does about as well as the nonlinear one.', set: { data: 'line', model: 'lin' }, play: true }
+    ],
+    frames(p) {
+      const pts = DATA[p.data], shots = trainAE(pts, p.model === 'nonlin');
+      return shots.map((s, k) => ({ ...s, pts, say: k === 0 ? `Random weights. The rebuilt points bunch together and the average squared error is ${f2(s.mse, 3)}. Training will adjust the encoder and decoder together.` : `After ${s.it} training steps: error <b>${f2(s.mse, 4)}</b>.${k === shots.length - 1 ? (p.model === 'lin' ? ' A linear autoencoder learns the same straight line as PCA.' : ' The nonlinear decoder can bend its curve to follow the data.') : ''}` }));
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 400, 310], [-2, 2], [-1.5, 1.5], { dx: 0, dy: 1, xl: 'x₁', yl: 'x₂' });
+      g.save(); g.beginPath(); g.rect(P.x0 + 26, P.y0 + 10, P.w - 36, P.h - 30); g.clip();
+      g.beginPath(); f.curve.forEach((q, i) => (i ? g.lineTo(P.X(q[0]), P.Y(q[1])) : g.moveTo(P.X(q[0]), P.Y(q[1])))); g.strokeStyle = c.green; g.lineWidth = 2.5; g.stroke();
+      f.pts.forEach((q, i) => D.line(g, P.X(q[0]), P.Y(q[1]), P.X(f.rec[i][0]), P.Y(f.rec[i][1]), c.line, 1));
+      f.rec.forEach(q => D.circle(g, P.X(q[0]), P.Y(q[1]), 3, { fill: klass(z, 1) }));
+      g.restore();
+      f.pts.forEach(q => D.circle(g, P.X(q[0]), P.Y(q[1]), 3.5, { fill: klass(z, 0), stroke: c.surf, w: 1 }));
+      head(z, 'Squeeze and rebuild', 430, 30);
+      const bx = 440;
+      [['input', 2, 70], ['code', 1, 150], ['output', 2, 230]].forEach(([lab, n, y]) => {
+        for (let i = 0; i < n; i++) D.circle(g, bx + 50 + (i - (n - 1) / 2) * 34, y, 12, { fill: lab === 'code' ? 'rgba(22,163,74,0.25)' : c.surf, stroke: c.line, w: 1.5 });
+        D.text(g, lab, bx - 6, y + 4, { s: 11, c: c.ink2 });
+      });
+      D.arrow(g, bx + 50, 86, bx + 50, 134, c.ink2, 1.5, 6); D.arrow(g, bx + 50, 166, bx + 50, 214, c.ink2, 1.5, 6);
+      D.text(g, 'encoder', bx + 60, 114, { s: 10, c: c.ink2 }); D.text(g, 'decoder', bx + 60, 194, { s: 10, c: c.ink2 });
+      D.text(g, `error ${f2(f.mse, 4)}`, 430, 280, { s: 13, mono: true, b: true, c: c.ink });
+      D.text(g, `step ${f.it}`, 430, 300, { s: 12, mono: true, c: c.ink2 });
+    }
+  });
+
+  trace('mlvae', {
+    title: 'The VAE’s trick: sample with the reparameterisation, pay a KL price',
+    sub: 'A VAE encoder outputs a mean μ and a spread σ for each input instead of a single code. The code is sampled as z = μ + σ·ε with ε from N(0, 1), so gradients can flow into μ and σ. The KL term measures how far N(μ, σ²) (orange) is from the prior N(0, 1) (blue).',
+    W: 600, H: 330,
+    params: [
+      { k: 'mu', label: 'Encoder mean μ', type: 'select', v: '1.5', opts: ['-2', '-1', '0', '1.5'].map(v => [v, v.replace('-', '−')]) },
+      { k: 's', label: 'Encoder spread σ', type: 'select', v: '0.5', opts: ['0.25', '0.5', '1', '1.5'].map(v => [v, v]) }
+    ],
+    tips: [
+      { t: 'μ = 0 and σ = 1: the encoder output equals the prior, so the KL price is exactly 0, but the code then carries no information about the input.', set: { mu: '0', s: '1' }, play: true },
+      { t: 'σ = 0.25: a narrow, confident code costs more KL, because a tiny σ makes ln σ² very negative.', set: { mu: '0', s: '0.25' }, play: true }
+    ],
+    frames(p) {
+      const mu = +p.mu, s = +p.s, R = rng(8);
+      const gs = () => { let u = 0; while (u === 0) u = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * R()); };
+      const kl = 0.5 * (mu * mu + s * s - 1 - Math.log(s * s));
+      const fr = [{ mu, s, step: 0, samples: [], say: 'The blue curve is the prior N(0, 1): the shape every code should roughly follow, so that sampling from it later gives sensible outputs.' }];
+      fr.push({ mu, s, step: 1, samples: [], say: `For one input, the encoder outputs μ = ${f2(mu, 2)} and σ = ${f2(s, 2)}, the orange curve.` });
+      fr.push({ mu, s, step: 2, samples: [], kl, say: `KL = ½(μ² + σ² − 1 − ln σ²) = ½(${f2(mu * mu, 2)} + ${f2(s * s, 3)} − 1 − (${f2(Math.log(s * s), 3)})) = <b>${f2(kl, 3)}</b>. ${kl < 1e-9 ? 'No price at all.' : 'This is added to the loss and pulls μ towards 0 and σ towards 1.'}` });
+      const samples = [];
+      for (let k = 0; k < 5; k++) { const e = gs(); samples.push([e, mu + s * e]); fr.push({ mu, s, step: 3, samples: samples.slice(), kl, say: `Sample ${k + 1}: ε = ${f2(e, 2)} from N(0, 1), so z = μ + σε = ${f2(mu, 2)} + ${f2(s, 2)} × ${f2(e, 2)} = <b>${f2(mu + s * e, 2)}</b>. The randomness sits in ε, so z is a smooth function of μ and σ and backpropagation can pass through it.` }); }
+      fr.push({ mu, s, step: 4, samples, kl, say: `Training balances two costs: rebuild the input well from z (wants a precise, separated code) and keep the KL small (wants every code close to N(0, 1)). Here the KL price is ${f2(kl, 3)}.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      const P = plot(z, [10, 10, 420, 310], [-4, 4], [0, 1.7], { dx: 0, dy: 1, xl: 'z', yl: 'density' });
+      const curve = (m, s, col, w) => { g.beginPath(); for (let k = 0; k <= 160; k++) { const x = -4 + k / 20, y = Math.min(1.65, Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * Math.sqrt(2 * Math.PI))); k ? g.lineTo(P.X(x), P.Y(y)) : g.moveTo(P.X(x), P.Y(y)); } g.strokeStyle = col; g.lineWidth = w; g.stroke(); };
+      curve(0, 1, klass(z, 0), 2.5);
+      if (f.step >= 1) curve(f.mu, f.s, klass(z, 1), 2.5);
+      f.samples.forEach(([e, zz], k) => {
+        D.line(g, P.X(zz), P.Y(0), P.X(zz), P.Y(0.25), c.green, 2);
+        D.circle(g, P.X(zz), P.Y(0.25), 4, { fill: c.green });
+        if (k === f.samples.length - 1) D.circle(g, P.X(e), P.Y(0.08), 4, { fill: c.ink2 });
+      });
+      head(z, 'Encoder output', 450, 30);
+      D.text(g, `μ = ${f2(f.mu, 2)}`, 450, 58, { s: 13, mono: true, c: c.ink });
+      D.text(g, `σ = ${f2(f.s, 2)}`, 450, 80, { s: 13, mono: true, c: c.ink });
+      if (f.kl !== undefined) { head(z, 'KL to N(0, 1)', 450, 120); D.text(g, f2(f.kl, 3), 450, 146, { s: 18, mono: true, b: true, c: c.ink }); }
+      if (f.samples.length) { head(z, 'Samples z = μ + σε', 450, 186); f.samples.forEach(([, zz], k) => D.text(g, f2(zz, 2), 450 + (k % 3) * 46, 210 + Math.floor(k / 3) * 20, { s: 12, mono: true, c: c.green })); }
+      D.text(g, 'dark dot: latest ε on N(0, 1)', 450, 274, { s: 10, c: c.ink2 });
+      D.text(g, 'blue: prior N(0, 1)', 450, 290, { s: 10, c: klass(z, 0) });
+      D.text(g, 'orange: encoder N(μ, σ²)', 450, 306, { s: 10, c: klass(z, 1) });
+    }
+  });
+})();

@@ -8954,6 +8954,28 @@ function mlDeepModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "ml-d3", title: "Generative models", emoji: "3", step: 3, part: "deep", level: "Advanced", blurb: "Networks that create new data: autoencoders and variational autoencoders, generative adversarial networks, and diffusion models.", topics: [
+      { id: "ml-autoencoders", title: "Autoencoders and variational autoencoders", emoji: "3.1", page: "content/machine-learning/ml-autoencoders.html",
+        summary: "Autoencoders, denoising and anomaly detection, VAEs with the ELBO, and discrete latent codes.",
+        keywords: ["autoencoder", "VAE", "variational autoencoder", "reparameterisation", "KL divergence", "ELBO", "anomaly detection", "denoising", "latent space", "VQ-VAE"],
+        minutes: 55, counts: {"lessons": 9, "problems": 10, "quiz": 14, "assign": 3},
+        added: "2026-11-14",
+        sections: [
+        { id: "idea", title: "Autoencoders: compress, then rebuild", emoji: "", group: "Lesson", keywords: ["autoencoder", "encoder", "decoder", "latent code", "bottleneck", "reconstruction error", "PCA"] },
+        { id: "uses", title: "Denoising and anomaly detection", emoji: "", group: "Lesson", keywords: ["denoising autoencoder", "anomaly detection", "reconstruction error", "threshold", "sparse autoencoder"] },
+        { id: "vae", title: "Variational autoencoders", emoji: "", group: "Lesson", keywords: ["variational autoencoder", "VAE", "reparameterisation trick", "KL divergence", "ELBO", "prior", "latent space", "beta VAE"] },
+        { id: "discrete", title: "Discrete codes and latent spaces in modern models", emoji: "", group: "Lesson", keywords: ["VQ-VAE", "codebook", "vector quantisation", "discrete latent", "latent space", "tokens"] },
+        { id: "versus", title: "Autoencoder, VAE and PCA compared", emoji: "", group: "Lesson", keywords: ["PCA vs autoencoder", "autoencoder vs VAE", "VQ-VAE"] },
+        { id: "maths", title: "The maths, all in one place", emoji: "", group: "Lesson", keywords: ["ELBO derivation", "Jensen inequality", "KL formula", "posterior collapse", "disentanglement", "hierarchical VAE"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "latent variable models"] },
+        { id: "leetcode", title: "LeetCode practice", emoji: "", group: "Lesson", keywords: ["LeetCode", "encoding", "compression", "bit manipulation", "serialisation"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
