@@ -9946,6 +9946,27 @@ function cyOpsModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cy-o2", title: "Intelligence, cloud and governance", emoji: "2", step: 2, part: "secops", level: "Advanced", blurb: "Learning about attackers before they arrive, securing the cloud, and the rules, risk methods and laws that guide security work.", topics: [
+      { id: "cy-threatintel", title: "Threat intelligence: knowing the attacker", emoji: "2.1", page: "content/cyber-security/cy-threatintel.html",
+        summary: "The intelligence cycle, IOCs and the Pyramid of Pain, Kill Chain, Diamond and ATT&amp;CK, STIX and TLP, confidence with Bayes, hunting and DGAs.",
+        keywords: ["threat intelligence", "IOC", "Pyramid of Pain", "Kill Chain", "Diamond Model", "MITRE ATT&CK", "STIX", "TLP", "Admiralty", "Bayes", "DGA"],
+        minutes: 70, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What threat intelligence is, and the intelligence cycle", emoji: "", group: "Lesson", keywords: ["threat intelligence", "intelligence cycle", "direction", "collection", "processing", "analysis", "dissemination", "feedback", "strategic", "operational", "tactical", "technical", "SolarWinds", "FireEye"] },
+        { id: "pyramid", title: "Indicators and the Pyramid of Pain", emoji: "", group: "Lesson", keywords: ["IOC", "indicator of compromise", "Pyramid of Pain", "David Bianco", "hash", "IP address", "domain", "artefacts", "tools", "TTPs", "indicator expiry", "half life"] },
+        { id: "models", title: "Models of an attack: Kill Chain, Diamond and ATT&amp;CK", emoji: "", group: "Lesson", keywords: ["Cyber Kill Chain", "Lockheed Martin", "Diamond Model", "adversary", "capability", "infrastructure", "victim", "MITRE ATT&CK", "tactics", "techniques", "T1110", "coverage"] },
+        { id: "share", title: "Sharing intelligence: STIX, TAXII, TLP and MISP", emoji: "", group: "Lesson", keywords: ["STIX 2.1", "TAXII", "OASIS", "MISP", "Traffic Light Protocol", "TLP 2.0", "TLP:RED", "TLP:AMBER+STRICT", "TLP:CLEAR", "ISAC", "FS-ISAC", "CERT-In advisories", "feed quality"] },
+        { id: "analysis", title: "Analysis with confidence: sources, Bayes and hunting", emoji: "", group: "Lesson", keywords: ["confidence", "Admiralty code", "source reliability", "information credibility", "ICD 203", "estimative language", "Bayes", "likelihood ratio", "odds", "threat hunting", "hypothesis", "DGA", "Conficker", "entropy"] },
+        { id: "versus", title: "Kinds of intelligence sources compared", emoji: "", group: "Lesson", keywords: ["comparison", "OSINT", "commercial feeds", "telemetry", "CERT-In", "ISAC"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "attribution", "campaign tracking"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

@@ -2602,3 +2602,183 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Security Operations 2.1  David Bianco's Pyramid of Pain: which indicators hurt the attacker most to change
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const LV = [
+    ['Hash values', 'Trivial', 'Recompile or add one byte, and the file hash is new.'],
+    ['IP addresses', 'Easy', 'Rent a new cloud server in minutes.'],
+    ['Domain names', 'Simple', 'Register a new domain for a few hundred rupees.'],
+    ['Network and host artefacts', 'Annoying', 'Change the user agent, file paths, registry keys they leave.'],
+    ['Tools', 'Challenging', 'Find or write a new tool and learn to use it.'],
+    ['TTPs (behaviour)', 'Tough', 'Learn a whole new way to attack. Very slow and costly.']
+  ];
+  trace('cypyramid', {
+    title: 'The Pyramid of Pain: block what costs the attacker most',
+    sub: 'David Bianco (2013) ranked the clues defenders use by how much pain it causes an attacker when you detect and block them. Blocking a file hash is easy for you and trivial for them to dodge. Detecting their behaviour is hard for you and very costly for them.',
+    W: 600, H: 340,
+    params: [{ k: 'lv', label: 'Defender detects', type: 'select', v: '0', opts: LV.map((l, i) => [String(i), l[0]]) }],
+    tips: [
+      { t: 'Play with hash values. The attacker changes one byte and walks straight past.', play: true },
+      { t: 'Pick TTPs. Now the attacker must change how they work, which can take months.', set: { lv: '5' }, play: true }
+    ],
+    frames(p) {
+      const k = +p.lv, fr = [];
+      LV.forEach((l, i) => fr.push({ st: 1, n: i + 1, k, say: `Level ${i + 1}, <b>${l[0]}</b>: pain for the attacker is ${l[1].toLowerCase()}. ${l[2]}` }));
+      fr.push({ st: 2, done: true, n: 6, k, say: `You detect ${LV[k][0]}. To get past you the attacker’s effort is ${LV[k][1].toLowerCase()}. ${k < 3 ? 'Indicator feeds are still useful for fast blocking, but they age within days.' : 'Detections built on behaviour, mapped to MITRE ATT&amp;CK, keep working when the attacker swaps files and servers.'}` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, cx = 300;
+      LV.forEach(([name, pain], i) => {
+        if (f.n <= i) return;
+        const y = 252 - i * 44, w = 560 - 70 * i, sel = f.k === i;
+        const shade = ['rgba(15,118,110,0.18)', 'rgba(15,118,110,0.28)', 'rgba(234,179,8,0.3)', 'rgba(234,88,12,0.3)', 'rgba(225,29,72,0.3)', 'rgba(225,29,72,0.45)'][i];
+        cbox(z, cx - w / 2, y, w, 38, `${name}: ${pain}`, { s: 12, b: true, fill: sel && f.done ? col.cv : shade, c: sel && f.done ? '#fff' : col.ink });
+      });
+      if (f.done) D.text(g, 'more pain for the attacker ↑', 586, 22, { a: 'right', s: 12, b: true, c: col.ink2 });
+      if (f.done) cbox(z, 14, 306, 572, 28, `detecting ${LV[f.k][0]}: ${LV[f.k][1].toLowerCase()} for the attacker to evade`, { s: 13, b: true, fill: f.k >= 3 ? col.cv : col.orange, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 2.1  The Cyber Kill Chain: break any link and the attack fails, earlier is cheaper
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const ST = [
+    ['Reconnaissance', 'Reads staff names on LinkedIn and the company website.', 'Limit public detail, watch for scraping.'],
+    ['Weaponisation', 'Builds a Word file with a malicious macro.', 'Happens on their side: we can only learn about it from intel.'],
+    ['Delivery', 'Emails it to the finance team as an invoice.', 'Mail filter blocks macro files from outside.'],
+    ['Exploitation', 'A clerk opens it and enables the macro.', 'Office policy blocks macros from the internet.'],
+    ['Installation', 'The macro drops a remote access tool.', 'EDR and application allow listing stop the new program.'],
+    ['Command and control', 'The tool calls home to the attacker’s server.', 'DNS filtering and threat intel block the domain.'],
+    ['Actions on objectives', 'Copies payroll data and sends it out.', 'Data loss prevention and egress alerts.']
+  ];
+  trace('cykillchain', {
+    title: 'The Cyber Kill Chain: where can we break the attack?',
+    sub: 'Lockheed Martin (2011) described an intrusion as seven links in a chain. The attacker needs every link. The defender needs to break only one, and the earlier it breaks, the less harm is done. Choose where your strongest control sits.',
+    W: 600, H: 340,
+    params: [{ k: 'at', label: 'Control that works', type: 'select', v: '2', opts: [['2', 'mail filter (delivery)'], ['3', 'macro policy (exploitation)'], ['5', 'DNS filter (command and control)'], ['9', 'none of them']] }],
+    tips: [
+      { t: 'Play with the mail filter. The chain breaks at delivery and nobody even sees the email.', play: true },
+      { t: 'Try the DNS filter. The laptop is infected and needs cleaning, but no data leaves.', set: { at: '5' }, play: true },
+      { t: 'Try none. Every link holds and the payroll data is stolen. Defence in depth means several of these at once.', set: { at: '9' }, play: true }
+    ],
+    frames(p) {
+      const at = +p.at, fr = [];
+      for (let i = 0; i < ST.length; i++) {
+        const stop = i === at;
+        fr.push({ st: 1, n: i + 1, at, say: `<b>${ST[i][0]}</b>: ${ST[i][1]} ${stop ? `<b>Broken here.</b> ${ST[i][2]}` : `Defence at this link: ${ST[i][2]}`}` });
+        if (stop) break;
+      }
+      const ok = at < ST.length;
+      fr.push({ st: 2, done: true, n: fr.length, at, say: ok ? `The attack stops at link ${at + 1} of 7. ${at <= 3 ? 'Nothing was installed, so there is little to clean up.' : 'A machine was infected and must be rebuilt, but the goal was not reached.'} Later models such as MITRE ATT&amp;CK add more detail inside each link.` : 'Every link held. The attacker reached the goal. The kill chain shows that each layer is a chance to stop them, so do not rely on only one.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      ST.forEach(([name], i) => {
+        const x = 14 + i * 82, on = f.n > i, br = f.at === i && on;
+        cbox(z, x, 40, 76, 70, name.split(' ').length > 1 && name.length > 12 ? name.split(' ').reduce((a, w) => { if (!a.length || (a[a.length - 1] + ' ' + w).length > 12) a.push(w); else a[a.length - 1] += ' ' + w; return a; }, []) : [name], { s: 10, b: true, fill: br ? col.cv : on ? 'rgba(225,29,72,0.25)' : col.bg, c: br ? '#fff' : col.ink });
+        if (i < 6 && on && !br) D.arrow(g, x + 76, 75, x + 82, 75, col.red, 2);
+        if (br) cbox(z, x + 8, 118, 60, 22, 'BROKEN', { s: 10, b: true, fill: col.cv, c: '#fff' });
+      });
+      const i = Math.min(f.n, 7) - 1;
+      if (i >= 0 && !f.done) { cbox(z, 14, 160, 572, 46, ['attacker: ' + ST[i][1]], { s: 12, fill: 'rgba(225,29,72,0.1)' }); cbox(z, 14, 214, 572, 46, ['defender: ' + ST[i][2]], { s: 12, fill: 'rgba(15,118,110,0.12)' }); }
+      if (f.done) cbox(z, 14, 306, 572, 28, f.at < 7 ? `attack broken at link ${f.at + 1}: ${ST[f.at][0]}` : 'no link broken: data stolen', { s: 13, b: true, fill: f.at < 7 ? col.cv : col.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 2.1  MITRE ATT&CK coverage: which tactics do our detections cover?
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const TA = ['Reconnaissance', 'Resource Development', 'Initial Access', 'Execution', 'Persistence', 'Privilege Escalation', 'Defense Evasion', 'Credential Access', 'Discovery', 'Lateral Movement', 'Collection', 'Command and Control', 'Exfiltration', 'Impact'];
+  const RULES = [
+    ['Phishing attachment opened (T1566)', 2], ['PowerShell with encoded command (T1059.001)', 3], ['New Run key (T1547.001)', 4],
+    ['Event log cleared (T1070.001)', 6], ['Brute force (T1110)', 7], ['LSASS memory read (T1003.001)', 7],
+    ['Remote service login with admin share (T1021.002)', 9], ['Beaconing to rare domain (T1071)', 11], ['Mass file rename (T1486)', 13]
+  ];
+  trace('cyattackmap', {
+    title: 'Mapping detections to MITRE ATT&CK',
+    sub: 'ATT&CK Enterprise lists 14 tactics, the attacker’s goals from reconnaissance to impact, with hundreds of techniques under them. Tagging every detection rule with its technique shows which tactics are covered and where the blind spots are.',
+    W: 600, H: 340,
+    params: [],
+    tips: [{ t: 'Play to add nine rules one by one and watch the coverage grow. Note the tactics still grey at the end.', play: true }],
+    frames() {
+      const fr = [{ st: 0, n: 0, cov: [], say: 'Fourteen tactics, all grey: no detections mapped yet.' }];
+      const cov = new Set();
+      RULES.forEach(([r, t], i) => { cov.add(t); fr.push({ st: 1, n: i + 1, cov: [...cov], say: `Rule ${i + 1}: ${r}, under <b>${TA[t]}</b>. Tactics covered: ${cov.size} of 14.` }); });
+      const gaps = TA.filter((_, i) => !cov.has(i));
+      fr.push({ st: 2, done: true, n: RULES.length, cov: [...cov], say: `${cov.size} of 14 tactics have at least one rule. Gaps: ${gaps.join(', ')}. The first two happen mostly outside our network, so intel covers them. Privilege Escalation, Discovery, Collection and Exfiltration are the next rules to write. Coverage counts are a start, not proof: one rule per tactic can still miss most techniques.` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      TA.forEach((t, i) => {
+        const r = Math.floor(i / 5), c = i % 5, on = f.cov.includes(i), cnt = RULES.slice(0, f.n).filter(x => x[1] === i).length;
+        cbox(z, 14 + c * 115, 14 + r * 66, 108, 56, [t.length > 15 ? t.split(' ')[0] : t, t.length > 15 ? t.split(' ').slice(1).join(' ') : '', cnt ? `${cnt} rule${cnt > 1 ? 's' : ''}` : ''].filter(Boolean), { s: 10, b: true, fill: on ? (cnt > 1 ? col.cv : 'rgba(15,118,110,0.4)') : col.bg, c: on && cnt > 1 ? '#fff' : col.ink });
+      });
+      D.rect(g, 14, 226, 572, 18, { fill: col.bg });
+      D.rect(g, 14, 226, 572 * f.cov.length / 14, 18, { fill: col.cv });
+      D.text(g, `coverage ${f.cov.length} / 14 tactics`, 300, 266, { a: 'center', s: 12, b: true, c: col.ink2 });
+      if (f.done) cbox(z, 14, 306, 572, 28, `${f.cov.length} of 14 tactics covered, ${14 - f.cov.length} gaps to plan for`, { s: 13, b: true, fill: col.orange, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 2.1  Spotting machine generated (DGA) domains by how random their letters look
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const DOM = [['google', 0], ['wikipedia', 0], ['xkqzvbtrwplm', 1], ['flipkart', 0], ['q7j2nd9vx0ra', 1], ['icicibank', 0], ['bwuzhfaiyeqo', 1], ['irctc', 0], ['zzqjxkwv', 1], ['timesofindia', 0]];
+  const ent = s => { const m = {}; for (const ch of s) m[ch] = (m[ch] || 0) + 1; return -Object.values(m).reduce((a, c) => a + c / s.length * Math.log2(c / s.length), 0); };
+  const vow = s => (s.match(/[aeiou]/g) || []).length / s.length;
+  /* score: higher looks more random. Entropy per letter, plus a bonus when there are few vowels or any digits */
+  const score = s => ent(s) + (vow(s) < 0.2 ? 1 : 0) + (/\d/.test(s) ? 1 : 0);
+  trace('cydga', {
+    title: 'Finding malware domains that a computer made up',
+    sub: 'Some malware, such as Conficker in 2008 and 2009, makes up thousands of random looking domain names a day and calls the ones its owner has registered. Blocking each name is hopeless, but the names look unlike real ones. A simple score adds letter entropy, a point for few vowels and a point for digits.',
+    W: 600, H: 340,
+    params: [{ k: 'th', label: 'Flag when score is above', type: 'range', v: 3.5, min: 2.5, max: 5.5, step: 0.25 }],
+    tips: [
+      { t: 'Play with threshold 3.5. All four made up names are flagged and the real ones pass.', play: true },
+      { t: 'Lower it to 3. Long real names like timesofindia start to be flagged. Real detectors add n gram statistics and lookups to avoid this.', set: { th: 3 }, play: true },
+      { t: 'Raise it to 4.5. Now two of the made up names slip through. One simple score cannot be perfect both ways.', set: { th: 4.5 }, play: true }
+    ],
+    frames(p) {
+      const th = +p.th, fr = [];
+      let tp = 0, fp = 0, fn = 0;
+      DOM.forEach(([d, bad], i) => {
+        const s = score(d), flag = s > th;
+        if (flag && bad) tp++; else if (flag) fp++; else if (bad) fn++;
+        fr.push({ st: 1, n: i + 1, tp, fp, fn, say: `<b>${d}.com</b>: entropy ${f2(ent(d), 2)}, vowels ${Math.round(vow(d) * 100)}%, score ${f2(s, 2)}. ${flag ? (bad ? 'Flagged, and it is machine made.' : 'Flagged, but it is a real site: a false alarm.') : (bad ? 'Missed: a machine made name below the line.' : 'Passes as normal.')}` });
+      });
+      fr.push({ st: 2, done: true, n: DOM.length, tp, fp, fn, say: `${tp} caught, ${fp} false alarms, ${fn} missed. Defenders also check how new a domain is, whether it resolves at all, and how many hosts query it. In Conficker’s case, researchers worked out the algorithm and registered or blocked the domains in advance.` });
+      return fr.map(x => ({ ...x, th }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 170, R = 560, X = v => L + v / 7 * (R - L);
+      D.line(g, X(f.th), 10, X(f.th), 292, col.red, 1.5, [5, 4]);
+      D.text(g, `threshold ${f.th}`, X(f.th) + 4, 22, { s: 11, b: true, c: col.red });
+      DOM.slice(0, f.n).forEach(([d, bad], i) => {
+        const y = 14 + i * 28, s = score(d), flag = s > f.th;
+        D.text(g, d + '.com', 160, y + 18, { a: 'right', s: 12, mono: true, b: true, c: col.ink });
+        D.rect(g, L, y + 4, X(s) - L, 18, { fill: flag ? (bad ? col.red : col.orange) : bad ? col.ink2 : col.cv });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, `threshold ${f.th}: ${f.tp} caught, ${f.fp} false alarms, ${f.fn} missed`, { s: 13, b: true, fill: f.fp || f.fn ? col.orange : col.cv, c: '#fff' });
+    }
+  });
+})();
