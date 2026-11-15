@@ -1770,3 +1770,142 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Application Security 2.2  Threat modelling with STRIDE per element on a small data flow diagram
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const EL = [
+    ['Customer', 'external entity', 'SR', [20, 40, 110, 50], 'Spoofing: someone logs in as the customer (stolen password). Repudiation: the customer denies placing an order.', 'MFA, signed receipts and audit logs'],
+    ['Browser to web app', 'data flow', 'TID', [160, 72, 124, 26], 'Tampering and disclosure of traffic on the network, and flooding the connection.', 'TLS everywhere, HSTS, rate limits and a CDN'],
+    ['Web app', 'process', 'STRIDE', [300, 30, 130, 62], 'All six: a fake server, changed code, missing logs, leaked data, overload, and a bug that grants admin rights.', 'Authentication, signed deployments, logging, encryption, autoscaling, least privilege'],
+    ['Web app to database', 'data flow', 'TID', [300, 130, 130, 26], 'Queries changed or read on the internal network, or the link saturated.', 'TLS to the database, network segmentation'],
+    ['Orders database', 'data store', 'TRID', [440, 176, 140, 46], 'Rows changed, deletions denied, data leaked (SQL injection, stolen backups), storage filled.', 'Parameterised queries, encryption at rest, backups, quotas']
+  ];
+  const NAME = { S: 'Spoofing', T: 'Tampering', R: 'Repudiation', I: 'Information disclosure', D: 'Denial of service', E: 'Elevation of privilege' };
+  trace('cystride', {
+    title: 'Threat modelling with STRIDE',
+    sub: 'Draw how data moves through the system, then ask, for each element, which of the six STRIDE threats apply. Microsoft’s STRIDE per element table says which letters fit each kind of element.',
+    W: 600, H: 340,
+    params: [],
+    tips: [
+      { t: 'Play to walk through the diagram one element at a time. Processes get all six letters, data flows get three.', play: true }
+    ],
+    frames() {
+      const fr = [{ st: 0, n: 0, say: 'A tiny online shop: a customer, the web app, its database, and two data flows. The dashed line is a trust boundary, where data enters from the untrusted internet.' }];
+      let total = 0;
+      EL.forEach(([name, kind, letters, , what, fix], i) => { total += letters.length; fr.push({ st: 1, n: i + 1, total, say: `<b>${name}</b> (${kind}): ${letters.split('').map(l => NAME[l]).join(', ')}. ${what} Mitigations: ${fix}.` }); });
+      fr.push({ st: 2, done: true, n: EL.length, total, say: `${total} threats from 5 elements. Each one gets an owner and a mitigation, or a recorded decision to accept the risk. Adam Shostack’s four questions sum up the method: what are we working on, what can go wrong, what are we going to do about it, and did we do a good job.` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      D.line(g, 145, 20, 145, 220, col.red, 1.5); D.text(g, 'trust boundary', 150, 230, { s: 10, c: col.red });
+      EL.forEach(([name, kind, letters, [x, y, w, h]], i) => {
+        const on = f.n > i, cur = f.n === i + 1 && !f.done;
+        const shape = kind === 'process' ? { fill: cur ? 'rgba(15,118,110,0.3)' : on ? 'rgba(15,118,110,0.12)' : col.bg } : { fill: cur ? 'rgba(234,88,12,0.25)' : on ? 'rgba(234,88,12,0.1)' : col.bg };
+        cbox(z, x, y, w, h, [name], { s: 11, b: true, ...shape });
+        if (on) cbox(z, x, y + h + 2, Math.min(w, 26 * letters.length + 8), 20, letters, { s: 11, b: true, mono: true, fill: col.surf });
+      });
+      D.arrow(g, 130, 62, 300, 62, col.ink2, 1.5); D.arrow(g, 430, 92, 500, 176, col.ink2, 1.5);
+      ['S', 'T', 'R', 'I', 'D', 'E'].forEach((l, i) => cbox(z, 14 + i * 96, 252, 90, 40, [l, NAME[l].split(' ')[0]], { s: 11, b: true, fill: col.surf }));
+      if (f.done) cbox(z, 14, 306, 572, 28, `${f.total} threats identified across 5 elements`, { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 2.2  An attack tree evaluated from the leaves up: cheapest path and success chance
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cytree', {
+    title: 'Attack trees: where should we spend on defence?',
+    sub: 'The attacker’s goal is the root. An OR node needs any one child, so its cost is the cheapest child. An AND node needs all children, so costs add and probabilities multiply. Fixing a leaf sets its cost to infinity.',
+    W: 600, H: 340,
+    params: [
+      { k: 'fix', label: 'Defence funded', type: 'select', v: 'none', opts: [['none', 'none yet'], ['sqli', 'fix the SQL injection'], ['bucket', 'lock down the backup bucket'], ['both', 'fix both']] }
+    ],
+    tips: [
+      { t: 'Play with no defence. The cheapest attack is stealing the backup, which costs the attacker only 100.', play: true },
+      { t: 'Fix only the SQL injection. The cheapest attack does not change at all: the backup is still there.', set: { fix: 'sqli' }, play: true },
+      { t: 'Fix both. Now the attacker must phish an admin and beat MFA, which costs 3000.', set: { fix: 'both' }, play: true }
+    ],
+    frames(p) {
+      const fx = p.fix, inf = Infinity;
+      const L = { phish: [2000, 0.3], mfa: [1000, 0.2], sqli: fx === 'sqli' || fx === 'both' ? [inf, 0] : [500, 0.1], name: [100, 0.5], pub: fx === 'bucket' || fx === 'both' ? [inf, 0] : [0, 0.05] };
+      const a1 = [L.phish[0] + L.mfa[0], L.phish[1] * L.mfa[1]], a2 = [L.name[0] + L.pub[0], L.name[1] * L.pub[1]];
+      const root = [Math.min(a1[0], L.sqli[0], a2[0]), 1 - (1 - a1[1]) * (1 - L.sqli[1]) * (1 - a2[1])];
+      const c = v => v === inf ? '∞' : String(v);
+      const fr = [
+        { st: 1, lv: 1, say: 'Leaves first: each has an estimated cost to the attacker and a chance of success. Fixed leaves become ∞ with chance 0.' },
+        { st: 2, lv: 2, say: `AND "stolen admin password": cost ${L.phish[0]} + ${L.mfa[0]} = ${a1[0]}, chance 0.3 &times; 0.2 = ${a1[1].toFixed(2)}. AND "steal a backup": cost ${c(L.name[0])} + ${c(L.pub[0])} = ${c(a2[0])}, chance ${a2[1].toFixed(3)}.` },
+        { st: 3, lv: 3, say: `OR at the root: cheapest child = min(${a1[0]}, ${c(L.sqli[0])}, ${c(a2[0])}) = <b>${c(root[0])}</b>. Chance that at least one path works, if independent: 1 &minus; (1 &minus; ${a1[1].toFixed(2)})(1 &minus; ${L.sqli[1]})(1 &minus; ${a2[1].toFixed(3)}) = <b>${root[1].toFixed(4)}</b>.` },
+        { st: 4, done: true, lv: 3, say: fx === 'none' ? 'The weakest path decides. Spend first where the root cost rises most per unit of effort.' : fx === 'sqli' ? 'Fixing the SQL injection lowered the overall chance but left the cheapest path untouched. Rational attackers take the cheapest path.' : fx === 'bucket' ? 'Locking the bucket raised the cheapest attack from 100 to 500, now the SQL injection.' : 'Both fixed: the cheapest attack is now 3000, and needs MFA to fail. Phishing resistant MFA such as passkeys would push it further.' }
+      ];
+      return fr.map(x => ({ ...x, L, a1, a2, root, c }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, c = f.c;
+      const node = (x, y, w, t, cost, p, show, kind) => cbox(z, x, y, w, 46, show ? [t, `cost ${c(cost)}  p ${p.toFixed(p < 0.1 && p > 0 ? 3 : 2)}`] : [t], { s: 10, b: true, fill: kind === 'OR' ? 'rgba(124,58,237,0.15)' : kind === 'AND' ? 'rgba(234,88,12,0.15)' : cost === Infinity ? 'rgba(15,118,110,0.25)' : col.surf });
+      node(200, 8, 200, 'OR: read customer database', f.root[0], f.root[1], f.lv >= 3, 'OR');
+      node(10, 100, 180, 'AND: stolen admin password', f.a1[0], f.a1[1], f.lv >= 2, 'AND');
+      node(210, 100, 180, 'SQL injection in search', f.L.sqli[0], f.L.sqli[1], f.lv >= 1, 'LEAF');
+      node(410, 100, 180, 'AND: steal a backup', f.a2[0], f.a2[1], f.lv >= 2, 'AND');
+      node(10, 196, 88, 'phish admin', f.L.phish[0], f.L.phish[1], f.lv >= 1, 'LEAF');
+      node(102, 196, 88, 'beat MFA', f.L.mfa[0], f.L.mfa[1], f.lv >= 1, 'LEAF');
+      node(410, 196, 88, 'find bucket', f.L.name[0], f.L.name[1], f.lv >= 1, 'LEAF');
+      node(502, 196, 88, 'bucket public', f.L.pub[0], f.L.pub[1], f.lv >= 1, 'LEAF');
+      [[100, 100], [300, 100], [500, 100]].forEach(([x, y]) => D.line(g, 300, 54, x, y, col.line, 1.5));
+      [[54, 196], [146, 196]].forEach(([x, y]) => D.line(g, 100, 146, x, y, col.line, 1.5));
+      [[454, 196], [546, 196]].forEach(([x, y]) => D.line(g, 500, 146, x, y, col.line, 1.5));
+      if (f.done) cbox(z, 14, 306, 572, 28, `cheapest attack costs ${c(f.root[0])}, overall chance ${f.root[1].toFixed(4)}`, { s: 13, b: true, fill: f.root[0] >= 3000 ? col.cv : col.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 2.2  Coverage guided fuzzing: keeping inputs that reach new code (numbers from the program)
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const MS = [
+    [1, 'len>=4', 'AAAAAA\\xfd\\xc2'],
+    [362, 'first byte is M', 'MAAAA\\xc0\\xfd\\x88\\xc2'],
+    [13113, 'then S', 'MSAA\\x9a\\xfd\\xf0\\xc2'],
+    [21873, 'then G and a lying length: CRASH', 'MSGAA\\xfd\\xf0']
+  ];
+  trace('cyfuzz', {
+    title: 'Coverage guided fuzzing: how AFL finds deep bugs',
+    sub: 'The parser crashes only for inputs starting with MSG whose length byte is too big. Random inputs almost never start with MSG (about 1 in 16.7 million). A coverage guided fuzzer keeps every input that reaches new code and mutates those, climbing one check at a time.',
+    W: 600, H: 340,
+    params: [
+      { k: 'mode', label: 'Fuzzer', type: 'select', v: 'guided', opts: [['guided', 'coverage guided'], ['blind', 'blind random']] }
+    ],
+    tips: [
+      { t: 'Play the coverage guided fuzzer. Each new branch reached is saved, and the crash appears after 21873 inputs, as in the program.', play: true },
+      { t: 'Try the blind fuzzer. It always mutates the same seed, so it never gets past the first letter check in 200000 inputs.', set: { mode: 'blind' }, play: true }
+    ],
+    frames(p) {
+      const g = p.mode === 'guided', fr = [{ st: 0, n: 0, say: 'Seed input: AAAAAAAA. The parser checks: length at least 4, then byte 0 = M, byte 1 = S, byte 2 = G, then trusts byte 3 as a length.' }];
+      if (g) MS.forEach(([i, what, inp], k) => fr.push({ st: 1, n: k + 1, say: `Input ${i}: ${inp} reaches a new branch (${what}). ${k < 3 ? 'It joins the corpus, so later mutations start from it.' : 'The length byte 0x41 (65) is far larger than the 3 body bytes: the parser reads past the end.'}` }));
+      else { fr.push({ st: 1, n: 1, say: 'Input 1 reaches the length check, but the blind fuzzer does not keep it. Every mutation starts again from AAAAAAAA.' }); fr.push({ st: 1, n: 1, say: 'Getting M, S and G in the first three bytes by chance needs about 256<sup>3</sup> = 16.7 million tries per lucky hit, and the mutations rarely change all three at once.' }); }
+      fr.push({ st: 2, done: true, n: g ? 4 : 1, g, say: g ? 'Crash found and saved as a test case. Real fuzzers measure coverage with compiler instrumentation, run thousands of inputs per second, and run under AddressSanitizer so silent memory bugs become visible crashes. OSS-Fuzz runs this for over a thousand open source projects.' : 'No crash in 200000 inputs. Guidance turns one impossible jump into a staircase of small steps.' });
+      return fr.map(x => ({ ...x, g }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      const steps = ['len>=4', 'byte0 = M', 'byte1 = S', 'byte2 = G', 'len > body: crash'];
+      steps.forEach((t, i) => { const x = 14 + i * 116, on = i < f.n + (f.n >= 4 ? 1 : 0); cbox(z, x, 30 + (4 - i) * 0, 108, 40, t, { s: 11, b: true, fill: on ? (i === 4 ? col.red : col.cv) : col.bg, c: on ? '#fff' : col.ink2 }); if (i < 4) D.arrow(g, x + 108, 50, x + 116, 50, col.line, 1.5); });
+      D.text(g, 'corpus (inputs kept because they reached new code)', 14, 100, { s: 11, b: true, c: col.ink2 });
+      const kept = f.g ? [['0', 'AAAAAAAA']].concat(MS.slice(0, Math.min(f.n, 3)).map(m => [String(m[0]), m[2]])) : [['0', 'AAAAAAAA']];
+      kept.forEach(([i, inp], k) => cbox(z, 14, 108 + k * 34, 572, 28, `#${i}   ${inp}`, { s: 11, b: true, mono: true, fill: col.surf }));
+      if (f.n >= 4 && f.g) cbox(z, 14, 108 + 4 * 34, 572, 28, `#21873   ${MS[3][2]}   CRASH`, { s: 11, b: true, mono: true, fill: 'rgba(225,29,72,0.25)' });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.g ? 'crash found after 21873 inputs' : 'no crash after 200000 inputs', { s: 13, b: true, fill: f.g ? col.cv : col.ink2, c: '#fff' });
+    }
+  });
+})();

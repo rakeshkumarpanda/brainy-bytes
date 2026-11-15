@@ -9856,6 +9856,26 @@ function cyAppModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-sdlc", title: "Secure development: threat models, scanners, fuzzing and the supply chain", emoji: "2.2", page: "content/cyber-security/cy-sdlc.html",
+        summary: "SDL and DevSecOps, STRIDE threat modelling, attack trees, static analysis and secret scanning, fuzzing, supply chain security.",
+        keywords: ["SDL", "threat modelling", "STRIDE", "attack tree", "SAST", "secret scanning", "fuzzing", "AFL", "supply chain", "SLSA"],
+        minutes: 80, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Building security in: the secure development life cycle", emoji: "", group: "Lesson", keywords: ["secure development life cycle", "SDL", "SSDLC", "Trustworthy Computing", "shift left", "DevSecOps", "NIST SSDF", "SP 800-218", "OWASP SAMM", "OWASP ASVS", "SLSA", "abuse cases"] },
+        { id: "threats", title: "Threat modelling with STRIDE", emoji: "", group: "Lesson", keywords: ["threat modelling", "STRIDE", "data flow diagram", "trust boundary", "STRIDE per element", "Shostack four questions", "Kohnfelder", "Garg", "PASTA", "LINDDUN", "DREAD", "mitigate transfer avoid accept"] },
+        { id: "trees", title: "Attack trees: quantifying where to defend", emoji: "", group: "Lesson", keywords: ["attack tree", "Schneier", "OR node", "AND node", "cheapest attack path", "security economics", "weakest link", "MITRE ATT&CK"] },
+        { id: "sast", title: "Static analysis and secret scanning", emoji: "", group: "Lesson", keywords: ["SAST", "static analysis", "syntax tree", "Bandit", "Semgrep", "CodeQL", "taint analysis", "sources and sinks", "Rice theorem", "false positives", "secret scanning", "gitleaks", "entropy", "Uber breach 2016", "key rotation"] },
+        { id: "fuzzing", title: "Fuzzing: millions of strange inputs", emoji: "", group: "Lesson", keywords: ["fuzzing", "Barton Miller", "coverage guided fuzzing", "AFL", "AFL++", "libFuzzer", "OSS-Fuzz", "corpus", "mutation", "instrumentation", "grammar based fuzzing", "regression tests"] },
+        { id: "supply", title: "The build pipeline and software supply chain", emoji: "", group: "Lesson", keywords: ["software supply chain", "SolarWinds", "build system", "typosquatting", "dependency confusion", "SBOM", "SCA", "pinning", "hash verification", "Sigstore", "SLSA", "provenance", "DevSecOps pipeline", "Codecov"] },
+        { id: "versus", title: "Security testing methods compared", emoji: "", group: "Lesson", keywords: ["comparison", "SAST", "DAST", "IAST", "SCA", "fuzzing", "penetration test", "code review"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "symbolic execution", "KLEE", "angr", "reproducible builds"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
