@@ -4154,3 +4154,108 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 3.1  Exam map: each domain of an exam outline, its weight, and the chapters that teach it
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const EX = {
+    sec: { name: 'Security+ SY0-701', d: [
+      ['General security concepts', 12, 'What cybersecurity is, the cryptography section, Authentication'],
+      ['Threats, vulnerabilities, mitigations', 22, 'Network attacks, Malware, Vulnerabilities, Injection, XSS and CSRF'],
+      ['Security architecture', 18, 'Firewalls and IDS, Wireless, Cloud security, PKI and TLS'],
+      ['Security operations', 28, 'Logging and SIEM, Incident response, Digital forensics, Access control'],
+      ['Program management and oversight', 20, 'Risk in numbers, Governance and law, Threat intelligence']] },
+    cissp: { name: 'CISSP (ISC2, 2024 outline)', d: [
+      ['Security and risk management', 16, 'Risk in numbers, Governance and law'],
+      ['Asset security', 10, 'Governance and law (classification), Differential privacy'],
+      ['Security architecture and engineering', 13, 'The cryptography section, Memory safety, Cloud security'],
+      ['Communication and network security', 13, 'Networks, Network attacks, Firewalls and IDS, Wireless'],
+      ['Identity and access management', 13, 'Authentication, Access control'],
+      ['Security assessment and testing', 12, 'Vulnerabilities, Secure development'],
+      ['Security operations', 13, 'Logging and SIEM, Incident response, Digital forensics'],
+      ['Software development security', 10, 'Web security, Injection, XSS and CSRF, Secure development']] },
+    cysa: { name: 'CySA+ CS0-003', d: [
+      ['Security operations', 33, 'Logging and SIEM, Threat intelligence, ML for security'],
+      ['Vulnerability management', 30, 'Vulnerabilities, Secure development, Cloud security'],
+      ['Incident response and management', 20, 'Incident response, Digital forensics'],
+      ['Reporting and communication', 17, 'Governance and law, Incident response (reports)']] }
+  };
+  trace('cyexammap', {
+    title: 'Exam map: domains, weights and where this subject teaches them',
+    sub: 'An exam outline splits the questions into domains, each with a share of the exam. Spend your revision time in proportion to the weight, and start with the chapters that cover the heaviest domain.',
+    W: 600, H: 340,
+    params: [{ k: 'ex', label: 'Exam', type: 'select', v: 'sec', opts: [['sec', 'CompTIA Security+'], ['cysa', 'CompTIA CySA+'], ['cissp', 'ISC2 CISSP']] }],
+    tips: [
+      { t: 'Play Security+. Security operations is the biggest domain at 28%, so the operations chapters repay the most time.', play: true },
+      { t: 'Switch to CISSP. Eight domains with weights from 10% to 16%: a broad, manager level exam with no single dominant area.', set: { ex: 'cissp' }, play: true },
+      { t: 'Try CySA+. Two domains, operations and vulnerability management, make up 63% of an analyst exam.', set: { ex: 'cysa' }, play: true }
+    ],
+    frames(p) {
+      const E = EX[p.ex], n = E.d.length, top = E.d.reduce((a, b) => (b[1] > a[1] ? b : a));
+      const out = E.d.map((row, i) => ({ st: i + 1, E, n, say: `<b>${row[0]}</b>: ${row[1]}% of ${E.name}. Revise with: ${row[2]}.` }));
+      out.push({ st: n + 1, E, n, done: true, top, say: `The weights add up to ${E.d.reduce((s, r) => s + r[1], 0)}%. The heaviest domain is ${top[0].toLowerCase()} (${top[1]}%). Outlines change every few years, so check the current one on the official exam page before you book.` });
+      return out;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, n = f.n, h = Math.min(50, 282 / n), max = Math.max(...f.E.d.map(r => r[1]));
+      D.text(g, f.E.name, 300, 12, { s: 12, b: true, c: col.ink2 });
+      f.E.d.forEach((row, i) => {
+        if (i >= f.st) return;
+        const y = 22 + i * h, w = row[1] / max * 250, hot = f.done && row === f.top;
+        cbox(z, 14, y + 2, 270, h - 6, row[0], { s: n > 5 ? 11 : 12, b: true, fill: col.surf });
+        D.rect(g, 296, y + 4, w, h - 10, { fill: hot ? col.red : col.cv });
+        D.text(g, `${row[1]}%`, 296 + w + 22, y + h / 2, { s: 12, b: true, c: col.ink });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, `start with: ${f.top[0].toLowerCase()} (${f.top[1]}%)`, { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 3.1  Incident response in order: what to do first, next and last in three exam scenarios
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const PH = ['Preparation', 'Detection and analysis', 'Containment', 'Eradication', 'Recovery', 'Lessons learned'];
+  const SC = {
+    ransom: ['backups kept offline, a tested IR plan', 'EDR alert, files renamed, ransom note', 'isolate the laptop from the network', 'remove the malware, close the way in', 'restore from clean backups, watch closely', 'report, fix the phishing gap, update the plan'],
+    phish: ['awareness training, a report button', 'a user reports entering a password', 'reset the password, revoke sessions', 'delete the email from every mailbox', 'confirm MFA, check the mailbox rules', 'share the lure, tune the mail filter'],
+    laptop: ['full disk encryption, asset list', 'employee reports the laptop lost', 'remote lock and wipe, revoke its keys', 'rotate any secrets stored on it', 'issue a new device from the image', 'check the breach notice duty, record it']
+  };
+  trace('cyirflow', {
+    title: 'Incident response in order: first, next, last',
+    sub: 'Many exam questions ask what to do FIRST or NEXT. The answer is almost always the next phase of the NIST incident response life cycle, applied to the scenario. Each step adds one phase with the action for this case.',
+    W: 600, H: 340,
+    params: [{ k: 'sc', label: 'Scenario', type: 'select', v: 'ransom', opts: [['ransom', 'Ransomware on one laptop'], ['phish', 'Password typed into a phishing page'], ['laptop', 'Company laptop lost']] }],
+    tips: [
+      { t: 'Play the ransomware case. Containment (isolate) comes before eradication and recovery, and paying the ransom is never a first step.', play: true },
+      { t: 'Try the phishing case. The first containment step is about the stolen password, not the email.', set: { sc: 'phish' }, play: true },
+      { t: 'Try the lost laptop. Preparation (encryption) decides whether this is a data breach at all.', set: { sc: 'laptop' }, play: true }
+    ],
+    frames(p) {
+      const A = SC[p.sc];
+      const out = PH.map((ph, i) => ({ st: i + 1, A, say: `<b>${ph}</b>: ${A[i]}.` }));
+      out.push({ st: 7, A, done: true, say: 'That is the order an exam expects: prepare, detect and analyse, contain, eradicate, recover, learn. NIST SP 800-61 Revision 3 (2025) maps the same work onto the CSF 2.0 functions, but the order of actions is unchanged.' });
+      return out;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      PH.forEach((ph, i) => {
+        if (i >= f.st) return;
+        const r = Math.floor(i / 3), c = r === 0 ? i % 3 : 2 - (i % 3), x = 14 + c * 196, y = 20 + r * 140;
+        cbox(z, x, y, 176, 30, `${i + 1}. ${ph}`, { s: 12, b: true, fill: i === 2 ? 'rgba(225,29,72,0.2)' : 'rgba(15,118,110,0.2)' });
+        cbox(z, x, y + 34, 176, 58, f.A[i].split(', '), { s: 11, fill: col.surf });
+        if (i > 0) {
+          if (i === 3) D.arrow(g, 14 + 2 * 196 + 88, 114, 14 + 2 * 196 + 88, 156, col.ink2, 2);
+          else if (r === 0) D.arrow(g, x - 18, y + 15, x - 2, y + 15, col.ink2, 2);
+          else D.arrow(g, x + 194, y + 15, x + 178, y + 15, col.ink2, 2);
+        }
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, 'first contain, then eradicate, then recover', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();

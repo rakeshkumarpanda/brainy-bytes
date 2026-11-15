@@ -10115,6 +10115,25 @@ function cyAdvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cy-a3", title: "Certification revision", emoji: "3", step: 3, part: "advanced", level: "All levels", blurb: "Revising the whole subject for security certifications, interviews and university exams.", topics: [
+      { id: "cy-certprep", title: "Certification revision: exams, recall, formulas and scenarios", emoji: "3.1", page: "content/cyber-security/cy-certprep.html",
+        summary: "Exam formats and domains mapped to the chapters, recall tables, every formula, scenario answering, research style questions and a mock exam.",
+        keywords: ["certification", "exam revision", "Security+", "CISSP", "CySA+", "mock exam", "formulas", "scenarios", "study plan"],
+        minutes: 70, counts: {"lessons": 9, "problems": 13, "quiz": 30, "assign": 0},
+        added: "2026-11-15",
+        sections: [
+        { id: "map", title: "How security certifications work", emoji: "", group: "Lesson", keywords: ["certification", "Security+", "CySA+", "CISSP", "CEH", "ISC2 CC", "exam format", "pass mark", "exam technique", "DoD 8140"] },
+        { id: "domains", title: "Exam domains mapped to this subject", emoji: "", group: "Lesson", keywords: ["exam domains", "domain weights", "Security+ domains", "CISSP domains", "CySA+ domains", "syllabus map"] },
+        { id: "recall", title: "Facts to recall quickly: ports, crypto and controls", emoji: "", group: "Lesson", keywords: ["ports", "protocols", "port drill", "AES", "SHA-256", "RSA key size", "control types", "preventive", "detective", "compensating", "DAC", "MAC", "RBAC", "ABAC"] },
+        { id: "maths", title: "Every formula in one place", emoji: "", group: "Lesson", keywords: ["formulas", "ALE", "SLE", "ARO", "entropy", "birthday bound", "RSA maths", "Diffie-Hellman maths", "Bayes", "base rate", "availability", "nines", "MTBF", "MTTR"] },
+        { id: "scenarios", title: "Scenario questions: what to do first", emoji: "", group: "Lesson", keywords: ["scenario questions", "first step", "NIST incident response", "containment", "order of volatility", "RFC 3227", "RTO", "RPO", "MTD", "hot site", "human safety"] },
+        { id: "traps", title: "Pairs that exams love to confuse", emoji: "", group: "Lesson", keywords: ["confused pairs", "encoding", "hashing", "encryption", "IDS vs IPS", "scan vs pentest", "authentication vs authorisation", "Bell-LaPadula", "Biba", "SIEM vs SOAR", "risk transfer"] },
+        { id: "advanced", title: "Revising the advanced section for interviews and research exams", emoji: "", group: "Lesson", keywords: ["interview questions", "research questions", "IIT", "MIT", "proof", "composition proof", "textbook RSA", "base rate", "FedAvg proof", "GCM nonce reuse", "FGSM", "Krum", "DP-SGD"] },
+        { id: "plan", title: "A study plan that works", emoji: "", group: "Lesson", keywords: ["study plan", "active recall", "spaced repetition", "Leitner boxes", "mock exam", "revision timetable"] },
+        { id: "recap", title: "Revision summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
