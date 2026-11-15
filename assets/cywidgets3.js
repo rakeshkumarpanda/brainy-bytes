@@ -3978,3 +3978,179 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 2.3  Randomised response: a coin gives every person deniability, and the crowd still gives the rate
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  trace('cyrr', {
+    title: 'Randomised response: honest statistics, deniable answers',
+    sub: 'Question: "Did you cheat in the exam?" Each student secretly flips a coin. Heads: answer truthfully. Tails: flip again and say yes on heads, no on tails. The surveyor never knows which path a single answer took.',
+    W: 600, H: 340,
+    params: [{ k: 'p', label: 'True share who cheated', type: 'select', v: '0.3', opts: [['0.1', '10%'], ['0.3', '30%'], ['0.6', '60%']] }],
+    tips: [
+      { t: 'Play with 30% cheaters. About 40% answer yes, and the surveyor recovers 30% from that.', play: true },
+      { t: 'Try 10%. Even students who never cheated say yes a quarter of the time, so a yes proves nothing about anyone.', set: { p: '0.1' }, play: true }
+    ],
+    frames(p) {
+      const pr = +p.p, yes = 0.5 * pr + 0.25;
+      return [
+        { st: 1, pr, yes, say: 'First coin. Heads (probability 1/2): tell the truth.' },
+        { st: 2, pr, yes, say: 'Tails (probability 1/2): flip a second coin and answer yes on heads, no on tails, whatever the truth is.' },
+        { st: 3, pr, yes, say: 'A student who cheated says yes with probability 1/2 + 1/4 = <b>3/4</b>. A student who did not says yes with probability <b>1/4</b>.' },
+        { st: 4, pr, yes, say: `With ${f2(pr * 100, 0)}% cheaters, the share of yes answers is 0.5 &times; ${f2(pr, 1)} + 0.25 = <b>${f2(yes, 2)}</b>. The surveyor inverts it: p = 2 &times; ${f2(yes, 2)} &minus; 0.5 = ${f2(pr, 2)}.` },
+        { st: 5, done: true, pr, yes, say: 'Privacy: a yes is at most (3/4) / (1/4) = 3 times more likely from a cheater than from an honest student, so &epsilon; = ln 3 &asymp; 1.10. This is local differential privacy: the noise is added by each person before the data leaves them.' }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 230, 14, 140, 34, 'first coin', { s: 13, b: true, fill: col.surf });
+      if (f.st >= 1) { D.arrow(g, 270, 50, 130, 86, col.ink2, 2); cbox(z, 40, 88, 180, 40, ['heads (1/2)', 'tell the truth'], { s: 12, b: true, fill: 'rgba(15,118,110,0.2)' }); }
+      if (f.st >= 2) { D.arrow(g, 330, 50, 470, 86, col.ink2, 2); cbox(z, 380, 88, 180, 40, ['tails (1/2)', 'second coin'], { s: 12, b: true, fill: 'rgba(234,88,12,0.2)' }); D.arrow(g, 430, 130, 400, 160, col.ink2, 2); D.arrow(g, 510, 130, 540, 160, col.ink2, 2); cbox(z, 340, 162, 110, 32, 'yes (1/4)', { s: 12, b: true, fill: col.surf }); cbox(z, 476, 162, 110, 32, 'no (1/4)', { s: 12, b: true, fill: col.surf }); }
+      if (f.st >= 3) { cbox(z, 20, 210, 270, 34, 'cheated: P(yes) = 3/4', { s: 13, b: true, fill: 'rgba(225,29,72,0.15)' }); cbox(z, 310, 210, 270, 34, 'did not: P(yes) = 1/4', { s: 13, b: true, fill: 'rgba(15,118,110,0.15)' }); }
+      if (f.st >= 4) cbox(z, 20, 256, 560, 34, `yes share ${f2(f.yes, 2)}  so estimate p = 2 × ${f2(f.yes, 2)} − 0.5 = ${f2(f.pr, 2)}`, { s: 13, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, 'ε = ln 3 ≈ 1.10 for every single answer', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 2.3  The Laplace mechanism: two neighbouring databases give output curves whose ratio is at most e^eps
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  trace('cylaplace', {
+    title: 'The Laplace mechanism and the e<sup>ε</sup> promise',
+    sub: 'A count is 100 in database D and 101 in D&prime;, the same database with you added. Each release adds Laplace noise of scale b = 1 / ε. An observer sees one noisy number and tries to tell which database produced it.',
+    W: 600, H: 340,
+    params: [
+      { k: 'eps', label: 'Privacy parameter ε', type: 'select', v: '0.5', opts: [['0.1', '0.1 (strong privacy)'], ['0.5', '0.5'], ['1', '1'], ['2', '2 (weak privacy)']] },
+      { k: 'out', label: 'Released value', type: 'range', v: 102, min: 94, max: 107, step: 1 }
+    ],
+    tips: [
+      { t: 'Play with ε = 0.5. At every released value, one curve is at most e<sup>0.5</sup> &asymp; 1.65 times the other.', play: true },
+      { t: 'Choose ε = 2. The curves are narrow and far apart in ratio, up to e<sup>2</sup> &asymp; 7.4: much easier to tell D from D&prime;.', set: { eps: '2' }, play: true },
+      { t: 'Choose ε = 0.1. The curves almost coincide, so a release says almost nothing about you, but each answer is noisy by about 10.', set: { eps: '0.1' }, play: true }
+    ],
+    frames(p) {
+      const e = +p.eps, b = 1 / e, x = +p.out, pd = v => Math.exp(-Math.abs(v) / b) / (2 * b), r = pd(x - 100) / pd(x - 101);
+      const o = { e, b, x, r };
+      return [
+        { st: 1, ...o, say: `Without you: true count 100, plus Laplace noise with scale b = 1 / ${e} = ${f2(b, 1)} (green curve).` },
+        { st: 2, ...o, say: 'With you: true count 101, same noise (red curve). The sensitivity of a count is 1, so the curves are shifted by 1.' },
+        { st: 3, ...o, say: `The observer sees ${x}. Density under D: ${f2(pd(x - 100), 4)}, under D&prime;: ${f2(pd(x - 101), 4)}.` },
+        { st: 4, ...o, say: `Ratio = ${f2(r, 3)}. For Laplace noise the ratio is always between e<sup>&minus;${e}</sup> = ${f2(Math.exp(-e), 3)} and e<sup>${e}</sup> = ${f2(Math.exp(e), 3)}, at every possible output.` },
+        { st: 5, done: true, ...o, say: `That is the definition of ${e}-differential privacy: whatever the observer sees, it is at most e<sup>&epsilon;</sup> times more likely with you in the data than without. Typical error |noise| is b = ${f2(b, 1)}.` }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 20, y0 = 20, W = 360, H = 240, lo = 90, hi = 111, X = v => x0 + (v - lo) / (hi - lo) * W;
+      const pd = v => Math.exp(-Math.abs(v) / f.b) / (2 * f.b), mx = pd(0), Y = v => y0 + H - v / mx * (H - 20);
+      D.line(g, x0, y0 + H, x0 + W, y0 + H, col.line, 1.5);
+      for (let v = 92; v <= 110; v += 3) D.text(g, String(v), X(v), y0 + H + 14, { a: 'center', s: 10, c: col.ink2 });
+      const curve = (m, c) => { g.save(); g.strokeStyle = c; g.lineWidth = 2.5; g.beginPath(); for (let i = 0; i <= 300; i++) { const v = lo + i * (hi - lo) / 300; i ? g.lineTo(X(v), Y(pd(v - m))) : g.moveTo(X(v), Y(pd(v - m))); } g.stroke(); g.restore(); };
+      if (f.st >= 1) curve(100, col.cv);
+      if (f.st >= 2) curve(101, col.red);
+      if (f.st >= 3) { D.line(g, X(f.x), y0, X(f.x), y0 + H, col.ink, 2, [5, 4]); D.circle(g, X(f.x), Y(pd(f.x - 100)), 5, { fill: col.cv }); D.circle(g, X(f.x), Y(pd(f.x - 101)), 5, { fill: col.red }); }
+      cbox(z, 400, 20, 186, 30, `ε = ${f.e}, b = ${f2(f.b, 1)}`, { s: 13, b: true, fill: col.surf });
+      if (f.st >= 4) cbox(z, 400, 60, 186, 30, `ratio here ${f2(f.r, 3)}`, { s: 13, b: true, fill: col.surf });
+      if (f.st >= 4) cbox(z, 400, 100, 186, 30, `always ≤ e^ε = ${f2(Math.exp(f.e), 3)}`, { s: 13, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, `${f.e}-DP: no output is more than ${f2(Math.exp(f.e), 2)} times likelier with you than without`, { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 2.3  A privacy budget: sequential queries add up, parallel queries on disjoint groups do not
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const Q = [['count of diabetics', 0.3, 'all'], ['average age of diabetics', 0.3, 'all'], ['count per city (4 disjoint cities)', 0.2, 'par'], ['count of smokers', 0.3, 'all'], ['count of diabetic smokers', 0.3, 'all']];
+  trace('cybudget', {
+    title: 'Spending a privacy budget',
+    sub: 'A hospital allows a total privacy loss of ε = 1 on its patient table. Every query spends some of it. Queries on the same people add up (sequential composition). Queries on separate groups cost only the largest one (parallel composition).',
+    W: 600, H: 340,
+    params: [{ k: 'tot', label: 'Total budget', type: 'select', v: '1', opts: [['1', 'ε = 1'], ['2', 'ε = 2']] }],
+    tips: [
+      { t: 'Play with a budget of 1. The last two queries are refused because each would overspend.', play: true },
+      { t: 'Raise the budget to 2. Every query runs, but the promise to each patient is now weaker.', set: { tot: '2' }, play: true }
+    ],
+    frames(p) {
+      const T = +p.tot, fr = [], rows = [];
+      let spent = 0;
+      Q.forEach(([q, e, kind]) => {
+        const ok = spent + e <= T + 1e-9;
+        if (ok) spent += e;
+        rows.push({ q, e, kind, ok, spent });
+        fr.push({ st: 1, rows: rows.slice(), spent, T, say: ok ? (kind === 'par' ? `"${q}": each city count uses ε = ${e}, but every patient lives in only one city, so the four together cost ${e}, not ${f2(4 * e, 1)}. Spent ${f2(spent, 1)} of ${T}.` : `"${q}" uses ε = ${e}. Spent ${f2(spent, 1)} of ${T}.`) : `"${q}" needs ε = ${e}, but only ${f2(T - spent, 1)} is left, so it is <b>refused</b>.` });
+      });
+      fr.push({ st: 2, done: true, rows, spent, T, say: `Total spent ${f2(spent, 1)} of ${T}. Rounding or cleaning any answer afterwards is free (post processing). Real systems track the budget with tighter accountants, such as Rényi differential privacy, that charge less than simple addition for many small queries.` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      f.rows.forEach((r, i) => cbox(z, 14, 14 + i * 40, 380, 32, `${r.q}: ε ${r.e}${r.ok ? '' : '  refused'}`, { s: 12, b: true, fill: r.ok ? (r.kind === 'par' ? 'rgba(37,99,235,0.18)' : col.surf) : 'rgba(225,29,72,0.2)' }));
+      const bx = 420, by = 14, bh = 250, bw = 60;
+      D.rect(g, bx, by, bw, bh, { stroke: col.line, w: 2 });
+      const h = bh * Math.min(1, f.spent / f.T);
+      D.rect(g, bx, by + bh - h, bw, h, { fill: f.spent >= f.T - 1e-9 ? col.orange : col.cv });
+      D.text(g, `spent ${f2(f.spent, 1)}`, bx + bw + 8, by + bh - h + 4, { s: 12, b: true, c: col.ink });
+      D.text(g, `budget ${f.T}`, bx + bw + 8, by + 10, { s: 12, b: true, c: col.ink2 });
+      if (f.done) cbox(z, 14, 306, 572, 28, `spent ${f2(f.spent, 1)} of ε = ${f.T}`, { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 2.3  DP-SGD: clip every example's gradient to length C, add Gaussian noise to the sum, then step
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const G = [[0.5, 0.3], [0.7, -0.2], [0.4, 0.5], [2.6, 1.8], [0.6, 0.1]];
+  trace('cydpsgd', {
+    title: 'DP-SGD: clip, add up, add noise',
+    sub: 'One training step on a batch of 5 examples. Each arrow is one example’s gradient. Example 4 is unusual, so its gradient is huge and would dominate the step, which is exactly what leaks information about it.',
+    W: 600, H: 340,
+    params: [
+      { k: 'C', label: 'Clip length C', type: 'select', v: '1', opts: [['0.5', '0.5'], ['1', '1'], ['3', '3 (barely clips)']] },
+      { k: 'sig', label: 'Noise multiplier σ', type: 'select', v: '1', opts: [['0.5', '0.5'], ['1', '1'], ['2', '2']] }
+    ],
+    tips: [
+      { t: 'Play with C = 1 and σ = 1. The big gradient is cut to length 1, and noise of size about σC hides what is left of any single example.', play: true },
+      { t: 'Set C = 3. Little is clipped, so example 4 still dominates, and the noise must be 3 times larger for the same privacy.', set: { C: '3' }, play: true },
+      { t: 'Set σ = 2. More noise means more privacy (a smaller ε for the same number of steps) and a noisier step.', set: { sig: '2' }, play: true }
+    ],
+    frames(p) {
+      const C = +p.C, sig = +p.sig, R = MLZ.rng(3), gs = () => { let s = 0; for (let k = 0; k < 6; k++) s += R(); return (s - 3) / Math.sqrt(0.5); };
+      const cl = G.map(v => { const n = Math.hypot(v[0], v[1]); return n > C ? v.map(a => a * C / n) : v; });
+      const raw = [0, 1].map(k => G.reduce((s, v) => s + v[k], 0)), sum = [0, 1].map(k => cl.reduce((s, v) => s + v[k], 0));
+      const noise = [gs() * sig * C, gs() * sig * C], noisy = [sum[0] + noise[0], sum[1] + noise[1]];
+      const o = { C, sig, cl, raw, sum, noise, noisy };
+      return [
+        { st: 1, ...o, say: 'Per example gradients. Ordinary SGD would add them up: the huge one from example 4 controls the direction.' },
+        { st: 2, ...o, say: `Clip each gradient to length at most C = ${C} (the circle). Now no single example can push the model further than C.` },
+        { st: 3, ...o, say: `Add the clipped gradients: (${f2(sum[0], 2)}, ${f2(sum[1], 2)}). Without clipping it would have been (${f2(raw[0], 2)}, ${f2(raw[1], 2)}).` },
+        { st: 4, ...o, say: `Add Gaussian noise with standard deviation &sigma;C = ${f2(sig * C, 1)} to each coordinate: (${f2(noisy[0], 2)}, ${f2(noisy[1], 2)}).` },
+        { st: 5, done: true, ...o, say: `Divide by the batch size and take the step. Clipping bounds each example’s influence (the sensitivity), and the noise hides it. A privacy accountant adds up the cost over all steps to give the final (&epsilon;, &delta;), as in Abadi et al. (2016).` }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, ox = 150, oy = 170, len = v => Math.hypot(v[0], v[1]), s = Math.min(50, 120 / Math.max(f.C, ...G.map(len)));
+      D.line(g, 20, oy, 330, oy, col.line, 1); D.line(g, ox, 20, ox, 296, col.line, 1);
+      if (f.st >= 2) D.circle(g, ox, oy, f.C * s, { stroke: col.ink2, w: 1.5 });
+      const vs = f.st >= 2 ? f.cl : G;
+      vs.forEach((v, i) => { D.arrow(g, ox, oy, ox + v[0] * s, oy - v[1] * s, i === 3 ? col.red : col.cv, 2.5); });
+      if (f.st >= 2) D.text(g, `C = ${f.C}`, ox + f.C * s * 0.7 + 4, oy + f.C * s * 0.7 + 12, { s: 11, b: true, c: col.ink2 });
+      const sx = 470, sy = 170, ss = Math.min(28, 100 / Math.max(1, ...f.sum.map(Math.abs), ...f.noisy.map(Math.abs)));
+      if (f.st >= 3) { D.arrow(g, sx, sy, sx + f.sum[0] * ss, sy - f.sum[1] * ss, col.cv, 3); D.text(g, 'sum of clipped', sx - 110, 40, { s: 11, b: true, c: col.cv }); }
+      if (f.st >= 4) { D.arrow(g, sx + f.sum[0] * ss, sy - f.sum[1] * ss, sx + f.noisy[0] * ss, sy - f.noisy[1] * ss, col.orange, 2.5); D.arrow(g, sx, sy, sx + f.noisy[0] * ss, sy - f.noisy[1] * ss, col.ink, 3); D.text(g, '+ noise (orange), result (black)', sx - 110, 58, { s: 11, b: true, c: col.orange }); }
+      D.circle(g, sx, sy, 4, { fill: col.ink });
+      if (f.done) cbox(z, 14, 306, 572, 28, `clip to C = ${f.C}, noise σC = ${f2(f.sig * f.C, 1)}, then step`, { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();

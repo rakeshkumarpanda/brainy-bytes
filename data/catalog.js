@@ -10094,6 +10094,26 @@ function cyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-dp", title: "Differential privacy", emoji: "2.3", page: "content/cyber-security/cy-dp.html",
+        summary: "Why anonymisation fails, randomised response, the DP definition, sensitivity and Laplace noise, composition and budgets, Gaussian and exponential mechanisms, local and central DP, DP-SGD and DP-FedAvg.",
+        keywords: ["differential privacy", "epsilon", "Laplace mechanism", "Gaussian mechanism", "randomised response", "composition", "privacy budget", "DP-SGD", "DP-FedAvg", "local DP"],
+        minutes: 85, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Why anonymising data is not enough", emoji: "", group: "Lesson", keywords: ["anonymisation", "de identification", "Sweeney", "quasi identifiers", "AOL search logs", "Netflix Prize", "Narayanan Shmatikov", "Dinur Nissim", "reconstruction attack", "differential privacy", "Dwork", "US Census 2020", "Godel Prize"] },
+        { id: "rr", title: "Randomised response: the first private survey", emoji: "", group: "Lesson", keywords: ["randomised response", "Warner 1965", "plausible deniability", "local differential privacy", "LDP", "RAPPOR", "Apple differential privacy", "unbiased estimate", "ln 3"] },
+        { id: "defn", title: "The definition, sensitivity and the Laplace mechanism", emoji: "", group: "Lesson", keywords: ["definition", "neighbouring databases", "epsilon", "delta", "approximate DP", "sensitivity", "Laplace mechanism", "scale", "triangle inequality", "posterior belief"] },
+        { id: "compose", title: "Composition and the privacy budget", emoji: "", group: "Lesson", keywords: ["composition", "sequential composition", "parallel composition", "privacy budget", "post processing", "group privacy", "advanced composition", "Renyi differential privacy", "privacy accountant"] },
+        { id: "mech", title: "The Gaussian and exponential mechanisms", emoji: "", group: "Lesson", keywords: ["Gaussian mechanism", "L2 sensitivity", "clipping", "bounded sensitivity", "exponential mechanism", "McSherry Talwar", "utility function", "private selection"] },
+        { id: "dpml", title: "Differential privacy for machine learning: DP-SGD and DP-FedAvg", emoji: "", group: "Lesson", keywords: ["DP-SGD", "Abadi", "per example gradients", "gradient clipping", "noise multiplier", "sampling rate", "privacy amplification", "moments accountant", "DP-FedAvg", "user level privacy", "local DP", "central DP", "membership advantage"] },
+        { id: "versus", title: "Differential privacy compared with other privacy methods", emoji: "", group: "Lesson", keywords: ["k anonymity", "linkage attack", "comparison", "encryption", "MPC", "homomorphic encryption"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "OpenDP", "Opacus", "TensorFlow Privacy", "synthetic data"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
