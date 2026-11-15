@@ -9750,6 +9750,26 @@ function cySysModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-vulns", title: "Vulnerabilities: CVE, CVSS, patching and hardening", emoji: "3.2", page: "content/cyber-security/cy-vulns.html",
+        summary: "CVE and CWE, Heartbleed, CVSS v3.1 maths, EPSS and KEV priority, patch management and SBOMs, system hardening.",
+        keywords: ["CVE", "CVSS", "EPSS", "KEV", "Heartbleed", "patching", "SBOM", "hardening", "CIS Benchmarks", "Log4Shell"],
+        minutes: 80, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What a vulnerability is, and how the world tracks them", emoji: "", group: "Lesson", keywords: ["vulnerability", "CVE", "CWE", "NVD", "zero day", "coordinated disclosure", "responsible disclosure", "bug bounty", "Project Zero", "HackerOne", "Heartbleed", "EternalBlue", "Log4Shell", "Equifax", "MOVEit", "xz backdoor"] },
+        { id: "heartbleed", title: "Anatomy of a real bug: Heartbleed", emoji: "", group: "Lesson", keywords: ["Heartbleed", "CVE-2014-0160", "OpenSSL", "TLS heartbeat", "buffer over-read", "bounds check", "CWE-125", "Neel Mehta", "Codenomicon", "memory safety", "Core Infrastructure Initiative"] },
+        { id: "cvss", title: "Scoring severity: CVSS v3.1, formula by formula", emoji: "", group: "Lesson", keywords: ["CVSS", "CVSS v3.1", "CVSS v4.0", "FIRST", "base score", "vector string", "attack vector", "attack complexity", "privileges required", "user interaction", "scope", "impact sub score", "exploitability", "roundup", "severity rating"] },
+        { id: "prioritise", title: "What to fix first: EPSS, KEV and the window of exposure", emoji: "", group: "Lesson", keywords: ["vulnerability prioritisation", "EPSS", "KEV", "CISA", "BOD 22-01", "SSVC", "risk based vulnerability management", "window of exposure", "EternalBlue", "WannaCry", "MS17-010", "remediation SLA"] },
+        { id: "patching", title: "Patch management, versions and the software supply chain", emoji: "", group: "Lesson", keywords: ["patch management", "NIST SP 800-40", "asset inventory", "mitigation", "compensating control", "SBOM", "SPDX", "CycloneDX", "Log4j", "version comparison", "supply chain attack", "xz utils", "CVE-2024-3094", "Andres Freund"] },
+        { id: "hardening", title: "Hardening: fewer doors, safer defaults", emoji: "", group: "Lesson", keywords: ["hardening", "attack surface", "least functionality", "CIS Benchmarks", "CIS Controls", "DISA STIG", "Lynis", "OpenSCAP", "Nessus", "OpenVAS", "sshd_config", "configuration drift", "infrastructure as code", "misconfiguration"] },
+        { id: "versus", title: "CVE, CWE, CVSS, EPSS and KEV compared", emoji: "", group: "Lesson", keywords: ["CVE versus CWE", "CVSS versus EPSS", "KEV", "vulnerability scan", "penetration test", "red team", "CNA"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "fuzzing", "OSS-Fuzz", "SLSA", "Sigstore", "mean time to remediate"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

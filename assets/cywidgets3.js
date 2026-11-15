@@ -935,3 +935,185 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Network and Systems 3.2  CVSS v3.1 base score, step by step, for real vulnerabilities
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const VEC = {
+    log4shell: ['Log4Shell CVE-2021-44228', 'AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H'],
+    heartbleed: ['Heartbleed CVE-2014-0160', 'AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N'],
+    lpe: ['Local privilege escalation', 'AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H'],
+    xss: ['Reflected XSS', 'AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N']
+  };
+  const Wt = { AV: { N: 0.85, A: 0.62, L: 0.55, P: 0.2 }, AC: { L: 0.77, H: 0.44 }, UI: { N: 0.85, R: 0.62 }, CIA: { H: 0.56, L: 0.22, N: 0 } };
+  const roundup = x => { const i = Math.round(x * 100000); return i % 10000 === 0 ? i / 100000 : (Math.floor(i / 10000) + 1) / 10; };
+  const sev = s => s === 0 ? 'None' : s < 4 ? 'Low' : s < 7 ? 'Medium' : s < 9 ? 'High' : 'Critical';
+  trace('cycvss', {
+    title: 'CVSS v3.1: from a vector string to a score',
+    sub: 'A CVSS vector lists how a flaw is reached (attack vector, complexity, privileges, user interaction), whether it escapes its component (scope) and what it hurts (confidentiality, integrity, availability). Fixed formulas turn it into a score from 0 to 10.',
+    W: 600, H: 340,
+    params: [
+      { k: 'v', label: 'Vulnerability', type: 'select', v: 'log4shell', opts: [['log4shell', 'Log4Shell (2021)'], ['heartbleed', 'Heartbleed (2014)'], ['lpe', 'Local privilege escalation'], ['xss', 'Reflected XSS']] }
+    ],
+    tips: [
+      { t: 'Play Log4Shell. Every metric is at its worst and scope is changed, so it scores the maximum 10.0.', play: true },
+      { t: 'Choose Heartbleed. It leaks secrets (C:H) but changes nothing (I:N, A:N), so it scores 7.5, High, even though its real impact was huge.', set: { v: 'heartbleed' }, play: true },
+      { t: 'Choose reflected XSS. It needs a click (UI:R), and low impacts keep it at 6.1, Medium.', set: { v: 'xss' }, play: true }
+    ],
+    frames(p) {
+      const [name, vec] = VEC[p.v];
+      const m = Object.fromEntries(vec.split('/').map(x => x.split(':')));
+      const ch = m.S === 'C';
+      const pr = { N: 0.85, L: ch ? 0.68 : 0.62, H: ch ? 0.5 : 0.27 }[m.PR];
+      const c = Wt.CIA[m.C], i = Wt.CIA[m.I], a = Wt.CIA[m.A];
+      const iss = 1 - (1 - c) * (1 - i) * (1 - a);
+      const imp = ch ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15) : 6.42 * iss;
+      const ex = 8.22 * Wt.AV[m.AV] * Wt.AC[m.AC] * pr * Wt.UI[m.UI];
+      const raw = imp <= 0 ? 0 : ch ? Math.min(1.08 * (imp + ex), 10) : Math.min(imp + ex, 10);
+      const base = imp <= 0 ? 0 : roundup(raw);
+      const w = { AV: Wt.AV[m.AV], AC: Wt.AC[m.AC], PR: pr, UI: Wt.UI[m.UI], S: m.S, C: c, I: i, A: a };
+      const fr = [
+        { st: 1, say: `${name}. Vector CVSS:3.1/${vec}. Each letter is a metric and its value.` },
+        { st: 2, say: `Look up the weights. Attack vector ${m.AV} = ${w.AV}, complexity ${m.AC} = ${w.AC}, privileges ${m.PR} = ${pr}${m.PR !== 'N' ? (ch ? ' (higher because scope is changed)' : '') : ''}, user interaction ${m.UI} = ${w.UI}. Impacts: C ${c}, I ${i}, A ${a}.` },
+        { st: 3, say: `Impact sub score base: ISS = 1 &minus; (1 &minus; ${c})(1 &minus; ${i})(1 &minus; ${a}) = <b>${iss.toFixed(4)}</b>.` },
+        { st: 4, say: ch ? `Scope changed, so Impact = 7.52 &times; (ISS &minus; 0.029) &minus; 3.25 &times; (ISS &minus; 0.02)<sup>15</sup> = <b>${imp.toFixed(4)}</b>.` : `Scope unchanged, so Impact = 6.42 &times; ISS = <b>${imp.toFixed(4)}</b>.` },
+        { st: 5, say: `Exploitability = 8.22 &times; ${w.AV} &times; ${w.AC} &times; ${pr} &times; ${w.UI} = <b>${ex.toFixed(4)}</b>. Its maximum is 3.887, for a flaw anyone can reach over the network with no help.` },
+        { st: 6, done: true, say: `Base = Roundup(min(${ch ? '1.08 &times; ' : ''}(Impact + Exploitability), 10)) = Roundup(${raw.toFixed(4)}) = <b>${base.toFixed(1)}</b>, ${sev(base)}. Roundup always goes up to one decimal place. The score says how bad the flaw is, not how likely it is to be used: that is EPSS and the KEV list.` }
+      ];
+      return fr.map(x => ({ ...x, name, vec, m, w, iss, imp, ex, base, ch }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 10, 572, 30, `CVSS:3.1/${f.vec}`, { s: 13, b: true, mono: true, fill: col.surf });
+      const keys = ['AV', 'AC', 'PR', 'UI', 'S', 'C', 'I', 'A'];
+      keys.forEach((k, j) => {
+        const x = 14 + j * 72;
+        cbox(z, x, 50, 66, 44, [k, f.m[k]], { s: 13, b: true, mono: true, fill: ['C', 'I', 'A'].includes(k) ? 'rgba(225,29,72,0.12)' : k === 'S' ? 'rgba(234,88,12,0.15)' : 'rgba(15,118,110,0.12)' });
+        if (f.st >= 2) cbox(z, x, 100, 66, 26, String(f.w[k]), { s: 12, b: true, mono: true, fill: col.bg });
+      });
+      const row = (y, label, val, on) => { if (!on) return; cbox(z, 14, y, 250, 34, label, { s: 12, b: true, fill: col.surf }); cbox(z, 270, y, 110, 34, val, { s: 14, b: true, mono: true, fill: col.bg }); };
+      row(140, 'ISS (impact sub score)', f.iss.toFixed(4), f.st >= 3);
+      row(182, f.ch ? 'Impact (scope changed)' : 'Impact = 6.42 × ISS', f.imp.toFixed(4), f.st >= 4);
+      row(224, 'Exploitability', f.ex.toFixed(4), f.st >= 5);
+      if (f.st >= 5) { D.rect(g, 400, 228, 186, 14, { fill: col.bg, stroke: col.line }); D.rect(g, 400, 228, 186 * f.ex / 3.887, 14, { fill: col.cv }); D.text(g, 'of max 3.887', 493, 256, { a: 'center', s: 10, c: col.ink2 }); }
+      if (f.st >= 4) { D.rect(g, 400, 186, 186, 14, { fill: col.bg, stroke: col.line }); D.rect(g, 400, 186, 186 * Math.max(0, f.imp) / 6.05, 14, { fill: col.red }); }
+      if (f.done) {
+        const s = sev(f.base);
+        cbox(z, 400, 132, 186, 44, [`${f.base.toFixed(1)}`, s], { s: 15, b: true, fill: s === 'Critical' ? col.red : s === 'High' ? col.orange : col.cv, c: '#fff' });
+        cbox(z, 14, 306, 572, 28, `${f.name}: base score ${f.base.toFixed(1)} (${s})`, { s: 13, b: true, fill: s === 'Critical' || s === 'High' ? col.red : col.cv, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 3.2  Heartbleed: a reply that trusts the claimed length, and the one line fix
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const MEM = 'HELLO|user=alice|pw=Tr0ub4dor|key=MIIEv|';
+  trace('cyheartbleed', {
+    title: 'Heartbleed: reading past the end of a buffer',
+    sub: 'A TLS heartbeat says "here are some bytes and their length, send them back". OpenSSL 1.0.1 to 1.0.1f trusted the length without checking it against what really arrived, so it sent back whatever sat next in memory.',
+    W: 600, H: 340,
+    params: [
+      { k: 'claim', label: 'Length the client claims', type: 'select', v: '30', opts: [['5', '5 (honest)'], ['30', '30 (lie)'], ['40', '40 (bigger lie)']] },
+      { k: 'ver', label: 'Server', type: 'select', v: 'bug', opts: [['bug', 'OpenSSL 1.0.1f (buggy)'], ['fix', 'OpenSSL 1.0.1g (fixed)']] }
+    ],
+    tips: [
+      { t: 'Play a lie of 30 against the buggy server. The reply carries a user name and password that were never part of the request.', play: true },
+      { t: 'Switch to the fixed server. It compares the claimed length with the real one and silently drops the request.', set: { ver: 'fix' }, play: true },
+      { t: 'Try an honest length of 5. Both servers answer normally, which is why the bug went unnoticed for two years.', set: { claim: '5', ver: 'bug' }, play: true }
+    ],
+    frames(p) {
+      const claim = +p.claim, real = 5, fix = p.ver === 'fix';
+      const drop = fix && claim > real;
+      const fr = [
+        { st: 1, say: 'Server memory. The client’s heartbeat payload is copied to the start of a buffer. Next to it, by chance, sit other data: a user name, a password, part of a private key.' },
+        { st: 2, say: `The client sends payload "HELLO" (5 bytes) but writes ${claim} in the length field.${claim === real ? ' That is honest.' : ' That is a lie.'}` },
+        { st: 3, drop, say: fix ? (drop ? `The fixed server checks: is ${claim} bigger than the ${real} bytes that arrived? Yes, so it discards the request. This check was the whole fix.` : `The fixed server checks: ${claim} is not bigger than ${real}, so it answers.`) : `The buggy server never checks. It prepares to copy ${claim} bytes, starting at the payload, with memcpy.` },
+        { st: 4, done: true, drop, say: drop ? 'No reply, no leak. Heartbleed was found in 2014 by Neel Mehta at Google and by Codenomicon. About 17% of TLS servers were thought to be vulnerable, and many had to replace their certificates because keys may have leaked.' : claim > real ? `The reply holds ${claim} bytes: the 5 real ones plus ${claim - real} from neighbouring memory, including the password. The real length field was 16 bits, so up to 64 KB could leak per request, and attackers could ask again and again, leaving no log.` : 'An honest request gets the 5 bytes back. Nothing leaks.' }
+      ];
+      return fr.map(x => ({ ...x, claim, real, fix }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, cw = 14, x0 = 14, y0 = 40;
+      D.text(g, 'server memory (one cell per byte)', x0, 28, { s: 11, b: true, c: col.ink2 });
+      [...MEM].forEach((ch, i) => {
+        const inPay = i < f.real, read = f.st >= 4 && !f.drop && i < f.claim;
+        const secret = i >= f.real;
+        D.rect(g, x0 + i * cw, y0, cw - 1, 26, { fill: read ? (inPay ? col.cv : col.red) : inPay ? 'rgba(15,118,110,0.25)' : secret ? 'rgba(234,88,12,0.12)' : col.bg, stroke: col.line });
+        D.text(g, ch, x0 + i * cw + cw / 2, y0 + 17, { a: 'center', s: 11, b: true, mono: true, c: read ? '#fff' : col.ink });
+      });
+      if (f.st >= 2) {
+        cbox(z, 14, 90, 270, 54, ['heartbeat request', `payload "HELLO"  length = ${f.claim}`], { s: 12, b: true, mono: true, fill: f.claim > f.real ? 'rgba(225,29,72,0.15)' : col.surf });
+        D.arrow(g, 150, 90, 60, 70, col.ink2, 2);
+      }
+      if (f.st >= 3) {
+        cbox(z, 300, 90, 286, 54, f.fix ? ['if (claimed > real) drop;', f.drop ? 'check fails: request dropped' : 'check passes'] : ['memcpy(reply, payload, claimed);', 'no check on claimed'], { s: 12, b: true, mono: true, fill: f.fix ? 'rgba(15,118,110,0.2)' : 'rgba(225,29,72,0.15)' });
+        if (!f.drop) { D.line(g, x0, 76, x0 + f.claim * cw, 76, col.orange, 3); D.text(g, `${f.claim} bytes`, x0 + f.claim * cw / 2, 86, { a: 'center', s: 10, b: true, c: col.orange }); }
+      }
+      if (f.st >= 4 && !f.drop) {
+        const out = MEM.slice(0, f.claim);
+        cbox(z, 14, 166, 572, 50, ['reply sent to the client', out], { s: 12, b: true, mono: true, fill: f.claim > f.real ? 'rgba(225,29,72,0.15)' : col.surf });
+      }
+      if (f.done) cbox(z, 14, 306, 572, 28, f.drop ? 'fixed: lying request discarded' : f.claim > f.real ? `leaked ${f.claim - f.real} bytes of other memory` : 'honest request: nothing leaked', { s: 13, b: true, fill: f.claim > f.real && !f.drop ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 3.2  The window of exposure: MS17-010, EternalBlue, WannaCry and NotPetya (2017)
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const EV = [
+    [0, 'Mar 14', 'Microsoft releases patch MS17-010', 'Patch MS17-010 released'],
+    [31, 'Apr 14', 'Shadow Brokers leak the EternalBlue exploit', 'EternalBlue exploit leaked'],
+    [59, 'May 12', 'WannaCry worm uses EternalBlue', 'WannaCry uses EternalBlue'],
+    [105, 'Jun 27', 'NotPetya wiper uses EternalBlue', 'NotPetya uses EternalBlue']
+  ];
+  trace('cypatch', {
+    title: 'The window of exposure: patch speed against real 2017 events',
+    sub: 'A system is exposed from the moment an exploit exists until the patch is installed. In 2017 the patch for the SMB flaw came first, the public exploit a month later, and two of the most damaging attacks ever followed. How fast you patch decides which of them reach you.',
+    W: 600, H: 340,
+    params: [
+      { k: 'p', label: 'Your organisation patches after', type: 'select', v: '90', opts: [['14', '14 days'], ['45', '45 days'], ['90', '90 days'], ['200', 'never got round to it']] }
+    ],
+    tips: [
+      { t: 'Play a 90 day patch cycle, common in 2017. WannaCry arrives while you are still exposed.', play: true },
+      { t: 'Choose 14 days. You were patched long before the exploit even leaked.', set: { p: '14' }, play: true },
+      { t: 'Choose 45 days. You were patched before WannaCry, but for two weeks a public exploit existed for your systems.', set: { p: '45' }, play: true }
+    ],
+    frames(p) {
+      const pd = +p.p, fr = [];
+      fr.push({ st: 0, n: 0, say: 'Day 0 is 14 March 2017. The timeline runs to the end of June. Your patch day is marked in green.' });
+      EV.forEach(([d, date, what], i) => {
+        const hit = d >= 31 && d < pd;
+        fr.push({ st: 1, n: i + 1, say: `Day ${d} (${date}): ${what}.${i === 0 ? ' From now on, attackers can also study the patch to find the bug.' : i === 1 ? (pd <= 31 ? ' You are already patched.' : ' Your window of exposure opens now.') : hit ? ' <b>You are still unpatched and get hit.</b>' : ' You are patched, so it passes you by.'}` });
+      });
+      const hits = EV.filter(([d]) => d >= 59 && d < pd).length;
+      const win = Math.max(0, Math.min(pd, 200) - 31);
+      fr.push({ st: 2, done: true, n: 4, hits, win, say: `Window of exposure: ${win} days${pd >= 200 ? ' and counting' : ''}. ${hits ? `You were hit by ${hits} attack${hits > 1 ? 's' : ''}.` : 'No attack reached you.'} WannaCry hit more than 200000 computers, and many were Windows machines left unpatched for two months. CISA now asks US agencies to fix known exploited flaws within two weeks.` });
+      return fr.map(x => ({ ...x, pd }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 30, R = 570, Y = 150, X = d => L + (R - L) * Math.min(d, 120) / 120;
+      D.line(g, L, Y, R, Y, col.line, 2);
+      [0, 30, 60, 90, 120].forEach(d => { D.line(g, X(d), Y - 4, X(d), Y + 4, col.line, 1.5); D.text(g, `day ${d}`, X(d), Y + 18, { a: 'center', s: 10, c: col.ink2 }); });
+      if (f.n >= 2) { const e = Math.min(f.pd, 120); if (e > 31) D.rect(g, X(31), Y - 14, X(e) - X(31), 28, { fill: 'rgba(225,29,72,0.25)' }); }
+      EV.slice(0, f.n).forEach(([d, date, what, short], i) => {
+        const up = i % 2 === 0, hit = d >= 59 && d < f.pd;
+        D.line(g, X(d), Y, X(d), up ? 60 : 220, hit ? col.red : col.ink2, 2);
+        cbox(z, Math.max(14, Math.min(X(d) - 80, 426)), up ? 30 + (i === 2 ? 0 : 0) : 220, 160, 44, [date, short], { s: 10, b: true, fill: hit ? col.red : col.surf, c: hit ? '#fff' : col.ink });
+      });
+      if (f.st >= 0) { const xp = X(f.pd); if (f.pd <= 120) { D.line(g, xp, Y - 30, xp, Y + 30, col.green, 3); D.text(g, 'you patch', xp, Y + 42, { a: 'center', s: 11, b: true, c: col.green }); } else D.text(g, 'not patched by day 120', R - 4, Y - 22, { a: 'end', s: 11, b: true, c: col.red }); }
+      if (f.done) cbox(z, 14, 306, 572, 28, `window of exposure ${f.win} days, ${f.hits ? f.hits + ' attack(s) hit you' : 'no attack reached you'}`, { s: 13, b: true, fill: f.hits ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
