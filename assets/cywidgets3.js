@@ -1909,3 +1909,136 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Application Security 2.3  A penetration test, phase by phase (PTES), on a fictional engagement
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const PH = [
+    ['Pre-engagement', 'Contract, scope (203.0.113.0/24, shop and api), excluded payment hosts, dates, emergency contacts, and a signed authorisation letter.'],
+    ['Intelligence gathering', 'Passive first: certificate transparency shows dev-api, staging and jenkins.internal. Then an agreed port scan of the in scope range.'],
+    ['Threat modelling', 'What would hurt this client most? Customer data and the build server. Plan attack paths toward those.'],
+    ['Vulnerability analysis', 'Scanners and manual testing: SQL injection in /search, default password on Jenkins, outdated libraries.'],
+    ['Exploitation', 'Prove impact carefully: one UNION query shows the users table exists, without dumping it. admin/admin logs in to Jenkins.'],
+    ['Post exploitation', 'From a Jenkins build shell, a SUID find binary gives root. Stop at proof, record every command and timestamp, clean up test files.'],
+    ['Reporting', 'Executive summary, findings ranked by risk with evidence and fixes, then a retest after the client patches.']
+  ];
+  trace('cyphases', {
+    title: 'A penetration test from contract to report',
+    sub: 'Ethical hacking follows a method, so that testing is legal, safe for the client and repeatable. The Penetration Testing Execution Standard (PTES) names seven phases. Here they are applied to a fictional engagement.',
+    W: 600, H: 340,
+    params: [],
+    tips: [{ t: 'Play to walk through the phases. Notice how much happens before the first attack, and that the report is the actual product.', play: true }],
+    frames() {
+      const fr = [{ st: 0, n: 0, say: 'A company hires testers to find what a real attacker could do to its online shop.' }];
+      PH.forEach(([name, what], i) => fr.push({ st: 1, n: i + 1, say: `<b>${i + 1}. ${name}.</b> ${what}` }));
+      fr.push({ st: 2, done: true, n: 7, say: 'Without the signed scope from phase 1, everything after it would be a crime. In 2019 two Coalfire testers were arrested during a physical test of an Iowa courthouse because the county and the state disagreed about who could authorise it. Charges were later dropped, but the case shows why scope and authority must be explicit.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      PH.forEach(([name], i) => {
+        const x = 14 + (i % 4) * 145, y = 20 + Math.floor(i / 4) * 90, on = f.n > i, cur = f.n === i + 1 && !f.done;
+        cbox(z, x, y, 135, 70, [`${i + 1}`, name], { s: 12, b: true, fill: cur ? col.cv : on ? 'rgba(15,118,110,0.2)' : col.bg, c: cur ? '#fff' : col.ink });
+        if (i < 6 && i !== 3) D.arrow(g, x + 135, y + 35, x + 145, y + 35, col.line, 1.5);
+      });
+      D.arrow(g, 586, 90, 586, 100, col.line, 1.5);
+      if (f.n >= 1) cbox(z, 14, 205, 572, 60, f.n === 1 ? ['signed authorisation + scope', 'nothing starts without it'] : f.n <= 4 ? ['finding and planning', 'most time is spent here'] : f.n <= 6 ? ['careful proof of impact', 'no damage, full logs'] : ['the report is the product', 'clear risk, evidence, fixes, retest'], { s: 13, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, 'engagement complete: 2 critical, 1 high, 3 medium findings reported', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 2.3  Privilege escalation paths on a Linux host, and what removing each one does
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const P = [
+    ['suid', 'SUID find', 'find runs as root and can start a shell: find . -exec /bin/sh -p'],
+    ['sudo', 'sudo vim, no password', 'vim run through sudo can open a root shell with :!/bin/sh'],
+    ['cron', 'writable root cron script', 'edit cleanup.sh, wait for cron to run it as root'],
+    ['kernel', 'old kernel 5.8', 'a public exploit such as Dirty Pipe (CVE-2022-0847) writes to root owned files']
+  ];
+  trace('cyprivesc', {
+    title: 'Privilege escalation: from a low user to root',
+    sub: 'After a first foothold, attackers look for a way from their limited account to root. Each misconfiguration is a separate path, so defenders must close all of them. Choose which ones the admin has fixed.',
+    W: 600, H: 340,
+    params: [
+      { k: 'fix', label: 'Fixed by the admin', type: 'select', v: 'none', opts: [['none', 'nothing'], ['suid', 'SUID bit removed from find'], ['three', 'SUID, sudo rule and cron script fixed'], ['all', 'all four, including a kernel patch']] }
+    ],
+    tips: [
+      { t: 'Play with nothing fixed. Four separate paths lead to root.', play: true },
+      { t: 'Fix three of them. One path, the old kernel, is enough for the attacker.', set: { fix: 'three' }, play: true },
+      { t: 'Fix all four. The foothold stays a low privilege account, which limits the damage.', set: { fix: 'all' }, play: true }
+    ],
+    frames(p) {
+      const fixed = p.fix === 'none' ? [] : p.fix === 'suid' ? ['suid'] : p.fix === 'three' ? ['suid', 'sudo', 'cron'] : ['suid', 'sudo', 'cron', 'kernel'];
+      const fr = [{ st: 0, n: 0, fixed, say: 'The attacker has a shell as user deploy, through a weak Jenkins password. They run checks like the audit program.' }];
+      P.forEach(([k, name, how], i) => fr.push({ st: 1, n: i + 1, fixed, say: `Path ${i + 1}: ${name}. ${fixed.includes(k) ? '<b>Closed</b> by the admin.' : `<b>Open</b>: ${how}.`}` }));
+      const open = P.filter(([k]) => !fixed.includes(k)).length;
+      fr.push({ st: 2, done: true, n: 4, fixed, open, say: open ? `${open} open path${open > 1 ? 's' : ''}: the attacker becomes root. Defence must be complete, the attacker needs only one path.` : 'No path to root. The attacker is stuck as deploy. Least privilege, patching and regular audits with tools such as LinPEAS or Lynis keep it that way.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 130, 120, 60, ['deploy', 'low privilege'], { s: 12, b: true, fill: col.surf });
+      cbox(z, 466, 130, 120, 60, ['root', 'full control'], { s: 13, b: true, fill: f.done && f.open ? col.red : col.bg, c: f.done && f.open ? '#fff' : col.ink });
+      P.forEach(([k, name], i) => {
+        const y = 20 + i * 72, show = f.n > i, closed = f.fixed.includes(k);
+        cbox(z, 210, y, 180, 50, name, { s: 12, b: true, fill: !show ? col.bg : closed ? 'rgba(15,118,110,0.2)' : 'rgba(225,29,72,0.18)' });
+        if (show) {
+          D.line(g, 134, 160, 210, y + 25, closed ? col.line : col.red, 2);
+          if (!closed) D.arrow(g, 390, y + 25, 466, 160, col.red, 2);
+          else cbox(z, 392, y + 13, 60, 24, 'closed', { s: 11, b: true, fill: col.cv, c: '#fff' });
+        }
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.open ? `root reached through ${f.open} open path(s)` : 'all paths closed: attacker stays low privilege', { s: 13, b: true, fill: f.open ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 2.3  A 5 by 5 risk matrix for the findings of a penetration test report
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const F = [
+    ['Default Jenkins password', 5, 5], ['SQL injection in /search', 4, 5], ['SUID find binary', 3, 4],
+    ['Verbose error pages', 3, 2], ['Outdated jQuery', 2, 3], ['Missing HSTS', 3, 2]
+  ];
+  const rate = s => s >= 20 ? 'Critical' : s >= 12 ? 'High' : s >= 6 ? 'Medium' : 'Low';
+  trace('cyrisk5', {
+    title: 'Rating findings: likelihood times impact',
+    sub: 'A report ranks findings so the client fixes the right things first. A common method scores likelihood and impact from 1 to 5 and multiplies them. Many teams use CVSS instead or as well, but the matrix makes business risk easy to explain.',
+    W: 600, H: 340,
+    params: [],
+    tips: [{ t: 'Play to place the six findings from the program on the matrix, one at a time.', play: true }],
+    frames() {
+      const fr = [{ st: 0, n: 0, say: 'The matrix: likelihood across, impact up. Colours mark Low (under 6), Medium (6 to 11), High (12 to 19) and Critical (20 and above).' }];
+      F.forEach(([t, l, i], k) => fr.push({ st: 1, n: k + 1, say: `${t}: likelihood ${l} &times; impact ${i} = <b>${l * i}</b>, ${rate(l * i)}.` }));
+      fr.push({ st: 2, done: true, n: F.length, say: 'Two critical findings go to the top of the executive summary, each with evidence and a clear fix. Scores like these are judgements, so the report explains each one, and the client’s own knowledge of its business can move them.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 60, y0 = 20, c = 44;
+      for (let l = 1; l <= 5; l++) for (let i = 1; i <= 5; i++) {
+        const s = l * i, fill = s >= 20 ? 'rgba(225,29,72,0.45)' : s >= 12 ? 'rgba(234,88,12,0.35)' : s >= 6 ? 'rgba(234,179,8,0.3)' : 'rgba(15,118,110,0.2)';
+        D.rect(g, x0 + (l - 1) * c, y0 + (5 - i) * c, c - 2, c - 2, { fill });
+        D.text(g, String(s), x0 + (l - 1) * c + c / 2 - 1, y0 + (5 - i) * c + 14, { a: 'center', s: 9, c: col.ink2 });
+      }
+      D.text(g, 'likelihood →', x0 + 110, y0 + 5 * c + 16, { a: 'center', s: 11, b: true, c: col.ink2 });
+      D.text(g, 'impact ↑', 30, y0 + 110, { a: 'center', s: 11, b: true, c: col.ink2 });
+      F.slice(0, f.n).forEach(([t, l, i], k) => {
+        const cx = x0 + (l - 1) * c + c / 2 - 1, cy = y0 + (5 - i) * c + c / 2 + 6;
+        D.text(g, String(k + 1), cx + (k === 5 ? 10 : k === 3 ? -10 : 0), cy, { a: 'center', s: 14, b: true, c: col.ink });
+        cbox(z, 300, 20 + k * 40, 286, 34, `${k + 1}. ${t}: ${l * i} ${rate(l * i)}`, { s: 11, b: true, fill: col.surf });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, '2 Critical, 1 High, 3 Medium', { s: 13, b: true, fill: col.red, c: '#fff' });
+    }
+  });
+})();
