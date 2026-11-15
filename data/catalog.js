@@ -10053,6 +10053,29 @@ function cyAdvModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cy-a2", title: "Federated learning and privacy", emoji: "2", step: 2, part: "advanced", level: "Advanced", blurb: "Training models across many devices and organisations without collecting their data, the attacks on such systems, and differential privacy.", topics: [
+      { id: "cy-fedlearn", title: "Federated learning in full", emoji: "2.1", page: "content/cyber-security/cy-fedlearn.html",
+        summary: "FedAvg and its maths, communication and compression, non IID drift with FedProx and SCAFFOLD, cross device and cross silo, horizontal and vertical FL, secure aggregation, real systems.",
+        keywords: ["federated learning", "FedAvg", "FedSGD", "non IID", "client drift", "FedProx", "SCAFFOLD", "vertical FL", "secure aggregation", "communication cost", "DP-FedAvg"],
+        minutes: 90, counts: {"lessons": 10, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Federated learning: bring the model to the data", emoji: "", group: "Lesson", keywords: ["federated learning", "FL", "McMahan", "Gboard", "Apple Siri", "FeTS", "Kairouz", "client", "server", "aggregator", "round", "local epochs", "data minimisation", "privacy by design"] },
+        { id: "fedavg", title: "The FedAvg algorithm and its maths", emoji: "", group: "Lesson", keywords: ["FedAvg", "federated averaging", "FedSGD", "global objective", "weighted average", "client fraction", "local epochs", "batch size", "learning rate", "gradient descent equivalence"] },
+        { id: "comm", title: "Communication is the bottleneck", emoji: "", group: "Lesson", keywords: ["communication cost", "rounds", "upload", "compression", "top k sparsification", "quantisation", "error feedback", "client selection", "idle charging Wi-Fi", "over selection"] },
+        { id: "noniid", title: "Non IID data, client drift and fixes", emoji: "", group: "Lesson", keywords: ["non IID", "IID", "heterogeneity", "client drift", "label skew", "feature skew", "quantity skew", "FedProx", "proximal term", "SCAFFOLD", "control variates", "personalisation", "fine tuning"] },
+        { id: "types", title: "Cross device, cross silo, horizontal and vertical", emoji: "", group: "Lesson", keywords: ["cross device", "cross silo", "horizontal FL", "vertical FL", "federated transfer learning", "private set intersection", "PSI", "entity alignment", "split model", "Paillier", "FATE", "WeBank"] },
+        { id: "secagg", title: "Secure aggregation: the server sees only the sum", emoji: "", group: "Lesson", keywords: ["secure aggregation", "Bonawitz", "pairwise masks", "Diffie-Hellman", "mask cancellation", "drop outs", "Shamir secret sharing", "self mask", "gradient leakage", "Deep Leakage from Gradients"] },
+        { id: "systems", title: "Real systems, privacy layers and tools", emoji: "", group: "Lesson", keywords: ["FL system design", "eligibility", "client selection", "over selection", "DP-FedAvg", "clipping", "trusted execution environment", "honest but curious", "threat model", "TensorFlow Federated", "Flower", "NVIDIA FLARE", "PySyft", "FATE"] },
+        { id: "versus", title: "Federated learning compared with other privacy tools", emoji: "", group: "Lesson", keywords: ["comparison", "MPC", "homomorphic encryption", "differential privacy", "central training"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "personalised FL", "clustered FL", "convergence"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

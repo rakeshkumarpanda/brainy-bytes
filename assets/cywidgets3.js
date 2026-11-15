@@ -3590,3 +3590,217 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 2.1  FedAvg rounds in a two weight model: local training, weighted averaging and client drift
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const SETS = {
+    noniid: { c: [[0.18, 0.22], [0.82, 0.3], [0.55, 0.86]], a: [1, 3, 1.5], n: [50, 30, 20] },
+    iid: { c: [[0.5, 0.46], [0.56, 0.52], [0.47, 0.55]], a: [1, 1.2, 1.1], n: [50, 30, 20] }
+  };
+  const NAMES = ['Asha', 'Bose', 'City'];
+  trace('cyfedround', {
+    title: 'Federated averaging, round by round',
+    sub: 'Three hospitals share one model with two weights (the plane). Each hospital’s own best model is a coloured cross. In every round the server sends the global model (black dot), each hospital trains on its own data for E steps, and the server averages the results weighted by data size (50, 30, 20 patients).',
+    W: 600, H: 340,
+    params: [
+      { k: 'E', label: 'Local steps per round (E)', type: 'select', v: '5', opts: [['1', '1 (FedSGD style)'], ['5', '5'], ['30', '30']] },
+      { k: 'data', label: 'Data at the hospitals', type: 'select', v: 'noniid', opts: [['noniid', 'very different (non IID)'], ['iid', 'similar (IID)']] }
+    ],
+    tips: [
+      { t: 'Play with E = 5 and very different data. The global model moves towards the best overall point (star) in a few rounds.', play: true },
+      { t: 'Set E = 30. Each hospital runs almost to its own cross, and the average lands away from the star: client drift.', set: { E: '30' }, play: true },
+      { t: 'Choose similar data with E = 30. With IID data, many local steps are safe and save rounds.', set: { E: '30', data: 'iid' }, play: true }
+    ],
+    frames(p) {
+      const S = SETS[p.data], E = +p.E, lr = 0.15, N = S.n.reduce((s, v) => s + v, 0);
+      const den = S.n.reduce((s, n, k) => s + n * S.a[k], 0), star = [0, 1].map(d => S.n.reduce((s, n, k) => s + n * S.a[k] * S.c[k][d], 0) / den);
+      let g = [0.08, 0.92];
+      const hist = [g.slice()], fr = [];
+      fr.push({ st: 0, g, hist: hist.slice(), paths: null, say: `Start: the server’s global model is the black dot. The star is the best model for all 150 patients together, which no single hospital can see.` });
+      for (let r = 1; r <= 4; r++) {
+        const paths = S.c.map((c, k) => { let v = g.slice(); const P = [v.slice()]; for (let s = 0; s < E; s++) { v = v.map((x, d) => x - lr * S.a[k] * (x - c[d])); P.push(v.slice()); } return P; });
+        fr.push({ st: 1, r, g, hist: hist.slice(), paths, say: `Round ${r}: the server sends the global model. Each hospital takes ${E} gradient step${E > 1 ? 's' : ''} on its own data, moving towards its own cross. Only the new weights leave the hospital, never the patient rows.` });
+        const ng = [0, 1].map(d => paths.reduce((s, P, k) => s + S.n[k] / N * P[P.length - 1][d], 0));
+        g = ng; hist.push(g.slice());
+        fr.push({ st: 2, r, g, hist: hist.slice(), paths, say: `The server averages: new w = 0.5 w<sub>Asha</sub> + 0.3 w<sub>Bose</sub> + 0.2 w<sub>City</sub> = (${f2(g[0], 3)}, ${f2(g[1], 3)}). Distance to the star: ${f2(Math.hypot(g[0] - star[0], g[1] - star[1]), 3)}.` });
+      }
+      const dist = Math.hypot(g[0] - star[0], g[1] - star[1]);
+      fr.push({ st: 3, done: true, g, hist: hist.slice(), paths: null, dist, say: dist > 0.05 ? `After 4 rounds the model is ${f2(dist, 3)} from the star. With very different data and many local steps, each hospital overfits to its own data and the average is pulled off course. Fixes: fewer local steps, FedProx or SCAFFOLD.` : `After 4 rounds the model is only ${f2(dist, 3)} from the star. Several local steps per round cut the number of rounds, which saves most of the communication cost.` });
+      return fr.map(f => ({ ...f, star, S }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 20, y0 = 14, Sz = 280, X = v => x0 + v * Sz, Y = v => y0 + Sz - v * Sz, CC = [col.red, col.orange, '#2563eb'];
+      D.rect(g, x0, y0, Sz, Sz, { stroke: col.line });
+      f.S.c.forEach((c, k) => { D.line(g, X(c[0]) - 7, Y(c[1]) - 7, X(c[0]) + 7, Y(c[1]) + 7, CC[k], 3); D.line(g, X(c[0]) - 7, Y(c[1]) + 7, X(c[0]) + 7, Y(c[1]) - 7, CC[k], 3); D.text(g, NAMES[k], X(c[0]) + 9, Y(c[1]) - 8, { s: 11, b: true, c: CC[k] }); });
+      const st = f.star; g.save(); g.fillStyle = col.cv; g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 4 : 10, a = -Math.PI / 2 + i * Math.PI / 5; g.lineTo(X(st[0]) + r * Math.cos(a), Y(st[1]) + r * Math.sin(a)); } g.closePath(); g.fill(); g.restore();
+      for (let i = 1; i < f.hist.length; i++) D.line(g, X(f.hist[i - 1][0]), Y(f.hist[i - 1][1]), X(f.hist[i][0]), Y(f.hist[i][1]), col.ink2, 1.5, [4, 3]);
+      if (f.paths) f.paths.forEach((P, k) => { for (let i = 1; i < P.length; i++) D.line(g, X(P[i - 1][0]), Y(P[i - 1][1]), X(P[i][0]), Y(P[i][1]), CC[k], 2); D.circle(g, X(P[P.length - 1][0]), Y(P[P.length - 1][1]), 4, { fill: CC[k] }); });
+      D.circle(g, X(f.g[0]), Y(f.g[1]), 7, { fill: col.ink });
+      cbox(z, 320, 20, 266, 34, f.r ? `round ${f.r}${f.st === 1 ? ': local training' : ': averaging'}` : f.done ? 'after 4 rounds' : 'before round 1', { s: 13, b: true, fill: col.surf });
+      cbox(z, 320, 64, 266, 34, `global model (${f2(f.g[0], 3)}, ${f2(f.g[1], 3)})`, { s: 12, b: true, fill: col.surf });
+      cbox(z, 320, 108, 266, 34, `best overall (star) (${f2(f.star[0], 3)}, ${f2(f.star[1], 3)})`, { s: 12, b: true, fill: col.surf });
+      cbox(z, 320, 152, 266, 34, 'weights: Asha 0.5, Bose 0.3, City 0.2', { s: 12, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.dist > 0.05 ? `client drift: ${f2(f.dist, 3)} away from the best model` : `close to the best model: ${f2(f.dist, 3)} away`, { s: 13, b: true, fill: f.dist > 0.05 ? col.orange : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 2.1  Secure aggregation with pairwise masks that cancel, and recovery when a phone drops out
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const V = [12, 5, 8], MK = { '12': 37, '13': 81, '23': 56 }, M = 100;
+  const mod = v => ((v % M) + M) % M;
+  trace('cysecagg', {
+    title: 'Secure aggregation: the server learns the sum, not the updates',
+    sub: 'Three phones hold one number each (a model update, scaled to whole numbers). Each pair of phones agrees a secret mask. The lower numbered phone adds it and the higher one subtracts it, all mod 100, so every mask cancels in the total.',
+    W: 600, H: 340,
+    params: [{ k: 'drop', label: 'During the round', type: 'select', v: 'none', opts: [['none', 'all phones finish'], ['3', 'phone 3 drops out']] }],
+    tips: [
+      { t: 'Play with all phones. Each sent number looks random, but the server’s total is exactly 12 + 5 + 8 = 25.', play: true },
+      { t: 'Make phone 3 drop out. Its masks no longer cancel, so the survivors reveal only their masks shared with phone 3, and the server removes them.', set: { drop: '3' }, play: true }
+    ],
+    frames(p) {
+      const s1 = mod(V[0] + MK['12'] + MK['13']), s2 = mod(V[1] - MK['12'] + MK['23']), s3 = mod(V[2] - MK['13'] - MK['23']);
+      const fr = [];
+      fr.push({ st: 1, say: 'The real updates: phone 1 has 12, phone 2 has 5, phone 3 has 8. The server must never see these single values.' });
+      fr.push({ st: 2, say: 'Each pair agrees a mask through a Diffie-Hellman key exchange, so the server cannot know it: m<sub>12</sub> = 37, m<sub>13</sub> = 81, m<sub>23</sub> = 56.' });
+      fr.push({ st: 3, s: [s1], say: `Phone 1 is lower than both partners, so it adds both masks: 12 + 37 + 81 = 130, and 130 mod 100 = <b>${s1}</b>.` });
+      fr.push({ st: 4, s: [s1, s2], say: `Phone 2 subtracts m<sub>12</sub> and adds m<sub>23</sub>: 5 &minus; 37 + 56 = 24, so it sends <b>${s2}</b>.` });
+      if (p.drop === 'none') {
+        fr.push({ st: 5, s: [s1, s2, s3], say: `Phone 3 subtracts both: 8 &minus; 81 &minus; 56 = &minus;129, and &minus;129 mod 100 = <b>${s3}</b>.` });
+        fr.push({ st: 6, done: true, s: [s1, s2, s3], tot: mod(s1 + s2 + s3), say: `Server: ${s1} + ${s2} + ${s3} = ${s1 + s2 + s3}, mod 100 = <b>${mod(s1 + s2 + s3)}</b>. Every mask appeared once with + and once with &minus;, so the total is exactly 12 + 5 + 8 = 25, while each sent number alone looks random.` });
+      } else {
+        fr.push({ st: 5, s: [s1, s2, null], say: 'Phone 3 loses its connection before sending. Phones 1 and 2 already added masks shared with phone 3, so their sum is garbage.' });
+        const part = mod(s1 + s2);
+        fr.push({ st: 6, s: [s1, s2, null], part, say: `Server: ${s1} + ${s2} = ${s1 + s2}, mod 100 = ${part}. This is not 12 + 5 = 17, because m<sub>13</sub> and m<sub>23</sub> did not cancel.` });
+        fr.push({ st: 7, done: true, s: [s1, s2, null], part, tot: mod(part - MK['13'] - MK['23']), say: `The surviving phones reveal only the masks they shared with phone 3 (in the real protocol the server rebuilds them from Shamir shares): ${part} &minus; 81 &minus; 56 = ${part - 137}, mod 100 = <b>${mod(part - MK['13'] - MK['23'])}</b> = 12 + 5. Masks between survivors stay secret.` });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, xs = [30, 225, 420];
+      for (let i = 0; i < 3; i++) {
+        const gone = f.s && f.s[i] === null;
+        cbox(z, xs[i], 16, 150, 46, [`phone ${i + 1}`, `update ${V[i]}`], { s: 12, b: true, fill: gone ? 'rgba(100,116,139,0.3)' : col.surf });
+      }
+      if (f.st >= 2) {
+        cbox(z, 120, 76, 120, 26, 'm12 = 37', { s: 12, b: true, mono: true, fill: 'rgba(37,99,235,0.15)' });
+        cbox(z, 240, 106, 120, 26, 'm13 = 81', { s: 12, b: true, mono: true, fill: 'rgba(37,99,235,0.15)' });
+        cbox(z, 360, 76, 120, 26, 'm23 = 56', { s: 12, b: true, mono: true, fill: 'rgba(37,99,235,0.15)' });
+      }
+      const rule = ['12 + 37 + 81', '5 − 37 + 56', '8 − 81 − 56'];
+      if (f.s) f.s.forEach((v, i) => { if (v === null) { cbox(z, xs[i], 146, 150, 40, 'dropped out', { s: 12, b: true, fill: 'rgba(100,116,139,0.3)' }); return; } cbox(z, xs[i], 146, 150, 40, [rule[i], `sends ${v}`], { s: 12, b: true, mono: true, fill: 'rgba(15,118,110,0.15)' }); D.arrow(g, xs[i] + 75, 188, 300, 226, col.ink2, 2); });
+      if (f.st >= 6) cbox(z, 175, 228, 250, 36, f.part !== undefined ? `server sum of survivors = ${f.part}` : `server sum = ${f.tot}`, { s: 13, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, `total learned: ${f.tot}, and no single update was revealed`, { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 2.1  Horizontal, vertical and transfer federated learning: who holds which rows and columns
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const T = {
+    h: ['Horizontal (sample based)', 'Same columns, different people', 'Two hospitals record the same tests for different patients. FedAvg works directly.', 'Phones of different users, hospitals in different cities'],
+    v: ['Vertical (feature based)', 'Same people, different columns', 'A bank (income, loan repaid) and a shop (spending) share many customers. Each party computes part of the score, and only the bank holds the label.', 'Credit scoring with a bank and an e commerce firm'],
+    t: ['Federated transfer learning', 'Few shared people and few shared columns', 'A small overlap is used to learn a shared representation, then knowledge transfers to the rest.', 'A hospital in one country and an insurer in another']
+  };
+  trace('cyfedtypes', {
+    title: 'Who holds which part of the data?',
+    sub: 'Picture all the data as one big table: rows are people, columns are features. Federated learning is named by how the table is split between the parties.',
+    W: 600, H: 340,
+    params: [{ k: 'ty', label: 'Split', type: 'select', v: 'h', opts: [['h', 'horizontal'], ['v', 'vertical'], ['t', 'transfer']] }],
+    tips: [
+      { t: 'Play horizontal: the same columns, different rows.', play: true },
+      { t: 'Switch to vertical: the same rows, different columns.', set: { ty: 'v' }, play: true },
+      { t: 'Try transfer: only a small corner overlaps.', set: { ty: 't' }, play: true }
+    ],
+    frames(p) {
+      const t = T[p.ty];
+      return [
+        { st: 1, ty: p.ty, say: 'Party A’s part of the table (blue).' },
+        { st: 2, ty: p.ty, say: 'Party B’s part of the table (orange).' },
+        { st: 3, ty: p.ty, say: `<b>${t[0]}</b>: ${t[1]}. ${t[2]}` },
+        { st: 4, ty: p.ty, done: true, say: `Typical example: ${t[3]}. ${p.ty === 'v' ? 'The parties first find their shared customers with a private set intersection, without revealing the others.' : p.ty === 'h' ? 'This is the setting of FedAvg on phones and in hospital networks.' : 'It is the hardest and least common setting.'}` }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 30, y0 = 24, cw = 30, rh = 22, C = 10, R = 11;
+      const A = f.ty === 'h' ? [0, 10, 0, 5] : f.ty === 'v' ? [0, 6, 0, 11] : [0, 6, 0, 7];
+      const B = f.ty === 'h' ? [0, 10, 6, 11] : f.ty === 'v' ? [6, 10, 0, 11] : [5, 10, 5, 11];
+      for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+        const inA = f.st >= 1 && c >= A[0] && c < A[1] && r >= A[2] && r < A[3], inB = f.st >= 2 && c >= B[0] && c < B[1] && r >= B[2] && r < B[3];
+        D.rect(g, x0 + c * cw, y0 + r * rh, cw - 3, rh - 3, { fill: inA && inB ? '#7c3aed' : inA ? 'rgba(37,99,235,0.55)' : inB ? 'rgba(234,88,12,0.55)' : 'rgba(100,116,139,0.12)' });
+      }
+      D.text(g, 'features (columns)', x0 + C * cw / 2, y0 + R * rh + 14, { a: 'center', s: 10, b: true, c: col.ink2 });
+      D.text(g, 'rows: people', x0, y0 - 6, { s: 10, b: true, c: col.ink2 });
+      if (f.st >= 1) cbox(z, 350, 20, 236, 30, 'party A', { s: 12, b: true, fill: 'rgba(37,99,235,0.25)' });
+      if (f.st >= 2) cbox(z, 350, 58, 236, 30, 'party B', { s: 12, b: true, fill: 'rgba(234,88,12,0.25)' });
+      if (f.ty === 't' && f.st >= 2) cbox(z, 350, 96, 236, 30, 'purple: overlap', { s: 12, b: true, fill: 'rgba(124,58,237,0.25)' });
+      if (f.st >= 3) cbox(z, 350, 140, 236, 40, [T[f.ty][0]], { s: 13, b: true, fill: col.surf });
+      if (f.st >= 3) cbox(z, 350, 186, 236, 34, T[f.ty][1], { s: 11, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, T[f.ty][0] + ': ' + T[f.ty][1].toLowerCase(), { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 2.1  Shrinking a model update: top k sparsification and quantisation
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const U = (() => { const R = MLZ.rng(9), u = []; for (let i = 0; i < 20; i++) { let s = 0; for (let k = 0; k < 6; k++) s += R(); s = (s - 3) / Math.sqrt(0.5); u.push(s * (i % 5 === 0 ? 1 : 0.25)); } return u; })();
+  trace('cycompress', {
+    title: 'Sending less: keep the biggest numbers, then round them',
+    sub: 'A phone’s model update has 20 numbers here (real ones have millions). Uploads are slow and costly, so the phone keeps only the k largest by size and rounds each kept value to one of 2<sup>bits</sup> levels.',
+    W: 600, H: 340,
+    params: [
+      { k: 'kk', label: 'Keep the top k', type: 'select', v: '4', opts: [['2', '2'], ['4', '4'], ['8', '8']] },
+      { k: 'bits', label: 'Bits per kept value', type: 'select', v: '3', opts: [['2', '2'], ['3', '3'], ['8', '8']] }
+    ],
+    tips: [
+      { t: 'Play with k = 4 and 3 bits. A big saving, with a visible error that error feedback repairs over later rounds.', play: true },
+      { t: 'Keep 8 values. The error drops because more of the update survives.', set: { kk: '8' }, play: true },
+      { t: 'Use 2 bits. Only 4 levels: rounding error grows. Real systems pick 8 bits and top 1% or so.', set: { bits: '2' }, play: true }
+    ],
+    frames(p) {
+      const k = +p.kk, bits = +p.bits, keep = U.map((v, i) => [Math.abs(v), i]).sort((a, b) => b[0] - a[0]).slice(0, k).map(v => v[1]);
+      const kv = keep.map(i => U[i]), lo = Math.min(...kv), hi = Math.max(...kv), L = 2 ** bits - 1, step = (hi - lo) / L || 1;
+      const sp = U.map((v, i) => keep.includes(i) ? v : 0), q = U.map((v, i) => keep.includes(i) ? lo + Math.round((v - lo) / step) * step : 0);
+      const err = a => Math.sqrt(a.reduce((s, v, i) => s + (v - U[i]) ** 2, 0) / U.reduce((s, v) => s + v * v, 0));
+      const bytesFull = 20 * 4, bytesQ = Math.ceil(k * (5 + bits) / 8) + 8;
+      const o = { keep, sp, q, k, bits, e1: err(sp), e2: err(q), bytesFull, bytesQ };
+      return [
+        { st: 1, ...o, say: `The full update: 20 numbers of 32 bits = ${bytesFull} bytes.` },
+        { st: 2, ...o, say: `Find the ${k} largest by size (outlined). Most of the update’s length sits in a few big values.` },
+        { st: 3, ...o, say: `Set the rest to 0 and send only (position, value) pairs. Relative error so far: ${f2(o.e1, 3)}.` },
+        { st: 4, ...o, say: `Round each kept value to one of ${L + 1} levels between ${f2(lo, 2)} and ${f2(hi, 2)} (${bits} bits each). Relative error now ${f2(o.e2, 3)}.` },
+        { st: 5, done: true, ...o, say: `About ${bytesQ} bytes instead of ${bytesFull}: ${f2(bytesFull / bytesQ, 1)} times smaller. With error feedback the phone keeps the part it did not send and adds it next round, so training still converges.` }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 20, base = 140, bw = 27, sc = 85;
+      D.line(g, x0, base, x0 + 20 * bw, base, col.line, 1.5);
+      const show = f.st >= 4 ? f.q : f.st >= 3 ? f.sp : U;
+      show.forEach((v, i) => {
+        const h = Math.max(-120, Math.min(120, v * sc)), x = x0 + i * bw + 3;
+        if (f.st >= 3 && !f.keep.includes(i)) D.rect(g, x, base - U[i] * sc, bw - 6, U[i] * sc, { fill: 'rgba(100,116,139,0.15)' });
+        D.rect(g, x, h > 0 ? base - h : base, bw - 6, Math.abs(h), { fill: f.keep.includes(i) && f.st >= 2 ? col.cv : 'rgba(37,99,235,0.55)' });
+        if (f.st === 2 && f.keep.includes(i)) D.rect(g, x - 2, Math.min(base, base - h) - 2, bw - 2, Math.abs(h) + 4, { stroke: col.red, w: 2 });
+      });
+      cbox(z, 20, 274, 270, 26, f.st >= 3 ? `error ${f2(f.st >= 4 ? f.e2 : f.e1, 3)}` : 'error 0', { s: 12, b: true, fill: col.surf });
+      cbox(z, 310, 274, 276, 26, f.st >= 5 ? `${f.bytesQ} bytes instead of ${f.bytesFull}` : `${f.bytesFull} bytes`, { s: 12, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, `${f2(f.bytesFull / f.bytesQ, 1)} times smaller upload`, { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
