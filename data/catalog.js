@@ -9966,6 +9966,25 @@ function cyOpsModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-cloud", title: "Cloud security: shared responsibility, identity, settings and keys", emoji: "2.2", page: "content/cyber-security/cy-cloud.html",
+        summary: "Shared responsibility, IAM and least privilege, misconfigurations and IMDSv2, envelope encryption with KMS, IaC scanning and cloud monitoring.",
+        keywords: ["cloud", "shared responsibility", "IAM", "least privilege", "CSPM", "IMDSv2", "KMS", "envelope encryption", "Terraform", "CloudTrail"],
+        minutes: 75, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What cloud security is, and the shared responsibility model", emoji: "", group: "Lesson", keywords: ["cloud security", "shared responsibility", "IaaS", "PaaS", "SaaS", "NIST SP 800-145", "security of the cloud", "security in the cloud", "Capital One", "Snowflake", "Storm-0558", "Gartner"] },
+        { id: "iam", title: "Identity is the new perimeter: IAM and least privilege", emoji: "", group: "Lesson", keywords: ["IAM", "identity and access management", "policy", "explicit deny", "default deny", "wildcard", "least privilege", "IAM Access Analyzer", "roles", "short lived credentials", "access keys", "root account", "MFA", "identity perimeter"] },
+        { id: "config", title: "Misconfiguration: buckets, firewall rules and the metadata service", emoji: "", group: "Lesson", keywords: ["misconfiguration", "public bucket", "security group", "firewall rule", "0.0.0.0/0", "CSPM", "CIS Benchmarks", "instance metadata service", "IMDSv2", "169.254.169.254", "SSRF", "Capital One", "CIDR"] },
+        { id: "data", title: "Protecting data: encryption, keys and secrets", emoji: "", group: "Lesson", keywords: ["encryption at rest", "envelope encryption", "data key", "key encryption key", "KMS", "HSM", "key rotation", "customer managed keys", "BYOK", "secrets manager", "Key Vault", "Vault", "GCM nonce limit"] },
+        { id: "devsecops", title: "Infrastructure as code, containers and monitoring", emoji: "", group: "Lesson", keywords: ["infrastructure as code", "Terraform", "CloudFormation", "Checkov", "tfsec", "KICS", "containers", "Kubernetes", "RBAC", "network policy", "CloudTrail", "landing zone", "CSPM", "CWPP", "CIEM", "CNAPP"] },
+        { id: "versus", title: "Cloud security tools compared", emoji: "", group: "Lesson", keywords: ["comparison", "CSPM", "CWPP", "CIEM", "CNAPP", "IaC scanning", "cloud SIEM"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "CCSP", "AWS Security Specialty", "Zelkova", "confidential computing"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

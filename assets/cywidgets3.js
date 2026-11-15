@@ -2782,3 +2782,195 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Security Operations 2.2  The shared responsibility model for IaaS, PaaS and SaaS
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  /* layer, who owns it in IaaS, PaaS, SaaS (c customer, p provider, s shared) */
+  const L = [
+    ['Your data and who may see it', 'c', 'c', 'c'], ['User accounts and access', 'c', 'c', 'c'], ['Application code', 'c', 'c', 'p'],
+    ['Network and firewall settings', 'c', 's', 'p'], ['Operating system and patches', 'c', 'p', 'p'], ['Virtual machines (hypervisor)', 'p', 'p', 'p'],
+    ['Servers, storage, network hardware', 'p', 'p', 'p'], ['Buildings, power, guards', 'p', 'p', 'p']
+  ];
+  const NAME = { c: 'you', p: 'provider', s: 'shared' };
+  trace('cyshared', {
+    title: 'Shared responsibility: who secures which layer?',
+    sub: 'In the cloud the provider secures the cloud itself, and you secure what you put in it. How the line moves depends on the service model. Whatever the model, your data and your user accounts stay your job.',
+    W: 600, H: 340,
+    params: [{ k: 'm', label: 'Service model', type: 'select', v: '1', opts: [['1', 'IaaS (virtual machines, for example EC2)'], ['2', 'PaaS (managed platform, for example a managed database)'], ['3', 'SaaS (ready software, for example Microsoft 365)']] }],
+    tips: [
+      { t: 'Play IaaS. You patch the operating system yourself.', play: true },
+      { t: 'Try SaaS. The provider runs almost everything, yet data and accounts are still yours. Most SaaS breaches come from stolen passwords without MFA.', set: { m: '3' }, play: true }
+    ],
+    frames(p) {
+      const m = +p.m, fr = [];
+      for (let i = L.length - 1; i >= 0; i--) {
+        const who = L[i][m];
+        fr.push({ st: 1, n: L.length - i, m, say: `<b>${L[i][0]}</b>: ${who === 'c' ? 'your responsibility' : who === 'p' ? 'the provider’s responsibility' : 'shared, the provider gives the controls and you set them'}.` });
+      }
+      const mine = L.filter(l => l[m] === 'c').length;
+      fr.push({ st: 2, done: true, n: L.length, m, mine, say: `${mine} of 8 layers are fully yours in ${['', 'IaaS', 'PaaS', 'SaaS'][m]}. Gartner predicted that through 2025, 99% of cloud security failures would be the customer’s fault, mostly settings and identities, not provider hacks.` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col;
+      L.forEach((l, i) => {
+        const show = f.n >= L.length - i, who = l[f.m], y = 14 + i * 35;
+        cbox(z, 14, y, 340, 30, l[0], { s: 12, b: true, fill: col.surf });
+        if (show) cbox(z, 362, y, 224, 30, NAME[who], { s: 12, b: true, fill: who === 'c' ? 'rgba(234,88,12,0.35)' : who === 'p' ? 'rgba(37,99,235,0.25)' : 'rgba(234,179,8,0.35)' });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, `${['', 'IaaS', 'PaaS', 'SaaS'][f.m]}: ${f.mine} layers are fully yours, data and accounts always`, { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 2.2  How a cloud IAM policy decides: explicit deny, then allow, else deny
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const POL = [
+    ['Allow', 's3:GetObject', 'reports-bucket/*'],
+    ['Allow', 's3:PutObject', 'reports-bucket/uploads/*'],
+    ['Deny', 's3:*', 'reports-bucket/payroll/*']
+  ];
+  const REQ = {
+    read: ['s3:GetObject', 'reports-bucket/q3.pdf'], up: ['s3:PutObject', 'reports-bucket/uploads/a.csv'],
+    pay: ['s3:GetObject', 'reports-bucket/payroll/nov.xlsx'], del: ['s3:DeleteObject', 'reports-bucket/q3.pdf']
+  };
+  const like = (pat, s) => new RegExp('^' + pat.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$').test(s);
+  trace('cyiam', {
+    title: 'Cloud IAM: how one request is allowed or denied',
+    sub: 'A policy is a list of statements. For each request the cloud checks: does any statement explicitly deny it? If yes, denied. Otherwise, does any statement allow it? If yes, allowed. Otherwise denied by default. This is the AWS order, and other clouds work in a similar way.',
+    W: 600, H: 340,
+    params: [{ k: 'rq', label: 'Request', type: 'select', v: 'read', opts: [['read', 'read reports-bucket/q3.pdf'], ['up', 'upload to reports-bucket/uploads/'], ['pay', 'read reports-bucket/payroll/nov.xlsx'], ['del', 'delete reports-bucket/q3.pdf']] }],
+    tips: [
+      { t: 'Play the normal read. Statement 1 allows it.', play: true },
+      { t: 'Try the payroll read. Statement 1 would allow it, but the explicit deny wins.', set: { rq: 'pay' }, play: true },
+      { t: 'Try the delete. Nothing mentions it, so it is denied by default. That is least privilege working.', set: { rq: 'del' }, play: true }
+    ],
+    frames(p) {
+      const [act, res] = REQ[p.rq], m = POL.map(([e, a, r]) => like(a, act) && like(r, res));
+      const deny = POL.some((s, i) => s[0] === 'Deny' && m[i]), allow = POL.some((s, i) => s[0] === 'Allow' && m[i]);
+      const fr = [{ st: 0, m: [], say: `Request: action <b>${act}</b> on <b>${res}</b>.` }];
+      fr.push({ st: 1, m, say: `Match every statement against the action and resource (the * means anything). Matches: ${m.map((x, i) => x ? i + 1 : null).filter(Boolean).join(', ') || 'none'}.` });
+      fr.push({ st: 2, m, deny, say: deny ? '<b>An explicit Deny matches.</b> Nothing can override it. Denied.' : 'No Deny statement matches. Go on to the Allows.' });
+      if (!deny) fr.push({ st: 3, m, allow, say: allow ? 'An Allow statement matches, so the request is allowed.' : 'No Allow matches either. With nothing granting it, the answer is the default: denied.' });
+      const ok = !deny && allow;
+      fr.push({ st: 4, done: true, m, ok, say: ok ? 'Allowed. Keep Allow statements as narrow as possible: one action and one folder, not s3:* on *.' : 'Denied. An explicit Deny is useful for guard rails, such as never allowing anyone to read payroll from this role, whatever other policies say.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      POL.forEach(([e, a, r], i) => {
+        const hit = f.m[i];
+        cbox(z, 14, 14 + i * 50, 70, 40, e, { s: 13, b: true, fill: e === 'Deny' ? 'rgba(225,29,72,0.25)' : 'rgba(15,118,110,0.25)' });
+        cbox(z, 90, 14 + i * 50, 496, 40, `${a}  on  ${r}`, { s: 12, mono: true, b: hit, fill: hit ? 'rgba(234,179,8,0.35)' : col.surf });
+      });
+      const chk = [['explicit Deny?', f.st >= 2, f.deny], ['any Allow?', f.st >= 3, f.allow], ['default: Deny', f.done && !f.ok && !f.deny && !f.allow, true]];
+      chk.forEach(([t, on, yes], i) => {
+        cbox(z, 14 + i * 196, 186, 180, 50, [t, on ? (yes ? 'yes' : 'no') : ''], { s: 12, b: true, fill: on ? (yes ? (i === 1 ? 'rgba(15,118,110,0.35)' : 'rgba(225,29,72,0.3)') : col.bg) : col.bg });
+        if (i < 2) D.arrow(g, 194 + i * 196, 211, 210 + i * 196, 211, col.ink2, 1.5);
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.ok ? 'ALLOWED' : 'DENIED', { s: 14, b: true, fill: f.ok ? col.cv : col.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 2.2  The instance metadata service: why IMDSv2 and narrow roles stop stolen cloud keys
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cyimds', {
+    title: 'Protecting cloud server keys: IMDSv2 and least privilege',
+    sub: 'Each cloud server can ask a local address, 169.254.169.254, for short lived keys of its role. If a web app has a server side request forgery (SSRF) bug, an outsider can make the app fetch that address. This is how the Capital One breach of 2019 happened. See which defence stops it.',
+    W: 600, H: 340,
+    params: [{ k: 'd', label: 'Defence', type: 'select', v: 'none', opts: [['none', 'IMDSv1 and a role that can read every bucket'], ['v2', 'IMDSv2 (session token needed)'], ['lp', 'IMDSv1 but the role can read only its own bucket']] }],
+    tips: [
+      { t: 'Play with no defence. The keys leak and every bucket can be read.', play: true },
+      { t: 'Choose IMDSv2. The forged request cannot first get the session token, so no keys leak.', set: { d: 'v2' }, play: true },
+      { t: 'Choose least privilege. Keys leak, but they open only one small bucket. Combine both in real life.', set: { d: 'lp' }, play: true }
+    ],
+    frames(p) {
+      const d = p.d, fr = [];
+      fr.push({ st: 1, say: 'A web app on a cloud server has an SSRF bug: it fetches any URL a user sends, for example to preview a link.' });
+      fr.push({ st: 2, say: 'An outsider sends the URL of the metadata service. The app, inside the cloud, fetches it on their behalf.' });
+      if (d === 'v2') {
+        fr.push({ st: 3, stop: true, say: 'IMDSv2 first needs a PUT request with a special header to get a session token. A simple forged GET cannot do that, so the service refuses. <b>No keys leak.</b>' });
+      } else {
+        fr.push({ st: 3, leak: true, say: 'IMDSv1 answers any GET. The response holds the role’s access key, secret key and session token.' });
+        fr.push({ st: 4, leak: true, use: true, lp: d === 'lp', say: d === 'lp' ? 'The outsider tries the keys. The role may read only its own bucket of thumbnails. Every other bucket says Access Denied.' : 'The role was allowed to list and read every bucket. The outsider downloads them all. At Capital One this exposed data on about 100 million people.' });
+      }
+      const bad = d === 'none';
+      fr.push({ st: 5, done: true, d, leak: d !== 'v2', use: d !== 'v2', lp: d === 'lp', stop: d === 'v2', say: bad ? 'Defences: fix the SSRF bug, require IMDSv2, give each role only what it needs, and alert on role keys used from outside the cloud. Since 2024 AWS has been making IMDSv2 the default for new instance types.' : d === 'v2' ? 'Stopped at the metadata service. Still fix the SSRF bug, because it can reach other internal services too.' : 'Damage was limited by the narrow role. Least privilege does not stop the leak, it shrinks what the leak is worth.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 30, 120, 50, ['outsider', 'internet'], { s: 12, b: true, fill: 'rgba(225,29,72,0.15)' });
+      cbox(z, 200, 30, 160, 50, ['web app', 'with SSRF bug'], { s: 12, b: true, fill: col.surf });
+      cbox(z, 430, 30, 156, 50, ['metadata service', '169.254.169.254'], { s: 11, b: true, mono: false, fill: f.st >= 3 && !f.leak ? 'rgba(15,118,110,0.3)' : col.surf });
+      cbox(z, 200, 170, 386, 90, ['cloud storage buckets', f.use ? (f.lp ? 'only thumbnails readable, others denied' : 'customers, payroll, backups: ALL readable') : ''], { s: 12, b: true, fill: f.use ? (f.lp ? 'rgba(234,179,8,0.3)' : 'rgba(225,29,72,0.35)') : col.bg });
+      if (f.st >= 1) D.arrow(g, 134, 55, 200, 55, col.red, 2);
+      if (f.st >= 2) D.arrow(g, 360, 55, 430, 55, col.red, 2);
+      if (f.stop) cbox(z, 430, 90, 156, 30, 'token needed: refused', { s: 11, b: true, fill: col.cv, c: '#fff' });
+      if (f.leak) { D.arrow(g, 430, 70, 134, 72, col.orange, 2); cbox(z, 150, 100, 220, 30, 'role keys leaked', { s: 12, b: true, fill: col.orange, c: '#fff' }); }
+      if (f.use) D.arrow(g, 74, 80, 200, 200, col.red, 2.5);
+      if (f.done) cbox(z, 14, 306, 572, 28, f.d === 'none' ? 'keys leaked and every bucket read' : f.d === 'v2' ? 'stopped: no keys leaked' : 'keys leaked, but only one small bucket readable', { s: 13, b: true, fill: f.d === 'none' ? col.red : f.d === 'v2' ? col.cv : col.orange, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 2.2  Envelope encryption with a key management service (KMS)
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cyenvelope', {
+    title: 'Envelope encryption: a key that locks a key',
+    sub: 'Cloud services encrypt each file with its own data key, then lock that data key with a master key that never leaves the key management service (KMS) hardware. To read the file you must ask KMS to unlock the data key, and every ask is checked and logged.',
+    W: 600, H: 340,
+    params: [{ k: 'act', label: 'Then', type: 'select', v: 'read', opts: [['read', 'an allowed app reads the file'], ['steal', 'a thief copies the stored file'], ['rotate', 'the master key is rotated']] }],
+    tips: [
+      { t: 'Play the allowed read. KMS unlocks the data key for an app with permission.', play: true },
+      { t: 'Try the thief. They get the locked file and the locked data key, but no master key, so nothing opens.', set: { act: 'steal' }, play: true },
+      { t: 'Try rotation. Only the small data keys are re locked, not the terabytes of data.', set: { act: 'rotate' }, play: true }
+    ],
+    frames(p) {
+      const a = p.act, fr = [];
+      fr.push({ st: 1, say: 'The app asks KMS for a new data key. KMS returns it twice: once in plain form and once locked with the master key.' });
+      fr.push({ st: 2, say: 'The app encrypts the file with the plain data key (for example AES-256-GCM), then throws the plain key away.' });
+      fr.push({ st: 3, say: 'It stores the encrypted file together with the locked data key. That pair is the envelope.' });
+      if (a === 'read') {
+        fr.push({ st: 4, say: 'Later the app sends the locked data key to KMS. KMS checks the app’s IAM permission, logs the request, and returns the plain data key.' });
+        fr.push({ st: 5, done: true, a, say: 'The app decrypts the file. Every unlock left a record, so unusual reads can be spotted in the audit log.' });
+      } else if (a === 'steal') {
+        fr.push({ st: 4, thief: true, say: 'A thief copies the stored envelope from a misconfigured backup.' });
+        fr.push({ st: 5, done: true, a, thief: true, say: 'Without permission to call KMS, the locked data key stays locked, so the file is useless to them. Encryption only helps if the key permissions are tight.' });
+      } else {
+        fr.push({ st: 4, rot: true, say: 'The security team rotates the master key, as policy says, every year.' });
+        fr.push({ st: 5, done: true, a, rot: true, say: 'Only the small locked data keys are re locked with the new master key. The large encrypted files stay as they are. That is the main reason clouds use envelopes.' });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 420, 20, 166, 70, ['KMS', f.rot ? 'master key v2' : 'master key v1', 'never leaves'], { s: 12, b: true, fill: 'rgba(37,99,235,0.2)' });
+      cbox(z, 14, 20, 150, 50, 'app', { s: 13, b: true, fill: col.surf });
+      if (f.st >= 1) { D.arrow(g, 420, 50, 164, 50, col.ink2, 1.5); cbox(z, 190, 26, 200, 40, ['data key: plain + locked'], { s: 11, b: true, fill: col.bg }); }
+      if (f.st >= 2) cbox(z, 14, 110, 260, 50, ['file.pdf', 'encrypted with data key'], { s: 12, b: true, fill: 'rgba(15,118,110,0.25)' });
+      if (f.st >= 3) { cbox(z, 290, 110, 296, 50, ['locked data key', f.rot ? 'now locked with v2' : 'locked with master v1'], { s: 12, b: true, fill: 'rgba(234,179,8,0.3)' }); D.rect(g, 10, 104, 580, 62, { fill: 'rgba(0,0,0,0)' }); }
+      if (f.thief) cbox(z, 14, 190, 572, 50, ['thief has the envelope', 'no KMS permission: cannot unlock'], { s: 12, b: true, fill: 'rgba(225,29,72,0.2)' });
+      if (f.st >= 4 && f.a === undefined && !f.thief && !f.rot) cbox(z, 14, 190, 572, 50, ['app sends locked key to KMS', 'IAM check, audit log, plain key returned'], { s: 12, b: true, fill: col.surf });
+      if (f.done && f.a === 'read') cbox(z, 14, 190, 572, 50, ['app sends locked key to KMS', 'IAM check, audit log, plain key returned'], { s: 12, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.a === 'read' ? 'file read, and the unlock was logged' : f.a === 'steal' ? 'stolen envelope stays locked' : 'rotation re locks only the small data keys', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
