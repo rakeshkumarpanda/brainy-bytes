@@ -99,7 +99,7 @@ def main():
     every = []
     for P in PARTS:
         folder = os.path.join(HERE, P['topics'])
-        if not [f for f in os.listdir(folder) if f.endswith('.py')]:
+        if not os.path.isdir(folder) or not [f for f in os.listdir(folder) if f.endswith('.py')]:
             continue
         B.CFG.clear()
         B.CFG.update(BASE)

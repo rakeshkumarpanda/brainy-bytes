@@ -480,9 +480,9 @@ window.CATALOG = {
         { id: 'secops', title: 'Security Operations', blurb: 'Logging and SIEM, incident response, digital forensics, threat intelligence and MITRE ATT&CK, cloud security, governance, risk, compliance and cyber law.',
           intro: 'Security Operations is the daily work of defending: collecting logs, spotting attacks, responding, collecting evidence, learning from threat intelligence, securing the cloud and meeting laws and standards.' },
         { id: 'advanced', title: 'Advanced', blurb: 'Machine learning for security, attacks on machine learning, federated learning, its privacy and attacks, differential privacy, and the certification revision.',
-          intro: 'Advanced brings security to research level: models that catch attacks, attacks on models, federated learning with secure aggregation and differential privacy, and a revision chapter mapped to Security+, CEH, CISSP and OSCP.' }
+          intro: 'Advanced brings security to research level: models that catch attacks, attacks on models, federated learning with secure aggregation and differential privacy, and a revision chapter mapped to Security+, CySA+, CISSP and CEH.' }
       ],
-      modules: cyFoundModules().concat(cyCryptoModules(), cySysModules(), cyAppModules(), cyOpsModules(), cyAdvModules(), sheetModule('cyber-security'))
+      modules: cyFoundModules().concat(cyCryptoModules(), cySysModules(), cyAppModules(), cyOpsModules(), cyAdvModules(), sheetModule('cyber-security'), iqModule('cyber-security'))
     }
   ]
 };
@@ -1426,6 +1426,7 @@ function iqModule(sid) {
     'nlp': ['content/nlp/interview-questions.html', 'NLP interview questions on tokenisation, stemming and lemmatisation, Zipf, entropy, cross entropy and KL, perplexity, n-gram models, add-k, Good-Turing, Kneser-Ney, backoff and interpolation, HMM tagging, Viterbi, parsing and evaluation, with scenario questions.', ['tokenisation', 'stemming vs lemmatisation', 'Zipf law', 'entropy', 'cross entropy', 'perplexity', 'n-gram', 'Laplace smoothing', 'Kneser-Ney', 'interpolation', 'OOV', 'HMM', 'Viterbi', 'POS tagging', 'CKY', 'BLEU']],
     'cuda': ['content/cuda/interview-questions.html', 'GPU and CUDA interview questions for ML engineers, HPC developers and systems roles: the execution model, thread indexing, warps and divergence, occupancy, the memory hierarchy, coalescing, bank conflicts, the roofline, tiling, reductions, atomics, streams, tensor cores, profiling and debugging scenarios.', ['CUDA thread hierarchy', 'warp', 'SIMT', 'occupancy', 'coalescing', 'shared memory', 'bank conflict', '__syncthreads', 'atomicAdd', 'roofline', 'streams', 'pinned memory', 'tensor cores', 'Nsight']],
     'git': ['content/git/interview-questions.html', 'Git and CI/CD interview questions for developers and QA engineers: the three areas, reset, revert and restore, merge versus rebase, conflicts, reflog recovery, remotes and force pushes, internals, GitHub Actions and GitLab CI/CD pipelines, caches, artifacts, secrets, flaky tests and pipeline design scenarios.', ['git reset vs revert', 'merge vs rebase', 'fast forward', 'cherry-pick', 'reflog', 'detached HEAD', 'force-with-lease', 'git bisect', 'git objects', 'GitHub Actions', 'needs', 'matrix', 'artifacts', 'GitLab rules', 'cache vs artifacts', 'secrets']],
+    'cyber-security': ['content/cyber-security/interview-questions.html', 'Cybersecurity interview questions for SOC analyst, security engineer, application security, cloud and research roles: the CIA triad and risk, AES, hashing, RSA, Diffie-Hellman, TLS 1.3 and post quantum crypto, firewalls, MFA, Kerberos and zero trust, SQL injection, XSS and CSRF, SIEM, the base rate, incident response and forensics, cloud and GDPR, adversarial examples, federated learning and differential privacy, with scenario and design questions.', ['CIA triad', 'ALE', 'symmetric vs asymmetric', 'password hashing', 'ECB mode', 'RSA', 'Diffie-Hellman', 'TLS 1.3', 'post quantum', 'IDS vs IPS', 'MFA', 'Kerberos', 'zero trust', 'SQL injection', 'XSS vs CSRF', 'OWASP Top 10', 'base rate', 'incident response', 'order of volatility', 'shared responsibility', 'FGSM', 'federated averaging', 'Krum', 'differential privacy']],
     'computer-vision': ['content/computer-vision/interview-questions.html', 'Computer vision interview questions on images and filters, edges, Harris, SIFT and HOG, optical flow, CNN arithmetic, anchors, IoU, NMS, focal loss, precision, recall and mAP, segmentation metrics, U-Net, ViT, CLIP and SAM, with debugging scenarios and system design.', ['convolution output size', 'parameter count', 'receptive field', 'Harris', 'optical flow', 'IoU', 'NMS', 'anchor boxes', 'focal loss', 'mAP50-95', 'mIoU', 'Dice', 'U-Net', 'transposed convolution', 'ViT', 'CLIP', 'SAM', 'domain shift']],
     'selenium': ['content/selenium/interview-questions.html', 'Selenium questions from automation and SDET interviews on how WebDriver works, sessions and options, locators, waits, windows, frames, alerts, Actions, JavaScript and cookies, frameworks and page objects, flaky tests and debugging, and Selenium Grid 4 with BiDi and CDP, with code in Java, Python and JavaScript.', ['selenium architecture', 'W3C WebDriver', 'Selenium Manager', 'close vs quit', 'CSS vs XPath', 'relative locators', 'shadow root', 'implicit vs explicit wait', 'FluentWait', 'window handles', 'iframe', 'Actions API', 'stale element', 'click intercepted', 'page object model', 'Selenium Grid', 'BiDi', 'CDP']],
     'master-claude': ['content/claude/interview-questions.html', 'Claude interview questions on prompting, context engineering, CLAUDE.md and rules, skills, permissions and hooks, subagents, MCP, claude -p and GitHub Actions, the Claude API, agents, cost and safety, with real scenario questions.', ['prompt engineering', 'context rot', 'CLAUDE.md', 'rules.md', 'SKILL.md', 'hooks exit code 2', 'subagents', 'MCP', '.mcp.json', 'claude -p', 'tool use loop', 'prompt caching', 'agent safety']]
@@ -9395,12 +9396,6 @@ function cyFoundModules() {
 }
 /* ===== end of cy-foundations-build ===== */
 
-/* placeholder until the first chapter of this section is built by tools/cyber-build/build.py */
-function cyOpsModules() { return []; }
-
-/* placeholder until the first chapter of this section is built by tools/cyber-build/build.py */
-function cyAdvModules() { return []; }
-
 /* ===== cy-crypto-build: Cybersecurity chapters. Generated by tools/cyber-build/build.py, edit the topic files instead. ===== */
 function cyCryptoModules() {
   return [
@@ -9881,3 +9876,266 @@ function cyAppModules() {
   ];
 }
 /* ===== end of cy-appsec-build ===== */
+
+/* ===== cy-secops-build: Cybersecurity chapters. Generated by tools/cyber-build/build.py, edit the topic files instead. ===== */
+function cyOpsModules() {
+  return [
+    { id: "cy-o1", title: "Detect, respond and investigate", emoji: "1", step: 1, part: "secops", level: "Intermediate", blurb: "How defenders watch logs and raise alerts, handle an incident step by step, and collect digital evidence that holds up.", topics: [
+      { id: "cy-siem", title: "Logging, monitoring and the SIEM", emoji: "1.1", page: "content/cyber-security/cy-siem.html",
+        summary: "Log sources, parsing, detection rules, impossible travel, the base rate problem, tamper evident logs and the SOC.",
+        keywords: ["SIEM", "logs", "Windows events", "syslog", "detection rules", "Sigma", "impossible travel", "base rate", "hash chain", "SOC"],
+        minutes: 80, counts: {"lessons": 11, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Why we log, and what a SIEM does", emoji: "", group: "Lesson", keywords: ["log", "SIEM", "security information and event management", "Gartner", "Splunk", "Microsoft Sentinel", "QRadar", "Elastic", "Wazuh", "Target breach", "Equifax", "CERT-In", "log retention", "NIST SP 800-92"] },
+        { id: "sources", title: "What to log: the sources and the events that matter", emoji: "", group: "Lesson", keywords: ["log sources", "Windows event ID", "4624", "4625", "4672", "4688", "4720", "1102", "Sysmon", "syslog", "RFC 5424", "Eric Allman", "NTP", "CloudTrail", "DNS logs", "log volume"] },
+        { id: "parse", title: "Parsing and normalising: one shape for every log", emoji: "", group: "Lesson", keywords: ["parsing", "normalisation", "schema", "Elastic Common Schema", "CIM", "OCSF", "regular expression", "enrichment", "geo IP", "threat intelligence lookup"] },
+        { id: "rules", title: "Detection rules: thresholds, correlation and Sigma", emoji: "", group: "Lesson", keywords: ["detection rule", "threshold", "sliding window", "correlation", "brute force", "T1110", "T1078", "password spraying", "low and slow", "Sigma", "Florian Roth", "MITRE ATT&CK", "Poisson"] },
+        { id: "travel", title: "Impossible travel and behaviour baselines", emoji: "", group: "Lesson", keywords: ["impossible travel", "haversine", "geo location", "UEBA", "behaviour analytics", "baseline", "VPN false positive", "anomaly"] },
+        { id: "baserate", title: "The base rate problem: why most alerts are false", emoji: "", group: "Lesson", keywords: ["base rate fallacy", "Axelsson", "Bayes rule", "precision", "false positive rate", "true positive rate", "alert fatigue", "risk based alerting"] },
+        { id: "integrity", title: "Keeping logs trustworthy: time, retention and tamper evidence", emoji: "", group: "Lesson", keywords: ["log integrity", "NTP", "UTC", "retention", "PCI DSS requirement 10", "write once storage", "WORM", "hash chain", "HMAC", "Schneier and Kelsey", "secure audit log", "journal sealing", "Certificate Transparency"] },
+        { id: "soc", title: "The security operations centre: people, triage and automation", emoji: "", group: "Lesson", keywords: ["SOC", "security operations centre", "tier 1", "tier 2", "threat hunting", "MTTD", "MTTR", "triage", "SOAR", "playbook", "detection engineering"] },
+        { id: "versus", title: "SIEM compared with other monitoring tools", emoji: "", group: "Lesson", keywords: ["comparison", "log management", "SIEM", "EDR", "NDR", "XDR", "SOAR"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "detection programme", "forward secure logging"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-incident", title: "Incident response: from the first alert to lessons learned", emoji: "1.2", page: "content/cyber-security/cy-incident.html",
+        summary: "Response life cycle, triage, containment speed, backups with RPO and RTO, reporting deadlines and lessons learned.",
+        keywords: ["incident response", "NIST 800-61", "PICERL", "triage", "containment", "ransomware", "backups", "RPO", "RTO", "CERT-In", "GDPR"],
+        minutes: 75, counts: {"lessons": 10, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What incident response is, and why a plan beats panic", emoji: "", group: "Lesson", keywords: ["incident", "incident response", "event", "alert", "breach", "playbook", "WannaCry", "NotPetya", "Maersk", "Colonial Pipeline", "AIIMS ransomware", "kill switch"] },
+        { id: "lifecycle", title: "The life cycle: NIST SP 800-61 and SANS PICERL", emoji: "", group: "Lesson", keywords: ["NIST SP 800-61", "Rev. 3", "SANS", "PICERL", "preparation", "detection and analysis", "containment", "eradication", "recovery", "lessons learned", "CSF 2.0"] },
+        { id: "prepare", title: "Preparation and triage: being ready, and sorting what matters", emoji: "", group: "Lesson", keywords: ["preparation", "incident response plan", "roles", "contact list", "triage", "impact", "urgency", "priority", "functional impact", "information impact", "tabletop exercise"] },
+        { id: "contain", title: "Containment, eradication and recovery", emoji: "", group: "Lesson", keywords: ["containment", "isolation", "EDR network containment", "segmentation", "eradication", "root cause", "recovery", "rebuild from image", "volatile evidence", "exponential spread"] },
+        { id: "backups", title: "Backups, RPO and RTO: recovering from ransomware", emoji: "", group: "Lesson", keywords: ["backup", "RPO", "RTO", "recovery point objective", "recovery time objective", "3-2-1 rule", "3-2-1-1-0", "immutable backup", "offline backup", "restore test", "ransom payment", "sanctions"] },
+        { id: "comms", title: "Telling the right people: roles, evidence and legal deadlines", emoji: "", group: "Lesson", keywords: ["incident commander", "scribe", "communication", "CERT-In 6 hours", "GDPR article 33", "72 hours", "NIS2", "SEC 8-K", "DPDP Act", "chain of custody", "timeline", "Little law"] },
+        { id: "lessons", title: "Lessons learned and automation", emoji: "", group: "Lesson", keywords: ["lessons learned", "blameless postmortem", "five whys", "root cause analysis", "action items", "SOAR", "automation", "playbook"] },
+        { id: "versus", title: "Response approaches compared", emoji: "", group: "Lesson", keywords: ["comparison", "MDR", "managed detection and response", "retainer", "cyber insurance", "in house SOC"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "incident commander", "crisis management"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-forensics", title: "Digital forensics: collecting and reading evidence", emoji: "1.3", page: "content/cyber-security/cy-forensics.html",
+        summary: "Order of volatility, imaging and hashes, deleted files and carving, timelines and timestomping, memory forensics, chain of custody.",
+        keywords: ["forensics", "order of volatility", "write blocker", "hash", "file carving", "timestomping", "timeline", "Volatility", "chain of custody", "section 63"],
+        minutes: 75, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What digital forensics is: evidence that holds up", emoji: "", group: "Lesson", keywords: ["digital forensics", "Locard exchange principle", "evidence", "BTK case", "metadata", "NIST SP 800-86", "ISO 27037", "RFC 3227", "repeatability"] },
+        { id: "collect", title: "Collecting evidence: order of volatility, write blockers and hashes", emoji: "", group: "Lesson", keywords: ["order of volatility", "RFC 3227", "memory capture", "WinPmem", "LiME", "pull the plug", "write blocker", "disk image", "bit for bit copy", "SHA-256", "MD5", "hash verification"] },
+        { id: "disk", title: "Disk forensics: deleted files, slack space and carving", emoji: "", group: "Lesson", keywords: ["deleted file recovery", "FAT", "0xE5", "cluster", "slack space", "unallocated space", "file carving", "magic number", "file signature", "PhotoRec", "Foremost", "Scalpel", "TRIM", "SSD", "full disk encryption"] },
+        { id: "time", title: "Time stamps and timelines", emoji: "", group: "Lesson", keywords: ["time stamps", "MAC times", "NTFS", "$STANDARD_INFORMATION", "$FILE_NAME", "timestomping", "FILETIME", "Unix time", "UTC", "IST", "super timeline", "Plaso", "log2timeline"] },
+        { id: "memory", title: "Memory and artefact forensics", emoji: "", group: "Lesson", keywords: ["memory forensics", "RAM", "fileless malware", "Volatility", "pslist", "psscan", "DKOM", "rootkit", "Prefetch", "registry Run keys", "Amcache", "ShimCache", "bash_history", "cloud forensics"] },
+        { id: "custody", title: "Chain of custody, reports and the law", emoji: "", group: "Lesson", keywords: ["chain of custody", "evidence form", "hash verification", "section 65B", "Bharatiya Sakshya Adhiniyam", "section 63", "Anvar v Basheer", "expert report", "admissibility"] },
+        { id: "versus", title: "Kinds of forensics compared", emoji: "", group: "Lesson", keywords: ["comparison", "disk forensics", "memory forensics", "network forensics", "mobile forensics", "cloud forensics", "Autopsy", "Sleuth Kit", "FTK Imager", "Zeek"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "anti forensics", "expert witness"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cy-o2", title: "Intelligence, cloud and governance", emoji: "2", step: 2, part: "secops", level: "Advanced", blurb: "Learning about attackers before they arrive, securing the cloud, and the rules, risk methods and laws that guide security work.", topics: [
+      { id: "cy-threatintel", title: "Threat intelligence: knowing the attacker", emoji: "2.1", page: "content/cyber-security/cy-threatintel.html",
+        summary: "The intelligence cycle, IOCs and the Pyramid of Pain, Kill Chain, Diamond and ATT&amp;CK, STIX and TLP, confidence with Bayes, hunting and DGAs.",
+        keywords: ["threat intelligence", "IOC", "Pyramid of Pain", "Kill Chain", "Diamond Model", "MITRE ATT&CK", "STIX", "TLP", "Admiralty", "Bayes", "DGA"],
+        minutes: 70, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What threat intelligence is, and the intelligence cycle", emoji: "", group: "Lesson", keywords: ["threat intelligence", "intelligence cycle", "direction", "collection", "processing", "analysis", "dissemination", "feedback", "strategic", "operational", "tactical", "technical", "SolarWinds", "FireEye"] },
+        { id: "pyramid", title: "Indicators and the Pyramid of Pain", emoji: "", group: "Lesson", keywords: ["IOC", "indicator of compromise", "Pyramid of Pain", "David Bianco", "hash", "IP address", "domain", "artefacts", "tools", "TTPs", "indicator expiry", "half life"] },
+        { id: "models", title: "Models of an attack: Kill Chain, Diamond and ATT&amp;CK", emoji: "", group: "Lesson", keywords: ["Cyber Kill Chain", "Lockheed Martin", "Diamond Model", "adversary", "capability", "infrastructure", "victim", "MITRE ATT&CK", "tactics", "techniques", "T1110", "coverage"] },
+        { id: "share", title: "Sharing intelligence: STIX, TAXII, TLP and MISP", emoji: "", group: "Lesson", keywords: ["STIX 2.1", "TAXII", "OASIS", "MISP", "Traffic Light Protocol", "TLP 2.0", "TLP:RED", "TLP:AMBER+STRICT", "TLP:CLEAR", "ISAC", "FS-ISAC", "CERT-In advisories", "feed quality"] },
+        { id: "analysis", title: "Analysis with confidence: sources, Bayes and hunting", emoji: "", group: "Lesson", keywords: ["confidence", "Admiralty code", "source reliability", "information credibility", "ICD 203", "estimative language", "Bayes", "likelihood ratio", "odds", "threat hunting", "hypothesis", "DGA", "Conficker", "entropy"] },
+        { id: "versus", title: "Kinds of intelligence sources compared", emoji: "", group: "Lesson", keywords: ["comparison", "OSINT", "commercial feeds", "telemetry", "CERT-In", "ISAC"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "attribution", "campaign tracking"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-cloud", title: "Cloud security: shared responsibility, identity, settings and keys", emoji: "2.2", page: "content/cyber-security/cy-cloud.html",
+        summary: "Shared responsibility, IAM and least privilege, misconfigurations and IMDSv2, envelope encryption with KMS, IaC scanning and cloud monitoring.",
+        keywords: ["cloud", "shared responsibility", "IAM", "least privilege", "CSPM", "IMDSv2", "KMS", "envelope encryption", "Terraform", "CloudTrail"],
+        minutes: 75, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What cloud security is, and the shared responsibility model", emoji: "", group: "Lesson", keywords: ["cloud security", "shared responsibility", "IaaS", "PaaS", "SaaS", "NIST SP 800-145", "security of the cloud", "security in the cloud", "Capital One", "Snowflake", "Storm-0558", "Gartner"] },
+        { id: "iam", title: "Identity is the new perimeter: IAM and least privilege", emoji: "", group: "Lesson", keywords: ["IAM", "identity and access management", "policy", "explicit deny", "default deny", "wildcard", "least privilege", "IAM Access Analyzer", "roles", "short lived credentials", "access keys", "root account", "MFA", "identity perimeter"] },
+        { id: "config", title: "Misconfiguration: buckets, firewall rules and the metadata service", emoji: "", group: "Lesson", keywords: ["misconfiguration", "public bucket", "security group", "firewall rule", "0.0.0.0/0", "CSPM", "CIS Benchmarks", "instance metadata service", "IMDSv2", "169.254.169.254", "SSRF", "Capital One", "CIDR"] },
+        { id: "data", title: "Protecting data: encryption, keys and secrets", emoji: "", group: "Lesson", keywords: ["encryption at rest", "envelope encryption", "data key", "key encryption key", "KMS", "HSM", "key rotation", "customer managed keys", "BYOK", "secrets manager", "Key Vault", "Vault", "GCM nonce limit"] },
+        { id: "devsecops", title: "Infrastructure as code, containers and monitoring", emoji: "", group: "Lesson", keywords: ["infrastructure as code", "Terraform", "CloudFormation", "Checkov", "tfsec", "KICS", "containers", "Kubernetes", "RBAC", "network policy", "CloudTrail", "landing zone", "CSPM", "CWPP", "CIEM", "CNAPP"] },
+        { id: "versus", title: "Cloud security tools compared", emoji: "", group: "Lesson", keywords: ["comparison", "CSPM", "CWPP", "CIEM", "CNAPP", "IaC scanning", "cloud SIEM"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "CCSP", "AWS Security Specialty", "Zelkova", "confidential computing"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-grc", title: "Governance, risk, compliance and cyber law", emoji: "2.3", page: "content/cyber-security/cy-grc.html",
+        summary: "Roles and policies, ISO 27001, NIST CSF 2.0, CIS, SOC 2, PCI DSS, audit sampling, Indian and world cyber law, privacy and third parties.",
+        keywords: ["governance", "ISO 27001", "NIST CSF", "CIS Controls", "SOC 2", "PCI DSS", "audit sampling", "IT Act", "DPDP Act", "GDPR", "DPIA"],
+        minutes: 75, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Governance, risk and compliance: steering security", emoji: "", group: "Lesson", keywords: ["governance", "GRC", "risk appetite", "board", "CISO", "DPO", "policy", "standard", "procedure", "guideline", "compliance", "Equifax", "SolarWinds SEC"] },
+        { id: "frameworks", title: "Frameworks: ISO 27001, NIST CSF 2.0, CIS Controls, SOC 2 and PCI DSS", emoji: "", group: "Lesson", keywords: ["framework", "ISO 27001", "ISMS", "PDCA", "Annex A", "93 controls", "NIST CSF 2.0", "Govern", "profiles", "tiers", "CIS Controls v8", "implementation groups", "SOC 2", "Type I", "Type II", "trust services criteria", "PCI DSS", "crosswalk"] },
+        { id: "audit", title: "Audits, evidence and sampling", emoji: "", group: "Lesson", keywords: ["audit", "internal audit", "external audit", "evidence", "sampling", "confidence", "sample size", "exception", "finding", "hypergeometric", "QSA"] },
+        { id: "law", title: "Cyber law in India and around the world", emoji: "", group: "Lesson", keywords: ["cyber law", "IT Act 2000", "section 43", "section 66", "66C", "66D", "66F", "43A", "72A", "DPDP Act 2023", "Data Protection Board", "CERT-In", "RBI", "SEBI", "GDPR", "article 83", "Meta fine", "CFAA", "Budapest Convention"] },
+        { id: "privacy", title: "Privacy, third parties and people", emoji: "", group: "Lesson", keywords: ["privacy", "privacy by design", "Ann Cavoukian", "GDPR article 5", "data minimisation", "purpose limitation", "DPIA", "third party risk", "vendor tiering", "SOC 2 report", "Target HVAC", "security awareness", "phishing simulation", "KPI", "KRI", "metrics"] },
+        { id: "versus", title: "Compliance and security compared", emoji: "", group: "Lesson", keywords: ["compliance versus security", "box ticking", "Target PCI", "continuous compliance"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "CISSP", "CISM", "CISA", "Tallinn Manual"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of cy-secops-build ===== */
+
+/* ===== cy-advanced-build: Cybersecurity chapters. Generated by tools/cyber-build/build.py, edit the topic files instead. ===== */
+function cyAdvModules() {
+  return [
+    { id: "cy-a1", title: "Machine learning and security", emoji: "1", step: 1, part: "advanced", level: "Advanced", blurb: "Using machine learning to find attacks, and protecting machine learning systems from attackers.", topics: [
+      { id: "cy-mlsec", title: "Machine learning for security", emoji: "1.1", page: "content/cyber-security/cy-mlsec.html",
+        summary: "Detection loop, naive Bayes filter, phishing link features with logistic regression, robust anomaly detection and isolation forest, ROC and the base rate, malware similarity, drift and explanations.",
+        keywords: ["machine learning", "naive Bayes", "logistic regression", "anomaly detection", "isolation forest", "ROC AUC", "precision", "recall", "malware", "drift", "PSI"],
+        minutes: 80, counts: {"lessons": 10, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Why security teams use machine learning", emoji: "", group: "Lesson", keywords: ["machine learning", "security analytics", "Denning 1987", "IDES", "Paul Graham", "A Plan for Spam", "Gmail TensorFlow", "UEBA", "EPSS", "Sommer and Paxson", "pipeline"] },
+        { id: "bayes", title: "Naive Bayes: the classic spam and phishing filter", emoji: "", group: "Lesson", keywords: ["naive Bayes", "Bayes rule", "log odds", "Laplace smoothing", "add one smoothing", "SpamAssassin", "Bayesian poisoning", "image spam", "baseline"] },
+        { id: "features", title: "Features and logistic regression for phishing links", emoji: "", group: "Lesson", keywords: ["features", "feature engineering", "logistic regression", "sigmoid", "gradient descent", "log loss", "Shannon entropy", "phishing URL", "shortcut learning", "APWG", "domain age"] },
+        { id: "anomaly", title: "Anomaly detection: learning what normal looks like", emoji: "", group: "Lesson", keywords: ["anomaly detection", "z score", "robust statistics", "median", "MAD", "modified z score", "Iglewicz and Hoaglin", "isolation forest", "path length", "UEBA", "baseline"] },
+        { id: "metrics", title: "Measuring a detector honestly", emoji: "", group: "Lesson", keywords: ["confusion matrix", "precision", "recall", "true positive rate", "false positive rate", "F1", "ROC curve", "AUC", "PR curve", "base rate fallacy", "Axelsson", "KDD Cup 99", "NSL-KDD", "time split"] },
+        { id: "malware", title: "Classifying malware by what it does", emoji: "", group: "Lesson", keywords: ["malware classification", "signatures", "static features", "dynamic features", "sandbox", "API calls", "Jaccard similarity", "nearest neighbour", "section entropy", "packing", "EMBER", "evasion"] },
+        { id: "drift", title: "Drift, adaptive attackers and explaining the model", emoji: "", group: "Lesson", keywords: ["data drift", "concept drift", "population stability index", "PSI", "adversarial adaptation", "macros blocked 2022", "explainability", "SHAP", "human in the loop", "retraining"] },
+        { id: "versus", title: "Rules, supervised and unsupervised detection compared", emoji: "", group: "Lesson", keywords: ["rules versus ML", "signatures", "supervised", "unsupervised", "layered detection"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "SOC assistant", "research"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-advml", title: "Attacks on machine learning and their defences", emoji: "1.2", page: "content/cyber-security/cy-advml.html",
+        summary: "Map of attacks on ML, FGSM and certified radius, adversarial training, poisoning and backdoors, membership inference, model extraction, prompt injection and tool gates.",
+        keywords: ["adversarial machine learning", "FGSM", "certified robustness", "adversarial training", "poisoning", "backdoor", "membership inference", "model extraction", "prompt injection", "OWASP LLM"],
+        minutes: 80, counts: {"lessons": 10, "problems": 13, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Machine learning systems are a new attack surface", emoji: "", group: "Lesson", keywords: ["adversarial machine learning", "attack surface", "NIST AI 100-2", "MITRE ATLAS", "OWASP LLM Top 10", "EU AI Act", "Tay", "Cylance bypass", "taxonomy"] },
+        { id: "evasion", title: "Evasion: adversarial examples and FGSM", emoji: "", group: "Lesson", keywords: ["evasion", "adversarial example", "FGSM", "fast gradient sign method", "gradient", "epsilon", "L infinity", "linearity", "PGD", "stop sign stickers", "certified radius"] },
+        { id: "robust", title: "Defending against evasion", emoji: "", group: "Lesson", keywords: ["adversarial training", "min max", "Madry", "PGD", "certified robustness", "randomised smoothing", "monotonic classifier", "gradient masking", "obfuscated gradients", "Athalye Carlini Wagner", "ensemble"] },
+        { id: "poison", title: "Poisoning and backdoors", emoji: "", group: "Lesson", keywords: ["poisoning", "availability poisoning", "targeted poisoning", "label flipping", "backdoor", "trojan", "BadNets", "trigger", "data provenance", "neighbour vote", "model supply chain", "safetensors", "Tay"] },
+        { id: "privacy", title: "Privacy attacks: membership inference and data extraction", emoji: "", group: "Lesson", keywords: ["privacy attacks", "membership inference", "Shokri", "overfitting", "membership advantage", "Yeom", "generalisation gap", "model inversion", "Fredrikson", "training data extraction", "Carlini GPT-2", "memorisation"] },
+        { id: "extract", title: "Model extraction: copying a model through its API", emoji: "", group: "Lesson", keywords: ["model extraction", "model stealing", "Tramer", "prediction API", "logit", "equation solving", "transferability", "rate limiting", "watermarking", "intellectual property"] },
+        { id: "llm", title: "Attacks on language model applications", emoji: "", group: "Lesson", keywords: ["prompt injection", "indirect prompt injection", "jailbreak", "Greshake", "OWASP LLM Top 10", "LLM01", "excessive agency", "least privilege", "human approval", "tool gate", "red teaming"] },
+        { id: "versus", title: "The attacks compared", emoji: "", group: "Lesson", keywords: ["comparison", "threat model", "attack access", "CIA for ML"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "MITRE ATLAS", "red team"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cy-a2", title: "Federated learning and privacy", emoji: "2", step: 2, part: "advanced", level: "Advanced", blurb: "Training models across many devices and organisations without collecting their data, the attacks on such systems, and differential privacy.", topics: [
+      { id: "cy-fedlearn", title: "Federated learning in full", emoji: "2.1", page: "content/cyber-security/cy-fedlearn.html",
+        summary: "FedAvg and its maths, communication and compression, non IID drift with FedProx and SCAFFOLD, cross device and cross silo, horizontal and vertical FL, secure aggregation, real systems.",
+        keywords: ["federated learning", "FedAvg", "FedSGD", "non IID", "client drift", "FedProx", "SCAFFOLD", "vertical FL", "secure aggregation", "communication cost", "DP-FedAvg"],
+        minutes: 90, counts: {"lessons": 10, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Federated learning: bring the model to the data", emoji: "", group: "Lesson", keywords: ["federated learning", "FL", "McMahan", "Gboard", "Apple Siri", "FeTS", "Kairouz", "client", "server", "aggregator", "round", "local epochs", "data minimisation", "privacy by design"] },
+        { id: "fedavg", title: "The FedAvg algorithm and its maths", emoji: "", group: "Lesson", keywords: ["FedAvg", "federated averaging", "FedSGD", "global objective", "weighted average", "client fraction", "local epochs", "batch size", "learning rate", "gradient descent equivalence"] },
+        { id: "comm", title: "Communication is the bottleneck", emoji: "", group: "Lesson", keywords: ["communication cost", "rounds", "upload", "compression", "top k sparsification", "quantisation", "error feedback", "client selection", "idle charging Wi-Fi", "over selection"] },
+        { id: "noniid", title: "Non IID data, client drift and fixes", emoji: "", group: "Lesson", keywords: ["non IID", "IID", "heterogeneity", "client drift", "label skew", "feature skew", "quantity skew", "FedProx", "proximal term", "SCAFFOLD", "control variates", "personalisation", "fine tuning"] },
+        { id: "types", title: "Cross device, cross silo, horizontal and vertical", emoji: "", group: "Lesson", keywords: ["cross device", "cross silo", "horizontal FL", "vertical FL", "federated transfer learning", "private set intersection", "PSI", "entity alignment", "split model", "Paillier", "FATE", "WeBank"] },
+        { id: "secagg", title: "Secure aggregation: the server sees only the sum", emoji: "", group: "Lesson", keywords: ["secure aggregation", "Bonawitz", "pairwise masks", "Diffie-Hellman", "mask cancellation", "drop outs", "Shamir secret sharing", "self mask", "gradient leakage", "Deep Leakage from Gradients"] },
+        { id: "systems", title: "Real systems, privacy layers and tools", emoji: "", group: "Lesson", keywords: ["FL system design", "eligibility", "client selection", "over selection", "DP-FedAvg", "clipping", "trusted execution environment", "honest but curious", "threat model", "TensorFlow Federated", "Flower", "NVIDIA FLARE", "PySyft", "FATE"] },
+        { id: "versus", title: "Federated learning compared with other privacy tools", emoji: "", group: "Lesson", keywords: ["comparison", "MPC", "homomorphic encryption", "differential privacy", "central training"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "personalised FL", "clustered FL", "convergence"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-flattack", title: "Attacks and defences in federated learning", emoji: "2.2", page: "content/cyber-security/cy-flattack.html",
+        summary: "FL threat model, gradient leakage, poisoning and model replacement, clipping, median, trimmed mean and Krum, Sybil detection, free riders, and a layered defence stack.",
+        keywords: ["federated learning", "gradient leakage", "model replacement", "backdoor", "norm clipping", "robust aggregation", "median", "Krum", "Sybil", "FoolsGold"],
+        minutes: 80, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Who can attack a federated system?", emoji: "", group: "Lesson", keywords: ["threat model", "honest but curious", "malicious server", "malicious clients", "Sybil attack", "Douceur", "free rider", "privacy versus robustness", "availability attack", "backdoor"] },
+        { id: "leak", title: "Privacy attacks: what one update reveals", emoji: "", group: "Lesson", keywords: ["gradient leakage", "gradient inversion", "Phong", "Deep Leakage from Gradients", "DLG", "iDLG", "Geiping", "property inference", "Melis", "malicious server", "batch size", "secure aggregation", "differential privacy"] },
+        { id: "poison", title: "Poisoning and backdoors in federated learning", emoji: "", group: "Lesson", keywords: ["poisoning", "data poisoning", "model poisoning", "model replacement", "Bagdasaryan", "boosting", "Bhagoji", "backdoor", "edge case backdoor", "norm clipping", "weak differential privacy", "Sun et al."] },
+        { id: "robust", title: "Robust aggregation: surviving Byzantine clients", emoji: "", group: "Lesson", keywords: ["Byzantine", "Byzantine generals", "Lamport", "robust aggregation", "coordinate wise median", "trimmed mean", "breakdown point", "Krum", "FLTrust", "A Little Is Enough", "adaptive attack", "Fang et al."] },
+        { id: "sybil", title: "Sybils, free riders and client checks", emoji: "", group: "Lesson", keywords: ["Sybil", "Douceur", "attestation", "rate limits", "random sampling", "FoolsGold", "cosine similarity", "update history", "free rider", "contribution"] },
+        { id: "stack", title: "Privacy and robustness together: a defence stack", emoji: "", group: "Lesson", keywords: ["privacy versus robustness", "defence in depth", "client side clipping", "validity proofs", "zero knowledge", "central DP", "minimum round size", "model validation", "rollback", "secure robust aggregation"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "red team", "research"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-dp", title: "Differential privacy", emoji: "2.3", page: "content/cyber-security/cy-dp.html",
+        summary: "Why anonymisation fails, randomised response, the DP definition, sensitivity and Laplace noise, composition and budgets, Gaussian and exponential mechanisms, local and central DP, DP-SGD and DP-FedAvg.",
+        keywords: ["differential privacy", "epsilon", "Laplace mechanism", "Gaussian mechanism", "randomised response", "composition", "privacy budget", "DP-SGD", "DP-FedAvg", "local DP"],
+        minutes: 85, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Why anonymising data is not enough", emoji: "", group: "Lesson", keywords: ["anonymisation", "de identification", "Sweeney", "quasi identifiers", "AOL search logs", "Netflix Prize", "Narayanan Shmatikov", "Dinur Nissim", "reconstruction attack", "differential privacy", "Dwork", "US Census 2020", "Godel Prize"] },
+        { id: "rr", title: "Randomised response: the first private survey", emoji: "", group: "Lesson", keywords: ["randomised response", "Warner 1965", "plausible deniability", "local differential privacy", "LDP", "RAPPOR", "Apple differential privacy", "unbiased estimate", "ln 3"] },
+        { id: "defn", title: "The definition, sensitivity and the Laplace mechanism", emoji: "", group: "Lesson", keywords: ["definition", "neighbouring databases", "epsilon", "delta", "approximate DP", "sensitivity", "Laplace mechanism", "scale", "triangle inequality", "posterior belief"] },
+        { id: "compose", title: "Composition and the privacy budget", emoji: "", group: "Lesson", keywords: ["composition", "sequential composition", "parallel composition", "privacy budget", "post processing", "group privacy", "advanced composition", "Renyi differential privacy", "privacy accountant"] },
+        { id: "mech", title: "The Gaussian and exponential mechanisms", emoji: "", group: "Lesson", keywords: ["Gaussian mechanism", "L2 sensitivity", "clipping", "bounded sensitivity", "exponential mechanism", "McSherry Talwar", "utility function", "private selection"] },
+        { id: "dpml", title: "Differential privacy for machine learning: DP-SGD and DP-FedAvg", emoji: "", group: "Lesson", keywords: ["DP-SGD", "Abadi", "per example gradients", "gradient clipping", "noise multiplier", "sampling rate", "privacy amplification", "moments accountant", "DP-FedAvg", "user level privacy", "local DP", "central DP", "membership advantage"] },
+        { id: "versus", title: "Differential privacy compared with other privacy methods", emoji: "", group: "Lesson", keywords: ["k anonymity", "linkage attack", "comparison", "encryption", "MPC", "homomorphic encryption"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "OpenDP", "Opacus", "TensorFlow Privacy", "synthetic data"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cy-a3", title: "Certification revision", emoji: "3", step: 3, part: "advanced", level: "All levels", blurb: "Revising the whole subject for security certifications, interviews and university exams.", topics: [
+      { id: "cy-certprep", title: "Certification revision: exams, recall, formulas and scenarios", emoji: "3.1", page: "content/cyber-security/cy-certprep.html",
+        summary: "Exam formats and domains mapped to the chapters, recall tables, every formula, scenario answering, research style questions and a mock exam.",
+        keywords: ["certification", "exam revision", "Security+", "CISSP", "CySA+", "mock exam", "formulas", "scenarios", "study plan"],
+        minutes: 70, counts: {"lessons": 9, "problems": 13, "quiz": 30, "assign": 0},
+        added: "2026-11-15",
+        sections: [
+        { id: "map", title: "How security certifications work", emoji: "", group: "Lesson", keywords: ["certification", "Security+", "CySA+", "CISSP", "CEH", "ISC2 CC", "exam format", "pass mark", "exam technique", "DoD 8140"] },
+        { id: "domains", title: "Exam domains mapped to this subject", emoji: "", group: "Lesson", keywords: ["exam domains", "domain weights", "Security+ domains", "CISSP domains", "CySA+ domains", "syllabus map"] },
+        { id: "recall", title: "Facts to recall quickly: ports, crypto and controls", emoji: "", group: "Lesson", keywords: ["ports", "protocols", "port drill", "AES", "SHA-256", "RSA key size", "control types", "preventive", "detective", "compensating", "DAC", "MAC", "RBAC", "ABAC"] },
+        { id: "maths", title: "Every formula in one place", emoji: "", group: "Lesson", keywords: ["formulas", "ALE", "SLE", "ARO", "entropy", "birthday bound", "RSA maths", "Diffie-Hellman maths", "Bayes", "base rate", "availability", "nines", "MTBF", "MTTR"] },
+        { id: "scenarios", title: "Scenario questions: what to do first", emoji: "", group: "Lesson", keywords: ["scenario questions", "first step", "NIST incident response", "containment", "order of volatility", "RFC 3227", "RTO", "RPO", "MTD", "hot site", "human safety"] },
+        { id: "traps", title: "Pairs that exams love to confuse", emoji: "", group: "Lesson", keywords: ["confused pairs", "encoding", "hashing", "encryption", "IDS vs IPS", "scan vs pentest", "authentication vs authorisation", "Bell-LaPadula", "Biba", "SIEM vs SOAR", "risk transfer"] },
+        { id: "advanced", title: "Revising the advanced section for interviews and research exams", emoji: "", group: "Lesson", keywords: ["interview questions", "research questions", "IIT", "MIT", "proof", "composition proof", "textbook RSA", "base rate", "FedAvg proof", "GCM nonce reuse", "FGSM", "Krum", "DP-SGD"] },
+        { id: "plan", title: "A study plan that works", emoji: "", group: "Lesson", keywords: ["study plan", "active recall", "spaced repetition", "Leitner boxes", "mock exam", "revision timetable"] },
+        { id: "recap", title: "Revision summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of cy-advanced-build ===== */
