@@ -621,3 +621,159 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Network and Systems 2.2  The access matrix, read by columns (ACLs) or by rows (capability lists)
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const S = ['asha', 'ravi', 'build'], O = ['payroll', 'wiki', 'repo'];
+  const M = { asha: { payroll: 'rw', wiki: 'rw', repo: '' }, ravi: { payroll: 'r', wiki: 'r', repo: '' }, build: { payroll: '', wiki: 'r', repo: 'r' } };
+  trace('cymatrix', {
+    title: 'The access matrix: ACLs or capabilities?',
+    sub: 'Rows are subjects, columns are objects, and each cell holds the rights. Real systems never store the whole matrix. They store either each column with its object (an access control list) or each row with its subject (a capability list).',
+    W: 600, H: 340,
+    params: [
+      { k: 'view', label: 'Store the matrix as', type: 'select', v: 'acl', opts: [['acl', 'ACLs (columns, kept with each object)'], ['cap', 'Capabilities (rows, kept with each subject)']] }
+    ],
+    tips: [
+      { t: 'Play ACLs. Each file keeps its own list, so "who can read payroll?" is one lookup, and revoking one user from one file is easy.', play: true },
+      { t: 'Choose capabilities. Each subject carries its rights like keys, so "what can ravi reach?" is one lookup, and passing a right on is easy, but revoking it is hard.', set: { view: 'cap' }, play: true }
+    ],
+    frames(p) {
+      const acl = p.view === 'acl';
+      const fr = [{ st: 1, hi: -1, say: 'The full matrix: 3 subjects by 3 objects. r = read, w = write, an empty cell means no rights. Real systems have millions of each, and most cells are empty.' }];
+      const items = acl ? O : S;
+      items.forEach((it, i) => {
+        const list = acl ? S.filter(s => M[s][it]).map(s => `${s}: ${M[s][it]}`) : O.filter(o => M[it][o]).map(o => `${o}: ${M[it][o]}`);
+        fr.push({ st: 2, hi: i, say: acl ? `Column "${it}" becomes its ACL: ${list.join(', ') || 'empty'}. The object carries it, like the permission bits and ACL of a file.` : `Row "${it}" becomes its capability list: ${list.join(', ') || 'empty'}. The subject carries these like keys, such as open file descriptors or signed tokens.` });
+      });
+      fr.push({ st: 3, done: true, hi: -1, say: acl ? 'ACLs: easy to review and revoke per object, the model of Unix, Windows and cloud storage policies. Hard to answer "everything this user can reach" without scanning every object.' : 'Capabilities: easy to delegate and to check without a central lookup, the model of file descriptors, object capability systems and many bearer tokens. Hard to revoke once handed out.' });
+      return fr.map(x => ({ ...x, acl }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 120, y0 = 50, cw = 100, ch = 50;
+      O.forEach((o, j) => cbox(z, x0 + j * cw, y0 - 36, cw - 6, 30, o, { s: 13, b: true, fill: f.acl && f.hi === j ? col.cv : col.surf, c: f.acl && f.hi === j ? '#fff' : col.ink }));
+      S.forEach((s, i) => {
+        cbox(z, 14, y0 + i * ch, 96, ch - 6, s, { s: 13, b: true, fill: !f.acl && f.hi === i ? col.cv : col.surf, c: !f.acl && f.hi === i ? '#fff' : col.ink });
+        O.forEach((o, j) => {
+          const on = f.st === 2 && (f.acl ? f.hi === j : f.hi === i);
+          cbox(z, x0 + j * cw, y0 + i * ch, cw - 6, ch - 6, M[s][o] || '·', { s: 15, b: true, mono: true, fill: on ? 'rgba(15,118,110,0.25)' : col.bg });
+        });
+      });
+      if (f.st >= 2) {
+        const items = f.acl ? O : S, upto = f.st === 3 ? items.length - 1 : f.hi;
+        for (let i = 0; i <= upto; i++) {
+          const it = items[i];
+          const list = f.acl ? S.filter(s => M[s][it]).map(s => `${s}:${M[s][it]}`) : O.filter(o => M[it][o]).map(o => `${o}:${M[it][o]}`);
+          cbox(z, 432, 14 + i * 56, 154, 48, [f.acl ? `ACL ${it}` : `caps ${it}`, list.join(' ') || '(none)'], { s: 11, b: true, mono: true, fill: col.surf });
+        }
+      }
+      if (f.done) cbox(z, 14, 306, 572, 28, f.acl ? 'ACL: "who can access this object?" is quick' : 'capability: "what can this subject access?" is quick', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 2.2  Bell-LaPadula (no read up, no write down) against Biba (no read down, no write up)
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const LV = ['Unclassified', 'Confidential', 'Secret', 'Top Secret'];
+  trace('cyblp', {
+    title: 'Bell-LaPadula and Biba: which way may information flow?',
+    sub: 'A subject at one level checks reads and writes against objects at every level. Bell-LaPadula protects secrecy, so information may only flow up. Biba protects integrity, so information may only flow down.',
+    W: 600, H: 340,
+    params: [
+      { k: 'm', label: 'Model', type: 'select', v: 'blp', opts: [['blp', 'Bell-LaPadula (secrecy)'], ['biba', 'Biba (integrity)']] },
+      { k: 'lv', label: 'Subject level', type: 'range', v: 2, min: 0, max: 3, step: 1 }
+    ],
+    tips: [
+      { t: 'Play Bell-LaPadula for a Secret subject. It may read Secret and below, and write Secret and above, so secrets never leak down.', play: true },
+      { t: 'Switch to Biba. The arrows flip: read only at or above your level, write only at or below, so untrusted data never contaminates trusted data.', set: { m: 'biba' }, play: true },
+      { t: 'Set the level to Unclassified under Bell-LaPadula. It may write anywhere above, a blind write up, but read only Unclassified.', set: { m: 'blp', lv: 0 }, play: true }
+    ],
+    frames(p) {
+      const blp = p.m === 'blp', s = +p.lv;
+      const fr = [{ st: 0, rows: [], say: `Subject at level <b>${LV[s]}</b>. ${blp ? 'Bell-LaPadula (1973): simple security property, no read up, and star property, no write down.' : 'Biba (1977): simple integrity, no read down, and star integrity, no write up. Levels now mean trustworthiness.'}` }];
+      const rows = [];
+      for (let o = 3; o >= 0; o--) {
+        const r = blp ? s >= o : o >= s, w = blp ? o >= s : s >= o;
+        rows.push({ o, r, w });
+        fr.push({ st: 1, rows: rows.slice(), say: `Object at ${LV[o]}: read ${r ? 'allowed' : 'denied'}, write ${w ? 'allowed' : 'denied'}. ${blp ? (o > s ? 'Reading would reveal higher secrets.' : o < s ? 'Writing down could leak secrets into lower files.' : 'Same level: both allowed.') : (o < s ? 'Reading could pull in untrusted data.' : o > s ? 'Writing up could corrupt more trusted data.' : 'Same level: both allowed.')}` });
+      }
+      fr.push({ st: 2, done: true, rows, say: blp ? 'Information can only move up the lattice. A Trojan horse running with this subject’s rights cannot copy a secret into a lower file. The cost: writing up blind, and no way to downgrade without a trusted subject.' : 'Information can only move down. Windows integrity levels follow this idea: a low integrity browser tab cannot write to medium or high integrity files and processes.' });
+      return fr.map(x => ({ ...x, blp, s }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      D.text(g, f.blp ? 'secrecy level' : 'integrity level', 14, 20, { s: 11, b: true, c: col.ink2 });
+      for (let o = 3; o >= 0; o--) {
+        const y = 30 + (3 - o) * 66;
+        cbox(z, 14, y, 160, 54, f.blp ? LV[o] : ['Low', 'Medium', 'High', 'System'][o], { s: 13, b: true, fill: o === f.s ? 'rgba(15,118,110,0.25)' : col.surf });
+        const row = f.rows.find(r => r.o === o);
+        if (row) {
+          cbox(z, 190, y + 6, 120, 42, row.r ? 'read ✓' : 'read ✗', { s: 13, b: true, fill: row.r ? col.green : col.red, c: '#fff' });
+          cbox(z, 320, y + 6, 120, 42, row.w ? 'write ✓' : 'write ✗', { s: 13, b: true, fill: row.w ? col.green : col.red, c: '#fff' });
+        }
+      }
+      cbox(z, 456, 30 + (3 - f.s) * 66, 130, 54, ['subject', f.blp ? LV[f.s] : ['Low', 'Medium', 'High', 'System'][f.s]], { s: 12, b: true, fill: col.cv, c: '#fff' });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.blp ? 'Bell-LaPadula: information flows only up' : 'Biba: information flows only down', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 2.2  RBAC: users get roles, roles get permissions, seniors inherit, conflicts are refused
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const ROLES = { employee: ['read wiki', 'submit expense'], manager: ['approve expense'], accountant: ['pay expense', 'read ledger'] };
+  const JUN = { manager: ['employee'], accountant: ['employee'] };
+  trace('cyrbac', {
+    title: 'Role based access control',
+    sub: 'Permissions are given to roles, and users are given roles. Senior roles inherit junior roles. A separation of duties rule stops one person holding two roles that together allow fraud.',
+    W: 600, H: 340,
+    params: [
+      { k: 'q', label: 'Question', type: 'select', v: 'approve', opts: [['approve', 'Can asha approve an expense?'], ['pay', 'Can asha pay an expense?'], ['wiki', 'Can ravi read the wiki?'], ['both', 'Make asha accountant too']] }
+    ],
+    tips: [
+      { t: 'Play "can asha approve?". asha is a manager, and managers hold approve expense.', play: true },
+      { t: 'Ask "can ravi read the wiki?". ravi is an accountant, which inherits employee, which holds read wiki.', set: { q: 'wiki' }, play: true },
+      { t: 'Try to make asha an accountant too. Approving and paying the same expense must be split, so the assignment is refused.', set: { q: 'both' }, play: true }
+    ],
+    frames(p) {
+      const q = p.q;
+      const fr = [{ st: 1, say: 'Users: asha is a manager, ravi is an accountant. Roles: employee (read wiki, submit expense), manager (approve expense), accountant (pay expense, read ledger). Manager and accountant both inherit employee.' }];
+      if (q === 'both') {
+        fr.push({ st: 2, hl: ['asha', 'manager', 'accountant'], say: 'Request: add the accountant role to asha, who is already a manager.' });
+        fr.push({ st: 3, done: true, ok: false, hl: ['manager', 'accountant'], say: 'Refused by static separation of duties: manager and accountant are mutually exclusive, because one person could then approve and pay their own expense claim. This is the RBAC version of the Clark-Wilson idea of separating duties.' });
+      } else {
+        const user = q === 'wiki' ? 'ravi' : 'asha', perm = { approve: 'approve expense', pay: 'pay expense', wiki: 'read wiki' }[q];
+        const role = user === 'asha' ? 'manager' : 'accountant';
+        fr.push({ st: 2, hl: [user, role], say: `${user} has the role ${role}.` });
+        const direct = ROLES[role].includes(perm), inh = !direct && JUN[role].some(j => ROLES[j].includes(perm));
+        fr.push({ st: 3, hl: [user, role].concat(inh ? ['employee'] : []).concat([perm]), say: direct ? `${role} holds "${perm}" directly.` : inh ? `${role} does not hold "${perm}", but it inherits employee, which does.` : `Neither ${role} nor the roles it inherits hold "${perm}".` });
+        fr.push({ st: 4, done: true, ok: direct || inh, hl: [user, role].concat(inh ? ['employee'] : []).concat([perm]), say: direct || inh ? `Allowed. Change the role once and every manager or accountant changes with it, which is why RBAC scales.` : `Denied. To let asha pay, an admin would need to give her the accountant role, which separation of duties forbids.` });
+      }
+      return fr.map(x => ({ ...x, q, hl: x.hl || [] }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, H = new Set(f.hl);
+      const U = { asha: [14, 60], ravi: [14, 170] }, R = { manager: [210, 30], accountant: [210, 130], employee: [210, 230] };
+      const P = { 'approve expense': [430, 20], 'pay expense': [430, 72], 'read ledger': [430, 124], 'read wiki': [430, 176], 'submit expense': [430, 228] };
+      D.line(g, 124, 82, 210, 52, col.line, 2); D.line(g, 124, 192, 210, 152, col.line, 2);
+      D.line(g, 210, 52, 192, 52, col.ink2, 1.5, [4, 4]); D.line(g, 192, 52, 192, 252, col.ink2, 1.5, [4, 4]); D.arrow(g, 192, 252, 208, 252, col.ink2, 1.5); D.arrow(g, 275, 174, 275, 228, col.ink2, 1.5);
+      D.text(g, 'inherits', 280, 206, { s: 10, b: true, c: col.ink2 });
+      Object.entries(ROLES).forEach(([r, ps]) => ps.forEach(pp => D.line(g, R[r][0] + 130, R[r][1] + 22, P[pp][0], P[pp][1] + 18, H.has(r) && H.has(pp) ? col.cv : col.line, H.has(r) && H.has(pp) ? 3 : 1)));
+      Object.entries(U).forEach(([u, [x, y]]) => cbox(z, x, y, 110, 44, u, { s: 13, b: true, fill: H.has(u) ? col.cv : col.surf, c: H.has(u) ? '#fff' : col.ink }));
+      Object.entries(R).forEach(([r, [x, y]]) => cbox(z, x, y, 130, 44, r, { s: 13, b: true, fill: H.has(r) ? 'rgba(15,118,110,0.3)' : col.bg }));
+      Object.entries(P).forEach(([pp, [x, y]]) => cbox(z, x, y, 156, 36, pp, { s: 12, b: true, mono: true, fill: H.has(pp) ? 'rgba(15,118,110,0.3)' : col.surf }));
+      if (f.q === 'both' && f.st >= 2) D.line(g, 124, 82, 210, 152, col.red, 2.5, [6, 4]);
+      if (f.done) cbox(z, 14, 306, 572, 28, f.ok ? 'allowed through the role' : f.q === 'both' ? 'refused: separation of duties' : 'denied: no role grants it', { s: 13, b: true, fill: f.ok ? col.green : col.red, c: '#fff' });
+    }
+  });
+})();

@@ -9709,6 +9709,26 @@ function cySysModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-access", title: "Access control models: from the access matrix to RBAC and ABAC", emoji: "2.2", page: "content/cyber-security/cy-access.html",
+        summary: "the access matrix, ACLs and capabilities, Bell-LaPadula and Biba, Clark-Wilson, Chinese Wall, RBAC and ABAC.",
+        keywords: ["access control", "access matrix", "ACL", "capability", "Bell-LaPadula", "Biba", "Chinese Wall", "RBAC", "ABAC", "least privilege"],
+        minutes: 75, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Subjects, objects and the reference monitor", emoji: "", group: "Lesson", keywords: ["access control", "authorisation", "subject", "object", "rights", "access matrix", "Lampson", "reference monitor", "Anderson report", "Saltzer and Schroeder", "least privilege", "complete mediation", "fail safe defaults", "broken access control", "Capital One"] },
+        { id: "matrix", title: "ACLs and capabilities", emoji: "", group: "Lesson", keywords: ["ACL", "access control list", "capability", "capability list", "file descriptor", "Unix permissions", "revocation", "delegation", "confused deputy", "Hardy", "SSRF", "Capsicum", "seL4"] },
+        { id: "mac", title: "DAC and MAC: Bell-LaPadula and Biba", emoji: "", group: "Lesson", keywords: ["DAC", "discretionary access control", "MAC", "mandatory access control", "Bell-LaPadula", "no read up", "no write down", "star property", "Biba", "integrity", "lattice", "dominance", "clearance", "categories", "SELinux", "AppArmor", "Mandatory Integrity Control", "covert channel", "Trojan horse"] },
+        { id: "commercial", title: "Commercial models: Clark-Wilson and the Chinese Wall", emoji: "", group: "Lesson", keywords: ["Clark-Wilson", "well formed transaction", "separation of duties", "audit", "Chinese Wall", "Brewer-Nash", "conflict of interest", "dynamic policy"] },
+        { id: "rbac", title: "Role based access control", emoji: "", group: "Lesson", keywords: ["RBAC", "role based access control", "Ferraiolo and Kuhn", "role hierarchy", "separation of duties", "static SoD", "dynamic SoD", "role explosion", "permission creep", "access review", "Kubernetes RBAC"] },
+        { id: "abac", title: "Attribute based and relationship based access control", emoji: "", group: "Lesson", keywords: ["ABAC", "attribute based access control", "NIST SP 800-162", "policy engine", "Open Policy Agent", "XACML", "AWS IAM", "deny overrides", "ReBAC", "relationship based access control", "Zanzibar", "SpiceDB", "OpenFGA"] },
+        { id: "versus", title: "Access control models compared", emoji: "", group: "Lesson", keywords: ["comparison", "DAC", "MAC", "RBAC", "ABAC", "capabilities"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "HRU", "undecidable", "type enforcement", "SMT", "information flow control", "seL4"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
