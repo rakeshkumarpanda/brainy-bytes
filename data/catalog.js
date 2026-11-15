@@ -10031,6 +10031,27 @@ function cyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-advml", title: "Attacks on machine learning and their defences", emoji: "1.2", page: "content/cyber-security/cy-advml.html",
+        summary: "Map of attacks on ML, FGSM and certified radius, adversarial training, poisoning and backdoors, membership inference, model extraction, prompt injection and tool gates.",
+        keywords: ["adversarial machine learning", "FGSM", "certified robustness", "adversarial training", "poisoning", "backdoor", "membership inference", "model extraction", "prompt injection", "OWASP LLM"],
+        minutes: 80, counts: {"lessons": 10, "problems": 13, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Machine learning systems are a new attack surface", emoji: "", group: "Lesson", keywords: ["adversarial machine learning", "attack surface", "NIST AI 100-2", "MITRE ATLAS", "OWASP LLM Top 10", "EU AI Act", "Tay", "Cylance bypass", "taxonomy"] },
+        { id: "evasion", title: "Evasion: adversarial examples and FGSM", emoji: "", group: "Lesson", keywords: ["evasion", "adversarial example", "FGSM", "fast gradient sign method", "gradient", "epsilon", "L infinity", "linearity", "PGD", "stop sign stickers", "certified radius"] },
+        { id: "robust", title: "Defending against evasion", emoji: "", group: "Lesson", keywords: ["adversarial training", "min max", "Madry", "PGD", "certified robustness", "randomised smoothing", "monotonic classifier", "gradient masking", "obfuscated gradients", "Athalye Carlini Wagner", "ensemble"] },
+        { id: "poison", title: "Poisoning and backdoors", emoji: "", group: "Lesson", keywords: ["poisoning", "availability poisoning", "targeted poisoning", "label flipping", "backdoor", "trojan", "BadNets", "trigger", "data provenance", "neighbour vote", "model supply chain", "safetensors", "Tay"] },
+        { id: "privacy", title: "Privacy attacks: membership inference and data extraction", emoji: "", group: "Lesson", keywords: ["privacy attacks", "membership inference", "Shokri", "overfitting", "membership advantage", "Yeom", "generalisation gap", "model inversion", "Fredrikson", "training data extraction", "Carlini GPT-2", "memorisation"] },
+        { id: "extract", title: "Model extraction: copying a model through its API", emoji: "", group: "Lesson", keywords: ["model extraction", "model stealing", "Tramer", "prediction API", "logit", "equation solving", "transferability", "rate limiting", "watermarking", "intellectual property"] },
+        { id: "llm", title: "Attacks on language model applications", emoji: "", group: "Lesson", keywords: ["prompt injection", "indirect prompt injection", "jailbreak", "Greshake", "OWASP LLM Top 10", "LLM01", "excessive agency", "least privilege", "human approval", "tool gate", "red teaming"] },
+        { id: "versus", title: "The attacks compared", emoji: "", group: "Lesson", keywords: ["comparison", "threat model", "attack access", "CIA for ML"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "MITRE ATLAS", "red team"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
