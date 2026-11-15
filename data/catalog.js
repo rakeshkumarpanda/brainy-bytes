@@ -9688,6 +9688,28 @@ function cySysModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cy-s2", title: "Identity and access", emoji: "2", step: 2, part: "systems", level: "Intermediate", blurb: "How systems prove who you are, from passwords and MFA to passkeys and Kerberos, and how they decide what you may do.", topics: [
+      { id: "cy-authn", title: "Authentication: passwords, MFA, passkeys and single sign on", emoji: "2.1", page: "content/cyber-security/cy-authn.html",
+        summary: "factors, password rules, TOTP, phishing and passkeys, Kerberos, SAML, OAuth and OpenID Connect, JWT, biometrics.",
+        keywords: ["authentication", "MFA", "TOTP", "passkey", "WebAuthn", "Kerberos", "OAuth", "OpenID Connect", "JWT", "biometrics"],
+        minutes: 85, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Identification, authentication and authorisation", emoji: "", group: "Lesson", keywords: ["authentication", "identification", "authorisation", "factors", "something you know", "something you have", "something you are", "multi factor authentication", "MFA", "CTSS"] },
+        { id: "passwords", title: "Passwords done right", emoji: "", group: "Lesson", keywords: ["password policy", "NIST SP 800-63B", "length over complexity", "breached passwords", "k anonymity", "Have I Been Pwned", "credential stuffing", "password manager", "rate limiting", "Diceware", "pass phrase"] },
+        { id: "mfa", title: "One time codes and multi factor authentication", emoji: "", group: "Lesson", keywords: ["MFA", "one time password", "HOTP", "TOTP", "RFC 4226", "RFC 6238", "dynamic truncation", "authenticator app", "SMS", "SIM swap", "push notification", "MFA fatigue", "number matching", "Uber 2022"] },
+        { id: "passkeys", title: "Passkeys: phishing resistant login", emoji: "", group: "Lesson", keywords: ["passkey", "FIDO2", "WebAuthn", "CTAP", "security key", "public key authentication", "challenge response", "origin binding", "phishing resistant", "relying party", "account recovery"] },
+        { id: "sso", title: "Single sign on: Kerberos, SAML, OAuth and OpenID Connect", emoji: "", group: "Lesson", keywords: ["single sign on", "SSO", "Kerberos", "KDC", "TGT", "service ticket", "Active Directory", "Kerberoasting", "golden ticket", "SAML", "golden SAML", "OAuth 2.0", "access token", "OpenID Connect", "ID token", "JWT", "alg none", "PKCE"] },
+        { id: "biometrics", title: "Biometrics and their error rates", emoji: "", group: "Lesson", keywords: ["biometrics", "FAR", "FRR", "false accept rate", "false reject rate", "equal error rate", "EER", "liveness detection", "Touch ID", "Face ID", "template", "DPDP Act", "BIPA"] },
+        { id: "versus", title: "Authentication methods compared", emoji: "", group: "Lesson", keywords: ["comparison", "password", "SMS", "TOTP", "push", "passkey", "phishing resistant MFA"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "OAuth mix up", "SAML wrapping", "Kerberos delegation", "attestation", "formal verification"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

@@ -457,3 +457,167 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Network and Systems 2.1  TOTP step by step (RFC 6238 with HMAC-SHA-256, checked against the RFC vectors)
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8 } = CYZ;
+  const hmac = (key, msg) => {
+    let k = key.length > 64 ? sha256(key) : key.slice();
+    while (k.length < 64) k.push(0);
+    const ip = k.map(b => b ^ 0x36), op = k.map(b => b ^ 0x5c);
+    return sha256(op.concat(sha256(ip.concat(msg))));
+  };
+  const hx = a => a.map(b => b.toString(16).padStart(2, '0')).join('');
+  const KEY = utf8('12345678901234567890123456789012');
+  trace('cytotp', {
+    title: 'TOTP: how an authenticator app makes a code',
+    sub: 'Phone and server share a secret key. Both count 30 second time slots since 1970, run HMAC on the slot number and cut the result down to a short code. These are the RFC 6238 SHA-256 test values, so you can check every step.',
+    W: 600, H: 340,
+    params: [
+      { k: 't', label: 'Unix time (seconds)', type: 'select', v: '59', opts: [['59', '59'], ['1111111109', '1111111109'], ['1234567890', '1234567890'], ['2000000000', '2000000000']] },
+      { k: 'dg', label: 'Digits', type: 'select', v: '8', opts: [['8', '8 (RFC test values)'], ['6', '6 (authenticator apps)']] }
+    ],
+    tips: [
+      { t: 'Play t = 59 with 8 digits. The final code is 46119246, the value printed in RFC 6238.', play: true },
+      { t: 'Switch to 6 digits. Apps keep the last 6 digits of the same number, so the code is 119246.', set: { dg: '6' }, play: true },
+      { t: 'Try t = 1234567890. RFC 6238 lists 91819424 for SHA-256 at this time.', set: { t: '1234567890', dg: '8' }, play: true }
+    ],
+    frames(p) {
+      const t = +p.t, dg = +p.dg, T = Math.floor(t / 30);
+      const msg = []; let v = T; for (let i = 0; i < 8; i++) { msg.unshift(v % 256); v = Math.floor(v / 256); }
+      const mac = hmac(KEY, msg), off = mac[31] & 15;
+      const bin = ((mac[off] & 0x7f) * 16777216) + mac[off + 1] * 65536 + mac[off + 2] * 256 + mac[off + 3];
+      const code = String(bin % 10 ** dg).padStart(dg, '0');
+      const fr = [
+        { st: 1, say: `Shared secret K (32 bytes of ASCII "1234...9012" in the RFC). Unix time t = ${t}.` },
+        { st: 2, say: `Time slot T = floor(t / 30) = <b>${T}</b>, written as 8 bytes: ${hx(msg)}. Phone and server get the same T if their clocks agree within the slot.` },
+        { st: 3, say: `HMAC-SHA-256(K, T) gives 32 bytes. Without K nobody can predict them, and old codes say nothing about new ones.` },
+        { st: 4, say: `Dynamic truncation: the last byte is 0x${mac[31].toString(16).padStart(2, '0')}, its low 4 bits give offset = <b>${off}</b>. Take the 4 bytes starting there.` },
+        { st: 5, say: `Those 4 bytes with the top bit cleared: ${hx(mac.slice(off, off + 4))} &rarr; <b>${bin}</b>.` },
+        { st: 6, done: true, say: `Code = ${bin} mod 10<sup>${dg}</sup> = <b>${code}</b>. A guesser has a 1 in ${(10 ** dg).toLocaleString('en')} chance per try, so servers also limit attempts.` }
+      ];
+      return fr.map(x => ({ ...x, t, T, msg, mac, off, bin, code, dg }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 12, 280, 32, `K = ${hx(KEY.slice(0, 8))}...`, { s: 12, b: true, mono: true, fill: col.surf });
+      cbox(z, 306, 12, 280, 32, `t = ${f.t}`, { s: 13, b: true, mono: true, fill: col.surf });
+      if (f.st >= 2) cbox(z, 14, 54, 572, 32, `T = floor(t / 30) = ${f.T}  →  ${hx(f.msg)}`, { s: 12, b: true, mono: true, fill: col.bg });
+      if (f.st >= 3) {
+        D.text(g, 'HMAC-SHA-256(K, T)', 14, 106, { s: 11, b: true, c: col.ink2 });
+        for (let i = 0; i < 32; i++) {
+          const x = 14 + (i % 16) * 36, y = 114 + Math.floor(i / 16) * 32, hot = f.st >= 4 && i >= f.off && i < f.off + 4, last = f.st >= 4 && i === 31;
+          cbox(z, x, y, 32, 26, f.mac[i].toString(16).padStart(2, '0'), { s: 11, b: true, mono: true, fill: hot ? col.cv : last ? col.orange : col.surf, c: hot || last ? '#fff' : col.ink });
+        }
+      }
+      if (f.st >= 4) D.text(g, `offset = last byte & 0x0F = ${f.off}`, 14, 194, { s: 12, b: true, c: col.orange });
+      if (f.st >= 5) cbox(z, 14, 206, 572, 32, `31 bit number: ${f.bin}`, { s: 13, b: true, mono: true, fill: col.bg });
+      if (f.st >= 6) cbox(z, 150, 248, 300, 48, f.code, { s: 26, b: true, mono: true, fill: col.cv, c: '#fff' });
+      if (f.done) cbox(z, 14, 306, 572, 28, 'same secret + same time slot = same code on phone and server', { s: 13, b: true, fill: col.surf, c: col.cv });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 2.1  A real time phishing relay against passwords, one time codes, push and passkeys
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cyphish', {
+    title: 'Phishing relay: which second factor survives?',
+    sub: 'The victim clicks a link to bank-example.login.test, a copy of the bank’s page run by the attacker, who passes everything to the real bank in real time. Choose the second factor and see if the attacker gets in.',
+    W: 600, H: 340,
+    params: [
+      { k: 'f', label: 'Second factor', type: 'select', v: 'totp', opts: [['none', 'Password only'], ['totp', 'SMS or authenticator code'], ['push', 'Push approval'], ['number', 'Push with number matching'], ['passkey', 'Passkey (FIDO2 / WebAuthn)']] }
+    ],
+    tips: [
+      { t: 'Play the authenticator code. The victim types it into the fake page and the attacker uses it within the same 30 seconds.', play: true },
+      { t: 'Choose a passkey. The browser signs a challenge together with the real origin it sees, so the bank rejects the relayed answer.', set: { f: 'passkey' }, play: true },
+      { t: 'Try plain push. Attackers send prompt after prompt until a tired user taps Approve, as in the 2022 Uber breach.', set: { f: 'push' }, play: true }
+    ],
+    frames(p) {
+      const f = p.f;
+      const fr = [
+        { st: 1, say: 'An email says the account is locked. The link opens bank-example.login.test, which looks exactly like the bank.' },
+        { st: 2, say: 'The victim types user name and password. The fake site forwards them to the real bank at once.' }
+      ];
+      const end = {
+        none: [true, 'With a password only, the attacker is already logged in. The password may also be reused on other sites, which is credential stuffing.'],
+        totp: [true, 'The bank asks for a code, the fake page asks the victim, and the attacker relays it within the 30 second window. Codes stop password reuse and guessing, but not a live relay. Tools such as Evilginx automate this and steal the session cookie too.'],
+        push: [true, 'The attacker triggers a push to the victim’s phone, again and again. A tired or confused user taps Approve. This MFA fatigue attack was used against Uber in 2022.'],
+        number: [true, 'Number matching shows a code on the login page that the user must type into the app. Fatigue spam fails, but a fake page can still show the real number and ask the user to type it, so a live relay still works. Better, but not phishing resistant.'],
+        passkey: [false, 'The bank sends a challenge. The browser asks the passkey to sign it together with the origin it is really on: bank-example.login.test. The bank expects https://bank.example, so it rejects the answer. The user cannot be tricked into signing for the wrong site, because the browser fills in the origin.']
+      }[f];
+      if (f !== 'none') fr.push({ st: 3, say: f === 'passkey' ? 'The real bank sends a WebAuthn challenge. The attacker passes it to the fake page.' : f === 'totp' ? 'The real bank asks for a one time code. The fake page asks the victim for it.' : 'The real bank sends a push request to the victim’s phone.' });
+      fr.push({ st: 4, done: true, ok: end[0], say: end[1] });
+      return fr.map(x => ({ ...x, f }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 40, 130, 50, ['victim', 'browser'], { s: 13, b: true, fill: col.surf });
+      cbox(z, 235, 40, 130, 50, ['fake site', 'login.test'], { s: 12, b: true, fill: 'rgba(225,29,72,0.15)' });
+      cbox(z, 456, 40, 130, 50, ['real bank', 'bank.example'], { s: 12, b: true, fill: col.surf });
+      if (f.st >= 1) D.arrow(g, 144, 65, 231, 65, col.orange, 2);
+      if (f.st >= 2) { D.arrow(g, 365, 65, 452, 65, col.red, 2); cbox(z, 150, 104, 300, 26, 'user + password relayed', { s: 12, b: true, mono: true, fill: col.bg }); }
+      if (f.st >= 3) cbox(z, 150, 140, 300, 26, f.f === 'passkey' ? 'challenge relayed, signed for login.test' : f.f === 'totp' ? 'code 482915 relayed in time' : 'push to phone', { s: 12, b: true, mono: true, fill: col.bg });
+      if (f.done) {
+        cbox(z, 150, 190, 300, 50, f.ok ? ['attacker logged in', 'session cookie stolen'] : ['bank rejects', 'wrong origin in signature'], { s: 13, b: true, fill: f.ok ? col.red : col.green, c: '#fff' });
+        cbox(z, 14, 306, 572, 28, f.ok ? 'not phishing resistant' : 'phishing resistant: the origin is bound into the signature', { s: 13, b: true, fill: f.ok ? col.red : col.cv, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 2.1  Kerberos tickets, and the Kerberoasting attack on weak service passwords
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cykerberos', {
+    title: 'Kerberos: tickets instead of passwords',
+    sub: 'A trusted Key Distribution Centre (KDC) shares a long term key with every user and service. Users prove themselves once, get a ticket granting ticket (TGT), and trade it for service tickets. No password crosses the network.',
+    W: 600, H: 340,
+    params: [
+      { k: 'v', label: 'Show', type: 'select', v: 'normal', opts: [['normal', 'Normal login'], ['roast', 'Kerberoasting attack']] }
+    ],
+    tips: [
+      { t: 'Play the normal login: AS exchange, TGS exchange, then the file server opens the ticket with its own key.', play: true },
+      { t: 'Show Kerberoasting. Any user can ask for a service ticket, and it is encrypted with a key made from the service account’s password, which can be guessed offline.', set: { v: 'roast' }, play: true }
+    ],
+    frames(p) {
+      const roast = p.v === 'roast';
+      const fr = roast ? [
+        { st: 1, a: 'c2k', l: 'TGS-REQ for MSSQLSvc/db01', say: 'An attacker with any normal domain account asks the KDC for a ticket to a service, for example a database run under a user account.' },
+        { st: 2, a: 'k2c', l: 'service ticket {…} key = from service password', say: 'The KDC happily returns it. The ticket is encrypted with a key derived from the service account’s password.' },
+        { st: 3, a: 'off', l: 'offline: guess password → key → decrypt?', say: 'The attacker takes the ticket home and tries passwords until one decrypts it. No more traffic, no lockouts, no alarms.' },
+        { st: 4, done: true, bad: true, say: 'Defences: long random service passwords (25 or more characters) or group managed service accounts that rotate automatically, AES only (no RC4), and alerts on unusual ticket requests. A stolen krbtgt key is worse still: it lets attackers forge any TGT, a golden ticket.' }
+      ] : [
+        { st: 1, a: 'c2k', l: 'AS-REQ: "I am asha" + timestamp', say: 'AS exchange: Asha asks for a TGT. Pre authentication encrypts a timestamp with her password derived key, so the KDC knows she has it.' },
+        { st: 2, a: 'k2c', l: 'TGT {asha, S1} krbtgt + {S1} asha', say: 'The KDC returns a TGT, encrypted with its own krbtgt key, and session key S1 encrypted with Asha’s key. Only the real Asha can open S1.' },
+        { st: 3, a: 'c2k', l: 'TGS-REQ: TGT + authenticator {time} S1', say: 'TGS exchange: to reach the file server she shows the TGT and an authenticator made with S1. Her password is not needed again until the TGT expires, typically after 10 hours.' },
+        { st: 4, a: 'k2c', l: 'ticket {asha, S2} files + {S2} S1', say: 'The KDC returns a service ticket encrypted with the file server’s key, and session key S2 for Asha.' },
+        { st: 5, a: 'c2s', l: 'AP-REQ: ticket + authenticator {time} S2', say: 'AP exchange: the file server opens the ticket with its own key, finds S2, and checks the authenticator. It never contacts the KDC. Clocks must agree within about 5 minutes, which stops old authenticators being replayed.' },
+        { st: 6, done: true, bad: false, say: 'Single sign on: one password entry, many services, and no password on the wire. Kerberos came from MIT’s Project Athena in the 1980s and is the heart of Microsoft Active Directory logins.' }
+      ];
+      return fr.map((x, i) => ({ ...x, roast, log: fr.slice(0, i + 1).filter(y => y.l) }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 60, 120, 54, [f.roast ? 'attacker' : 'Asha', f.roast ? '(any user)' : 'client'], { s: 13, b: true, fill: f.roast ? 'rgba(225,29,72,0.15)' : col.surf });
+      cbox(z, 240, 8, 120, 54, ['KDC', 'AS + TGS'], { s: 13, b: true, fill: col.surf });
+      cbox(z, 466, 60, 120, 54, [f.roast ? 'db01' : 'file server', 'service'], { s: 13, b: true, fill: col.surf });
+      const path = { c2k: [134, 72, 236, 44], k2c: [236, 50, 134, 82], c2s: [134, 100, 462, 100] }[f.a];
+      if (path) D.arrow(g, path[0], path[1], path[2], path[3], col.orange, 3);
+      f.log.forEach((y, i) => {
+        const cur = i === f.log.length - 1 && !f.done;
+        cbox(z, 14, 128 + i * 34, 572, 28, `${i + 1}. ${y.l}`, { s: 11, b: true, mono: true, fill: y.a === 'off' ? 'rgba(225,29,72,0.15)' : cur ? 'rgba(15,118,110,0.18)' : col.bg });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.bad ? 'weak service passwords fall to offline guessing' : 'logged in to the service without sending a password', { s: 13, b: true, fill: f.bad ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
