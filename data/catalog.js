@@ -9650,6 +9650,25 @@ function cySysModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-firewall", title: "Firewalls, intrusion detection, VPNs and zero trust", emoji: "1.2", page: "content/cyber-security/cy-firewall.html",
+        summary: "firewall rules and state, IDS and IPS with detection maths, VPNs from IPsec to WireGuard, and zero trust.",
+        keywords: ["firewall", "stateful", "default deny", "IDS", "IPS", "Snort", "Zeek", "VPN", "WireGuard", "zero trust"],
+        minutes: 80, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Defence in depth: layers between attacker and data", emoji: "", group: "Lesson", keywords: ["defence in depth", "perimeter", "castle and moat", "DMZ", "Target breach", "Operation Aurora", "firewall", "IDS", "VPN", "zero trust"] },
+        { id: "firewall", title: "Firewalls: rules, state and order", emoji: "", group: "Lesson", keywords: ["firewall", "packet filter", "stateless", "stateful", "connection tracking", "first match", "default deny", "shadowing", "Check Point", "next generation firewall", "web application firewall", "WAF", "nftables", "iptables", "security groups", "DMZ"] },
+        { id: "ids", title: "Intrusion detection and prevention", emoji: "", group: "Lesson", keywords: ["intrusion detection", "IDS", "IPS", "NIDS", "HIDS", "signature", "anomaly detection", "Snort", "Suricata", "Zeek", "Bro", "Denning", "z score", "EWMA", "precision", "recall", "F1", "base rate fallacy", "Axelsson"] },
+        { id: "vpn", title: "VPNs: IPsec, TLS VPNs and WireGuard", emoji: "", group: "Lesson", keywords: ["VPN", "tunnel", "encapsulation", "IPsec", "ESP", "IKEv2", "OpenVPN", "WireGuard", "Noise protocol", "ChaCha20-Poly1305", "site to site", "remote access", "MTU"] },
+        { id: "zerotrust", title: "Zero trust and segmentation", emoji: "", group: "Lesson", keywords: ["zero trust", "BeyondCorp", "NIST SP 800-207", "Kindervag", "policy decision point", "policy enforcement point", "device posture", "least privilege", "segmentation", "microsegmentation", "lateral movement", "identity aware proxy"] },
+        { id: "versus", title: "Network defences compared", emoji: "", group: "Lesson", keywords: ["comparison", "firewall versus IDS", "IDS versus IPS", "VPN", "zero trust"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "IDS evasion", "Ptacek and Newsham", "Aho-Corasick", "encrypted traffic analysis"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
