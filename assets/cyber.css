@@ -1,0 +1,15 @@
+/* ===== Complete Cybersecurity chapter pages (body class cyp): the Machine Learning layout in the subject's teal.
+   The voice controls are styled by assets/voiceteach.js, the same on every subject. ===== */
+:root{--cv:#0f766e; --cv-soft:#e6f6f3; --cv-line:#99d8cd}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cv:#2dd4bf; --cv-soft:#0f2a28; --cv-line:#1f6b62}}
+:root[data-theme="dark"]{--cv:#2dd4bf; --cv-soft:#0f2a28; --cv-line:#1f6b62}
+
+/* how to practise an attack idea safely and legally */
+.cyp .cy-safe{border:1px solid var(--line); border-left:5px solid var(--green, #16a34a); border-radius:12px; padding:10px 14px;
+  margin:14px 0; background:var(--surface2)}
+.cyp .cy-safe b{display:block; margin-bottom:2px}
+.cyp .cy-safe div{color:var(--ink2); font-size:15px}
+/* attacker and defender tables: the first column in the alert colour, the second in the subject colour */
+.cyp table.cy-ad td:first-child{border-left:4px solid var(--red, #dc2626)}
+.cyp table.cy-ad td:last-child{border-left:4px solid var(--cv)}
+.vt-talk[hidden]{display:none}

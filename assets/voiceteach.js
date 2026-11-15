@@ -2,8 +2,9 @@
    1. Every step by step animation gets a "Voice off / Voice on" button in its control row, next to Play, Step,
       Back and Reset. While it is on, each time the reader steps forward or back (or presses Play) the explanation
       of that step is read aloud. The choice is remembered for the whole site.
-   2. Every lesson gets a "Listen to this lesson" bar under its title, with a Speed choice. It reads the lesson's
-      explanations in order (headings, paragraphs, boxes, scenarios, notes and summary points) and marks the part
+   2. Every lesson gets a "Listen to this lesson" bar under its title, with a Speed choice. It first reads the
+      lesson's background talk when it has one (div.vt-talk, hidden on the page, used by the Cybersecurity subject),
+      then the lesson's explanations in order (headings, paragraphs, boxes, scenarios, notes and summary points) and marks the part
       being read. Code, tables and the animations themselves are skipped, because they are read by the eye.
    It works on both page families of the site:
      the chapter pages built by tools/cv-build (article.cv-lesson lessons, .cvz animations from assets/cvviz.js)
@@ -178,7 +179,17 @@ button.vt-vb.on::before{content:"\\1F50A  "}
       const t = (n.innerText || '').replace(/\s+/g, ' ').trim();
       if (t.length > 1 && spoken(t)) out.push({ n, t });
     });
-    return out;
+    /* a lesson may carry a background talk (div.vt-talk, hidden on the page): the story behind the lesson, read
+       first, while the lesson title is marked */
+    const h = lesson.querySelector(':scope > h2') || lesson.querySelector('h2');
+    const talks = [...lesson.querySelectorAll(':scope > .vt-talk')].map(n => (n.textContent || '').replace(/\s+/g, ' ').trim()).filter(t => t && spoken(t));
+    /* long speech is cut short by some browser voices, so the talk is spoken a few sentences at a time */
+    const parts = [];
+    talks.forEach(t => (t.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || [t]).forEach(x => {
+      const last = parts[parts.length - 1];
+      if (last && last.length + x.length < 260) parts[parts.length - 1] = (last + ' ' + x.trim()).trim(); else parts.push(x.trim());
+    }));
+    return parts.filter(Boolean).map(t => ({ n: h || lesson, t })).concat(out);
   }
   function addListen(lesson) {
     if (lesson.querySelector(':scope > .vt-lbar')) return;
@@ -188,7 +199,7 @@ button.vt-vb.on::before{content:"\\1F50A  "}
     bar.className = 'vt-lbar';
     bar.innerHTML = '<button type="button" class="vt-listen" aria-pressed="false">Listen to this lesson</button>' +
       '<label class="vt-rate">Speed <select><option value="0.8">Slow</option><option value="0.95">Normal</option><option value="1.15">Fast</option></select></label>' +
-      '<span class="vt-lnote">Reads the explanations aloud. Code and tables are skipped.</span>';
+      '<span class="vt-lnote">' + (lesson.querySelector(':scope > .vt-talk') ? 'Starts with the background story of this lesson, then reads the explanations aloud. Code and tables are skipped.' : 'Reads the explanations aloud. Code and tables are skipped.') + '</span>';
     h.insertAdjacentElement('afterend', bar);
     const sel = bar.querySelector('select');
     sel.value = String(RATES.reduce((a, b) => Math.abs(b - rate) < Math.abs(a - rate) ? b : a, 0.95));
