@@ -2974,3 +2974,180 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Security Operations 2.3  NIST Cybersecurity Framework 2.0: Govern in the middle, five functions around it
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const F = [
+    ['Govern', 'GV', 'Set the strategy, roles, policies and risk appetite, and oversee suppliers. New in CSF 2.0 (February 2024).', 'The board approves a security policy and names a CISO.'],
+    ['Identify', 'ID', 'Know your assets, data, risks and improvement needs.', 'An up to date list of every laptop, server and cloud account.'],
+    ['Protect', 'PR', 'Safeguards: identity and access, training, data security, platform security, resilient infrastructure.', 'MFA for all staff, encrypted laptops, patching.'],
+    ['Detect', 'DE', 'Find attacks and anomalies: continuous monitoring and event analysis.', 'SIEM rules and EDR alerts watched every day.'],
+    ['Respond', 'RS', 'Act on a detected incident: manage, analyse, report, contain.', 'The incident response plan from Security Operations 1.2.'],
+    ['Recover', 'RC', 'Restore assets and operations, and communicate.', 'Tested offline backups and a recovery order for systems.']
+  ];
+  trace('cycsf', {
+    title: 'NIST Cybersecurity Framework 2.0, one function at a time',
+    sub: 'The CSF is a common language for security outcomes, used by companies of every size around the world. Version 2.0 (2024) puts Govern at the centre, because every other function depends on clear decisions and ownership.',
+    W: 600, H: 340,
+    params: [],
+    tips: [{ t: 'Play to place the six functions with a real example of each.', play: true }],
+    frames() {
+      const fr = F.map(([n, c, w, e], i) => ({ st: 1, n: i + 1, say: `<b>${n} (${c})</b>: ${w} Example: ${e}` }));
+      fr.push({ st: 2, done: true, n: 6, say: 'A company writes a current profile (where it is today) and a target profile (where it wants to be) using these functions, then plans the gap. Tiers 1 to 4 (partial, risk informed, repeatable, adaptive) describe how mature its risk practices are.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, cx = 170, cy = 150;
+      if (f.n >= 1) cbox(z, cx - 55, cy - 30, 110, 60, ['GOVERN', 'GV'], { s: 13, b: true, fill: f.n === 1 && !f.done ? col.cv : 'rgba(15,118,110,0.35)', c: f.n === 1 && !f.done ? '#fff' : col.ink });
+      F.slice(1).forEach(([n, c], k) => {
+        if (f.n < k + 2) return;
+        const a = -Math.PI / 2 + k * 2 * Math.PI / 5, x = cx + 118 * Math.cos(a), y = cy + 112 * Math.sin(a), cur = f.n === k + 2 && !f.done;
+        D.line(g, cx + 55 * Math.cos(a), cy + 30 * Math.sin(a), x - 40 * Math.cos(a), y - 20 * Math.sin(a), col.line, 1.5);
+        cbox(z, x - 50, y - 20, 100, 40, [n, c], { s: 11, b: true, fill: cur ? col.cv : 'rgba(37,99,235,0.18)', c: cur ? '#fff' : col.ink });
+      });
+      const i = Math.min(f.n, 6) - 1;
+      if (i >= 0) {
+        const words = (F[i][2] + ' Example: ' + F[i][3]).split(' '), lines = [];
+        let cur = '';
+        words.forEach(w => { if ((cur + ' ' + w).length > 34) { lines.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; });
+        lines.push(cur);
+        cbox(z, 340, 20, 246, 30, F[i][0], { s: 13, b: true, fill: col.surf });
+        lines.slice(0, 10).forEach((l, k) => D.text(g, l, 346, 74 + k * 20, { s: 12, c: col.ink }));
+      }
+      if (f.done) cbox(z, 14, 306, 572, 28, 'current profile, target profile, then close the gap', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 2.3  The document hierarchy: policy, standard, procedure, guideline
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const H = [
+    ['Policy', 'Why and what, approved by leaders, rarely changes', 'All accounts must be protected against password theft.', 'mandatory'],
+    ['Standard', 'Specific, measurable rules that carry out the policy', 'MFA for every user. Passwords at least 12 characters. Lock after 10 failures.', 'mandatory'],
+    ['Procedure', 'Step by step how to do it', 'To enrol a new joiner in MFA: 1. open the admin portal 2. ... 5. confirm the first sign in.', 'mandatory'],
+    ['Guideline', 'Helpful advice, not compulsory', 'Use a password manager and a passphrase of four random words.', 'optional']
+  ];
+  trace('cypolicy', {
+    title: 'Policy, standard, procedure, guideline',
+    sub: 'Governance is written down in layers. Each layer is more specific and changes more often than the one above it. Here is one topic, protecting accounts, at every layer.',
+    W: 600, H: 340,
+    params: [],
+    tips: [{ t: 'Play to build the four layers, top to bottom.', play: true }],
+    frames() {
+      const fr = H.map(([n, w, e, m], i) => ({ st: 1, n: i + 1, say: `<b>${n}</b> (${m}): ${w}. Example: ${e}` }));
+      fr.push({ st: 2, done: true, n: 4, say: 'Auditors check that each layer exists, matches the one above, and is actually followed. A policy with no standard or procedure under it is only a wish.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      H.forEach(([n, w, e, m], i) => {
+        if (f.n <= i) return;
+        const y = 14 + i * 70, w0 = 200 + i * 40;
+        cbox(z, 14, y, 120, 56, [n, m], { s: 12, b: true, fill: m === 'optional' ? col.bg : 'rgba(15,118,110,' + (0.4 - i * 0.08) + ')' });
+        cbox(z, 142, y, 444, 56, [e.length > 70 ? e.slice(0, e.lastIndexOf(' ', 70)) : e, e.length > 70 ? e.slice(e.lastIndexOf(' ', 70) + 1) : ''].filter(Boolean), { s: 11, fill: col.surf });
+        if (i > 0) D.arrow(g, 74, y - 14, 74, y, col.ink2, 1.5);
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, 'more specific and more frequently updated as you go down', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 2.3  Audit sampling: how many items must an auditor test to catch a problem?
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const N = 200, BAD = new Set([7, 23, 41, 66, 88, 102, 131, 150, 177, 194]); /* 10 of 200 changes were not approved: 5% */
+  trace('cyaudit', {
+    title: 'Audit sampling: testing a sample instead of everything',
+    sub: '200 system changes were made this year. The rule says each needs an approval. In fact 10 of them (5%) were never approved. The auditor tests a random sample. How likely is the sample to catch at least one?',
+    W: 600, H: 340,
+    params: [
+      { k: 'n', label: 'Sample size', type: 'range', v: 25, min: 5, max: 80, step: 5 },
+      { k: 'seed', label: 'Random draw', type: 'range', v: 4, min: 1, max: 9, step: 1 }
+    ],
+    tips: [
+      { t: 'Play with a sample of 25. The chance to catch at least one is about 72%.', play: true },
+      { t: 'Set the sample to 60. The chance rises to about 95%. Auditors pick n from the confidence they need.', set: { n: 60, seed: 4 }, play: true },
+      { t: 'Set the sample to 5 and try different draws. Small samples often miss real problems.', set: { n: 5, seed: 4 }, play: true },
+      { t: 'Set the sample to 25 and the draw to 3. This sample misses all 10 bad changes, which happens about 28% of the time.', set: { n: 25, seed: 3 }, play: true }
+    ],
+    frames(p) {
+      const n = +p.n, R = MLZ.rng(+p.seed), idx = [...Array(N).keys()];
+      for (let i = N - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+      const pick = idx.slice(0, n), prob = 1 - Math.pow(0.95, n), fr = [];
+      fr.push({ st: 0, pick: [], say: `200 changes. The auditor does not know which ones are bad. Chance a random sample of ${n} contains at least one bad change: 1 &minus; 0.95<sup>${n}</sup> &asymp; <b>${f2(prob * 100, 1)}%</b> (treating draws as independent).` });
+      const chunk = Math.max(1, Math.ceil(n / 5));
+      for (let k = chunk; k < n + chunk; k += chunk) {
+        const sh = pick.slice(0, Math.min(k, n)), found = sh.filter(i => BAD.has(i)).length;
+        fr.push({ st: 1, pick: sh, found, say: `Tested ${sh.length} of ${n}. Exceptions found so far: <b>${found}</b>.` });
+      }
+      const found = pick.filter(i => BAD.has(i)).length;
+      fr.push({ st: 2, done: true, pick, found, prob, say: found ? `The sample found ${found} unapproved change${found > 1 ? 's' : ''}. The auditor reports a control failure, and the team must fix the approval process.` : `This sample found nothing, even though 10 bad changes exist. That happens about ${f2((1 - prob) * 100, 1)}% of the time with n = ${n}. This risk of a wrong clean result is why sample sizes are set from the confidence needed.` });
+      return fr.map(x => ({ ...x, n }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, per = 20, s = 25;
+      for (let i = 0; i < N; i++) {
+        const r = Math.floor(i / per), c = i % per, picked = f.pick.includes(i), bad = BAD.has(i);
+        D.rect(g, 50 + c * s, 14 + r * s, s - 4, s - 4, { fill: picked ? (bad ? col.red : col.cv) : (f.done && bad ? 'rgba(225,29,72,0.35)' : 'rgba(100,116,139,0.16)'), stroke: col.line });
+      }
+      if (f.st >= 1) cbox(z, 50, 270, 240, 28, `tested ${f.pick.length}, exceptions ${f.found}`, { s: 12, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, `n = ${f.n}: P(catch at least one) ≈ ${f2(f.prob * 100, 1)}%, found ${f.found}`, { s: 13, b: true, fill: f.found ? col.cv : col.orange, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 2.3  Which rules apply to a data breach? India, the EU and card data
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox } = CYZ;
+  trace('cylaw', {
+    title: 'A breach happened. Which laws and rules apply?',
+    sub: 'Obligations depend on what data was involved, whose data it is, and the sector. Pick the facts of the case and step through the checks a legal and security team runs together. This is a teaching sketch, not legal advice.',
+    W: 600, H: 340,
+    params: [
+      { k: 'data', label: 'Data involved', type: 'select', v: 'personal', opts: [['personal', 'customer names, phones and emails'], ['card', 'payment card numbers'], ['none', 'no personal data (a website defaced)']] },
+      { k: 'eu', label: 'Includes people in the EU?', type: 'select', v: 'no', opts: [['no', 'no'], ['yes', 'yes']] },
+      { k: 'bank', label: 'Company is a bank regulated by RBI?', type: 'select', v: 'no', opts: [['no', 'no'], ['yes', 'yes']] }
+    ],
+    tips: [
+      { t: 'Play the default: an Indian company, personal data, no EU customers.', play: true },
+      { t: 'Add EU customers. GDPR’s 72 hour notice to the authority now applies too.', set: { eu: 'yes' }, play: true },
+      { t: 'Try card data at a bank. PCI DSS and the RBI rules join in.', set: { data: 'card', bank: 'yes' }, play: true }
+    ],
+    frames(p) {
+      const out = [], fr = [];
+      out.push(['CERT-In (India)', 'Report covered incidents within 6 hours']);
+      fr.push({ st: 1, out: out.slice(), say: 'Any company with systems in India: the CERT-In Directions of 2022 ask for a report within 6 hours for many incident types, including data breaches and website defacement.' });
+      if (p.data !== 'none') {
+        out.push(['DPDP Act 2023 (India)', 'Tell the Data Protection Board and affected people'], ['IT Act 2000 section 43A, 72A', 'Duty of reasonable security, limits on disclosure']);
+        fr.push({ st: 2, out: out.slice(), say: 'Personal data of people in India: the Digital Personal Data Protection Act 2023 requires notice of a personal data breach to the Data Protection Board and to each affected person. Penalties for failing to take reasonable security safeguards go up to 250 crore rupees.' });
+      } else fr.push({ st: 2, out: out.slice(), say: 'No personal data, so the data protection laws do not apply here. The CERT-In report still does.' });
+      if (p.eu === 'yes' && p.data !== 'none') { out.push(['GDPR (EU)', 'Authority within 72 hours, people if high risk']); fr.push({ st: 3, out: out.slice(), say: 'Personal data of people in the EU: GDPR article 33 asks for notice to the supervisory authority within 72 hours, and article 34 to the people themselves when the risk to them is high. Fines go up to 20 million euros or 4% of global turnover.' }); }
+      if (p.data === 'card') { out.push(['PCI DSS v4.0', 'Tell the card brands and acquiring bank, forensic investigation']); fr.push({ st: 4, out: out.slice(), say: 'Payment card data: PCI DSS, a contract standard set by the card brands, requires telling the acquiring bank and card brands, and often a PCI forensic investigator.' }); }
+      if (p.bank === 'yes') { out.push(['RBI rules for banks', 'Report to RBI quickly, as its directions set']); fr.push({ st: 5, out: out.slice(), say: 'A bank: the Reserve Bank of India’s cyber security framework and IT directions require prompt reporting of cyber incidents to RBI as well.' }); }
+      fr.push({ st: 6, done: true, out: out.slice(), say: `${out.length} sets of obligations. The team keeps one timeline, involves lawyers early, and sends each notice on time. Contracts with customers may add more duties.` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col;
+      f.out.forEach(([law, duty], i) => {
+        cbox(z, 14, 14 + i * 46, 220, 40, law, { s: 12, b: true, fill: 'rgba(37,99,235,0.18)' });
+        cbox(z, 240, 14 + i * 46, 346, 40, duty, { s: 12, fill: col.surf });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, `${f.out.length} sets of obligations apply`, { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();

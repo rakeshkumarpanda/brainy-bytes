@@ -9985,6 +9985,25 @@ function cyOpsModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-grc", title: "Governance, risk, compliance and cyber law", emoji: "2.3", page: "content/cyber-security/cy-grc.html",
+        summary: "Roles and policies, ISO 27001, NIST CSF 2.0, CIS, SOC 2, PCI DSS, audit sampling, Indian and world cyber law, privacy and third parties.",
+        keywords: ["governance", "ISO 27001", "NIST CSF", "CIS Controls", "SOC 2", "PCI DSS", "audit sampling", "IT Act", "DPDP Act", "GDPR", "DPIA"],
+        minutes: 75, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Governance, risk and compliance: steering security", emoji: "", group: "Lesson", keywords: ["governance", "GRC", "risk appetite", "board", "CISO", "DPO", "policy", "standard", "procedure", "guideline", "compliance", "Equifax", "SolarWinds SEC"] },
+        { id: "frameworks", title: "Frameworks: ISO 27001, NIST CSF 2.0, CIS Controls, SOC 2 and PCI DSS", emoji: "", group: "Lesson", keywords: ["framework", "ISO 27001", "ISMS", "PDCA", "Annex A", "93 controls", "NIST CSF 2.0", "Govern", "profiles", "tiers", "CIS Controls v8", "implementation groups", "SOC 2", "Type I", "Type II", "trust services criteria", "PCI DSS", "crosswalk"] },
+        { id: "audit", title: "Audits, evidence and sampling", emoji: "", group: "Lesson", keywords: ["audit", "internal audit", "external audit", "evidence", "sampling", "confidence", "sample size", "exception", "finding", "hypergeometric", "QSA"] },
+        { id: "law", title: "Cyber law in India and around the world", emoji: "", group: "Lesson", keywords: ["cyber law", "IT Act 2000", "section 43", "section 66", "66C", "66D", "66F", "43A", "72A", "DPDP Act 2023", "Data Protection Board", "CERT-In", "RBI", "SEBI", "GDPR", "article 83", "Meta fine", "CFAA", "Budapest Convention"] },
+        { id: "privacy", title: "Privacy, third parties and people", emoji: "", group: "Lesson", keywords: ["privacy", "privacy by design", "Ann Cavoukian", "GDPR article 5", "data minimisation", "purpose limitation", "DPIA", "third party risk", "vendor tiering", "SOC 2 report", "Target HVAC", "security awareness", "phishing simulation", "KPI", "KRI", "metrics"] },
+        { id: "versus", title: "Compliance and security compared", emoji: "", group: "Lesson", keywords: ["compliance versus security", "box ticking", "Target PCI", "continuous compliance"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "CISSP", "CISM", "CISA", "Tallinn Manual"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
