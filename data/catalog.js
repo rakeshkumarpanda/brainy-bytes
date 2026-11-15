@@ -9605,6 +9605,26 @@ function cyCryptoModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-advcrypto", title: "Advanced cryptography: secret sharing, zero knowledge, homomorphic encryption and MPC", emoji: "1.3", page: "content/cyber-security/cy-advcrypto.html",
+        summary: "Shamir secret sharing, commitments, zero knowledge proofs, Paillier and FHE, MPC and secure aggregation.",
+        keywords: ["secret sharing", "Shamir", "commitment", "Pedersen", "zero knowledge", "Schnorr", "SNARK", "Paillier", "FHE", "MPC"],
+        minutes: 90, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Cryptography beyond encryption", emoji: "", group: "Lesson", keywords: ["advanced cryptography", "secret sharing", "commitment", "zero knowledge", "homomorphic encryption", "multiparty computation", "MPC", "Yao millionaires"] },
+        { id: "shamir", title: "Shamir secret sharing", emoji: "", group: "Lesson", keywords: ["Shamir secret sharing", "threshold scheme", "Lagrange interpolation", "Blakley", "information theoretic security", "verifiable secret sharing", "Feldman", "FROST", "RFC 9591", "DNSSEC root key"] },
+        { id: "commit", title: "Commitments: lock now, reveal later", emoji: "", group: "Lesson", keywords: ["commitment", "hiding", "binding", "hash commitment", "salt", "Pedersen commitment", "sealed bid", "coin flipping", "confidential transactions"] },
+        { id: "zkp", title: "Zero knowledge proofs", emoji: "", group: "Lesson", keywords: ["zero knowledge proof", "ZKP", "Ali Baba cave", "completeness", "soundness", "simulator", "Schnorr identification", "Sigma protocol", "Fiat-Shamir", "SNARK", "Groth16", "PLONK", "STARK", "Bulletproofs", "Zcash", "trusted setup"] },
+        { id: "he", title: "Homomorphic encryption", emoji: "", group: "Lesson", keywords: ["homomorphic encryption", "Paillier", "additive homomorphism", "semantic security", "fully homomorphic encryption", "FHE", "Gentry", "bootstrapping", "BGV", "BFV", "CKKS", "TFHE", "Microsoft SEAL", "OpenFHE", "ElGamal", "e-voting"] },
+        { id: "mpc", title: "Secure multiparty computation", emoji: "", group: "Lesson", keywords: ["secure multiparty computation", "MPC", "Yao", "garbled circuits", "oblivious transfer", "GMW", "additive secret sharing", "Beaver triples", "SPDZ", "semi honest", "malicious", "sugar beet auction", "wage gap", "private set intersection", "PSI", "threshold signatures", "FROST", "secure aggregation", "federated learning"] },
+        { id: "versus", title: "The privacy tools compared", emoji: "", group: "Lesson", keywords: ["comparison", "trusted execution environment", "SGX", "SEV", "Foreshadow", "differential privacy"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "simulation", "rewinding", "R1CS", "QAP", "KZG", "folding schemes", "noise budget"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

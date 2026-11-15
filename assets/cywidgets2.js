@@ -1688,3 +1688,160 @@ const CYEC = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Cryptography 3.3  Shamir secret sharing: a secret hidden as f(0) of a random polynomial
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const lag = (pts, x) => pts.reduce((acc, [xi, yi], i) => acc + yi * pts.reduce((pr, [xj], j) => (i === j ? pr : pr * (x - xj) / (xi - xj)), 1), 0);
+  trace('cyshamir', {
+    title: 'Shamir secret sharing: k points fix a polynomial',
+    sub: 'Hide the secret as f(0) of a random polynomial of degree k − 1 and hand out points on it. Any k points rebuild the curve and the secret. With fewer than k points, every secret is still possible. (Drawn over real numbers here. Real schemes work modulo a prime.)',
+    W: 600, H: 340,
+    params: [
+      { k: 's', label: 'Secret f(0)', type: 'range', v: 42, min: 0, max: 100, step: 1 },
+      { k: 'k', label: 'Threshold k (shares needed)', type: 'range', v: 3, min: 2, max: 4, step: 1 },
+      { k: 'm', label: 'Shares brought together', type: 'range', v: 3, min: 1, max: 5, step: 1 }
+    ],
+    tips: [
+      { t: 'Play with k = 3 and 3 shares. The curve through them meets the y axis at the secret, 42.', play: true },
+      { t: 'Bring only 2 shares. Many curves pass through them, each with a different f(0), so the secret is still hidden.', set: { m: 2 }, play: true },
+      { t: 'Set k = 2. Then the polynomial is a straight line, and any 2 shares rebuild it.', set: { k: 2, m: 2 }, play: true }
+    ],
+    frames(p) {
+      const s = +p.s, k = +p.k, m = +p.m;
+      const cf = [s]; let seed = 7 + s * 13 + k * 101; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      for (let i = 1; i < k; i++) cf.push(Math.round((rnd() * 2 - 1) * (i === 1 ? 14 : 4)));
+      const f = x => cf.reduce((a, c, i) => a + c * x ** i, 0);
+      const shares = [1, 2, 3, 4, 5].map(x => [x, f(x)]), used = shares.slice(0, m);
+      const fr = [
+        { st: 1, say: `The secret is ${s}. It will be the value of a polynomial at x = 0.` },
+        { st: 2, say: `Pick random coefficients: f(x) = ${cf.map((c, i) => i === 0 ? String(c) : `${c < 0 ? '&minus; ' + (-c) : '+ ' + c}x${i > 1 ? '<sup>' + i + '</sup>' : ''}`).join(' ')}. Degree ${k - 1}, so ${k} points are needed to pin it down.` },
+        { st: 3, say: `Give five people one point each: ${shares.map(([x, y]) => `(${x}, ${y})`).join(', ')}. No single point says anything about f(0).` }
+      ];
+      if (m >= k) fr.push({ st: 4, done: true, say: `${m} shares come together. Lagrange interpolation through ${k} of them gives back the same polynomial, and f(0) = <b>${Math.round(lag(used.slice(0, k), 0))}</b>, the secret.` });
+      else {
+        const alts = [s - 30, s + 25, s + 60].map(t => [[0, t], ...used]);
+        fr.push({ st: 5, done: true, alts, say: `Only ${m} share${m > 1 ? 's' : ''}. The dashed curves all pass through ${m > 1 ? 'them' : 'it'} with secrets ${alts.map(a => a[0][1]).join(', ')}, and any other value works as well. Modulo a prime every secret is exactly equally likely, which is perfect secrecy.` });
+      }
+      return fr.map(x => ({ ...x, s, k, m, f, shares, used }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 40, R = 380, T = 14, B = 314;
+      const ys = [f.s, ...f.shares.map(v => v[1])]; if (f.alts) f.alts.forEach(a => ys.push(a[0][1]));
+      let lo = Math.min(0, ...ys) - 10, hi = Math.max(...ys) + 10;
+      const X = x => L + (x / 5.4) * (R - L), Y = y => B - (y - lo) / (hi - lo) * (B - T);
+      D.line(g, L, Y(0), R, Y(0), col.line, 1); D.line(g, X(0), T, X(0), B, col.line, 1.5);
+      for (let x = 1; x <= 5; x++) D.text(g, String(x), X(x), Y(0) + 13, { a: 'center', s: 10, c: col.ink2 });
+      const curve = (fn, c, w, dash) => { let prev = null; for (let i = 0; i <= 54; i++) { const x = i / 10, y = fn(x); const pt = [X(x), Y(y)]; if (prev && pt[1] > T - 40 && pt[1] < B + 40 && prev[1] > T - 40 && prev[1] < B + 40) D.line(g, prev[0], prev[1], pt[0], pt[1], c, w, dash); prev = pt; } };
+      if (f.st >= 2 && f.st !== 5) curve(f.f, f.st === 4 ? col.green : 'rgba(15,118,110,0.5)', 2);
+      if (f.alts) f.alts.forEach(a => curve(x => lag(a, x), col.orange, 1.5, [5, 4]));
+      if (f.st >= 1) D.circle(g, X(0), Y(f.s), 7, { fill: f.st === 5 ? col.surf : col.red, stroke: col.ink, w: 1.5 });
+      if (f.st >= 1) D.text(g, f.st === 5 ? 'secret ?' : 'secret ' + f.s, X(0) + 10, Y(f.s) - 8, { s: 11, b: true, c: col.red });
+      if (f.st >= 3) f.shares.forEach(([x, y], i) => D.circle(g, X(x), Y(y), 6, { fill: i < f.m && f.st >= 4 ? col.cv : col.surf, stroke: col.cv, w: 2 }));
+      cbox(z, 400, 14, 186, 44, [`threshold k = ${f.k}`, `degree ${f.k - 1}`], { s: 13, b: true, mono: true, fill: col.surf });
+      if (f.st >= 3) cbox(z, 400, 68, 186, 30, `5 shares made`, { s: 12, b: true, fill: col.bg });
+      if (f.done) cbox(z, 400, 108, 186, 44, f.st === 4 ? [`${f.m} ≥ k: rebuilt`, `f(0) = ${f.s}`] : [`${f.m} < k: hidden`, 'every secret possible'], { s: 13, b: true, fill: f.st === 4 ? col.green : col.orange, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 3.3  A zero knowledge proof, round by round: honest prover against a cheater
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const N = CYNUM;
+  trace('cyzkp', {
+    title: 'Zero knowledge: convince without revealing',
+    sub: 'Peggy claims to know x with y = gˣ mod 23. Each round: she sends t = gʳ, Victor flips a coin c ∈ {0, 1}, she answers s = r + c·x mod 11, and Victor checks gˢ = t·yᶜ. An honest Peggy always passes. A cheater must guess c in advance and is caught half the time.',
+    W: 600, H: 340,
+    params: [
+      { k: 'who', label: 'Prover', type: 'select', v: 'honest', opts: [['honest', 'Peggy knows x'], ['cheat', 'Cheater who does not know x']] },
+      { k: 'n', label: 'Rounds', type: 'range', v: 8, min: 1, max: 10, step: 1 }
+    ],
+    tips: [
+      { t: 'Play the honest prover. Every round passes, and the values t, c, s look random, so Victor learns nothing about x.', play: true },
+      { t: 'Choose the cheater. Each round has a 1 in 2 chance of being caught, so 10 rounds leave only about a 1 in 1000 chance of fooling Victor.', set: { who: 'cheat' }, play: true }
+    ],
+    frames(p) {
+      const P = 23, Q = 11, G = 4, X = 7, Y = Number(N.pw(G, X, P)), honest = p.who === 'honest', n = +p.n;
+      let seed = honest ? 5 : 9; const rnd = m => (seed = (seed * 48271) % 2147483647) % m;
+      const rounds = []; let caught = false;
+      const fr = [{ k: 0, say: `Public: p = ${P}, g = ${G} (order ${Q}), y = ${Y}. ${honest ? 'Peggy knows x = 7.' : 'The cheater does not know x.'} Victor will run ${n} rounds.`, rounds: [] }];
+      for (let i = 0; i < n && !caught; i++) {
+        let t, s, c, ok, note;
+        if (honest) { const r = rnd(Q); t = Number(N.pw(G, r, P)); c = rnd(2); s = (r + c * X) % Q; note = `r = ${r}`; }
+        else { const guess = rnd(2); const s0 = rnd(Q); t = guess === 0 ? Number(N.pw(G, s0, P)) : Number(N.pw(G, s0, P)) * Number(N.inv(Y, P)) % P; c = rnd(2); s = s0; note = `guessed c = ${guess}`; }
+        ok = Number(N.pw(G, s, P)) === t * Number(N.pw(Y, c, P)) % P;
+        rounds.push({ t, c, s, ok }); if (!ok) caught = true;
+        fr.push({ k: 1, rounds: rounds.slice(), say: `Round ${i + 1}: t = ${t}, coin c = ${c}, answer s = ${s} (${note}). Check g<sup>s</sup> = ${Number(N.pw(G, s, P))} and t&middot;y<sup>c</sup> = ${t * Number(N.pw(Y, c, P)) % P}: <b>${ok ? 'pass' : 'FAIL'}</b>.` });
+      }
+      const passed = rounds.every(r => r.ok);
+      fr.push({ k: 2, done: true, rounds, passed, say: passed ? `All ${rounds.length} rounds passed. A cheater would survive this with probability (1/2)<sup>${rounds.length}</sup> = 1/${2 ** rounds.length}. Victor saw only random looking numbers, and he could have made identical transcripts himself, which is exactly what zero knowledge means.` : `Caught in round ${rounds.length}. Without x, the cheater can prepare an answer for only one value of c. Real protocols use challenges from a huge range, so one round is enough.` });
+      return fr.map(x => ({ ...x, honest, n }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      D.text(g, 'Peggy (prover)', 70, 22, { a: 'center', s: 13, b: true, c: col.cv }); D.text(g, 'Victor (verifier)', 530, 22, { a: 'center', s: 13, b: true, c: col.cv });
+      f.rounds.forEach((r, i) => {
+        const y = 36 + i * 27;
+        cbox(z, 140, y, 320, 23, `round ${i + 1}:  t = ${r.t}   c = ${r.c}   s = ${r.s}`, { s: 11, b: true, mono: true, fill: col.surf });
+        cbox(z, 470, y, 116, 23, r.ok ? 'pass ✓' : 'FAIL ✗', { s: 12, b: true, fill: r.ok ? col.green : col.red, c: '#fff' });
+      });
+      cbox(z, 14, 36, 112, 44, [f.honest ? 'knows x' : 'no x', 'y = gˣ = 8'], { s: 12, b: true, fill: f.honest ? 'rgba(15,118,110,0.2)' : 'rgba(225,29,72,0.15)' });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.passed ? `accepted: cheater chance (1/2)^${f.rounds.length} = 1/${2 ** f.rounds.length}` : 'rejected: the prover does not know x', { s: 13, b: true, fill: f.passed ? col.cv : col.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Cryptography 3.3  Paillier: multiply two ciphertexts to add the hidden numbers
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const N = CYNUM;
+  trace('cypaillier', {
+    title: 'Homomorphic encryption: adding numbers you cannot see',
+    sub: 'With Paillier encryption, multiplying two ciphertexts gives an encryption of the sum of the messages. A server can total votes or salaries without ever decrypting one. Toy key p = 5, q = 7, so n = 35 and sums wrap round at 35.',
+    W: 600, H: 340,
+    params: [
+      { k: 'a', label: 'First number a (0 to 34)', type: 'range', v: 12, min: 0, max: 34, step: 1 },
+      { k: 'b', label: 'Second number b (0 to 34)', type: 'range', v: 9, min: 0, max: 34, step: 1 }
+    ],
+    tips: [
+      { t: 'Play a = 12, b = 9. The server multiplies the ciphertexts, and the owner decrypts 21.', play: true },
+      { t: 'Try a = 30, b = 10. The result is 40 mod 35 = 5. Real keys use a 2048 bit n so sums never wrap.', set: { a: 30, b: 10 }, play: true }
+    ],
+    frames(p) {
+      const n = 35, n2 = 1225, gg = 36, lam = 12, mu = 3, a = +p.a, b = +p.b, ra = 2, rb = 8;
+      const enc = (m, r) => Number(N.pw(gg, m, n2)) * Number(N.pw(r, n, n2)) % n2;
+      const dec = c => ((Number(N.pw(c, lam, n2)) - 1) / n) * mu % n;
+      const ca = enc(a, ra), cb = enc(b, rb), cs = ca * cb % n2, sum = dec(cs);
+      const fr = [
+        { k: 1, say: 'Key: n = 5 &times; 7 = 35, g = n + 1 = 36, private &lambda; = lcm(4, 6) = 12 and &mu; = &lambda;<sup>&minus;1</sup> mod 35 = 3. Ciphertexts live mod n<sup>2</sup> = 1225.' },
+        { k: 2, say: `Encrypt a = ${a} with random r = ${ra}: c<sub>a</sub> = g<sup>a</sup> r<sup>n</sup> mod n<sup>2</sup> = <b>${ca}</b>.` },
+        { k: 3, say: `Encrypt b = ${b} with random r = ${rb}: c<sub>b</sub> = <b>${cb}</b>. The random r makes equal messages encrypt differently.` },
+        { k: 4, say: `The server, with no key, multiplies: c<sub>a</sub> &middot; c<sub>b</sub> mod 1225 = <b>${cs}</b>. It has no idea what ${a} or ${b} are.` },
+        { k: 5, done: true, say: `The key owner decrypts: L(c<sup>&lambda;</sup> mod n<sup>2</sup>) &middot; &mu; mod n = <b>${sum}</b> = ${a} + ${b}${a + b >= n ? ' mod 35' : ''}. Because g<sup>a</sup> g<sup>b</sup> = g<sup>a+b</sup>, multiplication of ciphertexts is addition of messages.` }
+      ];
+      return fr.map(x => ({ ...x, a, b, ca, cb, cs, sum }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 12, 572, 30, 'public: n = 35, g = 36        private: λ = 12, μ = 3', { s: 12, b: true, mono: true, fill: col.surf });
+      D.text(g, 'data owners', 90, 66, { a: 'center', s: 12, b: true, c: col.ink2 }); D.text(g, 'untrusted server', 300, 66, { a: 'center', s: 12, b: true, c: col.red }); D.text(g, 'key owner', 510, 66, { a: 'center', s: 12, b: true, c: col.ink2 });
+      if (f.k >= 2) { cbox(z, 14, 80, 150, 44, [`a = ${f.a}`, `Enc → ${f.ca}`], { s: 12, b: true, mono: true, fill: 'rgba(15,118,110,0.2)' }); D.arrow(g, 166, 102, 226, 150, col.cv, 2, 7); }
+      if (f.k >= 3) { cbox(z, 14, 190, 150, 44, [`b = ${f.b}`, `Enc → ${f.cb}`], { s: 12, b: true, mono: true, fill: 'rgba(15,118,110,0.2)' }); D.arrow(g, 166, 212, 226, 170, col.cv, 2, 7); }
+      if (f.k >= 4) { cbox(z, 230, 136, 140, 50, ['multiply', `${f.ca}·${f.cb} ≡ ${f.cs}`], { s: 12, b: true, mono: true, fill: 'rgba(234,88,12,0.2)' }); D.arrow(g, 372, 160, 430, 160, col.orange, 2, 7); }
+      if (f.k >= 5) {
+        cbox(z, 434, 136, 152, 50, ['decrypt', `= ${f.sum}`], { s: 13, b: true, mono: true, fill: col.green, c: '#fff' });
+        cbox(z, 14, 262, 572, 30, 'Enc(a) · Enc(b) mod n² = Enc(a + b mod n)', { s: 13, b: true, mono: true, fill: col.cv, c: '#fff' });
+      }
+    }
+  });
+})();
