@@ -777,3 +777,161 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Network and Systems 3.1  Worm outbreak curves: SI and SIR models with a cleanup rate
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cyworm', {
+    title: 'Worm outbreaks: the epidemic curve',
+    sub: 'A scanning worm infects new hosts in proportion to infected × still vulnerable: dI/dt = β·I·S/N. Defenders clean hosts at rate γ. When R0 = β/γ is below 1 the outbreak dies out. Numbers based on SQL Slammer: 75000 hosts, doubling every 8.5 seconds.',
+    W: 600, H: 340,
+    params: [
+      { k: 'dbl', label: 'Doubling time at the start', type: 'select', v: '8.5', opts: [['8.5', '8.5 s (Slammer, 2003)'], ['37', '37 minutes (Code Red, 2001)']] },
+      { k: 'g', label: 'Cleanup rate γ (fraction of β)', type: 'select', v: '0', opts: [['0', 'none'], ['0.25', 'γ = β/4 (R0 = 4)'], ['1.25', 'γ = 1.25β (R0 = 0.8)']] }
+    ],
+    tips: [
+      { t: 'Play Slammer with no cleanup. The S shaped curve passes 90% in under 3 minutes, faster than any human response.', play: true },
+      { t: 'Set R0 = 4. Cleaning helps, but most hosts are still infected at some point. Patching before the outbreak is what really works.', set: { g: '0.25' }, play: true },
+      { t: 'Set R0 = 0.8. Each infection causes less than one more on average, so the worm fizzles out.', set: { g: '1.25' }, play: true }
+    ],
+    frames(p) {
+      const N = 75000, dblS = p.dbl === '8.5' ? 8.5 : 37 * 60, beta = Math.log(2) / dblS, gamma = beta * +p.g;
+      const Tend = dblS * 30, steps = 3000, dt = Tend / steps;
+      let S = N - 1, I = 1, R = 0; const pts = [[0, I, R]];
+      for (let k = 1; k <= steps; k++) { const ni = beta * S * I / N * dt, nr = gamma * I * dt; S -= ni; I += ni - nr; R += nr; if (k % 30 === 0) pts.push([k * dt, I, R]); }
+      const fmt = t => dblS < 60 ? `${Math.round(t)} s` : `${(t / 3600).toFixed(1)} h`;
+      const fr = [{ st: 0, n: 1, say: `N = 75000 vulnerable hosts, one infected. β = ln 2 / ${p.dbl === '8.5' ? '8.5 s' : '37 min'}${gamma ? `, γ = ${p.g}β, R0 = ${(1 / +p.g).toFixed(1)}` : ', no cleanup'}.` }];
+      [10, 25, 40, 55, 70, 85, 100].forEach(pc => {
+        const n = Math.round(pts.length * pc / 100); const [t, i, r] = pts[n - 1];
+        fr.push({ st: 1, n, say: `t = ${fmt(t)}: ${Math.round(i).toLocaleString('en')} infected now${gamma ? `, ${Math.round(r).toLocaleString('en')} cleaned` : ''} (${(100 * (i + r) / N).toFixed(1)}% ever infected).` });
+      });
+      const ever = (pts[pts.length - 1][1] + pts[pts.length - 1][2]) / N;
+      fr.push({ st: 2, done: true, n: pts.length, ever, say: gamma === 0 ? `Nearly every vulnerable host is infected. Early growth is exponential, then it slows as vulnerable hosts run out, the logistic S curve. Slammer reached about 90% of vulnerable hosts in 10 minutes.` : +p.g > 1 ? `R0 &lt; 1: the outbreak dies out with only ${(ever * 100).toFixed(2)}% ever infected.` : `R0 = 4: ${(ever * 100).toFixed(0)}% are infected at some point. Cleanup lowers the peak but the real defence is having fewer vulnerable hosts before the worm arrives.` });
+      return fr.map(x => ({ ...x, pts, N, Tend, fmt }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 50, R = 420, T = 20, B = 262;
+      const X = t => L + t / f.Tend * (R - L), Y = v => B - v / f.N * (B - T);
+      D.line(g, L, B, R, B, col.line, 1.5); D.line(g, L, T, L, B, col.line, 1.5);
+      [0, 0.5, 1].forEach(v => D.text(g, `${v * 100}%`, L - 6, Y(v * f.N) + 4, { a: 'right', s: 9, c: col.ink2 }));
+      D.text(g, `time (0 to ${f.fmt(f.Tend)})`, (L + R) / 2, B + 18, { a: 'center', s: 10, b: true, c: col.ink2 });
+      const pts = f.pts.slice(0, f.n);
+      for (let i = 1; i < pts.length; i++) {
+        D.line(g, X(pts[i - 1][0]), Y(pts[i - 1][1]), X(pts[i][0]), Y(pts[i][1]), col.red, 2.5);
+        D.line(g, X(pts[i - 1][0]), Y(pts[i - 1][2]), X(pts[i][0]), Y(pts[i][2]), col.green, 2);
+        D.line(g, X(pts[i - 1][0]), Y(pts[i - 1][1] + pts[i - 1][2]), X(pts[i][0]), Y(pts[i][1] + pts[i][2]), col.ink2, 1.2, [4, 3]);
+      }
+      cbox(z, 440, 20, 146, 30, 'infected now', { s: 12, b: true, fill: 'rgba(225,29,72,0.2)' });
+      cbox(z, 440, 56, 146, 30, 'cleaned', { s: 12, b: true, fill: 'rgba(22,163,74,0.2)' });
+      cbox(z, 440, 92, 146, 30, 'ever infected (dashed)', { s: 11, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, `ever infected: ${(f.ever * 100).toFixed(1)}% of vulnerable hosts`, { s: 13, b: true, fill: f.ever > 0.5 ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 3.1  Byte histograms and Shannon entropy: spotting packed or encrypted data
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, utf8 } = CYZ;
+  const make = kind => {
+    let seed = 7; const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    if (kind === 'text') return utf8('Security is a process, not a product. Attackers look for the weakest link, so defenders must think in layers. '.repeat(12)).slice(0, 1024);
+    if (kind === 'code') { const ops = [0x55, 0x48, 0x89, 0xe5, 0x8b, 0x45, 0xfc, 0x83, 0xc0, 0x01, 0xc3, 0x00, 0x00, 0xe8, 0x0f, 0x1f]; return Array.from({ length: 1024 }, () => ops[Math.floor(rnd() * rnd() * 16)]); }
+    return Array.from({ length: 1024 }, () => Math.floor(rnd() * 256));
+  };
+  const H = a => { const c = new Array(256).fill(0); a.forEach(b => c[b]++); return -c.filter(Boolean).reduce((s, k) => s + k / a.length * Math.log2(k / a.length), 0); };
+  trace('cyentropy', {
+    title: 'Entropy: does this file look packed or encrypted?',
+    sub: 'Shannon entropy H = −Σ p·log₂ p measures how evenly the 256 byte values are used. Text and normal code use few values often (low H). Compressed, packed or encrypted data uses all values almost equally (H near 8 bits per byte).',
+    W: 600, H: 340,
+    params: [
+      { k: 'kind', label: 'Sample (1024 bytes)', type: 'select', v: 'text', opts: [['text', 'English text'], ['code', 'Machine code section'], ['enc', 'Encrypted or packed section']] }
+    ],
+    tips: [
+      { t: 'Play English text. A few letters and the space dominate, so entropy is around 4 bits per byte.', play: true },
+      { t: 'Choose an encrypted section. The histogram is flat and entropy is close to 8, which is why packers and ransomware stand out.', set: { kind: 'enc' }, play: true }
+    ],
+    frames(p) {
+      const data = make(p.kind), c = new Array(16).fill(0); data.forEach(b => c[b >> 4]++);
+      const e = H(data);
+      const fr = [
+        { st: 1, data, c, say: `The first bytes: ${data.slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join(' ')} ... 1024 bytes in all.` },
+        { st: 2, data, c, say: 'Count how often each byte value appears. The chart groups the 256 values into 16 bins of 16 values each.' },
+        { st: 3, data, c, e, say: `H = &minus;&Sigma; p<sub>i</sub> log<sub>2</sub> p<sub>i</sub> over all 256 values = <b>${e.toFixed(2)}</b> bits per byte. The maximum is 8, when every value has p = 1/256.` },
+        { st: 4, done: true, data, c, e, say: e > 7.2 ? 'Near 8: compressed, packed or encrypted. Malware packers hide code this way, and a burst of files rewritten at this entropy suggests ransomware. JPEG, ZIP and video are also high, so tools combine entropy with other signals.' : 'Well below 8: structured data. A section of a program that suddenly jumps to near 8 is a classic sign of a packer.' }
+      ];
+      return fr.map(x => ({ ...x, kind: p.kind }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 40, B = 250, W = 360, Hh = 200, mx = Math.max(...f.c);
+      if (f.st >= 2) {
+        D.line(g, L, B, L + W, B, col.line, 1.5);
+        f.c.forEach((v, i) => { const h = v / mx * Hh; D.rect(g, L + i * (W / 16) + 2, B - h, W / 16 - 4, h, { fill: f.st >= 3 && f.e > 7.2 ? col.red : col.cv }); D.text(g, (i * 16).toString(16), L + i * (W / 16) + W / 32, B + 13, { a: 'center', s: 9, c: col.ink2 }); });
+        D.text(g, 'byte value bins (hex)', L + W / 2, B + 28, { a: 'center', s: 10, b: true, c: col.ink2 });
+      } else {
+        for (let i = 0; i < 48; i++) cbox(z, 14 + (i % 12) * 48, 30 + Math.floor(i / 12) * 34, 44, 28, f.data[i].toString(16).padStart(2, '0'), { s: 12, b: true, mono: true, fill: col.surf });
+      }
+      if (f.st >= 3) {
+        cbox(z, 430, 30, 156, 60, ['entropy', `${f.e.toFixed(2)} / 8`], { s: 15, b: true, fill: f.e > 7.2 ? 'rgba(225,29,72,0.2)' : 'rgba(15,118,110,0.2)' });
+        D.rect(g, 430, 104, 156, 16, { fill: col.bg, stroke: col.line }); D.rect(g, 430, 104, 156 * f.e / 8, 16, { fill: f.e > 7.2 ? col.red : col.cv });
+      }
+      if (f.done) cbox(z, 14, 306, 572, 28, f.e > 7.2 ? 'high entropy: packed, compressed or encrypted' : 'low entropy: normal structured data', { s: 13, b: true, fill: f.e > 7.2 ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 3.1  A YARA style scan: strings, a condition, and a hash list, file by file
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const FILES = [
+    ['readme.txt', 'Thanks for installing. Docs at example.org', []],
+    ['HOW_TO_RECOVER.txt', 'Your files have been encrypted. Pay in Bitcoin at abc.onion', ['$a', '$b', '$c']],
+    ['crypto_news.html', 'Bitcoin price rises again', ['$b']],
+    ['notes.txt', 'Read the .onion guide and buy bitcoin safely', ['$b', '$c']]
+  ];
+  trace('cyyara', {
+    title: 'Signature scanning: a YARA style rule',
+    sub: 'A rule names byte strings and a condition. The scanner checks each file and reports a match when the condition holds. Changing the condition trades missed detections for false alarms.',
+    W: 600, H: 340,
+    params: [
+      { k: 'need', label: 'Condition', type: 'select', v: '2', opts: [['1', 'any of them'], ['2', '2 of them'], ['3', 'all of them']] }
+    ],
+    tips: [
+      { t: 'Play "2 of them". The ransom note matches, but so does an innocent notes file that mentions bitcoin and .onion: a false positive.', play: true },
+      { t: 'Choose "all of them". Only the ransom note matches. Stricter rules miss variants that change one string.', set: { need: '3' }, play: true },
+      { t: 'Choose "any of them". Even the crypto news page matches. Loose rules flood analysts.', set: { need: '1' }, play: true }
+    ],
+    frames(p) {
+      const need = +p.need, rows = [];
+      const fr = [{ st: 0, rows: [], say: `Rule Toy_Ransom_Note: $a = "files have been encrypted", $b = "bitcoin", $c = ".onion" (case ignored). Condition: ${need === 1 ? 'any of them' : need === 3 ? 'all of them' : '2 of them'}.` }];
+      FILES.forEach(([name, text, hits]) => {
+        const m = hits.length >= need, bad = name === 'HOW_TO_RECOVER.txt';
+        rows.push({ name, hits, m, bad });
+        fr.push({ st: 1, rows: rows.slice(), say: `${name}: found ${hits.length ? hits.join(', ') : 'nothing'}. ${m ? (bad ? '<b>Match</b>, and it really is a ransom note.' : '<b>Match</b>, but this file is harmless: a false positive.') : (bad ? 'No match: a missed detection.' : 'No match.')}` });
+      });
+      const fp = rows.filter(r => r.m && !r.bad).length;
+      fr.push({ st: 2, done: true, rows, fp, say: `${fp} false positive${fp === 1 ? '' : 's'}. Real rules combine distinctive strings, byte patterns, file size and structure (for example the file must start with MZ) to stay precise, and they are tested against large sets of clean files before use.` });
+      return fr.map(x => ({ ...x, need }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      ['$a encrypted', '$b bitcoin', '$c .onion'].forEach((t, i) => cbox(z, 14 + i * 150, 12, 140, 26, t, { s: 11, b: true, mono: true, fill: col.surf }));
+      cbox(z, 470, 12, 116, 26, `need ${f.need}`, { s: 12, b: true, fill: col.bg });
+      f.rows.forEach((r, i) => {
+        const y = 52 + i * 60;
+        cbox(z, 14, y, 190, 48, r.name, { s: 12, b: true, mono: true, fill: col.surf });
+        ['$a', '$b', '$c'].forEach((s, j) => cbox(z, 214 + j * 64, y + 8, 56, 32, s, { s: 12, b: true, mono: true, fill: r.hits.includes(s) ? col.cv : col.bg, c: r.hits.includes(s) ? '#fff' : col.ink2 }));
+        cbox(z, 410, y + 4, 176, 40, r.m ? (r.bad ? 'match (true)' : 'match (false alarm)') : (r.bad ? 'missed' : 'clean'), { s: 12, b: true, fill: r.m ? (r.bad ? col.red : col.orange) : r.bad ? col.ink2 : col.green, c: '#fff' });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.fp ? `${f.fp} false alarm(s): rule too loose` : 'precise: only the ransom note matched', { s: 13, b: true, fill: f.fp ? col.orange : col.cv, c: '#fff' });
+    }
+  });
+})();

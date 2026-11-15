@@ -9730,6 +9730,27 @@ function cySysModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cy-s3", title: "Malware and hardening", emoji: "3", step: 3, part: "systems", level: "Intermediate", blurb: "How malicious software spreads and is detected, how vulnerabilities are scored, and how systems are hardened and patched.", topics: [
+      { id: "cy-malware", title: "Malware: types, epidemics, detection and ransomware", emoji: "3.1", page: "content/cyber-security/cy-malware.html",
+        summary: "malware types and history, worm epidemic maths, signatures, YARA, entropy and EDR, ransomware defence and analysis.",
+        keywords: ["malware", "worm", "virus", "ransomware", "YARA", "entropy", "EDR", "SIR model", "rootkit", "backups"],
+        minutes: 80, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What malware is and how it evolved", emoji: "", group: "Lesson", keywords: ["malware", "virus", "worm", "Trojan", "ransomware", "spyware", "rootkit", "botnet", "wiper", "Fred Cohen", "Morris worm", "ILOVEYOU", "Slammer", "Stuxnet", "WannaCry", "NotPetya", "ransomware as a service"] },
+        { id: "spread", title: "How worms spread: the epidemic maths", emoji: "", group: "Lesson", keywords: ["worm", "epidemic model", "SI model", "SIR model", "logistic curve", "doubling time", "R0", "basic reproduction number", "Kephart and White", "Code Red", "Slammer", "random scanning", "hit list"] },
+        { id: "detect", title: "Detecting malware: signatures, entropy and behaviour", emoji: "", group: "Lesson", keywords: ["malware detection", "signature", "hash", "IOC", "YARA", "polymorphic", "metamorphic", "packer", "entropy", "heuristics", "sandbox", "EDR", "behaviour based detection", "machine learning detection", "Cohen undecidability"] },
+        { id: "ransomware", title: "Ransomware and how to survive it", emoji: "", group: "Lesson", keywords: ["ransomware", "hybrid encryption", "double extortion", "No More Ransom", "Colonial Pipeline", "3-2-1 backups", "immutable backups", "shadow copies", "canary files", "CERT-In", "ransomware as a service"] },
+        { id: "analysis", title: "Persistence, rootkits and malware analysis", emoji: "", group: "Lesson", keywords: ["persistence", "rootkit", "bootkit", "Secure Boot", "MITRE ATT&CK", "static analysis", "dynamic analysis", "Ghidra", "sandbox", "indicators of compromise", "Sigma"] },
+        { id: "versus", title: "Malware types and defences compared", emoji: "", group: "Lesson", keywords: ["comparison", "virus versus worm", "Trojan", "ransomware", "rootkit"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Sigma", "adversarial malware", "unpacking"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
