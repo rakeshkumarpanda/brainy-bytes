@@ -1612,3 +1612,161 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Application Security 2.1  A stack buffer overflow, byte by byte, with and without a stack canary
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const IN = { ok: 'alice', mid: 'AAAAAAAAAAAAAAAABBBB', full: 'AAAAAAAAAAAAAAAABBBBBBBB' + 'efbeadde0000' };
+  trace('cystack', {
+    title: 'Stack buffer overflow: writing past a 16 byte buffer',
+    sub: 'A function keeps a 16 byte buffer on the stack. Just above it sit a canary value and the saved return address, which tells the CPU where to go when the function ends. Copying input without checking its length overwrites them.',
+    W: 600, H: 340,
+    params: [
+      { k: 'in', label: 'Input', type: 'select', v: 'full', opts: [['ok', '"alice" (5 bytes)'], ['mid', '20 bytes'], ['full', '32 bytes ending in an address']] },
+      { k: 'can', label: 'Stack canary', type: 'select', v: 'off', opts: [['off', 'off'], ['on', 'on (-fstack-protector)']] }
+    ],
+    tips: [
+      { t: 'Play 32 bytes with no canary. The last 8 bytes replace the return address, so the function "returns" wherever the attacker likes.', play: true },
+      { t: 'Turn the canary on. The overflow must pass through the canary to reach the return address, the check at return notices, and the program stops.', set: { can: 'on' }, play: true },
+      { t: 'Try a short input. Nothing beyond the buffer changes.', set: { in: 'ok' }, play: true }
+    ],
+    frames(p) {
+      const n = p.in === 'ok' ? 5 : p.in === 'mid' ? 20 : 32, can = p.can === 'on';
+      const smashCan = n > 16, smashRet = n > 24;
+      const fr = [
+        { st: 1, n: 0, say: 'The frame: buf[16] at the lowest addresses, then an 8 byte canary (a random value set when the program starts), then the 8 byte saved return address 0x401136.' },
+        { st: 2, n: 0, say: `strcpy(buf, input) is called with ${n} bytes. strcpy copies until the end of the input and never looks at the size of buf.` },
+        { st: 3, n: Math.min(n, 16), say: `Bytes 0 to ${Math.min(n, 16) - 1} go into buf.${n <= 16 ? ' The input fits.' : ' The buffer is now full, but copying continues.'}` },
+        { st: 4, n, say: n <= 16 ? 'Nothing else was touched.' : smashRet ? 'Bytes 16 to 23 overwrite the canary, and bytes 24 to 31 overwrite the return address with 0xdeadbeef, chosen by the attacker.' : 'Bytes 16 to 19 overwrite part of the canary. The return address is still intact.' },
+        { st: 5, done: true, n, say: !smashCan ? 'The function returns to 0x401136 as normal.' : can ? '<b>*** stack smashing detected ***</b>. Before returning, the compiler’s check compares the canary with the saved copy. It differs, so the program aborts instead of jumping. StackGuard introduced this idea in 1998.' : smashRet ? 'The function returns to 0xdeadbeef. In a real attack this points to the attacker’s code or, with non executable stacks, to a chain of existing code fragments (return oriented programming). The Morris worm of 1988 used exactly this bug in fingerd.' : 'The function returns normally, but memory was corrupted. Without a canary nobody noticed.' }
+      ];
+      return fr.map(x => ({ ...x, total: n, can, smashCan, smashRet, input: IN[p.in] }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, cw = 17, x0 = 28, y0 = 70;
+      const label = (x, w, t, c) => { D.rect(g, x, y0 - 30, w, 22, { fill: c }); D.text(g, t, x + w / 2, y0 - 15, { a: 'center', s: 11, b: true, c: col.ink }); };
+      label(x0, 16 * cw, 'buf[16]', 'rgba(15,118,110,0.18)'); label(x0 + 16 * cw, 8 * cw, f.can ? 'canary' : 'padding', 'rgba(234,88,12,0.18)'); label(x0 + 24 * cw, 8 * cw, 'return address', 'rgba(124,58,237,0.18)');
+      const ret = '36114000 00000000'.replace(' ', ''), canv = '00942d7b5e3c1f8a';
+      for (let i = 0; i < 32; i++) {
+        const w = i < f.n, over = w && i >= 16;
+        let t = '';
+        if (w) t = i < 24 || f.input.length <= 24 ? (f.input[i] || '') : f.input.slice(24 + (i - 24) * 2, 26 + (i - 24) * 2) || '00';
+        else if (i >= 24) t = ret.slice((i - 24) * 2, (i - 24) * 2 + 2);
+        else if (i >= 16) t = f.can ? canv.slice((i - 16) * 2, (i - 16) * 2 + 2) : '..';
+        D.rect(g, x0 + i * cw, y0, cw - 1, 30, { fill: over ? col.red : w ? col.cv : col.bg, stroke: col.line });
+        D.text(g, t, x0 + i * cw + cw / 2, y0 + 19, { a: 'center', s: t.length > 1 ? 8 : 11, b: true, mono: true, c: w ? '#fff' : col.ink2 });
+      }
+      D.text(g, 'low addresses', x0, y0 + 46, { s: 10, c: col.ink2 }); D.text(g, 'high addresses', x0 + 32 * cw, y0 + 46, { a: 'end', s: 10, c: col.ink2 });
+      if (f.st >= 2) cbox(z, 14, 130, 572, 34, `strcpy(buf, input)   input length = ${f.total} bytes`, { s: 12, b: true, mono: true, fill: col.surf });
+      if (f.st >= 5) {
+        const t = !f.smashCan ? 'ret → 0x401136 (normal)' : f.can ? 'canary changed → abort' : f.smashRet ? 'ret → 0xdeadbeef (attacker)' : 'ret → 0x401136, memory silently corrupted';
+        cbox(z, 14, 180, 572, 40, t, { s: 13, b: true, mono: true, fill: f.smashRet && !f.can ? 'rgba(225,29,72,0.2)' : 'rgba(15,118,110,0.15)' });
+      }
+      if (f.done) cbox(z, 14, 306, 572, 28, !f.smashCan ? 'input fit: safe' : f.can ? 'overflow detected by the canary' : f.smashRet ? 'control flow hijacked' : 'memory corrupted, not detected', { s: 13, b: true, fill: f.smashRet && !f.can ? col.red : f.smashCan && !f.can ? col.orange : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 2.1  ASLR as a guessing game: same layout after a crash, or a fresh one
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cyaslr', {
+    title: 'ASLR: guessing where the code lives',
+    sub: 'Address space layout randomisation loads code at a random offset, so an exploit must guess where its target is. A wrong guess crashes the process. Here there are only 16 possible offsets (4 bits) so you can watch, real systems use 8 to 28 bits or more.',
+    W: 600, H: 340,
+    params: [
+      { k: 'mode', label: 'After a crash', type: 'select', v: 'fork', opts: [['fork', 'forked child: same layout'], ['rerand', 'restart: fresh random layout']] }
+    ],
+    tips: [
+      { t: 'Play a forking server. Each crash rules out one offset, so the attacker sweeps through them and must win within 16 tries.', play: true },
+      { t: 'Try re-randomising restarts. Every try is a new lottery with a 1 in 16 chance, and past failures teach nothing.', set: { mode: 'rerand' }, play: true }
+    ],
+    frames(p) {
+      let seed = 12345; const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+      const fork = p.mode === 'fork', fr = [];
+      let secret = 11, tried = [], hit = false, k = 0;
+      fr.push({ st: 0, secret, tried: [], say: `The program’s code base is at one of 16 offsets. ${fork ? 'This server forks a child per connection, and children inherit the parent’s layout.' : 'This service re-randomises its layout whenever it restarts after a crash.'}` });
+      while (!hit && k < 30) {
+        const guess = fork ? k : 0;
+        if (!fork && k > 0) secret = Math.floor(rnd() * 16);
+        hit = guess === secret; k++;
+        tried = fork ? tried.concat([guess]) : [guess];
+        fr.push({ st: 1, secret, tried: tried.slice(), guess, hit, k, say: `Try ${k}: the exploit assumes offset ${guess}. ${hit ? '<b>Correct</b>: the jump lands on the intended code.' : `Wrong, the real offset is ${secret}. The process crashes${fork ? ' and the parent forks a new child with the same layout.' : ' and restarts with a new random layout.'}`}` });
+      }
+      fr.push({ st: 2, done: true, secret, tried, k, hit, guess: secret, say: `Found after ${k} tries. Expected tries: ${fork ? '(16 + 1) / 2 = 8.5 with the same layout' : '16 with fresh layouts'}. With n bits these become (2<sup>n</sup> + 1)/2 and 2<sup>n</sup>. In 2004 Shacham and colleagues beat 16 bit ASLR on a forking web server in about 216 seconds. 64 bit systems have far more bits, and one leaked pointer still defeats ASLR completely.` });
+      return fr.map(x => ({ ...x, fork }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 20, w = 35;
+      for (let i = 0; i < 16; i++) {
+        const isS = f.st >= 1 && i === f.secret, t = f.tried.includes(i), isG = i === f.guess && f.st >= 1;
+        D.rect(g, x0 + i * w, 60, w - 3, 60, { fill: isG ? (f.hit ? col.green : col.red) : t && f.fork ? col.ink2 : isS ? 'rgba(124,58,237,0.25)' : col.bg, stroke: col.line });
+        D.text(g, String(i), x0 + i * w + w / 2 - 1, 96, { a: 'center', s: 13, b: true, c: isG || (t && f.fork) ? '#fff' : col.ink });
+      }
+      D.text(g, 'possible offsets of the code base', x0, 48, { s: 11, b: true, c: col.ink2 });
+      if (f.st >= 1) D.text(g, 'purple = real offset this run', x0, 140, { s: 11, c: col.ink2 });
+      cbox(z, 20, 170, 270, 50, ['tries so far', String(f.k || 0)], { s: 14, b: true, fill: col.surf });
+      cbox(z, 306, 170, 274, 50, ['chance this try', f.done ? 'found' : f.fork ? `1 / ${16 - Math.max(0, (f.k || 1) - 1)}` : '1 / 16'], { s: 14, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, `offset found after ${f.k} tries (${f.fork ? 'same layout each time' : 'fresh layout each time'})`, { s: 13, b: true, fill: col.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 2.1  Use after free: a freed block is reused and an old pointer reads the new owner
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cyuaf', {
+    title: 'Use after free: the dangling pointer',
+    sub: 'In C and C++ the program frees memory by hand. If it keeps using a pointer after the free, and the allocator hands the same block to someone else, the old pointer now reads and writes the new owner’s data. Browsers and kernels suffer from this bug class more than any other.',
+    W: 600, H: 340,
+    params: [
+      { k: 'def', label: 'Language or habit', type: 'select', v: 'none', opts: [['none', 'C, pointer kept after free'], ['null', 'C, pointer set to NULL after free'], ['rust', 'Rust ownership rules']] }
+    ],
+    tips: [
+      { t: 'Play the plain C version. The old session pointer ends up pointing at an object the attacker controls, with is_admin set.', play: true },
+      { t: 'Set the pointer to NULL after freeing. A later use crashes cleanly instead of reading someone else’s data. Other copies of the pointer can still dangle.', set: { def: 'null' }, play: true },
+      { t: 'Try Rust. The compiler refuses to build a program that uses a value after it has been dropped.', set: { def: 'rust' }, play: true }
+    ],
+    frames(p) {
+      const d = p.def;
+      const fr = [
+        { st: 1, say: 'session = malloc(...) gets heap block 2 and stores alice’s session there: user alice, is_admin false.' },
+        { st: 2, say: d === 'rust' ? 'In Rust, drop(session) ends the value’s life. The name session can no longer be used.' : `free(session): block 2 goes back on the free list.${d === 'null' ? ' The code then sets session = NULL.' : ' But the variable session still holds the address of block 2: a dangling pointer.'}` },
+        { st: 3, say: d === 'rust' ? 'Any later line that uses session is a compile time error: "borrow of moved value". The program is never built.' : 'The attacker triggers a new allocation of the same size, for example by sending a message. The allocator reuses the most recently freed block, block 2, and fills it with the attacker’s data: user mallory, is_admin true.' },
+        { st: 4, done: true, say: d === 'none' ? 'The code later checks session->is_admin through the old pointer and reads <b>true</b>. Real exploits place fake objects with function pointers in the reused block to take control. Hardened allocators, memory tagging (Arm MTE) and safe languages fight this class.' : d === 'null' ? 'Using session now dereferences NULL and the program crashes, a denial of service but not a takeover. Pointers copied elsewhere before the free would still dangle, which is why this habit helps but does not solve the problem.' : 'No dangling pointer can exist. Google reported that as Android wrote new code in memory safe languages, memory safety bugs fell from 76% of its vulnerabilities in 2019 to 24% in 2024.' }
+      ];
+      return fr.map(x => ({ ...x, d }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      D.text(g, 'heap blocks', 20, 30, { s: 11, b: true, c: col.ink2 });
+      for (let i = 0; i < 4; i++) {
+        let txt = 'free', fill = col.bg;
+        if (i === 0) { txt = 'in use'; fill = col.surf; }
+        if (i === 2) {
+          if (f.st === 1 || (f.st >= 2 && f.d === 'rust' && f.st < 2)) { txt = 'alice, admin=false'; fill = 'rgba(15,118,110,0.2)'; }
+          if (f.st === 1) { txt = 'alice, admin=false'; fill = 'rgba(15,118,110,0.2)'; }
+          else if (f.st === 2 || (f.d === 'rust' && f.st > 2)) { txt = f.d === 'rust' ? 'dropped' : 'free (on free list)'; fill = col.bg; }
+          if (f.st >= 3 && f.d !== 'rust') { txt = 'mallory, admin=true'; fill = 'rgba(225,29,72,0.25)'; }
+        }
+        cbox(z, 20 + i * 142, 40, 132, 56, [`block ${i}`, txt], { s: 11, b: true, fill });
+      }
+      const ptr = f.d === 'null' && f.st >= 2 ? 'session = NULL' : f.d === 'rust' && f.st >= 2 ? 'session: moved, unusable' : 'session → block 2';
+      cbox(z, 20, 140, 220, 40, ptr, { s: 12, b: true, mono: true, fill: col.surf });
+      if (!(f.d !== 'none' && f.st >= 2)) D.arrow(g, 130, 140, 304 + 66 - 50, 96, f.st >= 2 ? col.red : col.cv, 2.5);
+      if (f.st >= 3 && f.d !== 'rust') cbox(z, 330, 140, 250, 40, 'attacker = malloc(...) → block 2', { s: 12, b: true, mono: true, fill: 'rgba(225,29,72,0.15)' });
+      if (f.st >= 3 && f.d === 'rust') cbox(z, 20, 200, 560, 40, 'error[E0382]: borrow of moved value: `session`', { s: 12, b: true, mono: true, fill: 'rgba(15,118,110,0.2)' });
+      if (f.st >= 4 && f.d !== 'rust') cbox(z, 20, 200, 560, 40, f.d === 'none' ? 'if (session->is_admin)  reads true  →  admin access granted' : 'session->is_admin  →  NULL dereference, crash', { s: 12, b: true, mono: true, fill: f.d === 'none' ? 'rgba(225,29,72,0.2)' : col.bg });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.d === 'none' ? 'use after free: attacker data read as alice’s session' : f.d === 'null' ? 'crash instead of takeover' : 'rejected at compile time', { s: 13, b: true, fill: f.d === 'none' ? col.red : f.d === 'null' ? col.orange : col.cv, c: '#fff' });
+    }
+  });
+})();

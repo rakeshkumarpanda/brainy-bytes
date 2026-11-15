@@ -9836,6 +9836,27 @@ function cyAppModules() {
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "cy-a2", title: "Secure software and ethical hacking", emoji: "2", step: 2, part: "appsec", level: "Advanced", blurb: "Memory safety bugs and their defences, building security into development, the ethical hacking method and the human side of attacks.", topics: [
+      { id: "cy-memsafe", title: "Memory safety: overflows, ASLR, use after free and Rust", emoji: "2.1", page: "content/cyber-security/cy-memsafe.html",
+        summary: "Stack overflows and canaries, NX and ROP, ASLR brute force maths, heap bugs and integer overflow, sanitisers, fuzzing and Rust.",
+        keywords: ["buffer overflow", "stack canary", "NX", "ROP", "ASLR", "use after free", "integer overflow", "AddressSanitizer", "fuzzing", "Rust"],
+        minutes: 80, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Memory safety: why C and C++ bugs become exploits", emoji: "", group: "Lesson", keywords: ["memory safety", "stack", "heap", "undefined behaviour", "buffer overflow", "use after free", "double free", "integer overflow", "format string", "Aleph One", "Phrack", "Morris worm", "70 percent", "memory safe languages"] },
+        { id: "overflow", title: "Stack overflows, canaries, NX and return oriented programming", emoji: "", group: "Lesson", keywords: ["stack overflow", "return address", "strcpy", "gets", "shellcode", "stack canary", "StackGuard", "fstack-protector", "NX bit", "DEP", "return oriented programming", "ROP", "gadgets", "Shacham", "shadow stack", "Intel CET", "BROP"] },
+        { id: "aslr", title: "ASLR: randomness against exploits", emoji: "", group: "Lesson", keywords: ["ASLR", "address space layout randomisation", "entropy", "brute force", "PaX", "PIE", "KASLR", "information leak", "fork server", "mmap_rnd_bits", "geometric distribution"] },
+        { id: "heap", title: "Heap bugs: use after free, integer overflow and friends", emoji: "", group: "Lesson", keywords: ["heap", "malloc", "free", "use after free", "dangling pointer", "double free", "integer overflow", "wraparound", "signedness", "Stagefright", "memory tagging", "Arm MTE", "hardened allocator"] },
+        { id: "defences", title: "Finding and stopping memory bugs", emoji: "", group: "Lesson", keywords: ["AddressSanitizer", "sanitizers", "fuzzing", "AFL", "libFuzzer", "OSS-Fuzz", "CFI", "pointer authentication", "CHERI", "Morello", "Rust", "borrow checker", "FORTIFY_SOURCE", "hardening flags"] },
+        { id: "versus", title: "Languages and memory safety compared", emoji: "", group: "Lesson", keywords: ["comparison", "C", "C++", "Rust", "Go", "Java", "Python", "unsafe", "smart pointers"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "CTF", "exploit development", "AFL++", "RustBelt"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
