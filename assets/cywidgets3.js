@@ -2042,3 +2042,201 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Security Operations 1.1  Turning raw log lines from three sources into one common event shape
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const RAW = [
+    ['Linux sshd (syslog)', 'Nov 15 09:12:04 web1 sshd[811]: Failed password for root from 203.0.113.9 port 52144 ssh2', ['09:12:04', 'root', '203.0.113.9', 'logon', 'failure', 'web1']],
+    ['Windows Security log', 'EventID=4625 Time=2026-11-15T09:12:09Z Account=asha Source=203.0.113.9 Host=PC-22', ['09:12:09', 'asha', '203.0.113.9', 'logon', 'failure', 'PC-22']],
+    ['Web app (JSON)', '{"ts":"2026-11-15T09:12:30Z","event":"login","user":"asha","ip":"203.0.113.9","ok":true}', ['09:12:30', 'asha', '203.0.113.9', 'logon', 'success', 'shop-app']],
+    ['Firewall', '2026-11-15 09:13:02 ALLOW TCP 10.0.0.22:51515 -> 198.51.100.7:443', ['09:13:02', '-', '10.0.0.22', 'connection', 'allowed', 'fw1']]
+  ];
+  const COLS = ['time', 'user', 'source ip', 'action', 'outcome', 'host'];
+  trace('cylogparse', {
+    title: 'Normalising logs: many formats, one shape',
+    sub: 'Every system writes its logs in its own way. A SIEM first turns each line into the same set of fields, so one rule can search all of them together. Step through four lines from four different sources.',
+    W: 600, H: 340,
+    params: [],
+    tips: [{ t: 'Play to read each raw line and see it land in the common table. Notice how the same attacker IP shows up in three sources.', play: true }],
+    frames() {
+      const fr = [];
+      RAW.forEach(([src, , f], i) => {
+        fr.push({ st: 1, n: i, raw: true, say: `Line ${i + 1} comes from the <b>${src}</b>. It is just text. A person can read it, but a computer cannot yet compare it with other lines.` });
+        fr.push({ st: 2, n: i + 1, say: `The parser picks out the fields: time ${f[0]}, user ${f[1]}, source ${f[2]}, action ${f[3]}, outcome <b>${f[4]}</b>. Now it fits the common table.` });
+      });
+      fr.push({ st: 3, done: true, n: RAW.length, say: 'All four lines now share one shape. A single search, source ip = 203.0.113.9, finds the failed root login, the failed Windows login and then the successful web login. That story was hidden across three separate systems.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      const cur = f.raw ? RAW[f.n] : null;
+      cbox(z, 14, 14, 572, 56, cur ? [cur[0], cur[1]] : ['raw line', 'waiting'], { s: 11, b: false, mono: true, fill: cur ? 'rgba(234,88,12,0.12)' : col.bg });
+      if (cur) D.arrow(g, 300, 72, 300, 92, col.orange, 2);
+      const x0 = 14, w = 572 / COLS.length;
+      COLS.forEach((c, j) => cbox(z, x0 + j * w, 96, w - 2, 26, c, { s: 11, b: true, fill: col.surf }));
+      RAW.slice(0, f.n).forEach(([, , vals], i) => vals.forEach((v, j) => {
+        const hit = f.done && v === '203.0.113.9';
+        cbox(z, x0 + j * w, 126 + i * 34, w - 2, 30, v, { s: 11, mono: true, b: hit, fill: hit ? 'rgba(225,29,72,0.2)' : col.bg });
+      }));
+      if (f.done) cbox(z, 14, 306, 572, 28, 'one search across every source: source ip = 203.0.113.9', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 1.1  A threshold rule over a sliding time window: password guessing detection
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  /* minute of the hour, source, ok */
+  const EV = [[1, 'A', 0], [3, 'B', 0], [4, 'A', 1], [10, 'C', 0], [11, 'C', 0], [11, 'C', 0], [12, 'C', 0], [12, 'C', 0], [13, 'C', 0], [14, 'B', 0], [15, 'C', 1], [22, 'B', 0], [27, 'B', 0], [33, 'B', 0], [38, 'B', 0], [44, 'B', 0]];
+  trace('cybrute', {
+    title: 'A detection rule: too many failed logins in a short time',
+    sub: 'Rule: alert when one source has at least N failed logins inside a window of W minutes. Each dot is a login. Red means failed, green means success. Watch the counter for each source as the window slides along.',
+    W: 600, H: 340,
+    params: [
+      { k: 'n', label: 'Alert at N failures', type: 'range', v: 5, min: 2, max: 8, step: 1 },
+      { k: 'w', label: 'Window W (minutes)', type: 'select', v: '5', opts: [['5', '5 minutes'], ['10', '10 minutes'], ['60', '60 minutes']] }
+    ],
+    tips: [
+      { t: 'Play with N = 5 and W = 5. Source C fails 6 times in 4 minutes and then succeeds, so the rule fires and a second rule should flag the success.', play: true },
+      { t: 'Set W = 60. Source B, which fails slowly every few minutes, is now caught too. This is the low and slow attacker.', set: { w: '60' }, play: true },
+      { t: 'Set N = 2. Now a person who mistypes twice raises an alert. Too low a threshold floods the team.', set: { n: 2 }, play: true }
+    ],
+    frames(p) {
+      const N = +p.n, W = +p.w, fr = [], fired = {};
+      EV.forEach(([t, s, ok], i) => {
+        const cnt = EV.slice(0, i + 1).filter(([t2, s2, ok2]) => s2 === s && !ok2 && t2 > t - W).length;
+        let say = `Minute ${t}: source ${s} ${ok ? '<b>logs in successfully</b>' : 'fails a login'}. Failures from ${s} in the last ${W} minutes: <b>${cnt}</b>.`;
+        let alert = '';
+        if (!ok && cnt >= N && !fired[s]) { fired[s] = t; alert = s; say += ` That reaches N = ${N}, so the rule <b>fires an alert</b> for ${s}.`; }
+        else if (ok && fired[s]) { alert = s + '!'; say += ` A success right after an alert is the worst case: the guessing may have worked. Escalate now.`; }
+        fr.push({ st: 1, n: i + 1, cnt, cur: s, alert, say });
+      });
+      const who = Object.keys(fired);
+      fr.push({ st: 2, done: true, n: EV.length, who, say: who.length ? `Alerts for ${who.join(' and ')}. The same data with a different N or W gives a different answer, so rules are tuned on real history before they go live.` : 'No alert. The threshold was too high or the window too short for these attackers.' });
+      return fr.map(x => ({ ...x, N, W }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 50, R = 580, X = t => L + t / 48 * (R - L);
+      const rows = { A: 60, B: 130, C: 200 };
+      Object.entries(rows).forEach(([s, y]) => { D.text(g, 'src ' + s, 12, y + 4, { s: 12, b: true, c: col.ink2 }); D.line(g, L, y, R, y, col.line, 1); });
+      [0, 10, 20, 30, 40].forEach(t => D.text(g, t + ' min', X(t), 250, { a: 'center', s: 10, c: col.ink2 }));
+      const last = EV[f.n - 1];
+      if (last && !f.done) D.rect(g, X(Math.max(0, last[0] - f.W)), rows[last[1]] - 22, X(last[0]) - X(Math.max(0, last[0] - f.W)) + 4, 44, { fill: 'rgba(37,99,235,0.12)' });
+      const seen = {};
+      EV.slice(0, f.n).forEach(([t, s, ok]) => { const k = s + t; seen[k] = (seen[k] || 0) + 1; D.circle(g, X(t), rows[s] - 10 + seen[k] * 6, 5, { fill: ok ? col.green : col.red }); });
+      if (!f.done && last) cbox(z, 380, 262, 206, 34, `src ${last[1]}: ${f.cnt} in ${f.W} min`, { s: 12, b: true, fill: f.alert ? col.red : col.surf, c: f.alert ? '#fff' : col.ink });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.who.length ? `N = ${f.N}, W = ${f.W}: alerts for ${f.who.join(', ')}` : `N = ${f.N}, W = ${f.W}: no alert`, { s: 13, b: true, fill: f.who.length ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 1.1  The base rate fallacy: why a 99 percent detector can still be mostly wrong
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  trace('cybaserate', {
+    title: 'The base rate problem: most alerts can be false even with a great detector',
+    sub: 'Take 1000000 events. Only a few are real attacks. The detector catches most attacks (the detection rate) but also wrongly flags a small share of normal events (the false alarm rate). How many of its alerts are real?',
+    W: 600, H: 340,
+    params: [
+      { k: 'b', label: 'Real attacks in 1000000 events', type: 'select', v: '100', opts: [['10', '10'], ['100', '100'], ['1000', '1000'], ['10000', '10000']] },
+      { k: 'tpr', label: 'Detection rate (%)', type: 'range', v: 99, min: 50, max: 100, step: 1 },
+      { k: 'fpr', label: 'False alarm rate (%)', type: 'select', v: '1', opts: [['0.01', '0.01%'], ['0.1', '0.1%'], ['1', '1%'], ['5', '5%']] }
+    ],
+    tips: [
+      { t: 'Play with the defaults: 100 attacks, 99% detection, 1% false alarms. Fewer than 1 alert in 100 is real.', play: true },
+      { t: 'Set the false alarm rate to 0.01%. Now most alerts are real. Cutting false alarms matters far more than raising detection.', set: { fpr: '0.01' }, play: true },
+      { t: 'Set attacks to 10000. When attacks are common the same detector looks much better. The base rate decides.', set: { b: '10000' }, play: true }
+    ],
+    frames(p) {
+      const T = 1e6, B = +p.b, tpr = +p.tpr / 100, fpr = +p.fpr / 100;
+      const tp = Math.round(B * tpr), fp = Math.round((T - B) * fpr), prec = tp / (tp + fp || 1);
+      const d = { T, B, tp, fp, prec };
+      return [
+        { st: 1, ...d, say: `Start with 1000000 events. <b>${B}</b> of them are real attacks, and ${T - B} are normal.` },
+        { st: 2, ...d, say: `The detector catches ${p.tpr}% of the attacks: ${B} &times; ${f2(tpr, 2)} = <b>${tp}</b> true alerts.` },
+        { st: 3, ...d, say: `It also flags ${p.fpr}% of normal events by mistake: ${T - B} &times; ${fpr} = <b>${fp}</b> false alarms.` },
+        { st: 4, ...d, say: `An analyst sees ${tp + fp} alerts. The share that are real is ${tp} / ${tp + fp} = <b>${f2(prec * 100, 2)}%</b>. This share is called precision.` },
+        { st: 5, done: true, ...d, say: prec < 0.5 ? `Most alerts are false even though the detector sounds excellent. Stefan Axelsson showed this in 1999: because attacks are rare, the false alarm rate must be tiny. Teams fix it by adding context, combining signals and tuning rules.` : `Here most alerts are real. Either attacks are common or false alarms are very rare. Keep checking precision as data changes.` }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 16, 572, 40, `1000000 events`, { s: 14, b: true, fill: col.surf });
+      if (f.st >= 1) { cbox(z, 14, 70, 180, 40, ['attacks', String(f.B)], { s: 12, b: true, fill: 'rgba(225,29,72,0.15)' }); cbox(z, 406, 70, 180, 40, ['normal', String(f.T - f.B)], { s: 12, b: true, fill: col.bg }); }
+      if (f.st >= 2) { D.arrow(g, 104, 112, 104, 140, col.red, 2); cbox(z, 14, 142, 180, 40, ['true alerts', String(f.tp)], { s: 12, b: true, fill: 'rgba(225,29,72,0.3)' }); }
+      if (f.st >= 3) { D.arrow(g, 496, 112, 496, 140, col.orange, 2); cbox(z, 406, 142, 180, 40, ['false alarms', String(f.fp)], { s: 12, b: true, fill: 'rgba(234,88,12,0.3)' }); }
+      if (f.st >= 4) {
+        D.arrow(g, 194, 162, 240, 210, col.ink2, 2); D.arrow(g, 406, 162, 360, 210, col.ink2, 2);
+        const all = f.tp + f.fp || 1, w = 372, real = Math.max(2, w * f.tp / all);
+        D.rect(g, 114, 212, w, 34, { fill: 'rgba(234,88,12,0.35)' }); D.rect(g, 114, 212, real, 34, { fill: col.red });
+        D.text(g, `alerts the analyst sees: ${f.tp + f.fp}`, 300, 266, { a: 'center', s: 12, b: true, c: col.ink2 });
+      }
+      if (f.done) cbox(z, 14, 306, 572, 28, `precision = ${f2(f.prec * 100, 2)}% of alerts are real`, { s: 13, b: true, fill: f.prec < 0.5 ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 1.1  A hash chained log: editing or deleting one old entry breaks every later link
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8, hex } = CYZ;
+  const LOG = ['09:00 asha logged in', '09:05 asha opened payroll.xlsx', '09:07 asha exported 900 rows', '09:09 asha deleted export.csv', '09:10 asha logged out'];
+  const h8 = s => sha256(utf8(s)).slice(0, 4).map(b => hex(b)).join('').toLowerCase();
+  trace('cyhashchain', {
+    title: 'Tamper evident logs: each entry carries the hash of the one before',
+    sub: 'Each stored hash is SHA-256 of the previous hash plus the entry text (only the first 8 hex digits are shown). An intruder who edits or deletes an old line cannot fix the later hashes without the secret start value kept elsewhere.',
+    W: 600, H: 340,
+    params: [
+      { k: 'tm', label: 'What the intruder does', type: 'select', v: 'none', opts: [['none', 'nothing'], ['edit', 'edits line 3 to "exported 9 rows"'], ['del', 'deletes line 4']] }
+    ],
+    tips: [
+      { t: 'Play with no tampering. The checker recomputes every hash and all match.', play: true },
+      { t: 'Choose the edit. The checker finds the first broken link at line 3, so we know exactly where the log was changed.', set: { tm: 'edit' }, play: true },
+      { t: 'Choose the delete. Removing a line also breaks the chain, so a quiet clean up is caught.', set: { tm: 'del' }, play: true }
+    ],
+    frames(p) {
+      const fr = [], stored = [];
+      let prev = 'start-secret';
+      LOG.forEach(e => { prev = h8(prev + '|' + e); stored.push(prev); });
+      fr.push({ st: 0, n: 0, say: 'When each line was written, the logger stored its hash: hash = SHA-256(previous hash | text). The first line starts from a secret value kept on another server.' });
+      let lines = LOG.map((t, i) => ({ t, h: stored[i] }));
+      if (p.tm === 'edit') lines[2] = { t: '09:07 asha exported 9 rows', h: stored[2], bad: true };
+      if (p.tm === 'del') lines = lines.filter((_, i) => i !== 3);
+      fr.push({ st: 1, n: 0, lines, say: p.tm === 'none' ? 'Later, an auditor reads the log back. Nothing was changed.' : p.tm === 'edit' ? 'The intruder changed line 3 to hide a big export. They kept the old stored hash, because they cannot compute a matching new one without the secret.' : 'The intruder deleted line 4 to hide that a file was removed.' });
+      let run = 'start-secret', broken = -1;
+      lines.forEach((ln, i) => {
+        run = h8(run + '|' + ln.t);
+        ln.ok = run === ln.h;
+        if (!ln.ok && broken < 0) broken = i;
+        fr.push({ st: 2, n: i + 1, lines, calc: run, broken, say: `Check line ${i + 1}: recompute ${run}, stored ${ln.h}. ${run === ln.h ? 'They match.' : '<b>They do not match.</b> The chain is broken here, so this line was changed or a line just before it was removed.'}` });
+        run = ln.h;
+      });
+      fr.push({ st: 3, done: true, n: lines.length, lines, broken, say: broken < 0 ? 'Every link checks out, so the log is exactly as written. This is the idea behind secure audit logs (Schneier and Kelsey, 1998), systemd journal sealing and many blockchains.' : `Tampering found at line ${broken + 1}. The hash cannot say what the old text was, only that it changed. Sending logs to a separate, write once store as they are made is the other half of the defence.` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      const lines = f.lines || LOG.map(t => ({ t, h: '' }));
+      lines.forEach((ln, i) => {
+        const y = 14 + i * 56, chk = f.n > i && f.st >= 2, bad = chk && ln.ok === false;
+        cbox(z, 14, y, 330, 44, ln.t, { s: 12, b: true, mono: true, fill: ln.bad ? 'rgba(234,88,12,0.25)' : col.surf });
+        if (f.st >= 1) cbox(z, 352, y, 110, 44, ['stored', ln.h], { s: 11, mono: true, fill: col.bg });
+        if (chk) cbox(z, 470, y, 116, 44, bad ? 'broken link' : 'ok', { s: 12, b: true, fill: bad ? col.red : 'rgba(15,118,110,0.3)', c: bad ? '#fff' : col.ink });
+        if (i > 0) D.line(g, 30, y - 12, 30, y, col.ink2, 1.5);
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.broken < 0 ? 'chain verified: log not changed' : `chain broken at line ${f.broken + 1}: tampering detected`, { s: 13, b: true, fill: f.broken < 0 ? col.cv : col.red, c: '#fff' });
+    }
+  });
+})();
