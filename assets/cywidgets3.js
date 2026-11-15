@@ -2420,3 +2420,185 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Security Operations 1.3  Order of volatility (RFC 3227): collect what disappears first, or lose it
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox } = CYZ;
+  const IT = [
+    ['CPU registers and cache', 'nanoseconds', 'mem'], ['RAM: processes, network connections, keys', 'until power off', 'mem'],
+    ['Temporary files and swap', 'minutes to hours', 'disk'], ['Disk contents', 'until overwritten', 'disk'],
+    ['Remote logs in the SIEM', 'weeks to months', 'remote'], ['Backups and archives', 'years', 'remote']
+  ];
+  trace('cyvolatility', {
+    title: 'Order of volatility: what to collect first',
+    sub: 'Some evidence lasts nanoseconds, some lasts years. RFC 3227 (2002) says collect the most fragile first. Compare a responder who follows it with one who pulls the plug straight away.',
+    W: 600, H: 340,
+    params: [{ k: 'how', label: 'Responder', type: 'select', v: 'rfc', opts: [['rfc', 'follows RFC 3227'], ['pull', 'pulls the power plug first']] }],
+    tips: [
+      { t: 'Play the careful responder. Memory is captured while the machine runs, then the disk is imaged.', play: true },
+      { t: 'Now the hasty responder. One action loses the running malware, its network connections and any encryption keys held in memory.', set: { how: 'pull' }, play: true }
+    ],
+    frames(p) {
+      const pull = p.how === 'pull', fr = [], got = [];
+      if (pull) {
+        fr.push({ st: 1, got: [], lost: [0, 1], say: 'The responder pulls the power plug. Registers, cache and RAM are gone at once: running processes, open network connections and encryption keys in memory are lost for ever.' });
+        [2, 3, 4, 5].forEach(i => { got.push(i); fr.push({ st: 1, got: got.slice(), lost: [0, 1], say: `Collected: ${IT[i][0]}.` }); });
+      } else {
+        fr.push({ st: 1, got: [0], lost: [], say: 'Registers and cache change every nanosecond. In practice they are captured as part of the memory dump, so the responder starts the memory capture tool at once.' });
+        [1, 2, 3, 4, 5].forEach(i => { got.push(i); fr.push({ st: 1, got: [0, ...got], lost: [], say: `Collected: <b>${IT[i][0]}</b>, which lasts ${IT[i][1]}. ${i === 1 ? 'A tool such as WinPmem or LiME writes RAM to an external drive while the machine still runs.' : i === 3 ? 'The disk is imaged through a write blocker, and the image is hashed.' : ''}` }); });
+      }
+      const last = fr[fr.length - 1];
+      fr.push({ st: 2, done: true, got: last.got, lost: last.lost, say: pull ? 'Only 4 of 6 kinds of evidence survive. If the malware lived only in memory, which fileless malware does, there may be nothing left to find.' : 'All 6 kinds collected, most fragile first. Every step, with its time and the tool used, goes into the notes.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col;
+      IT.forEach(([name, life], i) => {
+        const y = 14 + i * 46, got = f.got.includes(i), lost = f.lost.includes(i);
+        cbox(z, 14, y, 330, 40, name, { s: 12, b: true, fill: lost ? 'rgba(225,29,72,0.3)' : got ? 'rgba(15,118,110,0.25)' : col.bg });
+        cbox(z, 352, y, 130, 40, life, { s: 11, fill: col.surf });
+        cbox(z, 490, y, 96, 40, lost ? 'LOST' : got ? 'collected' : 'waiting', { s: 12, b: true, fill: lost ? col.red : got ? col.cv : col.bg, c: lost || got ? '#fff' : col.ink2 });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, `${f.got.length} of 6 kinds of evidence kept`, { s: 13, b: true, fill: f.lost.length ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 1.3  File carving: finding files in raw bytes by their magic numbers
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, hex } = CYZ;
+  const B = [0x00, 0x13, 0x7a, 0x00, 0x41,
+    0xFF, 0xD8, 0xFF, 0xE0, 0x10, 0x4A, 0x46, 0xFF, 0xD9,
+    0x00, 0x00, 0x2e, 0x91, 0x00, 0x05, 0x00, 0x77,
+    0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x0A, 0x25, 0x25, 0x45, 0x4F, 0x46,
+    0x00, 0x3c, 0x00, 0x00, 0x11, 0x00,
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+  const F = [['jpeg', 5, 13, 'JPEG photo', 'FF D8 FF', 'FF D9'], ['pdf', 22, 33, 'PDF document', '25 50 44 46 (%PDF)', '25 25 45 4F 46 (%%EOF)'], ['png', 40, -1, 'PNG image', '89 50 4E 47', 'no IEND footer']];
+  trace('cycarve', {
+    title: 'File carving: recovering files with no file system',
+    sub: 'When a disk is formatted or a directory is damaged, the file names are gone but the bytes often remain. Most file types start and end with fixed byte patterns called magic numbers. A carver scans the raw bytes for them.',
+    W: 600, H: 340,
+    params: [],
+    tips: [{ t: 'Play to scan 48 raw bytes. Two files are recovered whole and one only in part.', play: true }],
+    frames() {
+      const fr = [{ st: 0, found: [], say: '48 bytes taken from unallocated disk space. There is no file name, no folder and no size. Just bytes.' }];
+      const found = [];
+      F.forEach(([k, s, e, name, head, foot]) => {
+        fr.push({ st: 1, found: found.slice(), cur: [s, s + 3], say: `At offset ${s} the carver sees ${head}, the header of a <b>${name}</b>.` });
+        if (e > 0) { found.push([k, s, e]); fr.push({ st: 2, found: found.slice(), say: `It reads on until the footer ${foot} at offset ${e - (k === 'pdf' ? 4 : 1)}. Bytes ${s} to ${e} are carved out and saved as a ${k} file of ${e - s + 1} bytes.` }); }
+        else { found.push([k, s, B.length - 1, true]); fr.push({ st: 2, found: found.slice(), say: `No footer before the data ends. Part of the ${name} was overwritten, so only a broken fragment can be saved. Carvers mark it as partial.` }); }
+      });
+      fr.push({ st: 3, done: true, found, say: 'Recovered: one whole JPEG, one whole PDF, one partial PNG. Real tools such as PhotoRec, Foremost and Scalpel work this way on whole disks, and also handle files split into pieces.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, per = 12, w = 46, h = 40;
+      B.forEach((b, i) => {
+        const r = Math.floor(i / per), c = i % per;
+        const inF = f.found.find(([, s, e]) => i >= s && i <= e), cur = f.cur && i >= f.cur[0] && i <= f.cur[1];
+        const fill = cur ? 'rgba(234,88,12,0.5)' : inF ? (inF[3] ? 'rgba(225,29,72,0.3)' : inF[0] === 'jpeg' ? 'rgba(37,99,235,0.3)' : 'rgba(15,118,110,0.35)') : col.bg;
+        cbox(z, 14 + c * (w + 1), 14 + r * (h + 22), w, h, hex(b), { s: 12, b: true, mono: true, fill });
+        if (c === 0) cbox(z, 14, 14 + r * (h + 22) + h + 1, 44, 18, `@${i}`, { s: 9, mono: true, fill: col.surf });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, '2 whole files and 1 partial file carved', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 1.3  A super timeline: events from many sources merged in time order tell the story
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const EV = [
+    ['09:58:10', 'web log', 'POST /upload.php from 198.51.100.23 (a profile photo form)'],
+    ['09:58:11', 'file system', 'shell.php created in /var/www/uploads'],
+    ['10:03:40', 'web log', 'GET /uploads/shell.php?cmd=whoami'],
+    ['10:03:41', 'EDR', 'process: www-data starts /bin/sh, then whoami'],
+    ['10:06:02', 'file system', 'backup.php: $FILE_NAME created 10:06 today, but $STANDARD_INFO says 2019-03-01'],
+    ['10:20:15', 'auth.log', 'sudo attempt by www-data: FAILED'],
+    ['10:31:50', 'firewall', '2.1 GB sent from web1 to 203.0.113.80:443']
+  ];
+  trace('cytimeline', {
+    title: 'A super timeline: putting every source in one time line',
+    sub: 'Web logs, file times, process records, auth logs and firewall records each hold one piece. Merged in time order, they show how the attacker got in and what they did. All clocks must be in UTC for this to work.',
+    W: 600, H: 340,
+    params: [],
+    tips: [{ t: 'Play to add events one by one. Watch for the file whose two time stamps disagree.', play: true }],
+    frames() {
+      const fr = EV.map((e, i) => ({ st: 1, n: i + 1, say: `${e[0]} from the <b>${e[1]}</b>: ${e[2]}. ${[
+        'An upload form is often the first door for a web attack.',
+        'One second later a PHP file appears in the upload folder. A photo form should only ever save images.',
+        'Someone runs a command through that file. It is a web shell.',
+        'The endpoint record confirms the web server user started a shell.',
+        'Timestomping: the attacker set a fake old date to hide the file among old ones. NTFS keeps a second set of times that normal tools cannot easily change, and they give the lie away.',
+        'The attacker tried to become root and failed. The patch level held.',
+        'A large upload to an unknown server: likely data theft. This sets the scope of the incident.'][i]}` }));
+      fr.push({ st: 2, done: true, n: EV.length, say: 'The story in seven lines: upload flaw, web shell, commands, a hidden second shell, a failed privilege climb, and data sent out. Each source alone looked small. Tools such as Plaso (log2timeline) build these timelines from hundreds of sources.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      const SC = { 'web log': 'rgba(37,99,235,0.25)', 'file system': 'rgba(15,118,110,0.25)', EDR: 'rgba(124,58,237,0.25)', 'auth.log': 'rgba(234,179,8,0.3)', firewall: 'rgba(225,29,72,0.25)' };
+      D.line(g, 90, 14, 90, 300, col.line, 2);
+      EV.slice(0, f.n).forEach(([t, s, txt], i) => {
+        const y = 14 + i * 41, bad = i === 4 || i === 6;
+        D.text(g, t, 82, y + 22, { a: 'right', s: 11, mono: true, b: true, c: col.ink2 });
+        cbox(z, 98, y, 92, 34, s, { s: 11, b: true, fill: SC[s] });
+        cbox(z, 196, y, 390, 34, txt, { s: 11, fill: bad ? 'rgba(225,29,72,0.15)' : col.surf, b: bad });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, 'entry, web shell, hidden shell, failed root, 2.1 GB out', { s: 13, b: true, fill: col.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 1.3  Chain of custody: hashes and signatures at every hand over keep evidence trusted
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8, hex } = CYZ;
+  const h8 = s => sha256(utf8(s)).slice(0, 4).map(b => hex(b)).join('').toLowerCase();
+  trace('cycustody', {
+    title: 'Chain of custody: proving the evidence was never changed',
+    sub: 'Each time the disk image changes hands, the new holder records who, when and why, and checks the SHA-256 hash (first 8 hex digits shown). If anyone works on the original without a write blocker, the hash changes and the evidence can be challenged in court.',
+    W: 600, H: 340,
+    params: [{ k: 'oops', label: 'What happens at the lab', type: 'select', v: 'ok', opts: [['ok', 'analyst works on a verified copy'], ['bad', 'analyst opens the original without a write blocker']] }],
+    tips: [
+      { t: 'Play the correct process. The hash matches at every hand over.', play: true },
+      { t: 'Now the mistake. Opening the original without a write blocker lets the operating system write to it, so the hash changes.', set: { oops: 'bad' }, play: true }
+    ],
+    frames(p) {
+      const orig = h8('disk image of laptop SN-4471'), changed = h8('disk image of laptop SN-4471 touched');
+      const bad = p.oops === 'bad';
+      const S = [
+        ['Seized', 'Officer Priya, 14 Nov 10:15, office of the suspect', orig, 'Laptop photographed, bagged and labelled item 44. Image made through a write blocker, hash recorded.'],
+        ['Transport', 'Courier, sealed bag 44, 14 Nov 13:00', orig, 'Bag seal number written on the form. Nobody opens it on the way.'],
+        ['Lab intake', 'Analyst Ravi, 14 Nov 16:40', orig, 'Seal checked intact, hash re-computed: it matches the one recorded at seizure.'],
+        ['Analysis', bad ? 'Ravi mounts the original drive read and write' : 'Ravi works on a copy, original locked away', bad ? changed : orig, bad ? 'The operating system wrote a few bytes to the original drive while mounting it. The hash no longer matches.' : 'All work happens on a copy whose hash matches. The original stays sealed.'],
+        ['Court', 'Report and item 44 submitted', bad ? changed : orig, bad ? 'The defence points out the hash changed after seizure. The court may refuse the evidence.' : 'The hash matches the seizure record, and the custody form has no gaps. The evidence can be relied on.']
+      ];
+      const fr = S.map((s, i) => ({ st: 1, n: i + 1, S, orig, say: `<b>${s[0]}</b>: ${s[1]}. ${s[3]}` }));
+      fr.push({ st: 2, done: true, n: S.length, S, orig, bad, say: bad ? 'One careless step broke the chain. In India, electronic records also need a certificate under section 63 of the Bharatiya Sakshya Adhiniyam 2023 (formerly section 65B of the Evidence Act).' : 'Every hand over is recorded and every hash matches. This is what makes digital evidence count, together with the certificate Indian law asks for electronic records.' });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      f.S.slice(0, f.n).forEach(([step, who, h], i) => {
+        const y = 14 + i * 56, ok = h === f.orig;
+        cbox(z, 14, y, 110, 44, step, { s: 12, b: true, fill: col.surf });
+        cbox(z, 130, y, 330, 44, who, { s: 11, fill: col.bg });
+        cbox(z, 466, y, 120, 44, ['sha256', h], { s: 11, b: true, mono: true, fill: ok ? 'rgba(15,118,110,0.3)' : col.red, c: ok ? col.ink : '#fff' });
+        if (i > 0) D.arrow(g, 69, y - 12, 69, y, col.ink2, 1.5);
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.bad ? 'hash changed after seizure: chain of custody broken' : 'hash matches at every step: chain of custody intact', { s: 13, b: true, fill: f.bad ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();

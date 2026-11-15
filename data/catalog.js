@@ -9925,6 +9925,26 @@ function cyOpsModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-forensics", title: "Digital forensics: collecting and reading evidence", emoji: "1.3", page: "content/cyber-security/cy-forensics.html",
+        summary: "Order of volatility, imaging and hashes, deleted files and carving, timelines and timestomping, memory forensics, chain of custody.",
+        keywords: ["forensics", "order of volatility", "write blocker", "hash", "file carving", "timestomping", "timeline", "Volatility", "chain of custody", "section 63"],
+        minutes: 75, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What digital forensics is: evidence that holds up", emoji: "", group: "Lesson", keywords: ["digital forensics", "Locard exchange principle", "evidence", "BTK case", "metadata", "NIST SP 800-86", "ISO 27037", "RFC 3227", "repeatability"] },
+        { id: "collect", title: "Collecting evidence: order of volatility, write blockers and hashes", emoji: "", group: "Lesson", keywords: ["order of volatility", "RFC 3227", "memory capture", "WinPmem", "LiME", "pull the plug", "write blocker", "disk image", "bit for bit copy", "SHA-256", "MD5", "hash verification"] },
+        { id: "disk", title: "Disk forensics: deleted files, slack space and carving", emoji: "", group: "Lesson", keywords: ["deleted file recovery", "FAT", "0xE5", "cluster", "slack space", "unallocated space", "file carving", "magic number", "file signature", "PhotoRec", "Foremost", "Scalpel", "TRIM", "SSD", "full disk encryption"] },
+        { id: "time", title: "Time stamps and timelines", emoji: "", group: "Lesson", keywords: ["time stamps", "MAC times", "NTFS", "$STANDARD_INFORMATION", "$FILE_NAME", "timestomping", "FILETIME", "Unix time", "UTC", "IST", "super timeline", "Plaso", "log2timeline"] },
+        { id: "memory", title: "Memory and artefact forensics", emoji: "", group: "Lesson", keywords: ["memory forensics", "RAM", "fileless malware", "Volatility", "pslist", "psscan", "DKOM", "rootkit", "Prefetch", "registry Run keys", "Amcache", "ShimCache", "bash_history", "cloud forensics"] },
+        { id: "custody", title: "Chain of custody, reports and the law", emoji: "", group: "Lesson", keywords: ["chain of custody", "evidence form", "hash verification", "section 65B", "Bharatiya Sakshya Adhiniyam", "section 63", "Anvar v Basheer", "expert report", "admissibility"] },
+        { id: "versus", title: "Kinds of forensics compared", emoji: "", group: "Lesson", keywords: ["comparison", "disk forensics", "memory forensics", "network forensics", "mobile forensics", "cloud forensics", "Autopsy", "Sleuth Kit", "FTK Imager", "Zeek"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "anti forensics", "expert witness"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
