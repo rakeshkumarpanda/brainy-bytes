@@ -3151,3 +3151,228 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 1.1  The machine learning loop in a security product, from data to retraining
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const S = {
+    phish: ['Collect: 2 million emails from user reports and spam traps', 'Label: analysts and user reports mark phish or safe', 'Features: words, links, sender domain age, attachment type', 'Train: naive Bayes or gradient boosted trees', 'Validate: precision and recall on last month, kept apart', 'Deploy: block above 0.95, warn between 0.6 and 0.95', 'Feedback: users press Report phish, analysts fix mistakes', 'Drift: attackers change words and file types, so retrain weekly'],
+    ueba: ['Collect: sign in, VPN and file logs for 5000 staff', 'Label: almost none, so learn what normal looks like', 'Features: login hour, country, MB uploaded, new devices', 'Train: a baseline per user, isolation forest across users', 'Validate: replay past incidents and count missed ones', 'Deploy: raise a risk score, alert above a tuned threshold', 'Feedback: the SOC marks alerts as true or false', 'Drift: new jobs, travel and tools shift normal, so update baselines']
+  };
+  const NAMES = ['Collect data', 'Label', 'Features', 'Train', 'Validate', 'Deploy', 'Feedback', 'Drift and retrain'];
+  trace('cymlpipe', {
+    title: 'How a machine learning detector is built and kept working',
+    sub: 'A model is only one box in the loop. Data, labels, thresholds, analyst feedback and retraining decide whether it helps the security team. Pick a product to see each stage with a real example.',
+    W: 600, H: 340,
+    params: [{ k: 'ex', label: 'Product', type: 'select', v: 'phish', opts: [['phish', 'Email phishing filter (supervised)'], ['ueba', 'User behaviour analytics (unsupervised)']] }],
+    tips: [
+      { t: 'Play the phishing filter. It learns from labelled examples.', play: true },
+      { t: 'Switch to user behaviour analytics. Labels are rare, so it learns what normal looks like and flags the unusual.', set: { ex: 'ueba' }, play: true }
+    ],
+    frames(p) {
+      const L = S[p.ex], fr = [];
+      L.forEach((t, i) => fr.push({ st: 1, n: i + 1, say: `<b>${NAMES[i]}</b>. ${t}.` }));
+      fr.push({ st: 2, done: true, n: 8, say: 'The arrow back to the start is the point: attackers adapt, so the loop never ends. Sommer and Paxson (2010) warned that most of the work in security ML is data, labels and evaluation, not the model itself.' });
+      return fr.map(x => ({ ...x, ex: p.ex }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = S[f.ex];
+      for (let i = 0; i < f.n; i++) {
+        const row = i < 4 ? 0 : 1, c = row ? 7 - i : i, x = 14 + c * 146, y = row ? 150 : 30, cur = i === f.n - 1 && !f.done;
+        cbox(z, x, y, 132, 54, [NAMES[i], String(i + 1)], { s: 12, b: true, fill: cur ? col.cv : 'rgba(15,118,110,0.18)', c: cur ? '#fff' : col.ink });
+        if (i > 0 && i !== 4) { const px = row ? x + 132 + 14 : x - 14; D.arrow(g, row ? px - 2 : px, y + 27, row ? x + 134 : x - 2, y + 27, col.ink2, 2); }
+        if (i === 4) D.arrow(g, 14 + 3 * 146 + 66, 86, 14 + 3 * 146 + 66, 148, col.ink2, 2);
+      }
+      if (f.n >= 8) { D.line(g, 80, 206, 80, 222, col.red, 2); D.line(g, 80, 222, 4, 222, col.red, 2); D.line(g, 4, 222, 4, 57, col.red, 2); D.arrow(g, 4, 57, 12, 57, col.red, 2); }
+      if (f.n >= 1) cbox(z, 14, 236, 572, 56, [L[f.n - 1]], { s: 13, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, 'a loop, not a one time project: attackers adapt', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 1.1  Naive Bayes: each word adds evidence for phishing or for a safe email
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const TRAIN = [
+    ['verify your account password now', 1], ['urgent your account is suspended click here', 1], ['click here to claim your prize now', 1], ['update payment details urgent', 1],
+    ['meeting moved to friday afternoon', 0], ['lunch tomorrow with the team', 0], ['here are the notes from the meeting', 0], ['your payment receipt for the course', 0]
+  ];
+  const cnt = [{}, {}], tot = [0, 0];
+  TRAIN.forEach(([t, y]) => t.split(' ').forEach(w => { cnt[y][w] = (cnt[y][w] || 0) + 1; tot[y]++; }));
+  const V = new Set([...Object.keys(cnt[0]), ...Object.keys(cnt[1])]);
+  const pw = (w, y) => ((cnt[y][w] || 0) + 1) / (tot[y] + V.size);
+  trace('cybayes', {
+    title: 'A naive Bayes phishing filter reads an email word by word',
+    sub: 'Trained on 8 tiny emails (4 phish, 4 safe, 31 different words). Each known word adds log(P(word | phish) / P(word | safe)) to the score. Above 0 means phishing is more likely. Unknown words are skipped.',
+    W: 600, H: 340,
+    params: [{ k: 'm', label: 'Email', type: 'select', v: 'urgent verify your password', opts: [['urgent verify your password', 'urgent verify your password'], ['notes from friday meeting', 'notes from friday meeting'], ['your course payment receipt', 'your course payment receipt'], ['click here for the meeting notes', 'click here for the meeting notes']] }],
+    tips: [
+      { t: 'Play the first email. Every word pushes towards phishing.', play: true },
+      { t: 'Try "notes from friday meeting". Words seen only in safe mail pull the score down.', set: { m: 'notes from friday meeting' }, play: true },
+      { t: 'Try "click here for the meeting notes". Mixed evidence: the words fight and the total decides.', set: { m: 'click here for the meeting notes' }, play: true }
+    ],
+    frames(p) {
+      const words = p.m.split(' '), fr = [], parts = [];
+      let s = Math.log(4 / 4);
+      fr.push({ st: 0, parts: [], s, words, say: 'Start with the prior: 4 phish and 4 safe emails, so log(4 / 4) = 0. No evidence yet.' });
+      words.forEach(w => {
+        if (!V.has(w)) { parts.push({ w, v: null }); fr.push({ st: 1, parts: parts.slice(), s, words, say: `"${w}" never appeared in training, so it is skipped.` }); return; }
+        const a = pw(w, 1), b = pw(w, 0), v = Math.log(a / b);
+        s += v; parts.push({ w, v });
+        fr.push({ st: 1, parts: parts.slice(), s, words, say: `"${w}": seen ${cnt[1][w] || 0} times in phish, ${cnt[0][w] || 0} in safe. With add one smoothing: log((${(cnt[1][w] || 0) + 1}/54) / (${(cnt[0][w] || 0) + 1}/54)) = <b>${v >= 0 ? '+' : '&minus;'}${f2(Math.abs(v), 2)}</b>. Total now ${f2(s, 2)}.` });
+      });
+      const P = 1 / (1 + Math.exp(-s));
+      fr.push({ st: 2, done: true, parts, s, P, words, say: `Total log odds ${f2(s, 2)}, so P(phish) = 1 / (1 + e<sup>${s >= 0 ? '&minus;' : ''}${f2(Math.abs(s), 2)}</sup>) = <b>${f2(P, 3)}</b>. ${P > 0.5 ? 'Flagged as phishing.' : 'Delivered as safe.'} Naive means it treats words as independent, which is wrong but works well in practice.` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, n = f.words.length, bw = Math.min(110, 560 / n - 6);
+      f.words.forEach((w, i) => {
+        const p = f.parts[i], x = 20 + i * (bw + 6);
+        cbox(z, x, 18, bw, 34, w, { s: 12, b: true, mono: true, fill: !p ? col.bg : p.v === null ? col.surf : p.v > 0 ? 'rgba(225,29,72,0.25)' : 'rgba(15,118,110,0.25)' });
+        if (p) D.text(g, p.v === null ? 'skip' : (p.v >= 0 ? '+' : '−') + f2(Math.abs(p.v), 2), x + bw / 2, 70, { a: 'center', s: 12, b: true, c: p.v === null ? col.ink2 : p.v > 0 ? col.red : col.cv });
+      });
+      const X = v => 300 + v * 45, y = 190;
+      D.line(g, X(-6), y, X(6), y, col.line, 2);
+      for (let v = -6; v <= 6; v += 2) { D.line(g, X(v), y - 5, X(v), y + 5, col.line, 1.5); D.text(g, String(v), X(v), y + 20, { a: 'center', s: 10, c: col.ink2 }); }
+      D.text(g, 'safe', X(-6), y - 14, { s: 11, b: true, c: col.cv }); D.text(g, 'phishing', X(6), y - 14, { a: 'right', s: 11, b: true, c: col.red });
+      let cur = 0, row = 0;
+      f.parts.forEach(p => { if (p.v === null) return; const nx = cur + p.v; D.arrow(g, X(cur), 110 + row * 12, X(Math.max(-6.4, Math.min(6.4, nx))), 110 + row * 12, p.v > 0 ? col.red : col.cv, 3); cur = nx; row++; });
+      D.circle(g, X(Math.max(-6.4, Math.min(6.4, f.s))), y, 7, { fill: f.s > 0 ? col.red : col.cv });
+      cbox(z, 200, 228, 200, 28, `log odds = ${f2(f.s, 2)}`, { s: 13, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, `P(phish) = ${f2(f.P, 3)}: ${f.P > 0.5 ? 'flag as phishing' : 'deliver'}`, { s: 13, b: true, fill: f.P > 0.5 ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 1.1  Isolation forest: an odd point is cut off from the rest in very few random cuts
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const pts = (() => { const R = MLZ.rng(11), P = []; for (let i = 0; i < 31; i++) { const a = R() * 6.283, r = Math.sqrt(R()) * 0.25; P.push([0.4 + r * Math.cos(a), 0.42 + r * Math.sin(a)]); } P.push([0.88, 0.85]); return P; })();
+  const cN = n => 2 * (Math.log(n - 1) + 0.5772156649) - 2 * (n - 1) / n;
+  const tree = (R, t) => {
+    let box = [0, 1, 0, 1], idx = pts.map((_, i) => i);
+    const cuts = [];
+    while (idx.length > 1 && cuts.length < 14) {
+      const d = R() < 0.5 ? 0 : 1, xs = idx.map(i => pts[i][d]), lo = Math.min(...xs), hi = Math.max(...xs);
+      if (hi - lo < 1e-9) break;
+      const v = lo + R() * (hi - lo), side = pts[t][d] < v;
+      idx = idx.filter(i => (pts[i][d] < v) === side);
+      cuts.push({ d, v, box: box.slice(), left: idx.length });
+      if (d === 0) { if (side) box[1] = v; else box[0] = v; } else { if (side) box[3] = v; else box[2] = v; }
+    }
+    return { cuts, box };
+  };
+  trace('cyiforest', {
+    title: 'Isolation forest: how many random cuts until a point stands alone?',
+    sub: '32 logins drawn as points (x = hour of the day, y = MB downloaded, both scaled to 0 to 1). Each cut picks a random direction and a random place between the points still in the box around the chosen point. Odd points are isolated in few cuts.',
+    W: 600, H: 340,
+    params: [
+      { k: 't', label: 'Point to isolate', type: 'select', v: 'odd', opts: [['odd', 'the odd login (top right)'], ['normal', 'a normal login in the crowd']] },
+      { k: 'seed', label: 'Random tree', type: 'range', v: 2, min: 1, max: 9, step: 1 }
+    ],
+    tips: [
+      { t: 'Play for the odd login. A couple of cuts and it is alone.', play: true },
+      { t: 'Switch to a normal login. It hides in the crowd and needs many more cuts.', set: { t: 'normal' }, play: true },
+      { t: 'Change the random tree. One tree is noisy, so the real method averages the path length over 100 trees.', set: { seed: 7 }, play: true }
+    ],
+    frames(p) {
+      const t = p.t === 'odd' ? 31 : 4, T = tree(MLZ.rng(+p.seed * 17 + 3), t), fr = [];
+      fr.push({ st: 0, t, k: 0, T, left: 32, say: `Start with all 32 points in one box. The chosen point is circled. Count the cuts needed to leave it alone.` });
+      T.cuts.forEach((c, k) => fr.push({ st: 1, t, k: k + 1, T, left: c.left, say: `Cut ${k + 1}: a ${c.d ? 'horizontal' : 'vertical'} line at ${c.d ? 'y' : 'x'} = ${f2(c.v, 2)}. Keep only the side with the chosen point: <b>${c.left}</b> point${c.left > 1 ? 's' : ''} left.` }));
+      let sum = 0;
+      for (let s = 0; s < 100; s++) sum += tree(MLZ.rng(s * 31 + 5), t).cuts.length;
+      const Eh = sum / 100, c = cN(32), score = Math.pow(2, -Eh / c);
+      fr.push({ st: 2, done: true, t, k: T.cuts.length, T, left: 1, Eh, c, score, say: `This tree needed ${T.cuts.length} cut${T.cuts.length > 1 ? 's' : ''}. Over 100 trees the average path length is E[h] = ${f2(Eh, 2)}. With c(32) = ${f2(c, 2)}, the score is 2<sup>&minus;E[h]/c</sup> = <b>${f2(score, 3)}</b>. Near 1 means anomaly, near 0.5 or below means normal (Liu, Ting and Zhou, 2008).` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 20, y0 = 14, W = 340, H = 280, X = v => x0 + v * W, Y = v => y0 + H - v * H;
+      D.rect(g, x0, y0, W, H, { stroke: col.line });
+      const fin = f.k ? (() => { const b = [0, 1, 0, 1]; f.T.cuts.slice(0, f.k).forEach(c => { const side = pts[f.t][c.d] < c.v; if (c.d === 0) { if (side) b[1] = c.v; else b[0] = c.v; } else { if (side) b[3] = c.v; else b[2] = c.v; } }); return b; })() : [0, 1, 0, 1];
+      D.rect(g, X(fin[0]), Y(fin[3]), (fin[1] - fin[0]) * W, (fin[3] - fin[2]) * H, { fill: 'rgba(15,118,110,0.12)' });
+      f.T.cuts.slice(0, f.k).forEach((c, i) => {
+        const b = c.box, last = i === f.k - 1;
+        if (c.d === 0) D.line(g, X(c.v), Y(b[3]), X(c.v), Y(b[2]), last ? col.red : col.ink2, last ? 2.5 : 1.2);
+        else D.line(g, X(b[0]), Y(c.v), X(b[1]), Y(c.v), last ? col.red : col.ink2, last ? 2.5 : 1.2);
+      });
+      pts.forEach(([a, b], i) => D.circle(g, X(a), Y(b), i === f.t ? 6 : 4, { fill: i === 31 ? col.orange : col.cv }));
+      D.circle(g, X(pts[f.t][0]), Y(pts[f.t][1]), 11, { stroke: col.red, w: 2.5 });
+      D.text(g, 'x: hour of day, y: MB downloaded', x0 + 6, y0 + H - 6, { s: 10, c: col.ink2 });
+      cbox(z, 380, 20, 206, 40, [`cuts so far: ${f.k}`], { s: 13, b: true, fill: col.surf });
+      cbox(z, 380, 70, 206, 40, [`points left: ${f.left}`], { s: 13, b: true, fill: col.surf });
+      if (f.done) { cbox(z, 380, 120, 206, 40, `average over 100 trees: ${f2(f.Eh, 2)}`, { s: 12, b: true, fill: col.surf }); cbox(z, 380, 170, 206, 40, `score ${f2(f.score, 3)}`, { s: 14, b: true, fill: f.score > 0.6 ? col.red : col.cv, c: '#fff' }); }
+      if (f.done) cbox(z, 14, 306, 572, 28, f.score > 0.6 ? 'few cuts: an anomaly worth a look' : 'many cuts: a normal point', { s: 13, b: true, fill: f.score > 0.6 ? col.orange : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 1.1  Threshold, ROC curve and AUC for a detector whose scores overlap
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const erf = x => { const s = Math.sign(x), a = Math.abs(x), t = 1 / (1 + 0.3275911 * a); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a)); };
+  const Phi = x => 0.5 * (1 + erf(x / Math.SQRT2));
+  trace('cyroc', {
+    title: 'Choosing a threshold: the ROC curve and the area under it',
+    sub: 'The detector gives every event a score. Normal events (green) tend to score low and attacks (red) high, but the two overlap. Each threshold gives one point on the ROC curve: the false positive rate across, the true positive rate up.',
+    W: 600, H: 340,
+    params: [
+      { k: 't', label: 'Threshold', type: 'range', v: 0.55, min: 0.1, max: 0.9, step: 0.05 },
+      { k: 'sep', label: 'How well the model separates', type: 'select', v: '0.25', opts: [['0.1', 'poorly (means 0.1 apart)'], ['0.25', 'fairly (0.25 apart)'], ['0.4', 'well (0.4 apart)']] }
+    ],
+    tips: [
+      { t: 'Play with threshold 0.55. Some attacks are missed and some normal events are flagged.', play: true },
+      { t: 'Lower the threshold to 0.35. More attacks caught, but many more false alarms: the point moves up and right.', set: { t: 0.35 }, play: true },
+      { t: 'Pick a model that separates well. The curve bends to the top left and the AUC rises towards 1.', set: { sep: '0.4' }, play: true }
+    ],
+    frames(p) {
+      const t = +p.t, d = +p.sep, m0 = 0.5 - d / 2, m1 = 0.5 + d / 2, sd = 0.12;
+      const tpr = 1 - Phi((t - m1) / sd), fpr = 1 - Phi((t - m0) / sd), auc = Phi(d / (sd * Math.SQRT2));
+      const o = { t, m0, m1, sd, tpr, fpr, auc };
+      return [
+        { st: 1, ...o, say: `Normal events score around ${f2(m0, 2)} on average (green curve).` },
+        { st: 2, ...o, say: `Attacks score around ${f2(m1, 2)} (red curve). Where the curves overlap, no threshold can be perfect.` },
+        { st: 3, ...o, say: `Alert when the score is at least ${f2(t, 2)}. Red area to the right of the line: caught attacks. Green area to the right: false alarms.` },
+        { st: 4, ...o, say: `True positive rate (recall) = <b>${f2(tpr * 100, 1)}%</b> of attacks caught. False positive rate = <b>${f2(fpr * 100, 1)}%</b> of normal events flagged.` },
+        { st: 5, ...o, say: `Moving the threshold from high to low traces the ROC curve from (0, 0) to (1, 1). This threshold is the dot at (${f2(fpr, 2)}, ${f2(tpr, 2)}).` },
+        { st: 6, done: true, ...o, say: `Area under the curve, AUC = <b>${f2(auc, 3)}</b>: the chance a random attack scores above a random normal event. 0.5 is guessing, 1 is perfect. In security also look at precision, because attacks are rare.` }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 20, y0 = 20, W = 330, H = 230, X = v => x0 + v * W;
+      const pdf = (x, m) => Math.exp(-0.5 * ((x - m) / f.sd) ** 2), Y = v => y0 + H - v * (H - 20);
+      D.line(g, x0, y0 + H, x0 + W, y0 + H, col.line, 1.5);
+      for (let v = 0; v <= 1.001; v += 0.25) D.text(g, f2(v, 2), X(v), y0 + H + 14, { a: 'center', s: 10, c: col.ink2 });
+      const curve = (m, c, from) => { g.save(); g.strokeStyle = c; g.lineWidth = 2.5; g.beginPath(); for (let i = 0; i <= 100; i++) { const x = i / 100, yy = Y(pdf(x, m)); i ? g.lineTo(X(x), yy) : g.moveTo(X(x), yy); } g.stroke(); g.restore(); if (from !== undefined) { g.save(); g.fillStyle = c === col.red ? 'rgba(225,29,72,0.25)' : 'rgba(15,118,110,0.25)'; g.beginPath(); g.moveTo(X(from), Y(0)); for (let x = from; x <= 1.0001; x += 0.01) g.lineTo(X(x), Y(pdf(x, m))); g.lineTo(X(1), Y(0)); g.closePath(); g.fill(); g.restore(); } };
+      if (f.st >= 1) curve(f.m0, col.cv, f.st >= 3 ? f.t : undefined);
+      if (f.st >= 2) curve(f.m1, col.red, f.st >= 3 ? f.t : undefined);
+      if (f.st >= 3) { D.line(g, X(f.t), y0, X(f.t), y0 + H, col.ink, 2, [5, 4]); D.text(g, `threshold ${f2(f.t, 2)}`, X(f.t) + 4, y0 + 10, { s: 11, b: true, c: col.ink }); }
+      if (f.st >= 4) cbox(z, 20, 268, 330, 28, `TPR ${f2(f.tpr * 100, 1)}%   FPR ${f2(f.fpr * 100, 1)}%`, { s: 13, b: true, fill: col.surf });
+      if (f.st >= 5) {
+        const rx = 390, ry = 20, S = 190, RX = v => rx + v * S, RY = v => ry + S - v * S;
+        D.rect(g, rx, ry, S, S, { stroke: col.line });
+        D.line(g, RX(0), RY(0), RX(1), RY(1), col.line, 1, [4, 4]);
+        g.save(); g.strokeStyle = col.cv; g.lineWidth = 2.5; g.beginPath();
+        for (let i = 0; i <= 60; i++) { const th = 1.2 - i * 1.4 / 60, a = 1 - Phi((th - f.m0) / f.sd), b = 1 - Phi((th - f.m1) / f.sd); i ? g.lineTo(RX(a), RY(b)) : g.moveTo(RX(a), RY(b)); }
+        g.stroke(); g.restore();
+        D.circle(g, RX(f.fpr), RY(f.tpr), 6, { fill: col.red });
+        D.text(g, 'FPR', rx + S, ry + S + 14, { a: 'right', s: 10, b: true, c: col.ink2 }); D.text(g, 'TPR', rx + 4, ry + 12, { s: 10, b: true, c: col.ink2 });
+        D.text(g, 'guessing', RX(0.62), RY(0.5), { s: 10, c: col.ink2 });
+      }
+      if (f.done) cbox(z, 390, 230, 190, 30, `AUC = ${f2(f.auc, 3)}`, { s: 14, b: true, fill: col.cv, c: '#fff' });
+      if (f.done) cbox(z, 14, 306, 572, 28, 'lower threshold: more caught, more false alarms', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
