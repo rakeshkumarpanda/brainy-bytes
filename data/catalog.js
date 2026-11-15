@@ -9795,6 +9795,26 @@ function cyAppModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-injection", title: "Injection: SQL, blind SQL, commands, SSRF and paths", emoji: "1.2", page: "content/cyber-security/cy-injection.html",
+        summary: "SQL and blind SQL injection, parameterised queries, command injection, SSRF and the metadata service, path traversal and deserialisation.",
+        keywords: ["injection", "SQL injection", "blind SQLi", "parameterised query", "command injection", "SSRF", "path traversal", "pickle", "sqlmap", "Capital One"],
+        minutes: 80, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Injection: when data is read as code", emoji: "", group: "Lesson", keywords: ["injection", "code versus data", "SQL injection", "command injection", "path traversal", "SSRF", "template injection", "Phrack", "rain.forest.puppy", "Heartland", "Albert Gonzalez", "TalkTalk", "MOVEit"] },
+        { id: "sqli", title: "SQL injection and parameterised queries", emoji: "", group: "Lesson", keywords: ["SQL injection", "SQLi", "parameterised query", "prepared statement", "UNION attack", "tautology", "comment injection", "stacked queries", "ORM", "escaping", "least privilege", "Bobby Tables"] },
+        { id: "blind", title: "Blind SQL injection: leaking data one bit at a time", emoji: "", group: "Lesson", keywords: ["blind SQL injection", "boolean based", "time based", "SLEEP", "binary search", "sqlmap", "out of band", "information leakage", "WAF"] },
+        { id: "command", title: "OS command injection", emoji: "", group: "Lesson", keywords: ["command injection", "OS command injection", "shell metacharacters", "Shellshock", "CVE-2014-6271", "subprocess", "shell=False", "shlex.quote", "allow list", "CWE-78"] },
+        { id: "ssrf", title: "Server side request forgery and the cloud metadata service", emoji: "", group: "Lesson", keywords: ["SSRF", "server side request forgery", "cloud metadata", "169.254.169.254", "IMDSv2", "Capital One", "DNS rebinding", "redirects", "RFC 1918", "link local", "allow list", "CWE-918"] },
+        { id: "paths", title: "Path traversal, deserialisation and template injection", emoji: "", group: "Lesson", keywords: ["path traversal", "directory traversal", "dot dot slash", "CVE-2021-41773", "normpath", "commonpath", "insecure deserialisation", "pickle", "server side template injection", "SSTI", "Jinja2", "CWE-22", "CWE-502"] },
+        { id: "versus", title: "Injection defences compared", emoji: "", group: "Lesson", keywords: ["comparison", "input validation", "WAF", "ModSecurity", "escaping", "defence in depth"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "taint analysis", "sqlmap", "prompt injection", "SAST"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

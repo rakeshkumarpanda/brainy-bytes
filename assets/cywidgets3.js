@@ -1295,3 +1295,171 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Application Security 1.2  SQL injection: how input turns into code, and how parameters keep it data
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const CASES = {
+    normal: { n: 'bob', p: 'h_91cc', sql: "... WHERE name = 'bob' AND password_hash = 'h_91cc'", chips: [['WHERE name =', 'code'], ["'bob'", 'data'], ['AND password_hash =', 'code'], ["'h_91cc'", 'data']], rows: ['bob | user'], why: 'Both values sit inside quotes as data. One matching row.' },
+    comment: { n: "alice' --", p: 'x', sql: "... WHERE name = 'alice' --' AND password_hash = 'x'", chips: [['WHERE name =', 'code'], ["'alice'", 'data'], ['--', 'inj'], ["' AND password_hash = 'x'", 'gone']], rows: ['alice | admin'], why: 'The quote in the input closed the string early, and -- turned the password check into a comment. Logged in as alice, an admin, with no password.' },
+    taut: { n: "' OR '1'='1", p: "' OR '1'='1", sql: "... WHERE name = '' OR '1'='1' AND password_hash = '' OR '1'='1'", chips: [['WHERE name =', 'code'], ["''", 'data'], ['OR', 'inj'], ["'1'='1'", 'inj'], ['AND password_hash =', 'code'], ["''", 'data'], ['OR', 'inj'], ["'1'='1'", 'inj']], rows: ['alice | admin', 'bob | user'], why: "The input added OR '1'='1', which is always true, so the WHERE clause matches every row. Many apps log in as the first row, often the admin." }
+  };
+  trace('cysqli', {
+    title: 'SQL injection: when data becomes code',
+    sub: 'A login builds its SQL by pasting what the user typed between quotes. A quote in the input ends the string early, and whatever follows is read as SQL. Parameterised queries send the query and the data separately, so input can never change the query’s shape.',
+    W: 600, H: 340,
+    params: [
+      { k: 'c', label: 'User types (name / password)', type: 'select', v: 'comment', opts: [['normal', "bob / h_91cc"], ['comment', "alice' -- / x"], ['taut', "' OR '1'='1 / same"]] },
+      { k: 'm', label: 'Code', type: 'select', v: 'concat', opts: [['concat', 'string building (f-string)'], ['param', 'parameterised query (?)']] }
+    ],
+    tips: [
+      { t: 'Play the comment trick with string building. Two dashes cut off the password check.', play: true },
+      { t: 'Switch to the parameterised query. The same text is now only a strange user name, and nothing matches.', set: { m: 'param' }, play: true },
+      { t: 'Try the always true input with string building. Every row comes back.', set: { c: 'taut', m: 'concat' }, play: true }
+    ],
+    frames(p) {
+      const C = CASES[p.c], par = p.m === 'param';
+      const rows = par ? (p.c === 'normal' ? ['bob | user'] : []) : C.rows;
+      const fr = [
+        { st: 1, say: par ? 'The code: execute("SELECT name, role FROM users WHERE name = ? AND password_hash = ?", (name, pw)). The query text never changes.' : 'The code: execute(f"SELECT name, role FROM users WHERE name = \'{name}\' AND password_hash = \'{pw}\'"). The input is pasted inside the quotes.' },
+        { st: 2, say: `The user types name <code>${C.n}</code> and password <code>${C.p}</code>.` },
+        { st: 3, say: par ? 'The database receives the fixed query with two placeholders, and separately the two values. It parses the query first, so the values can only ever be data.' : `The database receives <code>${C.sql}</code> and parses it. The chips show how the parser reads it.` },
+        { st: 4, done: true, say: par ? (rows.length ? 'One matching row, as expected.' : `No user is literally named <code>${C.n}</code>, so no rows. The attack text was harmless.`) + ' Parameterised queries are the main defence against SQL injection, with least privilege database accounts behind them.' : C.why }
+      ];
+      return fr.map(x => ({ ...x, C, par, rows, c: p.c }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, C = f.C;
+      cbox(z, 14, 12, 572, 34, f.par ? "WHERE name = ? AND password_hash = ?" : "WHERE name = '{name}' AND password_hash = '{pw}'", { s: 12, b: true, mono: true, fill: f.par ? 'rgba(15,118,110,0.15)' : col.surf });
+      if (f.st >= 2) { cbox(z, 14, 56, 280, 34, ['name', C.n], { s: 11, b: true, mono: true, fill: col.bg }); cbox(z, 306, 56, 280, 34, ['password', C.p], { s: 11, b: true, mono: true, fill: col.bg }); }
+      if (f.st >= 3) {
+        if (f.par) {
+          cbox(z, 14, 104, 572, 30, 'query: WHERE name = ? AND password_hash = ?', { s: 12, b: true, mono: true, fill: col.surf });
+          cbox(z, 14, 142, 280, 30, `data 1: "${C.n}"`, { s: 12, b: true, mono: true, fill: 'rgba(124,58,237,0.15)' });
+          cbox(z, 306, 142, 280, 30, `data 2: "${C.p}"`, { s: 12, b: true, mono: true, fill: 'rgba(124,58,237,0.15)' });
+        } else {
+          let x = 14, y = 104;
+          C.chips.forEach(([t, k]) => {
+            const w = Math.max(40, t.length * 7.2 + 14);
+            if (x + w > 586) { x = 14; y += 38; }
+            cbox(z, x, y, w, 30, t, { s: 11, b: true, mono: true, fill: k === 'code' ? col.surf : k === 'data' ? 'rgba(124,58,237,0.15)' : k === 'inj' ? col.red : col.bg, c: k === 'inj' ? '#fff' : k === 'gone' ? col.ink2 : col.ink });
+            if (k === 'gone') D.line(g, x + 4, y + 15, x + w - 4, y + 15, col.ink2, 1.5);
+            x += w + 6;
+          });
+          D.text(g, 'grey = SQL code   purple = data   red = SQL the attacker wrote   struck = comment, ignored', 14, 196, { s: 10, c: col.ink2 });
+        }
+      }
+      if (f.st >= 4) {
+        D.text(g, 'rows returned', 14, 222, { s: 11, b: true, c: col.ink2 });
+        if (!f.rows.length) cbox(z, 14, 230, 200, 28, '(none)', { s: 12, b: true, mono: true, fill: col.bg });
+        f.rows.forEach((r, i) => cbox(z, 14 + i * 210, 230, 200, 28, r, { s: 12, b: true, mono: true, fill: r.includes('admin') && f.c !== 'normal' ? 'rgba(225,29,72,0.2)' : col.surf }));
+      }
+      if (f.done) { const bad = !f.par && f.c !== 'normal'; cbox(z, 14, 306, 572, 28, bad ? 'injection: the input changed the query' : 'safe: the query shape did not change', { s: 13, b: true, fill: bad ? col.red : col.cv, c: '#fff' }); }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 1.2  Blind SQL injection: binary search on one secret character, yes or no at a time
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cyblind', {
+    title: 'Blind SQL injection: leaking a secret with yes or no questions',
+    sub: 'The page shows no data, only "found" or "not found". The attacker injects a condition such as unicode(substr(token, 1, 1)) > 79 and watches which answer comes back. Halving the range each time finds any printable character in at most 7 questions.',
+    W: 600, H: 340,
+    params: [
+      { k: 'ch', label: 'Secret character', type: 'select', v: 'K', opts: [['K', 'K (75)'], ['9', '9 (57)'], ['q', 'q (113)'], ['~', '~ (126)']] }
+    ],
+    tips: [
+      { t: 'Play K. Seven questions, each cutting the range in half, from 95 possibilities down to one.', play: true },
+      { t: 'Try ~, the last printable character. Only 6 questions this time: binary search never needs more than 7, wherever the answer lies.', set: { ch: '~' }, play: true }
+    ],
+    frames(p) {
+      const code = p.ch.charCodeAt(0), fr = [];
+      let lo = 32, hi = 126, q = 0;
+      fr.push({ st: 0, lo, hi, q, say: `The secret is one printable ASCII character, a code from 32 to 126: ${hi - lo + 1} possibilities.` });
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1, yes = code > mid; q++;
+        const before = [lo, hi];
+        if (yes) lo = mid + 1; else hi = mid;
+        fr.push({ st: 1, lo, hi, q, mid, yes, before, say: `Question ${q}: inject <code>unicode(substr(token,1,1)) &gt; ${mid}</code>. The page says <b>${yes ? 'found' : 'not found'}</b>, so the code is ${yes ? 'above' : 'at most'} ${mid}. Range now ${lo} to ${hi} (${hi - lo + 1} left).` });
+      }
+      fr.push({ st: 2, done: true, lo, hi, q, say: `Found: code ${lo} is "${String.fromCharCode(lo)}" after ${q} questions. A 32 character token takes about 224 requests, a few seconds for a tool such as sqlmap. Time based blind injection works the same way with SLEEP() when even the found or not found difference is hidden. The fix is the same as before: parameterised queries.` });
+      return fr.map(x => ({ ...x, code }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 30, R = 570, Y = 120, X = c => L + (R - L) * (c - 32) / 94;
+      D.line(g, L, Y, R, Y, col.line, 2);
+      [32, 48, 64, 80, 96, 112, 126].forEach(c => { D.line(g, X(c), Y - 4, X(c), Y + 4, col.line, 1.5); D.text(g, `${c} ${String.fromCharCode(c) === ' ' ? 'space' : String.fromCharCode(c)}`, X(c), Y + 20, { a: 'center', s: 10, c: col.ink2 }); });
+      D.rect(g, X(f.lo) - 2, Y - 18, Math.max(4, X(f.hi) - X(f.lo) + 4), 36, { fill: 'rgba(15,118,110,0.25)' });
+      if (f.mid != null) { D.line(g, X(f.mid), Y - 34, X(f.mid), Y + 30, col.orange, 2.5); cbox(z, Math.min(Math.max(X(f.mid) - 70, 14), 446), 40, 140, 30, `> ${f.mid}? ${f.yes ? 'yes' : 'no'}`, { s: 12, b: true, mono: true, fill: f.yes ? 'rgba(15,118,110,0.2)' : 'rgba(225,29,72,0.15)' }); }
+      cbox(z, 14, 170, 280, 50, ['questions asked', `${f.q}`], { s: 14, b: true, fill: col.surf });
+      cbox(z, 306, 170, 280, 50, ['candidates left', `${f.hi - f.lo + 1}`], { s: 14, b: true, fill: col.surf });
+      cbox(z, 14, 232, 572, 30, `log2(95) = 6.57, so at most 7 questions per character`, { s: 12, b: true, fill: col.bg });
+      if (f.done) cbox(z, 14, 306, 572, 28, `secret character "${String.fromCharCode(f.lo)}" (code ${f.lo}) found in ${f.q} questions`, { s: 13, b: true, fill: col.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 1.2  SSRF: a URL preview feature aimed at the cloud metadata service
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const U = {
+    pub: ['https://images.example.org/cat.png', '93.184.216.34', false, 'a cat picture'],
+    meta: ['http://169.254.169.254/latest/meta-data/iam/security-credentials/web-role', '169.254.169.254', true, 'AccessKeyId, SecretAccessKey, Token'],
+    int: ['http://10.0.0.12/admin', '10.0.0.12', true, 'the internal admin panel'],
+    dec: ['http://2130706433:8080/debug', '127.0.0.1', true, 'a debug page on the server itself']
+  };
+  trace('cyssrf', {
+    title: 'Server side request forgery (SSRF)',
+    sub: 'The app offers "paste a link and we show a preview". The server fetches the URL from inside the network, where it can reach addresses the attacker cannot: internal services and the cloud metadata service that hands out the server’s credentials.',
+    W: 600, H: 340,
+    params: [
+      { k: 'u', label: 'URL the user submits', type: 'select', v: 'meta', opts: [['pub', 'public image'], ['meta', 'cloud metadata 169.254.169.254'], ['int', 'internal 10.0.0.12'], ['dec', '2130706433 (127.0.0.1 in disguise)']] },
+      { k: 'g', label: 'Server check', type: 'select', v: 'off', opts: [['off', 'none'], ['on', 'resolve, block private and link local addresses']] }
+    ],
+    tips: [
+      { t: 'Play the metadata URL with no check. The server fetches its own cloud credentials and shows them to the attacker.', play: true },
+      { t: 'Turn on the check. The server resolves the host, sees a link local address and refuses.', set: { g: 'on' }, play: true },
+      { t: 'Try the disguised loopback address. A filter that only looks for the text "127.0.0.1" misses it, but checking the resolved address catches it.', set: { u: 'dec', g: 'on' }, play: true }
+    ],
+    frames(p) {
+      const [url, ip, internal, prize] = U[p.u], guard = p.g === 'on', blocked = guard && internal;
+      const fr = [
+        { st: 1, say: `The attacker submits <code>${url}</code> to the preview feature.` },
+        { st: 2, say: `The server resolves the host to <b>${ip}</b>. ${internal ? 'That address is not on the internet: it is inside the cloud network or on the server itself.' : 'A normal public address.'}` },
+        { st: 3, blocked, say: guard ? (blocked ? `The check finds ${ip} in a blocked range (${ip.startsWith('169.254') ? 'link local' : ip.startsWith('127') ? 'loopback' : 'private 10.0.0.0/8'}) and refuses.` : 'The check allows a public address.') : 'No check: the server fetches whatever it was given.' },
+        { st: 4, done: true, blocked, say: blocked ? 'Blocked. Also connect only to the address you checked, so a second DNS lookup cannot swap it (DNS rebinding), turn off redirects, and on AWS require IMDSv2, which needs a PUT with a session token that a simple SSRF cannot send.' : internal ? `The server fetched ${prize} and returned it in the preview. In 2019 an SSRF like this let an attacker take Capital One’s cloud credentials and copy data on about 106 million people.` : 'A normal preview. The feature is useful, which is why it must be guarded rather than removed.' }
+      ];
+      return fr.map(x => ({ ...x, url, ip, internal, prize, guard }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 20, 120, 54, ['Attacker', 'internet'], { s: 12, b: true, fill: 'rgba(225,29,72,0.15)' });
+      D.rect(g, 170, 8, 416, 270, { fill: 'rgba(15,118,110,0.06)', stroke: col.line });
+      D.text(g, 'cloud network', 180, 24, { s: 11, b: true, c: col.ink2 });
+      cbox(z, 190, 34, 160, 54, ['Web server', 'preview feature'], { s: 12, b: true, fill: col.surf });
+      cbox(z, 410, 34, 166, 46, ['metadata service', '169.254.169.254'], { s: 11, b: true, fill: f.internal && f.ip.startsWith('169') ? 'rgba(234,88,12,0.2)' : col.bg });
+      cbox(z, 410, 92, 166, 46, ['internal admin', '10.0.0.12'], { s: 11, b: true, fill: f.ip === '10.0.0.12' ? 'rgba(234,88,12,0.2)' : col.bg });
+      cbox(z, 190, 110, 160, 40, ['loopback', '127.0.0.1'], { s: 11, b: true, fill: f.ip === '127.0.0.1' ? 'rgba(234,88,12,0.2)' : col.bg });
+      cbox(z, 14, 210, 140, 46, ['public site', '93.184.216.34'], { s: 11, b: true, fill: f.ip === '93.184.216.34' ? 'rgba(234,88,12,0.2)' : col.bg });
+      if (f.st >= 1) { D.arrow(g, 134, 46, 190, 56, col.red, 2); cbox(z, 14, 84, 150, 24, 'POST /preview url=…', { s: 10, b: true, mono: true, fill: col.surf }); }
+      if (f.st >= 2) cbox(z, 190, 164, 160, 28, `resolves to ${f.ip}`, { s: 11, b: true, mono: true, fill: col.bg });
+      if (f.st >= 3 && f.guard) cbox(z, 190, 200, 160, 28, f.blocked ? 'check: BLOCK' : 'check: allow', { s: 12, b: true, fill: f.blocked ? col.cv : col.surf, c: f.blocked ? '#fff' : col.ink });
+      if (f.st >= 4 && !f.blocked) {
+        const tx = f.ip.startsWith('169') ? [410, 57] : f.ip.startsWith('10.') ? [410, 115] : f.ip.startsWith('127') ? [270, 110] : [154, 233];
+        D.arrow(g, 350, 70, tx[0], tx[1], col.orange, 2.5);
+        cbox(z, 190, 240, 386, 30, `returned to attacker: ${f.prize}`, { s: 11, b: true, fill: f.internal ? col.red : col.surf, c: f.internal ? '#fff' : col.ink });
+      }
+      if (f.done) cbox(z, 14, 306, 572, 28, f.blocked ? 'SSRF blocked by the address check' : f.internal ? 'SSRF: internal data leaked' : 'normal fetch of a public URL', { s: 13, b: true, fill: f.blocked || !f.internal ? col.cv : col.red, c: '#fff' });
+    }
+  });
+})();
