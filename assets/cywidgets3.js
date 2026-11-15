@@ -306,3 +306,154 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Network and Systems 1.3  The WEP birthday problem: how quickly a random IV repeats
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cywep', {
+    title: 'WEP’s 24 bit IV: the birthday paradox on Wi-Fi',
+    sub: 'WEP mixed a 24 bit IV into the same key for every packet. When an IV repeats, the keystream repeats, and two ciphertexts XOR to the two plaintexts. P(repeat after n packets) ≈ 1 − e^(−n²/2N) with N = 2^bits.',
+    W: 600, H: 340,
+    params: [
+      { k: 'bits', label: 'IV size in bits', type: 'select', v: '24', opts: [['24', '24 bits (WEP)'], ['32', '32 bits'], ['48', '48 bits (TKIP and CCMP packet numbers)']] }
+    ],
+    tips: [
+      { t: 'Play 24 bits. A 50% chance of a repeat comes after only about 4823 packets, a few seconds on a busy network.', play: true },
+      { t: 'Choose 48 bits. CCMP in WPA2 uses a 48 bit packet number that only counts up, so with a fresh key per session it never repeats.', set: { bits: '48' }, play: true }
+    ],
+    frames(p) {
+      const b = +p.bits, N = 2 ** b, half = Math.sqrt(2 * Math.log(2) * N);
+      const P = n => 1 - Math.exp(-n * n / (2 * N));
+      const ns = [1000, 2000, 4823, 10000, 40000, 1e6, 2e7];
+      const fr = [{ st: 0, pts: [], say: `IV space N = 2<sup>${b}</sup> = ${N.toLocaleString('en')}. Each packet picks an IV. How many packets until two share one?` }];
+      const pts = [];
+      ns.forEach(n => { pts.push([n, P(n)]); fr.push({ st: 1, pts: pts.slice(), say: `After ${n.toLocaleString('en')} packets: P(repeat) &asymp; 1 &minus; e<sup>&minus;n&sup2;/2N</sup> = <b>${(100 * P(n)).toFixed(P(n) < 0.001 ? 4 : 1)}%</b>.` }); });
+      fr.push({ st: 2, done: true, pts, say: b === 24 ? `50% after &radic;(2 ln 2 &middot; N) &asymp; ${Math.round(half)} packets. An access point sending 1000 packets a second repeats IVs within seconds, and the FMS (2001) and PTW (2007) attacks went further and recovered the key itself from about 40000 to 85000 packets.` : `50% only after about ${Math.round(half).toLocaleString('en')} packets. ${b === 48 ? 'And WPA2 does not pick randomly: the packet number counts up and the key changes per session, so a nonce repeats only if an attack such as KRACK forces a reset.' : 'Better, but random 32 bit IVs would still repeat on a busy network within hours.'}` });
+      return fr.map(x => ({ ...x, b, half }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 50, R = 420, T = 20, B = 262;
+      const lx = n => L + Math.log10(n) / Math.log10(2e7) * (R - L), Y = v => B - v * (B - T);
+      D.line(g, L, B, R, B, col.line, 1.5); D.line(g, L, T, L, B, col.line, 1.5);
+      [10, 1e3, 1e5, 1e7].forEach(n => D.text(g, n >= 1e6 ? `10^${Math.log10(n)}` : n.toLocaleString('en'), lx(n), B + 14, { a: 'center', s: 9, c: col.ink2 }));
+      D.text(g, 'packets (log scale)', (L + R) / 2, B + 28, { a: 'center', s: 10, b: true, c: col.ink2 });
+      [0, 0.5, 1].forEach(v => { D.text(g, `${v * 100}%`, L - 6, Y(v) + 4, { a: 'right', s: 9, c: col.ink2 }); D.line(g, L, Y(v), R, Y(v), col.line, 0.5, [3, 4]); });
+      if (f.st >= 1) {
+        const N = 2 ** f.b; let prev = null;
+        for (let i = 0; i <= 100; i++) { const n = 10 ** (i / 100 * Math.log10(2e7)), pt = [lx(n), Y(1 - Math.exp(-n * n / (2 * N)))]; if (prev) D.line(g, prev[0], prev[1], pt[0], pt[1], 'rgba(15,118,110,0.35)', 2); prev = pt; }
+      }
+      f.pts.forEach(([n, v], i) => { D.circle(g, lx(n), Y(v), 5, { fill: i === f.pts.length - 1 ? col.red : col.cv }); });
+      if (f.done && f.half < 2e7) { D.line(g, lx(f.half), B, lx(f.half), Y(0.5), col.red, 1.5, [5, 4]); D.text(g, `50% at ${Math.round(f.half)}`, lx(f.half) + 4, Y(0.5) - 6, { s: 10, b: true, c: col.red }); }
+      cbox(z, 440, 20, 146, 44, ['IV bits', String(f.b)], { s: 13, b: true, fill: col.surf });
+      if (f.pts.length) { const [n, v] = f.pts[f.pts.length - 1]; cbox(z, 440, 74, 146, 44, [`n = ${n.toLocaleString('en')}`, `P = ${(100 * v).toFixed(v < 0.001 ? 4 : 1)}%`], { s: 12, b: true, fill: col.bg }); }
+      if (f.done) cbox(z, 14, 306, 572, 28, f.b === 24 ? 'WEP: keystreams repeat within seconds' : 'longer, counting nonces avoid repeats', { s: 13, b: true, fill: f.b === 24 ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 1.3  WPA2-PSK four way handshake against WPA3-SAE: can a captured handshake be cracked?
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cyhandshake', {
+    title: 'WPA2 against WPA3: what a captured handshake gives away',
+    sub: 'Both phone and access point know the Wi-Fi password. WPA2-Personal turns it straight into the master key, so a recorded handshake lets an attacker test guesses offline. WPA3 first runs SAE, a password authenticated key exchange with fresh secrets each time.',
+    W: 600, H: 340,
+    params: [
+      { k: 'ver', label: 'Protocol', type: 'select', v: 'wpa2', opts: [['wpa2', 'WPA2-Personal (PSK)'], ['wpa3', 'WPA3-Personal (SAE)']] }
+    ],
+    tips: [
+      { t: 'Play WPA2. The attacker records messages 1 and 2, then tries a word list at home until the MIC matches.', play: true },
+      { t: 'Choose WPA3. The recorded SAE exchange depends on random secrets the attacker never sees, so each guess needs a live attempt that the access point can limit.', set: { ver: 'wpa3' }, play: true }
+    ],
+    frames(p) {
+      const v2 = p.ver === 'wpa2';
+      const m = v2 ? [
+        ['both', 'PMK = PBKDF2(password, SSID, 4096) on both sides', 'Both sides turn the password into the 256 bit pairwise master key. The same password and SSID always give the same PMK.'],
+        ['ap', 'msg 1: ANonce', 'The access point sends a random ANonce, in the clear.'],
+        ['sta', 'msg 2: SNonce + MIC', 'The phone picks SNonce, computes PTK = PRF(PMK, MACs, ANonce, SNonce) and sends SNonce with a MIC made with part of the PTK.'],
+        ['ap', 'msg 3: GTK (encrypted) + MIC', 'The access point derives the same PTK, checks the MIC, and sends the group key encrypted.'],
+        ['sta', 'msg 4: ACK + MIC', 'The phone confirms. Both install the keys and start CCMP encryption.']
+      ] : [
+        ['both', 'password element PE = hash to curve(password, MACs)', 'Both sides map the password to a point on an elliptic curve. Nothing about it is sent.'],
+        ['sta', 'SAE commit: scalar + element (fresh randoms)', 'The phone picks random secrets and sends a commit built from them and PE.'],
+        ['ap', 'SAE commit: scalar + element (fresh randoms)', 'The access point does the same with its own random secrets.'],
+        ['both', 'SAE confirm both ways, PMK = from the shared secret', 'Each side proves it derived the same secret. The PMK comes from a fresh Diffie-Hellman style secret, so it differs every time.'],
+        ['both', '4 way handshake with that PMK', 'The usual 4 way handshake follows, now keyed by the fresh PMK.']
+      ];
+      const fr = [];
+      m.forEach((r, i) => fr.push({ st: 1, n: i + 1, say: r[2] }));
+      fr.push({ st: 2, done: true, n: m.length, say: v2 ? 'The attacker recorded messages 1 and 2 (or just the PMKID from message 1, Steube 2018). At home, for each word: PMK, then PTK, then MIC, and compare. GPUs test hundreds of thousands of words per second, so only a long random password is safe. And anyone who knows the password can decrypt recorded sessions.' : 'The recording is useless offline: checking a guess needs the random secrets inside the commits. Each guess means a live SAE attempt, which the access point can slow down. A fresh PMK every time also gives forward secrecy. Early implementations had side channel flaws (Dragonblood, 2019), fixed by later updates.' });
+      return fr.map(x => ({ ...x, v2, m }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 12, 120, 34, 'phone', { s: 13, b: true, fill: col.surf }); cbox(z, 466, 12, 120, 34, 'access point', { s: 13, b: true, fill: col.surf });
+      D.line(g, 74, 46, 74, 270, col.line, 1.5, [4, 4]); D.line(g, 526, 46, 526, 270, col.line, 1.5, [4, 4]);
+      f.m.slice(0, f.n).forEach((r, i) => {
+        const y = 62 + i * 42;
+        if (r[0] === 'both') cbox(z, 90, y, 420, 30, r[1], { s: 11, b: true, mono: true, fill: col.bg });
+        else { const ap = r[0] === 'ap'; D.arrow(g, ap ? 520 : 80, y + 26, ap ? 80 : 520, y + 26, col.cv, 2); cbox(z, 140, y, 320, 22, r[1], { s: 11, b: true, mono: true, fill: col.surf }); }
+      });
+      if (f.done) {
+        cbox(z, 14, 278, 572, 22, f.v2 ? 'attacker: record, then guess offline at GPU speed' : 'attacker: recording gives nothing to test offline', { s: 11, b: true, fill: col.surf, c: f.v2 ? col.red : col.cv });
+        cbox(z, 14, 306, 572, 28, f.v2 ? 'WPA2-PSK: offline dictionary attack possible' : 'WPA3-SAE: online guessing only, forward secrecy', { s: 13, b: true, fill: f.v2 ? col.red : col.cv, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Network and Systems 1.3  An evil twin access point against four kinds of Wi-Fi security
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cyeviltwin', {
+    title: 'Evil twin: a fake access point with the same name',
+    sub: 'Devices join the strongest signal with a known network name. An attacker sets up a twin of "CorpWiFi" close to the victim. Whether the twin gets anything depends on how the network authenticates.',
+    W: 600, H: 340,
+    params: [
+      { k: 'sec', label: 'Network security', type: 'select', v: 'eapbad', opts: [['open', 'Open network'], ['psk', 'WPA2-PSK, password on the wall'], ['eapbad', '802.1X, certificate check OFF'], ['eap', '802.1X, certificate checked'], ['sae', 'WPA3-SAE, password secret']] }
+    ],
+    tips: [
+      { t: 'Play 802.1X with the certificate check off. The phone talks to the twin’s fake RADIUS server and hands over a crackable login hash.', play: true },
+      { t: 'Turn the certificate check on. The twin cannot show the company’s server certificate, so the phone refuses before sending anything.', set: { sec: 'eap' }, play: true },
+      { t: 'Try a shared password on the wall. The attacker knows it too, so the twin works perfectly.', set: { sec: 'psk' }, play: true }
+    ],
+    frames(p) {
+      const s = p.sec;
+      const fr = [
+        { st: 1, say: 'The real CorpWiFi access point is down the corridor, signal &minus;60 dBm.' },
+        { st: 2, say: 'The attacker’s twin broadcasts the same name, CorpWiFi, right next to the victim at &minus;38 dBm. It may also send deauthentication frames to push devices off the real one (802.11w protection frames stop this, and WPA3 requires them).' },
+        { st: 3, say: 'The phone sees a stronger CorpWiFi and tries to join it.' }
+      ];
+      const out = {
+        open: ['joined', 'Open network: nothing proves who the access point is. The phone joins, and the twin sees all traffic not protected by TLS.'],
+        psk: ['joined', 'The password is shared with everyone, including the attacker, so the twin completes the WPA2 handshake. A shared password authenticates the network to no one who also knows it.'],
+        eapbad: ['leak', 'With the server certificate check off, the phone accepts the twin’s fake RADIUS server and runs PEAP with MSCHAPv2, giving the attacker a challenge and response that can be cracked offline to get the user’s password.'],
+        eap: ['refused', 'The phone checks that the server certificate is the company’s, signed by the company CA, with the right name. The twin cannot show it, so the phone stops before sending credentials.'],
+        sae: ['refused', 'The twin does not know the WPA3 password, so the SAE exchange fails, and it cannot learn the password by recording it.']
+      }[s];
+      fr.push({ st: 4, done: true, res: out[0], say: out[1] });
+      return fr.map(x => ({ ...x, s }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      if (f.st >= 1) cbox(z, 440, 30, 146, 50, ['real CorpWiFi', '−60 dBm'], { s: 12, b: true, fill: col.surf });
+      if (f.st >= 2) cbox(z, 220, 200, 160, 50, ['twin "CorpWiFi"', '−38 dBm'], { s: 12, b: true, fill: 'rgba(225,29,72,0.15)' });
+      cbox(z, 14, 110, 120, 50, ['phone', 'saved: CorpWiFi'], { s: 12, b: true, fill: col.bg });
+      if (f.st >= 3) { D.arrow(g, 134, 145, 220, 215, col.orange, 2.5); D.line(g, 134, 125, 440, 60, col.line, 1.5, [5, 5]); }
+      if (f.done) {
+        const bad = f.res !== 'refused';
+        cbox(z, 400, 200, 186, 50, f.res === 'joined' ? ['joined the twin', 'traffic exposed'] : f.res === 'leak' ? ['login hash sent', 'crackable offline'] : ['refused', 'nothing sent'], { s: 12, b: true, fill: bad ? col.red : col.green, c: '#fff' });
+        cbox(z, 14, 306, 572, 28, bad ? 'evil twin succeeds' : 'evil twin fails: the network proves who it is', { s: 13, b: true, fill: bad ? col.red : col.cv, c: '#fff' });
+      }
+    }
+  });
+})();

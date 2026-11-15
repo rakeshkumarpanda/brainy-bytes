@@ -9669,6 +9669,24 @@ function cySysModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-wireless", title: "Wireless security: from WEP to WPA3", emoji: "1.3", page: "content/cyber-security/cy-wireless.html",
+        summary: "WEP’s failures, WPA2 handshake and offline guessing, WPS, KRACK, WPA3 SAE, enterprise Wi-Fi, evil twins and Bluetooth.",
+        keywords: ["WEP", "WPA2", "WPA3", "four way handshake", "PBKDF2", "KRACK", "SAE", "WPS", "evil twin", "802.1X"],
+        minutes: 75, counts: {"lessons": 7, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Why wireless needs its own security", emoji: "", group: "Lesson", keywords: ["wireless security", "Wi-Fi", "WEP", "WPA", "WPA2", "WPA3", "TJX breach", "OWE", "Enhanced Open", "802.11"] },
+        { id: "wep", title: "How WEP broke", emoji: "", group: "Lesson", keywords: ["WEP", "RC4", "initialisation vector", "IV reuse", "birthday paradox", "keystream reuse", "CRC-32", "linearity", "FMS attack", "PTW attack", "Borisov Goldberg Wagner"] },
+        { id: "wpa2", title: "WPA2: the four way handshake and offline guessing", emoji: "", group: "Lesson", keywords: ["WPA2", "802.11i", "CCMP", "PSK", "PBKDF2", "PMK", "PTK", "four way handshake", "ANonce", "SNonce", "MIC", "offline dictionary attack", "PMKID", "KRACK", "FragAttacks"] },
+        { id: "wps", title: "WPS, WPA3 and enterprise Wi-Fi", emoji: "", group: "Lesson", keywords: ["WPS", "WPS PIN", "Viehbock", "Reaver", "WPA3", "SAE", "Dragonfly", "forward secrecy", "Dragonblood", "protected management frames", "802.11w", "802.1X", "EAP-TLS", "PEAP", "RADIUS", "evil twin", "rogue access point", "Bluetooth", "BlueBorne", "KNOB"] },
+        { id: "versus", title: "Wi-Fi security options compared", emoji: "", group: "Lesson", keywords: ["comparison", "WEP", "WPA2", "WPA3", "Enterprise", "OWE"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Tamarin", "fuzzing", "BIAS"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
