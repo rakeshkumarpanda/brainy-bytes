@@ -10075,6 +10075,25 @@ function cyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-flattack", title: "Attacks and defences in federated learning", emoji: "2.2", page: "content/cyber-security/cy-flattack.html",
+        summary: "FL threat model, gradient leakage, poisoning and model replacement, clipping, median, trimmed mean and Krum, Sybil detection, free riders, and a layered defence stack.",
+        keywords: ["federated learning", "gradient leakage", "model replacement", "backdoor", "norm clipping", "robust aggregation", "median", "Krum", "Sybil", "FoolsGold"],
+        minutes: 80, counts: {"lessons": 8, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Who can attack a federated system?", emoji: "", group: "Lesson", keywords: ["threat model", "honest but curious", "malicious server", "malicious clients", "Sybil attack", "Douceur", "free rider", "privacy versus robustness", "availability attack", "backdoor"] },
+        { id: "leak", title: "Privacy attacks: what one update reveals", emoji: "", group: "Lesson", keywords: ["gradient leakage", "gradient inversion", "Phong", "Deep Leakage from Gradients", "DLG", "iDLG", "Geiping", "property inference", "Melis", "malicious server", "batch size", "secure aggregation", "differential privacy"] },
+        { id: "poison", title: "Poisoning and backdoors in federated learning", emoji: "", group: "Lesson", keywords: ["poisoning", "data poisoning", "model poisoning", "model replacement", "Bagdasaryan", "boosting", "Bhagoji", "backdoor", "edge case backdoor", "norm clipping", "weak differential privacy", "Sun et al."] },
+        { id: "robust", title: "Robust aggregation: surviving Byzantine clients", emoji: "", group: "Lesson", keywords: ["Byzantine", "Byzantine generals", "Lamport", "robust aggregation", "coordinate wise median", "trimmed mean", "breakdown point", "Krum", "FLTrust", "A Little Is Enough", "adaptive attack", "Fang et al."] },
+        { id: "sybil", title: "Sybils, free riders and client checks", emoji: "", group: "Lesson", keywords: ["Sybil", "Douceur", "attestation", "rate limits", "random sampling", "FoolsGold", "cosine similarity", "update history", "free rider", "contribution"] },
+        { id: "stack", title: "Privacy and robustness together: a defence stack", emoji: "", group: "Lesson", keywords: ["privacy versus robustness", "defence in depth", "client side clipping", "validity proofs", "zero knowledge", "central DP", "minimum round size", "model validation", "rollback", "secure robust aggregation"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "red team", "research"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

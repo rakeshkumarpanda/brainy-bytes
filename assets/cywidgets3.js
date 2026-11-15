@@ -3804,3 +3804,177 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 2.2  Gradient leakage: rebuilding a private input from one client's update of a dense layer
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const XS = [[0.9, 0.1, 0.7, 0.3], [0.2, 0.8, 0.4, 0.6], [0.5, 0.5, 0.9, 0.1], [0.1, 0.3, 0.2, 0.9]], DEL = [-0.62, 0.48, -0.35, 0.71];
+  trace('cygradleak', {
+    title: 'Rebuilding a private input from a model update',
+    sub: 'A dense layer z = W x + b. For one example the gradient of row r is &delta;<sub>r</sub> times the input x, and the bias gradient is &delta;<sub>r</sub> itself. So the server can divide the two and read x. The four squares are four private values, for example pixels.',
+    W: 600, H: 340,
+    params: [{ k: 'n', label: 'Examples in the client’s update', type: 'select', v: '1', opts: [['1', '1 example'], ['4', 'average of 4 examples']] }],
+    tips: [
+      { t: 'Play with one example. The division gives back the input exactly.', play: true },
+      { t: 'Use an average of 4 examples. The division gives a mix of the inputs, not any one of them. Smarter optimisation attacks can still pull apart small batches.', set: { n: '4' }, play: true }
+    ],
+    frames(p) {
+      const n = +p.n, xs = XS.slice(0, n), d = DEL.slice(0, n);
+      const gW = [0, 1, 2, 3].map(c => xs.reduce((s, x, i) => s + d[i] * x[c], 0) / n), gb = d.reduce((s, v) => s + v, 0) / n, rec = gW.map(v => v / gb);
+      const o = { n, xs, gW, gb, rec };
+      return [
+        { st: 1, ...o, say: n === 1 ? 'The client’s private input x = (0.9, 0.1, 0.7, 0.3). It never leaves the phone.' : 'Four private inputs on the phone. The update will be their average gradient.' },
+        { st: 2, ...o, say: `Local training computes the error signal &delta; for the first output (${n === 1 ? '&delta; = &minus;0.62' : 'one &delta; per example'}).` },
+        { st: 3, ...o, say: `The update sent to the server holds &part;L/&part;W row 1 = (${o.gW.map(v => f2(v, 3)).join(', ')}) and &part;L/&part;b<sub>1</sub> = ${f2(gb, 3)}.` },
+        { st: 4, ...o, say: `The server divides each entry by ${f2(gb, 3)}: (${rec.map(v => f2(v, 3)).join(', ')}).` },
+        { st: 5, done: true, ...o, say: n === 1 ? 'Exactly the private input. This is why the server must never see a single client’s update: use secure aggregation, and add differential privacy noise.' : 'A mix of the four inputs with weights that can be negative, not any one person’s data. Batching helps a little, but attacks such as Deep Leakage from Gradients (2019) can separate small batches, so batching is not a defence on its own.' }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      const sq = (x, y, vals, label) => { vals.forEach((v, i) => { const c = Math.max(0, Math.min(1, v)); D.rect(g, x + i * 46, y, 40, 40, { fill: `rgba(15,118,110,${0.08 + 0.85 * c})`, stroke: col.line }); D.text(g, f2(v, 2), x + i * 46 + 20, y + 56, { a: 'center', s: 11, b: true, c: col.ink }); }); D.text(g, label, x, y - 8, { s: 11, b: true, c: col.ink2 }); };
+      if (f.st >= 1) f.xs.forEach((x, i) => f.n === 1 ? sq(20, 34, x, 'private input on the phone') : sq(20 + (i % 2) * 200, 34 + Math.floor(i / 2) * 90, x, `example ${i + 1}`));
+      if (f.st >= 2 && f.n === 1) cbox(z, 220, 40, 150, 30, 'δ = −0.62', { s: 13, b: true, mono: true, fill: col.surf });
+      if (f.st >= 3) { cbox(z, 410, 30, 176, 54, ['update sent', `row 1 and bias ${f2(f.gb, 3)}`], { s: 12, b: true, fill: 'rgba(234,88,12,0.2)' }); }
+      if (f.st >= 4) { D.arrow(g, 498, 86, 498, 210, col.red, 2.5); cbox(z, 410, 110, 176, 40, 'server divides', { s: 12, b: true, fill: col.surf }); }
+      if (f.st >= 4) sq(20 + (f.n === 1 ? 0 : 0), 222, f.rec, 'what the server rebuilds');
+      if (f.done) cbox(z, 14, 306, 572, 28, f.n === 1 ? 'exact copy of the private input' : 'a mix, not one person’s input', { s: 13, b: true, fill: f.n === 1 ? col.red : col.orange, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 2.2  Model replacement: a boosted malicious update takes over the average, and norm clipping
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const G = [0.3, 0.4], X = [0.82, 0.78], H = [[0.38, 0.47], [0.22, 0.45], [0.35, 0.31], [0.4, 0.36], [0.29, 0.47]];
+  trace('cyreplace', {
+    title: 'Model replacement: one client takes over the global model',
+    sub: 'Five clients this round, server learning rate 1, so G<sub>new</sub> = G + (1/5) &Sigma; (L<sub>i</sub> &minus; G). Four honest clients send small changes. The attacker wants the backdoored model X (red cross) and boosts its change by 5 so the average lands on X.',
+    W: 600, H: 340,
+    params: [{ k: 'def', label: 'Server defence', type: 'select', v: 'none', opts: [['none', 'plain FedAvg'], ['clip', 'clip every change to length 0.1']] }],
+    tips: [
+      { t: 'Play plain FedAvg. The average lands almost exactly on the attacker’s model.', play: true },
+      { t: 'Turn on norm clipping. The boosted change is cut to the same size limit as everyone else, and the global model barely moves.', set: { def: 'clip' }, play: true }
+    ],
+    frames(p) {
+      const clip = p.def === 'clip' ? 0.1 : null, n = 5;
+      const A = [0, 1].map(k => G[k] + n * (X[k] - G[k]));
+      const ch = [...H.slice(0, 4), A].map(L => { let d = [L[0] - G[0], L[1] - G[1]]; const s = Math.hypot(d[0], d[1]); if (clip && s > clip) d = d.map(v => v * clip / s); return d; });
+      const NG = [0, 1].map(k => G[k] + ch.reduce((s, d) => s + d[k], 0) / n);
+      const o = { A, ch, NG, clip };
+      return [
+        { st: 1, ...o, say: 'The current global model G (black dot) and the attacker’s target X (red cross), a model with a hidden backdoor.' },
+        { st: 2, ...o, say: 'Four honest clients train on their data and send small changes (green arrows).' },
+        { st: 3, ...o, say: `The attacker sends L = G + 5 (X &minus; G) = (${f2(A[0], 2)}, ${f2(A[1], 2)}), five times the change it really wants (red arrow, mostly off the chart).` },
+        { st: 4, ...o, say: clip ? 'Norm clipping: every change longer than 0.1 is scaled down to length 0.1. The attacker’s change is cut hard, honest ones are untouched.' : 'Plain FedAvg accepts every change as it is.' },
+        { st: 5, done: true, ...o, say: clip ? `New global model (${f2(NG[0], 3)}, ${f2(NG[1], 3)}): a small step, close to where honest clients would take it. Clipping, plus a little noise, is the standard defence (Sun et al. 2019).` : `New global model (${f2(NG[0], 3)}, ${f2(NG[1], 3)}): almost exactly X. One client in one round replaced the model (Bagdasaryan et al. 2020).` }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 20, y0 = 14, S = 280, Xp = v => x0 + v * S, Yp = v => y0 + S - v * S;
+      D.rect(g, x0, y0, S, S, { stroke: col.line });
+      const cross = (p, c) => { D.line(g, Xp(p[0]) - 7, Yp(p[1]) - 7, Xp(p[0]) + 7, Yp(p[1]) + 7, c, 3); D.line(g, Xp(p[0]) - 7, Yp(p[1]) + 7, Xp(p[0]) + 7, Yp(p[1]) - 7, c, 3); };
+      cross(X, col.red); D.text(g, 'X (backdoor)', Xp(X[0]) - 30, Yp(X[1]) - 12, { s: 11, b: true, c: col.red });
+      if (f.st >= 2) f.ch.slice(0, 4).forEach(d => D.arrow(g, Xp(G[0]), Yp(G[1]), Xp(G[0] + d[0]), Yp(G[1] + d[1]), col.cv, 2));
+      if (f.st >= 3) {
+        const raw = [f.A[0] - G[0], f.A[1] - G[1]], d = f.st >= 4 ? f.ch[4] : raw;
+        g.save(); g.beginPath(); g.rect(x0, y0, S, S); g.clip(); D.arrow(g, Xp(G[0]), Yp(G[1]), Xp(G[0] + d[0]), Yp(G[1] + d[1]), col.red, 2.5); g.restore();
+        if (f.clip && f.st >= 4) D.circle(g, Xp(G[0]), Yp(G[1]), 0.1 * S, { stroke: col.ink2, w: 1.5 });
+      }
+      D.circle(g, Xp(G[0]), Yp(G[1]), 6, { fill: col.ink });
+      if (f.done) { D.circle(g, Xp(f.NG[0]), Yp(f.NG[1]), 7, { fill: col.orange }); D.text(g, 'new G', Xp(f.NG[0]) - 12, Yp(f.NG[1]) + 22, { a: 'right', s: 11, b: true, c: col.orange }); }
+      cbox(z, 320, 20, 266, 34, `attacker boost: 5 × (X − G)`, { s: 12, b: true, fill: f.st >= 3 ? col.surf : col.bg });
+      cbox(z, 320, 64, 266, 34, f.clip ? 'clip: max change length 0.1' : 'no clipping', { s: 12, b: true, fill: col.surf });
+      if (f.done) cbox(z, 320, 108, 266, 34, `new G (${f2(f.NG[0], 3)}, ${f2(f.NG[1], 3)})`, { s: 12, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.clip ? 'clipping limits any one client’s influence' : 'one boosted update replaced the global model', { s: 13, b: true, fill: f.clip ? col.cv : col.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 2.2  Robust aggregation on one coordinate: mean, median, trimmed mean and Krum against attackers
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const HON = [1.0, 1.1, 0.9, 1.05, 0.95, 1.2, 0.85, 1.15, 0.8, 1.02];
+  trace('cyrobust', {
+    title: 'Robust aggregation: which average survives attackers?',
+    sub: 'Ten clients send one number each (one coordinate of their update). Honest values sit near 1. The attackers all send 8 to drag the model. The number line runs from 0 to 9.',
+    W: 600, H: 340,
+    params: [{ k: 'f', label: 'Attackers among the 10', type: 'select', v: '3', opts: [['0', '0'], ['1', '1'], ['3', '3'], ['4', '4'], ['6', '6']] }],
+    tips: [
+      { t: 'Play with 3 attackers. The mean is dragged far off, the median and trimmed mean barely move.', play: true },
+      { t: 'Try 1 attacker. Even one is enough to move the plain mean noticeably.', set: { f: '1' }, play: true },
+      { t: 'Try 6 attackers. With a majority of attackers, the median fails too: no aggregator can tell who is honest.', set: { f: '6' }, play: true }
+    ],
+    frames(p) {
+      const f = +p.f, vals = [...HON.slice(0, 10 - f), ...Array(f).fill(8)], s = vals.slice().sort((a, b) => a - b), n = 10;
+      const mean = vals.reduce((a, b) => a + b, 0) / n, med = (s[4] + s[5]) / 2, b = Math.min(4, Math.max(f, 1)), tm = s.slice(b, n - b).reduce((a, c) => a + c, 0) / (n - 2 * b);
+      const kf = Math.min(f, 3), sc = vals.map((v, i) => vals.filter((_, j) => j !== i).map(w => (v - w) ** 2).sort((a, c) => a - c).slice(0, Math.max(1, n - kf - 2)).reduce((a, c) => a + c, 0));
+      const krum = vals[sc.indexOf(Math.min(...sc))];
+      const o = { f, vals, mean, med, tm, b, krum };
+      return [
+        { st: 1, ...o, say: `${10 - f} honest values near 1 (green)${f ? ` and ${f} attacker value${f > 1 ? 's' : ''} at 8 (red)` : ''}.` },
+        { st: 2, ...o, say: `Plain mean = <b>${f2(mean, 3)}</b>. Every value pulls on it, so one extreme value can move it anywhere.` },
+        { st: 3, ...o, say: `Median = <b>${f2(med, 3)}</b>. It stays inside the honest values while attackers are fewer than half (a breakdown point of 50%).` },
+        { st: 4, ...o, say: `Trimmed mean, dropping the ${b} smallest and ${b} largest = <b>${f2(tm, 3)}</b>. It must trim at least as many as there are attackers.` },
+        { st: 5, ...o, say: `Krum picks the single update closest to its neighbours: <b>${f2(krum, 3)}</b>. It needs n &gt; 2f + 2 to be safe.` },
+        { st: 6, done: true, ...o, say: f >= 5 ? 'With a majority of attackers every rule fails, because the attackers now look like the normal group. Robust aggregation assumes an honest majority.' : f ? 'Robust rules stay near the honest value while attackers are a minority. The price: they ignore unusual honest clients too, which can hurt fairness on non IID data.' : 'No attackers, so every rule gives a similar answer. The mean is the most accurate when everyone is honest.' }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, X = v => 30 + v * 60, y = 110;
+      D.line(g, X(0), y, X(9), y, col.line, 2);
+      for (let v = 0; v <= 9; v++) { D.line(g, X(v), y - 5, X(v), y + 5, col.line, 1.5); D.text(g, String(v), X(v), y + 20, { a: 'center', s: 10, c: col.ink2 }); }
+      const seen = {};
+      f.vals.forEach(v => { const k = v.toFixed(2); seen[k] = (seen[k] || 0) + 1; D.circle(g, X(v), y - 14 - (seen[k] - 1) * 12, 5, { fill: v > 5 ? col.red : col.cv }); });
+      const marks = [[2, f.mean, 'mean', col.red], [3, f.med, 'median', col.cv], [4, f.tm, 'trimmed mean', '#2563eb'], [5, f.krum, 'Krum', col.orange]].filter(m => f.st >= m[0]);
+      marks.forEach(([s0, v, label, c], row) => D.line(g, X(v), y + 26, X(v), 150 + row * 34, c, 2, [4, 3]));
+      marks.forEach(([s0, v, label, c], row) => { const bx = X(v) > 300 ? X(v) - 160 : X(v) + 10; cbox(z, Math.max(14, Math.min(436, bx)), 150 + row * 34 - 14, 150, 28, `${label} ${f2(v, 2)}`, { s: 12, b: true, fill: col.surf, c }); });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.f >= 5 ? 'attacker majority: every rule fails' : `honest value about 1, plain mean ${f2(f.mean, 2)}`, { s: 13, b: true, fill: f.f >= 5 ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 2.2  Sybil detection: fake clients run by one attacker send updates that point the same way
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, f2 } = CYZ;
+  const N = ['user1', 'user2', 'user3', 'user4', 'sybil1', 'sybil2'];
+  const V = (() => { const R = MLZ.rng(9), gs = () => { let s = 0; for (let k = 0; k < 6; k++) s += R(); return (s - 3) / Math.sqrt(0.5); }; return N.map(n => n.startsWith('sybil') ? [0, 0, 0, 0, 2, -2].map(v => v + 0.15 * gs()) : [0, 0, 0, 0, 0, 0].map(() => gs())); })();
+  const cos = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0) / Math.sqrt(a.reduce((s, v) => s + v * v, 0) * b.reduce((s, v) => s + v * v, 0));
+  trace('cysybil', {
+    title: 'Sybil detection: fake clients agree too well',
+    sub: 'One attacker runs two fake clients (Sybils) that push the same poisoned direction. Honest users have different data, so their updates point in different directions. The grid shows the cosine similarity between every pair of update histories.',
+    W: 600, H: 340,
+    params: [],
+    tips: [{ t: 'Play to fill the similarity grid one row at a time, then give each client a weight.', play: true }],
+    frames() {
+      const M = N.map(a => N.map(b => cos(V[N.indexOf(a)], V[N.indexOf(b)])));
+      const fr = N.map((n, r) => ({ st: 1, r: r + 1, M, say: `Row for ${n}: cosine similarity with every other client. 1 means the same direction, 0 unrelated, &minus;1 opposite.` }));
+      const w = N.map((n, i) => Math.max(0, 1 - Math.max(...M[i].filter((_, j) => j !== i))));
+      fr.push({ st: 2, done: true, r: 6, M, w, say: `Weight = 1 &minus; highest similarity to any other client. The Sybils match each other almost perfectly, so their weights drop to about ${f2(Math.max(w[4], w[5]), 2)}. This is the idea behind FoolsGold (Fung et al. 2018).` });
+      return fr;
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 90, y0 = 30, c = 38;
+      N.forEach((n, i) => { D.text(g, n, x0 - 8, y0 + i * c + c / 2 + 4, { a: 'right', s: 11, b: true, c: n.startsWith('sybil') ? col.red : col.ink }); D.text(g, n.replace('user', 'u').replace('sybil', 's'), x0 + i * c + c / 2, y0 - 8, { a: 'center', s: 11, b: true, c: col.ink2 }); });
+      for (let r = 0; r < f.r; r++) for (let k = 0; k < 6; k++) {
+        const v = f.M[r][k], a = Math.abs(v);
+        D.rect(g, x0 + k * c, y0 + r * c, c - 3, c - 3, { fill: v >= 0 ? `rgba(225,29,72,${0.1 + 0.8 * a})` : `rgba(37,99,235,${0.1 + 0.8 * a})` });
+        D.text(g, f2(v, 2), x0 + k * c + (c - 3) / 2, y0 + r * c + c / 2 + 3, { a: 'center', s: 10, b: true, c: a > 0.6 ? '#fff' : col.ink });
+      }
+      if (f.done) f.w.forEach((w, i) => cbox(z, 340, y0 + i * c, 246, c - 4, `${N[i]} weight ${f2(w, 2)}`, { s: 12, b: true, fill: w < 0.2 ? 'rgba(225,29,72,0.25)' : col.surf }));
+      if (f.done) cbox(z, 14, 306, 572, 28, 'too similar to another client: weight cut to near 0', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
