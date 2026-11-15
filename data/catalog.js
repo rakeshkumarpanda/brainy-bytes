@@ -9815,6 +9815,26 @@ function cyAppModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-xss", title: "Cross site attacks: XSS, CSP, CSRF and clickjacking", emoji: "1.3", page: "content/cyber-security/cy-xss.html",
+        summary: "XSS kinds and output encoding, sanitising and DOM sinks, strict CSP and SRI, CSRF tokens and SameSite, clickjacking.",
+        keywords: ["XSS", "output encoding", "sanitiser", "DOM XSS", "CSP", "nonce", "SRI", "CSRF", "SameSite", "clickjacking"],
+        minutes: 80, counts: {"lessons": 9, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "Cross site scripting: three kinds, one cause", emoji: "", group: "Lesson", keywords: ["XSS", "cross site scripting", "stored XSS", "reflected XSS", "DOM XSS", "Samy worm", "MySpace", "British Airways", "Magecart", "CERT CA-2000-02", "JavaScript", "same origin"] },
+        { id: "encoding", title: "Output encoding: the right escape for each context", emoji: "", group: "Lesson", keywords: ["output encoding", "escaping", "html.escape", "context", "HTML attribute", "JavaScript string", "javascript: URL", "autoescape", "Jinja2", "React", "dangerouslySetInnerHTML", "mark_safe"] },
+        { id: "sanitise", title: "Allowing some HTML, and DOM based XSS", emoji: "", group: "Lesson", keywords: ["HTML sanitiser", "allow list", "blocklist", "DOMPurify", "nh3", "onerror", "DOM XSS", "source and sink", "innerHTML", "textContent", "eval", "Trusted Types"] },
+        { id: "csp", title: "Content Security Policy and Subresource Integrity", emoji: "", group: "Lesson", keywords: ["Content Security Policy", "CSP", "nonce", "strict-dynamic", "unsafe-inline", "Report-Only", "CSP Level 3", "Weichselbaum", "Subresource Integrity", "SRI", "hash source", "frame-ancestors"] },
+        { id: "csrf", title: "Cross site request forgery", emoji: "", group: "Lesson", keywords: ["CSRF", "cross site request forgery", "CSRF token", "synchroniser token", "HMAC token", "SameSite", "Origin header", "Zeller and Felten", "ING Direct", "GET versus POST"] },
+        { id: "clickjacking", title: "Clickjacking and framing", emoji: "", group: "Lesson", keywords: ["clickjacking", "UI redressing", "X-Frame-Options", "frame-ancestors", "iframe", "Hansen", "Grossman", "frame busting"] },
+        { id: "versus", title: "XSS and CSRF compared", emoji: "", group: "Lesson", keywords: ["comparison", "XSS versus CSRF", "clickjacking", "defence in depth"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "mutation XSS", "script gadgets", "DOM Invader", "Sanitizer API"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

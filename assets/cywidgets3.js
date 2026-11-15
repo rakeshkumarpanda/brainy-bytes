@@ -1463,3 +1463,152 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Application Security 1.3  Cross site scripting: stored and reflected, with encoding or a strict CSP
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const PAY = '<script>steal()</script>';
+  trace('cyxss', {
+    title: 'Cross site scripting (XSS): the attacker’s script runs on your site',
+    sub: 'If a page puts user supplied text into its HTML without encoding it, a browser cannot tell the attacker’s script from the site’s own. The script then runs with the site’s origin: it can read the page, act as the user and send data away.',
+    W: 600, H: 340,
+    params: [
+      { k: 'kind', label: 'Type', type: 'select', v: 'stored', opts: [['stored', 'Stored (a comment on a forum)'], ['reflected', 'Reflected (a crafted search link)']] },
+      { k: 'def', label: 'Defence', type: 'select', v: 'none', opts: [['none', 'none'], ['enc', 'output encoding'], ['csp', 'no encoding, but a strict CSP']] }
+    ],
+    tips: [
+      { t: 'Play a stored XSS with no defence. Every visitor who opens the thread runs the attacker’s script.', play: true },
+      { t: 'Turn on output encoding. The same text arrives as &amp;lt;script&amp;gt; and is shown, not run.', set: { def: 'enc' }, play: true },
+      { t: 'Try a strict CSP without encoding. The browser builds the script element but refuses to run it, because it has no nonce. A useful second layer.', set: { def: 'csp' }, play: true }
+    ],
+    frames(p) {
+      const st = p.kind === 'stored', d = p.def;
+      const html = d === 'enc' ? '&lt;script&gt;steal()&lt;/script&gt;' : PAY;
+      const fr = [
+        { st: 1, say: st ? `The attacker posts a comment: <code>${PAY.replace(/</g, '&lt;')}</code>. The server saves it in the database.` : `The attacker sends the victim a link: <code>/search?q=${PAY.replace(/</g, '&lt;')}</code>, perhaps hidden behind a short URL.` },
+        { st: 2, say: st ? 'Later the victim, logged in, opens the thread. The server reads the comment and builds the page.' : 'The victim clicks. The server builds a page that says "Results for" followed by q.' },
+        { st: 3, say: d === 'enc' ? 'The template encodes the text: &lt; becomes &amp;lt; and so on. The HTML sent is plain text that looks like code.' : `The HTML sent contains the raw text <code>${PAY.replace(/</g, '&lt;')}</code>${d === 'csp' ? ', together with a header Content-Security-Policy: script-src \'nonce-…\'' : ''}.` },
+        { st: 4, say: d === 'enc' ? 'The browser shows the characters &lt;script&gt; on screen. No script element exists.' : d === 'csp' ? 'The browser creates a script element, checks the policy, sees no matching nonce and blocks it, logging a CSP violation report.' : 'The browser creates a script element and runs it, with the site’s origin. To the browser it is the site’s own code.' },
+        { st: 5, done: true, ran: d === 'none', say: d === 'none' ? `steal() runs: it can read the page and any non HttpOnly cookies, make requests as the user, or show a fake login form. ${st ? 'A stored XSS hits every visitor. In 2005 the Samy worm used one to add over a million MySpace friends in about 20 hours.' : 'A reflected XSS needs each victim to open the link.'}` : d === 'enc' ? 'Safe. Encoding at output, for the right context, is the main defence. Modern frameworks such as React, Angular and Django templates do it by default.' : 'Blocked by CSP. The bug is still there and should be fixed, but the policy stopped this exploit.' }
+      ];
+      return fr.map(x => ({ ...x, st0: st, d, html }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 16, 120, 50, ['Attacker'], { s: 12, b: true, fill: 'rgba(225,29,72,0.15)' });
+      cbox(z, 240, 16, 120, 50, [f.st0 ? 'Forum server' : 'Search server', f.st0 ? '+ database' : ''], { s: 12, b: true, fill: col.surf });
+      cbox(z, 466, 16, 120, 50, ['Victim browser', 'logged in'], { s: 12, b: true, fill: col.surf });
+      if (f.st >= 1) { if (f.st0) D.arrow(g, 134, 41, 240, 41, col.red, 2); else D.arrow(g, 134, 30, 466, 30, col.red, 2); cbox(z, 14, 76, 230, 26, f.st0 ? 'POST comment' : 'link with ?q=<script>…', { s: 11, b: true, mono: true, fill: col.bg }); }
+      if (f.st >= 2) { D.arrow(g, 466, 56, 360, 56, col.ink2, 2); }
+      if (f.st >= 3) { D.arrow(g, 360, 64, 466, 64, f.d === 'enc' ? col.cv : col.orange, 2.5); cbox(z, 150, 116, 436, 34, ['HTML sent: ' + (f.d === 'enc' ? '&lt;script&gt;steal()&lt;/script&gt;' : '<script>steal()</script>')], { s: 11, b: true, mono: true, fill: f.d === 'enc' ? 'rgba(15,118,110,0.15)' : 'rgba(234,88,12,0.15)' }); if (f.d === 'csp') cbox(z, 150, 156, 436, 26, "header: script-src 'nonce-r4nd0m' 'strict-dynamic'", { s: 11, b: true, mono: true, fill: col.bg }); }
+      if (f.st >= 4) {
+        const t = f.d === 'enc' ? 'screen shows the text <script>steal()</script>' : f.d === 'csp' ? 'script element created, CSP check fails: blocked' : 'script element created and executed';
+        cbox(z, 150, 196, 436, 34, t, { s: 12, b: true, fill: f.d === 'none' ? 'rgba(225,29,72,0.2)' : 'rgba(15,118,110,0.2)' });
+      }
+      if (f.st >= 5 && f.ran) { D.arrow(g, 470, 22, 134, 22, col.red, 2.5); cbox(z, 150, 244, 436, 30, 'data and actions sent to the attacker', { s: 12, b: true, fill: col.red, c: '#fff' }); }
+      if (f.done) cbox(z, 14, 306, 572, 28, f.ran ? 'XSS: attacker code ran with the site’s origin' : f.d === 'enc' ? 'encoded: shown as text' : 'blocked by Content Security Policy', { s: 13, b: true, fill: f.ran ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 1.3  Content Security Policy: which scripts a browser lets run
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const POL = {
+    weak: ["script-src 'self' 'unsafe-inline' cdn.example.com", [1, 1, 1, 0]],
+    list: ["script-src 'self' cdn.example.com", [0, 0, 1, 0]],
+    strict: ["script-src 'nonce-r4nd0m' 'strict-dynamic'", [1, 0, 0, 0]]
+  };
+  const SC = [
+    ['<script nonce="r4nd0m">initMenu()</script>', 'the site’s own inline script'],
+    ['<script>steal(document.cookie)</script>', 'injected by XSS'],
+    ['<script src="https://cdn.example.com/lib.js">', 'a library on a listed CDN'],
+    ['<script src="https://evil.io/x.js">', 'injected, from the attacker’s host']
+  ];
+  const WHY = {
+    weak: ["'unsafe-inline' allows it", "'unsafe-inline' allows every inline script, including injected ones", 'host is listed', 'host not listed'],
+    list: ['inline scripts need a nonce or hash', 'inline scripts need a nonce or hash', 'host is listed', 'host not listed'],
+    strict: ['nonce matches', 'no nonce', 'no nonce (add one, or load it from a trusted script)', 'no nonce']
+  };
+  trace('cycsp', {
+    title: 'Content Security Policy: a script allow list in a header',
+    sub: 'A CSP header tells the browser which scripts may run. Even if an attacker injects a script tag, the browser refuses to run it unless the policy allows it. The choice of policy decides whether it helps at all.',
+    W: 600, H: 340,
+    params: [
+      { k: 'pol', label: 'Policy', type: 'select', v: 'weak', opts: [['weak', "with 'unsafe-inline'"], ['list', 'host allow list'], ['strict', 'strict: nonce + strict-dynamic']] }
+    ],
+    tips: [
+      { t: "Play the weak policy. 'unsafe-inline' lets the injected inline script run, so the policy does nothing against classic XSS.", play: true },
+      { t: 'Try a host allow list. Inline injection is blocked, but the site must move its own inline code to files, and any script on a listed host is trusted.', set: { pol: 'list' }, play: true },
+      { t: 'Try the strict policy. Only scripts carrying the random nonce run. Google found this style far harder to bypass than allow lists.', set: { pol: 'strict' }, play: true }
+    ],
+    frames(p) {
+      const [text, ok] = POL[p.pol], fr = [{ st: 0, n: 0, say: `The response carries Content-Security-Policy: ${text}. The page contains four scripts. Two are the site’s, two were injected.` }];
+      SC.forEach(([tag, who], i) => fr.push({ st: 1, n: i + 1, say: `${who}: ${ok[i] ? '<b>runs</b>' : '<b>blocked</b>'}, ${WHY[p.pol][i]}.` }));
+      const bad = ok[1] + ok[3], good = ok[0] + ok[2];
+      fr.push({ st: 2, done: true, n: 4, bad, good, say: bad ? `An injected script ran, so this policy fails against XSS. Weichselbaum and colleagues at Google studied about 26000 real policies in 2016 and found almost 95% could be bypassed, mostly through 'unsafe-inline' or overly broad host lists.` : `No injected script ran. ${good < 2 ? 'Some of the site’s own scripts were blocked too, so roll a policy out first with Content-Security-Policy-Report-Only and fix what breaks.' : ''} A fresh random nonce must be generated for every response, or attackers can reuse it.` });
+      return fr.map(x => ({ ...x, text, ok }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 12, 572, 30, f.text, { s: 12, b: true, mono: true, fill: col.surf });
+      SC.forEach(([tag, who], i) => {
+        const y = 54 + i * 56, inj = i % 2 === 1;
+        cbox(z, 14, y, 410, 46, [tag, who], { s: 11, b: true, mono: false, fill: inj ? 'rgba(225,29,72,0.1)' : col.bg });
+        if (f.n > i) cbox(z, 434, y + 6, 152, 34, f.ok[i] ? 'RUN' : 'BLOCK', { s: 13, b: true, fill: f.ok[i] ? (inj ? col.red : col.cv) : (inj ? col.green : col.ink2), c: '#fff' });
+      });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.bad ? 'policy bypassed: injected code ran' : 'every injected script blocked', { s: 13, b: true, fill: f.bad ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 1.3  Cross site request forgery: a hidden form on an evil page, and two defences
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  trace('cycsrf', {
+    title: 'Cross site request forgery (CSRF)',
+    sub: 'The victim is logged in to the bank in one tab and opens an evil page in another. The evil page submits a hidden form to the bank. The browser attaches the bank’s cookie, so without a defence the bank sees a genuine request from its customer.',
+    W: 600, H: 340,
+    params: [
+      { k: 'def', label: 'Bank’s defence', type: 'select', v: 'none', opts: [['none', 'none'], ['token', 'CSRF token in every form'], ['lax', 'session cookie SameSite=Lax']] }
+    ],
+    tips: [
+      { t: 'Play with no defence. The transfer goes through, sent by the victim’s own browser.', play: true },
+      { t: 'Add a CSRF token. The evil page cannot read the bank’s pages, so it cannot know the token, and the bank refuses the form.', set: { def: 'token' }, play: true },
+      { t: 'Use SameSite=Lax instead. The browser leaves the cookie off the cross site POST, so the request arrives logged out.', set: { def: 'lax' }, play: true }
+    ],
+    frames(p) {
+      const d = p.def;
+      const fr = [
+        { st: 1, say: 'The victim logs in to bank.example. The browser stores the session cookie.' },
+        { st: 2, say: 'In another tab the victim opens evil.io, perhaps from a link in an email or an advert.' },
+        { st: 3, say: 'evil.io contains a hidden form: action="https://bank.example/transfer", to=attacker, amount=5000, and a script that submits it at once.' },
+        { st: 4, say: d === 'lax' ? 'The browser sees a cross site POST. The cookie is SameSite=Lax, so it is <b>not</b> attached.' : 'The browser sends the POST to bank.example and attaches the bank’s cookie, as it does for any request to that site.' },
+        { st: 5, say: d === 'lax' ? 'The bank sees no session and asks for a login. Nothing happens.' : d === 'token' ? 'The bank looks for the hidden csrf_token field. The form has none, because evil.io could not read it from the bank’s pages. Refused.' : 'The bank checks the cookie: valid session. It has no other check, so it performs the transfer.' },
+        { st: 6, done: true, ok: d === 'none', say: d === 'none' ? 'CSRF succeeded. In 2008 Zeller and Felten at Princeton found CSRF bugs that allowed money transfers at ING Direct and account changes at YouTube and others. The attacker never saw the cookie: they borrowed the browser.' : d === 'token' ? 'Blocked by the token. Tokens should be random or HMAC based, tied to the session, and checked on every state changing request.' : 'Blocked by SameSite. Use both: SameSite as a default layer, tokens for strong protection, and never change state with GET requests.' }
+      ];
+      return fr.map(x => ({ ...x, d }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 110, 150, 70, ['Victim browser', 'cookie for bank.example'], { s: 12, b: true, fill: col.surf });
+      cbox(z, 436, 30, 150, 56, ['bank.example'], { s: 13, b: true, fill: col.surf });
+      cbox(z, 436, 200, 150, 56, ['evil.io'], { s: 13, b: true, fill: 'rgba(225,29,72,0.15)' });
+      if (f.st >= 1) { D.arrow(g, 164, 120, 436, 58, col.cv, 2); D.text(g, 'login, Set-Cookie', 300, 80, { a: 'center', s: 11, c: col.ink2 }); }
+      if (f.st >= 2) D.arrow(g, 164, 170, 436, 228, col.ink2, 2);
+      if (f.st >= 3) cbox(z, 180, 220, 240, 44, ['hidden form, auto submit', 'to=attacker amount=5000'], { s: 11, b: true, mono: true, fill: col.bg });
+      if (f.st >= 4) { D.arrow(g, 164, 140, 436, 70, col.orange, 3); cbox(z, 200, 120, 210, 28, f.d === 'lax' ? 'POST, no cookie' : 'POST + bank cookie', { s: 11, b: true, mono: true, fill: f.d === 'lax' ? 'rgba(15,118,110,0.2)' : 'rgba(234,88,12,0.2)' }); }
+      if (f.st >= 5) cbox(z, 436, 94, 150, 50, f.d === 'none' ? ['session valid', 'transfer done'] : f.d === 'token' ? ['no csrf_token', 'refused'] : ['no session', 'refused'], { s: 12, b: true, fill: f.d === 'none' ? col.red : col.cv, c: '#fff' });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.ok ? 'CSRF: 5000 sent to the attacker' : f.d === 'token' ? 'blocked by the CSRF token' : 'blocked by SameSite=Lax', { s: 13, b: true, fill: f.ok ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
