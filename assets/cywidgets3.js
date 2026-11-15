@@ -2240,3 +2240,183 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Security Operations 1.2  The incident response life cycle (NIST SP 800-61) walked through for one incident
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const PH = ['Prepare', 'Detect and analyse', 'Contain', 'Eradicate', 'Recover', 'Lessons learned'];
+  const SC = {
+    phish: ['Phishing: a stolen email password', [
+      'Before anything happens: MFA for all staff, a phishing report button, a written playbook and an on call list with phone numbers.',
+      'An alert: Meena’s mailbox logged in from a new country and created a rule that forwards all mail outside. She also reports a fake login page.',
+      'Reset her password, end all her sessions, delete the forwarding rule, and block the fake site’s domain for everyone.',
+      'Search all mailboxes for the same phishing email and remove it. Check whether anyone else entered their password.',
+      'Meena works again with new credentials and a phishing resistant key. Watch her account closely for two weeks.',
+      'Why did MFA not stop it? Her account was missed in the roll out. Fix the roll out check and train the team on the new lure.']],
+    ransom: ['Ransomware on a file server', [
+      'Before: offline backups tested every month, EDR on every server, network segments, and a call tree that works without email.',
+      'EDR alerts that one process is renaming thousands of files to .locked on FS-02. The ransom note appears on shared drives.',
+      'Isolate FS-02 and any host talking to it, disable the account the malware used, and keep the machines powered on for evidence.',
+      'Find how they got in (an unpatched VPN) and every foothold they left. Patch, remove back doors, reset privileged passwords.',
+      'Restore files from the last clean offline backup, scan them, bring services back in order of business priority.',
+      'Track time to detect and time to contain. Patch the VPN faster next time, and add an alert for mass file renames.']],
+    laptop: ['A lost laptop with customer data', [
+      'Before: full disk encryption on every laptop, remote wipe, an asset list that says what data each laptop holds.',
+      'A salesperson reports the laptop stolen from a car. The asset list shows it held a customer spreadsheet.',
+      'Lock the account, send a remote wipe, revoke the laptop’s certificates and VPN access.',
+      'Little to remove here. Confirm disk encryption was on, using the management console record.',
+      'Give a new laptop, restore files from the cloud copy, and reissue access.',
+      'Encryption was on, so the data stays protected and a breach notice may not be needed. Record the decision and the legal advice.']]
+  };
+  trace('cyirlife', {
+    title: 'The incident response life cycle, one phase at a time',
+    sub: 'NIST SP 800-61 groups the work into preparation, detection and analysis, containment, eradication and recovery, then lessons learned. Pick an incident and step through what a calm team does in each phase.',
+    W: 600, H: 340,
+    params: [{ k: 'sc', label: 'Incident', type: 'select', v: 'phish', opts: Object.entries(SC).map(([k, v]) => [k, v[0]]) }],
+    tips: [
+      { t: 'Play the phishing case. Notice that containment comes before the deep search, so the attacker loses access fast.', play: true },
+      { t: 'Switch to ransomware. Look at why machines stay powered on during containment.', set: { sc: 'ransom' }, play: true },
+      { t: 'Try the lost laptop. Preparation (disk encryption) does most of the work here.', set: { sc: 'laptop' }, play: true }
+    ],
+    frames(p) {
+      const [name, acts] = SC[p.sc];
+      const fr = acts.map((a, i) => ({ st: 1, n: i + 1, say: `<b>${PH[i]}.</b> ${a}` }));
+      fr.push({ st: 2, done: true, n: 6, say: `The loop closes: lessons learned feed back into preparation, so the next ${name.toLowerCase().split(':')[0]} case is shorter. In real incidents phases overlap, and a team often goes back from eradication to analysis when it finds more.` });
+      return fr.map(x => ({ ...x, acts }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, cx = 158, cy = 150, R = 104;
+      PH.forEach((ph, i) => {
+        const a = -Math.PI / 2 + i * Math.PI / 3, x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+        const on = f.n > i, cur = f.n === i + 1 && !f.done;
+        cbox(z, x - 58, y - 18, 116, 36, ph, { s: 11, b: true, fill: cur ? col.cv : on ? 'rgba(15,118,110,0.25)' : col.bg, c: cur ? '#fff' : col.ink });
+        if (on && i < 5) { const b = a + Math.PI / 3; D.arrow(g, cx + (R - 30) * Math.cos(a + 0.35), cy + (R - 30) * Math.sin(a + 0.35), cx + (R - 30) * Math.cos(b - 0.35), cy + (R - 30) * Math.sin(b - 0.35), col.ink2, 1.5); }
+      });
+      if (f.done) D.arrow(g, cx + 80 * Math.cos(-Math.PI / 2 - 0.7), cy + 80 * Math.sin(-Math.PI / 2 - 0.7), cx + 80 * Math.cos(-Math.PI / 2 - 0.35), cy + 80 * Math.sin(-Math.PI / 2 - 0.35), col.red, 2);
+      const i = Math.min(f.n, 6) - 1;
+      if (i >= 0) {
+        const words = f.acts[i].split(' '), lines = [];
+        let cur = '';
+        words.forEach(w => { if ((cur + ' ' + w).length > 34) { lines.push(cur); cur = w; } else cur = cur ? cur + ' ' + w : w; });
+        lines.push(cur);
+        cbox(z, 300, 30, 286, 30, PH[i], { s: 13, b: true, fill: col.surf });
+        lines.slice(0, 9).forEach((l, k) => D.text(g, l, 308, 84 + k * 20, { s: 12, c: col.ink }));
+      }
+      if (f.done) cbox(z, 14, 306, 572, 28, 'lessons learned feed back into preparation', { s: 13, b: true, fill: col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 1.2  Why fast containment and network segments matter: ransomware spreading host to host
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const COLS = 6, ROWS = 4;
+  /* minutes until each host is reached from host (0,0), spreading one step to its 4 neighbours each minute */
+  function dist(seg) {
+    const d = Array.from({ length: ROWS }, () => Array(COLS).fill(Infinity));
+    d[0][0] = 0;
+    const q = [[0, 0]];
+    while (q.length) {
+      const [r, c] = q.shift();
+      for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const r2 = r + dr, c2 = c + dc;
+        if (r2 < 0 || r2 >= ROWS || c2 < 0 || c2 >= COLS) continue;
+        if (seg && ((c === 2 && c2 === 3) || (c === 3 && c2 === 2))) continue;   /* firewall between segments */
+        if (d[r2][c2] > d[r][c] + 1) { d[r2][c2] = d[r][c] + 1; q.push([r2, c2]); }
+      }
+    }
+    return d;
+  }
+  trace('cycontain', {
+    title: 'Containment: every minute counts',
+    sub: 'Ransomware starts on one laptop (top left) and each minute reaches the machines next to it. The SOC isolates infected machines at a chosen minute. A firewall between the two halves of the network can also stop the spread.',
+    W: 600, H: 340,
+    params: [
+      { k: 'iso', label: 'SOC isolates at minute', type: 'range', v: 3, min: 1, max: 9, step: 1 },
+      { k: 'seg', label: 'Network segments', type: 'select', v: 'no', opts: [['no', 'one flat network'], ['yes', 'firewall between the halves']] }
+    ],
+    tips: [
+      { t: 'Play with isolation at minute 3 on a flat network. 10 of 24 machines are hit.', play: true },
+      { t: 'Set isolation to minute 9. Almost everything is encrypted. Slow response is what turns an incident into a disaster.', set: { iso: 9 }, play: true },
+      { t: 'Keep minute 9 but add the firewall. Half the company is safe even with a slow response. That is defence in depth.', set: { iso: 9, seg: 'yes' }, play: true }
+    ],
+    frames(p) {
+      const iso = +p.iso, seg = p.seg === 'yes', d = dist(seg), fr = [];
+      for (let m = 0; m <= iso; m++) {
+        let hit = 0;
+        d.forEach(row => row.forEach(v => { if (v <= m) hit++; }));
+        fr.push({ st: 1, m, hit, say: m === 0 ? 'Minute 0: one laptop opens a malicious attachment. The ransomware starts encrypting and looks for other machines.' : m < iso ? `Minute ${m}: it has reached <b>${hit}</b> machines. Each new one starts spreading too.` : `Minute ${m}: the SOC isolates every infected machine with EDR network containment. <b>${hit}</b> machines are hit and the spread stops.` });
+      }
+      const last = fr[fr.length - 1].hit;
+      fr.push({ st: 2, done: true, m: iso, hit: last, say: `${last} of 24 machines need rebuilding. ${seg ? 'The firewall kept the right half clean however slow the team was.' : 'Isolating earlier is the strongest lever on a flat network.'} This is why playbooks let a tier 1 analyst isolate a host at once, without waiting for a manager.` });
+      return fr.map(x => ({ ...x, d, seg, iso }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, x0 = 40, y0 = 30, w = 70, h = 56;
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+        const v = f.d[r][c], hit = v <= f.m;
+        cbox(z, x0 + c * (w + 18), y0 + r * (h + 10), w, h, [hit ? 'locked' : 'clean', hit ? `min ${v}` : ''], { s: 11, b: true, fill: hit ? (f.m >= f.iso ? 'rgba(225,29,72,0.55)' : 'rgba(225,29,72,0.3)') : 'rgba(15,118,110,0.15)' });
+      }
+      if (f.seg) { const xs = x0 + 3 * (w + 18) - 10; D.line(g, xs, y0 - 10, xs, y0 + ROWS * (h + 10), col.orange, 4); D.text(g, 'firewall', xs, y0 - 14, { a: 'center', s: 11, b: true, c: col.orange }); }
+      if (!f.done) D.text(g, `minute ${f.m}: ${f.hit} of 24 hit`, 560, 296, { a: 'right', s: 12, b: true, c: col.ink2 });
+      if (f.done) cbox(z, 14, 306, 572, 28, `isolated at minute ${f.iso}: ${f.hit} of 24 machines hit`, { s: 13, b: true, fill: f.hit > 12 ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Security Operations 1.2  Backups against ransomware: how often (RPO), and where the copy lives
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const HIT = 15.5;
+  trace('cyrpo', {
+    title: 'Backups: how much data do we lose, and can we restore at all?',
+    sub: 'Ransomware strikes at 15:30. We restore from the last good backup, so anything newer is lost. That gap is the recovery point. Attackers also hunt for backups, so where the copy lives decides whether it survives.',
+    W: 600, H: 340,
+    params: [
+      { k: 'every', label: 'Backup every', type: 'select', v: '4', opts: [['24', '24 hours'], ['12', '12 hours'], ['4', '4 hours'], ['1', '1 hour']] },
+      { k: 'where', label: 'Where backups live', type: 'select', v: 'offline', opts: [['online', 'a share on the same network'], ['offline', 'offline or immutable copy']] }
+    ],
+    tips: [
+      { t: 'Play with 4 hourly offline backups. We lose 3.5 hours of work and restore.', play: true },
+      { t: 'Change to backups on the same network. The attacker encrypts them too, and only an old weekly copy is left.', set: { where: 'online' }, play: true },
+      { t: 'Try hourly offline backups. Data loss drops to 30 minutes, at the cost of more storage and bandwidth.', set: { every: '1', where: 'offline' }, play: true }
+    ],
+    frames(p) {
+      const B = +p.every, off = p.where === 'offline';
+      const times = []; for (let t = 0; t <= 24; t += B) if (t <= HIT) times.push(t);
+      const last = times[times.length - 1];
+      const lost = off ? HIT - last : 24 * 6 + HIT;   /* online copies are encrypted, fall back to last week's tape */
+      return [
+        { st: 1, B, off, times, say: `One day on the file server, from 00:00 to 24:00. Backups run every ${B} hours and are kept ${off ? 'offline or locked so they cannot be changed' : 'on a share the servers can write to'}.` },
+        { st: 2, B, off, times, hit: true, say: 'At 15:30 ransomware encrypts the file server. Work stops.' },
+        { st: 3, B, off, times, hit: true, enc: !off, say: off ? 'The attacker tries to delete the backups too, but the copies are offline or immutable, so they survive.' : 'The attacker finds the backup share with the same stolen admin account and <b>encrypts every backup</b> on it as well.' },
+        { st: 4, B, off, times, hit: true, enc: !off, last, say: off ? `Restore from the last good backup at ${String(last).padStart(2, '0')}:00. Everything after it is lost: <b>${(HIT - last).toFixed(1)} hours</b> of work. That is the recovery point.` : `The only clean copy is last week’s tape, kept off site. We lose about <b>${lost.toFixed(1)} hours</b>, almost a week of work.` },
+        { st: 5, done: true, B, off, times, hit: true, enc: !off, last, lost, say: `Recovery point lost: ${lost.toFixed(1)} hours. The 3 2 1 rule says keep 3 copies, on 2 kinds of storage, 1 off site. The newer 3 2 1 1 0 rule adds 1 offline or immutable copy and 0 errors in restore tests.` }
+      ];
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, L = 40, R = 560, Y = 120, X = t => L + t / 24 * (R - L);
+      D.line(g, L, Y, R, Y, col.line, 3);
+      [0, 6, 12, 18, 24].forEach(t => D.text(g, `${String(t).padStart(2, '0')}:00`, X(t), Y + 24, { a: 'center', s: 11, c: col.ink2 }));
+      f.times.forEach(t => {
+        const bad = f.enc;
+        cbox(z, X(t) - 14, Y - 50, 28, 30, 'B', { s: 12, b: true, fill: bad ? col.red : col.cv, c: '#fff' });
+        D.line(g, X(t), Y - 20, X(t), Y, bad ? col.red : col.cv, 2);
+      });
+      if (f.hit) { D.line(g, X(HIT), Y - 70, X(HIT), Y + 40, col.red, 3); D.text(g, 'ransomware 15:30', X(HIT), Y - 76, { a: 'center', s: 12, b: true, c: col.red }); }
+      if (f.last !== undefined && f.off) { D.rect(g, X(f.last), Y - 8, X(HIT) - X(f.last), 16, { fill: 'rgba(234,88,12,0.5)' }); D.text(g, 'lost work', (X(f.last) + X(HIT)) / 2, Y + 44, { a: 'center', s: 11, b: true, c: col.orange }); }
+      cbox(z, 40, 190, 240, 50, ['copies the attacker can reach', f.off ? 'none' : 'all online backups'], { s: 12, b: true, fill: f.off ? col.surf : 'rgba(225,29,72,0.15)' });
+      cbox(z, 320, 190, 240, 50, ['clean copy to restore', f.last === undefined ? '?' : f.off ? `${String(f.last).padStart(2, '0')}:00 today` : 'last week’s tape'], { s: 12, b: true, fill: col.surf });
+      if (f.done) cbox(z, 14, 306, 572, 28, `data lost: ${f.lost.toFixed(1)} hours`, { s: 13, b: true, fill: f.lost > 24 ? col.red : col.cv, c: '#fff' });
+    }
+  });
+})();

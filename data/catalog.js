@@ -9904,6 +9904,27 @@ function cyOpsModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-incident", title: "Incident response: from the first alert to lessons learned", emoji: "1.2", page: "content/cyber-security/cy-incident.html",
+        summary: "Response life cycle, triage, containment speed, backups with RPO and RTO, reporting deadlines and lessons learned.",
+        keywords: ["incident response", "NIST 800-61", "PICERL", "triage", "containment", "ransomware", "backups", "RPO", "RTO", "CERT-In", "GDPR"],
+        minutes: 75, counts: {"lessons": 10, "problems": 14, "quiz": 15, "assign": 3},
+        added: "2026-11-15",
+        sections: [
+        { id: "idea", title: "What incident response is, and why a plan beats panic", emoji: "", group: "Lesson", keywords: ["incident", "incident response", "event", "alert", "breach", "playbook", "WannaCry", "NotPetya", "Maersk", "Colonial Pipeline", "AIIMS ransomware", "kill switch"] },
+        { id: "lifecycle", title: "The life cycle: NIST SP 800-61 and SANS PICERL", emoji: "", group: "Lesson", keywords: ["NIST SP 800-61", "Rev. 3", "SANS", "PICERL", "preparation", "detection and analysis", "containment", "eradication", "recovery", "lessons learned", "CSF 2.0"] },
+        { id: "prepare", title: "Preparation and triage: being ready, and sorting what matters", emoji: "", group: "Lesson", keywords: ["preparation", "incident response plan", "roles", "contact list", "triage", "impact", "urgency", "priority", "functional impact", "information impact", "tabletop exercise"] },
+        { id: "contain", title: "Containment, eradication and recovery", emoji: "", group: "Lesson", keywords: ["containment", "isolation", "EDR network containment", "segmentation", "eradication", "root cause", "recovery", "rebuild from image", "volatile evidence", "exponential spread"] },
+        { id: "backups", title: "Backups, RPO and RTO: recovering from ransomware", emoji: "", group: "Lesson", keywords: ["backup", "RPO", "RTO", "recovery point objective", "recovery time objective", "3-2-1 rule", "3-2-1-1-0", "immutable backup", "offline backup", "restore test", "ransom payment", "sanctions"] },
+        { id: "comms", title: "Telling the right people: roles, evidence and legal deadlines", emoji: "", group: "Lesson", keywords: ["incident commander", "scribe", "communication", "CERT-In 6 hours", "GDPR article 33", "72 hours", "NIS2", "SEC 8-K", "DPDP Act", "chain of custody", "timeline", "Little law"] },
+        { id: "lessons", title: "Lessons learned and automation", emoji: "", group: "Lesson", keywords: ["lessons learned", "blameless postmortem", "five whys", "root cause analysis", "action items", "SOAR", "automation", "playbook"] },
+        { id: "versus", title: "Response approaches compared", emoji: "", group: "Lesson", keywords: ["comparison", "MDR", "managed detection and response", "retainer", "cyber insurance", "in house SOC"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "incident commander", "crisis management"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
