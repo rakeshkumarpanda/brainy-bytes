@@ -51,7 +51,7 @@ sys.path.append(os.path.join(TOOLS, 'python-build'))
 sys.path.append(os.path.join(TOOLS, 'ml-build'))
 sys.path.append(HERE)  # after the import above, so that 'build' still means the Computer Vision builder
 
-WIDGETS = ['cvviz.js', 'aiwidgets.js', 'mlwidgets.js', 'cywidgets.js', 'cywidgets2.js', 'cywidgets3.js']
+WIDGETS = ['cvviz.js', 'aiwidgets.js', 'mlwidgets.js', 'cywidgets.js', 'cywidgets2.js', 'cywidgets3.js', 'cywidgets4.js']
 BASE = {'builder': 'tools/cyber-build/build.py', 'css': ['cv.css', 'ai.css', 'python.css', 'ml.css', 'cyber.css'],
         'body': 'cvp aip caip pyp mlp cyp', 'widgets': WIDGETS, 'subject': 'cyber-security', 'badge': 'CY',
         'name': 'Cybersecurity'}

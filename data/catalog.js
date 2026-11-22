@@ -10117,8 +10117,32 @@ function cyAdvModules() {
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
-    { id: "cy-a3", title: "Certification revision", emoji: "3", step: 3, part: "advanced", level: "All levels", blurb: "Revising the whole subject for security certifications, interviews and university exams.", topics: [
-      { id: "cy-certprep", title: "Certification revision: exams, recall, formulas and scenarios", emoji: "3.1", page: "content/cyber-security/cy-certprep.html",
+    { id: "cy-a3", title: "Blockchain and emerging systems", emoji: "3", step: 3, part: "advanced", level: "Advanced", blurb: "How blockchains, cryptocurrencies and smart contracts are secured, and how they are attacked.", topics: [
+      { id: "cy-blockchain", title: "Blockchain security: hash chains, mining, consensus and wallets", emoji: "3.1", page: "content/cyber-security/cy-blockchain.html",
+        summary: "Hash linked blocks, proof of work maths, Merkle proofs, forks and double spends, 51% attacks, proof of stake and slashing, wallets and key theft, and tracing on a public chain.",
+        keywords: ["blockchain", "Bitcoin", "proof of work", "Merkle tree", "double spend", "51% attack", "proof of stake", "wallet", "seed phrase", "blockchain analysis"],
+        minutes: 90, counts: {"lessons": 11, "problems": 12, "quiz": 15, "assign": 3},
+        added: "2026-11-22",
+        sections: [
+        { id: "idea", title: "What a blockchain is, and what it protects", emoji: "", group: "Lesson", keywords: ["blockchain", "distributed ledger", "Haber Stornetta", "time stamping", "Satoshi Nakamoto", "Bitcoin white paper", "genesis block", "consensus", "integrity", "availability", "confidentiality"] },
+        { id: "chain", title: "Blocks and hash links: why old pages cannot be changed", emoji: "", group: "Lesson", keywords: ["block", "block header", "hash link", "previous hash", "SHA-256", "avalanche effect", "tamper evident", "value overflow incident", "CVE-2010-5139", "block 74638"] },
+        { id: "pow", title: "Proof of work: making the past expensive to rewrite", emoji: "", group: "Lesson", keywords: ["proof of work", "mining", "nonce", "target", "difficulty", "leading zeros", "retarget", "2016 blocks", "block reward", "halving", "21 million", "energy use", "ASIC"] },
+        { id: "merkle", title: "Merkle trees: one fingerprint for every payment in a block", emoji: "", group: "Lesson", keywords: ["Merkle tree", "Merkle root", "Ralph Merkle", "Merkle proof", "SPV", "simplified payment verification", "light wallet", "CVE-2012-2459", "log n proof"] },
+        { id: "race", title: "Consensus, forks, double spending and the 51% attack", emoji: "", group: "Lesson", keywords: ["fork", "longest chain", "most work", "orphan block", "confirmations", "double spend", "51% attack", "Nakamoto formula", "gambler’s ruin", "selfish mining", "eclipse attack", "Sybil attack", "Bitcoin Gold", "Ethereum Classic", "reorganisation"] },
+        { id: "pos", title: "Proof of stake: security from locked money instead of electricity", emoji: "", group: "Lesson", keywords: ["proof of stake", "validator", "32 ether", "slot", "epoch", "attestation", "finality", "slashing", "the Merge", "long range attack", "weak subjectivity", "PBFT", "permissioned blockchain", "Hyperledger"] },
+        { id: "keys", title: "Wallets and keys: where most money is actually lost", emoji: "", group: "Lesson", keywords: ["wallet", "private key", "public key", "address", "secp256k1", "BIP 39", "seed phrase", "mnemonic", "BIP 32", "brain wallet", "hot wallet", "hardware wallet", "cold storage", "multisig", "Mt. Gox", "WazirX", "Bybit", "blind signing", "clipboard hijacker"] },
+        { id: "privacy", title: "Privacy and crime: pseudonyms, tracing and ransomware", emoji: "", group: "Lesson", keywords: ["pseudonymity", "anonymity", "blockchain analysis", "common input heuristic", "address clustering", "Meiklejohn", "Colonial Pipeline", "ransomware tracing", "mixer", "CoinJoin", "Monero", "KYC", "cryptojacking", "Coinhive", "rug pull"] },
+        { id: "versus", title: "Blockchain compared with an ordinary database", emoji: "", group: "Lesson", keywords: ["blockchain versus database", "audit log", "when to use blockchain", "throughput", "immutability"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "key ceremony", "HSM", "consensus research"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "cy-a5", title: "Certification revision", emoji: "5", step: 5, part: "advanced", level: "All levels", blurb: "Revising the whole subject for security certifications, interviews and university exams.", topics: [
+      { id: "cy-certprep", title: "Certification revision: exams, recall, formulas and scenarios", emoji: "5.1", page: "content/cyber-security/cy-certprep.html",
         summary: "Exam formats and domains mapped to the chapters, recall tables, every formula, scenario answering, research style questions and a mock exam.",
         keywords: ["certification", "exam revision", "Security+", "CISSP", "CySA+", "mock exam", "formulas", "scenarios", "study plan"],
         minutes: 70, counts: {"lessons": 9, "problems": 13, "quiz": 30, "assign": 0},
