@@ -2250,5 +2250,5 @@ T = t.finish({
     'parts': PARTS, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'talk': TALK,
     'viz': VIZ_JS, 'css': '.grid3{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin:10px 0}',
     'prev': ('recursion', 'recursion', '🪆 Recursion'),
-    'next': ('trees', 'trees', '🌲 Trees'),
+    'next': ('divide-and-conquer', 'divide-and-conquer', '✂️ Divide and conquer'),
 })
