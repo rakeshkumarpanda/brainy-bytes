@@ -21,6 +21,7 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)  # topic files of the newer chapters import kit4
 ROOT = os.path.dirname(os.path.dirname(HERE))
 DSA = os.path.join(ROOT, 'content', 'dsa')
 CACHE = os.path.join(HERE, '.cache')
@@ -128,6 +129,7 @@ def load_topic(path):
 
 def check(T):
     errs = []
+    langs = T.get('langs', LANGS)
     keys = set(T['codes'])
     used = set(re.findall(r'data-k="([^"]+)"', ''.join(p['html'] for p in T['parts'])))
     used |= {p['code'] for p in T['practice']}
@@ -136,7 +138,7 @@ def check(T):
     for k in keys - used:
         errs.append(f'code block {k} is written but never shown')
     for k, c in T['codes'].items():
-        for l in LANGS:
+        for l in langs:
             if l not in c:
                 errs.append(f'code block {k} has no {l} version')
     says = {'top', 'practice'} | {p['id'] for p in T['parts']}
@@ -144,7 +146,7 @@ def check(T):
     for s in says - given:
         errs.append(f'narration missing for {s}')
     for s in T['say']:
-        for l in ['en', 'hi', 'kn', 'or', 'ar', 'de']:
+        for l in T.get('voice', ['en', 'hi', 'kn', 'or', 'ar', 'de']):
             if not s.get(l):
                 errs.append(f'narration {s["id"]} has no {l} text')
     for q in T['quiz']:
@@ -159,11 +161,23 @@ def build(slug):
     if errs:
         raise SystemExit(f'{slug}:\n  ' + '\n  '.join(errs))
     css, topbar, shared, glue = frame()
+    langs = T.get('langs', LANGS)
+    # play waits while voice is still reading a step (same line as the voice thread's patch of every VIZ copy)
+    shared = shared.replace("const tick = () => { if (i >= n - 1) { pause(); return; } go(i + 1); timer = setTimeout(tick, ms / +sp.value); };",
+                            "const tick = () => { if (i >= n - 1) { pause(); return; } if (window.__vtHold && window.__vtHold(host)) { timer = setTimeout(tick, 150); return; } go(i + 1); timer = setTimeout(tick, ms / +sp.value); };")
+    if 'ts' in langs:
+        shared = shared.replace("with yield of async await'\n  };", "with yield of async await',\n    ts: 'break case catch class const continue debugger default delete do else export extends false finally for function if import in instanceof let new null return super switch this throw true try typeof undefined var void while with yield of async await type interface implements readonly private public protected enum number string boolean any unknown never as keyof'\n  };", 1)
+        glue = glue.replace("java: ['☕', 'Java'] };", "java: ['☕', 'Java'], ts: ['🔷', 'TypeScript'] };")
+        glue = glue.replace("'Real output (identical in all three languages)'", "'Real output (identical in all four languages)'")
+        glue = glue.replace("Every solution is written in Python, JavaScript and Java, was run for real", "Every solution is written in Python, JavaScript, Java and TypeScript, was run for real")
+    if T.get('play'):
+        css += '\n' + open(os.path.join(HERE, 'playkit.css'), encoding='utf-8').read()
+        T['viz'] = open(os.path.join(HERE, 'playkit.js'), encoding='utf-8').read() + '\n' + T.get('viz', '')
 
     jobs = {}
     with cf.ThreadPoolExecutor(max_workers=6) as ex:
         for k, c in T['codes'].items():
-            for l in LANGS:
+            for l in langs:
                 jobs[(k, l)] = ex.submit(run_one, l, c[l].strip('\n'))
         res = {}
         for (k, l), f in jobs.items():
@@ -174,13 +188,13 @@ def build(slug):
 
     codes, outs, traces, same, tr = {}, {}, {}, {}, {}
     for k, c in T['codes'].items():
-        codes[k] = {l: c[l].strip('\n') for l in LANGS}
-        outs[k] = {l: res[(k, l)]['out'].rstrip('\n') for l in LANGS}
-        same[k] = len({outs[k][l] for l in LANGS}) == 1
+        codes[k] = {l: c[l].strip('\n') for l in langs}
+        outs[k] = {l: res[(k, l)]['out'].rstrip('\n') for l in langs}
+        same[k] = len({outs[k][l] for l in langs}) == 1
         if not same[k] and not T.get('allow_diff', {}).get(k):
             print(f'  note: {k} prints different text per language')
         tr[k] = []
-        for l in LANGS:
+        for l in langs:
             t = res[(k, l)]['trace']
             if t['end'].get('t'):
                 print(f'  note: {k} [{l}] recording was cut short')
@@ -197,7 +211,7 @@ def build(slug):
     n_viz = sum(len(re.findall(r'data-viz="', p['html'])) for p in parts)
     chips = [f'⏱️ About {T["minutes"]} min read', f'📚 {len(parts)} parts', f'🎬 {n_viz} animations',
              f'🏋️ {len(T["practice"])} practice problems', f'🎯 {len(T["quiz"])} quiz questions',
-             f'🧮 {len(T["calc"])} calculations', SUBJ['langs']]
+             f'🧮 {len(T["calc"])} calculations', SUBJ['langs'] + (' · 🔷 TypeScript' if 'ts' in langs else '')]
     chip_html = ''.join(f'<span class="chip">{c}</span>' for c in chips)
     toc = ''.join(f'<a href="#{p["id"]}"><span>{p["emoji"]}</span>{html.escape(p["title"])}</a>' for p in parts)
     toc += ('<a class="spec" href="#comic">🖼️ Comic</a><a class="spec" href="#real-life">🌍 Real life</a>'
@@ -235,7 +249,7 @@ def build(slug):
   <div class="crumb"><a class="home-link" href="../../subject.html?s={SUBJ["id"]}" target="_top">{SUBJ["crumb"]}</a><span>›</span><span>{mod[0]} {html.escape(mod[1])}</span><span>›</span><span>{html.escape(T["short"])}</span></div>
   <header class="hero" id="top" data-say="top">
     <div class="hero-row"><span class="em">{T["emoji"]}</span><div><h1>{html.escape(T["title"])}</h1><p class="lead">{T["lead"]}</p></div></div>
-    <div class="chips">{chip_html}<button type="button" class="listen-btn" id="listenAll">🎧 Listen in 6 languages</button></div>
+    <div class="chips">{chip_html}<button type="button" class="listen-btn" id="listenAll">{'🎧 Listen to this page' if T.get('voice') == ['en'] else '🎧 Listen in 6 languages'}</button></div>
   </header>
   <nav class="toc" aria-label="Parts of this page">{toc}</nav>
   <section class="card reveal" id="comic"></section>
@@ -260,9 +274,40 @@ const OUTS = {js(outs)};
 </body>
 </html>
 '''
+    if T.get('talk'):
+        # background voice talk for each lesson, read by assets/voiceteach.js (format in data/talk/README.md)
+        td = os.path.join(ROOT, 'data', 'talk', SUBJ['id'])
+        os.makedirs(td, exist_ok=True)
+        body = ',\n'.join(f'  {json.dumps(k)}: {json.dumps(v, ensure_ascii=False)}' for k, v in T['talk'].items())
+        open(os.path.join(td, T['slug'] + '.js'), 'w', encoding='utf-8').write(f"VT_TALK('{SUBJ['id']}/{T['slug']}', {{\n{body}\n}});\n")
     dest = os.path.join(OUT, T['slug'] + '.html')
     open(dest, 'w', encoding='utf-8').write(out)
+    if T.get('play') and OUT == DSA:
+        catalog_entry(T)
     print(f'{slug}: {len(parts)} parts, {n_viz} animations, {len(T["codes"])} programs, {len(out) // 1024} KB -> {os.path.relpath(dest, ROOT)}')
+
+
+CAT_START, CAT_END = '/* dsa-build new chapters: start */', '/* dsa-build new chapters: end */'
+LVNAME = {'e': 'Easy', 'm': 'Medium', 'h': 'Hard', 'x': 'Expert'}
+
+
+def catalog_entry(T):
+    """Write this chapter's topic entry into the dsaNew() block of data/catalog.js (only chapters built with kit4)."""
+    path = os.path.join(ROOT, 'data', 'catalog.js')
+    cat = open(path, encoding='utf-8').read()
+    m = re.search(re.escape(CAT_START) + r'\nfunction dsaNew\(\) \{\n  return (.*?);\n\}\n' + re.escape(CAT_END), cat, re.S)
+    data = json.loads(m.group(1)) if m else {}
+    secs = [{'id': p['id'], 'title': p['title'], 'emoji': p['emoji'], 'group': 'Lesson', 'keywords': p.get('keywords', [])} for p in T['parts']]
+    secs += [{'id': p['id'], 'title': p['title'], 'emoji': '🏋️', 'group': LVNAME[p['lv']] + ' practice'} for p in T['practice']]
+    secs += [{'id': 'quiz', 'title': 'Quiz', 'emoji': '🎯', 'group': 'Check yourself'}, {'id': 'numbers', 'title': 'Number crunch', 'emoji': '🧮', 'group': 'Check yourself'}]
+    data[T['topic']] = {'id': T['topic'], 'title': T['short'][0].upper() + T['short'][1:], 'emoji': T['emoji'], 'page': f'content/dsa/{T["slug"]}.html',
+                        'summary': T['summary'], 'keywords': T['keywords'], 'added': T['added'], 'sections': secs}
+    block = f'{CAT_START}\nfunction dsaNew() {{\n  return {json.dumps(data, ensure_ascii=False)};\n}}\n{CAT_END}'
+    if m:
+        cat = cat[:m.start()] + block + cat[m.end():]
+    else:
+        cat = cat.replace('/* path-build meta: start */', block + '\n\n/* path-build meta: start */', 1)
+    open(path, 'w', encoding='utf-8').write(cat)
 
 
 def main():
