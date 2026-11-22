@@ -163,7 +163,7 @@ K.lesson('domains', 'Exam domains mapped to this subject', f'''
     ['6. Security assessment and testing', '12%', 'Vulnerabilities, Secure development, Logging and SIEM'],
     ['7. Security operations', '13%', 'Incident response, Digital forensics, Threat intelligence'],
     ['8. Software development security', '10%', 'Web security, Injection, XSS and CSRF, Secure development, Attacks on ML']])}
-{note('The Advanced section (machine learning security, federated learning, differential privacy) goes beyond these exams. It is asked in research interviews, university exams and newer credentials on AI security, and it appears in CISSP domain 2 and Security+ domain 2 as privacy and data protection.')}
+{note('The Advanced section (machine learning security, federated learning, differential privacy) goes beyond these exams. It is asked in research interviews, university exams and newer credentials on AI security, and it appears in CISSP domain 2 and Security+ domain 2 as privacy and data protection. Steps 3 and 4 of the Advanced section (blockchain, smart contracts, social engineering, mobile, IoT and industrial systems, APIs) map more directly: social engineering, mobile, IoT, ICS and API security all appear in the Security+ threats and architecture domains, and blockchain appears in its cryptography objectives.')}
 ''', kw=['exam domains', 'domain weights', 'Security+ domains', 'CISSP domains', 'CySA+ domains', 'syllabus map'])
 
 K.lesson('recall', 'Facts to recall quickly: ports, crypto and controls', f'''

@@ -23,4 +23,4 @@ for line in log:
 
 for route, n in sorted(seen.items()):
     kind = "documented" if route in documented else "ZOMBIE (retired but still answering)" if route in retired else "SHADOW (nobody documented it)"
-    print(f"{route[0]:6s} {route[1]:28s} {n} calls  {kind}")
+    print(f"{route[0]:6s} {route[1]:28s} {n} call{'s' if n != 1 else ' '}  {kind}")

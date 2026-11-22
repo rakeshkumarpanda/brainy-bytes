@@ -5,7 +5,7 @@ window.LH_SEARCH_MANIFEST = {
  "api-manual-testing": "1b1fa87675",
  "computer-vision": "d9982677ce",
  "cuda": "b2ee335c1f",
- "cyber-security": "94ba3d4ac3",
+ "cyber-security": "c9c07c0e65",
  "deep-learning": "2bd9bab3ac",
  "dsa": "34bd6bf51f",
  "git": "a0a405282f",
