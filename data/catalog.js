@@ -10203,6 +10203,27 @@ function cyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-iot", title: "IoT and industrial control security: Mirai, Modbus, Purdue and Stuxnet", emoji: "4.3", page: "content/cyber-security/cy-iot.html",
+        summary: "IoT risks and Mirai, OWASP IoT Top 10, ICS components and priorities, Modbus without authentication, the Purdue model and segmentation, major industrial incidents, and OT defence.",
+        keywords: ["IoT", "Mirai", "default password", "ICS", "SCADA", "PLC", "Modbus", "Purdue model", "Stuxnet", "safety system"],
+        minutes: 85, counts: {"lessons": 10, "problems": 11, "quiz": 15, "assign": 3},
+        added: "2026-11-22",
+        sections: [
+        { id: "idea", title: "Computers in everything: IoT and industrial systems", emoji: "", group: "Lesson", keywords: ["IoT", "Internet of Things", "industrial control systems", "ICS", "operational technology", "OT", "SCADA", "PLC", "Jeep Cherokee hack", "Miller Valasek", "Verkada", "physical consequences"] },
+        { id: "mirai", title: "Default passwords and the Mirai botnet", emoji: "", group: "Lesson", keywords: ["Mirai", "botnet", "DDoS", "default password", "telnet", "Krebs", "OVH", "Dyn", "October 2016", "epidemic model", "UK PSTI", "California SB-327", "Cyber Resilience Act"] },
+        { id: "design", title: "Building safer devices: the OWASP IoT Top 10", emoji: "", group: "Lesson", keywords: ["OWASP IoT Top 10", "hard coded password", "secure update", "firmware signing", "secure boot", "secure element", "UART", "JTAG", "SBOM", "guest network", "UPnP", "secure by default"] },
+        { id: "ics", title: "Industrial control systems: when safety comes first", emoji: "", group: "Lesson", keywords: ["PLC", "SCADA", "HMI", "historian", "safety instrumented system", "SIS", "AIC triad", "availability first", "IEC 62443", "NIST SP 800-82", "patching in OT", "legacy systems"] },
+        { id: "protocols", title: "Industrial protocols with no passwords: Modbus and friends", emoji: "", group: "Lesson", keywords: ["Modbus", "Modicon", "Modbus TCP", "port 502", "function code", "write coil", "DNP3", "IEC 61850", "Profinet", "OPC UA", "industrial firewall", "deep packet inspection", "Modbus TCP Security"] },
+        { id: "purdue", title: "The Purdue model and network segmentation", emoji: "", group: "Lesson", keywords: ["Purdue model", "PERA", "levels", "industrial DMZ", "segmentation", "jump host", "data diode", "unidirectional gateway", "IEC 62443", "zones and conduits", "flat network"] },
+        { id: "cases", title: "Real attacks on industry: Stuxnet to Colonial Pipeline", emoji: "", group: "Lesson", keywords: ["Stuxnet", "Natanz", "Siemens", "zero day", "Ukraine power grid attack", "BlackEnergy", "Industroyer", "CrashOverride", "Triton", "Trisis", "safety system attack", "Colonial Pipeline", "Kudankulam", "process anomaly detection"] },
+        { id: "defend", title: "Defending plants: monitor, separate and fail safe", emoji: "", group: "Lesson", keywords: ["asset inventory", "passive monitoring", "OT network monitoring", "anomaly detection", "remote access", "jump host", "maintenance window", "compensating controls", "safety key switch", "manual operation", "incident exercises", "GRFICS"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "critical infrastructure", "cyber physical systems"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
     { id: "cy-a5", title: "Certification revision", emoji: "5", step: 5, part: "advanced", level: "All levels", blurb: "Revising the whole subject for security certifications, interviews and university exams.", topics: [

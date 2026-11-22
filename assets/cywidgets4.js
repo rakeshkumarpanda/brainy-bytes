@@ -932,3 +932,174 @@ const CYP = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 4.3  A Mirai style worm spreads through devices with default passwords
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr, f2 } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, banner, tint } = CYP;
+  const N = 120;
+  trace('cymirai', {
+    title: 'Default passwords and a worm',
+    sub: 'A neighbourhood of 120 cameras and routers. Some still use the factory password, such as admin and admin. One infected device scans for others each round and tries a short list of default passwords. Every infected device joins the botnet and scans too.',
+    W: 640, H: 350,
+    params: [
+      { k: 'p', label: 'Devices still on a default password', type: 'select', v: '0.6', opts: [['0.6', '60%'], ['0.2', '20%'], ['0.02', '2% (unique passwords by law)']] },
+      { k: 'tries', label: 'Devices each bot probes per round', type: 'select', v: '3', opts: [['1', '1'], ['3', '3'], ['6', '6']] }
+    ],
+    tips: [
+      { t: 'Play with 60% default passwords. The botnet grows fast, then slows when few weak devices are left.', play: true },
+      { t: 'Choose 2%, as when every device ships with a unique password. The worm barely spreads.', set: { p: '0.02' }, play: true }
+    ],
+    frames(p) {
+      const R = MLZ.rng(7), weak = Array.from({ length: N }, () => R() < +p.p), inf = new Array(N).fill(false), fr = [];
+      inf[0] = true; weak[0] = true;
+      const count = () => inf.filter(Boolean).length;
+      fr.push({ weak: weak.slice(), inf: inf.slice(), r: 0, say: `Round 0: one device is infected. ${weak.filter(Boolean).length} of ${N} devices still use a factory password (shown with a red dot).` });
+      for (let r = 1; r <= 10; r++) {
+        const now = inf.slice();
+        now.forEach((on, i) => { if (!on) return; for (let t = 0; t < +p.tries; t++) { const j = Math.floor(R() * N); if (weak[j]) inf[j] = true; } });
+        const c = count(), added = c - now.filter(Boolean).length;
+        fr.push({ weak: weak.slice(), inf: inf.slice(), r, say: `Round ${r}: ${added} new device${added === 1 ? '' : 's'} logged into with a default password. The botnet has ${c} devices.` });
+        if (added === 0 && r > 3) break;
+      }
+      const c = count(), gbps = c * 0.005 * 1000;
+      fr.push({ weak, inf: inf.slice(), r: -1, end: c > 10 ? 'bad' : 'good', c, say: c > 10 ? `${c} bots, each sending about 5 Mbit/s, can flood a target with about ${f2(gbps / 1000, 2)} Gbit/s. The real Mirai botnet of 2016 reached around 600,000 devices and knocked major websites offline through an attack on the DNS company Dyn.` : `Only ${c} device${c === 1 ? '' : 's'} infected. With unique passwords the worm has almost nothing to log into. That is why the UK has banned default passwords since April 2024.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, cols = 15;
+      f.inf.forEach((on, i) => {
+        const x = 30 + (i % cols) * 26, y = 36 + Math.floor(i / cols) * 30;
+        rr(g, x, y, 20, 20, 5, { fill: on ? c.red : c.surf, stroke: on ? c.red : c.line, w: 1.2 });
+        if (f.weak[i] && !on) D.circle(g, x + 16, y + 4, 3, { fill: c.red });
+        if (on) { D.circle(g, x + 7, y + 8, 1.6, { fill: '#fff' }); D.circle(g, x + 13, y + 8, 1.6, { fill: '#fff' }); D.line(g, x + 6, y + 14, x + 14, y + 14, '#fff', 1.4); }
+      });
+      const cnt = f.inf.filter(Boolean).length;
+      cbox(z, 440, 40, 180, 50, `bots: ${cnt}`, { s: 20, b: true, fill: cnt > 10 ? tint(z, 'red', 0.35) : tint(z, 'green', 0.3) });
+      rr(g, 440, 104, 180, 16, 8, { fill: c.surf, stroke: c.line });
+      rr(g, 440, 104, Math.max(6, 180 * cnt / N), 16, 8, { fill: c.red });
+      D.text(g, `${f.r >= 0 ? 'round ' + f.r : 'final'}`, 530, 140, { a: 'center', s: 13, b: true, c: c.ink2 });
+      if (f.end) {
+        face(z, 530, 200, 26, f.end === 'bad' ? 'sad' : 'happy');
+        if (f.end === 'good') party(z, 440, 150, 180, 110, 81);
+        banner(z, 300, f.end === 'bad' ? `Botnet of ${f.c} devices ready to flood a target` : 'Unique passwords stopped the worm', f.end === 'good');
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 4.3  A Modbus command has no password: a toy water tank
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox, hex } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  trace('cymodbus', {
+    title: 'Modbus: the factory language with no password',
+    sub: 'A PLC controls the inlet valve of a water tank. Commands arrive as Modbus TCP frames. Modbus was designed in 1979 for closed factory networks, so a frame has no username, password or signature. Here a stranger on the network sends "open the valve".',
+    W: 640, H: 360,
+    params: [{ k: 'def', label: 'Protection', type: 'select', v: 'none', opts: [['none', 'None: flat network, plain Modbus'], ['fw', 'Industrial firewall allows only the HMI to write'], ['sis', 'None, but a separate safety system watches the level']] }],
+    tips: [
+      { t: 'Play with no protection. The PLC obeys anyone and the tank overflows.', play: true },
+      { t: 'Choose the industrial firewall. Writes from anything but the operator’s HMI are dropped.', set: { def: 'fw' }, play: true },
+      { t: 'Choose the safety system. The bad command gets through, but an independent safety controller closes a second valve before the tank overflows.', set: { def: 'sis' }, play: true }
+    ],
+    frames(p) {
+      const fr = [];
+      const bytes = [0x00, 0x2A, 0x00, 0x00, 0x00, 0x06, 0x01, 0x05, 0x00, 0x10, 0xFF, 0x00];
+      fr.push({ lvl: 40, st: 1, bytes, say: 'The tank is at 40% and the valve is closed. A device that is not the operator’s screen sends a Modbus TCP frame to the PLC on port 502.' });
+      fr.push({ lvl: 40, st: 2, bytes, hl: [7], say: 'Byte 8 is the function code. 05 means "write single coil": switch one output on or off.' });
+      fr.push({ lvl: 40, st: 3, bytes, hl: [8, 9, 10, 11], say: 'The next bytes say which coil (address 0x0010, the inlet valve) and the value FF00, which means ON. Notice what is missing: nothing in the frame says who sent it.' });
+      if (p.def === 'fw') {
+        fr.push({ lvl: 40, st: 4, bytes, drop: true, say: 'An industrial firewall in front of the PLC understands Modbus. Its rule allows function code 05 only from the operator’s HMI address. This sender is not the HMI, so the frame is dropped.' });
+        fr.push({ lvl: 40, st: 5, bytes, end: 'good', say: 'The valve stays closed and the attempt is logged for the security team. Segmenting the network and allowing only known writers is the main defence for old protocols that cannot be fixed.' });
+        return fr;
+      }
+      fr.push({ lvl: 40, st: 4, bytes, valve: true, say: 'The PLC checks only that the frame is well formed, then obeys. The inlet valve opens.' });
+      [60, 80, 92].forEach(l => fr.push({ lvl: l, st: 5, bytes, valve: true, say: `Water keeps flowing in. Level ${l}%.${l === 92 && p.def !== 'sis' ? ' The operator’s screen could even be fooled into showing a normal level, as Stuxnet did.' : ''}` }));
+      if (p.def === 'sis') {
+        fr.push({ lvl: 95, st: 6, bytes, valve: true, sis: true, say: 'At 95% an independent safety instrumented system, with its own level sensor and its own valve, trips. It does not trust the PLC at all.' });
+        fr.push({ lvl: 95, st: 7, bytes, sis: true, end: 'good', say: 'The safety valve shuts and the tank never overflows. Safety systems are the last line of defence, which is why the Triton malware of 2017 targeting one was so alarming.' });
+      } else fr.push({ lvl: 100, st: 6, bytes, valve: true, end: 'bad', say: 'The tank overflows. In a real plant this could damage equipment or hurt people. Industrial security is about safety, not only data.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      D.text(g, 'Modbus TCP frame', 20, 30, { s: 12, b: true, c: c.ink2 });
+      f.bytes.forEach((b, i) => cbox(z, 20 + i * 32, 38, 30, 28, hex(b), { s: 12, mono: true, b: true, fill: f.hl && f.hl.includes(i) ? tint(z, 'yellow', 0.6) : i < 7 ? c.surf : tint(z, 'blue', 0.2) }));
+      D.text(g, 'header (7 bytes)', 20, 82, { s: 10, c: c.ink2 }); D.text(g, 'function, address, value', 244, 82, { s: 10, c: c.ink2 });
+      cbox(z, 20, 110, 120, 50, 'Stranger’s laptop', { s: 12, b: true, fill: tint(z, 'red', 0.25) });
+      cbox(z, 200, 110, 100, 50, 'PLC', { s: 15, b: true, fill: tint(z, 'purple', 0.25) });
+      if (f.drop) { cbox(z, 150, 170, 120, 30, 'firewall: DROP', { s: 12, b: true, fill: tint(z, 'green', 0.45) }); zap(z, 170, 135, 18); } else D.arrow(g, 142, 135, 198, 135, c.red, 2.2);
+      const tx = 430, ty = 60, th = 220, tw = 120;
+      rr(g, tx, ty, tw, th, 10, { fill: c.surf, stroke: c.ink2, w: 2 });
+      const h = th * f.lvl / 100;
+      rr(g, tx + 2, ty + th - h, tw - 4, h, 8, { fill: f.lvl >= 100 ? c.red : c.accent });
+      D.text(g, `${f.lvl}%`, tx + tw / 2, ty + th / 2, { a: 'center', s: 18, b: true, c: f.lvl >= 50 ? '#fff' : c.ink });
+      cbox(z, 320, 96, 90, 28, f.valve ? 'valve OPEN' : 'valve shut', { s: 11, b: true, fill: f.valve ? tint(z, 'orange', 0.5) : tint(z, 'green', 0.3) });
+      D.line(g, 410, 110, tx, 110, c.accent, 4);
+      if (f.sis) cbox(z, 560, 130, 74, 50, ['safety', 'trip'], { s: 12, b: true, fill: tint(z, 'green', 0.5) });
+      if (f.end) {
+        face(z, 250, 230, 22, f.end === 'bad' ? 'sad' : 'happy');
+        if (f.end === 'good') party(z, 20, 200, 380, 80, 91);
+        banner(z, 318, f.end === 'bad' ? 'Overflow: the PLC obeyed a stranger' : 'Tank safe', f.end === 'good');
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 4.3  The Purdue model: can an email attack reach the factory floor?
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  const LV = [['Level 5', 'Internet and cloud'], ['Level 4', 'Office IT: email, ERP'], ['Level 3.5', 'Industrial DMZ'], ['Level 3', 'Site operations, historian'], ['Level 2', 'Control: HMI, SCADA'], ['Level 1', 'PLCs and controllers'], ['Level 0', 'Pumps, valves, sensors']];
+  trace('cypurdue', {
+    title: 'From a phishing email to the factory floor',
+    sub: 'The Purdue model stacks a plant’s networks in levels, from the internet at the top to physical machines at the bottom. An attacker phishes an office worker (level 4) and tries to move down. Choose how the levels are separated.',
+    W: 640, H: 370,
+    params: [{ k: 'seg', label: 'Separation', type: 'select', v: 'flat', opts: [['flat', 'Flat: office and plant on one network'], ['dmz', 'Firewalls and a DMZ: no direct office to plant traffic'], ['diode', 'DMZ plus a one way data diode out of the plant']] }],
+    tips: [
+      { t: 'Play the flat network. The attacker walks from the inbox to the PLCs. This is close to what happened in Ukraine in December 2015.', play: true },
+      { t: 'Add the DMZ. The attacker is stuck in the office network and must break a second, separate set of defences.', set: { seg: 'dmz' }, play: true },
+      { t: 'Add the data diode. Data can flow out of the plant for reports, but nothing can flow in.', set: { seg: 'diode' }, play: true }
+    ],
+    frames(p) {
+      const fr = [], stop = p.seg === 'flat' ? 7 : p.seg === 'dmz' ? 2 : 2;
+      fr.push({ at: 1, path: [1], say: 'An engineer at level 4 opens a phishing attachment. The attacker now controls one office PC. The real attack on Ukrainian power companies in 2015 started exactly this way, with BlackEnergy malware in email attachments.' });
+      if (p.seg === 'flat') {
+        fr.push({ at: 3, path: [1, 3], say: 'On a flat network the office PC can reach the historian and site servers directly. The attacker steals passwords stored there.' });
+        fr.push({ at: 4, path: [1, 3, 4], say: 'With those passwords they log into the operator screens (HMI) using the plant’s own remote access tool.' });
+        fr.push({ at: 5, path: [1, 3, 4, 5], say: 'From the HMI they can send commands to the PLCs and breakers, which trust any command from the control network.' });
+        fr.push({ at: 6, path: [1, 3, 4, 5, 6], end: 'bad', say: 'Breakers open and real equipment stops. In Ukraine about 225,000 customers lost power for several hours on 23 December 2015.' });
+      } else {
+        fr.push({ at: 1, path: [1], block: 2, say: 'The firewall between levels 4 and 3.5 allows no direct connection from office PCs into the plant. Only specific servers in the DMZ talk to each side.' });
+        if (p.seg === 'diode') fr.push({ at: 1, path: [1], block: 2, diode: true, say: 'The plant’s historian pushes data out through a data diode, hardware that physically carries signals in one direction only. Even a perfect hacker cannot send a packet back in through it.' });
+        fr.push({ at: 1, path: [1], block: 2, diode: p.seg === 'diode', end: 'good', say: 'The attacker controls an office PC but cannot reach the plant. In 2019 India’s Kudankulam nuclear plant confirmed malware on its administrative network, and said the plant control network was isolated and not affected. That separation is the point of the model.' });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      LV.forEach((l, i) => {
+        const y = 14 + i * 42, on = f.path.includes(i), cur = f.at === i;
+        const fill = on ? tint(z, 'red', cur ? 0.5 : 0.3) : i <= 1 ? tint(z, 'blue', 0.15) : i === 2 ? tint(z, 'yellow', 0.3) : tint(z, 'green', 0.15);
+        cbox(z, 20, y, 330, 36, `${l[0]}  ${l[1]}`, { s: 13, b: true, fill, stroke: cur ? c.ink : undefined });
+        if (f.block === i) { rr(g, 14, y - 3, 342, 4, 2, { fill: c.ink }); zap(z, 370, y + 2, 18); D.text(g, 'firewall', 384, y + 6, { s: 12, b: true, c: c.ink }); }
+      });
+      if (f.diode) { cbox(z, 380, 140, 120, 30, 'data diode: out only', { s: 11, b: true, fill: tint(z, 'green', 0.4) }); D.arrow(g, 440, 172, 440, 142, c.green, 2); }
+      for (let k = 1; k < f.path.length; k++) D.arrow(g, 360, 14 + f.path[k - 1] * 42 + 18, 360, 14 + f.path[k] * 42 + 18, c.red, 2.5);
+      if (f.end) {
+        face(z, 560, 200, 26, f.end === 'bad' ? 'sad' : 'happy');
+        if (f.end === 'good') party(z, 470, 120, 160, 160, 101);
+        banner(z, 318, f.end === 'bad' ? 'Phishing email to power cut: no walls in between' : 'Office breach stayed out of the plant', f.end === 'good');
+      }
+    }
+  });
+})();
