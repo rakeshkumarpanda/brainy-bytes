@@ -364,6 +364,51 @@ body.pathmode .drawerbtn{display:none !important}
   .lp-st{margin-left:50px}
 }
 
+/* ===== playful colours for topics the learner marked as done =====
+   One candy gradient (mint, sky, lilac) used everywhere a done topic shows. The bright stops carry dark ink
+   so the text stays readable in both themes. Soft fills mix the colours into the theme surface, so dark mode
+   gets deep tints without extra rules. */
+:root{
+  --done-1:#34d399; --done-2:#38bdf8; --done-3:#a78bfa; --done-spark:#fbbf24; --done-ink:#08291d;
+  --done-grad:linear-gradient(120deg, var(--done-1), var(--done-2) 55%, var(--done-3));
+  --done-soft:linear-gradient(120deg, color-mix(in srgb, var(--done-1) 16%, var(--surface2)), color-mix(in srgb, var(--done-2) 12%, var(--surface2)) 55%, color-mix(in srgb, var(--done-3) 16%, var(--surface2)));
+  --done-dots:radial-gradient(circle at calc(100% - 9px) 9px, var(--done-spark) 0 2.5px, transparent 3.5px),
+    radial-gradient(circle at calc(100% - 20px) 6px, var(--done-3) 0 1.8px, transparent 2.8px),
+    radial-gradient(circle at calc(100% - 7px) 21px, var(--done-1) 0 1.8px, transparent 2.8px),
+    radial-gradient(circle at 7px calc(100% - 7px), var(--done-2) 0 2px, transparent 3px);
+  --done-line:color-mix(in srgb, var(--done-1) 55%, var(--done-3));
+}
+.donechip{color:var(--done-ink); background:var(--done-grad)}
+.scard .foot:has(.donechip){flex-wrap:wrap}
+.scard .foot .go{white-space:nowrap}
+.donebtn.on{background:var(--done-grad); color:var(--done-ink); border-color:transparent; box-shadow:0 4px 14px color-mix(in srgb, var(--done-2) 35%, transparent)}
+.donebtn.on:hover{animation:done-wiggle .5s ease}
+.tcard.is-done{background:var(--done-dots), var(--done-soft); border-color:var(--done-line)}
+.titem.is-done:not(.on){background:var(--done-soft)}
+.titem.is-done .em{background:var(--done-grad)}
+.titem .tick{font-size:14px; flex:none}
+.lp-topic.is-done{background:var(--done-dots), var(--done-soft); border-color:var(--done-line); border-width:1.5px}
+.lp-topic.is-done:hover{border-color:var(--done-3)}
+.lp-topic.is-done .lp-tn{background:var(--done-grad); border-color:transparent; color:var(--done-ink); transform:rotate(-4deg); box-shadow:0 2px 8px color-mix(in srgb, var(--done-2) 35%, transparent)}
+.lp-topic.is-done .lp-tb b{color:var(--ink)}
+.lp-st.done{background:var(--done-grad); border-color:transparent; color:var(--done-ink); box-shadow:0 2px 8px color-mix(in srgb, var(--done-3) 30%, transparent)}
+.lp-step.done .lp-num{background:var(--done-grad); border-color:transparent; color:var(--done-ink); box-shadow:0 0 0 4px color-mix(in srgb, var(--done-1) 22%, transparent)}
+.lp-step.done .lp-card{border-color:var(--done-line); background:var(--done-dots), var(--done-soft)}
+.lp-step.done::before{background:linear-gradient(var(--done-1), var(--done-3))}
+.lp-step.done .lp-sp{color:var(--done-ink); background:var(--done-grad); border-radius:12px; padding:4px 9px}
+.lp-step.done .lp-sp small{color:var(--done-ink)}
+.just-done,.just-done .lp-tn{animation:done-pop .7s cubic-bezier(.2,1.6,.4,1)}
+@keyframes done-pop{0%{transform:scale(.92)}60%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes done-wiggle{0%,100%{transform:rotate(0)}30%{transform:rotate(-3deg)}70%{transform:rotate(3deg)}}
+@media (max-width:640px){
+  /* on a phone the status pill drops under the topic text, so the text keeps the full row width */
+  .lp-tb{flex:1 1 calc(100% - 62px)}
+  .lp-step.done .lp-sp{padding:3px 7px}
+}
+@media (prefers-reduced-motion: reduce){
+  .donebtn.on:hover,.just-done,.just-done .lp-tn{animation:none}
+}
+
 /* ===== search inside one subject (assets/subjsearch.js) ===== */
 .searchpill.subjpill{flex:none; min-width:0; border-color:color-mix(in srgb, var(--c, var(--accent)) 55%, var(--line)); color:var(--ink)}
 .searchpill.subjpill[hidden]{display:none}

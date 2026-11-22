@@ -28,6 +28,8 @@
   document.documentElement.style.setProperty('--c', subj.color || 'var(--accent)');
   const live = subj.liveTopics;
   let cur = null;
+  /* the topic marked done most recently, so its row pops once when the path shows again */
+  let justDone = null;
   /* a subject with layout 'path' shows a numbered learning path instead of the contents list on the left */
   const pathMode = subj.layout === 'path';
   if (pathMode) { document.body.classList.add('pathmode'); layout.classList.add('pathmode'); }
@@ -42,7 +44,7 @@
       if (!ts.length) return '';
       const isClosed = closed.has(m.id) && !f;
       return `<div class="mod${isClosed ? ' closed' : ''}" data-m="${esc(m.id)}"><button aria-expanded="${!isClosed}"><span>${esc(m.emoji || '🗂️')}</span><span>${esc(m.title)}</span><span class="cnt">${ts.length}</span><span class="chev">▾</span></button>
-        <div class="tlist">${ts.map(t => `<a class="titem${t.soon ? ' is-soon' : ''}${cur === t ? ' on' : ''}" href="${LH.topicUrl(t)}" data-t="${esc(t.id)}"><span class="em">${esc(t.emoji)}</span><span class="nm">${esc(t.title)}</span>${t.soon ? '<span class="soon">Soon</span>' : PROGRESS.isDone(t) ? '<span class="tick" title="Completed">✅</span>' : ''}</a>`).join('')}</div></div>`;
+        <div class="tlist">${ts.map(t => `<a class="titem${t.soon ? ' is-soon' : ''}${!t.soon && PROGRESS.isDone(t) ? ' is-done' : ''}${cur === t ? ' on' : ''}" href="${LH.topicUrl(t)}" data-t="${esc(t.id)}"><span class="em">${esc(t.emoji)}</span><span class="nm">${esc(t.title)}</span>${t.soon ? '<span class="soon">Soon</span>' : PROGRESS.isDone(t) ? '<span class="tick" title="Completed">🌟</span>' : ''}</a>`).join('')}</div></div>`;
     }).join('');
     side.querySelector('.mods').innerHTML = mods || '<p style="color:var(--ink2);font-weight:700;padding:8px">Nothing matches that filter.</p>';
   }
@@ -109,7 +111,7 @@
       ${subj.page ? `<p><a class="ibtn primary" href="#" data-subjpage>📖 Open the main ${esc(subj.title)} notes</a></p>` : ''}
       ${subj.modules.map(m => `<div class="ovmod reveal" id="m-${esc(m.id)}"><h3>${esc(m.emoji || '🗂️')} ${esc(m.title)} <small>${m.topics.filter(t => !t.soon).length} ready · ${m.topics.length} total${modDone(m)}</small></h3>
         ${m.blurb ? `<p class="lede" style="margin:4px 0 0">${esc(m.blurb)}</p>` : ''}
-        <div class="tgrid">${m.topics.map(t => `<a class="tcard${t.soon ? ' is-soon' : ''}${PROGRESS.isDone(t) ? ' is-done' : ''}" href="${LH.topicUrl(t)}" data-t="${esc(t.id)}"><span class="em">${esc(t.emoji)}</span><b>${esc(t.title)}</b><span>${esc(t.summary || '')}</span>${t.soon ? '<span><span class="soon">Coming soon</span></span>' : t.sections.length ? `<span>${t.sections.length} lessons inside</span>` : ''}${t.soon ? '' : topicProg(t)}</a>`).join('')}</div></div>`).join('')}
+        <div class="tgrid">${m.topics.map(t => `<a class="tcard${t.soon ? ' is-soon' : ''}${PROGRESS.isDone(t) ? ' is-done' : ''}${PROGRESS.isDone(t) && justDone === t ? ' just-done' : ''}" href="${LH.topicUrl(t)}" data-t="${esc(t.id)}"><span class="em">${esc(t.emoji)}</span><b>${esc(t.title)}</b><span>${esc(t.summary || '')}</span>${t.soon ? '<span><span class="soon">Coming soon</span></span>' : t.sections.length ? `<span>${t.sections.length} lessons inside</span>` : ''}${t.soon ? '' : topicProg(t)}</a>`).join('')}</div></div>`).join('')}
       ${subj.modules.length ? '' : '<div class="empty"><div><div class="em">🍳</div><h2>This subject is cooking</h2><p>Topics will appear here as soon as they are added to the catalog.</p></div></div>'}
     </div>`;
     main.querySelectorAll('.tcard, [data-resume]').forEach(a => a.addEventListener('click', e => {
@@ -168,7 +170,7 @@
     const p = PROGRESS.stats(all);
     const pct = p.total ? Math.round(p.done / p.total * 100) : 0;
     const status = t => {
-      if (PROGRESS.isDone(t)) return '<span class="lp-st done">Completed</span>';
+      if (PROGRESS.isDone(t)) return '<span class="lp-st done">🌟 Completed</span>';
       const q = PROGRESS.quiz(t);
       if (q) return `<span class="lp-st prog">Quiz best ${q.best}/${q.total}</span>`;
       return '<span class="lp-st">Start</span>';
@@ -176,7 +178,7 @@
     const topicRow = t => {
       const c = t.counts || {};
       const bits = [c.lessons && `${c.lessons} lessons`, c.problems && `${c.problems} problems`, c.quiz && `${c.quiz} quiz`, c.assign && `${c.assign} assignments`, t.minutes && `${t.minutes} min`].filter(Boolean).join(' · ');
-      return `<li><a class="lp-topic${PROGRESS.isDone(t) ? ' is-done' : ''}${t.soon ? ' is-soon' : ''}" href="${LH.topicUrl(t)}" data-t="${esc(t.id)}">
+      return `<li><a class="lp-topic${PROGRESS.isDone(t) ? ' is-done' : ''}${PROGRESS.isDone(t) && justDone === t ? ' just-done' : ''}${t.soon ? ' is-soon' : ''}" href="${LH.topicUrl(t)}" data-t="${esc(t.id)}">
         <span class="lp-tn">${esc(t.emoji || '')}</span><span class="lp-tb"><b>${esc(t.title)}</b><span class="lp-ts2">${esc(t.summary || '')}</span>${bits ? `<span class="lp-tc">${bits}</span>` : ''}</span>${t.soon ? '<span class="lp-st">Soon</span>' : status(t)}</a></li>`;
     };
     const stepHtml = m => {
@@ -236,7 +238,7 @@
   function topicProg(t) {
     const q = PROGRESS.quiz(t), done = PROGRESS.isDone(t);
     if (!q && !done) return '';
-    return `<span class="tprog">${done ? '<span class="donechip">✅ Complete</span>' : ''}${q ? `<span class="quizchip" title="Best quiz score, latest was ${q.good} of ${q.total}">🎯 Best ${q.best}/${q.total}</span>` : ''}</span>`;
+    return `<span class="tprog">${done ? '<span class="donechip">🌟 Complete</span>' : ''}${q ? `<span class="quizchip" title="Best quiz score, latest was ${q.good} of ${q.total}">🎯 Best ${q.best}/${q.total}</span>` : ''}</span>`;
   }
   function resumeHtml() {
     const r = PROGRESS.lastTopic(cat);
@@ -280,6 +282,7 @@
     doneBtn.onclick = e => {
       const on = !PROGRESS.isDone(t);
       PROGRESS.setDone(t, on);
+      justDone = on ? t : null;
       paintDone();
       refreshProgress();
       if (on) FUN.confetti(e.clientX, e.clientY, 50);
