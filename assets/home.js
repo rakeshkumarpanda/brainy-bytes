@@ -109,7 +109,7 @@
       <p>${esc(s.blurb || '')}</p>
       ${s.tags && s.tags.length ? `<div class="tags">${s.tags.slice(0, 5).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
       <div class="meter"><i data-w="${pct}"></i></div>
-      <div class="foot"><span>${status}</span>${prog.done ? `<span class="donechip">✅ ${prog.done} done</span>` : ''}<span class="go">Open ↗</span></div>
+      <div class="foot"><span>${status}</span>${prog.done ? `<span class="donechip">🌟 ${prog.done} done</span>` : ''}<span class="go">Open ↗</span></div>
     </a>`;
   }
   const banner = s => `<div class="soonban" style="--c:${esc(s.color || 'var(--accent)')}" title="${esc(s.title + (s.blurb ? ': ' + s.blurb : ''))}">
