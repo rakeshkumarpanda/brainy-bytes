@@ -10224,6 +10224,27 @@ function cyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-api", title: "API security: BOLA, rate limits, mass assignment and the OWASP API Top 10", emoji: "4.4", page: "content/cyber-security/cy-api.html",
+        summary: "The OWASP API Top 10, BOLA and BFLA with owner checks, API authentication, token bucket rate limits, mass assignment and response schemas, SSRF in webhooks, API inventory and misconfiguration, and a secure API life cycle.",
+        keywords: ["API", "BOLA", "IDOR", "rate limit", "token bucket", "mass assignment", "SSRF", "GraphQL", "OpenAPI", "OWASP API Top 10"],
+        minutes: 80, counts: {"lessons": 10, "problems": 11, "quiz": 15, "assign": 3},
+        added: "2026-11-22",
+        sections: [
+        { id: "why", title: "APIs: the doors behind every app", emoji: "", group: "Lesson", keywords: ["API", "REST", "JSON", "HTTP methods", "endpoint", "OWASP API Security Top 10", "API security", "developer tools", "client side checks"] },
+        { id: "bola", title: "Broken object level authorisation: change one number", emoji: "", group: "Lesson", keywords: ["BOLA", "IDOR", "insecure direct object reference", "object level authorisation", "BFLA", "function level authorisation", "owner check", "UUID", "Optus", "Peloton", "USPS", "two user test"] },
+        { id: "auth", title: "Broken authentication: keys, tokens and logins", emoji: "", group: "Lesson", keywords: ["broken authentication", "API key", "bearer token", "JWT", "session cookie", "OAuth scopes", "PKCE", "mutual TLS", "secret scanning", "token expiry", "Facebook View As", "password reset"] },
+        { id: "limits", title: "Rate limits and resource consumption", emoji: "", group: "Lesson", keywords: ["rate limiting", "token bucket", "leaky bucket", "429 Too Many Requests", "Retry-After", "credential stuffing", "per account limit", "resource consumption", "pagination", "GraphQL", "query depth", "alias batching", "scraping"] },
+        { id: "props", title: "Mass assignment and excessive data exposure", emoji: "", group: "Lesson", keywords: ["mass assignment", "auto binding", "excessive data exposure", "object property level authorisation", "allow list", "response schema", "DTO", "serializer", "Rails 2012", "Twitter 2022", "OpenAPI"] },
+        { id: "consume", title: "Webhooks, SSRF and trusting other APIs", emoji: "", group: "Lesson", keywords: ["SSRF", "server side request forgery", "webhook", "metadata service", "169.254.169.254", "IMDSv2", "Capital One 2019", "DNS rebinding", "redirects", "unsafe consumption of APIs", "third party API"] },
+        { id: "inventory", title: "Misconfiguration, forgotten APIs and business flows", emoji: "", group: "Lesson", keywords: ["improper inventory management", "zombie API", "shadow API", "API versioning", "CORS", "security misconfiguration", "verbose errors", "business flow", "bots", "scalping", "T-Mobile 2023", "API gateway"] },
+        { id: "defend", title: "Building and testing secure APIs", emoji: "", group: "Lesson", keywords: ["OpenAPI", "API gateway", "schema validation", "authorisation tests", "fuzzing", "API scanner", "CI", "bug bounty", "crAPI", "Juice Shop", "monitoring", "secure design"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "API security career"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
     { id: "cy-a5", title: "Certification revision", emoji: "5", step: 5, part: "advanced", level: "All levels", blurb: "Revising the whole subject for security certifications, interviews and university exams.", topics: [

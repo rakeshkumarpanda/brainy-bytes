@@ -1103,3 +1103,210 @@ const CYP = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 4.4  Broken object level authorisation: change one number in the URL
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  const PEOPLE = [['1001', 'Mallory', '2 phone cases'], ['1002', 'Asha', 'Address: 14 Lake Rd'], ['1003', 'Ravi', 'Address: 7 Hill St'], ['1004', 'Meena', 'Address: 3 Fort Ln'], ['1005', 'Arjun', 'Address: 21 Bay Ave']];
+  const UUID = ['9f2c41d7', 'b81e07aa', '3d5f9c20', 'e64b1f83', '07ac5d9e'];
+  trace('cybola', {
+    title: 'Change one number, see someone else’s order',
+    sub: 'A shop’s API returns an order when you ask for GET /api/orders/{id}. Mallory is a real, logged in customer. Her own order is 1001. She edits the number in the request to see what comes back.',
+    W: 640, H: 360,
+    params: [{ k: 'fix', label: 'How the API is built', type: 'select', v: 'none', opts: [['none', 'Checks the login only'], ['uuid', 'Random looking IDs, still no owner check'], ['owner', 'Checks that the order belongs to the caller']] }],
+    tips: [
+      { t: 'Play with the login check only. Every number Mallory tries hands her a stranger’s order.', play: true },
+      { t: 'Choose random looking IDs. Guessing gets hard, but an ID leaked in a shared link still works.', set: { fix: 'uuid' }, play: true },
+      { t: 'Choose the owner check. The server compares the order’s owner with the caller and says no.', set: { fix: 'owner' }, play: true }
+    ],
+    frames(p) {
+      const fr = [], rows = [], idOf = i => (p.fix === 'uuid' ? UUID[i] : PEOPLE[i][0]);
+      fr.push({ rows: [], cur: -1, say: 'Mallory logs in and gets a token that says "user 7, Mallory". Every request she sends carries it, so the server knows who is asking.' });
+      rows.push({ id: idOf(0), code: 200, txt: 'Mallory: ' + PEOPLE[0][2], ok: true });
+      fr.push({ rows: rows.slice(), cur: 0, say: `She asks for her own order ${idOf(0)}. The server checks that the token is valid and returns it. So far, so good.` });
+      for (let i = 1; i <= 4; i++) {
+        let row, say;
+        if (p.fix === 'none') {
+          row = { id: PEOPLE[i][0], code: 200, txt: PEOPLE[i][1] + ': ' + PEOPLE[i][2], leak: true };
+          say = `She changes the number to ${PEOPLE[i][0]}. The token is valid, and that is all this server checks, so it returns ${PEOPLE[i][1]}’s order with a home address.`;
+        } else if (p.fix === 'uuid') {
+          if (i < 4) { row = { id: String(1000 + i + 1), code: 404, txt: 'not found', miss: true }; say = `IDs are now random strings like ${UUID[0]}, so trying ${1000 + i + 1} finds nothing. Guessing a random 128 bit ID is hopeless.`; }
+          else { row = { id: UUID[4], code: 200, txt: 'Arjun: ' + PEOPLE[4][2], leak: true }; say = `But Arjun once posted a "track my parcel" link with his order ID ${UUID[4]} in it. Mallory pastes that ID, and the server still hands over his address, because it never asks whose order this is.`; }
+        } else {
+          row = { id: PEOPLE[i][0], code: 403, txt: 'forbidden: not your order', stop: true };
+          say = `She asks for ${PEOPLE[i][0]}. The server loads the order, sees its owner is ${PEOPLE[i][1]}, not user 7, and answers 403 Forbidden.`;
+        }
+        rows.push(row); fr.push({ rows: rows.slice(), cur: i, say });
+      }
+      const leaks = rows.filter(r => r.leak).length;
+      if (p.fix === 'none') fr.push({ rows, cur: -1, end: 'bad', leaks, say: `${leaks} strangers’ orders leaked by editing one number. This bug, broken object level authorisation (BOLA), is number 1 in the OWASP API Security Top 10 (2023). Optus in 2022 lost data on about 10 million customers through an API that, according to public reports, had sequential IDs and needed no login at all.` });
+      else if (p.fix === 'uuid') fr.push({ rows, cur: -1, end: 'meh', leaks, say: 'Random IDs slowed Mallory down but did not stop her. IDs leak through links, logs, browser history and other API responses. Hiding the ID is not access control.' });
+      else fr.push({ rows, cur: -1, end: 'good', leaks, say: 'Every foreign order was refused. The fix is one line on every endpoint that takes an ID: load the object, then check it belongs to the caller (or that the caller’s role allows it) before returning anything.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      cbox(z, 20, 24, 150, 54, ['Mallory', 'token: user 7'], { s: 12, b: true, fill: tint(z, 'orange', 0.3) });
+      const cur = f.cur >= 0 ? f.rows[f.cur] : null;
+      cbox(z, 20, 92, 150, 30, cur ? `GET /orders/${cur.id}` : 'GET /orders/…', { s: 11, mono: true, b: true, fill: c.surf });
+      D.arrow(g, 172, 51, 228, 51, c.ink2, 2);
+      cbox(z, 230, 24, 120, 98, [], { fill: tint(z, 'purple', 0.18) });
+      D.text(g, 'API server', 290, 40, { a: 'center', s: 13, b: true, c: c.ink });
+      cbox(z, 240, 52, 100, 26, 'token valid?', { s: 11, b: true, fill: tint(z, 'green', 0.35) });
+      cbox(z, 240, 86, 100, 26, 'owner = caller?', { s: 11, b: true, fill: z.p && z.p.fix === 'owner' ? tint(z, 'green', 0.35) : c.surf });
+      if (!(z.p && z.p.fix === 'owner')) { D.line(g, 244, 99, 336, 99, c.red, 2); }
+      f.rows.forEach((r, i) => {
+        const y = 24 + i * 44, on = i === f.cur;
+        const fill = r.leak ? tint(z, 'red', on ? 0.45 : 0.28) : r.stop ? tint(z, 'green', on ? 0.45 : 0.28) : r.ok ? tint(z, 'blue', 0.22) : c.surf;
+        rr(g, 370, y, 250, 36, 8, { fill, stroke: on ? c.ink : c.line, w: on ? 2 : 1 });
+        D.text(g, `${r.code}`, 382, y + 18, { bl: 'middle', s: 13, b: true, mono: true, c: r.leak ? c.red : r.stop ? c.green : c.ink2 });
+        D.text(g, r.txt, 420, y + 18, { bl: 'middle', s: MLZ.fit(g, r.txt, 192, 12, {}), c: c.ink });
+        if (r.leak && on) zap(z, 604, y + 18, 18);
+      });
+      if (f.end) {
+        face(z, 170, 230, 30, f.end === 'bad' ? 'sad' : f.end === 'good' ? 'happy' : 'think');
+        if (f.end === 'good') party(z, 30, 170, 300, 120, 44);
+        banner(z, 314, f.end === 'bad' ? `${f.leaks} customers’ addresses leaked` : f.end === 'good' ? 'Owner check: every foreign order refused' : 'Hidden IDs slowed her down, one still leaked', f.end === 'good' ? true : f.end === 'bad' ? false : undefined);
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 4.4  Rate limiting a login API against credential stuffing, with token buckets
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, banner, tint } = CYP;
+  const IPS = 10, TARGET = 40, SECS = 12;
+  trace('cyratelimit', {
+    title: 'Slow down a password guessing bot',
+    sub: 'A bot has a leaked list of passwords and tries them on one account through the login API, 10 tries a second spread over 10 IP addresses. The real password is number 40 on its list. A rejected try (429 Too Many Requests) has to be sent again later.',
+    W: 640, H: 360,
+    params: [{ k: 'lim', label: 'Rate limit', type: 'select', v: 'none', opts: [['none', 'No limit'], ['ip', 'Per IP: bucket of 2, refills 1 every 2 s'], ['acct', 'Per account: bucket of 5, refills 1 every 5 s']] }],
+    tips: [
+      { t: 'Play with no limit. The bot reaches password 40 in 4 seconds.', play: true },
+      { t: 'Choose the per IP limit. Spreading over 10 addresses gives the bot 10 buckets, so it still gets in.', set: { lim: 'ip' }, play: true },
+      { t: 'Choose the per account limit. All tries share one small bucket, so the bot gets about 7 tries in 12 seconds.', set: { lim: 'acct' }, play: true }
+    ],
+    frames(p) {
+      const cap = p.lim === 'ip' ? 2 : 5, rate = p.lim === 'ip' ? 0.5 : 0.2;
+      const nb = p.lim === 'ip' ? IPS : 1, tok = new Array(nb).fill(cap), fr = [];
+      let tried = 0, rej = 0, found = 0;
+      fr.push({ t: 0, tok: tok.slice(), cap, nb, tried, rej, marks: [], say: p.lim === 'none' ? 'There is no limit. Every try reaches the password check.' : `Each bucket starts full with ${cap} tokens. A try spends one token. With an empty bucket the API answers 429 and does not check the password. Buckets refill ${p.lim === 'ip' ? 'one token every 2 seconds' : 'one token every 5 seconds'}.` });
+      const marks = [];
+      for (let t = 1; t <= SECS && !found; t++) {
+        if (p.lim !== 'none') for (let b = 0; b < nb; b++) tok[b] = Math.min(cap, tok[b] + (t > 1 ? rate : 0));
+        let acc = 0, r = 0;
+        for (let i = 0; i < IPS && !found; i++) {
+          const b = p.lim === 'ip' ? i : 0;
+          if (p.lim === 'none' || tok[b] >= 1) { if (p.lim !== 'none') tok[b] -= 1; tried++; acc++; marks.push(tried === TARGET ? 'hit' : 'try'); if (tried === TARGET) found = t; }
+          else { r++; rej++; marks.push('rej'); }
+        }
+        const say = found ? `Second ${t}: try number ${TARGET} is the right password. The bot is in.` : `Second ${t}: ${acc} tr${acc === 1 ? 'y' : 'ies'} checked, ${r} refused with 429. ${tried} of ${TARGET} passwords tested so far.`;
+        fr.push({ t, tok: tok.slice(), cap, nb, tried, rej, marks: marks.slice(), say });
+      }
+      fr.push({ t: -1, tok: tok.slice(), cap, nb, tried, rej, marks, end: found ? 'bad' : 'good', found, say: found ? (p.lim === 'ip' ? `Broken in after ${found} seconds. A per IP limit alone fails against bots that rotate addresses, which is how real credential stuffing works.` : `Broken in after ${found} seconds. With no rate limit an API lets a bot test a whole leaked list quickly.`) : `After ${SECS} seconds the bot has tested only ${tried} passwords and refused tries piled up. At this pace password 40 is almost three minutes away, long enough for an alert, a CAPTCHA or a lock to kick in. Add a breached password check and passkeys, and the list is useless.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      D.text(g, f.t > 0 ? `second ${f.t}` : f.t === 0 ? 'start' : 'final', 20, 30, { s: 14, b: true, c: c.ink2 });
+      const per = 18;
+      f.marks.forEach((m, i) => {
+        const x = 20 + (i % per) * 19, y = 44 + Math.floor(i / per) * 19;
+        if (y > 190) return;
+        rr(g, x, y, 16, 16, 4, { fill: m === 'hit' ? c.yellow : m === 'rej' ? c.surf : tint(z, 'blue', 0.45), stroke: m === 'hit' ? c.ink : c.line, w: m === 'hit' ? 2 : 1 });
+        if (m === 'rej') D.text(g, '429', x + 8, y + 9, { a: 'center', bl: 'middle', s: 7, b: true, c: c.ink2 });
+        if (m === 'hit') D.text(g, 'key', x + 8, y + 9, { a: 'center', bl: 'middle', s: 7, b: true, c: '#1f2937' });
+      });
+      D.text(g, `tested ${f.tried} / 40     refused ${f.rej}`, 20, 210, { s: 13, b: true, c: c.ink });
+      rr(g, 20, 220, 342, 12, 6, { fill: c.surf, stroke: c.line });
+      rr(g, 20, 220, Math.max(4, 342 * Math.min(1, f.tried / 40)), 12, 6, { fill: f.tried >= 40 ? c.red : c.accent });
+      if (f.nb && z.p && z.p.lim !== 'none') {
+        D.text(g, f.nb > 1 ? 'buckets (one per IP)' : 'bucket (one for the account)', 548, 30, { a: 'center', s: 11, b: true, c: c.ink2 });
+        const bw = f.nb > 1 ? 14 : 60, gap = f.nb > 1 ? 4 : 0, x0 = f.nb > 1 ? 548 - (f.nb * (bw + gap)) / 2 : 518;
+        f.tok.forEach((t, i) => {
+          const x = x0 + i * (bw + gap), h = 120, y = 44;
+          rr(g, x, y, bw, h, 4, { fill: c.surf, stroke: c.ink2, w: 1.2 });
+          const fh = h * t / f.cap;
+          if (fh > 0) rr(g, x + 1, y + h - fh, bw - 2, fh, 3, { fill: t < 1 ? c.orange : c.green });
+        });
+        D.text(g, `refill ${f.nb > 1 ? '0.5' : '0.2'} token/s`, 548, 180, { a: 'center', s: 11, c: c.ink2 });
+      }
+      if (f.end) {
+        face(z, 548, 260, 26, f.end === 'bad' ? 'sad' : 'happy');
+        if (f.end === 'good') party(z, 20, 240, 360, 60, 33);
+        banner(z, 314, f.end === 'bad' ? `Account taken over in ${f.found} s` : 'Rate limit held: only a handful of guesses got through', f.end === 'good');
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 4.4  Mass assignment and excessive data exposure: the API trusts every field it is sent
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  const REQ = [['name', '"Ravi"', 1], ['email', '"ravi@example.com"', 1], ['role', '"admin"', 0], ['credits', '9999', 0]];
+  trace('cymassassign', {
+    title: 'Sneak an extra field into the request',
+    sub: 'A profile API accepts PATCH /api/users/me with a JSON body. The app’s form only sends name and email. Ravi adds two fields by hand: role and credits. Then he reads what the API sends back.',
+    W: 640, H: 360,
+    params: [{ k: 'bind', label: 'How the server copies the body', type: 'select', v: 'all', opts: [['all', 'Copies every field into the user record'], ['allow', 'Copies only an allow list: name, email']] }],
+    tips: [
+      { t: 'Play with "copies every field". Ravi makes himself an admin and returns the password hash too.', play: true },
+      { t: 'Choose the allow list. Unknown fields are dropped, and the reply holds only safe fields.', set: { bind: 'allow' }, play: true }
+    ],
+    frames(p) {
+      const fr = [], db = { name: '"Ravee"', email: '"r@old.example"', role: '"user"', credits: '10', password_hash: '"$2b$12$Qe…"' };
+      const allow = p.bind === 'allow';
+      fr.push({ req: REQ.slice(0, 2), db: { ...db }, cur: -1, say: 'The form sends {"name", "email"}. The user record on the server also has role, credits and password_hash, which users must never set or see.' });
+      fr.push({ req: REQ, db: { ...db }, cur: -1, add: true, say: 'Ravi opens the browser’s developer tools and resends the request with "role": "admin" and "credits": 9999 added. Nothing on the client can stop this.' });
+      REQ.forEach(([k, v, safe], i) => {
+        const take = safe || !allow;
+        if (take) db[k] = v;
+        fr.push({ req: REQ, db: { ...db }, cur: i, take, changed: k, say: take ? (safe ? `"${k}" is a normal profile field. Copied.` : `"${k}" is copied too, because the code does user.update(request.body). ${k === 'role' ? 'Ravi is now an admin.' : 'Ravi just gave himself 9,999 credits.'}`) : `"${k}" is not on the allow list, so it is ignored.` });
+      });
+      const resp = allow ? ['name', 'email'] : Object.keys(db);
+      fr.push({ req: REQ, db: { ...db }, cur: -1, resp, say: allow ? 'The reply is built from a response schema with only name and email. Nothing secret leaves the server.' : 'The reply returns the whole record, password_hash included, and leaves it to the app to hide fields on screen. Anyone reading the raw response sees it.' });
+      fr.push({ req: REQ, db: { ...db }, cur: -1, resp, end: allow ? 'good' : 'bad', say: allow ? 'Allow lists going in and response schemas going out close OWASP API3 (broken object property level authorisation). Profile fields changed, privileges did not.' : 'Two bugs at once: mass assignment (fields the user should not set) and excessive data exposure (fields the user should not see). OWASP groups them as API3:2023. In 2012 a developer used a mass assignment bug on GitHub, a Ruby on Rails app, to add a key to the Rails project itself.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      D.text(g, 'PATCH /api/users/me', 20, 28, { s: 12, b: true, mono: true, c: c.ink2 });
+      f.req.forEach(([k, v, safe], i) => {
+        const y = 40 + i * 34, on = i === f.cur;
+        const fill = on ? (f.take ? (safe ? tint(z, 'green', 0.4) : tint(z, 'red', 0.4)) : tint(z, 'yellow', 0.5)) : safe ? c.surf : tint(z, 'orange', 0.3);
+        cbox(z, 20, y, 200, 28, `"${k}": ${v}`, { s: 11, mono: true, b: !safe, fill });
+        if (on && !f.take) zap(z, 236, y + 14, 16);
+      });
+      const allow = z.p && z.p.bind === 'allow';
+      cbox(z, 250, 60, 100, 64, allow ? ['allow list', 'name, email'] : ['copy', 'everything'], { s: 12, b: true, fill: allow ? tint(z, 'green', 0.4) : tint(z, 'red', 0.3) });
+      D.arrow(g, 222, 92, 248, 92, c.ink2, 2); D.arrow(g, 352, 92, 380, 92, c.ink2, 2);
+      D.text(g, 'user record', 384, 28, { s: 12, b: true, c: c.ink2 });
+      Object.entries(f.db).forEach(([k, v], i) => {
+        const y = 40 + i * 30, bad = (k === 'role' && v === '"admin"') || (k === 'credits' && v === '9999');
+        rr(g, 384, y, 236, 26, 6, { fill: bad ? tint(z, 'red', 0.45) : k === f.changed && f.take ? tint(z, 'green', 0.35) : c.surf, stroke: c.line });
+        D.text(g, `${k}: ${v}`, 394, y + 13, { bl: 'middle', s: 11, mono: true, b: bad, c: c.ink });
+      });
+      if (f.resp) {
+        const txt = 'reply: { ' + f.resp.join(', ') + ' }';
+        cbox(z, 20, 200, 600, 30, txt, { s: MLZ.fit(g, txt, 580, 12, { mono: true }), mono: true, b: true, fill: f.resp.includes('password_hash') ? tint(z, 'red', 0.35) : tint(z, 'green', 0.35) });
+      }
+      if (f.end) {
+        face(z, 320, 268, 24, f.end === 'bad' ? 'sad' : 'happy');
+        if (f.end === 'good') party(z, 20, 236, 600, 70, 57);
+        banner(z, 314, f.end === 'bad' ? 'Ravi became an admin and saw the password hash' : 'Extra fields ignored, secrets kept in', f.end === 'good');
+      }
+    }
+  });
+})();
