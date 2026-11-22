@@ -108,6 +108,8 @@ button.vt-vb.on::before{content:"\\1F50A  "}
       read: h => h.querySelector('.vz-msg') || h.querySelector('[aria-live]') || h.querySelector('.wk-steps'), before: c => c.querySelector('.vz-cnt') }
   ];
   function stepText(read) {
+    /* a player may hold a longer spoken explanation of the step in data-say on its message line (DSA pages) */
+    if (read.matches && read.matches('.vz-msg') && read.dataset.say && read.dataset.say.trim()) return read.dataset.say.trim().slice(0, 1500);
     const now = read.querySelector('.cai-now') || read.querySelector('li.cur');
     if (now) return now.innerText || now.textContent;
     /* a copy without tables, code and drawings, so only the explanation is read */
@@ -173,7 +175,7 @@ button.vt-vb.on::before{content:"\\1F50A  "}
       lastSaid.set(read, t);
       stopAll();
       sayStep(host, t);
-    }).observe(read, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+    }).observe(read, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'data-say'] });
   }
   function scanWidgets() {
     KINDS.forEach(k => document.querySelectorAll(k.ctl + ':not([data-vt])').forEach(c => addToggle(c, k)));
