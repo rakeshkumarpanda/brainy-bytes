@@ -152,5 +152,6 @@
 .pk-grid td.piv{background:var(--pk-piv); border-color:var(--pk-piv-line)}
 .pk-grid td.win{background:var(--win); border-color:var(--win-line)}
 .pk-grid td.done{opacity:.4}
+.pk-grid td.wall{background:var(--ink2); border-color:var(--ink2); opacity:.75}
 .pk-grid td.look{transform:none; animation:pk-look 1s ease-in-out infinite}
 .pk-bub .vz-msg{border:0; background:none; padding:0; box-shadow:none; border-radius:0}

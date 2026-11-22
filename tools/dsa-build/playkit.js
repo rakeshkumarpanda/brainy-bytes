@@ -25,6 +25,7 @@
      {t: 'bars', label, vals: [...], cls: {i: cls}, max}
      {t: 'note', html}
    cell classes: look (being checked), yes (found or kept), no (rejected), done (finished, faded), cur, sel, mv, piv, win, ghost
+   grid cells also take wall (a blocked square, for mazes and boards)
 */
 (() => {
   const K = VIZ.kit, W = VIZ.widgets;
