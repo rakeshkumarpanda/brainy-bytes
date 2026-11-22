@@ -10162,6 +10162,28 @@ function cyAdvModules() {
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
+    { id: "cy-a4", title: "Beyond the web", emoji: "4", step: 4, part: "advanced", level: "Advanced", blurb: "Security for people, phones, connected devices, industrial systems and the APIs that link them.", topics: [
+      { id: "cy-social", title: "Social engineering and phishing: tricks, email authentication and defences", emoji: "4.1", page: "content/cyber-security/cy-social.html",
+        summary: "Influence principles, kinds of phishing, reading links, lookalike domains, SPF, DKIM and DMARC, BEC and deepfakes, pretexting and MFA fatigue, and layered defences.",
+        keywords: ["social engineering", "phishing", "smishing", "vishing", "lookalike domain", "SPF", "DKIM", "DMARC", "business email compromise", "deepfake"],
+        minutes: 80, counts: {"lessons": 9, "problems": 11, "quiz": 15, "assign": 3},
+        added: "2026-11-22",
+        sections: [
+        { id: "idea", title: "Social engineering: hacking the person instead of the computer", emoji: "", group: "Lesson", keywords: ["social engineering", "human element", "Cialdini", "principles of influence", "authority", "urgency", "scarcity", "reciprocity", "social proof", "Kevin Mitnick", "Verizon DBIR", "digital arrest scam", "KYC scam", "1930 helpline"] },
+        { id: "phishing", title: "Phishing in all its forms: how to spot one", emoji: "", group: "Lesson", keywords: ["phishing", "spear phishing", "whaling", "smishing", "vishing", "quishing", "QR code scam", "clone phishing", "Podesta", "Twitter 2020 hack", "red flags", "UPI PIN"] },
+        { id: "lookalike", title: "Reading links and lookalike domains", emoji: "", group: "Lesson", keywords: ["URL", "domain name", "registered domain", "subdomain", "typosquatting", "homoglyph", "IDN homograph attack", "punycode", "xn--", "Xudong Zheng", "edit distance", "Levenshtein", "brand monitoring"] },
+        { id: "email", title: "Email authentication: SPF, DKIM and DMARC", emoji: "", group: "Lesson", keywords: ["email authentication", "SPF", "DKIM", "DMARC", "alignment", "p=reject", "p=quarantine", "p=none", "DMARC reports", "email spoofing", "Gmail bulk sender rules", "DNS TXT record", "forwarding"] },
+        { id: "bec", title: "Business email compromise, voice cloning and deepfakes", emoji: "", group: "Lesson", keywords: ["business email compromise", "BEC", "CEO fraud", "invoice fraud", "vendor email compromise", "FBI IC3", "deepfake", "voice cloning", "Arup Hong Kong", "callback verification", "out of band verification", "two person approval", "code word"] },
+        { id: "pretext", title: "Pretexting, baiting, tailgating and MFA fatigue", emoji: "", group: "Lesson", keywords: ["pretexting", "help desk social engineering", "MGM Resorts", "baiting", "USB drop", "tailgating", "piggybacking", "MFA fatigue", "push bombing", "Uber 2022", "number matching", "fake job offer", "shoulder surfing", "dumpster diving"] },
+        { id: "defend", title: "Defending people: training, reporting and phishing resistant login", emoji: "", group: "Lesson", keywords: ["security awareness training", "phishing simulation", "click rate", "report rate", "report phishing button", "passkeys", "FIDO2", "security keys", "Google 85,000 employees", "email filter", "sandbox", "external sender warning"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "usable security", "human factors"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
     { id: "cy-a5", title: "Certification revision", emoji: "5", step: 5, part: "advanced", level: "All levels", blurb: "Revising the whole subject for security certifications, interviews and university exams.", topics: [
       { id: "cy-certprep", title: "Certification revision: exams, recall, formulas and scenarios", emoji: "5.1", page: "content/cyber-security/cy-certprep.html",
         summary: "Exam formats and domains mapped to the chapters, recall tables, every formula, scenario answering, research style questions and a mock exam.",

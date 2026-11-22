@@ -559,3 +559,224 @@ const CYP = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 4.1  Spot the phish: check a message clue by clue
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  const MAILS = {
+    kyc: { from: 'SBI Alerts', addr: 'alerts@sbi-kyc-update.co', subj: 'URGENT: Your account will be blocked today', hello: 'Dear Customer,', body: ['Your KYC has expired. Update within 2 hours', 'or your account will be suspended.'], link: 'Update KYC now', url: 'http://sbi-kyc-update.co/login', phish: true,
+      checks: [['Sender address', false, 'The name says SBI, but the address is sbi-kyc-update.co, a lookalike domain anyone could buy. Real SBI mail comes from sbi.co.in.'],
+        ['Pressure and fear', false, '"Blocked today" and "within 2 hours" push you to act before you think. Urgency is the most common trick.'],
+        ['The real link', false, 'Hovering shows http://sbi-kyc-update.co/login: not the bank, and not even https.'],
+        ['What it asks for', false, 'It wants your login. Banks never ask you to log in from an email link to "update KYC".'],
+        ['Greeting', false, '"Dear Customer" means the sender does not know your name.']] },
+    ceo: { from: 'Anita Rao (CEO)', addr: 'anita.rao.ceo@gmail.com', subj: 'Quick favour, keep this confidential', hello: 'Hi Rahul,', body: ['I am in a board meeting. Buy 10 Amazon gift cards', 'of Rs 10,000 and send me the codes. I will repay.'], link: '', url: '', phish: true,
+      checks: [['Sender address', false, 'A CEO writing from a free Gmail address, not the company domain. Anyone can create that name.'],
+        ['Pressure and secrecy', false, '"Board meeting" and "confidential" stop you from checking with anyone. That is a classic pretext.'],
+        ['The real link', true, 'There is no link at all. Business email compromise often has no link or attachment, so filters miss it.'],
+        ['What it asks for', false, 'Gift card codes are as good as cash and cannot be traced back. No real manager pays like this.'],
+        ['Authority', false, 'It borrows the CEO’s authority so you feel you cannot say no. Call her on a known number to check.']] },
+    courier: { from: 'IndiaPost Delivery', addr: 'support@indiapost.gov.in.track-parcel.top', subj: 'Parcel on hold: address incomplete', hello: 'Dear user,', body: ['Your parcel could not be delivered.', 'Pay Rs 25 redelivery fee by scanning the QR code.'], link: '[QR code]', url: 'https://track-parcel.top/pay', phish: true,
+      checks: [['Sender address', false, 'Read domains from the right: this one ends in track-parcel.top. The indiapost.gov.in part at the front is just a decoy subdomain.'],
+        ['Pressure', false, 'A small fee feels harmless, so people pay without thinking. The real goal is your card details.'],
+        ['The real link', false, 'The QR code hides the link, so you cannot hover over it. This is called quishing. Your phone shows track-parcel.top.'],
+        ['What it asks for', false, 'Card number and OTP for a tiny fee. With those, the attacker can make much bigger payments.'],
+        ['Greeting', false, '"Dear user" again. A real courier message would show your tracking number.']] },
+    real: { from: 'People Team', addr: 'people@yourcompany.com', subj: 'Holiday calendar for next year', hello: 'Hi Rahul,', body: ['The holiday calendar is now on the intranet.', 'No action is needed. Questions? Ask your manager.'], link: 'Open the intranet page', url: 'https://intranet.yourcompany.com/holidays', phish: false,
+      checks: [['Sender address', true, 'The address uses the real company domain, and the mail passed SPF, DKIM and DMARC (next lessons).'],
+        ['Pressure', true, 'No deadline, no threat, and it says no action is needed.'],
+        ['The real link', true, 'Hovering shows https://intranet.yourcompany.com, the company’s own site, matching the text.'],
+        ['What it asks for', true, 'It asks for nothing: no password, money or codes.'],
+        ['Greeting', true, 'It uses your name and gives a normal way to ask questions.']] }
+  };
+  trace('cyphishspot', {
+    title: 'Spot the phish: check five clues',
+    sub: 'Pick a message. Each step checks one clue that security teams teach everyone to look for. A green tick means the clue looks fine, a red cross means a warning sign.',
+    W: 640, H: 370,
+    params: [{ k: 'mail', label: 'Message', type: 'select', v: 'kyc', opts: [['kyc', 'Bank KYC update email'], ['ceo', 'Message from the "CEO"'], ['courier', 'Parcel on hold with a QR code'], ['real', 'Holiday calendar from HR']] }],
+    tips: [
+      { t: 'Play the bank email. Every clue is a red flag.', play: true },
+      { t: 'Try the CEO message. It has no link at all, yet it is still a scam.', set: { mail: 'ceo' }, play: true },
+      { t: 'Try the HR email. A real message passes every check.', set: { mail: 'real' }, play: true }
+    ],
+    frames(p) {
+      const M = MAILS[p.mail], fr = [];
+      fr.push({ M, n: 0, say: `A message arrives: "${M.subj}". Before clicking anything, slow down and check five clues.` });
+      M.checks.forEach((c, i) => fr.push({ M, n: i + 1, say: `${c[1] ? 'Looks fine' : 'Warning'}. ${c[0]}: ${c[2]}` }));
+      const bad = M.checks.filter(c => !c[1]).length;
+      fr.push({ M, n: M.checks.length, end: true, say: M.phish ? `${bad} warning signs: this is a phishing message. Do not click, reply or pay. Report it with your mail’s "Report phishing" button, or forward bank fraud SMS to 7726 (SPAM) in India and report cyber fraud at cybercrime.gov.in or on 1930.` : 'Every clue looks fine, so this message is genuine. Being careful does not mean distrusting everything, it means checking before you act.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, M = f.M, hl = i => f.n === i + 1;
+      rr(g, 14, 20, 380, 300, 12, { fill: c.surf, stroke: c.line, w: 1.5 });
+      rr(g, 14, 20, 380, 30, 12, { fill: tint(z, 'blue', 0.2) });
+      D.text(g, 'Inbox', 28, 40, { s: 12, b: true, c: c.ink2 });
+      const row = (y, label, val, i, o = {}) => {
+        if (hl(i)) rr(g, 20, y - 15, 368, 22, 6, { fill: tint(z, M.checks[i][1] ? 'green' : 'red', 0.3) });
+        D.text(g, label, 28, y, { s: 11, b: true, c: c.ink2 });
+        D.text(g, val, 84, y, { s: o.s || 12, b: o.b, mono: o.mono, c: c.ink });
+      };
+      row(72, 'From', `${M.from} <${M.addr}>`, 0, { s: 11, mono: false });
+      row(96, 'Subject', M.subj, 1, { b: true, s: 11 });
+      D.text(g, M.hello, 28, 128, { s: 12, c: c.ink });
+      M.body.forEach((l, i) => D.text(g, l, 28, 152 + i * 20, { s: 12, c: c.ink }));
+      if (hl(4)) rr(g, 20, 113, 368, 22, 6, { fill: tint(z, M.checks[4][1] ? 'green' : 'red', 0.3) });
+      if (M.link) {
+        cbox(z, 28, 200, 180, 30, M.link, { s: 12, b: true, fill: tint(z, 'blue', 0.35) });
+        if (f.n >= 3) cbox(z, 28, 238, 356, 24, 'real link: ' + M.url, { s: 11, mono: true, fill: hl(2) ? tint(z, M.checks[2][1] ? 'green' : 'red', 0.35) : c.bg });
+      } else if (f.n >= 3) D.text(g, '(no link or attachment)', 28, 220, { s: 12, c: c.ink2 });
+      if (hl(3)) rr(g, 20, 136, 368, 44, 6, { stroke: M.checks[3][1] ? c.green : c.red, w: 2.5 });
+      M.checks.forEach((ch, i) => {
+        const y = 36 + i * 46, shown = f.n > i;
+        cbox(z, 410, y, 216, 36, ch[0], { s: 12, b: true, fill: shown ? tint(z, ch[1] ? 'green' : 'red', 0.35) : c.surf, stroke: hl(i) ? c.ink : undefined });
+        if (shown) { if (ch[1]) D.text(g, '✓', 610, y + 24, { a: 'center', s: 18, b: true, c: c.green }); else zap(z, 610, y + 18, 14); }
+      });
+      if (f.end) {
+        face(z, 518, 280, 20, M.phish ? 'wow' : 'happy');
+        if (M.phish) { party(z, 404, 250, 226, 60, 21); banner(z, 330, 'Caught it: phishing. Report it, do not click', false); }
+        else { party(z, 404, 250, 226, 60, 22); banner(z, 330, 'Genuine: every clue checks out', true); }
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 4.1  Lookalike domains: confusable letters and edit distance
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, banner, tint } = CYP;
+  const BRANDS = ['google', 'paypal', 'amazon', 'apple', 'microsoft', 'sbi', 'hdfcbank', 'icicibank', 'flipkart', 'paytm', 'netflix', 'facebook'];
+  const CONF = { '0': 'o', '1': 'l', '3': 'e', '5': 's', '@': 'a', 'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x', 'і': 'i', 'ӏ': 'l', 'ԁ': 'd', 'ɡ': 'g' };
+  const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length]; };
+  trace('cyhomoglyph', {
+    title: 'Is this domain pretending to be a brand?',
+    sub: 'Type any web address. The checker finds the part that was really registered, swaps letters that look alike (0 for o, 1 for l, rn for m, Cyrillic letters for Latin ones), then measures how many letter edits it is from well known brands.',
+    W: 640, H: 350,
+    params: [{ k: 'dom', label: 'Web address to check', type: 'text', v: 'login.paypa1-secure.com' }],
+    tips: [
+      { t: 'Play the example. "paypa1" becomes "paypal" once 1 is read as l.', play: true },
+      { t: 'Try hdfcbank.com. It matches the brand exactly, so it is the real one.', set: { dom: 'hdfcbank.com' }, play: true },
+      { t: 'Try аpple.com, where the first letter is Cyrillic. Your browser turns it into punycode starting with xn--.', set: { dom: 'аpple.com' }, play: true },
+      { t: 'Try arnazon.in. Look closely: r and n together look like m.', set: { dom: 'arnazon.in' }, play: true }
+    ],
+    frames(p) {
+      let raw = String(p.dom).trim().toLowerCase().replace(/^[a-z]+:\/\//, '').split(/[\/?#]/)[0];
+      if (!raw || !raw.includes('.')) throw new Error('Type a domain such as example.com');
+      let puny = raw;
+      try { puny = new URL('http://' + raw).hostname; } catch (e) { /* keep raw */ }
+      const labels = raw.split('.'), two = ['co.in', 'co.uk', 'com.au', 'gov.in', 'org.in', 'net.in'];
+      const tail = labels.slice(-2).join('.'), reg = two.includes(tail) && labels.length > 2 ? labels.slice(-3).join('.') : tail;
+      const name = reg.split('.')[0];
+      const fr = [];
+      fr.push({ raw, puny, reg, name, st: 1, say: `Read the address from the right. The part that was actually registered is <b>${reg}</b>. Everything to its left${labels.length > reg.split('.').length ? ` ("${labels.slice(0, labels.length - reg.split('.').length).join('.')}")` : ''} is chosen freely by whoever owns it.` });
+      if (puny !== raw) fr.push({ raw, puny, reg, name, st: 2, say: `This address uses non Latin letters. Browsers convert it to punycode: <code>${puny}</code>. In 2017 a researcher registered a domain that looked exactly like apple.com this way.` });
+      let norm = name.replace(/rn/g, 'm').replace(/vv/g, 'w');
+      norm = Array.from(norm).map(ch => CONF[ch] || ch).join('').replace(/-?(secure|login|verify|support|update|account|kyc|online)-?/g, '');
+      fr.push({ raw, puny, reg, name, norm, st: 3, say: norm !== name ? `After swapping lookalike letters and removing bait words such as "secure" or "login", "${name}" reads as <b>${norm}</b>.` : `No lookalike letters or bait words were found: the name stays "${name}".` });
+      const scores = BRANDS.map(b => ({ b, d: lev(norm, b) })).sort((a, b) => a.d - b.d).slice(0, 3);
+      fr.push({ raw, puny, reg, name, norm, scores, st: 4, say: `Edit distance counts the letters to add, remove or change to turn one word into another. Closest brands: ${scores.map(s => `${s.b} (${s.d})`).join(', ')}.` });
+      const best = scores[0], exact = name === best.b && best.d === 0;
+      const verdict = exact ? 'real' : best.d <= 1 ? 'fake' : best.d <= 2 ? 'sus' : 'none';
+      fr.push({ raw, puny, reg, name, norm, scores, st: 5, verdict, say: verdict === 'real' ? `The registered name is exactly "${best.b}". That matches the brand, so this looks genuine (still check the ending, such as .com or .co.in, is the one the brand uses).` : verdict === 'fake' ? `It is ${best.d === 0 ? 'identical' : 'one edit away'} once disguises are removed, but the real registered name is "${name}". This is a <b>lookalike</b> made to trick you into thinking it is ${best.b}.` : verdict === 'sus' ? `Two edits from ${best.b}. Possibly a typo domain (typosquatting). Be careful.` : 'Not close to any brand on our list. That does not make it safe, only that it is not copying these brands.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      D.text(g, 'address', 20, 34, { s: 12, b: true, c: c.ink2 });
+      const pre = f.raw.slice(0, f.raw.length - f.reg.length);
+      const x0 = 20; let x = x0;
+      g.save(); g.font = '600 16px "JetBrains Mono", monospace'; const wpre = g.measureText(pre).width, wreg = g.measureText(f.reg).width; g.restore();
+      rr(g, x - 4, 44, wpre + wreg + 8, 30, 6, { fill: c.surf, stroke: c.line });
+      D.text(g, pre, x, 65, { s: 16, mono: true, c: c.ink2 }); x += wpre;
+      rr(g, x - 2, 46, wreg + 4, 26, 4, { fill: tint(z, 'yellow', 0.5) });
+      D.text(g, f.reg, x, 65, { s: 16, mono: true, b: true, c: c.ink });
+      D.text(g, 'registered part', x, 90, { s: 11, b: true, c: c.orange });
+      if (f.st >= 2 && f.puny !== f.raw) cbox(z, 20, 100, 400, 26, 'punycode: ' + f.puny, { s: 12, mono: true, fill: tint(z, 'orange', 0.35) });
+      if (f.norm !== undefined) { D.text(g, `"${f.name}"  reads as  "${f.norm}"`, 20, 150, { s: 15, b: true, mono: true, c: c.ink }); }
+      if (f.scores) f.scores.forEach((s, i) => {
+        const y = 172 + i * 34, w = Math.max(20, 240 - s.d * 40);
+        D.text(g, s.b, 20, y + 18, { s: 13, b: true, c: c.ink });
+        rr(g, 120, y + 4, w, 20, 6, { fill: s.d === 0 ? c.red : s.d <= 2 ? c.orange : c.green });
+        D.text(g, `${s.d} edit${s.d === 1 ? '' : 's'}`, 128 + w, y + 19, { s: 12, b: true, c: c.ink });
+      });
+      if (f.verdict) {
+        const good = f.verdict === 'real' || f.verdict === 'none';
+        face(z, 540, 210, 26, f.verdict === 'real' ? 'happy' : f.verdict === 'fake' ? 'wow' : 'think');
+        if (f.verdict === 'real') party(z, 460, 160, 160, 100, 31);
+        banner(z, 310, f.verdict === 'real' ? 'Genuine brand name' : f.verdict === 'fake' ? 'Lookalike domain: do not trust it' : f.verdict === 'sus' ? 'Suspicious: close to a brand' : 'Not copying a known brand', good ? true : false);
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 4.1  SPF, DKIM and DMARC: three gates every email passes through
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  const SC = {
+    legit: { from: 'alerts@bank.example', ip: '203.0.113.25', sdom: 'bank.example', spf: true, dkim: 'bank.example', who: 'The bank’s own mail server sends a real alert.' },
+    spoof: { from: 'alerts@bank.example', ip: '198.51.100.66', sdom: 'bank.example', spf: false, dkim: '', who: 'An attacker’s server sends mail that only claims to be from bank.example.' },
+    look: { from: 'alerts@bank-example.com', ip: '192.0.2.10', sdom: 'bank-example.com', spf: true, dkim: 'bank-example.com', who: 'An attacker registered bank-example.com and set up SPF and DKIM for it properly.' },
+    fwd: { from: 'alerts@bank.example', ip: '233.252.0.5', sdom: 'bank.example', spf: false, dkim: 'bank.example', who: 'A real bank mail is forwarded by a mailing list server, which changes the sending IP.' }
+  };
+  trace('cydmarc', {
+    title: 'SPF, DKIM and DMARC: is this email really from the bank?',
+    sub: 'bank.example publishes three DNS records: SPF lists the servers allowed to send its mail, DKIM gives a public key to check signatures, and DMARC says what to do when a message fails. The receiving mail server checks all three.',
+    W: 640, H: 360,
+    params: [
+      { k: 'sc', label: 'Who sends the message', type: 'select', v: 'spoof', opts: [['legit', 'The bank itself'], ['spoof', 'An attacker faking the From address'], ['look', 'An attacker using a lookalike domain'], ['fwd', 'A forwarding mailing list']] },
+      { k: 'pol', label: 'Bank’s DMARC policy', type: 'select', v: 'reject', opts: [['none', 'p=none (only report)'], ['quarantine', 'p=quarantine (spam folder)'], ['reject', 'p=reject (refuse)']] }
+    ],
+    tips: [
+      { t: 'Play the spoofed mail with p=reject. It fails both checks and is refused.', play: true },
+      { t: 'Set the policy to p=none. The same fake reaches the inbox, which is why p=none is only a first step.', set: { pol: 'none' }, play: true },
+      { t: 'Try the lookalike domain. Every check passes, because the attacker owns that domain. DMARC cannot stop lookalikes, people and filters must.', set: { sc: 'look', pol: 'reject' }, play: true },
+      { t: 'Try the mailing list. SPF fails after forwarding, but the DKIM signature survives, so DMARC still passes.', set: { sc: 'fwd', pol: 'reject' }, play: true }
+    ],
+    frames(p) {
+      const S = SC[p.sc], pol = p.pol, fd = S.from.split('@')[1], fr = [];
+      const spfOk = S.spf, spfAl = spfOk && S.sdom === fd, dkOk = !!S.dkim, dkAl = dkOk && S.dkim === fd, dm = spfAl || dkAl;
+      fr.push({ S, st: 0, say: `${S.who} The From line says <code>${S.from}</code> and the mail comes from IP ${S.ip}.` });
+      fr.push({ S, st: 1, spfOk, say: spfOk ? `SPF: the receiver looks up the SPF record of ${S.sdom}. IP ${S.ip} is on its allowed list, so SPF passes.` : `SPF: the record for ${S.sdom} allows only 203.0.113.0/24. IP ${S.ip} is not on the list, so SPF fails.` });
+      fr.push({ S, st: 2, spfOk, dkOk, say: dkOk ? `DKIM: the message carries a signature from d=${S.dkim}. The receiver fetches that domain’s public key from DNS and the signature checks out, so the message was not changed.` : 'DKIM: there is no valid signature from bank.example, because the attacker does not have the bank’s private key.' });
+      fr.push({ S, st: 3, spfOk, dkOk, dm, say: `DMARC alignment: does a passing check belong to the same domain as the From line (${fd})? ${dm ? 'Yes' : 'No'}${spfAl ? ', SPF aligns' : ''}${dkAl ? ', DKIM aligns' : ''}. DMARC ${dm ? 'passes' : 'fails'}.` });
+      const fate = dm ? 'inbox' : pol === 'reject' ? 'rejected' : pol === 'quarantine' ? 'spam' : 'inbox';
+      const bad = p.sc === 'spoof' || p.sc === 'look';
+      fr.push({ S, st: 4, spfOk, dkOk, dm, fate, bad, say: dm ? (p.sc === 'look' ? `It lands in the inbox. Every check passed because the attacker really owns ${fd}. Only the reader, or a filter that spots lookalike names, can catch this one.` : 'It lands in the inbox. The mail is genuine.') : fate === 'rejected' ? 'The bank’s policy is p=reject, so the receiving server refuses the fake. Nobody ever sees it.' : fate === 'spam' ? 'The policy is p=quarantine, so the fake goes to the spam folder.' : 'The policy is p=none, so the receiver only sends a report to the bank, and the fake still reaches the inbox.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, S = f.S;
+      cbox(z, 10, 30, 176, 70, ['From:', S.from, 'IP ' + S.ip], { s: 11, mono: true, fill: tint(z, 'blue', 0.2) });
+      const gate = (x, label, st, ok) => {
+        const shown = f.st >= st;
+        cbox(z, x, 30, 100, 70, label, { s: 15, b: true, fill: shown ? tint(z, ok ? 'green' : 'red', 0.4) : c.surf });
+        if (shown) { if (ok) D.text(g, '✓', x + 50, 120, { a: 'center', s: 20, b: true, c: c.green }); else zap(z, x + 50, 114, 16); }
+      };
+      D.arrow(g, 188, 65, 204, 65, c.ink2, 2);
+      gate(206, 'SPF', 1, f.spfOk); D.arrow(g, 308, 65, 324, 65, c.ink2, 2);
+      gate(326, 'DKIM', 2, f.dkOk); D.arrow(g, 428, 65, 444, 65, c.ink2, 2);
+      gate(446, 'DMARC', 3, f.dm);
+      const bins = [['Inbox', 'inbox', 'green'], ['Spam', 'spam', 'yellow'], ['Rejected', 'rejected', 'red']];
+      bins.forEach(([t, k, col], i) => cbox(z, 120 + i * 140, 160, 120, 60, t, { s: 14, b: true, fill: f.fate === k ? tint(z, col, 0.55) : c.surf, stroke: f.fate === k ? c.ink : undefined }));
+      if (f.fate) {
+        const i = bins.findIndex(b => b[1] === f.fate);
+        D.arrow(g, 530, 100, 180 + i * 140, 156, c.ink, 2);
+        const happy = (f.bad && f.fate !== 'inbox') || (!f.bad && f.fate === 'inbox');
+        face(z, 580, 190, 22, happy ? 'happy' : f.bad ? 'wow' : 'sad');
+        if (happy) party(z, 100, 230, 440, 60, 41);
+        banner(z, 310, happy ? (f.bad ? 'Fake stopped before it reached anyone' : 'Genuine mail delivered') : (f.bad ? 'The fake reached the inbox' : 'Genuine mail was blocked'), happy);
+      }
+    }
+  });
+})();
