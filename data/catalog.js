@@ -10139,6 +10139,27 @@ function cyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-ethereum", title: "Ethereum and smart contract security: reentrancy, overflow, oracles and MEV", emoji: "3.2", page: "content/cyber-security/cy-ethereum.html",
+        summary: "Smart contracts and gas, reentrancy and The DAO, integer overflow, access control and Parity, flash loans and oracles, MEV and sandwiches, bridges and approvals, and secure contract development.",
+        keywords: ["smart contract", "Ethereum", "reentrancy", "The DAO", "integer overflow", "access control", "flash loan", "oracle", "MEV", "sandwich attack"],
+        minutes: 90, counts: {"lessons": 10, "problems": 12, "quiz": 15, "assign": 3},
+        added: "2026-11-22",
+        sections: [
+        { id: "idea", title: "Ethereum: a world computer whose programs hold money", emoji: "", group: "Lesson", keywords: ["Ethereum", "Vitalik Buterin", "white paper", "smart contract", "EVM", "externally owned account", "contract account", "gas", "gwei", "EIP-1559", "base fee", "priority fee", "immutability", "code is law", "Solidity"] },
+        { id: "reentrancy", title: "Reentrancy: The DAO and calling back in", emoji: "", group: "Lesson", keywords: ["reentrancy", "The DAO", "hard fork", "Ethereum Classic", "checks effects interactions", "nonReentrant", "reentrancy guard", "fallback", "receive function", "cross function reentrancy", "read only reentrancy", "OpenZeppelin"] },
+        { id: "overflow", title: "Integer overflow and the danger of silent maths", emoji: "", group: "Lesson", keywords: ["integer overflow", "underflow", "uint256", "uint8", "wrap around", "BeautyChain", "batchTransfer", "CVE-2018-10299", "SafeMath", "Solidity 0.8", "checked arithmetic", "Panic 0x11", "unchecked block", "rounding"] },
+        { id: "access", title: "Access control: who is allowed to call this function", emoji: "", group: "Lesson", keywords: ["access control", "Parity multisig", "initWallet", "devops199", "self destruct", "frozen funds", "tx.origin", "msg.sender", "onlyOwner", "Ownable", "AccessControl", "delegatecall", "initializer"] },
+        { id: "oracle", title: "Oracles and flash loans: bending prices for one transaction", emoji: "", group: "Lesson", keywords: ["oracle", "price oracle", "automated market maker", "AMM", "constant product", "x y = k", "flash loan", "price manipulation", "bZx", "Harvest Finance", "Mango Markets", "TWAP", "time weighted average price", "Chainlink"] },
+        { id: "mev", title: "Front running, sandwiches and MEV: the public waiting room", emoji: "", group: "Lesson", keywords: ["mempool", "front running", "back running", "sandwich attack", "MEV", "maximal extractable value", "Flash Boys 2.0", "slippage", "private transaction", "commit reveal", "block builder", "priority tip"] },
+        { id: "bridges", title: "Bridges, signatures and approvals: the biggest thefts", emoji: "", group: "Lesson", keywords: ["bridge", "cross chain", "Ronin", "Axie Infinity", "Lazarus", "Wormhole", "Nomad", "Poly Network", "Euler Finance", "signature replay", "EIP-712", "chain id", "token approval", "unlimited approval", "revoke", "proxy upgrade", "timelock"] },
+        { id: "audit", title: "Building contracts safely: patterns, tools and audits", emoji: "", group: "Lesson", keywords: ["smart contract audit", "OpenZeppelin", "Slither", "Echidna", "Foundry", "fuzzing", "invariant", "formal verification", "bug bounty", "pause switch", "timelock", "SWC registry", "OWASP Smart Contract Top 10", "Ethernaut"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "Solidity developer", "smart contract auditor", "MEV research"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
     { id: "cy-a5", title: "Certification revision", emoji: "5", step: 5, part: "advanced", level: "All levels", blurb: "Revising the whole subject for security certifications, interviews and university exams.", topics: [

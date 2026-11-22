@@ -317,3 +317,245 @@ const CYP = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 3.2  Reentrancy: the bug behind The DAO (June 2016)
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  trace('cyreentry', {
+    title: 'Reentrancy: calling back in before the books are updated',
+    sub: 'A tiny bank contract holds 10 ether for other customers. The attacker deposits 1 ether, then asks for it back. When the bank sends ether, the attacker’s contract gets control and can call withdraw again. Choose how the bank is written.',
+    W: 640, H: 360,
+    params: [{ k: 'mode', label: 'How the bank is written', type: 'select', v: 'vuln', opts: [['vuln', 'Send first, update the balance after (buggy)'], ['cei', 'Update the balance first, then send (checks effects interactions)'], ['guard', 'A reentrancy lock (nonReentrant)']] }],
+    tips: [
+      { t: 'Play the buggy bank. The attacker re-enters again and again until the bank is empty.', play: true },
+      { t: 'Choose "Update the balance first". The second call finds a balance of 0 and fails.', set: { mode: 'cei' }, play: true },
+      { t: 'Choose the lock. The second call is refused because withdraw is already running.', set: { mode: 'guard' }, play: true }
+    ],
+    frames(p) {
+      const fr = [], m = p.mode;
+      let bank = 10, att = 0, bal = 0, stack = [];
+      const S = (say, o = {}) => fr.push({ bank, att, bal, stack: stack.slice(), say, ...o });
+      S('The bank contract holds 10 ether that belongs to honest customers. The attacker’s contract has nothing yet.');
+      bank += 1; bal = 1; S('The attacker deposits 1 ether. The bank now holds 11, and its ledger says the attacker may withdraw 1.');
+      stack.push('withdraw()'); S('The attacker calls <code>withdraw()</code>. The bank checks the ledger: balance 1, more than 0, so the check passes.');
+      if (m === 'vuln') {
+        let depth = 1;
+        while (bank >= 1) {
+          bank -= 1; att += 1;
+          S(`Call ${depth}: the bank sends 1 ether <b>before</b> touching the ledger. Sending ether runs the attacker’s <code>receive()</code> function. Bank ${bank}, attacker ${att}.`, { hot: true });
+          if (bank < 1) break;
+          depth++; stack.push('withdraw()');
+          S(`Inside <code>receive()</code>, the attacker calls <code>withdraw()</code> again. The ledger still says 1, because the first call has not finished. The check passes again. The call stack is ${depth} deep.`, { hot: true });
+        }
+        S('The bank is empty, so the attacker stops. Now every call on the stack finishes and each one sets the ledger to 0, far too late.', { unwind: true });
+        stack = []; bal = 0;
+        S('The attacker turned 1 ether into 11. This is how The DAO lost about 3.6 million ether in June 2016, and why Ethereum split into Ethereum and Ethereum Classic.', { end: 'bad' });
+      } else {
+        if (m === 'cei') { bal = 0; S('The bank sets the ledger to 0 <b>first</b> (the effect), then sends the ether (the interaction).'); }
+        else S('The function is marked <code>nonReentrant</code>, so it sets a lock flag as it starts.', { lock: true });
+        bank -= 1; att += 1; if (m === 'guard') bal = 1;
+        S(`The bank sends 1 ether and the attacker’s <code>receive()</code> runs. Bank ${bank}, attacker ${att}.`, { hot: true, lock: m === 'guard' });
+        stack.push('withdraw()');
+        S(m === 'cei' ? 'The attacker calls <code>withdraw()</code> again, but the ledger now says 0, so the check fails and this call is reverted.' : 'The attacker calls <code>withdraw()</code> again, but the lock is still set, so the call is reverted at once.', { refused: true, lock: m === 'guard' });
+        stack = ['withdraw()']; bal = 0;
+        S('The first call finishes normally. The attacker got back only the 1 ether they put in.');
+        stack = []; S('The 10 ether of honest customers is safe. Update state before calling out, and add a lock for extra safety.', { end: 'good' });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      cbox(z, 20, 30, 170, 34, 'Bank contract', { s: 14, b: true, fill: tint(z, 'blue', 0.2) });
+      rr(g, 40, 76, 130, 170, 12, { fill: c.surf, stroke: c.line, w: 1.5 });
+      for (let i = 0; i < f.bank; i++) D.circle(g, 62 + (i % 4) * 28, 228 - Math.floor(i / 4) * 30, 11, { fill: c.yellow, stroke: c.orange, w: 2 });
+      D.text(g, `${f.bank} ether`, 105, 264, { a: 'center', s: 13, b: true, c: c.ink });
+      cbox(z, 20, 278, 170, 26, `ledger: attacker = ${f.bal}`, { s: 12, mono: true, fill: f.unwind ? tint(z, 'orange') : c.surf });
+      cbox(z, 450, 30, 170, 34, 'Attacker contract', { s: 14, b: true, fill: tint(z, 'red', 0.2) });
+      rr(g, 470, 76, 130, 170, 12, { fill: c.surf, stroke: c.line, w: 1.5 });
+      for (let i = 0; i < f.att; i++) D.circle(g, 492 + (i % 4) * 28, 228 - Math.floor(i / 4) * 30, 11, { fill: c.yellow, stroke: c.orange, w: 2 });
+      D.text(g, `${f.att} ether`, 535, 264, { a: 'center', s: 13, b: true, c: c.ink });
+      D.text(g, 'call stack', 320, 40, { a: 'center', s: 12, b: true, c: c.ink2 });
+      f.stack.forEach((s, i) => cbox(z, 250, 246 - i * 22, 140, 19, `${s} #${i + 1}`, { s: 11, mono: true, fill: f.refused && i === f.stack.length - 1 ? tint(z, 'red', 0.4) : tint(z, 'purple', 0.25) }));
+      if (f.refused) zap(z, 400, 246 - (f.stack.length - 1) * 22 + 10, 18);
+      if (f.hot) D.arrow(g, 192, 160, 446, 160, c.orange, 2.5);
+      if (f.lock) cbox(z, 250, 50, 140, 22, 'lock: ON', { s: 12, b: true, fill: tint(z, 'green', 0.4) });
+      if (f.end === 'bad') { face(z, 105, 130, 20, 'sad'); face(z, 535, 130, 20, 'happy'); banner(z, 318, 'Drained: 1 ether became 11', false); }
+      if (f.end === 'good') { party(z, 220, 60, 200, 200, 9); face(z, 105, 130, 20, 'happy'); banner(z, 318, 'Bank safe: the second call was refused', true); }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 3.2  Integer overflow: an 8 bit counter wraps around like a car's odometer
+   ===================================================================================================== */
+(() => {
+  const { trace, D } = MLZ;
+  const { cbox, bin } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  trace('cyoverflow', {
+    title: 'Integer overflow: a number that wraps around',
+    sub: 'A uint8 holds whole numbers from 0 to 255 in 8 bits. Go one past 255 and old Solidity (before 0.8) silently wraps to 0, and 0 minus 1 becomes 255. Solidity 0.8 and later stops the transaction instead. The dial shows all 256 values.',
+    W: 640, H: 340,
+    params: [
+      { k: 'op', label: 'Calculation', type: 'select', v: 'sub', opts: [['sub', 'balance 0, withdraw 1 (0 − 1)'], ['add', 'balance 250, add 10 (250 + 10)'], ['ok', 'balance 7, withdraw 3 (7 − 3)']] },
+      { k: 'ver', label: 'Compiler', type: 'select', v: '07', opts: [['07', 'Solidity 0.7 (no checks)'], ['08', 'Solidity 0.8 (checked maths)']] }
+    ],
+    tips: [
+      { t: 'Play 0 − 1 with Solidity 0.7. The balance becomes 255, so a broke user suddenly looks rich.', play: true },
+      { t: 'Switch to Solidity 0.8. The same calculation stops with an error, and nothing changes.', set: { ver: '08' }, play: true },
+      { t: 'Try 250 + 10 with Solidity 0.7. The total wraps to 4.', set: { op: 'add', ver: '07' }, play: true }
+    ],
+    frames(p) {
+      const [a, d] = p.op === 'sub' ? [0, -1] : p.op === 'add' ? [250, 10] : [7, -3];
+      const fr = [], checked = p.ver === '08';
+      let v = a;
+      fr.push({ v, a, d, say: `The balance is stored in a uint8: ${a}, which is <code>${bin(a)}</code> in binary.` });
+      for (let i = 0; i < Math.abs(d); i++) {
+        const nv = v + Math.sign(d), wrap = nv < 0 || nv > 255;
+        if (wrap && checked) { fr.push({ v, a, d, err: true, say: `The next step would leave the range 0 to 255. Solidity 0.8 checks every addition and subtraction, so the transaction reverts with <code>Panic(0x11)</code>. The balance stays ${a}.` }); fr.push({ v: a, a, d, end: 'good', say: 'Nothing was changed. This one compiler change in December 2020 removed a whole family of token bugs.' }); return fr; }
+        v = (nv + 256) % 256;
+        fr.push({ v, a, d, wrap, say: wrap ? `Step ${i + 1}: ${nv < 0 ? '0 − 1' : '255 + 1'} has no room in 8 bits, so it wraps to <b>${v}</b> (<code>${bin(v)}</code>). No error, no warning.` : `Step ${i + 1}: the dial moves to ${v}.` });
+      }
+      const wrapped = (a + d < 0 || a + d > 255);
+      fr.push({ v, a, d, end: wrapped ? 'bad' : 'good', say: wrapped ? `The result is ${v}, not ${String(a + d).replace('-', '−')}. In April 2018 the BeautyChain token had this bug in its batchTransfer function: one multiplication overflowed and attackers created an astronomically large number of tokens out of nothing.` : `The result is ${v}, inside the range, so no overflow happened.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g, cx = 150, cy = 160, R = 110;
+      D.circle(g, cx, cy, R, { fill: c.surf, stroke: c.line, w: 2 });
+      for (let i = 0; i < 256; i += 16) { const t = -Math.PI / 2 + i / 256 * 2 * Math.PI; D.text(g, String(i), cx + Math.cos(t) * (R - 18), cy + Math.sin(t) * (R - 18) + 4, { a: 'center', s: 10, c: c.ink2 }); }
+      D.text(g, '255 | 0', cx, cy - R - 8, { a: 'center', s: 11, b: true, c: c.red });
+      const t = -Math.PI / 2 + f.v / 256 * 2 * Math.PI;
+      D.arrow(g, cx, cy, cx + Math.cos(t) * (R - 34), cy + Math.sin(t) * (R - 34), f.wrap || f.end === 'bad' ? c.red : c.accent, 3);
+      D.circle(g, cx, cy, 6, { fill: c.ink });
+      for (let b = 0; b < 8; b++) { const bit = (f.v >> (7 - b)) & 1; cbox(z, 310 + b * 36, 70, 32, 40, String(bit), { s: 18, b: true, mono: true, fill: bit ? tint(z, 'blue', 0.45) : c.surf }); }
+      D.text(g, '8 bits of the uint8', 310, 60, { s: 12, b: true, c: c.ink2 });
+      cbox(z, 310, 130, 284, 44, `value = ${f.v}`, { s: 20, b: true, fill: f.wrap || f.end === 'bad' ? tint(z, 'red', 0.35) : tint(z, 'green', 0.2) });
+      if (f.err) { zap(z, 560, 200, 24); cbox(z, 310, 190, 230, 30, 'revert: Panic(0x11)', { s: 13, b: true, mono: true, fill: tint(z, 'orange', 0.4) }); }
+      if (f.end === 'bad') { face(z, 450, 240, 20, 'sad'); banner(z, 300, `Wrapped: the answer should be ${String(f.a + f.d).replace('-', '−')}`, false); }
+      if (f.end === 'good') { party(z, 300, 200, 300, 80, 3); face(z, 450, 240, 20, 'happy'); banner(z, 300, 'Safe: no silent wrap around', true); }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 3.2  A flash loan bends a price oracle (a constant product pool, x times y = k)
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, banner, tint } = CYP;
+  const swap = (inR, outR, amt) => outR - inR * outR / (inR + amt * 0.997);
+  const money = v => (v < 0 ? '−' : '') + '$' + Math.round(Math.abs(v)).toLocaleString('en-US');
+  trace('cyflash', {
+    title: 'Flash loan plus a weak price oracle',
+    sub: 'A pool holds 200,000 USDC and 100 ETH, so 1 ETH costs 2,000 USDC. A lending app asks this pool for the ETH price and lends up to 75% of a deposit’s value. The attacker owns 10 ETH. A flash loan lends any amount, as long as it is repaid in the same transaction.',
+    W: 640, H: 360,
+    params: [
+      { k: 'Q', label: 'Flash loan size', type: 'select', v: '200000', opts: [['100000', '100,000 USDC'], ['200000', '200,000 USDC'], ['400000', '400,000 USDC']] },
+      { k: 'orc', label: 'Where the lending app gets its price', type: 'select', v: 'spot', opts: [['spot', 'The pool price right now (spot)'], ['twap', 'A 30 minute average (TWAP)']] }
+    ],
+    tips: [
+      { t: 'Play with the spot price. The attacker pumps the price inside one transaction and walks away with free money.', play: true },
+      { t: 'Switch to the 30 minute average. The pump lasts 12 seconds out of 1,800, so the price barely moves and the attack loses money.', set: { orc: 'twap' }, play: true }
+    ],
+    frames(p) {
+      const Q = +p.Q, fr = [];
+      let x = 200000, y = 100;
+      const S = (say, o = {}) => fr.push({ x, y, say, ...o });
+      S('The pool starts with 200,000 USDC and 100 ETH. Price = 200,000 / 100 = 2,000 USDC per ETH. The product x × y = 20,000,000 must stay the same after every trade (fees aside).');
+      S(`First, the attacker flash borrows ${Q.toLocaleString('en-US')} USDC. No deposit is needed, because the whole transaction is cancelled if the loan is not repaid at the end.`, { loan: Q });
+      const eth = swap(x, y, Q); x += Q; y -= eth;
+      const spot = x / y;
+      S(`Next, they buy ETH with all of it and get ${f2(eth, 2)} ETH. The pool now holds fewer ETH, so its price jumps to ${Math.round(spot).toLocaleString('en-US')} USDC.`, { loan: Q, eth, pump: true });
+      const price = p.orc === 'spot' ? spot : 2000 * (1 - 12 / 1800) + spot * 12 / 1800, borrow = 0.75 * 10 * price;
+      S(p.orc === 'spot' ? `Then they deposit their own 10 ETH in the lending app. It asks the pool for a price, sees ${Math.round(price).toLocaleString('en-US')}, values the deposit at ${money(10 * price)} and lends ${money(borrow)}.` : `Then they deposit 10 ETH. The lending app uses the 30 minute average, which moved only to ${Math.round(price).toLocaleString('en-US')}, so it lends just ${money(borrow)}.`, { loan: Q, eth, borrow, price });
+      const back = swap(y, x, eth); y += eth; x -= back;
+      S(`Now they sell the ${f2(eth, 2)} ETH back to the pool and get ${money(back)}. The price falls back to about ${Math.round(x / y).toLocaleString('en-US')}.`, { loan: Q, eth: 0, borrow, back });
+      const fee = Q * 0.0009, profit = borrow + back - Q - fee - 20000;
+      S(`Finally they repay the loan plus a 0.09% fee (${money(fee)}). They leave their 10 ETH (worth ${money(20000)}) behind in the lending app.`, { borrow, back, repaid: true });
+      fr.push({ x, y, end: profit > 0 ? 'bad' : 'good', profit, borrow, say: profit > 0 ? `Profit ${money(profit)}, all inside one transaction of about 12 seconds. The lending app is left holding 10 ETH against a loan worth far more. Real cases: bZx (February 2020), Harvest Finance (October 2020, about 34 million dollars) and Mango Markets (October 2022, about 110 million dollars).` : `Result ${money(profit)}: the attack loses money, so it is not worth trying. Average prices, or several independent price feeds, defeat one block pumps.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      cbox(z, 20, 24, 200, 30, 'Trading pool  x × y = k', { s: 13, b: true, fill: tint(z, 'blue', 0.2) });
+      const hx = Math.min(200, f.x / 2000), hy = Math.min(200, f.y);
+      rr(g, 40, 260 - hx, 60, hx, 6, { fill: c.teal || c.cv }); rr(g, 130, 260 - hy, 60, hy, 6, { fill: c.purple });
+      D.text(g, `${Math.round(f.x).toLocaleString('en-US')} USDC`, 70, 276, { a: 'center', s: 11, b: true, c: c.ink });
+      D.text(g, `${f2(f.y, 1)} ETH`, 160, 276, { a: 'center', s: 11, b: true, c: c.ink });
+      cbox(z, 20, 286, 200, 26, `price ${Math.round(f.x / f.y).toLocaleString('en-US')} per ETH`, { s: 13, b: true, fill: f.pump ? tint(z, 'orange', 0.45) : c.surf });
+      cbox(z, 260, 24, 170, 30, 'Lending app', { s: 13, b: true, fill: tint(z, 'green', 0.2) });
+      if (f.price) cbox(z, 260, 64, 170, 26, `oracle says ${Math.round(f.price).toLocaleString('en-US')}`, { s: 12, b: true, fill: f.price > 2500 ? tint(z, 'red', 0.35) : tint(z, 'green', 0.3) });
+      if (f.borrow) cbox(z, 260, 100, 170, 26, `lent out ${money(f.borrow)}`, { s: 12, b: true, fill: c.surf });
+      cbox(z, 460, 24, 160, 30, 'Attacker', { s: 13, b: true, fill: tint(z, 'red', 0.2) });
+      const lines = [];
+      if (f.loan && !f.repaid) lines.push(`owes ${money(f.loan)}`);
+      if (f.eth) lines.push(`holds ${f2(f.eth, 1)} ETH`);
+      if (f.borrow) lines.push(`borrowed ${money(f.borrow)}`);
+      if (f.back) lines.push(`sold for ${money(f.back)}`);
+      lines.forEach((t, i) => cbox(z, 460, 64 + i * 32, 160, 26, t, { s: 12, fill: c.surf }));
+      if (f.end) {
+        face(z, 345, 200, 22, f.end === 'bad' ? 'sad' : 'happy'); face(z, 540, 200, 22, f.end === 'bad' ? 'happy' : 'sad');
+        if (f.end === 'good') party(z, 250, 150, 180, 100, 11);
+        banner(z, 320, f.end === 'bad' ? `Attacker profit ${money(f.profit)}: the lending app lost` : `Attack fails: result ${money(f.profit)}`, f.end !== 'bad');
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 3.2  Front running and the sandwich attack: everyone can see the waiting room
+   ===================================================================================================== */
+(() => {
+  const { trace, D, f2 } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, banner, tint } = CYP;
+  const buy = (x, y, amt) => y - x * y / (x + amt * 0.997);
+  const money = v => (v < 0 ? '−' : '') + '$' + Math.round(Math.abs(v)).toLocaleString('en-US');
+  trace('cysandwich', {
+    title: 'A sandwich attack in the mempool',
+    sub: 'Before a transaction is put in a block it waits in a public waiting room, the mempool. Priya wants to buy ETH with 20,000 USDC from a pool of 200,000 USDC and 100 ETH. She sets a slippage limit: the trade is cancelled if she would get too little ETH. A bot watches the mempool.',
+    W: 640, H: 350,
+    params: [{ k: 'slip', label: 'Priya’s slippage limit', type: 'select', v: '0.05', opts: [['0.005', '0.5%'], ['0.02', '2%'], ['0.05', '5%'], ['0.1', '10%']] }],
+    tips: [
+      { t: 'Play with a 5% limit. The bot buys just before Priya and sells just after her.', play: true },
+      { t: 'Choose 0.5%. There is almost no room to squeeze, so the bot’s profit falls below its fees and it does not attack.', set: { slip: '0.005' }, play: true }
+    ],
+    frames(p) {
+      const slip = +p.slip, X = 200000, Y = 100, V = 20000, fair = buy(X, Y, V), minOut = fair * (1 - slip), gas = 30;
+      let lo = 0, hi = 400000;
+      for (let i = 0; i < 60; i++) { const a = (lo + hi) / 2, e = buy(X, Y, a); (buy(X + a, Y - e, V) >= minOut ? lo = a : hi = a); }
+      const a = lo, ea = buy(X, Y, a), x1 = X + a, y1 = Y - ea, ev = buy(x1, y1, V), x2 = x1 + V, y2 = y1 - ev;
+      const sell = y2 * 0 + (x2 - x2 * y2 / (y2 + ea * 0.997)), profit = sell - a - gas;
+      const fr = [];
+      fr.push({ q: ['Priya: buy ETH with 20,000 USDC'], say: `Priya sends her trade. Alone, it would give her ${f2(fair, 3)} ETH. Her ${f2(slip * 100, 1)}% limit means she accepts no less than ${f2(minOut, 3)} ETH.` });
+      if (profit <= 0) {
+        fr.push({ q: ['Priya: buy ETH with 20,000 USDC'], say: `The bot works out the best squeeze: it could only push in ${money(a)} first, for a profit of ${money(profit + gas)} before about ${money(gas)} of fees. Not worth it.` });
+        fr.push({ q: ['Priya: buy ETH with 20,000 USDC'], end: 'good', got: fair, say: `Priya gets her ${f2(fair, 3)} ETH. A tight slippage limit, or a private transaction route that hides trades from the public mempool, protects users.` });
+        return fr;
+      }
+      fr.push({ q: ['Bot: buy first, higher tip', 'Priya: buy ETH with 20,000 USDC'], front: true, say: `The bot copies the idea and sends its own buy of ${money(a)} with a higher tip, so the block builder puts it first. It gets ${f2(ea, 3)} ETH and the price rises.` });
+      fr.push({ q: ['Bot: buy first, higher tip', 'Priya: buy ETH with 20,000 USDC'], victim: true, got: ev, say: `Priya’s trade runs at the worse price and she gets ${f2(ev, 3)} ETH, right at her limit of ${f2(minOut, 3)}, so the trade still goes through. She paid about ${money(V * (1 - ev / fair))} more than she should have.` });
+      fr.push({ q: ['Bot: buy first, higher tip', 'Priya: buy ETH with 20,000 USDC', 'Bot: sell right after'], back: true, got: ev, say: `The bot sells its ${f2(ea, 3)} ETH right after Priya, at the price she pushed up, and gets ${money(sell)}.` });
+      fr.push({ q: ['Bot: buy first, higher tip', 'Priya: buy ETH with 20,000 USDC', 'Bot: sell right after'], end: 'bad', got: ev, profit, say: `The bot keeps ${money(profit)} after fees, taken from Priya. This is called MEV, maximal extractable value. Bots took hundreds of millions of dollars this way, which is why wallets now offer private routes and tight default limits.` });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col;
+      D.text(z.g, 'Order inside the next block', 20, 34, { s: 13, b: true, c: c.ink2 });
+      f.q.forEach((t, i) => cbox(z, 20, 46 + i * 44, 300, 36, `${i + 1}. ${t}`, { s: 13, b: true, fill: t.startsWith('Bot') ? tint(z, 'red', 0.3) : tint(z, 'blue', 0.25) }));
+      face(z, 400, 90, 26, f.end === 'bad' ? 'sad' : f.end === 'good' ? 'happy' : f.victim ? 'wow' : 'think');
+      D.text(z.g, 'Priya', 400, 134, { a: 'center', s: 12, b: true, c: c.ink });
+      face(z, 540, 90, 26, f.end === 'bad' ? 'happy' : f.end === 'good' ? 'sad' : 'think', c.purple);
+      D.text(z.g, 'Bot', 540, 134, { a: 'center', s: 12, b: true, c: c.ink });
+      if (f.got) cbox(z, 340, 170, 280, 30, `Priya receives ${f2(f.got, 3)} ETH`, { s: 13, b: true, fill: f.end === 'bad' ? tint(z, 'red', 0.3) : tint(z, 'green', 0.3) });
+      if (f.end === 'good') { party(z, 340, 210, 280, 70, 13); banner(z, 300, 'No sandwich: Priya gets a fair price', true); }
+      if (f.end === 'bad') banner(z, 300, `Sandwiched: the bot earned ${money(f.profit)} from Priya’s trade`, false);
+    }
+  });
+})();
