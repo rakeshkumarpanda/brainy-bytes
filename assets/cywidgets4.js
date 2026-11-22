@@ -780,3 +780,155 @@ const CYP = (() => {
     }
   });
 })();
+
+/* =====================================================================================================
+   Advanced 4.2  App sandbox and permissions: what a sneaky torch app can reach
+   ===================================================================================================== */
+(() => {
+  const { trace, D, rr } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  const ASK = [['Camera', 'to turn on the torch light', true], ['Contacts', 'to "share with friends"', false], ['SMS', 'to "verify your number"', false], ['Location', 'to "show local weather"', false], ['Photos', 'to "set a wallpaper"', false]];
+  trace('cysandbox', {
+    title: 'A torch app asks for permissions',
+    sub: 'Every app runs in its own sandbox, a locked room with its own files. To reach anything outside, such as your contacts or messages, it must ask the operating system for a permission. A torch only needs the camera flash. Choose how the phone handles permissions.',
+    W: 640, H: 350,
+    params: [{ k: 'model', label: 'Permission model', type: 'select', v: 'runtime', opts: [['install', 'All at install (old Android before 6.0)'], ['runtime', 'Ask when needed, you decide (Android 6+, iOS)'], ['careful', 'Ask when needed, and you deny what makes no sense']] }],
+    tips: [
+      { t: 'Play the old install time model. One tap at install gives the torch everything.', play: true },
+      { t: 'Choose "you deny what makes no sense". The torch gets only the camera.', set: { model: 'careful' }, play: true }
+    ],
+    frames(p) {
+      const fr = [], got = [];
+      fr.push({ got: [], n: 0, say: 'The torch app is installed. It sits in its own sandbox and cannot read other apps’ files or your data until the operating system lets it.' });
+      if (p.model === 'install') {
+        ASK.forEach(a => got.push(a[0]));
+        fr.push({ got: got.slice(), n: 5, all: true, say: 'Old Android showed one long list of permissions at install time. Almost nobody reads it, so tapping Install granted all five at once.' });
+      } else ASK.forEach((a, i) => {
+        const allow = p.model === 'runtime' ? true : a[2];
+        if (allow) got.push(a[0]);
+        fr.push({ got: got.slice(), n: i + 1, cur: i, allow, say: `The app asks for <b>${a[0]}</b> ${a[1]}. ${allow ? (a[2] ? 'That makes sense for a torch, so you allow it.' : 'You tap Allow without thinking, as many people do.') : 'A torch has no reason to need this, so you tap Deny. The app still works.'}` });
+      });
+      const bad = got.filter(g => g !== 'Camera').length;
+      fr.push({ got, n: 5, end: bad ? 'bad' : 'good', say: bad ? `The torch can now read ${got.filter(g => g !== 'Camera').join(', ')}. Fake instant loan apps in India used exactly this to copy borrowers’ contact lists and harass their families, and Google removed thousands of such apps.` : 'The torch has only what it needs, the camera. Your contacts, messages, location and photos stay out of reach. This is least privilege on your own phone.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      rr(g, 20, 40, 180, 230, 18, { fill: tint(z, 'blue', 0.12), stroke: c.accent, w: 2.5, dash: [6, 4] });
+      D.text(g, 'sandbox', 110, 60, { a: 'center', s: 12, b: true, c: c.accent });
+      cbox(z, 50, 120, 120, 60, 'Torch app', { s: 14, b: true, fill: tint(z, 'yellow', 0.5) });
+      face(z, 110, 220, 18, f.end === 'bad' ? 'happy' : f.end === 'good' ? 'sad' : 'think', c.yellow);
+      ASK.forEach((a, i) => {
+        const y = 40 + i * 48, has = f.got.includes(a[0]), cur = f.cur === i;
+        cbox(z, 440, y, 180, 38, a[0], { s: 14, b: true, fill: has ? tint(z, a[2] ? 'green' : 'red', 0.4) : c.surf, stroke: cur ? c.ink : undefined });
+        if (has) D.arrow(g, 202, 150, 438, y + 19, a[2] ? c.green : c.red, 2);
+        else if (f.n > i && !f.all && f.cur !== undefined) zap(z, 420, y + 19, 14);
+      });
+      if (f.end === 'good') { party(z, 220, 40, 200, 220, 51); banner(z, 300, 'Only the camera: your data stays private', true); }
+      if (f.end === 'bad') banner(z, 300, 'The torch can read far more than a torch needs', false);
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 4.2  App signing: only the real developer can ship an update
+   ===================================================================================================== */
+(() => {
+  const { trace, D } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, zap, banner, tint, sha } = CYP;
+  trace('cysigning', {
+    title: 'App signing: is this update really from the developer?',
+    sub: 'A developer signs every version of an app with a private key. The phone remembers which key signed the installed app and accepts an update only if it carries a valid signature from the same key. Hashes are real SHA-256 of the app text.',
+    W: 640, H: 340,
+    params: [{ k: 'sc', label: 'What arrives', type: 'select', v: 'repack', opts: [['real', 'A genuine update from the developer'], ['repack', 'A repackaged copy with hidden malware'], ['side', 'A fake app from a link, signed with a new key']] }],
+    tips: [
+      { t: 'Play the repackaged copy. Adding code changes the hash, and the attacker cannot sign with the developer’s key.', play: true },
+      { t: 'Choose the genuine update. Same key, valid signature, installed.', set: { sc: 'real' }, play: true },
+      { t: 'Choose the fake app from a link. It has a valid signature, but from an unknown key, so the phone warns you.', set: { sc: 'side' }, play: true }
+    ],
+    frames(p) {
+      const code = 'BrainyBank v2.1: login, balance, transfer', bad = code + ', send_sms_to_attacker()';
+      const app = p.sc === 'real' ? code : bad, h = sha(app), fr = [];
+      fr.push({ st: 1, app, h, say: `The phone receives an app file. It hashes the contents: <code>${h.slice(0, 16)}…</code>.` });
+      if (p.sc === 'real') {
+        fr.push({ st: 2, app, h, key: 'dev', ok: true, say: 'The file carries a signature made with the developer’s private key over exactly this hash. The phone checks it with the developer’s public key: valid.' });
+        fr.push({ st: 3, app, h, key: 'dev', ok: true, same: true, say: 'The key matches the one that signed the installed version, so the update is accepted.' });
+        fr.push({ st: 4, app, h, key: 'dev', ok: true, same: true, end: 'good', say: 'Installed. Only someone holding the developer’s private key could have made this update.' });
+      } else if (p.sc === 'repack') {
+        fr.push({ st: 2, app, h, key: 'dev', ok: false, say: 'The attacker copied the real app and added a hidden function. The old signature was made over a different hash, so it no longer matches these contents.' });
+        fr.push({ st: 3, app, h, key: 'att', ok: true, same: false, say: 'So the attacker re signs it with their own key. The signature is now valid, but the key differs from the one that signed the installed app.' });
+        fr.push({ st: 4, app, h, key: 'att', ok: true, same: false, end: 'good', say: 'The phone refuses to install it as an update over the real app. The attacker would need the developer’s private key, which is why developers guard signing keys so carefully.' });
+      } else {
+        fr.push({ st: 2, app, h, key: 'att', ok: true, say: 'A message says "download the new bank app" with a link. The file is signed, by a brand new key nobody knows.' });
+        fr.push({ st: 3, app, h, key: 'att', ok: true, side: true, say: 'It is not an update, it is a new app, so the key check cannot help. Android blocks installs from unknown sources unless you allow them, and Play Protect scans and warns.' });
+        fr.push({ st: 4, app, h, key: 'att', ok: true, side: true, end: 'warn', say: 'If you override the warnings, the fake app installs. Banking trojans such as Anatsa spread this way. Install apps only from the official store, and never allow unknown sources because a message told you to.' });
+      }
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      cbox(z, 14, 30, 300, 50, f.app.includes(', send') ? f.app.split(', send').map((t, i) => i ? 'send' + t : t + ',') : f.app, { s: 11, mono: true, fill: f.app.includes('attacker') ? tint(z, 'red', 0.25) : tint(z, 'blue', 0.2) });
+      D.text(g, 'app contents', 14, 24, { s: 11, b: true, c: c.ink2 });
+      cbox(z, 14, 96, 300, 28, 'SHA-256 ' + f.h.slice(0, 24) + '…', { s: 11, mono: true, fill: c.surf });
+      if (f.st >= 2) cbox(z, 14, 140, 300, 36, f.key === 'dev' ? 'signed with: developer key' : 'signed with: attacker key', { s: 13, b: true, fill: f.key === 'dev' ? tint(z, 'green', 0.35) : tint(z, 'orange', 0.4) });
+      if (f.st >= 2) { cbox(z, 340, 30, 280, 36, `signature valid for these contents: ${f.ok ? 'yes' : 'no'}`, { s: 12, b: true, fill: f.ok ? tint(z, 'green', 0.35) : tint(z, 'red', 0.35) }); if (!f.ok) zap(z, 606, 48, 14); }
+      if (f.st >= 3 && f.same !== undefined) { cbox(z, 340, 80, 280, 36, `same key as installed app: ${f.same ? 'yes' : 'no'}`, { s: 12, b: true, fill: f.same ? tint(z, 'green', 0.35) : tint(z, 'red', 0.35) }); if (!f.same) zap(z, 606, 98, 14); }
+      if (f.side) cbox(z, 340, 80, 280, 36, 'unknown source: Play Protect warns', { s: 12, b: true, fill: tint(z, 'yellow', 0.45) });
+      if (f.end) {
+        const good = f.end === 'good';
+        face(z, 480, 200, 26, good ? 'happy' : 'wow');
+        if (good) party(z, 340, 150, 280, 110, 61);
+        banner(z, 296, f.end === 'warn' ? 'Only your caution stops this one: use the official store' : f.app.includes('attacker') ? 'Fake update refused' : 'Genuine update installed', good ? true : false);
+      }
+    }
+  });
+})();
+
+/* =====================================================================================================
+   Advanced 4.2  Certificate pinning on café Wi-Fi
+   ===================================================================================================== */
+(() => {
+  const { trace, D } = MLZ;
+  const { cbox } = CYZ;
+  const { face, party, zap, banner, tint } = CYP;
+  trace('cypinning', {
+    title: 'Café Wi-Fi, a sneaky certificate, and pinning',
+    sub: 'The café Wi-Fi is run by an attacker who sits in the middle. Earlier they tricked the user into installing a "Wi-Fi profile" that adds the attacker’s certificate authority (CA) to the phone. Now they show the banking app a fake certificate for bank.example signed by that CA.',
+    W: 640, H: 340,
+    params: [
+      { k: 'pin', label: 'The banking app', type: 'select', v: 'none', opts: [['none', 'Trusts any CA on the phone'], ['sys', 'Trusts only system CAs (Android 7+ default)'], ['pin', 'Pins the bank’s own public key']] },
+      { k: 'net', label: 'Network', type: 'select', v: 'cafe', opts: [['cafe', 'Attacker’s café Wi-Fi'], ['home', 'Home Wi-Fi, no attacker']] }
+    ],
+    tips: [
+      { t: 'Play with an app that trusts any CA. The fake certificate is accepted and the attacker reads the password.', play: true },
+      { t: 'Pin the bank’s key. The fake certificate has a different key, so the app refuses to connect.', set: { pin: 'pin' }, play: true },
+      { t: 'Switch to home Wi-Fi with pinning on. The real certificate matches the pin and everything works.', set: { pin: 'pin', net: 'home' }, play: true }
+    ],
+    frames(p) {
+      const evil = p.net === 'cafe', fr = [];
+      fr.push({ evil, st: 1, say: evil ? 'The app connects to bank.example. The café router intercepts the connection and answers itself.' : 'The app connects to bank.example over your home Wi-Fi.' });
+      fr.push({ evil, st: 2, say: evil ? 'The router sends a certificate for bank.example signed by the attacker’s CA, with the attacker’s public key inside.' : 'The bank sends its real certificate, signed by a public CA, with the bank’s own public key.' });
+      let ok;
+      if (!evil) { ok = true; fr.push({ evil, st: 3, ok, say: p.pin === 'pin' ? 'The app hashes the public key in the certificate and compares it with the pin built into the app. They match.' : 'The certificate chains to a trusted system CA, so it is accepted.' }); }
+      else if (p.pin === 'none') { ok = true; fr.push({ evil, st: 3, ok, say: 'The app accepts any CA the phone trusts, including the one the user installed. The fake certificate passes.' }); }
+      else if (p.pin === 'sys') { ok = false; fr.push({ evil, st: 3, ok, say: 'Since Android 7, apps ignore CAs that users install unless they opt in. The attacker’s CA is user installed, so the certificate is rejected.' }); }
+      else { ok = false; fr.push({ evil, st: 3, ok, say: 'The app hashes the public key in the certificate. It does not match the pin of the bank’s real key, whoever signed it. Connection refused.' }); }
+      const leak = evil && ok;
+      fr.push({ evil, st: 4, ok, end: leak ? 'bad' : 'good', say: leak ? 'The app sends the login over a connection the attacker can decrypt. The password is stolen. Never install profiles or certificates that a Wi-Fi page asks for.' : evil ? 'The app shows a connection error instead of leaking anything. The attacker sees only encrypted bytes or nothing.' : 'A normal, private connection. Pinning costs nothing on a safe network.' });
+      return fr;
+    },
+    paint(z, f) {
+      const c = z.col, g = z.g;
+      cbox(z, 14, 100, 130, 60, 'Banking app', { s: 14, b: true, fill: tint(z, 'blue', 0.25) });
+      cbox(z, 496, 100, 130, 60, 'bank.example', { s: 14, b: true, fill: tint(z, 'green', 0.25) });
+      if (f.evil) { cbox(z, 255, 100, 130, 60, 'Café router', { s: 14, b: true, fill: tint(z, 'red', 0.3) }); face(z, 320, 70, 16, f.end === 'bad' ? 'happy' : f.end === 'good' ? 'sad' : 'think', c.purple); }
+      if (f.st >= 1) { if (f.evil) { D.arrow(g, 146, 130, 252, 130, c.ink2, 2); D.line(g, 388, 130, 494, 130, c.line, 2, [4, 4]); } else D.arrow(g, 146, 130, 494, 130, c.ink2, 2); }
+      if (f.st >= 2) cbox(z, 150, 180, 340, 40, f.evil ? 'certificate: bank.example, signed by "Free WiFi CA"' : 'certificate: bank.example, signed by a public CA', { s: 12, b: true, mono: false, fill: f.evil ? tint(z, 'orange', 0.4) : tint(z, 'green', 0.3) });
+      if (f.st >= 3) { cbox(z, 150, 230, 340, 30, f.ok ? 'app check: accepted' : 'app check: REJECTED', { s: 13, b: true, fill: f.ok ? (f.evil ? tint(z, 'red', 0.35) : tint(z, 'green', 0.35)) : tint(z, 'green', 0.35) }); if (!f.ok) zap(z, 470, 245, 14); }
+      if (f.end === 'bad') { face(z, 79, 200, 18, 'sad'); banner(z, 296, 'Password stolen through a fake certificate', false); }
+      if (f.end === 'good') { party(z, 14, 166, 130, 100, 71); face(z, 79, 200, 18, 'happy'); banner(z, 296, f.evil ? 'Attack stopped: the app refused the fake' : 'Safe connection', true); }
+    }
+  });
+})();

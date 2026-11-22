@@ -10182,6 +10182,27 @@ function cyAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
         { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "cy-mobile", title: "Mobile security: sandboxes, permissions, signing and the OWASP Mobile Top 10", emoji: "4.2", page: "content/cyber-security/cy-mobile.html",
+        summary: "Sandboxes and permissions, signing and fake apps, device encryption and lock maths, TLS and pinning, spyware and SIM swaps, and the OWASP Mobile Top 10.",
+        keywords: ["mobile security", "Android", "iOS", "permissions", "app signing", "certificate pinning", "Secure Enclave", "Pegasus", "SIM swap", "OWASP Mobile Top 10"],
+        minutes: 80, counts: {"lessons": 10, "problems": 11, "quiz": 15, "assign": 3},
+        added: "2026-11-22",
+        sections: [
+        { id: "idea", title: "Why phones need their own security", emoji: "", group: "Lesson", keywords: ["mobile security", "Android", "iOS", "smartphone", "sandbox", "mobile threats", "UPI", "OTP", "lost phone"] },
+        { id: "sandbox", title: "The sandbox and permissions: least privilege in your pocket", emoji: "", group: "Lesson", keywords: ["app sandbox", "Linux user ID", "container", "permissions", "runtime permissions", "Android 6.0", "one time permission", "approximate location", "App Tracking Transparency", "photo picker", "privacy dashboard", "loan apps", "least privilege"] },
+        { id: "signing", title: "App signing, app stores and fake apps", emoji: "", group: "Lesson", keywords: ["app signing", "APK signature", "signing key", "repackaged app", "sideloading", "unknown sources", "App Store review", "Google Play Protect", "Joker malware", "Anatsa", "dropper", "accessibility abuse", "Play App Signing"] },
+        { id: "device", title: "Locks, encryption and the hardware that guards keys", emoji: "", group: "Lesson", keywords: ["device encryption", "file based encryption", "Data Protection", "Secure Enclave", "TEE", "StrongBox", "Android Keystore", "Keychain", "lock screen", "PIN", "unlock pattern", "389,112", "biometrics", "verified boot", "remote wipe", "Find My"] },
+        { id: "network", title: "Phones on hostile networks: TLS and certificate pinning", emoji: "", group: "Lesson", keywords: ["public Wi-Fi", "man in the middle", "TLS", "certificate authority", "user installed CA", "Wi-Fi profile", "Android 7", "network security configuration", "certificate pinning", "SPKI pin", "backup pin", "key rotation", "cleartext traffic"] },
+        { id: "advanced", title: "Spyware, zero click attacks and SIM swaps", emoji: "", group: "Lesson", keywords: ["Stagefright", "Pegasus", "NSO Group", "FORCEDENTRY", "zero click", "Citizen Lab", "Pegasus Project", "Lockdown Mode", "stalkerware", "SIM swap", "SIM PIN", "juice jacking", "security updates"] },
+        { id: "owasp", title: "Building safer apps: the OWASP Mobile Top 10", emoji: "", group: "Lesson", keywords: ["OWASP Mobile Top 10", "MASVS", "MASTG", "insecure data storage", "hard coded secrets", "Keystore", "Keychain", "deep links", "exported components", "obfuscation", "root detection", "jailbreak", "third party SDK", "DPDP Act"] },
+        { id: "versus", title: "Android and iOS security compared", emoji: "", group: "Lesson", keywords: ["Android versus iOS", "SELinux", "entitlements", "update policy", "Advanced Protection"] },
+        { id: "levels", title: "From beginner to expert", emoji: "", group: "Lesson", keywords: ["beginner", "expert", "mobile device management", "MDM", "memory tagging"] },
+        { id: "recap", title: "Chapter summary", emoji: "", group: "Lesson", keywords: ["summary", "recap"] },
+        { id: 'formulas', title: 'Formulas', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' },
+        { id: 'assign', title: 'Assignments', emoji: '', group: 'Check yourself' }
       ] }
     ] },
     { id: "cy-a5", title: "Certification revision", emoji: "5", step: 5, part: "advanced", level: "All levels", blurb: "Revising the whole subject for security certifications, interviews and university exams.", topics: [
