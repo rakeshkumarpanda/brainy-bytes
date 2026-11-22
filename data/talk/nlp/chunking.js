@@ -1,0 +1,6 @@
+/* Background voice talks for content/nlp/chunking.html, read by assets/voiceteach.js (see data/talk/README.md) */
+VT_TALK("nlp/chunking", {
+ "chunks": "Chunking, or shallow parsing, groups words into flat phrases such as noun phrases, the big red ball, or verb phrases, has been eating. It does not build a full tree, so it is faster and simpler than full parsing. Steven Abney described chunking in 1991. It is useful for extracting names, products and key phrases. Think of underlining the main phrases in a sentence without diagramming its grammar.",
+ "iob": "IOB tagging turns chunks into one tag per word. B marks the beginning of a chunk, I marks inside and O marks outside. The big red ball is B, I, I, I. Lance Ramshaw and Mitchell Marcus introduced this scheme in 1995, and it turns chunking into ordinary tagging, so any tagger can learn it. Think of marking where each group of friends starts in a queue.",
+ "ner": "Named entity tagging finds names of people, organisations, places and dates in text. It uses the same B, I and O tags with types, such as B person and I organisation. The CoNLL 2003 shared task became the standard benchmark. Banks, news agencies and search engines use it to pull facts from text. Think of a highlighter in four colours, one for each kind of name."
+});
