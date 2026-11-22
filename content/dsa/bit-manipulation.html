@@ -3240,7 +3240,7 @@ const OUTS = {"to_binary": {"py": "13 -> 1101 -> 13\n200 -> 11001000 -> 200\n255
   const D = {
     row(L) {
       const cls = L.cls || {}, ptr = L.ptr || {}, tag = L.tag || {};
-      const cells = L.cells.map((v, i) => cellHtml(v, cls[i], ptr[i], L.idx === false ? undefined : (L.base || 0) + i, tag[i], L.keys ? (L.id || 'r') + ':' + L.keys[i] : undefined)).join('');
+      const cells = L.cells.map((v, i) => cellHtml(v, cls[i], ptr[i], L.idx === false ? undefined : (L.base || 0) + i, tag[i], L.keys && L.keys[i] !== null && L.keys[i] !== undefined ? (L.id || 'r') + ':' + L.keys[i] : undefined)).join('');
       return `${lab(L.label)}<div class="pk-row${L.small ? ' pk-small' : ''}">${cells || '<span class="pk-empty">empty</span>'}</div>`;
     },
     grid(L) {
@@ -3770,7 +3770,7 @@ const OUTS = {"to_binary": {"py": "13 -> 1101 -> 13\n200 -> 11001000 -> 200\n255
 })();
 
 </script>
-<!-- pathskin --><script src="../../assets/pathskin.js" data-kicker="Step 2 · Topic 2 of 4 · Beginner"></script>
+<!-- pathskin --><script src="../../assets/pathskin.js" data-kicker="Step 2 · Topic 2 of 5 · Beginner"></script>
 <!-- pathskin --><script src="../../assets/voiceteach.js"></script>
 </body>
 </html>

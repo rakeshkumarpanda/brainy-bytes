@@ -54,7 +54,7 @@
   const D = {
     row(L) {
       const cls = L.cls || {}, ptr = L.ptr || {}, tag = L.tag || {};
-      const cells = L.cells.map((v, i) => cellHtml(v, cls[i], ptr[i], L.idx === false ? undefined : (L.base || 0) + i, tag[i], L.keys ? (L.id || 'r') + ':' + L.keys[i] : undefined)).join('');
+      const cells = L.cells.map((v, i) => cellHtml(v, cls[i], ptr[i], L.idx === false ? undefined : (L.base || 0) + i, tag[i], L.keys && L.keys[i] !== null && L.keys[i] !== undefined ? (L.id || 'r') + ':' + L.keys[i] : undefined)).join('');
       return `${lab(L.label)}<div class="pk-row${L.small ? ' pk-small' : ''}">${cells || '<span class="pk-empty">empty</span>'}</div>`;
     },
     grid(L) {
