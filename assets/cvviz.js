@@ -133,6 +133,8 @@ const CVZ = (() => {
       redraw(true);
       timer = setInterval(() => {
         if (!el.isConnected || z.step >= z.n) { stopPlay(); return; }
+        /* with "Voice on", wait until the voice has finished explaining this step (assets/voiceteach.js) */
+        if (window.__vtHold && window.__vtHold(el)) return;
         z.step++; redraw(true);
       }, spec.speed ? spec.speed(z) : 700);
     }

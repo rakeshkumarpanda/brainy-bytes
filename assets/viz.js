@@ -40,7 +40,8 @@ const VIZ = (() => {
     let n = 1, i = 0, timer = null;
     const go = j => { i = clamp(j, 0, n - 1); range.value = i; cnt.textContent = `${i} / ${n - 1}`; show(i); };
     const pause = () => { clearTimeout(timer); timer = null; pb.textContent = '▶ Play'; };
-    const tick = () => { if (i >= n - 1) { pause(); return; } go(i + 1); timer = setTimeout(tick, ms / +sp.value); };
+    /* with "Voice on", wait until the voice has finished explaining this step (assets/voiceteach.js) */
+    const tick = () => { if (i >= n - 1) { pause(); return; } if (window.__vtHold && window.__vtHold(host)) { timer = setTimeout(tick, 150); return; } go(i + 1); timer = setTimeout(tick, ms / +sp.value); };
     const play = () => { if (i >= n - 1) go(0); pb.textContent = '⏸ Pause'; timer = setTimeout(tick, 250); };
     host.addEventListener('click', e => {
       const a = (e.target.closest('button') || {}).dataset;
