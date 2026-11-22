@@ -1604,5 +1604,5 @@ T = {
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'practice': PRACTICE, 'quiz': QUIZ, 'calc': CALC,
     'viz': VIZ_JS, 'css': CSS,
     'prev': ('linked-lists', 'linked-lists', '🔗 Linked lists'),
-    'next': ('trees', 'trees', '🌲 Trees'),
+    'next': ('recursion', 'recursion', '🪆 Recursion'),
 }

@@ -2095,6 +2095,6 @@ T = {
     'minutes': 15,
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'practice': PRACTICE, 'quiz': QUIZ, 'calc': CALC,
     'viz': VIZ_JS, 'css': CSS,
-    'prev': ('stacks-queues', 'stacks-queues', '🥞 Stacks and queues'),
+    'prev': ('recursion', 'recursion', '🪆 Recursion'),
     'next': ('graphs', 'graphs', '🕸️ Graphs'),
 }

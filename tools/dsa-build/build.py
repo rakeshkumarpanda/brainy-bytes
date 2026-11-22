@@ -85,6 +85,8 @@ def run_one(lang, code):
         if plain.returncode:
             raise RuntimeError(f'{lang} program failed:\n{plain.stderr}')
         res = json.loads(r.stdout)
+        if res['trace']['end'].get('t') and plain.stdout.startswith(res['out']):
+            res['out'] = plain.stdout   # long run: the recording stops early, the plain run gives the full output
         if res['out'] != plain.stdout:
             raise RuntimeError(f'{lang} recording printed something different from the plain run:\n{res["out"]!r}\n{plain.stdout!r}')
     os.makedirs(CACHE, exist_ok=True)
