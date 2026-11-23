@@ -361,10 +361,10 @@ window.CATALOG = {
       emoji: '🗄️',
       color: '#00796b',
       layout: 'path',
-      blurb: 'A step by step path from what a database is to SELECT, joins, grouping, design and normal forms, then window functions, recursive queries, indexes, query plans, transactions and security, with every query running in your browser.',
-      intro: 'Follow the path one step at a time. You start with what data and databases are and run your first query, then learn to filter, sort, shape and group results, join many tables, build and change tables with constraints, and design a database with normal forms. The advanced steps cover window functions, recursive queries, indexes and B-trees, query plans, transactions and isolation levels, triggers, security and SQL at scale. Every query on these pages runs on the real SQLite inside your browser, every animation is worked out by that same engine from what you type, and every chapter has hands on labs that check your answer, plus a playground with three sample databases.',
+      blurb: 'A step by step path from what a database is to SELECT, joins, grouping, design and normal forms, then window functions, recursive queries, indexes, query plans, transactions, security, scaling and dialects, with every query running in your browser.',
+      intro: 'Follow the path one step at a time. You start with what data and databases are and run your first query, then learn to filter, sort, shape and group results, join many tables, build and change tables with constraints, and design a database with normal forms. The advanced steps cover window functions, recursive queries, indexes and B-trees, query plans, transactions and isolation levels, triggers, security, SQL at scale and the differences between engines, and the last step revises everything for exams and interviews. Every query on these pages runs on the real SQLite inside your browser, every animation is worked out by that same engine from what you type, and every chapter has hands on labs that check your answer, plus a playground with three sample databases.',
       tags: ['SELECT', 'Joins', 'GROUP BY', 'Design', 'Window functions', 'Indexes', 'Transactions'],
-      modules: sqlModules()
+      modules: sqlModules().concat(sheetModule('sql'))
     },
     {
       id: 'git',
@@ -1439,6 +1439,7 @@ function sheetModule(sid) {
     'api-manual-testing': ['content/api-testing/cheatsheet.html', 'The key idea of all 38 parts, every rule, table, tip and common mistake of the Manual API Testing course on one page, from HTTP methods, status codes and headers to auth, test design, pagination, rate limits, contracts, the OWASP API Top 10 and AI APIs. Search it, filter it, print it or download the PDF.', ['HTTP methods', 'status codes', 'headers', 'JSON', 'REST', 'Postman', 'JWT', 'OAuth', 'idempotency', 'pagination', 'rate limit', 'OWASP API Top 10', 'contract testing']],
     'api-automation': ['content/api-automation/cheatsheet.html', 'The key idea of every lesson, short code examples, tables, tips and common mistakes of all nine API automation tracks on one page, grouped by language: Rest Assured, Playwright and HttpClient in Java, requests and Playwright in Python, Postman, Playwright and fetch in JavaScript, and Playwright in TypeScript. Search it, filter it, print it or download the PDF.', ['Rest Assured', 'given when then', 'pytest', 'requests', 'Playwright request', 'Postman tests', 'Newman', 'fetch', 'JSON Schema', 'Zod', 'auth token', 'mocking'], 'eight'],
     'cyber-security': ['content/cyber-security/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from all six sections on one page: Foundations (CIA, risk, the maths, systems and networks), Cryptography (ciphers, AES, hashing, number theory, RSA, Diffie-Hellman, elliptic curves, PKI, post quantum), Network and Systems, Application Security, Security Operations and Advanced (attacks on ML, federated learning, differential privacy). Search it, filter it, print it or download the PDF.', ['CIA triad', 'risk', 'ALE', 'defence in depth', 'XOR', 'modular arithmetic', 'AES', 'SHA-256', 'birthday bound', 'RSA', 'Euler totient', 'Diffie-Hellman', 'elliptic curve', 'TLS', 'subnetting', 'CVSS', 'SQL injection', 'federated averaging', 'differential privacy'], 'fourteen'],
+    'sql': ['content/sql/cheatsheet.html', 'Every syntax card, key idea, table, memory aid and common mistake from the SQL and Databases chapters on one page, from SELECT, WHERE and NULL to GROUP BY, joins, subqueries, CREATE, UPSERT, views, normal forms, window functions, recursive CTEs, indexes, query plans, transactions, triggers, security, scaling and dialects. Search it, filter it, print it or download the PDF.', ['SELECT', 'WHERE', 'NULL', 'GROUP BY', 'HAVING', 'JOIN', 'subquery', 'UPSERT', 'CTE', 'normal forms', 'window functions', 'WITH RECURSIVE', 'index', 'EXPLAIN', 'ACID', 'isolation levels', 'SQL injection'], 'four'],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
   }[sid];
   return {
@@ -10741,6 +10742,22 @@ function sqlModules() {
         { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-revision", title: "Exam and interview revision", emoji: "9", step: 9, level: "All levels", blurb: "Revise the whole course with school questions, classic interview queries, a design answer and a mock paper.", topics: [
+      { id: "sql-exam", title: "Exam and interview revision", emoji: "9.1", page: "content/sql/sql-exam.html",
+        summary: "A chapter map, school questions, interview queries, a design answer and a mock paper.",
+        keywords: ["SQL exam", "SQL interview", "second highest salary", "mock test", "revision", "model answers"],
+        minutes: 60, counts: {"lessons": 6, "problems": 8, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "map", title: "The whole course on one page", emoji: "", group: "Lesson", keywords: ["revision map", "syllabus", "exam topics", "logical order", "course summary"] },
+        { id: "school", title: "School and first year questions", emoji: "", group: "Lesson", keywords: ["school SQL questions", "CBSE", "board exam", "WHERE vs HAVING", "DELETE vs DROP", "DDL vs DML", "short answers"] },
+        { id: "interview", title: "Classic interview queries", emoji: "", group: "Lesson", keywords: ["SQL interview questions", "second highest salary", "Nth highest", "self join", "anti join", "top per group", "interview traps"] },
+        { id: "design", title: "A design question, answered", emoji: "", group: "Lesson", keywords: ["schema design question", "model answer", "partial unique index", "3NF proof", "university exam"] },
+        { id: "mock", title: "Mock paper: hands on tasks", emoji: "", group: "Lesson", keywords: ["mock test", "practice paper", "hands on SQL", "timed tasks", "exam practice"] },
+        { id: "levels", title: "Where to go next", emoji: "", group: "Lesson", keywords: ["next steps", "practice", "Chinook", "Northwind", "CMU database course", "SIGMOD", "VLDB"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
