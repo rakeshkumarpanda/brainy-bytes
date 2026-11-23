@@ -10585,6 +10585,23 @@ function lxPowerModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-power-3", title: "Finding and packing files", emoji: "3", step: 3, part: "power", level: "Intermediate", blurb: "Search the file tree with find and xargs, and bundle and compress files with tar, gzip, xz and zip.", topics: [
+      { id: "find-files", title: "Finding files: find, xargs and locate", emoji: "3.1", page: "content/linux/find-files.html",
+        summary: "find by name, type, size and age, -o and -prune, -exec and -delete, xargs, locate and which.",
+        keywords: ["find", "xargs", "locate", "find -exec", "find -name", "find -size", "find -mtime", "print0", "which", "type", "search files"],
+        minutes: 45, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "find", title: "find: search the tree by name, type, size and age", emoji: "", group: "Lesson", keywords: ["find", "find -name", "find -type", "find -size", "find -mtime", "find -mmin", "find -newer", "find -empty", "find -perm", "find -user", "maxdepth"] },
+        { id: "combine", title: "Combining tests: and, or, not, prune", emoji: "", group: "Lesson", keywords: ["find -o", "find !", "find -not", "parentheses", "find -prune", "and or not", "operator precedence"] },
+        { id: "act", title: "Doing something with the results: -exec, -delete and xargs", emoji: "", group: "Lesson", keywords: ["find -exec", "{} \\;", "{} +", "find -delete", "xargs", "xargs -n", "xargs -I", "xargs -0", "print0", "xargs -P", "parallel"] },
+        { id: "locate", title: "Faster lookups: locate, which and type", emoji: "", group: "Lesson", keywords: ["locate", "plocate", "updatedb", "which", "type", "command -v", "PATH lookup", "builtin"] },
+        { id: "levels", title: "Finding files from school to research", emoji: "", group: "Lesson", keywords: ["fts", "getdents", "d_type", "ARG_MAX", "plocate", "io_uring", "inotify", "metadata index", "GUFI"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

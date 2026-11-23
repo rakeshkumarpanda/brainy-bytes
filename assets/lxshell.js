@@ -1707,55 +1707,74 @@ const LXSH = (() => {
   C.readlink = function (a) { const [f, rest] = opts(a); const n = this.node(this.abs(rest[0]), false); if (f.f) { this.out(this.abs(rest[0]) + '\n'); return 0; } if (!n || n.type !== 'l') return 1; this.out(n.target + '\n'); };
   C.find = function (a) {
     let i = 0; const starts = [];
-    while (a[i] && !a[i].startsWith('-') && a[i] !== '!' && a[i] !== '(') starts.push(a[i++]);
+    while (a[i] !== undefined && !/^-./.test(a[i]) && a[i] !== '!' && a[i] !== '(') starts.push(a[i++]);
     if (!starts.length) starts.push('.');
-    const tests = []; let exec = null, del = false, maxd = Infinity, mind = 0, neg = false, print0 = false;
-    for (; i < a.length; i++) {
-      const o = a[i], v = a[i + 1];
-      const add = fn => { const n = neg; tests.push(n ? (...x) => !fn(...x) : fn); neg = false; };
-      if (o === '!' || o === '-not') { neg = true; continue; }
-      if (o === '-name') { const re = globRe(v); add((n, nm) => re.test(nm)); i++; }
-      else if (o === '-iname') { const re = new RegExp(globRe(v).source, 'i'); add((n, nm) => re.test(nm)); i++; }
-      else if (o === '-type') { add(n => n.type === v || (v === 'c' && n.type === 'c')); i++; }
-      else if (o === '-path') { const re = globRe(v.replace(/\//g, '\u0001')); add((n, nm, p) => new RegExp(re.source.replace(/\[\^\/\]/g, '.').replace(/\u0001/g, '/')).test(p)); i++; }
-      else if (o === '-maxdepth') { maxd = +v; i++; }
-      else if (o === '-mindepth') { mind = +v; i++; }
-      else if (o === '-empty') add(n => n.type === 'd' ? !Object.keys(n.kids).length : this.size(n) === 0);
-      else if (o === '-size') { const m = /^([+-]?)(\d+)([ckMG]?)$/.exec(v); const unit = { c: 1, k: 1024, M: 1048576, G: 1073741824, '': 512 }[m[3]]; add(n => { const s = Math.ceil(this.size(n) / unit); return m[1] === '+' ? s > +m[2] : m[1] === '-' ? s < +m[2] : s === +m[2]; }); i++; }
-      else if (o === '-newer') { const r = this.node(this.abs(v)); add(n => r && n.mtime > r.mtime); i++; }
-      else if (o === '-mmin' || o === '-mtime') { const m = /^([+-]?)(\d+)$/.exec(v), per = o === '-mmin' ? 60000 : 86400000; add(n => { const age = Math.floor((this.clock - n.mtime) / per); return m[1] === '+' ? age > +m[2] : m[1] === '-' ? age < +m[2] : age === +m[2]; }); i++; }
-      else if (o === '-perm') { const want = parseInt(v.replace(/^[-/]/, ''), 8); add(n => v[0] === '-' ? (n.mode & want) === want : v[0] === '/' ? (n.mode & want) !== 0 : (n.mode & 0o7777) === want); i++; }
-      else if (o === '-user') { add(n => n.owner === v); i++; }
-      else if (o === '-exec') { const j = a.indexOf(';', i); const end = j < 0 ? a.indexOf('+', i) : j; exec = { cmd: a.slice(i + 1, end), plus: a[end] === '+' }; i = end; }
-      else if (o === '-delete') del = true;
-      else if (o === '-print' || o === '-a' || o === '-and') { /* the default action */ }
-      else if (o === '-print0') print0 = true;
-      else { this.eout(`find: unknown predicate '${o}'\n`); return 1; }
-    }
-    const hits = [];
-    starts.forEach(s => {
-      const root = this.node(this.abs(s));
-      if (!root) { this.eout(`find: '${s}': No such file or directory\n`); this.err = true; return; }
+    let maxd = Infinity, mind = 0, hasAction = false, delAll = false;
+    const plusRuns = [], toDelete = [];
+    const self = this;
+    /* expression grammar: or := and (-o and)*, and := not ((-a)? not)*, not := (! | -not)* prim, prim := ( or ) | test | action */
+    const toks = a.slice(i);
+    let k = 0;
+    const need = o => { if (toks[k] === undefined) throw new Error(`missing argument to \`${o}'`); return toks[k++]; };
+    const parseOr = () => { let l = parseAnd(); while (toks[k] === '-o' || toks[k] === '-or') { k++; const r = parseAnd(); const L = l; l = c => L(c) || r(c); } return l; };
+    const parseAnd = () => { let l = parseNot(); while (k < toks.length && toks[k] !== '-o' && toks[k] !== '-or' && toks[k] !== ')') { if (toks[k] === '-a' || toks[k] === '-and') k++; const r = parseNot(); const L = l; l = c => L(c) && r(c); } return l; };
+    const parseNot = () => { if (toks[k] === '!' || toks[k] === '-not') { k++; const e = parseNot(); return c => !e(c); } return prim(); };
+    const cmpNum = (spec, val) => { const m = /^([+-]?)(\d+)$/.exec(spec); if (!m) throw new Error(`invalid argument \`${spec}'`); return m[1] === '+' ? val > +m[2] : m[1] === '-' ? val < +m[2] : val === +m[2]; };
+    const prim = () => {
+      const o = toks[k++];
+      if (o === '(') { const e = parseOr(); if (toks[k++] !== ')') throw new Error("invalid expression; I was expecting to find a ')' somewhere but did not see one."); return e; }
+      if (o === '-name' || o === '-iname') { const re = new RegExp(globRe(need(o)).source, o === '-iname' ? 'i' : ''); return c => re.test(c.name); }
+      if (o === '-path' || o === '-wholename' || o === '-ipath') { const g = need(o); const re = new RegExp('^' + g.split('*').map(x => x.replace(/[.+^${}()|[\]\\?]/g, '\\$&')).join('.*').replace(/\\\?/g, '.') + '$', o === '-ipath' ? 'i' : ''); return c => re.test(c.path); }
+      if (o === '-type') { const v = need(o); return c => v.split(',').includes(c.n.type); }
+      if (o === '-maxdepth') { maxd = +need(o); return () => true; }
+      if (o === '-mindepth') { mind = +need(o); return () => true; }
+      if (o === '-empty') return c => (c.n.type === 'd' ? !Object.keys(c.n.kids).length : c.n.type === 'f' && self.size(c.n) === 0);
+      if (o === '-size') { const v = need(o), m = /^([+-]?)(\d+)([bckwMG]?)$/.exec(v); if (!m) throw new Error(`invalid -size type in \`${v}'`); const unit = { c: 1, w: 2, k: 1024, M: 1048576, G: 1073741824, b: 512, '': 512 }[m[3]]; return c => cmpNum(m[1] + m[2], Math.ceil(self.size(c.n) / unit)); }
+      if (o === '-newer') { const r = self.node(self.abs(need(o))); return c => !!r && c.n.mtime > r.mtime; }
+      if (o === '-mmin' || o === '-mtime') { const v = need(o), per = o === '-mmin' ? 60000 : 86400000; return c => cmpNum(v, Math.floor((self.clock - c.n.mtime) / per)); }
+      if (o === '-perm') { const v = need(o); let want; if (/^[-/]?[0-7]+$/.test(v)) want = parseInt(v.replace(/^[-/]/, ''), 8); else { want = 0; v.replace(/^[-/]/, '').split(',').forEach(cl => { const m = /^([ugoa]*)[+=]([rwxst]*)$/.exec(cl); if (!m) return; const who = m[1] || 'a'; [...m[2]].forEach(p => [['u', 6], ['g', 3], ['o', 0]].forEach(([w, sh]) => { if (who.includes(w) || who.includes('a')) want |= ({ r: 4, w: 2, x: 1 }[p] || 0) << sh; })); }); } return c => v[0] === '-' ? (c.n.mode & want) === want : v[0] === '/' ? (c.n.mode & want) !== 0 : (c.n.mode & 0o7777) === want; }
+      if (o === '-user') { const v = need(o); return c => c.n.owner === v; }
+      if (o === '-group') { const v = need(o); return c => c.n.group === v; }
+      if (o === '-readable' || o === '-writable' || o === '-executable') { const w = { '-readable': 'r', '-writable': 'w', '-executable': 'x' }[o]; return c => self.can(c.n, w); }
+      if (o === '-true') return () => true;
+      if (o === '-false') return () => false;
+      if (o === '-print' || o === '-print0') { hasAction = true; return c => { self.out(c.path + (o === '-print0' ? '\u0000' : '\n')); return true; }; }
+      if (o === '-ls') { hasAction = true; return c => { self.out(`${String(c.n.ino || 0).padStart(7)} ${self.size(c.n) > 0 ? 4 : 0} ${modeStr(c.n)} 1 ${c.n.owner} ${c.n.group} ${String(self.size(c.n)).padStart(6)} ${c.path}\n`); return true; }; }
+      if (o === '-prune') return c => { c.prune = true; return true; };
+      if (o === '-delete') { hasAction = true; delAll = true; return c => { toDelete.push(c.path); return true; }; }
+      if (o === '-exec' || o === '-ok') {
+        hasAction = true;
+        const cmd = []; while (k < toks.length && toks[k] !== ';' && !(toks[k] === '+' && toks[k - 1] === '{}')) cmd.push(toks[k++]);
+        if (k >= toks.length) throw new Error("missing argument to `-exec'");
+        if (toks[k++] === '+') { const run = { cmd, paths: [] }; plusRuns.push(run); return c => { run.paths.push(c.path); return true; }; }
+        return c => self.call(cmd.map(x => x.split('{}').join(c.path)), '') === 0;
+      }
+      throw new Error(o === undefined ? 'expected an expression' : `unknown predicate \`${o}'`);
+    };
+    let expr;
+    try { expr = toks.length ? parseOr() : () => true; if (k < toks.length) throw new Error(`paths must precede expression: \`${toks[k]}'`); } catch (e) { this.eout(`find: ${e.message}\n`); return 1; }
+    starts.forEach(st => {
+      const root = this.node(this.abs(st));
+      if (!root) { this.eout(`find: '${st}': No such file or directory\n`); this.err = true; return; }
       const walk = (n, p, d) => {
-        if (d >= mind && tests.every(t => t(n, d === 0 ? baseName(this.abs(s)) : n.name, p))) hits.push([p, n]);
-        if (n.type === 'd' && d < maxd) {
+        const c = { n, name: d === 0 ? (st === '/' ? '/' : baseName(st.replace(/\/+$/, '')) || st) : n.name, path: p, prune: false };
+        if (d >= mind && d <= maxd) { const ok = expr(c); if (ok && !hasAction) this.out(p + '\n'); }
+        if (n.type === 'd' && d < maxd && !c.prune) {
           if (!this.can(n, 'r') || !this.can(n, 'x')) { this.eout(`find: '${p}': Permission denied\n`); this.err = true; return; }
-          Object.keys(n.kids).sort().forEach(k => walk(n.kids[k], p.replace(/\/$/, '') + '/' + k, d + 1));
+          Object.keys(n.kids).sort().forEach(kk => walk(n.kids[kk], p.replace(/\/$/, '') + '/' + kk, d + 1));
         }
       };
-      walk(root, s, 0);
+      walk(root, st, 0);
     });
-    if (exec) {
-      if (exec.plus) this.call(exec.cmd.flatMap(x => x === '{}' ? hits.map(h => h[0]) : [x]), '');
-      else hits.forEach(([p]) => this.call(exec.cmd.map(x => x.split('{}').join(p)), ''));
-    } else if (del) hits.reverse().forEach(([p]) => this.removeNode(this.abs(p)));
-    else hits.forEach(([p]) => this.out(p + (print0 ? '\u0000' : '\n')));
+    plusRuns.forEach(r => { if (r.paths.length) this.call(r.cmd.flatMap(x => x === '{}' ? r.paths : [x]), ''); });
+    if (delAll) toDelete.reverse().forEach(p => { const n = this.node(this.abs(p), false); if (!n) return; if (n.type === 'd' && Object.keys(n.kids).length) { this.eout(`find: cannot delete '${p}': Directory not empty\n`); this.err = true; return; } this.removeNode(this.abs(p)); });
     return this.err ? 1 : 0;
   };
   C.xargs = function (a, input) {
-    const [f, rest] = opts(a, 'nI');
+    const z = a.includes('-0'); const [f, rest] = opts(a.filter(x => x !== '-0'), 'nId'); if (z) f['0'] = true;
     const cmd = rest.length ? rest : ['echo'];
-    const items = input.split(/\s+/).filter(Boolean);
+    const items = f['0'] ? input.split('\u0000').filter(x => x !== '') : f.d ? input.split(unesc(f.d)).filter(x => x !== '') : input.split(/\s+/).filter(Boolean);
+    if (f.r && !items.length) return 0;
     let code = 0;
     if (f.I) { items.length && lines(input).forEach(l => { code = this.call(cmd.map(x => x.split(f.I).join(l)), '') || code; }); return code; }
     const n = f.n ? +f.n : items.length || 1;

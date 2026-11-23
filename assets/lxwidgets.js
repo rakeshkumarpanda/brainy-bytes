@@ -357,6 +357,35 @@
     }
   }));
 
+  /* power 3.1 find: walk the tree and test every entry */
+  def('lx-find', el => W(el, {
+    title: 'Watch find walk the tree',
+    sub: 'Type the tests that follow find . (for example -type f -name "*.txt"). Pip visits every entry below your home folder, top down, and checks the tests.',
+    inputs: [{ k: 'expr', label: 'find .', type: 'text', val: "-type f -name '*.txt'", w: 360 }],
+    random: () => ({ expr: ["-type d", "-name '*.log'", "-type f -size -1k", "-empty", "-type f ! -name '*.txt'", "-path ./logs -prune -o -type f -print", "-type f \\( -name '*.jpg' -o -name '*.png' \\)", "-maxdepth 1 -type f"][Math.floor(Math.random() * 8)] }),
+    frames: v => {
+      const w = world(), expr = String(v.expr).trim();
+      const all = w.run('find .').out.replace(/\n$/, '').split('\n');
+      const r = w.run('find . ' + expr);
+      if (/^find: /m.test(r.out)) return [{ msg: 'find did not accept that: ' + esc(r.out.trim()), mood: 'sad', fx: 'shake', layers: [] }];
+      const hits = new Set(r.out.replace(/\n$/, '').split('\n').filter(Boolean));
+      const build = (path, name) => { const n = w.node(w.abs(path), false); return n && n.type === 'd' ? [name, Object.keys(n.kids).sort().map(k => build(path + '/' + k, k))] : [name]; };
+      const tree = build('.', '.');
+      const cls = {}, tag = {};
+      const L = () => [{ t: 'fs', label: 'Your home folder, as find sees it', tree, cls: Object.assign({}, cls), tag: Object.assign({}, tag) }];
+      const fr = [{ msg: `find starts at <code>.</code>, the current folder, and visits every entry below it, folder by folder. For each one it checks <code>${esc(expr)}</code>. Tests joined without -o must all be true.`, mood: 'think', layers: L() }];
+      const visited = all.filter(p => w.node(w.abs(p), false));
+      visited.forEach((p, i) => {
+        const yes = hits.has(p);
+        cls[p] = yes ? 'yes' : 'no'; tag[p] = yes ? 'match' : '';
+        const verbose = i < 8 || yes;
+        if (verbose) fr.push({ msg: `<code>${esc(p)}</code>: ${yes ? 'all tests pass, so find prints it.' : 'the tests fail (or the entry was skipped), so nothing is printed.'}`, mood: yes ? 'happy' : 'look', layers: L() });
+      });
+      fr.push({ msg: hits.size ? `${hits.size} match${hits.size === 1 ? '' : 'es'}. find prints them in the order it visited them.` : 'Nothing matched, so find prints nothing.', mood: hits.size ? 'wow' : 'think', fx: hits.size ? 'burst' : undefined, layers: L().concat([{ t: 'term', label: 'What the terminal shows', lines: [['c', 'find . ' + expr]].concat(r.out.replace(/\n$/, '').split('\n').filter(Boolean).map(x => ['o', x])) }]) });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
