@@ -322,8 +322,8 @@ html.md3 .lp-extra{background:var(--md-sc-lowest); border-radius:var(--md-shape-
 html.md3 .smodal .sbox,html.md3 .sbox{border-radius:var(--md-shape-xl)}
 
 /* ---------- 6. chapter pages (html.md3ch) ---------- */
-html.md3ch .wrap{max-width:1320px; padding-left:28px; padding-right:28px}
-html.md3ch.embedded .wrap{max-width:1360px}
+html.md3ch .wrap{max-width:1640px; padding-left:28px; padding-right:28px}
+html.md3ch.embedded .wrap{max-width:none}
 html.md3ch .card{border-radius:var(--md-shape-l); border-color:var(--md-outline-variant); box-shadow:none}
 html.md3ch .hero h1{font-weight:700; letter-spacing:-.8px}
 html.md3ch .chips .chip,html.md3ch .hero .chip{border-radius:var(--md-shape-xs)}
@@ -383,4 +383,75 @@ html.md3 body.subj .md-brand small{display:none}
 .cj-card{position:relative; margin:18px 0}
 .cj-card .md-fsb{top:14px; right:12px}
 .cj-card.md-fsel:fullscreen > .cj-host{zoom:1}
-html.md3ch .cv-wrap{max-width:1320px; padding-left:clamp(12px,2.4vw,28px); padding-right:clamp(12px,2.4vw,28px)}
+html.md3ch .cv-wrap{max-width:1640px; padding-left:clamp(12px,2.4vw,28px); padding-right:clamp(12px,2.4vw,28px)}
+
+/* ---------- 7. one animation look on every subject ----------
+   The CVZ widgets (cvviz.js: Python, AI, ML, CV, NLP, cyber, git, CUDA, Selenium and more) take the DSA card look:
+   a "Try it" badge with Reset beside it, the title, the picture with its settings, the guide bubble, then the
+   controls in one row at the bottom. The DOM keeps the classes voiceteach.js reads (.z-body .z-ctl, > .z-read).
+   .z-body and .z-stage become display:contents so their children can be placed on the card's own grid. */
+html.md3ch .cvz{--zc:var(--md-primary); display:grid; grid-template-columns:minmax(0,1fr) minmax(240px,320px); grid-template-areas:"bar bar" "head head" "cw panel" "read read" "ctl ctl" "tips tips"; column-gap:16px;
+  border:1.5px solid var(--md-outline-variant); border-radius:20px; overflow:visible; margin:22px 0; padding:14px 18px 16px;
+  background:linear-gradient(180deg, color-mix(in srgb,var(--md-primary) 7%,var(--md-sc-lowest)), var(--md-sc-lowest) 150px)}
+html.md3ch .cvz.md-nop{grid-template-columns:minmax(0,1fr); grid-template-areas:"bar" "head" "cw" "read" "ctl" "tips"}
+html.md3ch .cvz.md-fsel{padding-right:18px}
+html.md3ch .cvz > .z-body,html.md3ch .cvz .z-stage{display:contents}
+html.md3ch .cvz .md-zbar{grid-area:bar; display:flex; align-items:center; gap:8px; padding-right:52px; min-height:36px}
+html.md3ch .md-badge{display:inline-flex; align-items:center; gap:4px; font:800 12px var(--md-font); letter-spacing:.05em; text-transform:uppercase; color:var(--md-on-primary-container); background:var(--md-primary-container); border-radius:999px; padding:5px 12px}
+html.md3ch .cvz .md-zbar .rs{display:inline-flex; align-items:center; gap:4px; height:32px; padding:0 14px; border:1.5px solid var(--md-outline-variant); border-radius:999px; background:var(--md-sc-lowest); color:var(--md-on-surface); font:700 13px var(--md-font); cursor:pointer}
+html.md3ch .cvz .md-zbar .rs::before{content:"↻"; font-size:15px; line-height:1}
+html.md3ch .cvz .md-zbar .rs:hover{background:var(--md-sc-high)}
+html.md3ch .cvz .z-head{grid-area:head; padding:6px 0 10px}
+html.md3ch .cvz .z-head b{font:800 20px/1.25 var(--md-font); letter-spacing:-.2px; color:var(--md-on-surface)}
+html.md3ch .cvz .z-head span{margin-top:3px; font-size:15px; color:var(--md-on-surface-variant)}
+html.md3ch .cvz .z-cwrap{grid-area:cw; align-self:start; border:1px solid var(--md-outline-variant); border-radius:16px; background:var(--md-sc-lowest); padding:8px}
+html.md3ch .cvz .z-stage canvas{background:color-mix(in srgb,var(--md-primary) 4%,var(--md-sc-lowest)); border-radius:12px}
+html.md3ch .cvz .z-panel{grid-area:panel; align-self:start; border:1px solid var(--md-outline-variant); border-radius:16px; background:var(--md-sc-low); padding:14px 16px; gap:12px}
+html.md3ch .cvz.md-nop .z-panel{display:none}
+html.md3ch .cvz .z-p label{font:700 13px var(--md-font); color:var(--md-on-surface)}
+html.md3ch .cvz .z-p label output{color:var(--md-primary)}
+html.md3ch .cvz .z-p input[type=range],html.md3ch .cvz .z-p.chk input{accent-color:var(--md-primary)}
+html.md3ch .cvz .z-p select,html.md3ch .cvz .z-p input[type=number],html.md3ch .cvz .z-p input[type=text],html.md3ch .cvz .z-p textarea{border:1.5px solid var(--md-outline-variant); border-radius:12px; background:var(--md-sc-lowest); padding:8px 12px; font-size:14px}
+html.md3ch .cvz .z-p select:focus,html.md3ch .cvz .z-p input:focus,html.md3ch .cvz .z-p textarea:focus{outline:2px solid var(--md-primary); outline-offset:-1px}
+/* the guide bubble, the same as Pip in the DSA animations */
+html.md3ch .cvz > .z-read{grid-area:read; position:relative; margin:14px 0 0 58px; padding:26px 16px 12px; border:0 !important; border-radius:6px 20px 20px 20px; background:color-mix(in srgb,var(--md-primary) 11%,var(--md-sc-lowest)); color:var(--md-on-surface); font-size:15px; line-height:1.6; overflow:visible; min-height:48px; box-shadow:none}
+html.md3ch .cvz > .z-read::before{content:"Pip"; position:absolute; top:8px; left:16px; font:800 11.5px var(--md-font); letter-spacing:.02em; color:var(--md-primary)}
+html.md3ch .cvz > .z-read::after{content:"🤔"; position:absolute; left:-58px; top:0; width:44px; height:44px; display:grid; place-items:center; font-size:24px; border-radius:50%; background:var(--md-primary-container)}
+html.md3ch .cvz > .z-read:empty{display:block}
+html.md3ch .cvz > .z-read:empty::before{content:"Pip"}
+html.md3ch .cvz > .z-read > :first-child{margin-top:0}
+html.md3ch .cvz > .z-read table,html.md3ch .cvz > .z-read pre{max-width:100%; overflow-x:auto; display:block}
+/* the controls row at the bottom: Play is the filled pill, the rest are outlined */
+html.md3ch .cvz .z-ctl{grid-area:ctl; display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:14px}
+html.md3ch .cvz .z-ctl button{height:40px; min-width:40px; padding:0 14px; border:1.5px solid var(--md-outline-variant); border-radius:12px; background:var(--md-sc-lowest); color:var(--md-on-surface); font:700 14px var(--md-font); display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; transition:background .2s, border-radius .35s var(--md-spring)}
+html.md3ch .cvz .z-ctl button:hover{background:var(--md-sc-high)}
+html.md3ch .cvz .z-ctl button.play{order:2; background:var(--md-primary); color:var(--md-on-primary); border-color:var(--md-primary); padding:0 20px; font-size:15px; border-radius:999px}
+html.md3ch .cvz .z-ctl button.play:hover{background:color-mix(in srgb,var(--md-primary) 88%,#000)}
+html.md3ch .cvz .z-ctl button.play::before{content:"▶"; font-size:13px}
+html.md3ch .cvz .z-ctl button.play.md-run::before{content:"❚❚"; font-size:11px; letter-spacing:-1px}
+html.md3ch .cvz .z-ctl button.bk{order:1}
+html.md3ch .cvz .z-ctl button.bk::before{content:"◀"; font-size:12px}
+html.md3ch .cvz .z-ctl button.stp{order:3}
+html.md3ch .cvz .z-ctl button.stp::after{content:"▶"; font-size:12px}
+html.md3ch .cvz .z-ctl > :not(button){order:5}
+html.md3ch .cvz .z-ctl > .vt-vb{order:4; border-style:dashed; border-color:var(--md-primary); color:var(--md-primary)}
+html.md3ch .cvz .z-ctl > .vt-vb.on{border-style:solid; background:var(--md-primary-container)}
+html.md3ch .cvz .z-ctl .z-pos{order:6; margin-left:auto; font:600 13px var(--md-mono,"Roboto Mono",monospace); color:var(--md-on-surface-variant)}
+html.md3ch .cvz .z-ctl .rs{order:7}
+html.md3ch .cvz > .z-tips{grid-area:tips; margin-top:16px; padding:14px 16px; border:0; border-radius:16px; background:var(--md-sc-low)}
+html.md3ch .cvz > .z-tips h4{display:flex; align-items:center; gap:6px; color:var(--md-on-surface-variant); font:800 12px var(--md-font); letter-spacing:.06em}
+html.md3ch .cvz > .z-tips h4::before{content:"💡"; font-size:14px}
+html.md3ch .cvz > .z-tips li{margin:6px 0; line-height:1.55}
+html.md3ch .cvz > .z-tips button{border:0; background:var(--md-secondary-container); color:var(--md-on-secondary-container); border-radius:999px; padding:3px 12px; font:700 12.5px var(--md-font)}
+html.md3ch .cvz > .z-tips button:hover{background:var(--md-primary); color:var(--md-on-primary)}
+@media (max-width:900px){
+  html.md3ch .cvz{grid-template-columns:minmax(0,1fr); grid-template-areas:"bar" "head" "cw" "panel" "read" "ctl" "tips"; padding:12px}
+  html.md3ch .cvz .z-panel{margin-top:12px}
+  html.md3ch .cvz > .z-read{margin-left:0; margin-top:60px}
+  html.md3ch .cvz > .z-read::after{left:0; top:-52px}
+}
+/* every subject accent becomes the Material primary, so the subjects no longer each have their own colour */
+html.md3ch:root{--cv:var(--md-primary); --cv-soft:var(--md-primary-container); --cv-line:color-mix(in srgb,var(--md-primary) 45%,var(--md-sc-lowest))}
+/* the step line inside the bubble needs no box of its own */
+html.md3ch .cvz > .z-read .cai-now{border:0; background:transparent; padding:0; margin:0 0 6px; border-radius:0}
+html.md3ch.embedded .cv-wrap{max-width:none}

@@ -61,8 +61,31 @@
       });
     });
   }
+  /* ---------- the CVZ widgets get the DSA card look ----------
+     A badge row on top with Reset in it, and a class when the widget has no settings panel. cvviz.js builds the
+     widget again on Reset, so this runs after every build (the bar is gone then). Reset keeps its own click handler,
+     because the node is moved, not copied. The Play button gets a class while it plays, for its pause icon. */
+  function skinCvz(root = document) {
+    $$('.cvz[data-on]', root).forEach(el => {
+      if ($(':scope > .md-zbar', el)) return;
+      const bar = document.createElement('div');
+      bar.className = 'md-zbar';
+      bar.innerHTML = '<span class="md-badge">🎬 Try it</span>';
+      el.prepend(bar);
+      const rs = $('.z-ctl .rs', el);
+      if (rs) bar.appendChild(rs);
+      const panel = $('.z-panel', el);
+      el.classList.toggle('md-nop', !panel || !panel.children.length);
+      const play = $('.z-ctl .play', el);
+      if (play) {
+        const mark = () => play.classList.toggle('md-run', play.textContent.trim() === 'Pause');
+        new MutationObserver(mark).observe(play, { childList: true, characterData: true, subtree: true });
+        mark();
+      }
+    });
+  }
   let pend = 0;
-  new MutationObserver(() => { if (!pend) pend = requestAnimationFrame(() => { pend = 0; addAnimButtons(); }); })
+  new MutationObserver(() => { if (!pend) pend = requestAnimationFrame(() => { pend = 0; skinCvz(); addAnimButtons(); }); })
     .observe(document.body || html, { childList: true, subtree: true });
 
   /* ---------- the lesson panel ---------- */
@@ -150,6 +173,7 @@
   /* the engines build their tabs while the page loads, so start once they are done */
   function start() {
     try { buildLessons(); } catch (e) { console.warn('Lesson panel', e); }
+    skinCvz();
     addAnimButtons();
     pageButton();
   }
