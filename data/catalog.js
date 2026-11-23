@@ -10601,6 +10601,21 @@ function lxPowerModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "archives", title: "Archives and compression: tar, gzip, xz and zip", emoji: "3.2", page: "content/linux/archives.html",
+        summary: "tar -c -t -x, gzip and xz, zip and unzip, streaming backups and checking them.",
+        keywords: ["tar", "gzip", "gunzip", "zcat", "xz", "bzip2", "zstd", "zip", "unzip", "tar.gz", "archive", "compress", "backup"],
+        minutes: 45, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "tar", title: "tar: many files in, one archive out", emoji: "", group: "Lesson", keywords: ["tar", "tar -c", "tar -x", "tar -t", "tar -v", "tar -f", "tar -C", "archive", "extract", "tape archive"] },
+        { id: "squeeze", title: "Compression: gzip, bzip2, xz and zstd", emoji: "", group: "Lesson", keywords: ["gzip", "gunzip", "zcat", "bzip2", "xz", "zstd", "tar -z", "tar -J", "tar -j", "tar.gz", "tgz", "compression level", "DEFLATE", "LZMA"] },
+        { id: "zip", title: "zip and unzip: the format everyone can open", emoji: "", group: "Lesson", keywords: ["zip", "unzip", "zip -r", "unzip -l", "unzip -d", "unzip -o", "central directory", "zip vs tar"] },
+        { id: "backup", title: "Real backups: pipes, ssh, increments and safety", emoji: "", group: "Lesson", keywords: ["tar -f -", "tar ssh", "backup", "strip-components", "incremental backup", "listed-incremental", "snapshot", "sha256sum", "restore test", "3-2-1"] },
+        { id: "levels", title: "Archives and compression from school to research", emoji: "", group: "Lesson", keywords: ["tar format", "512 byte block", "record size", "ustar", "pax", "LZ77", "Huffman", "LZMA2", "ANS", "reproducible builds", "CVE-2024-3094", "xz backdoor"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

@@ -386,6 +386,43 @@
     }
   }));
 
+  /* power 3.2 archives: tar packs files into blocks, then gzip or xz squeezes the result */
+  def('lx-tar', el => W(el, {
+    title: 'Pack, then squeeze',
+    sub: 'Name files or folders from your home folder and pick a format. Pip packs each one into the archive block by block, then compresses it, and shows the sizes the practice shell measures.',
+    inputs: [{ k: 'files', label: 'Files and folders', type: 'text', val: 'logs notes.txt', w: 300 },
+             { k: 'fmt', label: 'Format', type: 'seg', val: 'gz', opts: [['tar', 'tar only'], ['gz', 'tar + gzip'], ['xz', 'tar + xz'], ['zip', 'zip']] }],
+    random: () => ({ files: ['logs', 'notes.txt poem.txt', 'scripts logs', 'marks.csv fruits.txt notes.txt', 'photos'][Math.floor(Math.random() * 5)], fmt: ['tar', 'gz', 'xz', 'zip'][Math.floor(Math.random() * 4)] }),
+    frames: v => {
+      const w = world(), names = String(v.files).trim().split(/\s+/).filter(Boolean), fmt = v.fmt;
+      if (!names.length) return [{ msg: 'Type at least one file or folder, for example logs notes.txt.', mood: 'think', layers: [] }];
+      const miss = names.filter(n => !w.node(w.abs(n)));
+      if (miss.length) return [{ msg: `${esc(miss.join(', '))} is not in your home folder. Try logs, scripts, photos, notes.txt, poem.txt, fruits.txt or marks.csv.`, mood: 'sad', fx: 'shake', layers: [] }];
+      const items = []; names.forEach(n => w.collect(w.abs(n), n, items, () => false));
+      const out = fmt === 'tar' ? 'backup.tar' : fmt === 'gz' ? 'backup.tar.gz' : fmt === 'xz' ? 'backup.tar.xz' : 'backup.zip';
+      const cmd = fmt === 'zip' ? `zip -r ${out} ${names.join(' ')}` : `tar -c${fmt === 'gz' ? 'z' : fmt === 'xz' ? 'J' : ''}vf ${out} ${names.join(' ')}`;
+      const size = it => it.data ? new TextEncoder().encode(it.data).length : 0;
+      const raw = items.reduce((t, it) => t + size(it), 0);
+      const boxes = (k, cls) => items.map((it, i) => [it.path, it.type === 'd' ? 'folder' : size(it) + ' bytes', i < k ? cls : i === k ? 'cur' : '']);
+      const fr = [{ msg: `<code>${esc(cmd)}</code>. ${fmt === 'zip' ? 'zip packs and compresses each file on its own, in one step.' : 'tar first glues everything into one file. It does not compress anything by itself.'} Together the files hold ${raw} bytes of data.`, mood: 'think', layers: [{ t: 'flow', label: 'Going into the archive', items: boxes(-1, 'done') }] }];
+      let blocks = 0;
+      items.forEach((it, i) => {
+        const b = 1 + Math.ceil(size(it) / 512); blocks += b;
+        if (fmt === 'zip') fr.push({ msg: `<code>${esc(it.path)}</code>: zip writes a small header, then the ${it.type === 'd' ? 'folder entry' : 'data, squeezed if that makes it smaller'}.`, mood: 'look', layers: [{ t: 'flow', label: 'Going into the archive', items: boxes(i, 'done') }] });
+        else fr.push({ msg: `<code>${esc(it.path)}</code>: one 512 byte header block with its name, owner, mode and time${it.type === 'd' ? '. A folder has no data.' : `, then ${b - 1} data block${b - 1 === 1 ? '' : 's'} of 512 bytes for its ${size(it)} bytes.`} Running total: ${blocks} block${blocks === 1 ? "" : "s"}.`, mood: 'look', layers: [{ t: 'flow', label: 'Going into the archive', items: boxes(i, 'done') }] });
+      });
+      const r = w.run(cmd), nd = w.node(w.abs(out)), fin = nd ? w.size(nd) : 0;
+      if (fmt !== 'zip') {
+        const tarBytes = (blocks + 2) * 512, rec = Math.ceil(tarBytes / 10240) * 10240;
+        fr.push({ msg: `Two empty blocks mark the end: ${blocks + 2} blocks, ${tarBytes} bytes. GNU tar then pads the file to a whole record of 20 blocks (10240 bytes), so the tar is <b>${rec} bytes</b>, bigger than the data itself.`, mood: 'wow', layers: [{ t: 'flow', label: 'Sizes', items: [['data', raw + ' bytes', 'look'], ['tar', rec + ' bytes', 'cur']] }] });
+        if (fmt !== 'tar') fr.push({ msg: `${fmt === 'gz' ? 'gzip' : 'xz'} now squeezes the whole tar stream. All that padding is zeros, which compress to almost nothing, so the final file is about <b>${fin} bytes</b>. Real numbers on a real machine differ a little.`, mood: 'happy', layers: [{ t: 'flow', label: 'Sizes', items: [['data', raw + ' bytes', 'look'], ['tar', rec + ' bytes', 'done'], [out, fin + ' bytes', 'yes']] }] });
+      } else fr.push({ msg: `The finished zip is about <b>${fin} bytes</b>. Each file can be pulled out on its own, without reading the others.`, mood: 'happy', layers: [{ t: 'flow', label: 'Sizes', items: [['data', raw + ' bytes', 'look'], [out, fin + ' bytes', 'yes']] }] });
+      const ls = w.run('ls -l ' + out).out;
+      fr.push({ msg: 'Done. The original files are still there. Archiving copies them, it does not move them.', mood: 'happy', fx: 'burst', layers: [{ t: 'term', label: 'What the terminal shows', lines: [['c', cmd]].concat(r.out.replace(/\n$/, '').split('\n').filter(Boolean).map(x => ['o', x])).concat([['c', 'ls -l ' + out], ['o', ls.trim()]]) }] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

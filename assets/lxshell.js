@@ -50,7 +50,7 @@ const LXSH = (() => {
       ['/var/www/index.html', '<h1>It works</h1>\n', 0o644, 'root']
     ]
   };
-  const CMDS = 'alias awk basename bash cal cat cd chmod chown clear cp cut date df diff dirname du echo env exit export expr false file find free grep groups head help history hostname id jobs kill less ln ls man mkdir more mv nl printenv printf ps pwd readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tee test touch tr tree true type umask unalias uname uniq unset uptime wc which whoami xargs'.split(' ');
+  const CMDS = 'alias awk basename bash bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp cut date df diff dirname du echo env exit export expr false file find free grep groups gunzip gzip head help history hostname id jobs kill less ln ls man mkdir more mv nl printenv printf ps pwd readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wc which whoami xargs xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -152,7 +152,7 @@ const LXSH = (() => {
       return ((n.mode >> sh) & bit) !== 0;
     }
     inGroup(g) { if (g === this.user) return true; const row = (this.node('/etc/group').data || '').split('\n').find(l => l.startsWith(g + ':')); return !!row && row.split(':')[3].split(',').includes(this.user); }
-    size(n) { return n.type === 'd' ? 4096 : n.type === 'l' ? n.target.length : n.type === 'c' ? 0 : enc(n.data); }
+    size(n) { if (n.type === 'f' && n.data && n.data.charCodeAt(0) === 0 && this.unpack && this.unpack(n.data)) return this.unpack(n.data).size; return n.type === 'd' ? 4096 : n.type === 'l' ? n.target.length : n.type === 'c' ? 0 : enc(n.data); }
     tilde(p) { return p === HOME ? '~' : p.startsWith(HOME + '/') ? '~' + p.slice(HOME.length) : p; }
     prompt() { return { user: this.user, host: HOST, dir: this.tilde(this.cwd), sign: this.user === 'root' ? '#' : '$' }; }
 
@@ -701,7 +701,13 @@ const LXSH = (() => {
     history: 'history  list the commands you typed. !N runs command N again, !! runs the last one.',
     sudo: 'sudo COMMAND  run one command as root. In this practice shell no password is asked.',
     ps: 'ps [aux]  list processes.',
-    kill: 'kill [-SIGNAL] PID  send a signal to a process. The default is TERM (15).'
+    kill: 'kill [-SIGNAL] PID  send a signal to a process. The default is TERM (15).',
+    tar: 'tar -c|-x|-t [-v] [-z|-J|-j] -f ARCHIVE [-C DIR] [FILE]...  bundle files into one archive. -c create, -x extract, -t list, -f the archive file, -z gzip, -J xz, -j bzip2, -C work inside DIR.',
+    gzip: 'gzip [-d] [-k] [-c] [-l] [-r] FILE...  compress files to FILE.gz. -d decompress, -k keep the original, -c write to standard output, -l show sizes.',
+    xz: 'xz [-d] [-k] [-c] FILE...  compress files to FILE.xz, smaller than gzip but slower.',
+    bzip2: 'bzip2 [-d] [-k] [-c] FILE...  compress files to FILE.bz2.',
+    zip: 'zip [-r] [-q] ARCHIVE.zip FILE...  make a zip archive. -r includes folders and everything inside.',
+    unzip: 'unzip [-l] [-o] [-q] ARCHIVE.zip [-d DIR]  extract a zip archive. -l lists it, -d extracts into DIR, -o overwrites without asking.'
   };
   const C = {};
   C.pwd = function () { this.out(this.cwd + '\n'); };
@@ -1671,7 +1677,8 @@ const LXSH = (() => {
     a.forEach(t => {
       const n = this.node(this.abs(t), false);
       if (!n) { this.out(`${t}: cannot open \`${t}' (No such file or directory)\n`); return; }
-      const what = n.type === 'd' ? 'directory' : n.type === 'l' ? `symbolic link to ${n.target}` : n.type === 'c' ? 'character special (1/3)' : /^#!practice/.test(n.data) ? 'ELF 64-bit LSB pie executable, x86-64' : /^#!.*bash/.test(n.data) ? 'Bourne-Again shell script, ASCII text executable' : n.data === 'JPEGDATA' ? 'JPEG image data' : n.data === 'PNGDATA' ? 'PNG image data' : !n.data ? 'empty' : /\.csv$/.test(t) ? 'CSV ASCII text' : /^</.test(n.data) ? 'HTML document, ASCII text' : 'ASCII text';
+      const pk = n.type === 'f' && this.unpack(n.data), PKD = { tar: 'POSIX tar archive (GNU)', gz: 'gzip compressed data, from Unix', xz: 'XZ compressed data, checksum CRC64', bz2: 'bzip2 compressed data, block size = 900k', zip: 'Zip archive data, at least v1.0 to extract' };
+      const what = pk ? (pk.kind === 'gz' && pk.name ? `gzip compressed data, was "${pk.name}", from Unix` : PKD[pk.kind]) : n.type === 'd' ? 'directory' : n.type === 'l' ? `symbolic link to ${n.target}` : n.type === 'c' ? 'character special (1/3)' : /^#!practice/.test(n.data) ? 'ELF 64-bit LSB pie executable, x86-64' : /^#!.*bash/.test(n.data) ? 'Bourne-Again shell script, ASCII text executable' : n.data === 'JPEGDATA' ? 'JPEG image data' : n.data === 'PNGDATA' ? 'PNG image data' : !n.data ? 'empty' : /\.csv$/.test(t) ? 'CSV ASCII text' : /^</.test(n.data) ? 'HTML document, ASCII text' : 'ASCII text';
       this.out(`${t}: ${what}\n`);
     });
   };
@@ -1770,6 +1777,295 @@ const LXSH = (() => {
     if (delAll) toDelete.reverse().forEach(p => { const n = this.node(this.abs(p), false); if (!n) return; if (n.type === 'd' && Object.keys(n.kids).length) { this.eout(`find: cannot delete '${p}': Directory not empty\n`); this.err = true; return; } this.removeNode(this.abs(p)); });
     return this.err ? 1 : 0;
   };
+  /* ---------- archives and compression: tar, gzip, xz, bzip2, zip ----------
+     A packed file holds a short marker string, and the real contents live in this.packs, so a packed file can be
+     copied, moved, piped and redirected like any other file. Sizes of compressed files are estimates. */
+  const PKRE = /^\u0000PK(\d+)\u0000$/;
+  const ZK = { gz: { ext: '.gz', cmd: 'gzip', name: 'gzip' }, xz: { ext: '.xz', cmd: 'xz', name: 'xz' }, bz2: { ext: '.bz2', cmd: 'bzip2', name: 'bzip2' } };
+  const isoTime = ms => new Date(ms).toISOString().slice(0, 16).replace('T', ' ');
+  World.prototype.pack = function (p) { this.packs = this.packs || []; this.packs.push(p); return '\u0000PK' + (this.packs.length - 1) + '\u0000'; };
+  World.prototype.unpack = function (s) { const m = PKRE.exec(s || ''); return m && this.packs ? this.packs[+m[1]] : null; };
+  /* how many bytes of real information a string holds: tar padding and headers squeeze down to almost nothing */
+  World.prototype.info = function (s) { const p = this.unpack(s); if (!p) return enc(s || ''); if (p.kind === 'tar' || p.kind === 'zip') return p.items.reduce((t, x) => t + 40 + (x.data ? this.info(x.data) : 0), 0); return p.size; };
+  World.prototype.squeeze = function (kind, data, name) {
+    const el = this.info(data);
+    const body = el < 64 ? el + 2 : Math.ceil(el * 0.4) + 30;
+    const size = kind === 'gz' ? 18 + (name ? enc(name) + 1 : 0) + body : kind === 'xz' ? Math.ceil((60 + el * 0.42) / 4) * 4 : 40 + Math.ceil(el * 0.45);
+    return this.pack({ kind, name, inner: data, size, usize: this.unpack(data) ? this.unpack(data).size : enc(data) });
+  };
+  /* turn a folder tree into archive items, in sorted order */
+  World.prototype.collect = function (path, member, items, skip) {
+    const n = this.node(path, false);
+    if (!n) return false;
+    if (skip(member)) return true;
+    if (n.type === 'd') {
+      items.push({ path: member.replace(/\/*$/, '/'), type: 'd', mode: n.mode, owner: n.owner, group: n.group, mtime: n.mtime });
+      if (!this.can(n, 'r') || !this.can(n, 'x')) { this.eout(`${this.cmdName || 'tar'}: ${member}: Cannot open: Permission denied\n`); this.err = true; return true; }
+      Object.keys(n.kids).sort().forEach(k => this.collect(path + '/' + k, member.replace(/\/*$/, '/') + k, items, skip));
+    } else if (n.type === 'l') items.push({ path: member, type: 'l', mode: 0o777, owner: n.owner, group: n.group, mtime: n.mtime, target: n.target });
+    else {
+      if (!this.can(n, 'r')) { this.eout(`${this.cmdName || 'tar'}: ${member}: Cannot open: Permission denied\n`); this.err = true; return true; }
+      items.push({ path: member, type: 'f', mode: n.mode, owner: n.owner, group: n.group, mtime: n.mtime, data: n.data });
+    }
+    return true;
+  };
+  /* write archive items under a folder. Returns false when a step was refused */
+  World.prototype.lay = function (base, it, keepOld) {
+    const p = norm(base + '/' + it.path);
+    const parent = dirName(p);
+    if (!this.node(parent)) this.mkdirs(parent);
+    const dir = this.node(parent);
+    if (!dir || dir.type !== 'd' || !this.can(dir, 'w')) return 'Cannot open: Permission denied';
+    const old = this.node(p, false);
+    if (it.type === 'd') { if (!old) this.mk(p, 'd', it.mode & ~this.umask & 0o7777, this.user).mtime = it.mtime; return ''; }
+    if (old && keepOld) return 'Cannot open: File exists';
+    if (old && old.type === 'd') return 'Cannot open: Is a directory';
+    const n = this.mk(p, it.type, it.type === 'l' ? 0o777 : it.mode & ~this.umask & 0o7777, this.user, it.type === 'l' ? it.target : it.data);
+    n.mtime = it.mtime;
+    return '';
+  };
+
+  C.tar = function (a0, input) {
+    const a = a0.slice();
+    if (a[0] && !a[0].startsWith('-')) a[0] = '-' + a[0];
+    let mode = '', file = null, dir = null, z = '', v = 0, auto = false, keep = false, strip = 0;
+    const ex = [], names = [];
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      if (x.startsWith('--')) {
+        const [k, val] = x.slice(2).split(/=(.*)/s);
+        const need = () => val !== undefined ? val : a[++i];
+        if (k === 'create') mode = 'c'; else if (k === 'extract' || k === 'get') mode = 'x'; else if (k === 'list') mode = 't'; else if (k === 'append') mode = 'r';
+        else if (k === 'file') file = need(); else if (k === 'directory') dir = need(); else if (k === 'exclude') ex.push(need());
+        else if (k === 'gzip' || k === 'gunzip') z = 'gz'; else if (k === 'xz') z = 'xz'; else if (k === 'bzip2') z = 'bz2';
+        else if (k === 'verbose') v++; else if (k === 'auto-compress') auto = true; else if (k === 'keep-old-files') keep = true;
+        else if (k === 'strip-components') strip = +need();
+        else if (k === 'sort') need();
+        else { this.eout(`tar: unrecognized option '${x}'\nTry 'tar --help' or 'tar --usage' for more information.\n`); return 2; }
+        continue;
+      }
+      if (x.startsWith('-') && x.length > 1) {
+        for (let j = 1; j < x.length; j++) {
+          const ch = x[j];
+          if ('ctxr'.includes(ch)) mode = ch; else if (ch === 'v') v++; else if (ch === 'z') z = 'gz'; else if (ch === 'J') z = 'xz'; else if (ch === 'j') z = 'bz2';
+          else if (ch === 'a') auto = true; else if (ch === 'k') keep = true;
+          else if (ch === 'f' || ch === 'C') { const val = x.slice(j + 1) || a[++i]; if (ch === 'f') file = val; else dir = val; break; }
+          else { this.eout(`tar: invalid option -- '${ch}'\nTry 'tar --help' or 'tar --usage' for more information.\n`); return 2; }
+        }
+        continue;
+      }
+      names.push(x);
+    }
+    const fatal = m => { this.eout(`tar: ${m}\ntar: Error is not recoverable: exiting now\n`); return 2; };
+    if (!mode) { this.eout("tar: You must specify one of the '-Acdtrux', '--delete' or '--test-label' options\nTry 'tar --help' or 'tar --usage' for more information.\n"); return 2; }
+    const base = dir ? this.abs(dir) : this.cwd;
+    if (dir && (!this.node(base) || this.node(base).type !== 'd')) return fatal(`${dir}: Cannot open: No such file or directory`);
+    if (mode === 'c' || mode === 'r') {
+      if (!names.length) return fatal('Cowardly refusing to create an empty archive');
+      if (!file) return fatal('Refusing to write archive contents to terminal (missing -f option?)');
+      if (auto && !z) z = /\.(tgz|tar\.gz)$/.test(file) ? 'gz' : /\.(txz|tar\.xz)$/.test(file) ? 'xz' : /\.(tbz2?|tar\.bz2)$/.test(file) ? 'bz2' : '';
+      let items = [];
+      if (mode === 'r') { const an = this.node(this.abs(file)); const p = an && this.unpack(an.data); if (p && p.kind !== 'tar') return fatal('Cannot update compressed archives'); if (p) items = p.items.slice(); }
+      const skip = m => ex.some(g => globRe(g).test(baseName(m)) || globRe(g).test(m.replace(/\/$/, '')));
+      let warned = false, code = 0;
+      names.forEach(nm => {
+        let member = nm;
+        if (member.startsWith('/')) { member = member.replace(/^\/+/, ''); if (!warned) { this.eout("tar: Removing leading `/' from member names\n"); warned = true; } }
+        const start = items.length;
+        if (!this.collect(nm.startsWith('/') ? nm : base + '/' + nm, member || '.', items, skip)) { this.eout(`tar: ${nm}: Cannot stat: No such file or directory\n`); code = 2; return; }
+        if (v) items.slice(start).forEach(it => this.out(v > 1 ? this.tarLine(it) : it.path + '\n'));
+      });
+      if (this.err) code = 2;
+      let data = this.pack({ kind: 'tar', items, size: Math.ceil((items.reduce((t, x) => t + 512 + (x.data ? Math.ceil(enc(x.data) / 512) * 512 : 0), 0) + 1024) / 10240) * 10240 });
+      if (z) data = this.squeeze(z, data, '');
+      if (file === '-') { this.out(data); if (code) this.eout('tar: Exiting with failure status due to previous errors\n'); return code; }
+      const fp = this.abs(file), parent = this.node(dirName(fp));
+      if (!parent) return fatal(`${file}: Cannot open: No such file or directory`);
+      const old = this.node(fp);
+      if (old && !this.can(old, 'w') || !old && !this.can(parent, 'w')) return fatal(`${file}: Cannot open: Permission denied`);
+      if (old) { old.data = data; old.mtime = this.now(); } else this.mk(fp, 'f', 0o666 & ~this.umask, this.user, data).mtime = this.now();
+      if (code) this.eout('tar: Exiting with failure status due to previous errors\n');
+      return code;
+    }
+    if (!file) return fatal('Refusing to read archive contents from terminal (missing -f option?)');
+    const an = file === '-' ? { type: 'f', data: input, mode: 0o644, owner: this.user } : this.node(this.abs(file));
+    if (!an) return fatal(`${file}: Cannot open: No such file or directory`);
+    if (an.type === 'd') return fatal(`${file}: Read error at byte 0, while reading 10240 bytes: Is a directory`);
+    if (!this.can(an, 'r')) return fatal(`${file}: Cannot open: Permission denied`);
+    let p = this.unpack(an.data);
+    while (p && ZK[p.kind]) p = this.unpack(p.inner);
+    if (!p || p.kind !== 'tar') { this.eout('tar: This does not look like a tar archive\ntar: Exiting with failure status due to previous errors\n'); return 2; }
+    const wanted = it => !names.length || names.some(nm => { const n = nm.replace(/\/+$/, ''); return it.path.replace(/\/$/, '') === n || it.path.startsWith(n + '/'); });
+    let code = 0;
+    const hit = new Set();
+    p.items.forEach(it => {
+      if (!wanted(it)) return;
+      names.forEach(nm => { const n = nm.replace(/\/+$/, ''); if (it.path.replace(/\/$/, '') === n || it.path.startsWith(n + '/')) hit.add(nm); });
+      if (mode === 't') { this.out(v ? this.tarLine(it) : it.path + '\n'); return; }
+      const parts = it.path.split('/').filter(Boolean);
+      if (parts.length <= strip) return;
+      const rel = Object.assign({}, it, { path: parts.slice(strip).join('/') + (it.type === 'd' ? '/' : '') });
+      if (v) this.out(v > 1 ? this.tarLine(it) : it.path + '\n');
+      const why = this.lay(base, rel, keep);
+      if (why) { this.eout(`tar: ${rel.path}: ${why}\n`); code = 2; }
+    });
+    names.filter(n => !hit.has(n)).forEach(n => { this.eout(`tar: ${n}: Not found in archive\n`); code = 2; });
+    if (code) this.eout('tar: Exiting with failure status due to previous errors\n');
+    return code;
+  };
+  World.prototype.tarLine = function (it) {
+    const ug = `${it.owner}/${it.group}`, sz = String(it.data ? enc(it.data) : 0);
+    const m = modeStr({ type: it.type, mode: it.mode });
+    return `${m} ${ug}${pad(sz, Math.max(19 - ug.length, sz.length + 1))} ${isoTime(it.mtime)} ${it.path}${it.type === 'l' ? ' -> ' + it.target : ''}\n`;
+  };
+
+  /* gzip, xz and bzip2 share one engine */
+  function squeezer(kind, defaults) {
+    return function (a, input) {
+      const K = ZK[kind], me = this.cmdLabel || K.cmd;
+      const [f0, rest] = opts(a);
+      const f = Object.assign({}, defaults, f0);
+      const dec = f.d || f['--decompress'] || f['--uncompress'], toOut = f.c || f['--stdout'], keepIn = f.k || f['--keep'] || toOut, force = f.f || f['--force'];
+      if (!rest.length) {
+        if (!dec) { this.out(this.squeeze(kind, input, '')); return 0; }
+        const p = this.unpack(input);
+        if (!p || p.kind !== kind) { this.eout(kind === 'gz' ? 'gzip: stdin: not in gzip format\n' : kind === 'xz' ? `${me}: (stdin): File format not recognized\n` : `${me}: (stdin) is not a bzip2 file.\n`); return 1; }
+        this.out(p.inner); return 0;
+      }
+      let code = 0;
+      const one = (t, recursed) => {
+        const fp = this.abs(t), n = this.node(fp, false);
+        if (!n) { this.eout(kind === 'xz' ? `${me}: ${t}: No such file or directory\n` : `${me}: ${t}: No such file or directory\n`); code = Math.max(code, 1); return; }
+        if (n.type === 'd') {
+          if (f.r && kind === 'gz') { Object.keys(n.kids).sort().forEach(k => one(t.replace(/\/$/, '') + '/' + k, true)); return; }
+          this.eout(kind === 'gz' ? `gzip: ${t} is a directory -- ignored\n` : kind === 'xz' ? `${me}: ${t}: Is a directory, skipping\n` : `${me}: Input file ${t} is a directory.\n`); code = 2; return;
+        }
+        if (f.l && kind === 'gz') {
+          const p = this.unpack(n.data);
+          if (!p || p.kind !== 'gz') { this.eout(`gzip: ${t}: not in gzip format\n`); code = 1; return; }
+          if (!this.listedHead) { this.out('         compressed        uncompressed  ratio uncompressed_name\n'); this.listedHead = true; }
+          this.out(`${pad(p.size, 19)} ${pad(p.usize, 19)} ${pad(((1 - p.size / Math.max(p.usize, 1)) * 100).toFixed(1), 5)}% ${t.replace(/\.gz$/, '')}\n`);
+          return;
+        }
+        if (!this.can(n, 'r')) { this.eout(`${me}: ${t}: Permission denied\n`); code = 1; return; }
+        if (f.t || f['--test']) { const p = this.unpack(n.data); if (!p || p.kind !== kind) { this.eout(kind === 'gz' ? `gzip: ${t}: not in gzip format\n` : `${me}: ${t}: File format not recognized\n`); code = 1; } return; }
+        if (dec) {
+          const p = this.unpack(n.data);
+          const outName = t.endsWith(K.ext) ? t.slice(0, -K.ext.length) : kind === 'gz' && t.endsWith('.tgz') ? t.slice(0, -4) + '.tar' : null;
+          if (!outName && !toOut) { this.eout(kind === 'gz' ? `gzip: ${t}: unknown suffix -- ignored\n` : `${me}: ${t}: Filename has an unknown suffix, skipping\n`); code = Math.max(code, 2); return; }
+          if (!p || p.kind !== kind) { this.eout(kind === 'gz' ? `gzip: ${t}: not in gzip format\n` : kind === 'xz' ? `${me}: ${t}: File format not recognized\n` : `${me}: ${t} is not a bzip2 file.\n`); code = 1; return; }
+          if (toOut) { this.out(p.inner); return; }
+          { const r = this.swap(n, fp, this.abs(outName), p.inner, t, outName, keepIn, force, kind, me, f.v, p); if (r) code = Math.max(code, r); return; }
+        }
+        if (t.endsWith(K.ext) || kind === 'gz' && t.endsWith('.tgz')) {
+          if (recursed) return;
+          this.eout(kind === 'gz' ? `gzip: ${t} already has ${K.ext} suffix -- unchanged\n` : `${me}: ${t}: File already has \`${K.ext}' suffix, skipping\n`); code = Math.max(code, 2); return;
+        }
+        const packed = this.squeeze(kind, n.data, kind === 'gz' ? baseName(t) : '');
+        if (toOut) { this.out(packed); return; }
+        const r = this.swap(n, fp, fp + K.ext, packed, t, t + K.ext, keepIn, force, kind, me, f.v, this.unpack(packed));
+        if (r) code = Math.max(code, r);
+      };
+      rest.forEach(t => one(t, false));
+      this.listedHead = false;
+      return code;
+    };
+  }
+  /* write the new file next to the old one, then remove the old one unless asked to keep it */
+  World.prototype.swap = function (n, from, to, data, fromName, toName, keepIn, force, kind, me, verbose, p) {
+    const parent = this.node(dirName(to));
+    if (this.node(to, false) && !force) {
+      this.eout(kind === 'gz' ? `gzip: ${toName} already exists;\tnot overwritten\n` : `${me}: ${toName}: File exists\n`);
+      return kind === 'gz' ? 2 : 1;
+    }
+    if (!this.can(parent, 'w')) { this.eout(`${me}: ${toName}: Permission denied\n`); return 1; }
+    const made = this.mk(to, 'f', n.mode, n.owner, data);
+    made.group = n.group; made.mtime = n.mtime;
+    if (!keepIn) this.removeNode(from);
+    if (verbose && kind === 'gz') this.out(`${fromName}:\t${pad(((1 - p.size / Math.max(p.usize, 1)) * 100).toFixed(1), 5)}% -- ${keepIn ? 'created' : 'replaced with'} ${toName}\n`);
+    return 0;
+  };
+  C.gzip = squeezer('gz', {});
+  C.gunzip = function (a, i) { this.cmdLabel = 'gzip'; try { return C.gzip.call(this, ['-d'].concat(a), i); } finally { this.cmdLabel = ''; } };
+  C.zcat = function (a, i) { this.cmdLabel = 'gzip'; try { return C.gzip.call(this, ['-d', '-c'].concat(a), i); } finally { this.cmdLabel = ''; } };
+  C.xz = squeezer('xz', {});
+  C.unxz = function (a, i) { this.cmdLabel = 'unxz'; try { return C.xz.call(this, ['-d'].concat(a), i); } finally { this.cmdLabel = ''; } };
+  C.xzcat = function (a, i) { this.cmdLabel = 'xzcat'; try { return C.xz.call(this, ['-d', '-c'].concat(a), i); } finally { this.cmdLabel = ''; } };
+  C.bzip2 = squeezer('bz2', {});
+  C.bunzip2 = function (a, i) { this.cmdLabel = 'bunzip2'; try { return C.bzip2.call(this, ['-d'].concat(a), i); } finally { this.cmdLabel = ''; } };
+  C.bzcat = function (a, i) { this.cmdLabel = 'bzcat'; try { return C.bzip2.call(this, ['-d', '-c'].concat(a), i); } finally { this.cmdLabel = ''; } };
+
+  C.zip = function (a) {
+    const [f, rest] = opts(a);
+    if (rest.length < 1) { this.out('zip error: Nothing to do! (try: zip -r archive.zip folder)\n'); return 12; }
+    let out = rest.shift();
+    if (!/\.\w+$/.test(baseName(out))) out += '.zip';
+    if (!rest.length) { this.eout(`\nzip error: Nothing to do! (${out})\n`); return 12; }
+    const fp = this.abs(out), old = this.node(fp), prev = old && this.unpack(old.data);
+    const items = prev && prev.kind === 'zip' ? prev.items.slice() : [];
+    let code = 0;
+    this.cmdName = 'zip';
+    rest.forEach(t => {
+      const got = [];
+      const n = this.node(this.abs(t), false);
+      if (!n) { this.out(`\tzip warning: name not matched: ${t}\n`); code = 12; return; }
+      if (n.type === 'd' && !f.r) got.push({ path: t.replace(/\/*$/, '/'), type: 'd', mode: n.mode, owner: n.owner, group: n.group, mtime: n.mtime });
+      else this.collect(this.abs(t), t.replace(/^\/+/, ''), got, () => false);
+      got.forEach(it => {
+        const i = items.findIndex(x => x.path === it.path);
+        const el = it.data ? this.info(it.data) : 0;
+        const how = !el || el < 64 ? 'stored 0%' : `deflated ${Math.round((1 - (Math.ceil(el * 0.4) + 30) / enc(it.data)) * 100)}%`;
+        if (!f.q) this.out(`  ${i >= 0 ? 'updating' : 'adding'}: ${it.path} (${how})\n`);
+        it.how = how;
+        if (i >= 0) items[i] = it; else items.push(it);
+      });
+    });
+    this.cmdName = '';
+    if (!items.length) { this.out(`\nzip error: Nothing to do! (${out})\n`); return 12; }
+    const size = items.reduce((s, it) => s + 76 + 2 * enc(it.path) + (it.data ? (it.how.startsWith('stored') ? enc(it.data) : Math.ceil(this.info(it.data) * 0.4) + 30) : 0), 22);
+    const data = this.pack({ kind: 'zip', items, size });
+    if (old) { old.data = data; old.mtime = this.now(); } else {
+      const parent = this.node(dirName(fp));
+      if (!parent || !this.can(parent, 'w')) { this.out(`zip I/O error: Permission denied\nzip error: Could not create output file (${out})\n`); return 15; }
+      this.mk(fp, 'f', 0o666 & ~this.umask, this.user, data).mtime = this.now();
+    }
+    return code;
+  };
+  C.unzip = function (a) {
+    const [f, rest] = opts(a, 'd');
+    const z = rest.shift();
+    if (!z) { this.out('UnZip 6.00. Usage: unzip [-l] [-o] [-q] file.zip [names] [-d exdir]\n'); return 0; }
+    const n = this.node(this.abs(z)) || this.node(this.abs(z + '.zip'));
+    if (!n) { this.out(`unzip:  cannot find or open ${z}, ${z}.zip or ${z}.ZIP.\n`); return 9; }
+    const p = this.unpack(n.data);
+    if (!p || p.kind !== 'zip') { this.out(`Archive:  ${z}\n  End-of-central-directory signature not found.  Either this file is not\n  a zipfile, or it constitutes one disk of a multi-part archive.\n`); return 9; }
+    const pick = p.items.filter(it => !rest.length || rest.some(g => globRe(g).test(it.path)));
+    if (f.l) {
+      this.out(`Archive:  ${z}\n  Length      Date    Time    Name\n---------  ---------- -----   ----\n`);
+      let tot = 0;
+      pick.forEach(it => { const s = it.data ? enc(it.data) : 0; tot += s; this.out(`${pad(s, 9)}  ${isoTime(it.mtime)}   ${it.path}\n`); });
+      this.out(`---------                     -------\n${pad(tot, 9)}                     ${pick.length} file${pick.length === 1 ? '' : 's'}\n`);
+      return 0;
+    }
+    const base = f.d ? this.abs(f.d) : this.cwd, show = f.d ? f.d.replace(/\/+$/, '') + '/' : '';
+    if (f.d && !this.node(base)) this.mkdirs(base);
+    if (!f.q) this.out(`Archive:  ${z}\n`);
+    let code = 0;
+    pick.forEach(it => {
+      const p2 = norm(base + '/' + it.path);
+      if (it.type !== 'd' && this.node(p2, false) && !f.o) {
+        if (f.n) return;
+        this.out(`replace ${show}${it.path}? [y]es, [n]o, [A]ll, [N]one, [r]ename: NULL\n(EOF or read failure, treating as "[N]one" ...)\n`); f.n = true; return;
+      }
+      const existed = it.type === 'd' && this.node(p2);
+      const why = this.lay(base, it, false);
+      if (existed) return;
+      if (why) { this.out(`checkdir error:  cannot create ${show}${it.path}\n                 ${why.replace('Cannot open: ', '')}\n`); code = 50; return; }
+      if (!f.q) this.out(it.type === 'd' ? `   creating: ${show}${it.path}\n` : `${it.how && it.how.startsWith('deflated') ? '  inflating' : ' extracting'}: ${(show + it.path).padEnd(23)} \n`);
+    });
+    return code;
+  };
+
   C.xargs = function (a, input) {
     const z = a.includes('-0'); const [f, rest] = opts(a.filter(x => x !== '-0'), 'nId'); if (z) f['0'] = true;
     const cmd = rest.length ? rest : ['echo'];
@@ -1971,7 +2267,7 @@ const LXSH = (() => {
   C.su = function () { this.eout('su: Authentication failure (in this practice shell use sudo instead)\n'); return 1; };
   const exitRoot = C.exit;
   C.exit = function (a) { if (this.user === 'root') { this.user = USER; return 0; } return exitRoot.call(this, a); };
-  ['tar', 'gzip', 'gunzip', 'zip', 'unzip', 'apt', 'dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'top', 'htop', 'mount', 'useradd', 'passwd', 'crontab', 'strace'].forEach(c => {
+  ['apt', 'dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'top', 'htop', 'mount', 'useradd', 'passwd', 'crontab', 'strace'].forEach(c => {
     C[c] = function () { this.eout(`${c}: this command is explained in its own lesson, but the practice shell does not run it. Try it on a real Linux machine, a virtual machine or WSL.\n`); return 127; };
   });
   C.vim = C.vi = C.nano = function (a) { this.eout(`${a[0] ? a[0] + ': ' : ''}the practice shell has no full screen editor. Use echo "text" > file or cat > file with a here document instead.\n`); return 1; };
