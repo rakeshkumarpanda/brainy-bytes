@@ -423,6 +423,44 @@
     }
   }));
 
+  /* power 4.1 jobs and signals: run a list of commands and watch every job change state */
+  def('lx-jobs', el => W(el, {
+    title: 'Jobs, states and signals',
+    sub: 'Type commands separated by commas. Pip runs them one by one in the practice shell and shows every job of this shell with its state. Ctrl+Z is written here as kill -STOP, which sends the same kind of stop signal.',
+    inputs: [{ k: 'cmds', label: 'Commands', type: 'text', val: 'sleep 300 &, sleep 600 &, kill -STOP %1, jobs, bg %1, kill %2, fg %1', w: 460 }],
+    random: () => ({ cmds: ['sleep 100 &, jobs, kill %1', 'yes > /dev/null &, ps, kill -9 %1', 'sleep 50 &, sleep 20, jobs, sleep 40, jobs', 'sleep 300 &, kill -STOP %1, jobs, kill -CONT %1, jobs', 'nice -n 10 sleep 200 &, ps -o pid,ni,cmd, kill %1', 'sleep 30 &, wait, echo $?'][Math.floor(Math.random() * 6)] }),
+    frames: v => {
+      const w = world(), cmds = String(v.cmds).split(',').map(x => x.trim()).filter(Boolean);
+      if (!cmds.length) return [{ msg: 'Type at least one command, for example sleep 300 &.', mood: 'think', layers: [] }];
+      const seen = new Map();
+      const table = () => {
+        w.jobs.forEach(j => seen.set(j.id + ':' + j.pid, j));
+        const items = [...seen.values()].map(j => [`[${j.id}] ${j.cmd}`, `${j.state} · PID ${j.pid}`, j.state === 'Running' ? 'cur' : j.state === 'Stopped' ? 'look' : j.state === 'Done' ? 'yes' : 'no']);
+        return items.length ? [{ t: 'flow', label: 'Jobs of this shell', items, arrows: items.map(() => 'ghost') }] : [{ t: 'flow', label: 'Jobs of this shell', items: [['no jobs yet', 'start one with &', '']] }];
+      };
+      const says = c => /&\s*$/.test(c) ? 'The trailing & starts it in the background. bash prints the job number in brackets and the process ID, then gives the prompt back at once.'
+        : /^kill\s+-(STOP|19|TSTP)/i.test(c) ? 'SIGSTOP freezes the process. It keeps its memory but gets no CPU time. Ctrl+Z sends SIGTSTP, which does the same for the job in the foreground.'
+        : /^kill\s+-(CONT|18)/i.test(c) ? 'SIGCONT lets a stopped process run again.'
+        : /^kill\s+-(9|KILL)/i.test(c) ? 'SIGKILL cannot be caught or ignored. The kernel ends the process at once, with no chance to clean up.'
+        : /^kill\b/.test(c) ? 'kill with no signal sends SIGTERM (15), a polite request to finish. A well written program saves its work and exits.'
+        : /^bg\b/.test(c) ? 'bg continues a stopped job in the background, as if it had been started with &.'
+        : /^fg\b/.test(c) ? 'fg brings a job to the foreground, so the shell waits for it to finish. The practice shell moves its clock forward instead of waiting.'
+        : /^jobs\b/.test(c) ? 'jobs lists the jobs this shell started. + marks the current job, the one fg and bg use by default, and - the one before it.'
+        : /^sleep\b/.test(c) ? 'A sleep in the foreground: the practice shell moves its clock forward by that many seconds.'
+        : /^wait\b/.test(c) ? 'wait pauses until background jobs finish, and its exit status is the status of the job it waited for.'
+        : 'The shell runs it as a normal command.';
+      const fr = [{ msg: 'Every command you start becomes a process with its own ID. A process started from this shell with & becomes a <b>job</b> too, so the shell can stop, continue or kill it by job number.', mood: 'think', layers: table() }];
+      const term = [];
+      cmds.forEach((c, i) => {
+        const r = w.run(c);
+        term.push(['c', c]); r.out.replace(/\n$/, '').split('\n').filter(x => x !== '').forEach(x => term.push(['o', x]));
+        fr.push({ msg: `<code>${esc(c)}</code>: ${says(c)}`, mood: /kill/.test(c) ? 'wow' : 'look', fx: /kill\s+(-9|-KILL|%|\d)/.test(c) ? 'shake' : undefined, layers: table().concat([{ t: 'term', label: 'Terminal', lines: term.slice(-10) }]) });
+      });
+      fr.push({ msg: 'That is the whole life of a job: started, maybe stopped and continued, and finally done or ended by a signal.', mood: 'happy', fx: 'burst', layers: table().concat([{ t: 'term', label: 'Terminal', lines: term.slice(-12) }]) });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

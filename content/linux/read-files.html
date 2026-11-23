@@ -132,10 +132,10 @@ latest.log:       symbolic link to logs/app.log</span>
   Size: 46        	Blocks: 8          IO Block: 4096   regular file
 Device: 254,0	Inode: 640029      Links: 1
 Access: (0644/-rw-r--r--)  Uid: ( 1000/ learner)   Gid: ( 1000/ learner)
-Access: 2026-11-23 13:12:50.038296013 +0000
+Access: 2026-11-23 17:46:11.108734974 +0000
 Modify: 2026-11-23 09:30:00.000000000 +0000
-Change: 2026-11-23 13:12:50.033443681 +0000
- Birth: 2026-11-23 13:12:50.028527125 +0000</span></pre><div class="lx-note">file never trusts the name. It reads the first bytes and compares them with a list of known signatures called magic numbers, for example every PNG image starts with the bytes 89 50 4E 47. stat shows the inode number and three times: Access (last read), Modify (content changed) and Change (details such as permissions changed). The Birth line appears only on file systems that record creation time.</div></div>
+Change: 2026-11-23 17:46:11.100848872 +0000
+ Birth: 2026-11-23 17:46:11.097142285 +0000</span></pre><div class="lx-note">file never trusts the name. It reads the first bytes and compares them with a list of known signatures called magic numbers, for example every PNG image starts with the bytes 89 50 4E 47. stat shows the inode number and three times: Access (last read), Modify (content changed) and Change (details such as permissions changed). The Birth line appears only on file systems that record creation time.</div></div>
 <div class="lx-run"><div class="lx-rh"><span>Spotting the difference</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">printf 'milk\neggs\nbread\n' &gt; monday.txt</span>
 <span class="lx-cmd">printf 'milk\nbutter\nbread\njam\n' &gt; tuesday.txt</span>
 <span class="lx-cmd">diff monday.txt tuesday.txt</span>
@@ -146,8 +146,8 @@ Change: 2026-11-23 13:12:50.033443681 +0000
 3a4
 &gt; jam</span>
 <span class="lx-cmd">diff -u monday.txt tuesday.txt</span>
-<span class="lx-o">--- monday.txt	2026-11-23 13:12:50.086296016 +0000
-+++ tuesday.txt	2026-11-23 13:12:50.086296016 +0000
+<span class="lx-o">--- monday.txt	2026-11-23 17:46:11.153191294 +0000
++++ tuesday.txt	2026-11-23 17:46:11.156734976 +0000
 @@ -1,3 +1,4 @@
  milk
 -eggs

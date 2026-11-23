@@ -50,8 +50,8 @@ const LXSH = (() => {
       ['/var/www/index.html', '<h1>It works</h1>\n', 0o644, 'root']
     ]
   };
-  const CMDS = 'alias awk basename bash bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp cut date df diff dirname du echo env exit export expr false file find free grep groups gunzip gzip head help history hostname id jobs kill less ln ls man mkdir more mv nl printenv printf ps pwd readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wc which whoami xargs xz xzcat zcat zip'.split(' ');
-  const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read'.split(' '));
+  const CMDS = 'alias awk basename bash bg bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp cut date df diff dirname disown du echo env exit export expr false fg file find free grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time'.split(' '));
 
   /* ---------- small helpers ---------- */
   function norm(path) {
@@ -117,7 +117,7 @@ const LXSH = (() => {
       this.exported = new Set(['HOME', 'USER', 'LOGNAME', 'SHELL', 'PATH', 'PWD', 'LANG', 'EDITOR']);
       this.aliases = { ll: 'ls -l', la: 'ls -A' };
       this.hist = []; this.last = 0; this.umask = 0o022; this.args = []; this.clock = T0 + 60000; this.jobs = [];
-      this.procs = [[1, 0, 'root', 'systemd'], [412, 1, 'root', 'sshd'], [618, 1, 'root', 'cron'], [905, 1, 'www-data', 'nginx'], [1200, 905, 'www-data', 'nginx'], [2001, 1, USER, 'bash']];
+      this.procs = [[1, 0, 'root', '/sbin/init', 'systemd'], [412, 1, 'root', 'sshd: /usr/sbin/sshd -D', 'sshd'], [618, 1, 'root', '/usr/sbin/cron -f', 'cron'], [905, 1, 'root', 'nginx: master process /usr/sbin/nginx', 'nginx'], [1200, 905, 'www-data', 'nginx: worker process', 'nginx'], [2001, 1, USER, '-bash', 'bash']].map(([pid, ppid, user, cmd, comm]) => ({ pid, ppid, user, cmd, comm, stat: 'S', ni: 0 }));
       this.nextPid = 2400;
     }
     now() { this.clock += 1000; return this.clock; }
@@ -316,6 +316,7 @@ const LXSH = (() => {
       if (name === '#') return String(this.args.length);
       if (name === '@' || name === '*') return this.args.join(' ');
       if (name === '$') return '2001';
+      if (name === '!') return this.lastBg ? String(this.lastBg) : '';
       if (name === '0') return this.script || 'bash';
       if (/^\d+$/.test(name)) return this.args[+name - 1] ?? '';
       if (name === 'RANDOM') return String(Math.floor(Math.random() * 32768));
@@ -365,7 +366,7 @@ const LXSH = (() => {
         if (s.startsWith('$((', i)) { const k = this.matchParen(s, i + 1); out += String(this.arith(s.slice(i + 3, k - 1))); i = k + 1; continue; }
         if (s[i + 1] === '(') { const k = this.matchParen(s, i + 1); const r = this.capture(s.slice(i + 2, k)); out += r.replace(/\n+$/, ''); i = k + 1; continue; }
         if (s[i + 1] === '{') { const k = s.indexOf('}', i); out += this.braceParam(s.slice(i + 2, k)); i = k + 1; continue; }
-        const m = /^(\w+|[?#@*$0-9])/.exec(s.slice(i + 1));
+        const m = /^(\w+|[?#@*$!0-9])/.exec(s.slice(i + 1));
         if (!m) { out += '$'; i++; continue; }
         const nm = /^\d/.test(m[1]) ? m[1][0] : m[1];
         out += this.param(nm); i += 1 + nm.length;
@@ -463,6 +464,7 @@ const LXSH = (() => {
       this.hist.push(src);
       if (src !== t) this.out(src + '\n');
       this.runSrc(src);
+      this.reap();
       return { out: this.buf, code: this.last };
     }
     runSrc(src, sub) {
@@ -479,7 +481,7 @@ const LXSH = (() => {
     }
     exec(node, input) {
       switch (node.t) {
-        case 'list': { let code = 0; node.items.forEach(it => { if (it.bg) { const id = this.jobs.length + 1, pid = this.nextPid++; this.jobs.push(pid); this.out(`[${id}] ${pid}\n`); } code = this.exec(it.p, input); }); return code; }
+        case 'list': { let code = 0; node.items.forEach(it => { code = it.bg ? this.background(it.p, input) : this.exec(it.p, input); }); return code; }
         case 'and': { const a = this.exec(node.a, input); return a === 0 ? this.exec(node.b, input) : a; }
         case 'or': { const a = this.exec(node.a, input); return a !== 0 ? this.exec(node.b, input) : a; }
         case 'pipe': {
@@ -2120,27 +2122,259 @@ const LXSH = (() => {
     return code;
   };
   C.unalias = function (a) { a.forEach(k => delete this.aliases[k]); };
-  C.ps = function (a) {
-    const wide = a.some(x => /a|e|x/.test(x));
-    const rows = wide ? this.procs : this.procs.filter(p => p[2] === this.user).concat([[this.nextPid, 2001, this.user, 'ps']]);
-    if (a.some(x => /u/.test(x))) { this.out('USER         PID %CPU %MEM COMMAND\n' + rows.map(p => `${pad(p[2], 8, true)} ${pad(p[0], 7)}  0.0  0.1 ${p[3]}`).join('\n') + '\n'); return 0; }
-    if (a.some(x => /f/.test(x)) || a.includes('-ef')) { this.out('UID          PID    PPID CMD\n' + rows.map(p => `${pad(p[2], 8, true)} ${pad(p[0], 7)} ${pad(p[1], 7)} ${p[3]}`).join('\n') + '\n'); return 0; }
-    this.out('    PID TTY          TIME CMD\n' + rows.map(p => `${pad(p[0], 7)} pts/0    00:00:00 ${p[3]}`).join('\n') + '\n');
+  /* ---------- processes, jobs and signals ----------
+     Every process is {pid, ppid, user, cmd, stat, ni, start}. A job is a background command typed in this shell:
+     {id, pid, cmd, state: Running | Stopped | Done | Terminated | Killed | Interrupt | Hangup, end, told}.
+     The practice shell has a pretend clock: sleep N moves it forward, and a background sleep ends when the
+     clock passes its end time. Other background commands run straight away and are reported Done. */
+  const SIGS = ['', 'HUP', 'INT', 'QUIT', 'ILL', 'TRAP', 'ABRT', 'BUS', 'FPE', 'KILL', 'USR1', 'SEGV', 'USR2', 'PIPE', 'ALRM', 'TERM', 'STKFLT', 'CHLD', 'CONT', 'STOP', 'TSTP', 'TTIN', 'TTOU', 'URG', 'XCPU', 'XFSZ', 'VTALRM', 'PROF', 'WINCH', 'IO', 'PWR', 'SYS'];
+  const sigName = n => n <= 31 ? SIGS[n] : n === 34 ? 'RTMIN' : n === 64 ? 'RTMAX' : n < 50 ? 'RTMIN+' + (n - 34) : 'RTMAX-' + (64 - n);
+  const sigNum = s => { s = String(s).toUpperCase().replace(/^SIG/, ''); if (/^\d+$/.test(s)) return +s <= 64 ? +s : -1; const i = SIGS.indexOf(s); return i > 0 ? i : -1; };
+  const DEATH = { 1: 'Hangup', 2: 'Interrupt', 3: 'Quit', 9: 'Killed', 15: 'Terminated' };
+  const srcWord = w => w.parts.map(p => p.q === 1 ? `'${p.t}'` : p.q === 2 ? `"${p.t}"` : p.t).join('');
+  World.prototype.srcOf = function (n) {
+    if (!n) return '';
+    if (n.t === 'cmd') return n.words.map(srcWord).concat((n.redir || []).map(r => r.op + (r.w ? ' ' + srcWord(r.w) : ''))).join(' ');
+    if (n.t === 'pipe') return n.cmds.map(c => this.srcOf(c)).join(' | ');
+    if (n.t === 'and' || n.t === 'or') return this.srcOf(n.a) + (n.t === 'and' ? ' && ' : ' || ') + this.srcOf(n.b);
+    return '...';
+  };
+  const comm = p => p.comm || baseName(p.cmd.split(' ')[0]);
+  World.prototype.proc = function (pid) { return this.procs.find(p => p.pid === pid); };
+  /* bash makes the most recently stopped job the current one (+), otherwise the newest job. - is the one before */
+  World.prototype.order = function () {
+    const js = this.jobs.filter(j => !j.gone), live = j => j && !j.gone;
+    const cur = live(this.curJob) ? this.curJob : js[js.length - 1];
+    const rest = js.filter(j => j !== cur);
+    const prev = live(this.prevJob) && this.prevJob !== cur ? this.prevJob : rest[rest.length - 1];
+    return { cur, prev };
+  };
+  World.prototype.makeCur = function (j) { if (this.curJob !== j) { this.prevJob = this.curJob; this.curJob = j; } };
+  World.prototype.mark = function (j) { const o = this.order(); return j === o.cur ? '+' : j === o.prev ? '-' : ' '; };
+  World.prototype.jobOf = function (spec) {
+    const js = this.jobs.filter(j => !j.gone);
+    if (spec === undefined || spec === '%' || spec === '%%' || spec === '%+') return this.order().cur;
+    if (spec === '%-') return this.order().prev;
+    const m = /^%(\d+)$/.exec(spec); if (m) return js.find(j => j.id === +m[1]);
+    const n = /^%(.+)$/.exec(spec); if (n) return js.find(j => j.cmd.startsWith(n[1]));
+    return null;
+  };
+  /* start a background job for one list item */
+  World.prototype.background = function (node, input) {
+    const js = this.jobs.filter(j => !j.gone);
+    const id = js.length ? js[js.length - 1].id + 1 : 1, pid = this.nextPid++, cmd = this.srcOf(node);
+    this.out(`[${id}] ${pid}\n`);
+    this.lastBg = pid;
+    const job = { id, pid, cmd, state: 'Running', told: false };
+    this.jobs.push(job); this.makeCur(job);
+    const first = node.t === 'pipe' && node.cmds.length === 1 ? node.cmds[0] : node;
+    const words = first.t === 'cmd' ? first.words.map(w => this.wordText(w)) : [];
+    let lead = words[0] === 'nohup' || words[0] === 'nice' ? words.slice(words[0] === 'nice' && words[1] === '-n' ? 3 : 1) : words;
+    if (lead[0] === 'sleep' && parseFloat(lead[1]) > 0 || lead[0] === 'yes' && /\/dev\/null/.test(cmd)) {
+      job.end = lead[0] === 'yes' ? Infinity : this.clock + parseFloat(lead[1]) * 1000;
+      this.procs.push({ pid, ppid: 2001, user: this.user, cmd: lead.join(' '), stat: 'S', ni: words[0] === 'nice' ? (words[1] === '-n' ? +words[2] : 10) : 0, start: this.clock, cpu: lead[0] === 'yes' ? 99.7 : 0 });
+      if (words[0] === 'nohup') { this.eout("nohup: ignoring input and appending output to 'nohup.out'\n"); const f = this.abs('nohup.out'); if (!this.node(f)) this.mk(f, 'f', 0o600, this.user, ''); }
+      return 0;
+    }
+    const code = this.exec(node, input);
+    job.state = code ? `Exit ${code}` : 'Done'; job.fresh = true;
+    return 0;
+  };
+  /* move the clock on and report jobs that changed, the way bash does just before it prints the next prompt */
+  World.prototype.reap = function () {
+    this.jobs.forEach(j => {
+      if (j.state === 'Running' && j.end !== undefined && this.clock >= j.end) { j.state = 'Done'; this.procs = this.procs.filter(p => p.pid !== j.pid); }
+    });
+    const live = this.jobs.filter(j => !j.gone);
+    live.forEach((j, k) => {
+      if (j.fresh) { j.fresh = false; return; }
+      if (j.state !== 'Running' && j.state !== 'Stopped' && !j.told) {
+        this.out(`[${j.id}]${this.mark(j)}  ${pad(j.state, 24, true)}${j.cmd}\n`);
+        j.told = true; j.gone = true;
+      }
+    });
+    if (this.jobs.every(j => j.gone)) this.jobs = [];
+  };
+  World.prototype.signal = function (pid, sig, who) {
+    const p = this.proc(pid);
+    if (!p) { this.eout(`${who}: (${pid}) - No such process\n`); return 1; }
+    if (p.user !== this.user && this.user !== 'root') { this.eout(`${who}: (${pid}) - Operation not permitted\n`); return 1; }
+    if (pid === 1 && sig !== 0) return 0;   /* init ignores signals it has no handler for */
+    const job = this.jobs.find(j => j.pid === pid && !j.gone);
+    if (sig === 0) return 0;
+    if (sig === 19 || sig === 20) { p.stat = 'T'; if (job) { job.state = 'Stopped'; this.makeCur(job); this.out(`\n[${job.id}]+  ${pad('Stopped', 24, true)}${job.cmd}\n`); } return 0; }
+    if (sig === 18) { p.stat = 'S'; if (job) job.state = 'Running'; return 0; }
+    if (sig === 28 || sig === 17 || sig === 23) return 0;   /* WINCH, CHLD and URG are ignored by default */
+    if (p.stat === 'T' && sig !== 9) { p.pending = sig; return 0; }   /* a stopped process sees the signal when it continues */
+    this.procs = this.procs.filter(x => x.pid !== pid && x.ppid !== pid);
+    if (job) job.state = DEATH[sig] || `Killed by signal ${sig}`;
+    return 0;
   };
   C.kill = function (a) {
-    if (a[0] === '-l') { this.out(' 1) SIGHUP\t 2) SIGINT\t 3) SIGQUIT\t 9) SIGKILL\n15) SIGTERM\t18) SIGCONT\t19) SIGSTOP\n'); return 0; }
-    const pids = a.filter(x => !x.startsWith('-')).map(Number);
+    let sig = 15; const targets = [];
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      if (x === '-l' || x === '-L') {
+        const rest = a.slice(i + 1);
+        if (rest.length) { rest.forEach(r => { const n = /^\d+$/.test(r) ? (+r > 128 ? +r - 128 : +r) : sigNum(r); this.out((/^\d+$/.test(r) ? sigName(n) : n) + '\n'); }); return 0; }
+        const all = []; for (let n = 1; n <= 64; n++) if (n !== 32 && n !== 33) all.push(`${pad(n, 2)}) SIG${sigName(n)}`);
+        let s = ''; all.forEach((e, k) => { s += e + ((k + 1) % 5 === 0 || k === all.length - 1 ? '\n' : '\t'); }); this.out(s); return 0;
+      }
+      if (x === '-s' || x === '-n') { sig = sigNum(a[++i]); if (sig < 0) { this.eout(`bash: kill: ${a[i]}: invalid signal specification\n`); return 1; } continue; }
+      if (/^-[A-Za-z0-9+]+$/.test(x) && !targets.length) { sig = sigNum(x.slice(1)); if (sig < 0) { this.eout(`bash: kill: ${x.slice(1)}: invalid signal specification\n`); return 1; } continue; }
+      targets.push(x);
+    }
+    if (!targets.length) { this.eout('kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]\n'); return 2; }
     let code = 0;
-    pids.forEach(pid => {
-      const k = this.procs.findIndex(p => p[0] === pid);
-      if (k < 0) { this.eout(`bash: kill: (${pid}) - No such process\n`); code = 1; return; }
-      if (this.procs[k][2] !== this.user && this.user !== 'root') { this.eout(`bash: kill: (${pid}) - Operation not permitted\n`); code = 1; return; }
-      this.procs.splice(k, 1);
+    targets.forEach(t => {
+      if (t.startsWith('%')) { const j = this.jobOf(t); if (!j) { this.eout(`bash: kill: ${t}: no such job\n`); code = 1; return; } if (j.state !== 'Running' && j.state !== 'Stopped') { this.eout(`bash: kill: ${t}: no such job\n`); code = 1; return; } code = this.signal(j.pid, sig, 'bash: kill') || code; return; }
+      if (!/^-?\d+$/.test(t)) { this.eout(`bash: kill: ${t}: arguments must be process or job IDs\n`); code = 1; return; }
+      code = this.signal(+t, sig, 'bash: kill') || code;
     });
     return code;
   };
-  C.jobs = function () { this.jobs.forEach((p, i) => this.out(`[${i + 1}]+  Done                    (job ${p})\n`)); this.jobs = []; };
-  C.sleep = function () { return 0; };
+  C.jobs = function (a) {
+    const [f] = opts(a); const live = this.jobs.filter(j => !j.gone);
+    live.forEach((j, k) => {
+      if (f.p) { this.out(j.pid + '\n'); return; }
+      if (f.r && j.state !== 'Running' || f.s && j.state !== 'Stopped') return;
+      const mark = this.mark(j);
+      this.out(`[${j.id}]${mark}${f.l ? ' ' + j.pid + ' ' : '  '}${pad(j.state, 24, true)}${j.cmd}${j.state === 'Running' ? ' &' : ''}\n`);
+      if (j.state !== 'Running' && j.state !== 'Stopped') { j.told = true; j.gone = true; }
+    });
+    return 0;
+  };
+  C.fg = function (a) {
+    const j = this.jobOf(a[0]);
+    if (!j || j.gone) { this.eout(`bash: fg: ${a[0] || 'current'}: no such job\n`); return 1; }
+    this.out(j.cmd + '\n');
+    const p = this.proc(j.pid);
+    if (p) { p.stat = 'S'; if (p.pending) { const s = p.pending; p.pending = 0; this.signal(j.pid, s, 'fg'); j.told = true; j.gone = true; return 128 + s; } }
+    if (j.end === Infinity) { this.out('^C\n'); this.procs = this.procs.filter(x => x.pid !== j.pid); j.gone = true; return 130; }
+    if (j.end !== undefined && this.clock < j.end) this.clock = j.end;
+    this.procs = this.procs.filter(x => x.pid !== j.pid);
+    j.gone = true; j.told = true;
+    return 0;
+  };
+  C.bg = function (a) {
+    const j = this.jobOf(a[0]);
+    if (!j || j.gone) { this.eout(`bash: bg: ${a[0] || 'current'}: no such job\n`); return 1; }
+    if (j.state === 'Running') { this.eout(`bash: bg: job ${j.id} already in background\n`); return 0; }
+    j.state = 'Running'; this.makeCur(j); const p = this.proc(j.pid); if (p) p.stat = 'S';
+    this.out(`[${j.id}]${this.mark(j)} ${j.cmd} &\n`);
+    return 0;
+  };
+  C.wait = function (a) {
+    const pick = a.length ? a.map(t => t.startsWith('%') ? this.jobOf(t) : this.jobs.find(j => j.pid === +t)).filter(Boolean) : this.jobs.filter(j => j.state === 'Running');
+    let code = 0;
+    pick.forEach(j => {
+      if (j.state === 'Running' && j.end !== undefined && j.end !== Infinity) { this.clock = Math.max(this.clock, j.end); j.state = 'Done'; this.procs = this.procs.filter(p => p.pid !== j.pid); }
+      const sig = Object.keys(DEATH).find(k => DEATH[k] === j.state);
+      code = j.state === 'Done' ? 0 : sig ? 128 + +sig : /^Exit (\d+)/.test(j.state) ? +RegExp.$1 : 0;
+      j.told = true; j.gone = true;
+    });
+    return code;
+  };
+  C.disown = function (a) { const j = this.jobOf(a[0]); if (!j) { this.eout(`bash: disown: ${a[0] || 'current'}: no such job\n`); return 1; } j.gone = true; j.told = true; const p = this.proc(j.pid); if (p) p.ppid = 1; return 0; };
+  C.sleep = function (a) {
+    const n = parseFloat(a[0]);
+    if (isNaN(n)) { this.eout(a[0] ? `sleep: invalid time interval '${a[0]}'\n` : "sleep: missing operand\nTry 'sleep --help' for more information.\n"); return 1; }
+    this.clock += n * (/m$/.test(a[0]) ? 60000 : /h$/.test(a[0]) ? 3600000 : 1000);
+    return 0;
+  };
+  World.prototype.allProcs = function () { return this.procs.concat([{ pid: this.nextPid, ppid: 2001, user: this.user, cmd: 'ps', stat: 'R', ni: 0, start: this.clock, me: true }]); };
+  C.ps = function (a) {
+    const flat = a.join(' ');
+    const all = /(^|\s)(-e|-A|aux|ax|-ef|-aux|-eo)\b/.test(flat) || /^a?u?x$/.test(flat);
+    let rows = all ? this.allProcs() : this.allProcs().filter(p => p.user === this.user);
+    const pi = a.indexOf('-p'), ui = a.indexOf('-u'), ci = a.indexOf('-C');
+    if (pi >= 0) rows = this.allProcs().filter(p => a[pi + 1].split(',').map(Number).includes(p.pid));
+    if (ui >= 0) rows = this.allProcs().filter(p => a[ui + 1].split(',').includes(p.user));
+    if (ci >= 0) rows = this.allProcs().filter(p => comm(p) === a[ci + 1]);
+    const tty = p => p.ppid === 2001 || p.pid === 2001 ? 'pts/0' : '?';
+    const t0 = p => when(p.start || T0 - 3 * 86400000).slice(7);
+    const oi = a.findIndex(x => x === '-o' || x === '-eo' || x === 'o');
+    if (oi >= 0) {
+      const cols = a[oi + 1].split(',');
+      const H = { pid: ['PID', 7], ppid: ['PPID', 7], user: ['USER', -8], stat: ['STAT', -4], ni: ['NI', 3], comm: ['COMMAND', -15], cmd: ['CMD', 0], args: ['COMMAND', 0], '%cpu': ['%CPU', 4], '%mem': ['%MEM', 4], tty: ['TT', -8], etime: ['ELAPSED', 11] };
+      const val = (p, c) => ({ pid: p.pid, ppid: p.ppid, user: p.user, stat: p.stat + (p.pid === 2001 ? 's' : ''), ni: p.ni || 0, comm: comm(p), cmd: p.cmd, args: p.cmd, '%cpu': (p.cpu || 0).toFixed(1), '%mem': '0.1', tty: tty(p), etime: '00:' + pad(Math.max(0, Math.round((this.clock - (p.start || T0)) / 1000)) % 60, 2).replace(' ', '0') })[c];
+      const line = f => cols.map((c, k) => { const [, w] = H[c] || [c.toUpperCase(), 8]; const s = String(f(c)); return k === cols.length - 1 && w <= 0 ? s : w < 0 ? pad(s, -w, true) : pad(s, w); }).join(' ');
+      this.out(line(c => (H[c] || [c.toUpperCase()])[0]).replace(/\s+$/, '') + '\n' + rows.map(p => line(c => val(p, c))).join('\n') + '\n');
+      return 0;
+    }
+    if (/u/.test(flat) && !/-u/.test(flat)) { this.out('USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\n' + rows.map(p => `${pad(p.user, 8, true)} ${pad(p.pid, 7)} ${pad((p.cpu || 0).toFixed(1), 4)}  0.1  ${pad(p.pid === 1 ? 167700 : 8000 + p.pid % 900 * 7, 6)} ${pad(p.pid === 1 ? 13020 : 3000 + p.pid % 700 * 3, 5)} ${pad(tty(p), 8, true)} ${pad(p.stat + (p.pid === 2001 || p.pid === 1 ? 's' : ''), 4, true)} ${pad(t0(p), 5)}   0:00 ${p.cmd}`).join('\n') + '\n'); return 0; }
+    if (/-ef|-f/.test(flat)) { this.out('UID          PID    PPID  C STIME TTY          TIME CMD\n' + rows.map(p => `${pad(p.user, 8, true)} ${pad(p.pid, 7)} ${pad(p.ppid, 7)}  0 ${t0(p)} ${pad(tty(p), 8, true)} 00:00:00 ${p.cmd}`).join('\n') + '\n'); return 0; }
+    this.out('    PID TTY          TIME CMD\n' + rows.map(p => `${pad(p.pid, 7)} ${pad(tty(p), 8, true)} 00:00:00 ${comm(p)}`).join('\n') + '\n');
+    return 0;
+  };
+  C.pgrep = function (a) {
+    const [f, rest] = opts(a, 'u');
+    const re = new RegExp(rest[0] || '^$');
+    const hits = this.procs.filter(p => (f.f ? re.test(p.cmd) : re.test(comm(p))) && (!f.u || p.user === f.u));
+    hits.forEach(p => this.out(f.l || f.a ? `${p.pid} ${f.a ? p.cmd : comm(p)}\n` : p.pid + '\n'));
+    return hits.length ? 0 : 1;
+  };
+  C.pkill = function (a) {
+    let sig = 15; const b = a.filter(x => { if (/^-[A-Z]+$|^-\d+$/.test(x)) { sig = sigNum(x.slice(1)); return false; } return true; });
+    const [f, rest] = opts(b, 'u'); const re = new RegExp(rest[0] || '^$');
+    const hits = this.procs.filter(p => (f.f ? re.test(p.cmd) : re.test(comm(p))) && (!f.u || p.user === f.u));
+    let denied = false;
+    hits.forEach(p => { if (!this.proc(p.pid)) return; if (p.user !== this.user && this.user !== 'root') { this.eout(`pkill: killing pid ${p.pid} failed: Operation not permitted\n`); denied = true; } else this.signal(p.pid, sig, 'pkill'); });
+    return hits.length && !denied ? 0 : hits.length ? 1 : 1;
+  };
+  C.killall = function (a) {
+    let sig = 15; const names = a.filter(x => { if (/^-[A-Z]+$|^-\d+$/.test(x)) { sig = sigNum(x.slice(1)); return false; } return !x.startsWith('-'); });
+    let code = 0;
+    names.forEach(nm => {
+      const hits = this.procs.filter(p => comm(p) === nm);
+      if (!hits.length) { this.eout(`${nm}: no process found\n`); code = 1; return; }
+      hits.forEach(p => { if (!this.proc(p.pid)) return; if (p.user !== this.user && this.user !== 'root') { this.eout(`${nm}(${p.pid}): Operation not permitted\n`); code = 1; } else this.signal(p.pid, sig, 'killall'); });
+    });
+    return code;
+  };
+  C.nohup = function (a, input) {
+    if (!a.length) { this.eout("nohup: missing operand\nTry 'nohup --help' for more information.\n"); return 125; }
+    if (this.notty) return this.call(a, input);
+    this.eout("nohup: ignoring input and appending output to 'nohup.out'\n");
+    const f = this.abs('nohup.out'), n = this.node(f) || this.mk(f, 'f', 0o600, this.user, '');
+    let buf = ''; const save = this.outHook; this.outHook = s => { buf += s; };
+    let code; try { code = this.call(a, input); } finally { this.outHook = save; }
+    n.data += buf; n.mtime = this.now();
+    return code;
+  };
+  C.nice = function (a, input) {
+    if (!a.length) { this.out('0\n'); return 0; }
+    let k = 0, n = 10;
+    if (a[0] === '-n') { n = +a[1]; k = 2; } else if (/^-\d+$/.test(a[0])) { n = +a[0].slice(1); k = 1; }
+    if (n < 0 && this.user !== 'root') this.eout('nice: cannot set niceness: Permission denied\n');
+    return this.call(a.slice(k), input);
+  };
+  C.renice = function (a) {
+    let n = 0, i = 0;
+    if (a[0] === '-n') { n = +a[1]; i = 2; } else { n = +a[0]; i = 1; }
+    if (a[i] === '-p') i++;
+    let code = 0;
+    a.slice(i).forEach(t => {
+      const p = this.proc(+t);
+      if (!p) { this.eout(`renice: failed to get priority for ${t} (process ID): No such process\n`); code = 1; return; }
+      if (p.user !== this.user && this.user !== 'root' || n < (p.ni || 0) && this.user !== 'root') { this.eout(`renice: failed to set priority for ${t} (process ID): Permission denied\n`); code = 1; return; }
+      this.out(`${t} (process ID) old priority ${p.ni || 0}, new priority ${n}\n`); p.ni = n;
+    });
+    return code;
+  };
+  C.top = function () {
+    const rows = this.allProcs().filter(p => !p.me).sort((x, y) => (y.cpu || 0) - (x.cpu || 0) || x.pid - y.pid);
+    const busy = rows.reduce((s, p) => s + (p.cpu || 0), 0) / 2;
+    this.out(`(the practice shell prints one screen, like top -b -n 1. A real top redraws every 3 seconds: q quits, k kills, M sorts by memory, P by CPU)\ntop - ${when(this.clock).slice(7)}:00 up 3 days,  2:41,  1 user,  load average: ${(0.3 + busy / 50).toFixed(2)}, 0.35, 0.30\nTasks: ${pad(rows.length, 3)} total,   ${rows.filter(p => p.cpu).length} running, ${pad(rows.filter(p => !p.cpu && p.stat !== 'T').length, 3)} sleeping,   ${rows.filter(p => p.stat === 'T').length} stopped,   0 zombie\n%Cpu(s): ${pad(busy.toFixed(1), 4)} us,  0.3 sy,  0.0 ni, ${pad((99.7 - busy).toFixed(1), 4)} id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st\nMiB Mem :   7859.4 total,   5120.6 free,   1210.3 used,   1528.5 buff/cache\nMiB Swap:   2048.0 total,   2048.0 free,      0.0 used.   6420.1 avail Mem\n\n    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND\n` +
+      rows.map(p => `${pad(p.pid, 7)} ${pad(p.user, 9, true)} ${pad(20 + (p.ni || 0), 3)} ${pad(p.ni || 0, 3)} ${pad(p.pid === 1 ? 167700 : 8000 + p.pid % 900 * 7, 7)} ${pad(3000 + p.pid % 700 * 3, 6)} ${pad(2200, 6)} ${p.cpu ? 'R' : p.stat === 'T' ? 'T' : 'S'} ${pad((p.cpu || 0).toFixed(1), 5)}   0.1   0:00.${pad(p.pid % 100, 2).replace(' ', '0')} ${comm(p)}`).join('\n') + '\n');
+    return 0;
+  };
+  C.time = function (a, input) {
+    const t0 = this.clock, code = this.call(a, input), secs = Math.max(0, (this.clock - t0) / 1000);
+    this.eout(`\nreal\t${Math.floor(secs / 60)}m${(secs % 60 + 0.002).toFixed(3)}s\nuser\t0m0.001s\nsys\t0m0.001s\n`);
+    return code;
+  };
+  C.yes = function (a) { const w = (a.length ? a.join(' ') : 'y') + '\n'; if (this.notty) { this.out(w.repeat(2000)); return 0; } this.out(w.repeat(12) + '^C\n(yes never stops on its own. In a real terminal press Ctrl+C. Here it was stopped after 12 lines)\n'); return 130; };
   C.true = function () { return 0; };
   C.false = function () { return 1; };
   C.exit = function (a) { throw { exit: a[0] === undefined ? this.last : +a[0] }; };
@@ -2267,7 +2501,7 @@ const LXSH = (() => {
   C.su = function () { this.eout('su: Authentication failure (in this practice shell use sudo instead)\n'); return 1; };
   const exitRoot = C.exit;
   C.exit = function (a) { if (this.user === 'root') { this.user = USER; return 0; } return exitRoot.call(this, a); };
-  ['apt', 'dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'top', 'htop', 'mount', 'useradd', 'passwd', 'crontab', 'strace'].forEach(c => {
+  ['apt', 'dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'useradd', 'passwd', 'crontab', 'strace'].forEach(c => {
     C[c] = function () { this.eout(`${c}: this command is explained in its own lesson, but the practice shell does not run it. Try it on a real Linux machine, a virtual machine or WSL.\n`); return 127; };
   });
   C.vim = C.vi = C.nano = function (a) { this.eout(`${a[0] ? a[0] + ': ' : ''}the practice shell has no full screen editor. Use echo "text" > file or cat > file with a here document instead.\n`); return 1; };
