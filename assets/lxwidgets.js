@@ -891,6 +891,78 @@
     }
   }));
 
+  /* admin 1.1 account files: a line of /etc/passwd, /etc/shadow, /etc/group or sudoers, read field by field */
+  const ACCT = {
+    passwd: { label: 'one line of /etc/passwd', eg: ['dev1:x:1002:1002:Dev One,,,:/home/dev1:/bin/bash', 'www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin', 'root:x:0:0:root:/root:/bin/bash', 'backup:x:34:34:backup:/var/backups:/usr/sbin/nologin'] },
+    shadow: { label: 'one line of /etc/shadow', eg: ['dev1:$y$j9T$Hk3...$Qx9...:20780:0:99999:7:::', 'dev1:!:20780:0:99999:7:::', 'ops:$6$salt$hash:20700:1:90:14:30::', 'daemon:*:20415:0:99999:7:::'] },
+    group: { label: 'one line of /etc/group', eg: ['sudo:x:27:learner,dev1', 'web:x:1003:', 'docker:x:998:asha,dev1'] },
+    sudoers: { label: 'one rule in /etc/sudoers', eg: ['%sudo ALL=(ALL:ALL) ALL', 'dev1 ALL=(root) NOPASSWD: /usr/bin/systemctl restart nginx', 'backup web1=(postgres) /usr/bin/pg_dump', 'root ALL=(ALL:ALL) ALL'] }
+  };
+  def('lx-account', el => W(el, {
+    title: 'Read an account line',
+    sub: 'Pick a file, then type or pick a line. Pip reads it one field at a time, as login, su, sudo and ls do.',
+    inputs: [{ k: 'file', label: 'File', type: 'seg', val: 'passwd', opts: [['passwd', '/etc/passwd'], ['shadow', '/etc/shadow'], ['group', '/etc/group'], ['sudoers', 'sudoers']] },
+             { k: 'line', label: 'Line', type: 'text', val: 'dev1:x:1002:1002:Dev One,,,:/home/dev1:/bin/bash', w: 380 }],
+    random: () => { const k = Object.keys(ACCT)[Math.floor(Math.random() * 4)], eg = ACCT[k].eg; return { file: k, line: eg[Math.floor(Math.random() * eg.length)] }; },
+    frames: v => {
+      const kind = ACCT[v.file] ? v.file : 'passwd', line = String(v.line).trim();
+      const day = d => { const t = new Date(+d * 864e5); return t.toISOString().slice(0, 10); };
+      let fields = [], names = [];
+      if (kind === 'sudoers') {
+        const m = /^(\S+)\s+([^=\s]+)\s*=\s*(?:\(([^)]*)\)\s*)?((?:(?:NOPASSWD|PASSWD|NOEXEC|SETENV):\s*)*)(.+)$/.exec(line);
+        if (!m) return [{ msg: 'A sudoers rule reads: who, where = (as whom) commands, for example <code>dev1 ALL=(root) /usr/bin/systemctl</code>. visudo would refuse this line.', mood: 'sad', fx: 'shake', layers: [] }];
+        names = ['who', 'on which hosts', 'as which user and group', 'tags', 'commands'];
+        fields = [m[1], m[2], m[3] === undefined ? '(root, the default)' : m[3], m[4].trim() || '(none)', m[5]];
+        const say = [
+          m[1].startsWith('%') ? `every member of the group <b>${esc(m[1].slice(1))}</b> (a % in front means a group)` : `the user <b>${esc(m[1])}</b>`,
+          m[2] === 'ALL' ? 'on any host. The same sudoers file can be shared by many machines' : `only on the host called <b>${esc(m[2])}</b>`,
+          m[3] === undefined ? 'may run commands as root, because no run-as list was given' : `may run commands as <b>${esc(m[3])}</b>. Before the colon are users, after it groups`,
+          /NOPASSWD/.test(m[4]) ? '<b>NOPASSWD</b>: sudo will not ask for the user’s own password. Use it only for narrow commands' : 'no tags, so sudo asks for the user’s own password (not the root password), then remembers it for a few minutes',
+          m[5].trim() === 'ALL' ? 'any command at all. This is full root power' : `only <code>${esc(m[5])}</code>, with exactly these arguments if arguments are given. Always write full paths`];
+        const fr = names.map((n, k) => ({ msg: `${n[0].toUpperCase() + n.slice(1)}: ${say[k]}.`, mood: k === 4 && m[5].trim() === 'ALL' ? 'wow' : 'look', layers: [{ t: 'flow', label: 'who host=(runas) tags commands', items: fields.map((f, j) => [f, names[j], j === k ? 'cur' : j < k ? 'yes' : '']), plain: true }] }));
+        fr.push({ msg: 'Always edit sudoers with <code>sudo visudo</code> or a file in /etc/sudoers.d with <code>sudo visudo -f</code>. visudo checks the syntax before saving, so a typo cannot lock everyone out of sudo.', mood: 'happy', fx: 'burst', layers: [{ t: 'flow', label: 'The whole rule', items: fields.map((f, j) => [f, names[j], 'yes']), plain: true }] });
+        return fr;
+      }
+      const f = line.split(':');
+      const want = { passwd: 7, shadow: 9, group: 4 }[kind];
+      if (f.length !== want) return [{ msg: `A line of /etc/${kind} has exactly ${want} fields separated by colons. This one has ${f.length}.`, mood: 'sad', fx: 'shake', layers: [] }];
+      let say;
+      if (kind === 'passwd') {
+        names = ['user name', 'password', 'UID', 'GID', 'comment (GECOS)', 'home folder', 'login shell'];
+        const uid = +f[2];
+        say = [`The login name is <b>${esc(f[0])}</b>.`,
+          f[1] === 'x' ? 'An <b>x</b> means the real password hash lives in /etc/shadow, which only root can read.' : 'The password field is not x. Modern systems keep hashes in /etc/shadow instead.',
+          `The user ID is <b>${esc(f[2])}</b>. ${uid === 0 ? 'UID 0 is root, whatever the name. The kernel checks the number, not the name.' : uid < 1000 ? 'Below 1000 on Debian and Ubuntu means a system account for a service.' : 'From 1000 up means a normal person’s account (UID_MIN in /etc/login.defs).'}`,
+          `The primary group ID is <b>${esc(f[3])}</b>. New files get this group. Its name is in /etc/group.`,
+          `The comment is <b>${esc(f[4]) || '(empty)'}</b>, usually the full name. Commas separate room, phone and other old fields.`,
+          `The home folder is <b>${esc(f[5])}</b>. ~ means this folder for this user.`,
+          /nologin|false$/.test(f[6]) ? `The shell is <b>${esc(f[6])}</b>, so nobody can log in as this account. Services run as it without a shell.` : `The shell <b>${esc(f[6])}</b> starts when this user logs in.`];
+      } else if (kind === 'shadow') {
+        names = ['user name', 'password hash', 'last change', 'min days', 'max days', 'warn days', 'inactive days', 'expire date', 'reserved'];
+        const h = f[1], alg = { '$y$': 'yescrypt', '$6$': 'SHA-512 crypt', '$5$': 'SHA-256 crypt', '$1$': 'MD5 crypt (weak, old)', '$2b$': 'bcrypt' };
+        const a = Object.keys(alg).find(k => h.startsWith(k));
+        say = [`The account <b>${esc(f[0])}</b>.`,
+          h === '*' ? 'A <b>*</b> means no password can ever match, which is normal for system accounts.' : h.startsWith('!') ? 'A <b>!</b> in front means the password is <b>locked</b>. passwd -l or usermod -L adds it, and a fresh useradd account starts locked until it gets a password.' : h === '' ? 'An empty field means no password at all, which is dangerous.' : `A hash made with <b>${a ? alg[a] : 'an unknown method'}</b>. The format is $method$salt$hash, and the salt makes equal passwords look different.`,
+          `Last changed on day <b>${esc(f[2])}</b> counted from 1 January 1970, which is ${/^\d+$/.test(f[2]) ? day(f[2]) : 'not a number'}.`,
+          `At least <b>${esc(f[3]) || 0}</b> days must pass before the user may change it again.`,
+          f[4] === '99999' || f[4] === '' ? 'Max <b>99999</b> days means the password never really expires.' : `The password must be changed every <b>${esc(f[4])}</b> days.`,
+          `The user is warned <b>${esc(f[5]) || 0}</b> days before it expires.`,
+          f[6] ? `After expiry the account still works for <b>${esc(f[6])}</b> days, then it is disabled.` : 'Empty, so no grace period is set.',
+          f[7] ? `The whole account expires on day ${esc(f[7])}.` : 'Empty, so the account itself never expires.',
+          'Reserved for future use, always empty.'];
+      } else {
+        names = ['group name', 'password', 'GID', 'members'];
+        const mem = f[3] ? f[3].split(',') : [];
+        say = [`The group is <b>${esc(f[0])}</b>.`, 'Group passwords are almost never used. x points to /etc/gshadow.', `The group ID is <b>${esc(f[2])}</b>.`,
+          mem.length ? `Extra members: <b>${esc(mem.join(', '))}</b>. Users whose primary GID is ${esc(f[2])} in /etc/passwd also belong, but are not listed here.` : 'No extra members are listed. Users whose primary GID is this one still belong.'];
+      }
+      const fr = names.map((n, k) => ({ msg: `Field ${k + 1}, ${n}: ${say[k]}`, mood: k === 1 && kind === 'shadow' && f[1].startsWith('!') ? 'wow' : 'look', layers: [{ t: 'flow', label: ACCT[kind].label, items: f.map((x, j) => [x === '' ? '(empty)' : x.length > 18 ? x.slice(0, 16) + '…' : x, names[j], j === k ? 'cur' : j < k ? 'yes' : '']), plain: true }] }));
+      const tip = { passwd: `<code>getent passwd ${esc(f[0])}</code> prints this line, and <code>id ${esc(f[0])}</code> shows the IDs with names.`, shadow: `<code>sudo chage -l ${esc(f[0])}</code> shows these dates in words, and <code>sudo passwd -S ${esc(f[0])}</code> gives a one-line status.`, group: `<code>getent group ${esc(f[0])}</code> prints this line, and <code>sudo usermod -aG ${esc(f[0])} NAME</code> adds a member.` }[kind];
+      fr.push({ msg: 'Every field read. ' + tip, mood: 'happy', fx: 'burst', layers: [{ t: 'flow', label: ACCT[kind].label, items: f.map((x, j) => [x === '' ? '(empty)' : x.length > 18 ? x.slice(0, 16) + '…' : x, names[j], 'yes']), plain: true }] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

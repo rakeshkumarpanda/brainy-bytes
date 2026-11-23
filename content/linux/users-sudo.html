@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Users, groups and sudo · Unix and Linux</title>
+<meta name="description" content="/etc/passwd, /etc/shadow and /etc/group with every field, UID ranges and /etc/login.defs, getent and id, useradd, adduser, usermod -aG, groupadd, passwd, chpasswd, chage and userdel, sudo, sudo -i, sudo -u, sudo -l and su, sudoers rules, visudo and /etc/sudoers.d, secure_path, and the auth log.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=admin">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 1: Users and software</span><span>›</span><span>Users and sudo</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 1 of 1 · Intermediate</div>
+    <h1>Users, groups and sudo</h1>
+    <p class="lead">Read the account files field by field, create, change and remove users and groups, set and lock passwords, and give exactly the right amount of root power with sudo and visudo.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#users-sudo" data-topic="cheatsheet" data-h="users-sudo">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#accounts" data-l="accounts"><span class="n">1</span><span class="t">Accounts: users, groups and the files behind them</span></a></li><li><a href="#manage" data-l="manage"><span class="n">2</span><span class="t">Creating, changing and removing accounts</span></a></li><li><a href="#sudo" data-l="sudo"><span class="n">3</span><span class="t">sudo, su and the sudoers file</span></a></li><li><a href="#practice" data-l="practice"><span class="n">4</span><span class="t">Practice: manage an account in the practice shell</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Accounts and privilege from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="accounts" data-l="accounts" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Accounts: users, groups and the files behind them</h2>
+<p>Linux knows people and services as numbers. A <b>UID</b> names a user and a <b>GID</b> names a group, and three plain text files map the numbers to names and settings.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>File</th><th>Holds</th><th>Who can read it</th></tr></thead><tbody><tr><td><code>/etc/passwd</code></td><td>one line per account: name, UID, primary GID, comment, home folder, shell</td><td>everyone (mode 644)</td></tr><tr><td><code>/etc/shadow</code></td><td>the password hashes and the password ageing dates</td><td>root and the shadow group only (mode 640)</td></tr><tr><td><code>/etc/group</code></td><td>one line per group: name, GID, extra members</td><td>everyone (mode 644)</td></tr><tr><td><code>/etc/login.defs</code></td><td>defaults for new accounts, such as UID_MIN and PASS_MAX_DAYS</td><td>everyone</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>UID range on Debian and Ubuntu</th><th>Used for</th></tr></thead><tbody><tr><td>0</td><td>root, the superuser. The kernel gives UID 0 every permission</td></tr><tr><td>1 to 999</td><td>system accounts for services, such as www-data (33) for web servers</td></tr><tr><td>1000 to 60000</td><td>people (UID_MIN and UID_MAX in /etc/login.defs)</td></tr><tr><td>65534</td><td>nobody, an account that owns nothing</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-account"></div>
+<div class="lx-run"><div class="lx-rh"><span>The account files on a real system</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">getent passwd root learner</span>
+<span class="lx-o">root:x:0:0:root:/root:/bin/bash
+learner:x:1000:1000::/home/learner:/bin/bash</span>
+<span class="lx-cmd">id learner</span>
+<span class="lx-o">uid=1000(learner) gid=1000(learner) groups=1000(learner),27(sudo)</span>
+<span class="lx-cmd">id -nG learner</span>
+<span class="lx-o">learner sudo</span>
+<span class="lx-cmd">ls -l /etc/passwd /etc/shadow /etc/group</span>
+<span class="lx-o">-rw-r--r-- 1 root root    983 Nov 23 22:44 /etc/group
+-rw-r--r-- 1 root root   3378 Nov 23 22:44 /etc/passwd
+-rw-r----- 1 root shadow 1408 Nov 23 22:44 /etc/shadow</span>
+<span class="lx-cmd">cat /etc/shadow</span>
+<span class="lx-o">cat: /etc/shadow: Permission denied</span>
+<span class="lx-cmd">grep -E '^(UID_MIN|UID_MAX|PASS_MAX_DAYS|ENCRYPT_METHOD)' /etc/login.defs</span>
+<span class="lx-o">PASS_MAX_DAYS	99999
+UID_MIN			 1000
+UID_MAX			60000
+ENCRYPT_METHOD SHA512</span></pre><div class="lx-note">getent reads the account databases, which are the files here but can also come from a network directory such as LDAP. id -nG lists the group names, and learner is in the sudo group, so learner may use sudo. /etc/shadow refused to open for a normal user, which protects the password hashes from guessing attacks.</div></div>
+<div class="vt-talk" hidden>Linux does not really think in names. Every user has a number called a U I D, and every group has a number called a G I D. Three text files connect the numbers to names. Slash etc slash passwd has one line per account with seven fields separated by colons: the name, an x, the U I D, the main group, a comment with the full name, the home folder and the login shell. Despite its name it holds no passwords any more. The password hashes moved to slash etc slash shadow, which only root can read. Slash etc slash group lists groups and their extra members. U I D zero is root. Numbers below one thousand belong to services, and people start at one thousand. Use the animation to read each field of real lines, and notice that the getent command reads these databases for you.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="manage" data-l="manage" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Creating, changing and removing accounts</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>useradd -m -s /bin/bash -c "Full Name" NAME</code></td><td>Create a user with a home folder (-m), a shell and a comment. Without -s, Debian and Ubuntu give /bin/sh</td><td><code>sudo useradd -m -s /bin/bash dev1</code></td></tr><tr><td><code>adduser NAME</code></td><td>Debian and Ubuntu: a friendly script that asks questions, creates the home folder and sets a password</td><td><code>sudo adduser dev1</code></td></tr><tr><td><code>passwd NAME</code></td><td>Set or change a password. Without a name it changes your own</td><td><code>sudo passwd dev1</code></td></tr><tr><td><code>usermod -aG GROUP NAME</code></td><td>Add the user to an extra group. The change applies from the next login</td><td><code>sudo usermod -aG docker dev1</code></td></tr><tr><td><code>usermod -L NAME, usermod -U NAME</code></td><td>Lock and unlock the password</td><td><code>sudo usermod -L dev1</code></td></tr><tr><td><code>chage -M DAYS NAME, chage -l NAME</code></td><td>Set the maximum password age, list the ageing settings</td><td><code>sudo chage -M 90 dev1</code></td></tr><tr><td><code>groupadd NAME, groupdel NAME</code></td><td>Create or delete a group</td><td><code>sudo groupadd web</code></td></tr><tr><td><code>userdel -r NAME</code></td><td>Delete the user, with -r also the home folder and mail</td><td><code>sudo userdel -r dev1</code></td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div><code>usermod -G web dev1</code> without -a replaces the whole list of extra groups, so dev1 silently leaves sudo, docker and every other group. Always write -aG.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>The life of an account, run as root</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">useradd -m -u 1002 -s /bin/bash -c "Dev One" dev1</span>
+<span class="lx-cmd lx-root">getent passwd dev1</span>
+<span class="lx-o">dev1:x:1002:1002:Dev One:/home/dev1:/bin/bash</span>
+<span class="lx-cmd lx-root">ls -la /home/dev1</span>
+<span class="lx-o">total 20
+drwxr-x--- 2 dev1 dev1 4096 Nov 23 22:44 .
+drwxr-xr-x 7 root root 4096 Nov 23 22:44 ..
+-rw-r--r-- 1 dev1 dev1  220 Mar 31  2024 .bash_logout
+-rw-r--r-- 1 dev1 dev1 3771 Mar 31  2024 .bashrc
+-rw-r--r-- 1 dev1 dev1  807 Mar 31  2024 .profile</span>
+<span class="lx-cmd lx-root">groupadd -g 1003 web</span>
+<span class="lx-cmd lx-root">usermod -aG web,sudo dev1</span>
+<span class="lx-cmd lx-root">id dev1</span>
+<span class="lx-o">uid=1002(dev1) gid=1002(dev1) groups=1002(dev1),27(sudo),1003(web)</span>
+<span class="lx-cmd lx-root">passwd -S dev1</span>
+<span class="lx-o">dev1 L 2026-11-23 0 99999 7 -1</span>
+<span class="lx-cmd lx-root">echo 'dev1:Garden.Tree.42' | chpasswd</span>
+<span class="lx-cmd lx-root">passwd -S dev1</span>
+<span class="lx-o">dev1 P 2026-11-23 0 99999 7 -1</span>
+<span class="lx-cmd lx-root">chage -M 90 dev1</span>
+<span class="lx-cmd lx-root">chage -l dev1 | head -4</span>
+<span class="lx-o">Last password change					: Nov 23, 2026
+Password expires					: Feb 21, 2027
+Password inactive					: never
+Account expires						: never</span>
+<span class="lx-cmd lx-root">usermod -L dev1</span>
+<span class="lx-cmd lx-root">passwd -S dev1</span>
+<span class="lx-o">dev1 L 2026-11-23 0 90 7 -1</span>
+<span class="lx-cmd lx-root">sudo -u dev1 bash -c 'whoami; cd; pwd'</span>
+<span class="lx-o">dev1
+/home/dev1</span>
+<span class="lx-cmd lx-root">userdel -r dev1</span>
+<span class="lx-o">userdel: dev1 mail spool (/var/mail/dev1) not found</span>
+<span class="lx-cmd lx-root">groupdel web</span>
+<span class="lx-cmd lx-root">id dev1</span>
+<span class="lx-o">id: ‘dev1’: no such user</span></pre><div class="lx-note">useradd -m copied the files of /etc/skel into the new home folder. passwd -S printed L (locked) until chpasswd set a password, then P, then L again after usermod -L. The fifth field of passwd -S is the maximum age, now 90 days. userdel -r removed the home folder and warned that dev1 had no mail spool.</div></div>
+<div class="note note-tip"><b>Remember</b><div>chpasswd reads name:password lines from standard input, which suits scripts. Never put a real password in a command line on a shared machine, because other users can see running commands with ps.</div></div>
+<div class="vt-talk" hidden>Creating an account is a job for root, so these commands run with sudo. Useradd dash m creates a user and a home folder, which is filled with starter files copied from slash etc slash skel. On Debian and Ubuntu, adduser is a friendlier helper that asks for the full name and a password. A new account from useradd starts with a locked password, shown as L by passwd dash capital S, until you set one with passwd or chpasswd. To add someone to an extra group, use usermod dash a capital G. Never forget the a, which means append. Without it the user is removed from every group that is not in your list. Chage controls password ageing, for example a maximum age of ninety days. And userdel dash r deletes the account together with its home folder, so copy any data you need first.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sudo" data-l="sudo" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>sudo, su and the sudoers file</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Command</th><th>What happens</th><th>Password asked</th></tr></thead><tbody><tr><td><code>sudo CMD</code></td><td>run one command as root, and log it</td><td>your own password, then remembered for 15 minutes by default</td></tr><tr><td><code>sudo -u NAME CMD</code></td><td>run one command as another user</td><td>your own</td></tr><tr><td><code>sudo -i</code></td><td>a full root login shell, until you type exit</td><td>your own</td></tr><tr><td><code>sudo -l</code></td><td>list what you are allowed to run</td><td>your own</td></tr><tr><td><code>su - NAME</code></td><td>become another user with a login shell</td><td>the password of that user</td></tr><tr><td><code>sudo visudo</code></td><td>edit /etc/sudoers safely, with a syntax check</td><td>your own</td></tr></tbody></table></div>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>A sudoers rule</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>who      hosts = (run as users:groups)  tags       commands
+%sudo    ALL   = (ALL:ALL)                         ALL
+dev1     ALL   = (root)               NOPASSWD:    /usr/bin/systemctl restart nginx</pre><div class="lx-note">A % in front of the name means a group. Put your own rules in a small file in /etc/sudoers.d and create it with sudo visudo -f /etc/sudoers.d/NAME.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Reading and checking sudo rules, run as root</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">grep -E '^(Defaults|root|%sudo|@includedir)' /etc/sudoers</span>
+<span class="lx-o">Defaults	env_reset
+Defaults	mail_badpass
+Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+Defaults	use_pty
+root	ALL=(ALL:ALL) ALL
+%sudo	ALL=(ALL:ALL) ALL
+@includedir /etc/sudoers.d</span>
+<span class="lx-cmd lx-root">sudo -l -U learner</span>
+<span class="lx-o">Matching Defaults entries for learner on vm:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty
+
+User learner may run the following commands on vm:
+    (ALL : ALL) ALL</span>
+<span class="lx-cmd lx-root">printf 'learner ALL=(root) NOPASSWD: /usr/bin/systemctl restart nginx\n' &gt; /tmp/web-restart</span>
+<span class="lx-cmd lx-root">visudo -cf /tmp/web-restart</span>
+<span class="lx-o">/tmp/web-restart: parsed OK</span>
+<span class="lx-cmd lx-root">printf 'learner ALL=(root) NOPASSWD /usr/bin/systemctl\n' &gt; /tmp/broken</span>
+<span class="lx-cmd lx-root">visudo -cf /tmp/broken</span>
+<span class="lx-o">/tmp/broken:1:47: syntax error
+learner ALL=(root) NOPASSWD /usr/bin/systemctl
+                                              ^</span>
+<span class="lx-cmd lx-root">rm /tmp/web-restart /tmp/broken</span></pre><div class="lx-note">The %sudo rule is why members of the sudo group may run any command. secure_path is the PATH sudo uses, which includes the sbin folders where admin tools live. visudo -c checked one good file and found the missing colon after NOPASSWD in the other, pointing at the column.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>A sudoers file with a syntax error can stop sudo from working for everyone. Never edit it with a plain editor. visudo refuses to save a broken file.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>/var/log/auth.log (Debian, Ubuntu), /var/log/secure (RHEL)</code></td><td>Every sudo use, login and failed password</td><td><code>sudo grep sudo /var/log/auth.log | tail</code></td></tr><tr><td><code>journalctl _COMM=sudo</code></td><td>The same entries from the systemd journal</td><td><code>journalctl _COMM=sudo --since today</code></td></tr><tr><td><code>who, w</code></td><td>Who is logged in now, and what they run</td><td><code>w</code></td></tr><tr><td><code>last, lastb</code></td><td>Past logins, and failed ones (lastb needs root)</td><td><code>last -n 5</code></td></tr></tbody></table></div>
+<div class="vt-talk" hidden>Logging in as root for daily work is risky, because one typo can damage the whole system. Instead, normal users run single commands as root with sudo. Sudo asks for your own password, not root’s, remembers it for a few minutes, and writes every use to the log, so you always know who did what. Sudo dash i gives a root shell when you need several commands, and sudo dash u runs a command as another user, such as a database account. Who may do what is written in slash etc slash sudoers. A rule says who, on which hosts, as which user, and which commands. A percent sign means a group, which is why everyone in the sudo group may run anything. Never edit this file with a normal editor. Use visudo, which checks the syntax first, and keep your own rules in small files inside slash etc slash sudoers dot d. You can give a narrow right, such as restarting one service, without handing out full root power.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Practice: manage an account in the practice shell</h2>
+<p>The practice shell keeps its own /etc/passwd, /etc/group and /etc/shadow, and its useradd, usermod and userdel change them the way the real tools do. Commands in /usr/sbin are found only through sudo, as on Debian.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Create, change and remove an account&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Create the user dev1 with a home folder and bash as the login shell.&quot;, &quot;hint&quot;: &quot;sudo useradd -m -s /bin/bash dev1&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;/home/dev1&quot;, &quot;type&quot;: &quot;d&quot;}, {&quot;has&quot;: [&quot;/etc/passwd&quot;, &quot;dev1:x:1002:1002::/home/dev1:/bin/bash&quot;]}]}, {&quot;t&quot;: &quot;Print the passwd line of dev1 with getent.&quot;, &quot;hint&quot;: &quot;getent passwd dev1&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^dev1:x:1002:&quot;}]}, {&quot;t&quot;: &quot;Create a group called web.&quot;, &quot;hint&quot;: &quot;sudo groupadd web&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;/etc/group&quot;, &quot;web:x:&quot;]}]}, {&quot;t&quot;: &quot;Add dev1 to the group web, keeping its other groups.&quot;, &quot;hint&quot;: &quot;sudo usermod -aG web dev1&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;/etc/group&quot;, &quot;web:x:1003:dev1&quot;]}]}, {&quot;t&quot;: &quot;Give dev1 a password with chpasswd.&quot;, &quot;hint&quot;: &quot;echo \&quot;dev1:Garden.Tree.42\&quot; | sudo chpasswd&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;chpasswd&quot;}, {&quot;has&quot;: [&quot;/etc/shadow&quot;, &quot;dev1:$y$&quot;]}]}, {&quot;t&quot;: &quot;Show the password status of dev1.&quot;, &quot;hint&quot;: &quot;sudo passwd -S dev1&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^dev1 P &quot;}]}, {&quot;t&quot;: &quot;Lock the password of dev1.&quot;, &quot;hint&quot;: &quot;sudo usermod -L dev1&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;/etc/shadow&quot;, &quot;dev1:!$y$&quot;]}]}, {&quot;t&quot;: &quot;List the groups of dev1.&quot;, &quot;hint&quot;: &quot;groups dev1&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^dev1 : dev1 web$&quot;}]}, {&quot;t&quot;: &quot;Delete dev1 together with its home folder.&quot;, &quot;hint&quot;: &quot;sudo userdel -r dev1&quot;, &quot;check&quot;: [{&quot;gone&quot;: &quot;/home/dev1&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Time to practise. The practice shell has its own account files, and its useradd, usermod and userdel change them just like the real tools. Create a user called dev one with a home folder, look at its line with getent, make a group called web and add dev one to it with usermod dash a capital G. Then give it a password with chpasswd, check the status, lock it, and finally remove the account and its home folder with userdel dash r. Look at slash etc slash group between the steps to see the files change.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Accounts and privilege from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Each person has their own account and password. Only administrators may use sudo, and they use it for one command at a time. Accounts for people who left are locked or deleted.</p></div><div class="ld-p" data-ld="college" hidden><p>Give rights through groups, not through individual sudo rules, and keep each sudoers.d rule as narrow as possible, with full paths. Avoid NOPASSWD for broad commands. A rule such as <code>(root) /usr/bin/vim</code> gives full root, because vim can start a shell. Service accounts use /usr/sbin/nologin and no password. Expire contractor accounts with <code>chage -E</code>.</p></div><div class="ld-p" data-ld="masters" hidden><p>The Name Service Switch (/etc/nsswitch.conf) lets getent and every program read accounts from files, LDAP or SSSD, so large sites manage users centrally. PAM (Pluggable Authentication Modules, /etc/pam.d) decides how a login is checked, with password rules, lockouts after failed tries, and two-factor modules. sudo can log full session input and output, and its rules can live in LDAP.</p></div><div class="ld-p" data-ld="research" hidden><p>Password hashing has moved from MD5 crypt to SHA-512 crypt to yescrypt, a memory-hard function, because GPUs made fast hashes cheap to attack. Research on privilege separation, such as the OpenSSH design that splits a small privileged monitor from an unprivileged worker, and on Linux capabilities, which divide root’s power into pieces like CAP_NET_BIND_SERVICE, aims to make UID 0 matter less.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the intern with root</div><p>A startup gave every developer <code>ALL=(ALL) NOPASSWD: ALL</code> for convenience. A leaked laptop key let an attacker log in as one developer and become root at once. The fix moved rights into groups, replaced the blanket rule with narrow files such as <code>%deploy ALL=(root) /usr/bin/systemctl restart app</code>, turned on passwords for sudo, and sent auth.log to a central log server, where a failed sudo now raises an alert.</p></div>
+<div class="vt-talk" hidden>Here is the bigger picture. Good practice is to give rights to groups rather than to single people, and to keep every sudo rule as narrow as possible. Be careful, because some programs can escape to a shell, so allowing an editor or a pager through sudo can hand out full root power. Service accounts get the nologin shell and no password. In larger organisations accounts come from a central directory such as LDAP, which the name service switch makes look just like the local files, and PAM modules decide how logins are checked, including lockouts and two factor codes. Password hashes have moved to slow, memory hard functions such as yescrypt, because graphics cards can test billions of fast hashes per second. And the long term research goal is to make root less special, by splitting its power into smaller capabilities and by separating programs into privileged and unprivileged parts.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><span></span><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "users-sudo", "topic": "users-sudo", "subject": "linux", "title": "Users, groups and sudo", "codes": {}, "quiz": [{"lv": "e", "q": "Which file lists the accounts and is readable by everyone?", "o": ["/etc/shadow", "/etc/passwd", "/etc/sudoers", "/etc/users"], "a": 1, "hint": "Despite the name.", "why": "/etc/passwd has no hashes any more."}, {"lv": "e", "q": "Which UID does root have?", "o": ["1", "0", "1000", "65534"], "a": 1, "hint": "The first number.", "why": "UID 0 is root."}, {"lv": "e", "q": "Which command runs one command as root?", "o": ["su", "sudo", "root", "admin"], "a": 1, "hint": "Superuser do.", "why": "sudo CMD."}, {"lv": "e", "q": "Where are the password hashes kept?", "o": ["/etc/passwd", "/etc/shadow", "/etc/group", "/home"], "a": 1, "hint": "Hidden.", "why": "Only root can read /etc/shadow."}, {"lv": "m", "q": "Which command adds dev1 to docker without removing other groups?", "o": ["usermod -G docker dev1", "usermod -aG docker dev1", "groupadd docker dev1", "useradd -G docker dev1"], "a": 1, "hint": "Append.", "why": "-a keeps the existing groups."}, {"lv": "m", "q": "What does an x in the second field of /etc/passwd mean?", "o": ["No password", "The hash is in /etc/shadow", "The account is locked", "Root only"], "a": 1, "hint": "Look elsewhere.", "why": "x points to /etc/shadow."}, {"lv": "m", "q": "Which password does sudo ask for by default?", "o": ["The root password", "Your own password", "No password", "The group password"], "a": 1, "hint": "Yours.", "why": "sudo checks your own password."}, {"lv": "m", "q": "How should you edit /etc/sudoers?", "o": ["nano /etc/sudoers", "sudo visudo", "echo >> /etc/sudoers", "chmod 777 first"], "a": 1, "hint": "Checked editing.", "why": "visudo checks the syntax before saving."}, {"lv": "m", "q": "passwd -S prints <code>dev1 L ...<\/code>. What does L mean?", "o": ["Logged in", "Locked password", "Local account", "Long password"], "a": 1, "hint": "Locked.", "why": "L is locked, P has a password, NP none."}, {"lv": "m", "q": "What does a % in front of a name in sudoers mean?", "o": ["A comment", "A group", "A percentage", "A host"], "a": 1, "hint": "Many users.", "why": "%sudo means the group sudo."}, {"lv": "h", "q": "Why is <code>dev1 ALL=(root) /usr/bin/vim<\/code> dangerous?", "o": ["vim is slow", "vim can start a shell, which then runs as root", "vim cannot read files", "It is not dangerous"], "a": 1, "hint": "Escapes.", "why": ":!bash inside vim gives a root shell."}, {"lv": "h", "q": "Which shell stops anyone logging in to a service account?", "o": ["/bin/bash", "/usr/sbin/nologin", "/bin/sh", "/etc/shells"], "a": 1, "hint": "No login.", "why": "nologin prints a message and exits."}, {"lv": "h", "q": "A user was added to a group, but id in their open terminal does not show it. Why?", "o": ["usermod failed", "Group lists are read at login, so they must log in again", "Groups need a reboot", "id is cached for a day"], "a": 1, "hint": "Next login.", "why": "Log out and in, or run newgrp."}, {"lv": "x", "q": "Which file decides whether getent reads accounts from files or LDAP?", "o": ["/etc/pam.d/common-auth", "/etc/nsswitch.conf", "/etc/login.defs", "/etc/sudoers"], "a": 1, "hint": "Name service.", "why": "nsswitch.conf lists the sources."}], "calc": [{"lv": "e", "q": "How many colon-separated fields does a line of /etc/passwd have?", "ans": "7", "hint": "Count them.", "steps": ["name, password, UID, GID", "comment, home, shell", "<span class=\"eq\">4 + 3 = 7<\/span>"]}, {"lv": "e", "q": "Debian gives people UIDs from 1000. Accounts 1000, 1001 and 1002 exist. Which UID does useradd pick next?", "ans": "1003", "hint": "One more than the highest.", "steps": ["The highest UID in the range is 1002.", "useradd takes the next free number.", "<span class=\"eq\">1002 + 1 = 1003<\/span>"]}, {"lv": "m", "q": "A password was last changed on shadow day 20780, with a maximum age of 90. On which shadow day does it expire?", "ans": "20870", "hint": "Add the days.", "steps": ["Expiry is last change plus maximum age.", "20780 + 90.", "<span class=\"eq\">20870<\/span>"]}, {"lv": "m", "q": "sudo remembers your password for 15 minutes by default. You ran sudo at 10:00 and again at 10:09. Until what minute past 10 is it remembered now?", "ans": "24", "hint": "Each use restarts the timer.", "steps": ["The timer restarts at 10:09.", "9 + 15.", "<span class=\"eq\">10:24<\/span>"]}, {"lv": "h", "q": "/etc/shadow has mode 640, owner root, group shadow. How many of the classes owner, group and others may read it?", "ans": "2", "hint": "6 and 4 can read.", "steps": ["Owner 6 is rw, group 4 is r.", "Others 0 is nothing.", "<span class=\"eq\">2 classes<\/span>"]}, {"lv": "h", "q": "A shadow line has 9 fields and a passwd line 7. How many fields do the two lines of one account have together?", "ans": "16", "hint": "Add them.", "steps": ["passwd has 7.", "shadow has 9.", "<span class=\"eq\">7 + 9 = 16<\/span>"]}], "assign": [], "must": [["Account files", "/etc/passwd (7 fields, readable), /etc/shadow (hashes and ageing, root only), /etc/group. getent reads them."], ["UIDs", "0 is root, 1 to 999 system accounts, 1000 and up people. The kernel checks numbers, not names."], ["Managing users", "useradd -m -s /bin/bash, passwd or chpasswd, usermod -aG (never -G alone), chage, userdel -r."], ["sudo", "sudo CMD, sudo -i, sudo -u NAME, sudo -l. Edit rules only with visudo, keep them narrow in /etc/sudoers.d."], ["Logs", "sudo and logins go to /var/log/auth.log on Debian and Ubuntu, /var/log/secure on RHEL, and to the journal."]], "summary": "<p>Accounts live in /etc/passwd, /etc/shadow and /etc/group, and the kernel only sees UIDs and GIDs. useradd, usermod -aG, passwd, chage and userdel manage them as root. sudo runs single commands as root, with narrow rules written through visudo and every use logged.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>
