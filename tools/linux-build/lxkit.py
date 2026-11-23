@@ -132,12 +132,21 @@ def execute(script, root=False, keep=False, cwd='~'):
     if not keep:
         reset_home()
     parts = split_cmds(script)
-    body = ['exec 2>&1', "__m() { printf '\\036%s\\n' \"$1\"; }", "HISTIGNORE='__m *'", f'cd {cwd}']
+    # Each top level command is announced by a marker line (\036 and its number) printed from a DEBUG trap, which
+    # bash runs before a command without changing $? or PIPESTATUS. The trap fires only when the line number is the
+    # start of the next expected command, so loops, functions and pipelines inside a command add nothing.
+    body = ['exec 2>&1', None, None, "HISTIGNORE='__m *'", f'cd {cwd}']
+    starts, idx = [], []
     for k, (kind, c) in enumerate(parts):
         if kind == '$':
-            body.append(f'__m {k}')
+            starts.append(sum(1 if x is None else x.count('\n') + 1 for x in body) + 1)
+            idx.append(str(k))
             body.append(c)
-    body.append('__m end')
+    body.append("trap - DEBUG")
+    body.append("printf '\\036end\\n'")
+    body[1] = f"__starts=({' '.join(map(str, starts))}) __idx=({' '.join(idx)}) __n=0"
+    body[2] = ("trap '{ [[ $__n -lt ${#__starts[@]} && $LINENO -eq ${__starts[$__n]} ]] && "
+               "{ printf \"\\036%s\\n\" \"${__idx[$__n]}\"; __n=$((__n + 1)); }; } 2>/dev/null' DEBUG")
     with tempfile.NamedTemporaryFile('w', suffix='.sh', delete=False, dir='/tmp') as f:
         f.write('\n'.join(body) + '\n')
         path = f.name

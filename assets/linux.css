@@ -102,3 +102,10 @@
 .vz .vz-seg button{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 12px; font:inherit; font-size:13.5px; font-weight:800; cursor:pointer}
 .vz .vz-seg button.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
 .vz .vz-seg button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+/* the stream table of lx-redirect */
+.pk-fds{display:flex; flex-direction:column; gap:8px}
+.pk-fdcmd{font:700 14px/1.4 var(--font-mono); background:var(--lx-bg); color:#fff; border-radius:12px; padding:8px 12px; overflow-x:auto; white-space:pre}
+.pk-fd{display:grid; grid-template-columns:34px 64px 24px 1fr; align-items:center; gap:6px; padding:6px 10px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); transition:background .3s, border-color .3s}
+.pk-fd b{font:800 18px var(--font-mono); text-align:center} .pk-fd span{font-weight:700; color:var(--ink2)} .pk-fd i{font-style:normal; color:var(--ink2)}
+.pk-fd em{font-style:normal; font:700 14px var(--font-mono); overflow-wrap:anywhere}
+.pk-fd.look{border-color:var(--accent); background:var(--accent-soft)}

@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipes and filters · Unix and Linux</title>
+<meta name="description" content="The pipe operator, the Unix philosophy, sort with -n -r -t -k -u -h, uniq and uniq -c, the top N recipe, cut with fields and characters, tr translate, delete and squeeze, exit status, PIPESTATUS, pipefail, &amp;&amp; and ||, SIGPIPE, and how the kernel buffers a pipe.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=power">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=power" target="_top">Unix and Linux</a><span>›</span><span>Shell Power Tools</span><span>›</span><span>Step 1: Streams and pipes</span><span>›</span><span>Pipes and filters</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 2 of 2 · Intermediate</div>
+    <h1>Pipes and filters</h1>
+    <p class="lead">Join small commands with | to answer real questions in one line: sort, count, pick columns, change characters, and check that every step of a pipeline really worked.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">3 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#pipes-filters" data-topic="cheatsheet" data-h="pipes-filters">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#pipe" data-l="pipe"><span class="n">1</span><span class="t">The pipe: one command feeds the next</span></a></li><li><a href="#sort" data-l="sort"><span class="n">2</span><span class="t">Sorting and counting: sort, uniq, wc</span></a></li><li><a href="#cut" data-l="cut"><span class="n">3</span><span class="t">Slicing and changing text: cut and tr</span></a></li><li><a href="#status" data-l="status"><span class="n">4</span><span class="t">Did the pipeline work: exit status and pipefail</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Pipes from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="pipe" data-l="pipe" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>The pipe: one command feeds the next</h2>
+<p>The <b>pipe</b> <code>|</code> connects the stdout of one command to the stdin of the next. No temporary file is needed: data flows straight from one program into the other while both run.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>A | B</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">pipe</div><div class="fx-n">The output of A becomes the input of B. Errors (stream 2) still go to the terminal.</div></div><div class="fx"><div class="fx-h"><span>A | B | C | D</span></div><div class="fx-b">pipeline</div><div class="fx-n">Any number of commands. Each one does a small job.</div></div><div class="fx"><div class="fx-h"><span>A 2>&1 | B</span></div><div class="fx-b">errors too</div><div class="fx-n">Send stderr into the pipe as well. Bash also accepts A |& B.</div></div></div>
+<div class="lx-run"><div class="lx-rh"><span>Your first pipelines</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls /etc | head -n 5</span>
+<span class="lx-o">ImageMagick-6
+PackageKit
+X11
+adduser.conf
+alternatives</span>
+<span class="lx-cmd">cat fruits.txt | sort</span>
+<span class="lx-o">apple
+apple
+apple
+banana
+cherry
+kiwi
+mango
+mango</span>
+<span class="lx-cmd">sort fruits.txt | uniq</span>
+<span class="lx-o">apple
+banana
+cherry
+kiwi
+mango</span>
+<span class="lx-cmd">ls /usr/bin | wc -l</span>
+<span class="lx-o">1160</span></pre><div class="lx-note">ls /usr/bin | wc -l counts the programs in /usr/bin of the machine that built this page, so your number will differ.</div></div>
+<div class="viz" data-viz="pk" data-pk="lx-pipe"></div>
+<div class="note note-tip"><b>Remember</b><div>A command that reads a file name never needs cat in front of it: sort fruits.txt does the same as cat fruits.txt | sort with one process less. cat is still handy to start a long pipeline in a readable way.</div></div>
+<div class="vt-talk" hidden>The pipe is the single most famous idea in Unix. The vertical bar takes the output of one command and feeds it directly into the next one, with no file in between. Doug McIlroy at Bell Labs pushed for this for years, and Ken Thompson added pipes to Unix in 1973, reportedly in a single night. Overnight, the small tools that already existed could be combined into new ones. McIlroy later summed up the Unix way of thinking: write programs that do one thing and do it well, and write programs that work together. A pipeline is exactly that. ls lists, head keeps the first lines, sort sorts, wc counts. None of them knows about the others, yet together they answer questions nobody planned for. Notice that error messages are not sent down the pipe. They still go to your screen, so you see problems while the data keeps flowing.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sort" data-l="sort" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Sorting and counting: sort, uniq, wc</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>sort</code></td><td>Sort lines by text</td><td><code>sort names.txt</code></td></tr><tr><td><code>sort -n</code></td><td>Sort by number, so 9 comes before 10</td><td><code>sort -n sizes.txt</code></td></tr><tr><td><code>sort -r</code></td><td>Reverse the order</td><td><code>sort -rn scores.txt</code></td></tr><tr><td><code>sort -t, -k3</code></td><td>Split fields at commas and sort by field 3</td><td><code>sort -t, -k3 -n marks.csv</code></td></tr><tr><td><code>sort -u</code></td><td>Sort and keep one copy of each line</td><td><code>sort -u emails.txt</code></td></tr><tr><td><code>sort -h</code></td><td>Sort human sizes like 2K, 15M, 1G (GNU)</td><td><code>du -sh * | sort -h</code></td></tr><tr><td><code>uniq</code></td><td>Remove repeated lines that are next to each other</td><td><code>sort list | uniq</code></td></tr><tr><td><code>uniq -c</code></td><td>Count each run of repeated lines</td><td><code>sort list | uniq -c</code></td></tr><tr><td><code>uniq -d</code></td><td>Show only lines that appear more than once</td><td><code>sort list | uniq -d</code></td></tr><tr><td><code>wc -l</code></td><td>Count lines</td><td><code>ls | wc -l</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Text order and number order</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">printf '10\n9\n100\n25\n' &gt; nums.txt</span>
+<span class="lx-cmd">sort nums.txt</span>
+<span class="lx-o">10
+100
+25
+9</span>
+<span class="lx-cmd">sort -n nums.txt</span>
+<span class="lx-o">9
+10
+25
+100</span>
+<span class="lx-cmd">sort -rn nums.txt</span>
+<span class="lx-o">100
+25
+10
+9</span></pre><div class="lx-note">Plain sort compares characters from the left, so "100" comes before "25" and "9" comes last. sort -n compares numbers.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Counting things</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">uniq fruits.txt</span>
+<span class="lx-o">mango
+apple
+banana
+apple
+cherry
+mango
+apple
+kiwi</span>
+<span class="lx-cmd">sort fruits.txt | uniq -c</span>
+<span class="lx-o">      3 apple
+      1 banana
+      1 cherry
+      1 kiwi
+      2 mango</span>
+<span class="lx-cmd">sort fruits.txt | uniq -c | sort -rn | head -n 2</span>
+<span class="lx-o">      3 apple
+      2 mango</span>
+<span class="lx-cmd">sort -t, -k3 -rn marks.csv | head -n 3</span>
+<span class="lx-o">Asha,maths,91
+Asha,science,88
+Meera,maths,85</span></pre><div class="lx-note">uniq only removes repeats that sit next to each other, so on the unsorted file it removes nothing. Sort first. The last line sorts the CSV by its third field, the score.</div></div>
+<div class="note note-tip"><b>Remember</b><div>sort uses the rules of your language setting (locale), which can put capitals and small letters together. Scripts that need the same order everywhere run LC_ALL=C sort, which compares plain byte values.</div></div>
+<div class="vt-talk" hidden>sort and uniq are a famous pair. sort puts lines in order. By default it compares text from the left, letter by letter, which surprises people with numbers: one hundred comes before twenty five, because the character one comes before two. Add dash n to sort by numeric value, dash r to reverse, and dash k to pick a column. uniq removes repeated lines, but only when the repeats are next to each other. That is why you almost always see sort followed by uniq. With dash c, uniq counts how many times each line appeared. Then a final sort dash r n puts the most common at the top. This short recipe, sort, uniq dash c, sort dash r n, head, is used every day to find the most frequent visitors in a web log, the commonest errors, or the most popular products.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="cut" data-l="cut" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Slicing and changing text: cut and tr</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>cut -d, -f1</code></td><td>Field 1 of comma separated lines</td><td><code>cut -d, -f1 marks.csv</code></td></tr><tr><td><code>cut -d: -f1,7</code></td><td>Fields 1 and 7, separated by colons</td><td><code>cut -d: -f1,7 /etc/passwd</code></td></tr><tr><td><code>cut -c1-8</code></td><td>Characters 1 to 8 of each line</td><td><code>cut -c1-10 app.log</code></td></tr><tr><td><code>tr a-z A-Z</code></td><td>Translate characters: small letters to capitals</td><td><code>tr a-z A-Z &lt; poem.txt</code></td></tr><tr><td><code>tr -d '0-9'</code></td><td>Delete every digit</td><td><code>tr -d '0-9' &lt; file</code></td></tr><tr><td><code>tr -s ' '</code></td><td>Squeeze runs of spaces into one</td><td><code>tr -s ' ' &lt; file</code></td></tr><tr><td><code>tr ' ' '\n'</code></td><td>Turn spaces into newlines, one word per line</td><td><code>tr ' ' '\n' &lt; poem.txt</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Columns and characters</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cut -d, -f1 marks.csv</span>
+<span class="lx-o">name
+Asha
+Ravi
+Meera
+John
+Ravi
+Asha</span>
+<span class="lx-cmd">cut -d, -f1 marks.csv | tail -n +2 | sort -u</span>
+<span class="lx-o">Asha
+John
+Meera
+Ravi</span>
+<span class="lx-cmd">cut -d: -f1,7 /etc/passwd | head -n 3</span>
+<span class="lx-o">root:/bin/bash
+daemon:/usr/sbin/nologin
+bin:/usr/sbin/nologin</span>
+<span class="lx-cmd">cut -c12-19 logs/app.log | head -n 3</span>
+<span class="lx-o">09:00:01
+09:00:05
+09:01:12</span>
+<span class="lx-cmd">tr a-z A-Z &lt; notes.txt</span>
+<span class="lx-o">BUY MILK
+CALL GRANDMA
+FINISH THE LINUX LESSON</span>
+<span class="lx-cmd">tr -d aeiou &lt; notes.txt</span>
+<span class="lx-o">By mlk
+Cll grndm
+Fnsh th Lnx lssn</span></pre><div class="lx-note">tail -n +2 drops the header line before counting names. In /etc/passwd field 1 is the user name and field 7 the login shell.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Word frequency in one line</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">tr ' ' '\n' &lt; poem.txt | tr A-Z a-z | sort | uniq -c | sort -rn | head -n 3</span>
+<span class="lx-o">      2 twinkle
+      2 the
+      1 you</span></pre><div class="lx-note">Split into words, make them lower case, sort, count, sort by count, keep the top three.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>cut uses exactly one character as the separator. Columns separated by several spaces, as in ps or ls -l output, need squeezing with tr -s first, or awk, which is covered two chapters later.</div></div>
+<div class="vt-talk" hidden>cut and tr are small tools that do one job each. cut picks columns. Tell it the separator with dash d and the field numbers with dash f, and it pulls out, for example, just the names from a spreadsheet file, or the user names from the system password file. tr translates characters one for one. tr with a to z and capital A to Z shouts everything in capitals. With dash d it deletes characters, and with dash s it squeezes repeated characters into one. Put them together with sort and uniq and you can count word frequencies in a whole book with one line. In 1986 the computer scientist Donald Knuth wrote a long, carefully crafted program for exactly that task, for a magazine column. Doug McIlroy reviewed it and showed that a six command Unix pipeline gave the same answer. Both approaches have their place, but the story shows how much power small tools have when combined.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="status" data-l="status" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Did the pipeline work: exit status and pipefail</h2>
+<p>Every command ends with an <b>exit status</b>, a number from 0 to 255. 0 means success, anything else means a problem. The shell keeps the last one in <code>$?</code>. A pipeline reports the status of its <b>last</b> command only, which can hide an early failure.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>echo $?</code></td><td>Status of the last command or pipeline</td><td><code>ls nothere; echo $?</code></td></tr><tr><td><code>echo ${PIPESTATUS[@]}</code></td><td>Bash: the status of every command in the last pipeline</td><td><code>false | true; echo ${PIPESTATUS[@]}</code></td></tr><tr><td><code>set -o pipefail</code></td><td>The pipeline fails if any command in it fails</td><td><code>set -o pipefail</code></td></tr><tr><td><code>A &amp;&amp; B</code></td><td>Run B only if A succeeded</td><td><code>mkdir out &amp;&amp; cd out</code></td></tr><tr><td><code>A || B</code></td><td>Run B only if A failed</td><td><code>cd out || echo "no folder"</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Hidden failures</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat nothere | sort</span>
+<span class="lx-o">cat: nothere: No such file or directory</span>
+<span class="lx-cmd">echo "status: $?"</span>
+<span class="lx-o">status: 0</span>
+<span class="lx-cmd">cat nothere | sort</span>
+<span class="lx-o">cat: nothere: No such file or directory</span>
+<span class="lx-cmd">echo "every part: ${PIPESTATUS[@]}"</span>
+<span class="lx-o">every part: 1 0</span>
+<span class="lx-cmd">set -o pipefail</span>
+<span class="lx-cmd">cat nothere | sort</span>
+<span class="lx-o">cat: nothere: No such file or directory</span>
+<span class="lx-cmd">echo "with pipefail: $?"</span>
+<span class="lx-o">with pipefail: 1</span>
+<span class="lx-cmd">mkdir -p out &amp;&amp; echo "made out"</span>
+<span class="lx-o">made out</span>
+<span class="lx-cmd">cd nothere || echo "could not enter"</span>
+<span class="lx-o">bash: cd: nothere: No such file or directory
+could not enter</span>
+<span class="lx-cmd">yes | head -n 3</span>
+<span class="lx-o">y
+y
+y</span></pre><div class="lx-note">Without pipefail the pipeline reports 0 because sort succeeded, even though cat failed with status 1. yes prints y for ever, but stops quietly once head has its three lines, because writing to a closed pipe ends it with the signal SIGPIPE.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Build data pipelines&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Show the fruits in sorted order.&quot;, &quot;hint&quot;: &quot;sort fruits.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;sort&quot;}, {&quot;out&quot;: &quot;^apple\\napple\\napple\\nbanana&quot;}]}, {&quot;t&quot;: &quot;Count how many times each fruit appears (sort, then uniq -c).&quot;, &quot;hint&quot;: &quot;sort fruits.txt | uniq -c&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;sort.*\\|\\s*uniq\\s+-c&quot;}, {&quot;out&quot;: &quot;3 apple&quot;}]}, {&quot;t&quot;: &quot;Show only the single most common fruit with its count.&quot;, &quot;hint&quot;: &quot;sort fruits.txt | uniq -c | sort -rn | head -n 1&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;uniq\\s+-c.*\\|\\s*sort\\s+-(rn|nr).*\\|\\s*head&quot;}, {&quot;out&quot;: &quot;^\\s*3 apple\\s*$&quot;}]}, {&quot;t&quot;: &quot;List each student name in &lt;code&gt;marks.csv&lt;/code&gt; once, without the header.&quot;, &quot;hint&quot;: &quot;cut -d, -f1 marks.csv | tail -n +2 | sort -u&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;cut&quot;}, {&quot;out&quot;: &quot;^Asha\\nJohn\\nMeera\\nRavi$&quot;}]}, {&quot;t&quot;: &quot;Count the number of different subjects in &lt;code&gt;marks.csv&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;cut -d, -f2 marks.csv | tail -n +2 | sort -u | wc -l&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;cut.*-f\\s*2.*wc\\s+-l&quot;}, {&quot;out&quot;: &quot;^3$&quot;}]}, {&quot;t&quot;: &quot;Show the poem in capital letters.&quot;, &quot;hint&quot;: &quot;tr a-z A-Z &lt; poem.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;tr\\s+&quot;}, {&quot;out&quot;: &quot;TWINKLE TWINKLE&quot;}]}, {&quot;t&quot;: &quot;Count how many files are in &lt;code&gt;/etc&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;ls /etc | wc -l&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;ls\\s+/etc\\s*\\|\\s*wc\\s+-l&quot;}, {&quot;out&quot;: &quot;^\\d+$&quot;}]}]}"></div>
+<div class="vt-talk" hidden>How do you know whether a command worked. Every command finishes with a number called its exit status. Zero means success, and any other number means something went wrong. The shell stores it in dollar question mark. Pipelines have a trap. Their status is the status of the last command only. If cat fails because a file is missing, but sort after it runs happily on empty input, the whole pipeline reports success. In a backup script that can mean a failure nobody notices for months. Bash offers two fixes. The PIPESTATUS array holds the status of every command in the last pipeline, and set dash o pipefail makes the pipeline fail when any part fails. Careful scripts turn pipefail on at the top, as you will see in the scripting section.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Pipes from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>The | symbol sends the output of one command into the next. sort orders lines, uniq -c counts repeats, cut picks columns, tr changes letters and wc -l counts lines. Joined together they answer questions in one line.</p></div><div class="ld-p" data-ld="college" hidden><p>A pipeline connects stdout of each command to stdin of the next and runs all of them at the same time. Filters read stdin and write stdout. The pipeline status is that of the last command unless pipefail is set, and PIPESTATUS holds every status.</p></div><div class="ld-p" data-ld="masters" hidden><p>The shell calls pipe() to get a pair of descriptors, forks one child per command and uses dup2() to wire them. The kernel buffers data in the pipe, 65,536 bytes by default on Linux, and blocks a fast writer until the reader catches up, which gives natural flow control. When the reader exits, the next write sends SIGPIPE to the writer. Bash runs each part of a multi command pipeline in a subshell, so echo hi | read x sets x only in a child, unless shopt -s lastpipe is used.</p></div><div class="ld-p" data-ld="research" hidden><p>The pipe and filter style influenced software architecture (Shaw and Garlan), stream processing systems such as Apache Kafka and Apache Flink, and dataflow languages. Research on shell performance, such as the PaSh project (EuroSys 2021), automatically turns ordinary pipelines into parallel ones that use many CPU cores while giving the same output.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the slow website</div><p>A site slows down and the engineer suspects a single visitor. One line answers it: <code>cut -d" " -f1 access.log | sort | uniq -c | sort -rn | head -n 5</code>. It prints the five IP addresses with the most requests. One address with 400,000 requests in an hour stands out, and a firewall rule blocks it.</p></div>
+<div class="vt-talk" hidden>Inside the computer, a pipe is a small buffer in the kernel with two ends, one for writing and one for reading. The shell creates the pipe, starts both programs at the same time, and connects the writer to one end and the reader to the other. On Linux the buffer holds sixty four kilobytes. If the writer is faster, the kernel pauses it until the reader catches up, so memory never fills up. When the reader stops early, as head does, the writer receives a signal called SIGPIPE and ends quietly. The pipe and filter idea spread far beyond the shell. Large data systems such as Apache Kafka are built on the same thinking: small steps connected by streams. Researchers have even built tools, such as the PaSh project presented in 2021, that take an ordinary shell pipeline and run it in parallel on many processor cores automatically.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./redirection.html" data-topic="redirection"><small>Previous topic</small><b>Redirection</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "pipes-filters", "topic": "pipes-filters", "subject": "linux", "title": "Pipes and filters", "codes": {}, "quiz": [{"lv": "e", "q": "What does the | symbol do?", "o": ["Ends a command", "Sends the output of one command into the next", "Runs a command as root", "Saves output to a file"], "a": 1, "hint": "Pipe.", "why": "The pipe connects stdout of the left command to stdin of the right one."}, {"lv": "e", "q": "Which command counts the lines coming out of a pipe?", "o": ["sort", "wc -l", "uniq", "cut"], "a": 1, "hint": "Word count.", "why": "wc -l counts lines."}, {"lv": "e", "q": "Which option makes sort compare numbers?", "o": ["-r", "-n", "-u", "-k"], "a": 1, "hint": "Numeric.", "why": "sort -n sorts by numeric value."}, {"lv": "e", "q": "What does tr a-z A-Z do?", "o": ["Deletes letters", "Turns small letters into capitals", "Sorts letters", "Counts letters"], "a": 1, "hint": "Translate.", "why": "tr translates each character of the first set into the second."}, {"lv": "m", "q": "uniq fruits.txt removes nothing, but the file has repeats. Why?", "o": ["uniq is broken", "uniq only removes repeats that are next to each other, sort first", "The file is binary", "You need -c"], "a": 1, "hint": "Adjacent lines.", "why": "Run sort before uniq."}, {"lv": "m", "q": "Which pipeline shows the 3 most common lines with their counts?", "o": ["sort | uniq -c | sort -rn | head -n 3", "uniq | sort | head", "sort -u | head -n 3", "wc -l | sort"], "a": 0, "hint": "Count, then rank.", "why": "Sort, count, sort by count descending, keep three."}, {"lv": "m", "q": "How do you get the user names (field 1) from /etc/passwd?", "o": ["cut -f1 /etc/passwd", "cut -d: -f1 /etc/passwd", "tr : 1 /etc/passwd", "sort -k1 /etc/passwd"], "a": 1, "hint": "Colon separated.", "why": "Fields in /etc/passwd are separated by colons."}, {"lv": "m", "q": "Plain sort puts 100 before 25. Why?", "o": ["It is random", "It compares characters from the left, and 1 comes before 2", "It sorts by length", "It is a bug"], "a": 1, "hint": "Text order.", "why": "Without -n, sort compares strings."}, {"lv": "m", "q": "cat nothere | sort, then echo $?. What is printed?", "o": ["1", "0", "2", "127"], "a": 1, "hint": "Last command decides.", "why": "The status of a pipeline is that of sort, which succeeded."}, {"lv": "h", "q": "What does set -o pipefail change?", "o": ["Pipes become faster", "A pipeline fails if any command in it fails", "Errors go into the pipe", "Pipes are disabled"], "a": 1, "hint": "Any part.", "why": "With pipefail the status is the last non zero status in the pipeline."}, {"lv": "h", "q": "Why does yes | head -n 3 finish, even though yes never stops by itself?", "o": ["yes has a limit", "When head exits, the next write by yes gets SIGPIPE and ends it", "The shell kills yes after 3 lines", "head reads everything first"], "a": 1, "hint": "Writing to a closed pipe.", "why": "SIGPIPE ends a writer whose reader is gone."}, {"lv": "h", "q": "Which sends both stdout and stderr of cmd into grep?", "o": ["cmd | grep x 2>&1", "cmd 2>&1 | grep x", "cmd > grep x", "cmd 2| grep x"], "a": 1, "hint": "Redirect before the pipe.", "why": "2>&1 must be on cmd, before the |."}, {"lv": "x", "q": "How big is a Linux pipe buffer by default?", "o": ["512 bytes", "4 KB", "64 KB (65,536 bytes)", "1 MB"], "a": 2, "hint": "Sixteen pages.", "why": "pipe(7): since Linux 2.6.11 the capacity is 65,536 bytes."}], "calc": [{"lv": "e", "q": "fruits.txt has 8 lines with 5 different fruits. How many lines does sort fruits.txt | uniq print?", "ans": "5", "hint": "One line per different fruit.", "steps": ["Repeats are removed after sorting.", "Different fruits: 5.", "<span class=\"eq\">5 lines<\/span>"]}, {"lv": "e", "q": "A pipeline has 4 commands joined by |. How many | symbols does it contain?", "ans": "3", "hint": "One between each pair.", "steps": ["Commands: 4.", "Gaps between them: 4 − 1.", "<span class=\"eq\">3 pipes<\/span>"]}, {"lv": "m", "q": "A log has 1200 lines. 300 come from one IP address and the rest are spread evenly over 60 other addresses. How many requests does each of the other addresses make?", "ans": "15", "hint": "Remaining lines over addresses.", "steps": ["Remaining: 1200 − 300 = 900.", "Addresses: 60.", "<span class=\"eq\">900 ÷ 60 = 15<\/span>"]}, {"lv": "m", "q": "sort -n on the numbers 10, 9, 100, 25. What is the second number in the output?", "ans": "10", "hint": "Numeric order.", "steps": ["sort -n compares the values, not the characters.", "Order: 9, 10, 25, 100.", "<span class=\"eq\">Second: 10<\/span>"]}, {"lv": "m", "q": "A writer produces 1 MB per second and the reader takes 2 MB per second. With a 64 KB pipe, does the writer ever wait? Answer 1 for yes, 0 for no.", "ans": "0", "hint": "Compare speeds.", "steps": ["The reader is faster than the writer.", "The buffer never fills.", "<span class=\"eq\">0, the writer never waits<\/span>"]}, {"lv": "h", "q": "false | true | false | true. With set -o pipefail, what is $? (false exits with 1)?", "ans": "1", "hint": "The rightmost failure.", "steps": ["Statuses: 1 0 1 0.", "pipefail returns the last non zero status.", "<span class=\"eq\">$? = 1<\/span>"]}], "assign": [], "must": [["Pipe", "A | B feeds stdout of A into stdin of B. Errors still go to the terminal unless you add 2>&1 before the |."], ["sort and uniq", "sort (-n numbers, -r reverse, -t, -k3 by field, -u unique, -h sizes). uniq needs sorted input, -c counts."], ["Top N recipe", "sort | uniq -c | sort -rn | head -n N finds the most common lines."], ["cut and tr", "cut -d, -f2 picks fields, cut -c1-8 characters. tr a-z A-Z translates, -d deletes, -s squeezes."], ["Status", "$? is 0 for success. A pipeline reports its last command. PIPESTATUS shows all, set -o pipefail catches any failure."]], "summary": "<p>A | B joins commands. sort, uniq -c, sort -rn, head finds the top lines. cut picks fields, tr changes characters. Check $? and use pipefail so failures are not hidden.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

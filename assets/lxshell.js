@@ -96,6 +96,7 @@ const LXSH = (() => {
     while (v >= 1024 && i < 3) { v /= 1024; i++; }
     return (v < 10 ? Math.ceil(v * 10) / 10 : Math.ceil(v)) + u[i];
   }
+  const REDIR_OPS = ['>', '>>', '>|', '<', '<<<', '2>', '2>>', '&>', '&>>', '2>&1', '>&2', '<<'];
   const UIDS = { root: 0, daemon: 1, 'www-data': 33, learner: 1000, asha: 1001 };
 
   /* ---------- the world: files, users and the shell state ---------- */
@@ -182,6 +183,12 @@ const LXSH = (() => {
         if (c === '$' && src[i + 1] === '{') { const k = src.indexOf('}', i); push(src.slice(i, k + 1), 0); i = k + 1; continue; }
         const two = src.slice(i, i + 2), three = src.slice(i, i + 4);
         if (three === '2>&1') { end(); toks.push({ op: '2>&1' }); i += 4; continue; }
+        if (three === '1>&2' && !w) { toks.push({ op: '>&2' }); i += 4; continue; }
+        if (src.startsWith('>&2', i)) { end(); toks.push({ op: '>&2' }); i += 3; continue; }
+        if (src.startsWith('<<<', i)) { end(); toks.push({ op: '<<<' }); i += 3; continue; }
+        if (src.startsWith('&>>', i)) { end(); toks.push({ op: '&>>' }); i += 3; continue; }
+        if (two === '>|') { end(); toks.push({ op: '>|' }); i += 2; continue; }
+        if (c === '1' && !w && src[i + 1] === '>') { i++; continue; }
         if (['&&', '||', '>>', '&>', '2>', '<<'].includes(two)) {
           if (two === '2>' && w) { push('2', 0); push('>', 0); i += 2; continue; }
           end();
@@ -283,7 +290,7 @@ const LXSH = (() => {
         while (i < toks.length) {
           const tk = toks[i];
           if (tk.w) { words.push(tk.w); i++; continue; }
-          if (['>', '>>', '<', '2>', '2>>', '&>', '2>&1', '<<'].includes(tk.op)) { redir.push(redirOne()); continue; }
+          if (REDIR_OPS.includes(tk.op)) { redir.push(redirOne()); continue; }
           break;
         }
         if (!words.length && !redir.length) throw new Error(`syntax error near "${toks[i] ? toks[i].op || this.wordText(toks[i].w) : 'end of line'}"`);
@@ -292,12 +299,12 @@ const LXSH = (() => {
       const skipSepSingle = () => { while (toks[i] && toks[i].op === ';' && !(toks[i + 1] && toks[i + 1].op === ';')) i++; };
       const redirOne = () => {
         const tk = toks[i++];
-        if (tk.op === '2>&1') return { op: '2>&1' };
+        if (tk.op === '2>&1' || tk.op === '>&2') return { op: tk.op };
         if (tk.op === '<<') { return { op: '<<', tag: tk.tag }; }
         if (!toks[i] || !toks[i].w) throw new Error('syntax error: a file name is needed after ' + tk.op);
         return { op: tk.op, w: toks[i++].w };
       };
-      const redirs = () => { const r = []; while (toks[i] && ['>', '>>', '<', '2>', '2>>', '&>', '2>&1'].includes(toks[i].op)) r.push(redirOne()); return r; };
+      const redirs = () => { const r = []; while (toks[i] && REDIR_OPS.includes(toks[i].op) && toks[i].op !== '<<') r.push(redirOne()); return r; };
       const tree = list([]);
       if (i < toks.length) throw new Error(`syntax error near "${toks[i].op || this.wordText(toks[i].w)}"`);
       return tree;
@@ -317,6 +324,12 @@ const LXSH = (() => {
     }
     braceParam(body) {
       let m;
+      const A = this.arrays || {};
+      if ((m = /^#(\w+)\[[@*]\]$/.exec(body))) return String((A[m[1]] || (m[1] in this.vars ? [this.vars[m[1]]] : [])).length);
+      if ((m = /^!(\w+)\[[@*]\]$/.exec(body))) return (A[m[1]] || []).map((_, k) => k).filter(k => A[m[1]][k] !== undefined).join(' ');
+      if ((m = /^(\w+)\[([@*])\]$/.exec(body))) return (A[m[1]] || (m[1] in this.vars ? [this.vars[m[1]]] : [])).filter(x => x !== undefined).join(' ');
+      if ((m = /^#(\w+)\[(.+)\]$/.exec(body))) { const arr = A[m[1]] || []; const ix = this.arith(m[2]); return String((arr[ix < 0 ? arr.length + ix : ix] ?? '').length); }
+      if ((m = /^(\w+)\[(.+)\]$/.exec(body))) { const arr = A[m[1]] || (m[1] in this.vars ? [this.vars[m[1]]] : []); const ix = this.arith(m[2]); return arr[ix < 0 ? arr.length + ix : ix] ?? ''; }
       if ((m = /^#(\w+|@)$/.exec(body))) return String(m[1] === '@' ? this.args.length : this.param(m[1]).length);
       if ((m = /^(\w+|\d+)(:?[-=+?])(.*)$/.exec(body))) {
         const v = this.param(m[1]), set = m[2].includes(':') ? v !== '' : (m[1] in this.vars || /^\d+$/.test(m[1]) && this.args.length >= +m[1]);
@@ -361,8 +374,8 @@ const LXSH = (() => {
     }
     capture(src) {
       const save = this.outHook; let buf = '';
-      this.outHook = s => { buf += s; };
-      try { this.runSrc(src, true); } finally { this.outHook = save; }
+      this.outHook = s => { buf += s; }; this.notty = (this.notty || 0) + 1;
+      try { this.runSrc(src, true); } finally { this.outHook = save; this.notty--; }
       return buf;
     }
     arith(e) {
@@ -456,7 +469,7 @@ const LXSH = (() => {
       let tree;
       const heres = [];
       /* here documents: lines after the command up to the end word */
-      src = src.replace(/<<-?\s*['"]?(\w+)['"]?([^\n]*)\n([\s\S]*?)\n\1(\n|$)/g, (all, tag, rest, body) => { heres.push(body + '\n'); return `<<${tag}${rest}\n`; });
+      src = src.replace(/(?<!<)<<(-?)\s*(['"]?)(\w+)\2([^\n]*)\n([\s\S]*?)\n\t*\3(\n|$)/g, (all, dash, q, tag, rest, body) => { heres.push({ body: (dash ? body.replace(/^\t+/gm, '') : body) + '\n', quoted: !!q }); return `<<${tag}${rest}\n`; });
       this.heres = heres;
       try { tree = this.parse(this.lex(src)); } catch (e) { this.out(`bash: ${e.message}\n`); this.last = 2; return; }
       try { this.exec(tree, ''); } catch (e) {
@@ -474,15 +487,18 @@ const LXSH = (() => {
           /* in bash every part of a pipeline with more than one command runs in its own subshell, so a variable set
              there (echo hi | read x) is gone afterwards */
           const keep = node.cmds.length > 1 ? { vars: Object.assign({}, this.vars), cwd: this.cwd } : null;
+          const codes = [];
           node.cmds.forEach((c, k) => {
             const last = k === node.cmds.length - 1;
-            if (last) { code = this.withRedir(c, data, null); return; }
+            if (last) { code = this.withRedir(c, data, null); codes.push(code); return; }
             let buf = '';
-            const save = this.outHook; this.outHook = s => { buf += s; };
-            try { this.withRedir(c, data, null); } finally { this.outHook = save; }
+            const save = this.outHook; this.outHook = s => { buf += s; }; this.notty = (this.notty || 0) + 1;
+            try { codes.push(this.withRedir(c, data, null)); } finally { this.outHook = save; this.notty--; }
             data = buf;
           });
           if (keep) { this.vars = keep.vars; this.cwd = keep.cwd; }
+          this.arrays = this.arrays || {}; this.arrays.PIPESTATUS = codes.map(String);
+          if (this.opts && this.opts.pipefail) { const bad = codes.filter(x => x !== 0); code = bad.length ? bad[bad.length - 1] : 0; }
           if (node.neg) code = code ? 0 : 1;
           this.last = code;
           return code;
@@ -493,43 +509,44 @@ const LXSH = (() => {
     withRedir(node, input, _) {
       const red = node.redir || [];
       if (!red.length) return this.last = this.simple(node, input);
-      let outFile = null, append = false, errFile = null, errAppend = false, both = false, errToOut = false;
-      for (const r of red) {
-        if (r.op === '<') { const p = this.expandWord(r.w)[0]; const n = this.node(this.abs(p)); if (!n) { this.out(`bash: ${p}: No such file or directory\n`); return this.last = 1; } if (!this.can(n, 'r')) { this.out(`bash: ${p}: Permission denied\n`); return this.last = 1; } input = n.data; }
-        else if (r.op === '<<') input = this.heres.shift() || '';
-        else if (r.op === '>' || r.op === '>>') { outFile = this.expandWord(r.w)[0]; append = r.op === '>>'; }
-        else if (r.op === '&>') { outFile = this.expandWord(r.w)[0]; both = true; }
-        else if (r.op === '2>' || r.op === '2>>') { errFile = this.expandWord(r.w)[0]; errAppend = r.op === '2>>'; }
-        else if (r.op === '2>&1') errToOut = true;
-      }
-      const target = f => {
+      /* each of stdout (1) and stderr (2) points at the terminal or a file, processed left to right as bash does */
+      const target = (f, mode) => {
         if (f === '/dev/null') return { null: true };
         const p = this.abs(f), n = this.node(p);
         if (n && n.type === 'd') throw new Error(`${f}: Is a directory`);
+        if (n && mode === '>' && this.opts && this.opts.noclobber) throw new Error(`${f}: cannot overwrite existing file`);
         if (n && !this.can(n, 'w')) throw new Error(`${f}: Permission denied`);
         const dir = this.node(dirName(p));
         if (!dir) throw new Error(`${f}: No such file or directory`);
         if (!n && !this.can(dir, 'w')) throw new Error(`${f}: Permission denied`);
-        return { p };
+        return { p, app: mode === '>>' || mode === '&>>' };
       };
-      let ot, et;
-      try { ot = outFile && target(outFile); et = errFile && target(errFile); } catch (e) { this.out(`bash: ${e.message}\n`); return this.last = 1; }
-      const write = (t, data, app) => {
+      const fd = { 1: { tty: 1 }, 2: { tty: 2 } }, opened = [];
+      const open = (f, mode) => { const t = target(f, mode); if (t.p) { let n = this.node(t.p); if (!n) n = this.mk(t.p, 'f', 0o666 & ~this.umask, this.user, ''); if (!t.app) { n.data = ''; } n.mtime = this.now(); opened.push(t.p); } return t; };
+      try {
+        for (const r of red) {
+          if (r.op === '<') { const p = this.expandWord(r.w)[0]; const n = this.node(this.abs(p)); if (!n) throw new Error(`${p}: No such file or directory`); if (!this.can(n, 'r')) throw new Error(`${p}: Permission denied`); input = n.data; }
+          else if (r.op === '<<') { const h = this.heres.shift() || { body: '', quoted: true }; input = h.quoted ? h.body : this.expandStr(h.body); }
+          else if (r.op === '<<<') input = this.expandWord(r.w).join(' ') + '\n';
+          else if (r.op === '>' || r.op === '>>' || r.op === '>|') fd[1] = open(this.expandWord(r.w)[0], r.op);
+          else if (r.op === '&>' || r.op === '&>>') fd[1] = fd[2] = open(this.expandWord(r.w)[0], r.op === '&>' ? '>' : '>>');
+          else if (r.op === '2>' || r.op === '2>>') fd[2] = open(this.expandWord(r.w)[0], r.op === '2>' ? '>' : '>>');
+          else if (r.op === '2>&1') fd[2] = fd[1];
+          else if (r.op === '>&2') fd[1] = fd[2];
+        }
+      } catch (e) { this.out(`bash: ${e.message}\n`); return this.last = 1; }
+      const save = this.outHook, saveErr = this.errHook, saveBuf = s => { if (save) save(s); else this.buf += s; };
+      const send = (t, s) => {
         if (t.null) return;
-        let n = this.node(t.p);
-        if (!n) n = this.mk(t.p, 'f', 0o666 & ~this.umask, this.user, '');
-        n.data = app ? n.data + data : data; n.mtime = this.now();
+        if (t.tty === 1) return saveBuf(s);
+        if (t.tty === 2) return saveErr ? saveErr(s) : saveBuf(s);
+        const n = this.node(t.p); if (n) { n.data += s; n.mtime = this.now(); }
       };
-      if (ot && !append) write(ot, '', false);
-      if (et && !errAppend && !(ot && ot.p === et.p)) write(et, '', false);
-      let out = '', err = '';
-      const save = this.outHook, saveErr = this.errHook;
-      this.outHook = s => { out += s; };
-      this.errHook = s => { if (errToOut || both) out += s; else if (et) err += s; else if (save) save(s); else this.buf += s; };
+      this.outHook = s => send(fd[1], s);
+      this.errHook = s => send(fd[2], s);
+      const nt = fd[1].tty !== 1 && !fd[1].null ? 1 : 0; this.notty = (this.notty || 0) + nt;
       let code;
-      try { code = this.simple(node, input); } finally { this.outHook = save; this.errHook = saveErr; }
-      if (ot) write(ot, out, true); else this.out(out);
-      if (et) write(et, err, true);
+      try { code = this.simple(node, input); } finally { this.outHook = save; this.errHook = saveErr; this.notty -= nt; }
       return this.last = code;
     }
     /* error output goes through errHook so 2> can catch it */
@@ -598,10 +615,11 @@ const LXSH = (() => {
       if (name.includes('/')) return this.runFile(name, args.slice(1), input, true);
       const f = C[name];
       if (!f) { this.eout(`${name}: command not found\n`); return 127; }
+      const keepErr = this.err; this.err = false;
       try { return f.call(this, args.slice(1), input, name) || 0; } catch (e) {
         if (e && (e.exit !== undefined || e.ret !== undefined)) throw e;
         this.eout(`${name}: ${e.message}\n`); return 1;
-      }
+      } finally { this.err = this.err || keepErr; }
     }
     runFile(path, args, input, needX) {
       const p = this.abs(path), n = this.node(p);
@@ -728,13 +746,13 @@ const LXSH = (() => {
       if (n.type === 'd' && !f.d) dirs.push([n, t]); else files.push([n, t]);
     });
     const parts = [];
-    if (files.length) { widths(files); parts.push(files.map(([n, t]) => show(n, t)).join(long || f['1'] ? '\n' : '  ')); }
+    if (files.length) { widths(files); parts.push(files.map(([n, t]) => show(n, t)).join(long || f['1'] || this.notty ? '\n' : '  ')); }
     const walk = (n, t, head) => {
       const rows = listing(n, t);
       let s = head ? `${t}:\n` : '';
       if (long) s += `total ${rows.reduce((sum, [m]) => sum + (m.type === 'd' ? 4 : this.size(m) ? Math.ceil(this.size(m) / 4096) * 4 : 0), 0)}\n`;
       widths(rows);
-      s += rows.map(([m, k]) => show(m, k)).join(long || f['1'] ? '\n' : '  ');
+      s += rows.map(([m, k]) => show(m, k)).join(long || f['1'] || this.notty ? '\n' : '  ');
       parts.push(s.replace(/\n$/, ''));
       if (f.R) rows.filter(([m, k]) => m.type === 'd' && k !== '.' && k !== '..').forEach(([m, k]) => walk(m, (t === '.' && !head ? '.' : t).replace(/\/$/, '') + '/' + k, true));
     };
@@ -1470,7 +1488,24 @@ const LXSH = (() => {
     if (a.length && !a[0].includes('=')) { const v = this.vars[a[0]]; if (v === undefined || !this.exported.has(a[0])) return 1; this.out(v + '\n'); return 0; }
     [...this.exported].sort().forEach(k => { if (this.vars[k] !== undefined) this.out(`${k}=${this.vars[k]}\n`); });
   };
-  C.set = function () { Object.keys(this.vars).sort().forEach(k => this.out(`${k}=${this.vars[k]}\n`)); };
+  C.set = function (a) {
+    if (!a.length) { Object.keys(this.vars).sort().forEach(k => this.out(`${k}=${this.vars[k]}\n`)); return 0; }
+    this.opts = this.opts || {};
+    const long = { e: 'errexit', u: 'nounset', x: 'xtrace', C: 'noclobber' };
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      if (x === '-o' || x === '+o') {
+        const name = a[++i];
+        if (!name) { ['errexit', 'noclobber', 'nounset', 'pipefail', 'xtrace'].forEach(k => this.out(`${k.padEnd(15)}\t${this.opts[k] ? 'on' : 'off'}\n`)); continue; }
+        if (!['errexit', 'noclobber', 'nounset', 'pipefail', 'xtrace'].includes(name)) { this.eout(`bash: set: ${name}: invalid option name\n`); return 2; }
+        this.opts[name] = x === '-o'; continue;
+      }
+      if (/^[-+][euxC]+$/.test(x)) { [...x.slice(1)].forEach(ch => { this.opts[long[ch]] = x[0] === '-'; }); continue; }
+      if (x === '--') { this.args = a.slice(i + 1); break; }
+      this.eout(`bash: set: ${x}: invalid option\n`); return 2;
+    }
+    return 0;
+  };
   C.unset = function (a) { a.forEach(k => { delete this.vars[k]; this.exported.delete(k); if (this.fns) delete this.fns[k]; }); };
   C.alias = function (a) {
     if (!a.length) { Object.keys(this.aliases).sort().forEach(k => this.out(`alias ${k}='${this.aliases[k]}'\n`)); return 0; }

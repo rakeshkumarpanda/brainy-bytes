@@ -52,6 +52,9 @@
     return `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-buf">${rows}<div class="pk-bufbar"><b>${L.mode === 'INSERT' ? '-- INSERT --' : L.mode === 'CMD' ? ':' + esc(L.cmd || '') : 'NORMAL'}</b><span>${L.r + 1},${L.c + 1}</span>${L.reg ? `<span>register: ${esc(L.reg)}</span>` : ''}</div></div>`;
   };
 
+  /* the three standard streams of a command: {t: 'fds', label, cmd, rows: [[fd, name, dest, cls]]} */
+  D.fds = L => `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-fds"><div class="pk-fdcmd">${esc(L.cmd)}</div><div>${L.rows.map(([n, name, dest, c]) => `<div class="pk-fd ${c || ''}"><b>${n}</b><span>${name}</span><i>${n === 0 ? '←' : '→'}</i><em>${esc(dest)}</em></div>`).join('')}</div></div>`;
+
   /* ---------- 1.1 Meet Unix and Linux ---------- */
   const HISTORY = [
     [1969, 'Ken Thompson and Dennis Ritchie start Unix at Bell Labs, on a spare PDP-7 computer.'],
@@ -218,6 +221,45 @@
       });
       const got = names.filter((_, i) => hits[i] === 'yes');
       fr.push({ msg: got.length ? `The shell replaces <code>${esc(pat)}</code> with: <code>${esc(got.sort().join(' '))}</code> before the command even starts.` : `Nothing matches, so bash leaves the pattern as it is: the command receives the text <code>${esc(pat)}</code>.`, mood: got.length ? 'wow' : 'think', fx: got.length ? 'rain' : undefined, layers: [{ t: 'row', label: 'Files in the folder', cells: names, idx: false, cls: Object.fromEntries(Object.entries(hits).map(([k, c]) => [k, c === 'yes' ? 'win' : 'done'])) }] });
+      return fr;
+    }
+  }));
+
+  /* power 1.1 redirection: the file descriptor table, left to right */
+  def('lx-redirect', el => W(el, {
+    title: 'Where does each stream go',
+    sub: 'Type a command with redirections. Pip reads them left to right, exactly like bash, updates the table of streams, and then runs the command in the practice shell.',
+    inputs: [{ k: 'line', label: 'Command', type: 'text', val: 'ls notes.txt nothere > out.txt 2>&1', w: 420 }],
+    random: () => ({ line: ['ls notes.txt nothere 2>&1 > out.txt', 'ls notes.txt nothere 2> errors.txt', 'ls nothere 2>/dev/null', 'wc -l < fruits.txt', 'ls notes.txt nothere &> all.txt', 'echo hello >> notes.txt', 'tr a-z A-Z <<< hello', 'echo oops >&2'][Math.floor(Math.random() * 8)] }),
+    frames: v => {
+      const line = String(v.line).trim(), w = world();
+      let tree; try { tree = w.parse(w.lex(line)); } catch (e) { return [{ msg: 'The shell could not read that line: ' + esc(e.message), mood: 'sad', fx: 'shake', layers: [] }]; }
+      const pp = tree.items.length === 1 ? tree.items[0].p : null, node = pp && pp.t === 'pipe' && pp.cmds.length === 1 && pp.cmds[0].t === 'cmd' ? pp.cmds[0] : pp && pp.t === 'cmd' ? pp : null;
+      if (!node) return [{ msg: 'Type one simple command with redirections, without | or ;. Pipes have their own animation.', mood: 'think', layers: [] }];
+      const name = node.words.map(x => w.wordText(x)).join(' ');
+      const fd = { 0: 'the keyboard', 1: 'the terminal', 2: 'the terminal' };
+      const rows = cls => [[0, 'stdin', fd[0], cls[0]], [1, 'stdout', fd[1], cls[1]], [2, 'stderr', fd[2], cls[2]]];
+      const L = (cls) => [{ t: 'fds', label: 'The streams of ' + esc(name.split(' ')[0] || 'the command'), cmd: line, rows: rows(cls || {}) }];
+      const fr = [{ msg: 'Every command starts with three open streams: 0 standard input from the keyboard, 1 standard output and 2 standard error, both to the terminal.', mood: 'think', layers: L() }];
+      const files = new Set();
+      for (const r of node.redir) {
+        const f = r.w ? w.wordText(r.w) : '';
+        let msg = '', c = {};
+        if (r.op === '<') { fd[0] = f; c = { 0: 'look' }; msg = `<code>&lt; ${esc(f)}</code>: standard input now reads from the file ${esc(f)} instead of the keyboard.`; }
+        else if (r.op === '<<<') { fd[0] = 'the text ' + f; c = { 0: 'look' }; msg = `<code>&lt;&lt;&lt;</code> is a here string: the word ${esc(f)} plus a newline becomes the input.`; }
+        else if (r.op === '<<') { fd[0] = 'the here document'; c = { 0: 'look' }; msg = 'A here document: the following lines up to the end word become the input.'; }
+        else if (r.op === '>' || r.op === '>|') { fd[1] = f; files.add(f); c = { 1: 'look' }; msg = `<code>&gt; ${esc(f)}</code>: standard output goes to ${esc(f)}. The file is created, or emptied if it exists, before the command even starts.`; }
+        else if (r.op === '>>') { fd[1] = f + ' (append)'; files.add(f); c = { 1: 'look' }; msg = `<code>&gt;&gt; ${esc(f)}</code>: standard output is added to the end of ${esc(f)}. Nothing already there is lost.`; }
+        else if (r.op === '2>' || r.op === '2>>') { fd[2] = f + (r.op === '2>>' ? ' (append)' : ''); if (f !== '/dev/null') files.add(f); c = { 2: 'look' }; msg = f === '/dev/null' ? '<code>2&gt; /dev/null</code>: error messages go to /dev/null, a special file that throws away everything written to it.' : `<code>2&gt; ${esc(f)}</code>: only stream 2, the error messages, goes to ${esc(f)}.`; }
+        else if (r.op === '&>' || r.op === '&>>') { fd[1] = fd[2] = f; files.add(f); c = { 1: 'look', 2: 'look' }; msg = `<code>&amp;&gt; ${esc(f)}</code>: a bash shortcut that sends both stdout and stderr to ${esc(f)}.`; }
+        else if (r.op === '2>&1') { fd[2] = fd[1]; c = { 2: 'look' }; msg = `<code>2&gt;&amp;1</code>: make stream 2 point to <b>wherever stream 1 points right now</b>, which is ${esc(fd[1])}. It copies the current target, it does not follow later changes.`; }
+        else if (r.op === '>&2') { fd[1] = fd[2]; c = { 1: 'look' }; msg = `<code>&gt;&amp;2</code>: stream 1 now points where stream 2 points, ${esc(fd[2])}. Scripts use this to print error messages.`; }
+        fr.push({ msg, mood: 'look', layers: L(c) });
+      }
+      const r = w.run(line);
+      const done = [{ t: 'term', label: 'On the terminal', lines: [['c', line]].concat(r.out ? r.out.replace(/\n$/, '').split('\n').map(x => ['o', x]) : []) }];
+      files.forEach(f => { if (f === '/dev/null') return; const n = w.node(w.abs(f)); if (n) done.push({ t: 'term', label: 'Inside ' + esc(f), lines: n.data ? n.data.replace(/\n$/, '').split('\n').map(x => ['o', x]) : [] }); });
+      fr.push({ msg: `Now the command runs. ${r.out ? 'Whatever still points at the terminal appears on screen.' : 'Nothing points at the terminal any more, so the screen stays empty.'}${files.size ? ' The files hold the rest.' : ''}`, mood: 'happy', fx: 'burst', layers: L().concat(done) });
       return fr;
     }
   }));
