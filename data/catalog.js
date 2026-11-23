@@ -10748,6 +10748,23 @@ function lxScriptModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-script-4", title: "Robust and scheduled scripts", emoji: "4", step: 4, part: "scripting", level: "Advanced", blurb: "Write scripts that fail safely, clean up after themselves, are easy to debug, and run on a schedule with cron, at and systemd timers.", topics: [
+      { id: "robust-scripts", title: "Robust scripts: errors, traps and debugging", emoji: "4.1", page: "content/linux/robust-scripts.html",
+        summary: "set -euo pipefail, trap and mktemp, bash -n, set -x and ShellCheck, defensive habits.",
+        keywords: ["set -e", "set -u", "pipefail", "trap", "EXIT", "ERR", "mktemp", "bash -x", "bash -n", "ShellCheck", "flock", "idempotent"],
+        minutes: 55, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "strict", title: "Stop on the first error: set -e, -u and pipefail", emoji: "", group: "Lesson", keywords: ["set -e", "errexit", "set -u", "nounset", "pipefail", "set -euo pipefail", "strict mode", "unbound variable", "errexit exceptions", "(( n++ )) gotcha"] },
+        { id: "trap", title: "Cleaning up with trap and temporary files", emoji: "", group: "Lesson", keywords: ["trap", "EXIT trap", "ERR trap", "cleanup", "mktemp", "mktemp -d", "temporary files", "SIGINT", "SIGTERM", "LINENO", "BASH_COMMAND", "Ctrl+C in scripts"] },
+        { id: "debug", title: "Finding bugs: bash -n, set -x and ShellCheck", emoji: "", group: "Lesson", keywords: ["bash -n", "syntax check", "bash -x", "set -x", "xtrace", "PS4", "debugging scripts", "ShellCheck", "SC2086", "SC2164", "trace with line numbers"] },
+        { id: "defend", title: "Defensive habits for scripts that run unattended", emoji: "", group: "Lesson", keywords: ["defensive scripting", "command -v", "readonly", "umask 077", "flock", "lock file", "dry run", "idempotent", "end of options --", "unattended scripts"] },
+        { id: "levels", title: "Robust scripts from school to research", emoji: "", group: "Lesson", keywords: ["errexit exceptions", "local hides status", "set -E", "errtrace", "inherit_errexit", "PIPESTATUS", "BashFAQ 105", "explicit error checks", "Ansible idempotence"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

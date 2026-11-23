@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robust scripts: errors, traps and debugging · Unix and Linux</title>
+<meta name="description" content="set -e, set -u and pipefail with the exact errexit exceptions, the (( n++ )) gotcha, trap on EXIT, ERR, INT and TERM, mktemp and cleanup functions, LINENO and BASH_COMMAND, signals sent to the script itself, bash -n, bash -x and PS4, ShellCheck codes SC2086 and SC2164, command -v, readonly, umask 077, the -- marker, flock locks, dry runs and idempotent steps.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=scripting">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=scripting" target="_top">Unix and Linux</a><span>›</span><span>Shell Scripting</span><span>›</span><span>Step 4: Robust and scheduled scripts</span><span>›</span><span>Robust scripts</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 1 of 1 · Advanced</div>
+    <h1>Robust scripts: errors, traps and debugging</h1>
+    <p class="lead">Make scripts stop on errors with set -euo pipefail and know its exceptions, clean up with trap and mktemp, find bugs with bash -n, set -x and ShellCheck, and add defensive habits for unattended runs.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#robust-scripts" data-topic="cheatsheet" data-h="robust-scripts">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#strict" data-l="strict"><span class="n">1</span><span class="t">Stop on the first error: set -e, -u and pipefail</span></a></li><li><a href="#trap" data-l="trap"><span class="n">2</span><span class="t">Cleaning up with trap and temporary files</span></a></li><li><a href="#debug" data-l="debug"><span class="n">3</span><span class="t">Finding bugs: bash -n, set -x and ShellCheck</span></a></li><li><a href="#defend" data-l="defend"><span class="n">4</span><span class="t">Defensive habits for scripts that run unattended</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Robust scripts from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="strict" data-l="strict" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Stop on the first error: set -e, -u and pipefail</h2>
+<p>By default bash runs every line of a script, even after a command fails. Three options make a script stop instead of carrying on with bad data. Many scripts start with all three on one line.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Option</th><th>Effect</th><th>Watch out for</th></tr></thead><tbody><tr><td><code>set -e</code> (errexit)</td><td>exit as soon as a simple command fails</td><td>ignored inside if, while and until tests, in && and || lists except the last command, and after !</td></tr><tr><td><code>set -u</code> (nounset)</td><td>using a variable that was never set is an error, and the script exits</td><td>use ${VAR:-} for variables that may be missing, such as optional settings</td></tr><tr><td><code>set -o pipefail</code></td><td>a pipeline fails when any part fails, not only the last</td><td>grep finding nothing in the middle of a pipe now counts as a failure</td></tr><tr><td><code>set -euo pipefail</code></td><td>all three at once, usually the second line of a script</td><td>it is a safety net, not a replacement for checking errors yourself</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-errexit"></div>
+<div class="lx-run"><div class="lx-rh"><span>What set -e and friends really do</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; strict.sh &lt;&lt;'EOF'
+#!/bin/bash
+set -euo pipefail
+echo "start"
+if grep -q pizza fruits.txt; then echo "pizza"; else echo "no pizza, still running"; fi
+grep -q pizza fruits.txt || echo "handled with ||"
+count=$(grep -c apple fruits.txt)
+echo "apples: $count"
+grep pizza fruits.txt | sort
+echo "never printed"
+EOF</span>
+<span class="lx-cmd">bash strict.sh; echo "exit status $?"</span>
+<span class="lx-o">start
+no pizza, still running
+handled with ||
+apples: 3
+exit status 1</span>
+<span class="lx-cmd">printf 'set -u\necho "name is ${NAME:-unknown}"\necho "home is $HOEM"\necho "never"\n' &gt; typo.sh</span>
+<span class="lx-cmd">bash typo.sh; echo "exit status $?"</span>
+<span class="lx-o">name is unknown
+typo.sh: line 3: HOEM: unbound variable
+exit status 1</span>
+<span class="lx-cmd">printf 'set -e\nn=0\n(( n++ ))\necho "n=$n"\n' &gt; gotcha.sh</span>
+<span class="lx-cmd">bash gotcha.sh; echo "exit status $?"</span>
+<span class="lx-o">exit status 1</span>
+<span class="lx-cmd">printf 'set -e\nn=0\n(( ++n ))\necho "n=$n"\n' &gt; fixed.sh</span>
+<span class="lx-cmd">bash fixed.sh</span>
+<span class="lx-o">n=1</span></pre><div class="lx-note">The failing test inside if and the failure before || did not stop the script. With pipefail the grep that found nothing made the pipeline fail, so set -e stopped it. set -u caught the typo HOEM, while ${NAME:-unknown} supplied a default. (( n++ )) returns the old value 0, which counts as a failure, but (( ++n )) returns 1 and passes.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>set -e is ignored in a function called from a condition such as if myfunc or myfunc || ..., for the whole function body. Check important steps explicitly with || die "...".</div></div>
+<div class="vt-talk" hidden>A plain bash script keeps going after a failure, which can be dangerous. Imagine a cleanup script whose cd command fails, followed by a delete that now runs in the wrong folder. Three options give you a safety net. Set dash e stops the script when a command fails. Set dash u stops it when you use a variable that was never set, which catches typos in variable names. And set dash o pipefail makes a pipeline fail if any part of it fails, not only the last command. Most careful scripts start with set dash e u o pipefail. But set dash e has exceptions, and they matter. A failure inside an if test, a while test, or before a double ampersand or double bar is treated as a decision, not an error. And arithmetic that evaluates to zero, such as n plus plus when n starts at zero, counts as a failure and stops the script. Try the animation to see every rule in action.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="trap" data-l="trap" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Cleaning up with trap and temporary files</h2>
+<p><code>trap 'commands' SIGNALS</code> runs commands when the script receives a signal or reaches a special moment. The most useful is <b>EXIT</b>, which runs whenever the script ends, normally, after an error, or after Ctrl+C or a kill.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>trap 'cmds' EXIT</code></td><td>Run cmds when the script ends, however it ends</td><td><code>trap 'rm -rf "$tmpdir"' EXIT</code></td></tr><tr><td><code>trap 'cmds' ERR</code></td><td>Run cmds after any failing command (same rules as set -e)</td><td><code>trap 'echo "failed at line $LINENO"' ERR</code></td></tr><tr><td><code>trap 'cmds' INT TERM</code></td><td>Catch Ctrl+C (INT) and kill (TERM)</td><td><code>trap 'echo stopping; exit 130' INT</code></td></tr><tr><td><code>trap '' INT</code></td><td>Ignore a signal</td><td><code>trap '' HUP</code></td></tr><tr><td><code>trap - INT</code></td><td>Back to the default action</td><td><code>trap - INT</code></td></tr><tr><td><code>mktemp, mktemp -d</code></td><td>Create a unique temporary file or folder that only you can read</td><td><code>tmp=$(mktemp) &amp;&amp; trap 'rm -f "$tmp"' EXIT</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>A script that always cleans up</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; tidy.sh &lt;&lt;'EOF'
+#!/bin/bash
+set -euo pipefail
+workdir=$(mktemp -d)
+cleanup() { rm -rf -- "$workdir"; echo "cleanup: removed the temp folder" &gt;&amp;2; }
+trap cleanup EXIT
+trap 'echo "error on line $LINENO: $BASH_COMMAND" &gt;&amp;2' ERR
+echo "working in a private folder: $(stat -c %A "$workdir")"
+sort fruits.txt &gt; "$workdir/sorted"
+uniq -c "$workdir/sorted" | sort -rn | head -2
+cp "$workdir/sorted" /root/sorted.txt
+echo "not reached"
+EOF</span>
+<span class="lx-cmd">bash tidy.sh; echo "exit status $?"</span>
+<span class="lx-o">working in a private folder: drwx------
+      3 apple
+      2 mango
+cp: cannot stat '/root/sorted.txt': Permission denied
+error on line 10: cp "$workdir/sorted" /root/sorted.txt
+cleanup: removed the temp folder
+exit status 1</span>
+<span class="lx-cmd">cat &gt; stop.sh &lt;&lt;'EOF'
+#!/bin/bash
+trap 'echo "caught Ctrl+C (INT), saving state"; exit 130' INT
+trap 'echo "goodbye from EXIT"' EXIT
+echo "working"
+kill -INT $$
+echo "never printed"
+EOF</span>
+<span class="lx-cmd">bash stop.sh; echo "exit status $?"</span>
+<span class="lx-o">working
+caught Ctrl+C (INT), saving state
+goodbye from EXIT
+exit status 130</span></pre><div class="lx-note">mktemp -d made a folder only the owner can open (drwx------). The cp to /root failed, so the ERR trap printed the line number and the failing command, set -e stopped the script, and the EXIT trap still removed the temporary folder. The second script sent itself SIGINT, as Ctrl+C would, and the INT trap ran before EXIT. 130 is 128 plus 2, the number of SIGINT.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Never use a fixed name such as /tmp/myscript.tmp. Another user can create it first, as a symbolic link to one of your files, and your script would overwrite that file. mktemp picks a new random name every time.</div></div>
+<div class="vt-talk" hidden>Scripts often create temporary files, take locks, or start helper processes, and these must be cleaned up even when something goes wrong. The trap command is the tool for this. Trap followed by a command and the word EXIT runs that command whenever the script ends, whether it finished normally, failed under set dash e, or was stopped with Control C. The usual pattern is to create a private temporary folder with mktemp dash d, write a small cleanup function, and register it with trap cleanup EXIT straight away. A trap on ERR runs after any failing command, and the variables LINENO and BASH COMMAND tell you exactly where it happened, which makes error messages much more helpful. Traps on INT and TERM let a script react to Control C and to kill, for example to save its state. Always let mktemp choose the name, because fixed names in slash tmp can be abused by other users.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="debug" data-l="debug" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Finding bugs: bash -n, set -x and ShellCheck</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>bash -n script.sh</code></td><td>Check the syntax without running anything</td><td><code>bash -n deploy.sh &amp;&amp; echo "syntax ok"</code></td></tr><tr><td><code>bash -x script.sh</code></td><td>Run and print every command after expansion</td><td><code>bash -x backup.sh 2&gt; trace.log</code></td></tr><tr><td><code>set -x ... set +x</code></td><td>Trace only part of a script</td><td><code>set -x; risky_step; set +x</code></td></tr><tr><td><code>PS4='+ line $LINENO: '</code></td><td>Change the prefix of trace lines, for example to show line numbers</td><td><code>export PS4='+ ${BASH_SOURCE}:${LINENO}: '</code></td></tr><tr><td><code>shellcheck script.sh</code></td><td>A separate program that finds common mistakes without running the script</td><td><code>shellcheck -x deploy.sh</code></td></tr><tr><td><code>echo "..." &gt;&amp;2</code></td><td>Debug messages to stderr, so they do not mix with real output</td><td><code>echo "debug: n=$n" &gt;&amp;2</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Syntax checks and traces</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">printf 'for f in *.txt; do\n  echo "$f"\n' &gt; broken.sh</span>
+<span class="lx-cmd">bash -n broken.sh; echo "status $?"</span>
+<span class="lx-o">broken.sh: line 3: syntax error: unexpected end of file
+status 2</span>
+<span class="lx-cmd">cat &gt; trace.sh &lt;&lt;'EOF'
+total=0
+for n in 3 4; do
+  total=$(( total + n * n ))
+done
+[ "$total" -gt 20 ] &amp;&amp; echo "big: $total"
+EOF</span>
+<span class="lx-cmd">bash -x trace.sh</span>
+<span class="lx-o">+ total=0
++ for n in 3 4
++ total=9
++ for n in 3 4
++ total=25
++ '[' 25 -gt 20 ']'
++ echo 'big: 25'
+big: 25</span>
+<span class="lx-cmd">PS4='+ line $LINENO: ' bash -x trace.sh 2&gt;&amp;1 | head -4</span>
+<span class="lx-o">+ line 1: total=0
++ line 2: for n in 3 4
++ line 3: total=9
++ line 2: for n in 3 4</span></pre><div class="lx-note">bash -n found the missing done without running a single command. The trace shows each command after expansion, so you see the real numbers that were added. Setting PS4 for one run added the line number to every trace line.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>ShellCheck on a risky script (ShellCheck is a separate program, install it with apt install shellcheck)</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat -n clean.sh</span>
+<span class="lx-cmd">shellcheck clean.sh</span>
+<span class="lx-o">     1	#!/bin/bash
+     2	dir=$1
+     3	cd $dir
+     4	rm -rf $dir/cache
+
+In clean.sh line 3:
+cd $dir
+^-----^ SC2164 (warning): Use 'cd ... || exit' or 'cd ... || return' in case cd fails.
+   ^--^ SC2086 (info): Double quote to prevent globbing and word splitting.
+
+In clean.sh line 4:
+rm -rf $dir/cache
+       ^--^ SC2086 (info): Double quote to prevent globbing and word splitting.
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2164 -- Use 'cd ... || exit' or 'cd ... ...
+  https://www.shellcheck.net/wiki/SC2086 -- Double quote to prevent globbing ...</span></pre><div class="lx-note">Each finding has a code you can look up on the ShellCheck wiki. Fixing both gives cd -- "$dir" || exit 1 and rm -rf -- "$dir/cache". With an empty $1, the original would have run rm -rf /cache.</div></div>
+<div class="vt-talk" hidden>Three tools find most bugs in shell scripts. Bash dash n reads the whole script and checks the syntax without running anything, which is a quick safety step before you deploy a script. Bash dash x runs the script and prints every command after all expansions, with a plus sign in front, so you see the real values of variables at each step. You can switch tracing on and off inside a script with set dash x and set plus x, and the variable PS4 changes the prefix, for example to show line numbers. The third tool is ShellCheck, a free program that reads a script and warns about common mistakes, such as missing quotes around variables or a cd whose failure is ignored. Each warning has a code like S C two zero eight six, which you can look up on the ShellCheck wiki for an explanation and a fix. Many teams run ShellCheck automatically on every change.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="defend" data-l="defend" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Defensive habits for scripts that run unattended</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Habit</th><th>Example</th><th>Why</th></tr></thead><tbody><tr><td>Quote every expansion</td><td><code>rm -- "$file"</code></td><td>spaces and wildcards in data cannot change the command</td></tr><tr><td>End options with --</td><td><code>cp -- "$src" "$dst"</code></td><td>a file called -rf is not read as an option</td></tr><tr><td>Check tools exist</td><td><code>command -v jq >/dev/null || die "jq is needed"</code></td><td>fail early with a clear message</td></tr><tr><td>Constants are readonly</td><td><code>readonly BACKUP_DIR=/srv/backup</code></td><td>a later line cannot change them by mistake</td></tr><tr><td>Private files</td><td><code>umask 077</code></td><td>new files are readable only by you</td></tr><tr><td>One run at a time</td><td><code>flock -n /tmp/job.lock ./job.sh</code></td><td>a second copy started by cron exits instead of clashing</td></tr><tr><td>Dry run first</td><td><code>run() { if (( DRY )); then echo "would run: $*"; else "$@"; fi; }</code></td><td>see what would happen before it happens</td></tr><tr><td>Idempotent steps</td><td><code>mkdir -p</code>, <code>ln -sfn</code>, <code>grep -q ... || echo ... >> file</code></td><td>running the script twice gives the same result</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Defensive building blocks</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">need() { command -v "$1" &gt;/dev/null || { echo "missing tool: $1" &gt;&amp;2; return 1; }; }</span>
+<span class="lx-cmd">need sort &amp;&amp; echo "sort is at $(command -v sort)"</span>
+<span class="lx-o">sort is at /usr/bin/sort</span>
+<span class="lx-cmd">need jq-does-not-exist; echo "status $?"</span>
+<span class="lx-o">missing tool: jq-does-not-exist
+status 1</span>
+<span class="lx-cmd">readonly LIMIT=3</span>
+<span class="lx-cmd">LIMIT=10</span>
+<span class="lx-o">bash: LIMIT: readonly variable</span>
+<span class="lx-cmd">echo "LIMIT is still $LIMIT"</span>
+<span class="lx-o">LIMIT is still 3</span>
+<span class="lx-cmd">touch -- -rf</span>
+<span class="lx-cmd">ls -- -rf &amp;&amp; rm -- -rf &amp;&amp; echo "removed the file called -rf"</span>
+<span class="lx-o">-rf
+removed the file called -rf</span>
+<span class="lx-cmd">bash -c 'umask 077; touch private.txt; stat -c "%A %n" private.txt'</span>
+<span class="lx-o">-rw------- private.txt</span>
+<span class="lx-cmd">DRY=1</span>
+<span class="lx-cmd">run() { if (( DRY )); then echo "would run: $*"; else "$@"; fi; }</span>
+<span class="lx-cmd">run rm -rf /srv/old-releases</span>
+<span class="lx-o">would run: rm -rf /srv/old-releases</span>
+<span class="lx-cmd">grep -q '^export EDITOR=' .bashrc || echo 'export EDITOR=nano' &gt;&gt; .bashrc</span>
+<span class="lx-cmd">grep -q '^export EDITOR=' .bashrc || echo 'export EDITOR=nano' &gt;&gt; .bashrc</span>
+<span class="lx-cmd">grep -c '^export EDITOR=' .bashrc</span>
+<span class="lx-o">1</span>
+<span class="lx-cmd">flock -n /tmp/demo.lock echo "got the lock and ran the job"</span>
+<span class="lx-o">got the lock and ran the job</span></pre><div class="lx-note">command -v answered without running anything. The readonly variable refused the change. With -- the file named -rf was treated as a name, not as options. umask 077 in a child bash made a file only the owner can read, without changing the umask of this shell. The dry run printed the dangerous command instead of running it. The grep or echo line added the setting once, even though it ran twice.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Make a script safe&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Turn on the three strict options in one set command.&quot;, &quot;hint&quot;: &quot;set -euo pipefail&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;set\\s+-euo\\s+pipefail|set\\s+-eu\\s+-o\\s+pipefail&quot;}]}, {&quot;t&quot;: &quot;Turn the strict options off again, so the practice shell stays usable.&quot;, &quot;hint&quot;: &quot;set +euo pipefail&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;set\\s+\\+&quot;}]}, {&quot;t&quot;: &quot;Create a temporary folder with mktemp and keep its path in the variable tmp.&quot;, &quot;hint&quot;: &quot;tmp=$(mktemp -d)&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;mktemp\\s+-d&quot;}, {&quot;envre&quot;: [&quot;tmp&quot;, &quot;^/tmp/tmp\\.&quot;]}]}, {&quot;t&quot;: &quot;Register a trap that removes \&quot;$tmp\&quot; when the shell exits.&quot;, &quot;hint&quot;: &quot;trap &#x27;rm -rf \&quot;$tmp\&quot;&#x27; EXIT&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*trap\\b.*EXIT&quot;}]}, {&quot;t&quot;: &quot;Check the syntax of the file notes.txt as a script with bash -n.&quot;, &quot;hint&quot;: &quot;bash -n notes.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;bash\\s+-n&quot;}]}, {&quot;t&quot;: &quot;Print where the sort command lives, using command -v.&quot;, &quot;hint&quot;: &quot;command -v sort&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^/usr/bin/sort$&quot;}]}, {&quot;t&quot;: &quot;Make LIMIT a readonly variable with the value 5.&quot;, &quot;hint&quot;: &quot;readonly LIMIT=5&quot;, &quot;check&quot;: [{&quot;env&quot;: [&quot;LIMIT&quot;, &quot;5&quot;]}]}]}"></div>
+<div class="vt-talk" hidden>Scripts that run unattended, from cron or a deployment pipeline, need extra care, because nobody is watching when something odd happens. A few habits prevent most disasters. Quote every variable, and put a double dash before file names, so a file called dash r f can never be read as options. Check at the start that every tool the script needs is installed, using command dash v, and stop with a clear message if not. Make constants readonly, and set umask zero seven seven when the script writes private data. Use flock so that two copies of the same job cannot run at once. Offer a dry run mode that prints what would happen. And write steps that are idempotent, which means running them twice gives the same result as running them once, such as mkdir dash p, or adding a line to a file only when it is not already there.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Robust scripts from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A good script stops when something goes wrong, tells you where, and tidies up after itself. set -euo pipefail stops it, trap cleans up, and bash -x and ShellCheck help you find mistakes.</p></div><div class="ld-p" data-ld="college" hidden><p>errexit is skipped in conditions, in && and || lists except the last command, after !, and in all commands of a function called from a condition. A command substitution inside a local declaration hides its status, since local itself succeeds, so write local x and then x=$(cmd). The EXIT trap runs once when the shell ends, and ERR follows the same rules as errexit.</p></div><div class="ld-p" data-ld="masters" hidden><p>Subshells and command substitutions do not inherit the ERR trap unless set -E (errtrace) is on, and set -T does the same for DEBUG and RETURN. inherit_errexit (shopt, bash 4.4) makes $( ) inherit set -e. Signals interrupt a foreground external command only after it exits, so long-running tools should be started in the background and waited for if a script must react quickly. PIPESTATUS gives the status of every part of the last pipeline.</p></div><div class="ld-p" data-ld="research" hidden><p>Many experts argue that set -e is unreliable because of its many exceptions (see the BashFAQ entry 105 on Greg’s Wiki), and prefer explicit checks with || die. Static analysis research on shell scripts, including work behind ShellCheck and the NL2Bash and Smoosh projects, shows that error handling and quoting dominate real bugs. Configuration management tools such as Ansible encode the idea of idempotent steps directly, so that running a task twice is always safe.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the backup that deleted itself</div><p>A nightly job ran <code>cd $BACKUP_DIR; rm -rf *</code> to empty a staging folder. One night BACKUP_DIR was empty after a config change, cd went to the home folder, and the job deleted it. The rewrite starts with <code>set -euo pipefail</code>, reads <code>: "${BACKUP_DIR:?is not set}"</code>, runs <code>cd -- "$BACKUP_DIR" || exit 1</code>, uses <code>flock</code> so two runs never overlap, and logs every step through an ERR trap. ShellCheck now runs in CI and flagged three other scripts with the same pattern.</p></div>
+<div class="vt-talk" hidden>Here is the expert view on robust scripts. Set dash e has many exceptions: it is ignored inside conditions, in all but the last command of double ampersand and double bar lists, after an exclamation mark, and in every command of a function that was called from a condition. A command substitution inside a local declaration also hides its failure, because local itself succeeds, so declare the variable first and assign it on the next line. Subshells do not inherit the ERR trap unless you set dash capital E. Because of these traps, many experienced writers prefer explicit checks with double bar die after each important step, and treat set dash e only as a backup. Researchers who study real shell scripts find that error handling and quoting cause most bugs, which is exactly what ShellCheck focuses on. And tools such as Ansible build the idea of idempotent steps into their design.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./arrays-options.html" data-topic="arrays-options"><small>Previous topic</small><b>Arrays and options</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "robust-scripts", "topic": "robust-scripts", "subject": "linux", "title": "Robust scripts: errors, traps and debugging", "codes": {}, "quiz": [{"lv": "e", "q": "Which option stops a script when a command fails?", "o": ["set -x", "set -e", "set -n", "set -v"], "a": 1, "hint": "e for error.", "why": "set -e is errexit."}, {"lv": "e", "q": "Which option makes an unset variable an error?", "o": ["set -u", "set -e", "set -f", "set -o noclobber"], "a": 0, "hint": "u for unset.", "why": "set -u is nounset."}, {"lv": "e", "q": "Which command checks a script for syntax errors without running it?", "o": ["bash -x", "bash -n", "bash -e", "bash -c"], "a": 1, "hint": "n for no execution.", "why": "bash -n only parses."}, {"lv": "e", "q": "Which command makes a unique temporary file?", "o": ["touch /tmp/tmp", "mktemp", "tmpfile", "mkdir /tmp"], "a": 1, "hint": "Make temp.", "why": "mktemp creates a new file with a random name."}, {"lv": "m", "q": "With set -e, does <code>if grep -q x file; then ...<\/code> stop the script when grep finds nothing?", "o": ["Yes", "No, a failing test of if is allowed", "Only with pipefail", "Only with set -u"], "a": 1, "hint": "Conditions are decisions.", "why": "set -e ignores failures in if tests."}, {"lv": "m", "q": "What does set -o pipefail change?", "o": ["Pipes run faster", "A pipeline fails when any part fails", "Pipes are disabled", "Only the first command counts"], "a": 1, "hint": "Any part.", "why": "Without it, only the last command counts."}, {"lv": "m", "q": "Which trap runs however the script ends?", "o": ["trap ... ERR", "trap ... EXIT", "trap ... INT", "trap ... DEBUG"], "a": 1, "hint": "The end.", "why": "EXIT runs on every exit."}, {"lv": "m", "q": "set -e and n=0. Why does (( n++ )) stop the script?", "o": ["n++ is a syntax error", "It evaluates to the old value 0, which means status 1", "n is read only", "It does not stop it"], "a": 1, "hint": "Zero is false.", "why": "An arithmetic result of 0 gives status 1."}, {"lv": "m", "q": "Which variable holds the line number inside an ERR trap?", "o": ["$LINE", "$LINENO", "$BASH_LINE", "$NR"], "a": 1, "hint": "Line number.", "why": "LINENO is the current line."}, {"lv": "h", "q": "Why can local x=$(failing_cmd) hide an error?", "o": ["local cannot hold output", "The status is that of local, which succeeds", "x is global", "It does not hide it"], "a": 1, "hint": "local succeeds.", "why": "Split it: local x, then x=$(cmd)."}, {"lv": "h", "q": "ShellCheck reports SC2086 on rm -rf $dir/cache. What is the fix?", "o": ["Use rm -r", "Quote it: rm -rf -- \"$dir/cache\"", "Use sudo", "Add set -x"], "a": 1, "hint": "Quotes.", "why": "SC2086 asks for double quotes."}, {"lv": "h", "q": "A script ends by SIGINT after its INT trap calls exit 130. What does $? show in the caller?", "o": ["0", "2", "130", "1"], "a": 2, "hint": "The trap’s exit.", "why": "The trap exited with 130."}, {"lv": "x", "q": "Which option makes subshells and $( ) inherit the ERR trap?", "o": ["set -T", "set -E", "set -u", "shopt -s lastpipe"], "a": 1, "hint": "errtrace.", "why": "set -E is errtrace."}], "calc": [{"lv": "e", "q": "A script is stopped by SIGTERM (signal 15) with no trap. What exit status does the caller see?", "ans": "143", "hint": "128 plus the signal.", "steps": ["Deaths by signal add 128.", "128 + 15.", "<span class=\"eq\">143<\/span>"]}, {"lv": "e", "q": "mktemp -d makes a folder with mode 700. Who may enter it, apart from root?", "ans": "1", "hint": "Only the owner.", "steps": ["7 for the owner, 0 for group and others.", "Only the owner.", "<span class=\"eq\">1 user<\/span>"]}, {"lv": "m", "q": "With umask 077, what mode does a new file get (files start from 666)?", "ans": "600", "hint": "Remove the umask bits.", "steps": ["666 with 077 removed.", "Owner keeps 6, group and others get 0.", "<span class=\"eq\">600<\/span>"]}, {"lv": "m", "q": "false | true | false. Without pipefail, what is $?", "ans": "1", "hint": "The last command.", "steps": ["Only the last part counts.", "The last part is false.", "<span class=\"eq\">status 1<\/span>"]}, {"lv": "m", "q": "true | false | true. With pipefail, what is $?", "ans": "1", "hint": "Any failure counts.", "steps": ["pipefail gives the last non-zero status.", "false gave 1.", "<span class=\"eq\">status 1<\/span>"]}, {"lv": "h", "q": "A loop with set -e runs (( i++ )) for i from 0. On which pass does the script stop (count from 1)?", "ans": "1", "hint": "The first value is 0.", "steps": ["On pass 1, i is 0.", "i++ gives 0, status 1.", "<span class=\"eq\">pass 1<\/span>"]}], "assign": [], "must": [["Strict mode", "set -euo pipefail near the top. -e stops on failures, -u on unset variables, pipefail on any failing pipe part."], ["Exceptions", "set -e ignores if, while and until tests, && and || lists except the last command, and ! commands. (( n++ )) from 0 fails."], ["trap", "trap cleanup EXIT for tidying up, trap '...' ERR with $LINENO and $BASH_COMMAND, INT and TERM for Ctrl+C and kill."], ["Temporary files", "tmp=$(mktemp) or $(mktemp -d), then trap 'rm -rf -- \"$tmp\"' EXIT. Never fixed names in /tmp."], ["Debugging", "bash -n checks syntax, bash -x or set -x traces, PS4 sets the trace prefix, ShellCheck finds common mistakes."]], "summary": "<p>set -euo pipefail stops a script on failures, unset variables and failing pipes, with exceptions for conditions and lists. trap cleanup EXIT and mktemp keep things tidy, bash -n, set -x and ShellCheck find bugs, and quoting, --, readonly, umask and flock protect unattended runs.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

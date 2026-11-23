@@ -772,6 +772,65 @@
     }
   }));
 
+  /* scripting 4.1 set -e, set -u and pipefail: which failing line stops a script, and which does not */
+  const EXITS = {
+    cd: ['cd /tmp/nowhere', 'rm -f old.log', 'echo "cleaned up"'],
+    grepc: ['grep -q pizza fruits.txt && echo "found pizza"', 'echo "next step"', 'count=$(grep -c pizza fruits.txt)', 'echo "count=$count"'],
+    arith: ['n=0', '(( n++ ))', 'echo "n is now $n"'],
+    pipe: ['grep pizza fruits.txt | sort', 'echo "sorted"', 'echo "user is $USERNAME"', 'echo "done"'],
+    guard: ['if grep -q pizza fruits.txt; then echo yes; else echo no; fi', 'false || echo "recovered"', 'false', 'echo "never printed with set -e"']
+  };
+  def('lx-errexit', el => W(el, {
+    title: 'Which failure stops the script',
+    sub: 'Pick a small script and switch the safety options on or off. Pip runs it line by line, explains why each failing line does or does not stop the script under the bash rules, and then runs the whole file to check.',
+    inputs: [{ k: 'script', label: 'Script', type: 'seg', val: 'grepc', opts: [['cd', 'cd that fails'], ['grepc', 'grep -c finds nothing'], ['arith', '(( n++ )) from 0'], ['pipe', 'pipe and unset variable'], ['guard', 'if, || and a bare false']] },
+             { k: 'e', label: 'set -e', type: 'seg', val: 'on', opts: [['on', 'on'], ['off', 'off']] }, { k: 'u', label: 'set -u', type: 'seg', val: 'off', opts: [['on', 'on'], ['off', 'off']] }, { k: 'p', label: 'pipefail', type: 'seg', val: 'off', opts: [['on', 'on'], ['off', 'off']] }],
+    random: () => ({ script: Object.keys(EXITS)[Math.floor(Math.random() * 5)], e: 'on', u: Math.random() < 0.5 ? 'on' : 'off', p: Math.random() < 0.5 ? 'on' : 'off' }),
+    frames: v => {
+      const lines = EXITS[v.script] || EXITS.grepc, E = v.e === 'on', U = v.u === 'on', P = v.p === 'on';
+      const flags = [E && 'set -e', U && 'set -u', P && 'set -o pipefail'].filter(Boolean);
+      const w = world(); if (U) w.run('set -u'); if (P) w.run('set -o pipefail');
+      const rows = lines.map(l => [l, '', '']), term = [];
+      const draw = (k, cls) => ({ t: 'flow', label: 'The script' + (flags.length ? ' with ' + flags.join(', ') : ' with no options'), items: rows.map((r, j) => [r[0], r[1], j === k ? cls : r[2]]), plain: true });
+      const fr = [{ msg: flags.length ? `The script starts with <code>${esc(flags.join('; '))}</code>.` : 'No safety options are on, so bash runs every line whatever happens.', mood: 'think', layers: [draw(-1)] }];
+      let stopped = -1;
+      for (let k = 0; k < lines.length; k++) {
+        const line = lines[k];
+        /* run a && / || list part by part, to know whether the last part ran */
+        const parts = line.split(/\s(&&|\|\|)\s/), steps = [];
+        let code = 0, out = '', lastRan = true, unbound = false;
+        if (parts.length > 1 && !/^if\s/.test(line)) {
+          let i = 0, r = w.run(parts[0]); code = r.code; out += r.out; steps.push(parts[0]);
+          for (i = 1; i < parts.length; i += 2) { const op = parts[i], next = parts[i + 1]; if ((op === '&&' && code === 0) || (op === '||' && code !== 0)) { r = w.run(next); code = r.code; out += r.out; lastRan = i + 1 === parts.length - 1; } else lastRan = false; }
+          lastRan = lastRan && code !== 0 && (parts.length < 3 || true);
+        } else { const r = w.run(line); code = r.code; out = r.out; }
+        unbound = /unbound variable/.test(out);
+        out.replace(/\n$/, '').split('\n').filter(x => x !== '').forEach(x => term.push([/unbound|No such|cannot/.test(x) ? 'e' : 'o', x]));
+        const isIf = /^(if|while|until)\s/.test(line), isNeg = /^!\s/.test(line), isList = parts.length > 1 && !isIf;
+        const isPipe = /[^|]\|[^|]/.test(line) && !isList;
+        let why, stop = false;
+        if (unbound) { stop = U; why = 'With set -u, using a variable that was never set is an error, and a script exits at once, even without set -e.'; }
+        else if (code === 0) why = isList ? 'The list as a whole succeeded.' : 'Status 0, success.';
+        else if (isIf) why = 'A failure inside the test of if, while or until is how the condition says no. set -e ignores it.';
+        else if (isNeg) why = 'A command reversed with ! never triggers set -e.';
+        else if (isList && !lastRan) why = 'A failure in the && or || list, but not in its last command, is treated as a decision. set -e ignores it.';
+        else if (isPipe && !P) why = 'A pipeline’s status is that of its last command, here sort, which succeeded. Without pipefail the failing grep is invisible.';
+        else if (isPipe && P) { stop = E; why = 'With pipefail the pipeline fails when any part fails, here grep.' + (E ? ' set -e stops the script.' : ' set -e is off, so the script goes on.'); }
+        else if (/^\(\(/.test(line)) { stop = E; why = '(( n++ )) gives the old value, 0, and an arithmetic result of 0 means status 1.' + (E ? ' set -e stops the script, a famous surprise.' : ''); }
+        else if (/=\$\(/.test(line)) { stop = E; why = 'An assignment gets the status of its command substitution. grep -c prints 0 and exits with 1 when nothing matches.' + (E ? ' set -e stops the script here.' : ''); }
+        else { stop = E; why = `Status ${code}.` + (E ? ' set -e stops the script.' : ' Without set -e the script just carries on.'); }
+        rows[k][1] = 'status ' + code; rows[k][2] = stop ? 'no' : code ? 'look' : 'yes';
+        fr.push({ msg: `<code>${esc(line)}</code> ends with status ${code}. ${why}`, mood: stop ? 'sad' : code ? 'look' : 'happy', fx: stop ? 'shake' : undefined, layers: [draw(k, stop ? 'no' : code ? 'look' : 'yes'), { t: 'term', label: 'Output so far', lines: term.length ? term.slice() : [['o', '(nothing yet)']] }] });
+        if (stop) { stopped = k; break; }
+      }
+      if (stopped >= 0) for (let j = stopped + 1; j < rows.length; j++) rows[j][2] = 'ghost';
+      const chk = world(); chk.run(`printf '%s\\n' ${['#!/bin/bash'].concat(flags, lines).map(x => "'" + x.replace(/'/g, "'\\''") + "'").join(' ')} > s.sh`);
+      const res = chk.run('bash s.sh; echo "exit status $?"').out.replace(/\n$/, '').split('\n').filter(x => x !== '');
+      fr.push({ msg: stopped >= 0 ? `The script stopped at line ${stopped + 1}, so the lines after it never ran. Here is the whole file run by the practice shell.` : 'Every line ran. Here is the whole file run by the practice shell.', mood: stopped >= 0 ? 'wow' : 'happy', fx: 'burst', layers: [draw(-1), { t: 'term', label: 'bash s.sh', lines: res.map(x => [/unbound|No such|cannot/.test(x) ? 'e' : 'o', x]) }] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

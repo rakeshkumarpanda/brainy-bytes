@@ -52,8 +52,8 @@ const LXSH = (() => {
       ['/var/www/index.html', '<h1>It works</h1>\n', 0o644, 'root']
     ]
   };
-  const CMDS = 'alias awk basename bash bg bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp cut date df diff dirname disown du echo env exit export expr false fg file find free grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
-  const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt'.split(' '));
+  const CMDS = 'alias awk basename bash bg bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp cut date df diff dirname disown du echo env exit export expr false fg file find flock free grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
   function norm(path) {
@@ -169,9 +169,13 @@ const LXSH = (() => {
     /* ---------- reading the command line ---------- */
     /* splits a line into words and operators. A word keeps a list of parts: {t: text, q: 0 none | 1 single | 2 double} */
     lex(src) {
-      const toks = []; let i = 0, w = null;
-      const push = (t, q) => { if (!w) w = { parts: [] }; w.parts.push({ t, q }); };
-      const end = () => { if (w) { toks.push({ w }); w = null; } };
+      const toks = []; let i = 0, w = null, wl = 1, cp = 0, cl = 1;
+      /* the line number of position pos. Positions only grow, so counting goes on from the last call */
+      const lineAt = pos => { while (cp < pos && cp < src.length) { if (src[cp] === '\n') cl++; cp++; } return cl; };
+      const push = (t, q) => { if (!w) { w = { parts: [] }; wl = lineAt(i); } w.parts.push({ t, q }); };
+      const end = () => { if (w) { toks.push({ w, ln: wl }); w = null; } };
+      const tp = toks.push.bind(toks);
+      toks.push = (...xs) => tp(...xs.map(x => (x.ln === undefined && (x.ln = x.w ? wl : lineAt(i)), x)));
       while (i < src.length) {
         const c = src[i];
         if (c === ' ' || c === '\t') { end(); i++; continue; }
@@ -224,6 +228,8 @@ const LXSH = (() => {
       end();
       return toks;
     }
+    /* the text of a word as it was typed, quotes included, for BASH_COMMAND and set -x style messages */
+    srcText(w) { return w.parts.map(p => p.q === 1 ? `'${p.t}'` : p.q === 2 ? `"${p.t}"` : p.t).join(''); }
     /* the end of (( ... )): the first )) that closes the brackets opened inside */
     matchArith(s, i) { let d = 0; for (let j = i; j < s.length; j++) { if (s[j] === '(') d++; else if (s[j] === ')') { if (!d && s[j + 1] === ')') return j; d--; } } throw new Error('syntax error: (( was not closed with ))'); }
     /* the end of [[ ... ]]: a ]] that stands on its own, outside quotes */
@@ -245,7 +251,7 @@ const LXSH = (() => {
       const peekW = () => toks[i] && toks[i].w && !toks[i].w.parts.some(p => p.q) ? this.wordText(toks[i].w) : null;
       const isOp = o => toks[i] && toks[i].op === o;
       const skipSep = () => { while (toks[i] && (toks[i].op === ';' || toks[i].op === '\n')) i++; };
-      const expectWord = kw => { skipSep(); if (peekW() !== kw) throw new Error(`syntax error: expected "${kw}"`); i++; };
+      const expectWord = kw => { skipSep(); if (!toks[i]) { const e = new Error('syntax error: unexpected end of file'); e.eof = true; throw e; } if (peekW() !== kw) throw new Error(`syntax error: expected "${kw}"`); i++; };
       const list = stop => {
         const items = [];
         skipSep();
@@ -331,7 +337,7 @@ const LXSH = (() => {
           return { t: 'fn', name, body: { t: 'sub', body: inner, keep: true, redir: redirs() } };
         }
         if (kw === '{') { i++; const body = list(['}']); expectWord('}'); return { t: 'sub', body, keep: true, redir: redirs() }; }
-        const words = [], redir = [];
+        const words = [], redir = [], start = toks[i];
         while (i < toks.length) {
           const tk = toks[i];
           if (tk.w) { words.push(tk.w); i++; continue; }
@@ -339,7 +345,7 @@ const LXSH = (() => {
           break;
         }
         if (!words.length && !redir.length) throw new Error(`syntax error near "${toks[i] ? toks[i].op || this.wordText(toks[i].w) : 'end of line'}"`);
-        return { t: 'cmd', words, redir };
+        return { t: 'cmd', words, redir, ln: start && start.ln };
       };
       const skipSepSingle = () => { while (toks[i] && toks[i].op === ';' && !(toks[i + 1] && (toks[i + 1].op === ';' || toks[i + 1].op === '&'))) i++; };
       const redirOne = () => {
@@ -367,6 +373,7 @@ const LXSH = (() => {
       if (/^\d+$/.test(name)) return this.args[+name - 1] ?? '';
       if (name === 'RANDOM') return String(Math.floor(Math.random() * 32768));
       if (name === 'PWD') return this.cwd;
+      if (name === 'BASH_COMMAND') return this.bashCmd || '';
       if (!(name in this.vars) && this.arrays && this.arrays[name] !== undefined && name !== 'PIPESTATUS') { const A = this.arrays[name]; return (Array.isArray(A) ? A[0] : A['0']) ?? ''; }
       if (!(name in this.vars) && this.opts && this.opts.nounset && !soft) throw new Error(`${name}: unbound variable`);
       return this.vars[name] ?? '';
@@ -426,7 +433,7 @@ const LXSH = (() => {
         if (c === '\\' && i + 1 < s.length && '"\\$`'.includes(s[i + 1])) { out += s[i + 1]; i += 2; continue; }
         if (c !== '$') { out += c; i++; continue; }
         if (s.startsWith('$((', i)) { const k = this.matchParen(s, i + 1); out += String(this.arith(this.expandStr(s.slice(i + 3, k - 1)))); i = k + 1; continue; }
-        if (s[i + 1] === '(') { const k = this.matchParen(s, i + 1); const r = this.capture(s.slice(i + 2, k)); out += r.replace(/\n+$/, ''); i = k + 1; continue; }
+        if (s[i + 1] === '(') { const k = this.matchParen(s, i + 1); const r = this.capture(s.slice(i + 2, k)); this.substCode = this.last; out += r.replace(/\n+$/, ''); i = k + 1; continue; }
         if (s[i + 1] === '{') { const k = s.indexOf('}', i); out += this.braceParam(s.slice(i + 2, k)); i = k + 1; continue; }
         const m = /^(\w+|[?#@*$!0-9])/.exec(s.slice(i + 1));
         if (!m) { out += '$'; i++; continue; }
@@ -548,9 +555,9 @@ const LXSH = (() => {
       let tree;
       const heres = [];
       /* here documents: lines after the command up to the end word */
-      src = src.replace(/(?<!<)<<(-?)\s*(['"]?)(\w+)\2([^\n]*)\n([\s\S]*?)\n\t*\3(\n|$)/g, (all, dash, q, tag, rest, body) => { heres.push({ body: (dash ? body.replace(/^\t+/gm, '') : body) + '\n', quoted: !!q }); return `<<${tag}${rest}\n`; });
+      src = src.replace(/(?<!<)<<(-?)\s*(['"]?)(\w+)\2([^\n]*)\n([\s\S]*?)\n\t*\3(\n|$)/g, (all, dash, q, tag, rest, body) => { heres.push({ body: (dash ? body.replace(/^\t+/gm, '') : body) + '\n', quoted: !!q }); return `<<${tag}${rest}\n` + '\n'.repeat(body.split('\n').length + 1); });
       this.heres = heres;
-      try { tree = this.parse(this.lex(src)); } catch (e) { this.out(`bash: ${e.message}\n`); this.last = 2; return; }
+      try { tree = this.parse(this.lex(src)); } catch (e) { this.out(e.eof && this.script ? `${this.script}: line ${src.split('\n').length}: ${e.message}\n` : `bash: ${e.message}\n`); this.last = 2; return; }
       try { this.exec(tree, ''); } catch (e) {
         if (e && e.exit !== undefined) {
           this.last = e.exit; if (sub) throw e;
@@ -715,8 +722,9 @@ const LXSH = (() => {
         try { return this.exec(node.body, input); } finally { this.cwd = keep.cwd; this.vars = keep.vars; }
       }
       /* plain command: leading NAME=value words are assignments */
+      if (!this.inTrap) { if (node.ln) this.vars.LINENO = String(node.ln + (this.lineBase || 0)); this.bashCmd = node.words.map(x => this.srcText(x)).concat((node.redir || []).map(r => r.w ? `${r.op} ${this.srcText(r.w)}` : r.op === '<<' ? '<<' + r.tag : r.op)).join(' '); }
       const words = node.words.slice();
-      const assigns = [];
+      const assigns = []; this.substCode = undefined;
       while (words.length && /^[A-Za-z_]\w*(\[[^\]]*\])?(\+?)=/.test(this.wordText(words[0])) && !words[0].parts[0].q) {
         const w = words.shift(), t = this.wordText(w), m = /^([A-Za-z_]\w*)(?:\[([^\]]*)\])?(\+?)=/.exec(t), name = m[1], app = m[3] === '+';
         const arrPart = w.parts.find(p => p.arr !== undefined);
@@ -734,8 +742,9 @@ const LXSH = (() => {
       const ro = assigns.find(x => this.ro && this.ro.has(nm(x)));
       if (ro) { this.eout(`bash: ${nm(ro)}: readonly variable\n`); return 1; }
       if (!args.length) {
-        assigns.forEach(x => { if (this.opts && this.opts.xtrace) this.eout(`+ ${nm(x)}=${Array.isArray(x) ? x[1] : x.val !== undefined ? x.val : '(...)'}\n`); if (Array.isArray(x)) this.vars[x[0]] = x[1]; else this.setArr(x); });
-        return 0;
+        assigns.forEach(x => { if (this.opts && this.opts.xtrace) this.eout(`${this.vars.PS4 !== undefined ? this.expandStr(this.vars.PS4) : '+ '}${nm(x)}=${Array.isArray(x) ? x[1] : x.val !== undefined ? x.val : '(...)'}\n`); if (Array.isArray(x)) this.vars[x[0]] = x[1]; else this.setArr(x); });
+        /* an assignment alone gives the status of its last command substitution, or 0 */
+        return this.substCode ?? 0;
       }
       const arrs = assigns.filter(x => !Array.isArray(x)); arrs.forEach(x => this.setArr(x));
       assigns.splice(0, assigns.length, ...assigns.filter(x => Array.isArray(x)));
@@ -750,7 +759,7 @@ const LXSH = (() => {
     }
     call(args, input) {
       let name = args[0];
-      if (this.opts && this.opts.xtrace && !this.inTrap) this.eout('+ ' + args.map(x => /^[\w.\/:=@%+,-]+$/.test(x) ? x : `'${x.replace(/'/g, "'\\''")}'`).join(' ') + '\n');
+      if (this.opts && this.opts.xtrace && !this.inTrap) this.eout((this.vars.PS4 !== undefined ? this.expandStr(this.vars.PS4) : '+ ') + args.map(x => /^[\w.\/:=@%+,-]+$/.test(x) ? x : `'${x.replace(/'/g, "'\\''")}'`).join(' ') + '\n');
       if (this.fns && this.fns[name]) {
         const keep = this.args; this.args = args.slice(1);
         const stack = this.fnStack = this.fnStack || [];
@@ -794,11 +803,13 @@ const LXSH = (() => {
       if (isNew) this.vars = this.childVars();
       const keepTraps = this.traps, keepOpts = Object.assign({}, this.opts || {}), keepFrames = this.frames;
       if (isNew) { this.traps = {}; this.opts = { noclobber: keepOpts.noclobber }; this.frames = []; }
-      try { this.runSrc(n.data, true); } catch (e) { if (e && e.exit !== undefined) this.last = e.exit; else throw e; } finally {
+      let death = '';
+      try { this.runSrc(n.data, true); } catch (e) { if (e && e.exit !== undefined) { this.last = e.exit; if (e.sig && e.sig !== 2 && DEATH[e.sig]) death = DEATH[e.sig]; } else throw e; } finally {
         if (isNew) { if (this.traps.EXIT) { const st = this.last; this.runTrap('EXIT'); this.last = st; } this.traps = keepTraps; this.opts = keepOpts; this.frames = keepFrames; }
         this.args = keep.args; this.script = keep.script;
         if (isNew) { this.vars = keep.vars; this.exported = keep.exported; }   /* ./script runs in a new shell, so its variables vanish. source keeps them */
       }
+      if (death) this.eout(death + '\n');   /* the parent shell reports how its child died */
       return this.last;
     }
     /* the variables a child process sees: only exported ones (and NAME=value given just for this command) */
@@ -2446,6 +2457,13 @@ const LXSH = (() => {
     if (this.jobs.every(j => j.gone)) this.jobs = [];
   };
   World.prototype.signal = function (pid, sig, who) {
+    if (pid === 2001) {
+      const name = sigName(sig);
+      if (this.traps && this.traps[name] !== undefined) { if (this.traps[name] !== '') this.runTrap(name); return 0; }
+      if (sig === 0 || sig === 17 || sig === 18 || sig === 28 || sig === 23) return 0;
+      if (this.script) throw { exit: 128 + sig, sig };
+      if (sig === 2 || sig === 15 || sig === 3) return 0;   /* an interactive shell ignores INT, TERM and QUIT */
+    }
     const p = this.proc(pid);
     if (!p) { this.eout(`${who}: (${pid}) - No such process\n`); return 1; }
     if (p.user !== this.user && this.user !== 'root') { this.eout(`${who}: (${pid}) - Operation not permitted\n`); return 1; }
@@ -2768,7 +2786,7 @@ const LXSH = (() => {
     if (a[0] === '-x') { const r = this.runFileX(a[1], a.slice(2), input); return r; }
     if (a[0] !== '-n') return this.runFile(a[0], a.slice(1), input, false, true);
     const n = this.node(this.abs(a[1] || '')); if (!n) { this.eout(`bash: ${a[1]}: No such file or directory\n`); return 127; }
-    try { this.parse(this.lex(n.data.replace(/(?<!<)<<(-?)\s*(['"]?)(\w+)\2([^\n]*)\n([\s\S]*?)\n\t*\3(\n|$)/g, '<<$3$4\n'))); return 0; } catch (e) { this.eout(`${a[1]}: ${e.message}\n`); return 2; }
+    try { this.parse(this.lex(n.data.replace(/(?<!<)<<(-?)\s*(['"]?)(\w+)\2([^\n]*)\n([\s\S]*?)\n\t*\3(\n|$)/g, '<<$3$4\n'))); return 0; } catch (e) { this.eout(`${a[1]}: ${e.eof ? `line ${n.data.split('\n').length}: ` : ''}${e.message}\n`); return 2; }
   };
   World.prototype.runFileX = function (path, args, input) { const p = this.abs(path), n = this.node(p); if (!n) { this.eout(`bash: ${path}: No such file or directory\n`); return 127; } const src = 'set -x\n' + n.data; const keep = n.data; n.data = src; try { return this.runFile(path, args, input, false, true); } finally { n.data = keep; } };
   C.source = C['.'] = function (a, input) { if (!a.length) { this.eout('bash: source: filename argument required\n'); return 2; } const keep = this.vars; const code = this.runFile(a[0], a.slice(1), input, false); return code; };
@@ -3042,6 +3060,33 @@ const LXSH = (() => {
 
   /* ---------- small builtins for scripts ---------- */
   C[':'] = function () { return 0; };
+  /* command -v NAME tells where a command comes from, command NAME ... runs it without looking at functions */
+  C.command = function (a, input) {
+    if (a[0] === '-v' || a[0] === '-V') {
+      let code = 0;
+      a.slice(1).forEach(n => {
+        if (this.aliases && this.aliases[n]) this.out(a[0] === '-v' ? `alias ${n}='${this.aliases[n]}'\n` : `${n} is aliased to \`${this.aliases[n]}'\n`);
+        else if (this.fns && this.fns[n]) this.out(a[0] === '-v' ? n + '\n' : `${n} is a function\n`);
+        else if (BUILTIN.has(n)) this.out(a[0] === '-v' ? n + '\n' : `${n} is a shell builtin\n`);
+        else { const hit = this.lookup(n); if (hit) this.out(a[0] === '-v' ? hit.path + '\n' : `${n} is ${hit.path}\n`); else { if (a[0] === '-V') this.eout(`bash: command: ${n}: not found\n`); code = 1; } }
+      });
+      return code;
+    }
+    if (!a.length) return 0;
+    const keep = this.fns; this.fns = {};
+    try { return this.call(a, input); } finally { this.fns = keep; }
+  };
+  /* flock [-n] [-w SECONDS] FILE COMMAND ...: run COMMAND holding a lock on FILE. One user, so the lock is always free */
+  C.flock = function (a, input) {
+    let i = 0;
+    while (/^-[nwxsoeu]/.test(a[i] || '')) { if (a[i] === '-w') i++; i++; }
+    const file = a[i], cmd = a.slice(i + 1);
+    if (!file) { this.eout('flock: bad usage\nTry \'flock --help\' for more information.\n'); return 64; }
+    if (/^\d+$/.test(file)) { this.eout('flock: file descriptors are not available in the practice shell, use flock FILE COMMAND\n'); return 64; }
+    const p = this.abs(file);
+    if (!this.node(p)) { if (!this.node(dirName(p))) { this.eout(`flock: cannot open lock file ${file}: No such file or directory\n`); return 66; } this.mk(p, 'f', 0o644, this.user, ''); }
+    return cmd.length ? this.call(cmd, input) : 0;
+  };
   /* shopt: the bash options that change globbing and matching */
   const SHOPTS = ['dotglob', 'expand_aliases', 'extglob', 'failglob', 'globstar', 'nocaseglob', 'nocasematch', 'nullglob'];
   C.shopt = function (a) {
