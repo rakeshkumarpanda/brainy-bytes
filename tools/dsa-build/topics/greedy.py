@@ -1514,5 +1514,5 @@ T = t.finish({
     'parts': PARTS, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'talk': TALK,
     'viz': VIZ_JS, 'css': '',
     'prev': ('advanced-graphs', 'advanced-graphs', '🧭 Advanced graphs'),
-    'next': None,
+    'next': ('dynamic-programming', 'dynamic-programming', '🧠 Dynamic programming 1'),
 })
