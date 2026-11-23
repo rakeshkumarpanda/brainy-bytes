@@ -1,0 +1,14 @@
+Facts read 2026-11-23 from sqlite.org (datatype3, lang_select, windowfunctions, lang_with, foreignkeys, lang_upsert, lang_returning, queryplanner, eqp, lang_transaction, isolation, json1, lang_createtable, lang_expr, nulls), postgresql.org transaction-iso, dev.mysql.com innodb isolation 8.4, learn.microsoft.com SET TRANSACTION ISOLATION LEVEL.
+- Storage classes NULL INTEGER REAL TEXT BLOB. Affinity rules in order: INT->INTEGER, CHAR/CLOB/TEXT->TEXT, BLOB or none->BLOB, REAL/FLOA/DOUB->REAL, else NUMERIC. TRUE/FALSE since 3.23.0. STRICT 3.37.0 (2021-11-27). Generated columns 3.31.0. WITHOUT ROWID 3.8.2. INTEGER PRIMARY KEY exact name = rowid alias.
+- Sort: NULL < numbers < TEXT < BLOB. NULL first in ascending ORDER BY.
+- Aggregate without GROUP BY returns one row. Bare columns: from one row, min/max special case.
+- 11 window funcs. Default frame RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW. GROUPS/EXCLUDE 3.28.0.
+- Recursive CTE rules. MATERIALIZED 3.35.0. UNION stops cycles.
+- FK off by default since 3.6.19, PRAGMA foreign_keys=ON per connection. Actions NO ACTION (default), RESTRICT, SET NULL, SET DEFAULT, CASCADE.
+- UPSERT 3.24.0 (2018-06-04), excluded. RETURNING 3.35.0 (2021-03-12).
+- EQP: SCAN t, SEARCH t USING INDEX i (a=?), USING COVERING INDEX, USE TEMP B-TREE FOR ORDER BY.
+- Transactions DEFERRED default, IMMEDIATE, EXCLUSIVE, SAVEPOINT. SQLite serializable. BEGIN does not nest.
+- PG: 4 levels, default Read Committed, Read Uncommitted acts as Read Committed, Repeatable Read prevents phantoms in PG, Serializable failures SQLSTATE 40001.
+- MySQL InnoDB default REPEATABLE READ. SQL Server default READ COMMITTED, plus SNAPSHOT.
+- JSON built in 3.38.0 (2022-02-22) with -> and ->>.
+- CHECK passes on NULL. LIKE case-insensitive for ASCII. GLOB case sensitive. NULLs equal in GROUP BY/DISTINCT, distinct in UNIQUE.
