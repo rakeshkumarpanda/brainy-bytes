@@ -1436,5 +1436,5 @@ T = {
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'practice': PRACTICE, 'quiz': QUIZ, 'calc': CALC,
     'viz': VIZ_JS, 'css': CSS,
     'prev': ('arrays', 'array-adventure', '📦 Arrays'),
-    'next': ('linked-lists', 'linked-lists', '🔗 Linked lists'),
+    'next': ('hashing', 'hashing', '🗄️ Hashing'),
 }

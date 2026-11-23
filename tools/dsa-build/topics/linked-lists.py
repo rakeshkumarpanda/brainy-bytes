@@ -1704,6 +1704,6 @@ T = {
     'minutes': 13,
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'practice': PRACTICE, 'quiz': QUIZ, 'calc': CALC,
     'viz': VIZ_JS, 'css': CSS,
-    'prev': ('strings', 'strings', '🔤 Strings'),
+    'prev': ('hashing', 'hashing', '🗄️ Hashing'),
     'next': ('stacks-queues', 'stacks-queues', '🥞 Stacks and queues'),
 }

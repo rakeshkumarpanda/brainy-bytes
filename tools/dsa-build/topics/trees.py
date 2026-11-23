@@ -2095,6 +2095,6 @@ T = {
     'minutes': 15,
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'practice': PRACTICE, 'quiz': QUIZ, 'calc': CALC,
     'viz': VIZ_JS, 'css': CSS,
-    'prev': ('stacks-queues', 'stacks-queues', '🥞 Stacks and queues'),
-    'next': ('graphs', 'graphs', '🕸️ Graphs'),
+    'prev': ('divide-and-conquer', 'divide-and-conquer', '✂️ Divide and conquer'),
+    'next': ('heaps', 'heaps', '⛰️ Heaps in depth'),
 }

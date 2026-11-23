@@ -1922,6 +1922,6 @@ T = {
     'minutes': 16,
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'practice': PRACTICE, 'quiz': QUIZ, 'calc': CALC,
     'viz': VIZ_JS, 'css': CSS,
-    'prev': ('trees', 'trees', '🌲 Trees'),
-    'next': None,
+    'prev': ('balanced-trees', 'balanced-trees', '🔄 Balanced trees'),
+    'next': ('advanced-graphs', 'advanced-graphs', '🧭 Advanced graphs'),
 }

@@ -7,7 +7,7 @@ window.LH_SEARCH_MANIFEST = {
  "cuda": "b2ee335c1f",
  "cyber-security": "c9c07c0e65",
  "deep-learning": "2bd9bab3ac",
- "dsa": "34bd6bf51f",
+ "dsa": "55ca68e39b",
  "git": "a0a405282f",
  "java": "4bcd2c3647",
  "javascript": "fd883ba108",
