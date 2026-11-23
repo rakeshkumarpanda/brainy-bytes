@@ -2073,5 +2073,5 @@ T = t.finish({
     'parts': PARTS, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'talk': TALK,
     'viz': VIZ_JS, 'css': '',
     'prev': ('trees', 'trees', '🌲 Trees'),
-    'next': ('graphs', 'graphs', '🕸️ Graphs'),
+    'next': ('balanced-trees', 'balanced-trees', '🔄 Balanced trees'),
 })
