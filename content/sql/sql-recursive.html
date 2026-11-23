@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recursive queries: trees, graphs and series · SQL and Databases</title>
+<meta name="description" content="WITH RECURSIVE, anchor and recursive parts, stop rules, number and date series, calendar tables, hierarchies with level and path, walking up and down, graphs, cycle guards, UNION versus UNION ALL, CYCLE, other tree models.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 6: Advanced queries</span><span>›</span><span>Recursive queries</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 6 · Topic 2 of 3 · Advanced</div>
+    <h1>Recursive queries: trees, graphs and series</h1>
+    <p class="lead">Write queries that call themselves with WITH RECURSIVE to generate number and date series, walk org charts and category trees, and explore graphs without getting stuck in loops.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">1 syntax card</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">7 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-recursive" data-topic="cheatsheet" data-h="sql-recursive">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#basics" data-l="basics"><span class="n">1</span><span class="t">A query that calls itself</span></a></li><li><a href="#series" data-l="series"><span class="n">2</span><span class="t">Generating series and calendars</span></a></li><li><a href="#tree" data-l="tree"><span class="n">3</span><span class="t">Walking hierarchies</span></a></li><li><a href="#graph" data-l="graph"><span class="n">4</span><span class="t">Graphs, cycles and UNION</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="basics" data-l="basics" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>A query that calls itself</h2>
+<p>Some questions have no fixed number of steps: "everyone who reports to Priya, directly or through others", "every date in June". A <b>recursive CTE</b> answers them by running a query again and again on its own latest results until nothing new appears.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Recursive CTE</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>WITH RECURSIVE name(cols) AS ( anchor UNION ALL recursive_part ) SELECT ... FROM name;</code></div><div class="fx-n">The anchor runs once. The recursive part reads name, but only sees the rows from the round before.</div></div></div>
+<div class="viz" data-viz="pk" data-pk="sqrec"></div>
+<div class="sq-run" data-q="count"></div>
+<div class="walk"><div class="walk-h"><span>How the engine runs it</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Run the anchor and put its rows in the result and in a queue.</li><li>Take rows from the queue and run the recursive part on them.</li><li>Add any new rows to the result and to the queue.</li><li>Stop when the queue is empty. No stop rule means it never empties.</li></ol></div>
+<div class="note note-warn"><b>Common mistake</b><div>Always write a stop rule, such as WHERE x < 10, a depth limit, or a LIMIT on the outer query. SQL Server stops after 100 rounds by default (MAXRECURSION), SQLite has no such limit.</div></div>
+<div class="sq-lab" data-lab="l-sum"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="series" data-l="series" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Generating series and calendars</h2>
+<p>SQLite has no built in series generator in this build, so a recursive CTE is the usual way to make a run of numbers or dates. A calendar of days is handy for reports that must show days with zero sales too.</p>
+<div class="sq-run" data-q="calendar"></div>
+<div class="sq-run" data-q="powers"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>Built in series</th></tr></thead><tbody><tr><td>PostgreSQL</td><td>generate_series(1, 10) and generate_series(date, date, interval)</td></tr><tr><td>SQL Server 2022+</td><td>GENERATE_SERIES(1, 10)</td></tr><tr><td>SQLite</td><td>a generate_series table valued function exists as an extension, otherwise a recursive CTE</td></tr><tr><td>MySQL 8</td><td>recursive CTE</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-cal"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="tree" data-l="tree" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Walking hierarchies</h2>
+<p>A table that points at itself, like employees.manager_id, stores a <b>tree</b>. A recursive CTE walks the tree one level per round, and can carry the depth and the path along.</p>
+<div class="sq-run" data-q="org"></div>
+<div class="sq-run" data-q="up"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Real tree</th><th>Self reference</th></tr></thead><tbody><tr><td>Org chart</td><td>employee.manager_id → employee.id</td></tr><tr><td>Category menu in a shop</td><td>category.parent_id → category.id</td></tr><tr><td>Comment threads</td><td>comment.reply_to → comment.id</td></tr><tr><td>Folders on a disk</td><td>folder.parent_id → folder.id</td></tr><tr><td>Bill of materials</td><td>part made of other parts, with quantities</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-team"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="graph" data-l="graph" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Graphs, cycles and UNION</h2>
+<p>A tree has one parent per node. A <b>graph</b> can have many links and even loops, such as train routes. A naive recursive walk around a loop never ends, so you must stop it.</p>
+<div class="sq-run" data-q="routes"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Way to stop a cycle</th><th>How</th></tr></thead><tbody><tr><td>Path check</td><td>keep the path as text or JSON and skip nodes already in it</td></tr><tr><td>UNION instead of UNION ALL</td><td>drops rows that are exact repeats, which ends simple loops where the whole row repeats</td></tr><tr><td>Depth limit</td><td>carry a level column and add WHERE level < 10</td></tr><tr><td>LIMIT</td><td>a LIMIT on the outer query stops the recursion early in SQLite</td></tr><tr><td>CYCLE clause</td><td>PostgreSQL 14+: CYCLE id SET is_cycle USING path</td></tr></tbody></table></div>
+<div class="sq-run" data-q="unionstop"></div>
+<div class="scene"><div class="scene-h">Real world scenario: friend suggestions</div><p>A social app suggests "people you may know": friends of your friends who are not already your friends. That is a two step walk on the friendship graph. Graph databases such as Neo4j are built for long walks, but for a few hops a recursive CTE with a depth limit works in any SQL engine.</p></div>
+<div class="sq-lab" data-lab="l-path"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A recursive query starts with some rows and keeps finding more rows from the ones it just found, until no new ones appear.</p></div><div class="ld-p" data-ld="college" hidden><p>Anchor UNION ALL recursive part, with a stop rule. Use it for series, hierarchies and graph walks. Guard against cycles with a path, UNION or a depth limit.</p></div><div class="ld-p" data-ld="masters" hidden><p>Semantically it computes a least fixed point. Engines run it as semi naive evaluation: each round joins only the new rows (the delta) from the previous round, which is why the recursive part sees only last round’s rows. Linear recursion, where the CTE appears once, is what the SQL standard allows.</p></div><div class="ld-p" data-ld="research" hidden><p>Recursive SQL comes from Datalog research on deductive databases. Modern work studies graph query languages, including the ISO GQL standard (2024) and SQL/PGQ (SQL:2023 part 16), which adds property graph queries to SQL itself.</p></div></div>
+<details class="deep"><summary>Going deeper: Other ways to store trees</summary><div class="deep-b"><p>Besides parent pointers (the adjacency list used here) there are nested sets (left and right numbers per node), materialized paths (a column such as /1/2/4/), and closure tables (one row per ancestor and descendant pair). They make some reads faster and writes slower. PostgreSQL’s ltree extension stores materialized paths.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-window.html" data-topic="sql-window"><small>Previous topic</small><b>Window functions</b></a><a class="next" href="./sql-patterns.html" data-topic="sql-patterns"><small>Next topic</small><b>Query patterns</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-recursive", "topic": "sql-recursive", "subject": "sql", "title": "Recursive queries: trees, graphs and series", "codes": {}, "quiz": [{"lv": "e", "q": "A recursive CTE starts with the words", "o": ["WITH LOOP", "WITH RECURSIVE", "REPEAT", "RECURSE"], "a": 1, "hint": "Recursive.", "why": "WITH RECURSIVE name AS (...)."}, {"lv": "e", "q": "The part that runs once is the", "o": ["Anchor", "Loop", "Frame", "Index"], "a": 0, "hint": "Start.", "why": "The anchor makes the starting rows."}, {"lv": "e", "q": "Without a stop rule the query", "o": ["Returns nothing", "May run forever", "Fails at once", "Returns one row"], "a": 1, "hint": "No end.", "why": "Always add a stop rule."}, {"lv": "e", "q": "Which table design stores a tree?", "o": ["A table pointing at itself", "Two unrelated tables", "A view", "An index"], "a": 0, "hint": "Self reference.", "why": "employees.manager_id points at employees.id."}, {"lv": "m", "q": "In each round, the recursive part sees", "o": ["All rows so far", "Only the rows from the previous round", "Only the anchor", "The whole table"], "a": 1, "hint": "Delta.", "why": "It works on the newest rows."}, {"lv": "m", "q": "Why LEFT JOIN a calendar to orders?", "o": ["Speed", "To keep days with zero orders", "To remove NULLs", "To sort"], "a": 1, "hint": "Quiet days.", "why": "Days without orders still appear."}, {"lv": "m", "q": "UNION instead of UNION ALL in a recursive CTE", "o": ["Is not allowed", "Drops repeated rows, which can end loops", "Doubles rows", "Sorts rows"], "a": 1, "hint": "No repeats.", "why": "A repeated row is not queued again."}, {"lv": "m", "q": "SQL Server’s default recursion limit is", "o": ["10", "100", "1000", "none"], "a": 1, "hint": "MAXRECURSION.", "why": "The default is 100 rounds."}, {"lv": "m", "q": "Oracle’s older syntax for hierarchies is", "o": ["CONNECT BY", "TREE BY", "LINK BY", "WALK"], "a": 0, "hint": "Connect.", "why": "START WITH ... CONNECT BY PRIOR."}, {"lv": "h", "q": "A path column like Pune > Mumbai is used to", "o": ["Sort only", "Detect and skip cycles", "Make indexes", "Group rows"], "a": 1, "hint": "Visited set.", "why": "Skip nodes already in the path."}, {"lv": "x", "q": "Evaluating only the new rows each round is called", "o": ["Naive evaluation", "Semi naive evaluation", "Lazy loading", "Sharding"], "a": 1, "hint": "Delta rounds.", "why": "Semi naive evaluation."}], "calc": [{"lv": "e", "q": "How many rows does the counting CTE from 1 while x < 10 produce?", "ans": "10", "hint": "Stops after 10.", "steps": ["The anchor gives 1.", "Each round adds one until x = 10 fails the rule x < 10.", "<span class=\"eq\">10 rows<\/span>"]}, {"lv": "e", "q": "What is the sum of 1 to 100?", "ans": "5050", "hint": "Gauss.", "steps": ["Pair 1 with 100, 2 with 99, and so on.", "There are 50 pairs of 101.", "<span class=\"eq\">50 × 101 = 5050<\/span>"]}, {"lv": "m", "q": "In the powers of two CTE, what is the last value?", "ans": "1024", "hint": "2 to the 10.", "steps": ["The rounds go n = 0 to 10.", "val doubles each round.", "<span class=\"eq\">2¹⁰ = 1024<\/span>"]}, {"lv": "m", "q": "How deep is the Orbit Tech org chart (Priya is level 0)?", "ans": "2", "hint": "Longest chain.", "steps": ["Priya > Rahul > Sneha.", "Priya is 0, Rahul 1, Sneha 2.", "<span class=\"eq\">deepest level = 2<\/span>"]}, {"lv": "m", "q": "How many people report to Priya, directly or indirectly?", "ans": "9", "hint": "Everyone else.", "steps": ["Priya is at the top.", "All other employees are below her.", "<span class=\"eq\">10 − 1 = 9<\/span>"]}, {"lv": "m", "q": "In the 1 to 10 June calendar, how many days have zero orders?", "ans": "7", "hint": "Ten days minus busy days.", "steps": ["Orders fell on 1, 3 and 10 June.", "That is 3 busy days out of 10.", "<span class=\"eq\">10 − 3 = 7<\/span>"]}, {"lv": "h", "q": "How many rows does the walk up from Tara return, Tara included?", "ans": "3", "hint": "Tara, Mohan, Priya.", "steps": ["Tara’s manager is Mohan.", "Mohan’s manager is Priya, who has none.", "<span class=\"eq\">3 rows<\/span>"]}, {"lv": "h", "q": "How many trips from Pune that never revisit a city does the routes example find?", "ans": "4", "hint": "List them.", "steps": ["Pune > Mumbai, then Pune > Mumbai > Surat.", "Pune > Hyderabad, then Pune > Hyderabad > Chennai.", "<span class=\"eq\">4 trips<\/span>"]}], "assign": [], "must": [["Shape", "WITH RECURSIVE name AS (anchor UNION ALL recursive part). The recursive part reads name and sees last round’s rows."], ["Stop rule", "Always stop: a WHERE condition, a depth limit, a cycle guard or an outer LIMIT."], ["Series", "Generate numbers and dates, then LEFT JOIN to show zero rows."], ["Trees", "Self referencing tables are walked one level per round. Carry level and path along."], ["Graphs", "Loops need a path check, UNION, or a depth limit. PostgreSQL has CYCLE."]], "summary": "<p>A recursive CTE grows round by round from an anchor until no new rows appear, which walks trees, graphs and series.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"count": {"src": "WITH RECURSIVE n(x) AS (\n  SELECT 1\n  UNION ALL\n  SELECT x + 1 FROM n WHERE x < 10\n)\nSELECT x FROM n;", "db": "", "setup": "", "title": "Counting from 1 to 10 with no table at all", "notes": {"2": "The anchor: the first row, 1.", "4": "Each round adds 1 to the last row. The WHERE is the stop rule."}, "out": [{"sql": "WITH RECURSIVE n(x) AS (\n  SELECT 1\n  UNION ALL\n  SELECT x + 1 FROM n WHERE x < 10\n)\nSELECT x FROM n;", "cols": ["x"], "rows": [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]}]}, "calendar": {"src": "WITH RECURSIVE days(d) AS (\n  SELECT '2025-06-01'\n  UNION ALL\n  SELECT date(d, '+1 day') FROM days WHERE d < '2025-06-10'\n)\nSELECT d, COUNT(o.id) AS orders\nFROM days LEFT JOIN orders o ON o.order_date = d\nGROUP BY d;", "db": "shop", "setup": "", "title": "Every day from 1 to 10 June, with zero for quiet days", "notes": {"4": "date(d, '+1 day') moves to the next date.", "7": "LEFT JOIN keeps days that have no orders, so they show 0."}, "out": [{"sql": "WITH RECURSIVE days(d) AS (\n  SELECT '2025-06-01'\n  UNION ALL\n  SELECT date(d, '+1 day') FROM days WHERE d < '2025-06-10'\n)\nSELECT d, COUNT(o.id) AS orders\nFROM days LEFT JOIN orders o ON o.order_date = d\nGROUP BY d;", "cols": ["d", "orders"], "rows": [["2025-06-01", 1], ["2025-06-02", 0], ["2025-06-03", 1], ["2025-06-04", 0], ["2025-06-05", 0], ["2025-06-06", 0], ["2025-06-07", 0], ["2025-06-08", 0], ["2025-06-09", 0], ["2025-06-10", 1]]}]}, "powers": {"src": "WITH RECURSIVE p(n, val) AS (\n  SELECT 0, 1\n  UNION ALL\n  SELECT n + 1, val * 2 FROM p WHERE n < 10\n)\nSELECT n, val FROM p;", "db": "", "setup": "", "title": "Powers of two, carrying two columns along", "notes": {"4": "Every column can change from round to round."}, "out": [{"sql": "WITH RECURSIVE p(n, val) AS (\n  SELECT 0, 1\n  UNION ALL\n  SELECT n + 1, val * 2 FROM p WHERE n < 10\n)\nSELECT n, val FROM p;", "cols": ["n", "val"], "rows": [[0, 1], [1, 2], [2, 4], [3, 8], [4, 16], [5, 32], [6, 64], [7, 128], [8, 256], [9, 512], [10, 1024]]}]}, "org": {"src": "WITH RECURSIVE chain(id, name, level, path) AS (\n  SELECT id, name, 0, name FROM employees WHERE manager_id IS NULL\n  UNION ALL\n  SELECT e.id, e.name, c.level + 1, c.path || ' > ' || e.name\n  FROM employees e JOIN chain c ON e.manager_id = c.id\n)\nSELECT substr('            ', 1, level * 3) || name AS org_chart, level, path\nFROM chain ORDER BY path;", "db": "company", "setup": "", "title": "The whole org chart with depth and path", "notes": {"2": "Start at the top: the person with no manager.", "4": "Each round goes one level down and extends the path text.", "7": "Indent by level to draw the tree."}, "out": [{"sql": "WITH RECURSIVE chain(id, name, level, path) AS (\n  SELECT id, name, 0, name FROM employees WHERE manager_id IS NULL\n  UNION ALL\n  SELECT e.id, e.name, c.level + 1, c.path || ' > ' || e.name\n  FROM employees e JOIN chain c ON e.manager_id = c.id\n)\nSELECT substr('            ', 1, level * 3) || name AS org_chart, level, path\nFROM chain ORDER BY path;", "cols": ["org_chart", "level", "path"], "rows": [["Priya", 0, "Priya"], ["   Lata", 1, "Priya > Lata"], ["      Joseph", 2, "Priya > Lata > Joseph"], ["      Kiran", 2, "Priya > Lata > Kiran"], ["   Mohan", 1, "Priya > Mohan"], ["      Tara", 2, "Priya > Mohan > Tara"], ["   Rahul", 1, "Priya > Rahul"], ["      Imran", 2, "Priya > Rahul > Imran"], ["      Sneha", 2, "Priya > Rahul > Sneha"], ["   Zoya", 1, "Priya > Zoya"]]}]}, "up": {"src": "WITH RECURSIVE up(id, name, manager_id) AS (\n  SELECT id, name, manager_id FROM employees WHERE name = 'Tara'\n  UNION ALL\n  SELECT e.id, e.name, e.manager_id FROM employees e JOIN up ON e.id = up.manager_id\n)\nSELECT name FROM up;", "db": "company", "setup": "", "title": "Walking up: Tara’s chain of managers", "notes": {"4": "Follow manager_id upwards instead of downwards."}, "out": [{"sql": "WITH RECURSIVE up(id, name, manager_id) AS (\n  SELECT id, name, manager_id FROM employees WHERE name = 'Tara'\n  UNION ALL\n  SELECT e.id, e.name, e.manager_id FROM employees e JOIN up ON e.id = up.manager_id\n)\nSELECT name FROM up;", "cols": ["name"], "rows": [["Tara"], ["Mohan"], ["Priya"]]}]}, "routes": {"src": "CREATE TABLE routes (src TEXT, dst TEXT, km INTEGER);\nINSERT INTO routes VALUES ('Pune', 'Mumbai', 150), ('Mumbai', 'Surat', 280),\n  ('Pune', 'Hyderabad', 560), ('Hyderabad', 'Chennai', 630), ('Surat', 'Pune', 420);\nWITH RECURSIVE trip(city, path, km) AS (\n  SELECT 'Pune', 'Pune', 0\n  UNION ALL\n  SELECT r.dst, t.path || ' > ' || r.dst, t.km + r.km\n  FROM trip t JOIN routes r ON r.src = t.city\n  WHERE instr(t.path, r.dst) = 0\n)\nSELECT path, km FROM trip WHERE city <> 'Pune' ORDER BY km;", "db": "", "setup": "", "title": "Every trip from Pune that never revisits a city", "notes": {"3": "Surat to Pune closes a loop.", "9": "Skip a city already in the path. This is the cycle guard."}, "out": [{"sql": "CREATE TABLE routes (src TEXT, dst TEXT, km INTEGER);", "cols": [], "rows": []}, {"sql": "INSERT INTO routes VALUES ('Pune', 'Mumbai', 150), ('Mumbai', 'Surat', 280),\n  ('Pune', 'Hyderabad', 560), ('Hyderabad', 'Chennai', 630), ('Surat', 'Pune', 420);", "cols": [], "rows": [], "changes": 5}, {"sql": "WITH RECURSIVE trip(city, path, km) AS (\n  SELECT 'Pune', 'Pune', 0\n  UNION ALL\n  SELECT r.dst, t.path || ' > ' || r.dst, t.km + r.km\n  FROM trip t JOIN routes r ON r.src = t.city\n  WHERE instr(t.path, r.dst) = 0\n)\nSELECT path, km FROM trip WHERE city <> 'Pune' ORDER BY km;", "cols": ["path", "km"], "rows": [["Pune > Mumbai", 150], ["Pune > Mumbai > Surat", 430], ["Pune > Hyderabad", 560], ["Pune > Hyderabad > Chennai", 1190]]}]}, "unionstop": {"src": "CREATE TABLE edge (a INTEGER, b INTEGER);\nINSERT INTO edge VALUES (1, 2), (2, 3), (3, 1);\nWITH RECURSIVE reach(n) AS (\n  SELECT 1\n  UNION\n  SELECT b FROM edge JOIN reach ON a = n\n)\nSELECT n FROM reach;", "db": "", "setup": "", "title": "UNION ends a simple loop", "notes": {"2": "1 > 2 > 3 > 1 is a loop.", "5": "UNION ALL would run forever here. UNION refuses the repeated row 1 and stops."}, "out": [{"sql": "CREATE TABLE edge (a INTEGER, b INTEGER);", "cols": [], "rows": []}, {"sql": "INSERT INTO edge VALUES (1, 2), (2, 3), (3, 1);", "cols": [], "rows": [], "changes": 3}, {"sql": "WITH RECURSIVE reach(n) AS (\n  SELECT 1\n  UNION\n  SELECT b FROM edge JOIN reach ON a = n\n)\nSELECT n FROM reach;", "cols": ["n"], "rows": [[1], [2], [3]]}]}}, "labs": [{"id": "l-sum", "lv": "e", "title": "Add up 1 to 100", "task": "Use a recursive CTE to produce the numbers 1 to 100 and return their sum as <code>total<\/code>.", "db": "", "hint": "Count to 100 as in the example, then SELECT SUM(x) FROM n.", "why": "The CTE makes 100 rows, and SUM adds them: 5050.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["total"], "rows": [[5050]]}, "solution": "WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM n WHERE x < 100)\nSELECT SUM(x) AS total FROM n;"}, {"id": "l-cal", "lv": "m", "title": "Orders per day in early July", "task": "Make a calendar from <code>2025-07-01<\/code> to <code>2025-07-07<\/code> and show each day <code>d<\/code> with its number of orders as <code>orders<\/code>, zero included.", "db": "shop", "hint": "Change the dates of the June example. COUNT(o.id) gives 0 when nothing matches.", "why": "Only 2 and 5 July have orders, the other five days show 0.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["d", "orders"], "rows": [["2025-07-01", 0], ["2025-07-02", 1], ["2025-07-03", 0], ["2025-07-04", 0], ["2025-07-05", 1], ["2025-07-06", 0], ["2025-07-07", 0]]}, "solution": "WITH RECURSIVE days(d) AS (SELECT '2025-07-01' UNION ALL SELECT date(d, '+1 day') FROM days WHERE d < '2025-07-07')\nSELECT d, COUNT(o.id) AS orders FROM days LEFT JOIN orders o ON o.order_date = d GROUP BY d;"}, {"id": "l-team", "lv": "m", "title": "Rahul’s whole team", "task": "From the company database, list the <code>name<\/code> of everyone who reports to Rahul (id 2), directly or indirectly. Do not include Rahul.", "db": "company", "hint": "Start the anchor with the people whose manager_id = 2.", "why": "Sneha and Imran report to Rahul, and nobody reports to them.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Sneha"], ["Imran"]]}, "solution": "WITH RECURSIVE t(id, name) AS (SELECT id, name FROM employees WHERE manager_id = 2 UNION ALL SELECT e.id, e.name FROM employees e JOIN t ON e.manager_id = t.id)\nSELECT name FROM t;"}, {"id": "l-path", "lv": "h", "title": "Shortest trip to Chennai", "task": "Using the <code>routes<\/code> table from the example, find the trip from Pune to Chennai with the fewest kilometres. Show its <code>path<\/code> and <code>km<\/code>.", "db": "", "hint": "Reuse the trip CTE, then keep rows where city = Chennai, ORDER BY km and LIMIT 1.", "why": "The only route is through Hyderabad: 560 + 630 = 1190 km.", "ordered": false, "setup": "CREATE TABLE routes (src TEXT, dst TEXT, km INTEGER);\nINSERT INTO routes VALUES ('Pune', 'Mumbai', 150), ('Mumbai', 'Surat', 280), ('Pune', 'Hyderabad', 560), ('Hyderabad', 'Chennai', 630), ('Surat', 'Pune', 420);", "starter": "", "want": {"cols": ["path", "km"], "rows": [["Pune > Hyderabad > Chennai", 1190]]}, "solution": "WITH RECURSIVE trip(city, path, km) AS (SELECT 'Pune', 'Pune', 0 UNION ALL SELECT r.dst, t.path || ' > ' || r.dst, t.km + r.km FROM trip t JOIN routes r ON r.src = t.city WHERE instr(t.path, r.dst) = 0)\nSELECT path, km FROM trip WHERE city = 'Chennai' ORDER BY km LIMIT 1;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

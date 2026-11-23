@@ -590,4 +590,99 @@ CREATE TABLE teachers AS SELECT DISTINCT teacher, room FROM sheet;`;
       ];
     }
   }));
+
+  /* ---------- 6.1 a window function looks at a frame of rows ---------- */
+  SQW('sqwin', (SQL, cfg) => ({
+    title: 'Window functions keep every row',
+    sub: 'Pick a function and a partition. For each employee Pip highlights the rows the function can see, its window, and SQLite fills in the answer. No rows are folded away.',
+    inputs: [{ k: 'f', label: 'Function', type: 'seg', val: cfg.f || 'RANK', opts: [['ROW_NUMBER', 'ROW_NUMBER'], ['RANK', 'RANK'], ['DENSE_RANK', 'DENSE_RANK'], ['SUM', 'running SUM'], ['AVG', 'AVG of group'], ['LAG', 'LAG']] },
+      { k: 'p', label: 'PARTITION BY', type: 'seg', val: cfg.p || 'dept', opts: [['dept', 'department'], ['none', 'nothing']] }],
+    frames: v => {
+      const d = db(SQL, 'company');
+      const part = v.p === 'dept' ? 'PARTITION BY dept_id ' : '';
+      const ord = 'ORDER BY salary DESC';
+      const call = { ROW_NUMBER: `ROW_NUMBER() OVER (${part}${ord})`, RANK: `RANK() OVER (${part}${ord})`, DENSE_RANK: `DENSE_RANK() OVER (${part}${ord})`,
+        SUM: `SUM(salary) OVER (${part}${ord})`, AVG: `AVG(salary) OVER (${part.trim()})`, LAG: `LAG(salary) OVER (${part}${ord})` }[v.f];
+      const r = q(d, `SELECT name, dept_id, salary, ${call} AS answer FROM employees WHERE dept_id IS NOT NULL ORDER BY ${v.p === 'dept' ? 'dept_id, ' : ''}salary DESC, id`);
+      const rows = r.rows.map(x => [x[0], x[1], x[2], null]);
+      const text = `SELECT name, dept_id, salary,\n       ${call} AS answer\nFROM employees;`;
+      const grp = i => v.p === 'dept' ? r.rows[i][1] : 0;
+      const frameOf = i => {
+        const g = grp(i), idx = r.rows.map((x, k) => k).filter(k => grp(k) === g);
+        if (v.f === 'AVG') return idx;
+        if (v.f === 'LAG') return idx.filter(k => k === i - 1);
+        if (v.f === 'ROW_NUMBER') return idx.filter(k => k <= i);
+        return idx.filter(k => r.rows[k][2] >= r.rows[i][2]);      /* peers included: RANGE frame and rank ties */
+      };
+      const fmt = a => typeof a === 'number' && !Number.isInteger(a) ? Math.round(a) : a;
+      const out = [{ msg: v.p === 'dept' ? 'PARTITION BY dept_id splits the rows into one group per department, and ORDER BY sorts inside each group. The rows stay separate.' : 'With no PARTITION BY the whole table is one window.', mood: 'think',
+        layers: [{ t: 'sql', text }, { t: 'tab', label: 'employees (Zoya has no department and is left out here)', cols: ['name', 'dept_id', 'salary', 'answer'], rows: rows.map(x => x.slice()), rcls: Object.fromEntries(r.rows.map((x, i) => [i, v.p === 'dept' ? ['', 'cur', 'look', 'yes'][x[1] % 4] : ''])) }] }];
+      r.rows.forEach((x, i) => {
+        const fr = frameOf(i);
+        rows[i][3] = fmt(x[3]);
+        const why = { ROW_NUMBER: 'counts the rows so far, ties get different numbers', RANK: 'is 1 plus the number of rows with a higher salary, so ties share a rank and leave a gap', DENSE_RANK: 'counts distinct higher salaries plus 1, so ties share a rank with no gap',
+          SUM: 'adds every salary from the top of the group down to this row, including rows tied with it', AVG: 'averages the whole group, because there is no ORDER BY', LAG: 'takes the salary of the row just above in the group, or NULL for the first row' }[v.f];
+        out.push({ msg: `<b>${esc(x[0])}</b>: ${v.f} ${why}. Answer: <b>${x[3] === null ? 'NULL' : fmt(x[3])}</b>.`, mood: 'work',
+          layers: [{ t: 'sql', text }, { t: 'tab', label: 'employees', cols: ['name', 'dept_id', 'salary', 'answer'], rows: rows.map(y => y.slice()), rcls: Object.assign(Object.fromEntries(fr.map(k => [k, 'look'])), { [i]: 'yes' }), ccls: { 3: 'piv' } }] });
+      });
+      out.push({ msg: `Every row kept its own line and gained an answer. GROUP BY would have folded them into ${v.p === 'dept' ? 3 : 1} ${v.p === 'dept' ? 'rows' : 'row'}.`, mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'tab', label: 'Result', cols: ['name', 'dept_id', 'salary', 'answer'], rows }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 6.2 a recursive CTE grows round by round ---------- */
+  SQW('sqrec', (SQL, cfg) => ({
+    title: 'WITH RECURSIVE, one round at a time',
+    sub: 'The anchor makes the first rows. Each round runs the recursive part on the rows found in the round before, until a round finds nothing.',
+    inputs: [{ k: 'm', label: 'Example', type: 'seg', val: cfg.m || 'org', opts: [['count', 'count to N'], ['org', 'who reports to Priya']] },
+      { k: 'n', label: 'N (for counting)', type: 'num', val: cfg.n || 5, min: 1, max: 12, w: 70 }],
+    frames: v => {
+      const N = Math.max(1, Math.min(12, +v.n || 5));
+      const C = v.m === 'count'
+        ? { d: '', text: `WITH RECURSIVE n(x, round) AS (\n  SELECT 1, 0                 -- anchor\n  UNION ALL\n  SELECT x + 1, round + 1 FROM n\n  WHERE x < ${N}              -- stop rule\n)\nSELECT x FROM n;`,
+            sql: `WITH RECURSIVE n(x, round) AS (SELECT 1, 0 UNION ALL SELECT x + 1, round + 1 FROM n WHERE x < ${N}) SELECT x, round FROM n`, cols: ['x'] }
+        : { d: 'company', text: 'WITH RECURSIVE team(id, name, level) AS (\n  SELECT id, name, 0 FROM employees WHERE id = 1      -- anchor: Priya\n  UNION ALL\n  SELECT e.id, e.name, t.level + 1\n  FROM employees e JOIN team t ON e.manager_id = t.id  -- next level down\n)\nSELECT name, level FROM team;',
+            sql: 'WITH RECURSIVE team(id, name, level) AS (SELECT id, name, 0 FROM employees WHERE id = 1 UNION ALL SELECT e.id, e.name, t.level + 1 FROM employees e JOIN team t ON e.manager_id = t.id) SELECT name, level FROM team ORDER BY level, id', cols: ['name', 'level'] };
+      const d = C.d ? db(SQL, C.d) : scratch(SQL, '');
+      const all = q(d, C.sql).rows;
+      const rounds = Math.max(...all.map(r => r[1] === undefined ? 0 : r[1])) + 1;
+      const out = [{ msg: 'A recursive CTE has two parts joined by UNION ALL: the <b>anchor</b>, run once, and the <b>recursive part</b>, which reads the CTE’s own name.', mood: 'think', layers: [{ t: 'sql', text: C.text }] }];
+      const sofar = [];
+      for (let k = 0; k < rounds; k++) {
+        const fresh = all.filter(r => r[1] === k);
+        const start = sofar.length;
+        fresh.forEach(r => sofar.push(v.m === 'count' ? [r[0]] : [r[0], r[1]]));
+        out.push({ msg: k === 0 ? `Round 0, the anchor: ${fresh.length} ${fresh.length === 1 ? 'row' : 'rows'}.` : `Round ${k}: the recursive part reads only the ${all.filter(r => r[1] === k - 1).length} new rows of round ${k - 1} and finds ${fresh.length} more.`, mood: k ? 'work' : 'look',
+          layers: [{ t: 'sql', text: C.text }, { t: 'tab', label: `rows after round ${k}`, cols: C.cols, rows: sofar.slice(), rcls: Object.fromEntries(fresh.map((r, i) => [start + i, 'yes'])) }] });
+      }
+      out.push({ msg: `Round ${rounds}: the recursive part finds no new rows${v.m === 'count' ? `, because the stop rule x < ${N} fails` : ', because nobody reports to the last people found'}. The recursion ends with ${all.length} rows.`, mood: 'happy', fx: 'burst',
+        layers: [{ t: 'sql', text: C.text }, { t: 'tab', label: 'Result', cols: C.cols, rows: sofar }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 6.3 gaps and islands ---------- */
+  SQW('sqisland', (SQL, cfg) => ({
+    title: 'Gaps and islands: find the streaks',
+    sub: 'Type the days on which a student logged in. Subtract the row number from each day: days in the same streak give the same answer, so GROUP BY finds each streak.',
+    inputs: [{ k: 'days', label: 'Login days', type: 'text', val: cfg.days || '1, 2, 3, 6, 7, 9, 10, 11, 12', w: 230 }],
+    check: v => (v.days.match(/\d+/g) || []).length ? '' : 'Type some whole numbers, separated by commas.',
+    frames: v => {
+      const days = [...new Set((v.days.match(/\d+/g) || []).map(Number))].filter(x => x <= 999).sort((a, b) => a - b).slice(0, 16);
+      const d = scratch(SQL, '', `CREATE TABLE logins (day INTEGER); INSERT INTO logins VALUES ${days.map(x => `(${x})`).join(', ')};`);
+      const r = q(d, 'SELECT day, ROW_NUMBER() OVER (ORDER BY day) AS rn, day - ROW_NUMBER() OVER (ORDER BY day) AS grp FROM logins ORDER BY day').rows;
+      const isl = q(d, 'SELECT MIN(day) AS first_day, MAX(day) AS last_day, COUNT(*) AS streak FROM (SELECT day, day - ROW_NUMBER() OVER (ORDER BY day) AS grp FROM logins) GROUP BY grp ORDER BY first_day');
+      const g = [...new Set(r.map(x => x[2]))];
+      const col = x => ['yes', 'look', 'cur', 'piv'][g.indexOf(x) % 4];
+      const text = 'SELECT MIN(day), MAX(day), COUNT(*) AS streak\nFROM (SELECT day,\n        day - ROW_NUMBER() OVER (ORDER BY day) AS grp\n      FROM logins)\nGROUP BY grp;';
+      return [
+        { msg: `${days.length} login days. A streak is a run of days with no gap.`, mood: 'think', layers: [{ t: 'sql', text }, { t: 'row', label: 'days', cells: days, idx: false }] },
+        { msg: 'ROW_NUMBER numbers the days 1, 2, 3 in order.', mood: 'work', layers: [{ t: 'sql', text }, { t: 'tab', label: 'step 1', cols: ['day', 'rn'], rows: r.map(x => [x[0], x[1]]) }] },
+        { msg: 'Inside a streak, day and rn both go up by 1, so day minus rn stays the same. After a gap, day jumps but rn does not, so the difference changes.', mood: 'wow',
+          layers: [{ t: 'sql', text }, { t: 'tab', label: 'step 2', cols: ['day', 'rn', 'day − rn'], rows: r, rcls: Object.fromEntries(r.map((x, i) => [i, col(x[2])])) }] },
+        { msg: `GROUP BY the difference: ${isl.rows.length} ${isl.rows.length === 1 ? 'island' : 'islands'}. The longest streak is ${Math.max(...isl.rows.map(x => x[2]))} days.`, mood: 'happy', fx: 'burst',
+          layers: [{ t: 'sql', text }, { t: 'tab', label: 'islands', cols: isl.cols, rows: isl.rows, rcls: Object.fromEntries(isl.rows.map((x, i) => [i, ['yes', 'look', 'cur', 'piv'][i % 4]])) }] }
+      ];
+    }
+  }));
 })();

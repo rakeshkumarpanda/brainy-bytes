@@ -10584,6 +10584,54 @@ function sqlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "sql-advanced", title: "Advanced queries", emoji: "6", step: 6, level: "Advanced", blurb: "Window functions, recursive queries and the patterns that solve real reporting problems.", topics: [
+      { id: "sql-window", title: "Window functions: ranks, running totals and more", emoji: "6.1", page: "content/sql/sql-window.html",
+        summary: "OVER, ranking, running totals, LAG and LEAD, frames.",
+        keywords: ["window functions", "OVER", "PARTITION BY", "ROW_NUMBER", "RANK", "LAG", "running total"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "over", title: "OVER: an answer for every row", emoji: "", group: "Lesson", keywords: ["window function", "OVER", "PARTITION BY", "analytic function", "group answer per row"] },
+        { id: "rank", title: "Ranking: ROW_NUMBER, RANK and DENSE_RANK", emoji: "", group: "Lesson", keywords: ["ROW_NUMBER", "RANK", "DENSE_RANK", "NTILE", "PERCENT_RANK", "CUME_DIST", "ties", "ranking"] },
+        { id: "offset", title: "Running totals, LAG and LEAD", emoji: "", group: "Lesson", keywords: ["running total", "cumulative sum", "LAG", "LEAD", "FIRST_VALUE", "LAST_VALUE", "NTH_VALUE", "previous row"] },
+        { id: "frames", title: "Frames, named windows and the WHERE trap", emoji: "", group: "Lesson", keywords: ["window frame", "ROWS BETWEEN", "RANGE", "GROUPS", "moving average", "WINDOW clause", "window in WHERE", "QUALIFY"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["SQL:2003", "segment tree", "QUALIFY", "window evaluation", "OLAP functions"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-recursive", title: "Recursive queries: trees, graphs and series", emoji: "6.2", page: "content/sql/sql-recursive.html",
+        summary: "WITH RECURSIVE for series, hierarchies and graphs.",
+        keywords: ["WITH RECURSIVE", "recursive CTE", "hierarchy", "org chart", "graph", "cycle"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "basics", title: "A query that calls itself", emoji: "", group: "Lesson", keywords: ["WITH RECURSIVE", "recursive CTE", "anchor member", "recursive member", "stop condition", "MAXRECURSION"] },
+        { id: "series", title: "Generating series and calendars", emoji: "", group: "Lesson", keywords: ["generate series", "calendar table", "date series", "missing dates", "zero rows", "generate_series"] },
+        { id: "tree", title: "Walking hierarchies", emoji: "", group: "Lesson", keywords: ["hierarchy", "tree", "org chart", "self reference", "path", "depth", "bill of materials", "parent child"] },
+        { id: "graph", title: "Graphs, cycles and UNION", emoji: "", group: "Lesson", keywords: ["graph", "cycle", "cycle detection", "UNION vs UNION ALL", "path", "shortest path", "CYCLE clause"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["fixed point", "semi naive evaluation", "Datalog", "GQL", "SQL/PGQ", "nested sets", "closure table", "materialized path"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-patterns", title: "Query patterns: top N, streaks, pivots and JSON", emoji: "6.3", page: "content/sql/sql-patterns.html",
+        summary: "Top N per group, gaps and islands, pivots, duplicates, percent of total and JSON.",
+        keywords: ["top N per group", "gaps and islands", "pivot", "duplicates", "JSON", "percent of total"],
+        minutes: 45, counts: {"lessons": 6, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "topn", title: "Top N per group", emoji: "", group: "Lesson", keywords: ["top N per group", "greatest per group", "ROW_NUMBER filter", "latest row per group", "DISTINCT ON"] },
+        { id: "islands", title: "Gaps and islands: finding streaks", emoji: "", group: "Lesson", keywords: ["gaps and islands", "streak", "consecutive days", "row number difference", "LEAD gap", "missing numbers"] },
+        { id: "pivot", title: "Pivoting rows into columns", emoji: "", group: "Lesson", keywords: ["pivot", "conditional aggregation", "CASE WHEN", "FILTER", "crosstab", "PIVOT", "report card"] },
+        { id: "dupes", title: "Duplicates and percent of total", emoji: "", group: "Lesson", keywords: ["duplicates", "dedupe", "remove duplicates", "rowid", "percent of total", "ratio to total", "HAVING COUNT > 1"] },
+        { id: "json", title: "JSON inside a database", emoji: "", group: "Lesson", keywords: ["JSON", "json_extract", "->>", "json_each", "json_group_array", "json_object", "jsonb", "semi structured data"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["SQL patterns", "SQL/JSON", "unpivot", "semi structured", "pattern recognition"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
