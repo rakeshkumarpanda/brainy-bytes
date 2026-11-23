@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SELECT in depth: columns, sums, aliases and paging · SQL and Databases</title>
+<meta name="description" content="The SELECT list as expressions, arithmetic and integer division, concatenation, aliases, quoting rules, comments, SELECT without FROM, DISTINCT, LIMIT, OFFSET and FETCH FIRST.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 1: Start here</span><span>›</span><span>SELECT in depth</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 2 of 3 · Beginner</div>
+    <h1>SELECT in depth: columns, sums, aliases and paging</h1>
+    <p class="lead">Turn SELECT into a calculator, rename columns with aliases, glue text together, remove repeats with DISTINCT and show results one page at a time.</p>
+    <div class="cv-chips"><span class="cv-chip">About 35 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">3 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">5 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-select" data-topic="cheatsheet" data-h="sql-select">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#columns" data-l="columns"><span class="n">1</span><span class="t">Choosing columns and doing sums</span></a></li><li><a href="#alias" data-l="alias"><span class="n">2</span><span class="t">Aliases, text and quoting</span></a></li><li><a href="#distinct" data-l="distinct"><span class="n">3</span><span class="t">DISTINCT, LIMIT and OFFSET</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="columns" data-l="columns" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Choosing columns and doing sums</h2>
+<p>SELECT does more than copy columns. Every item in the SELECT list is an <b>expression</b>: a column, a fixed value, or a little calculation worked out once for every row. A shopkeeper checking "how much stock money sits on each shelf" multiplies price by stock for each product. SQL does it in one line.</p>
+<div class="viz" data-viz="pk" data-pk="sqselect" data-cfg="{&quot;c&quot;: &quot;name, price, stock, price * stock&quot;}"></div>
+<div class="sq-run" data-q="calc"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Operator</th><th>Meaning</th><th>Example</th><th>Result</th></tr></thead><tbody><tr><td><code>+ - * /</code></td><td>add, subtract, multiply, divide</td><td><code>price * 2</code></td><td>double the price</td></tr><tr><td><code>%</code></td><td>remainder after division</td><td><code>stock % 10</code></td><td>40 gives 0, 25 gives 5</td></tr><tr><td><code>||</code></td><td>join two pieces of text</td><td><code>name || ' (' || category || ')'</code></td><td>Notebook (Stationery)</td></tr><tr><td><code>/</code> on whole numbers</td><td>integer division drops the fraction</td><td><code>7 / 2</code></td><td>3, but <code>7 / 2.0</code> gives 3.5</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>In SQLite and PostgreSQL, dividing two whole numbers gives a whole number. 7 / 2 is 3. Write 7 / 2.0 or CAST(7 AS REAL) / 2 when you want 3.5. MySQL is different: its / always gives a decimal.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="alias" data-l="alias" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Aliases, text and quoting</h2>
+<p>An <b>alias</b> gives a column or a table a nickname with <code>AS</code>. It makes results readable, and later it saves typing when many tables meet in one query.</p>
+<div class="sq-run" data-q="alias"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>You write</th><th>It means</th><th>Example</th></tr></thead><tbody><tr><td><code>'Pune'</code></td><td>single quotes: a piece of text (a string literal)</td><td><code>WHERE city = 'Pune'</code></td></tr><tr><td><code>"order"</code></td><td>double quotes: a name (an identifier), useful when it clashes with a keyword</td><td><code>SELECT "order" FROM t</code></td></tr><tr><td><code>'Kabir''s'</code></td><td>two single quotes inside text stand for one</td><td>Kabir's</td></tr><tr><td><code>-- note</code></td><td>a comment to the end of the line</td><td><code>-- why this query exists</code></td></tr><tr><td><code>/* note */</code></td><td>a comment that can span lines</td><td><code>/* draft */</code></td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Use single quotes for text. MySQL also accepts double quotes for text, but in standard SQL, SQLite and PostgreSQL double quotes mean a name. Single quotes work everywhere.</div></div>
+<div class="sq-run" data-q="nofrom"></div>
+<div class="sq-lab" data-lab="l-label"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="distinct" data-l="distinct" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>DISTINCT, LIMIT and OFFSET</h2>
+<p>Ask "which cities do our customers live in" and you do not want Pune printed twice. <code>DISTINCT</code> removes repeated rows from the result. <code>LIMIT</code> keeps only the first few rows, and <code>OFFSET</code> skips some rows first, which is how page 2 of search results works.</p>
+<div class="sq-run" data-q="distinct"></div>
+<div class="sq-run" data-q="limit"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Remove repeats</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>SELECT DISTINCT col, col FROM t;</code></div><div class="fx-n">Repeats are judged on the whole row of chosen columns, not on the first column alone.</div></div><div class="fx fx-key"><div class="fx-h"><span>Page of results</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>... ORDER BY col LIMIT n OFFSET k;</code></div><div class="fx-n">Skip k rows, then return n. Page p of size n uses OFFSET (p − 1) × n.</div></div><div class="fx"><div class="fx-h"><span>Standard spelling</span></div><div class="fx-b"><code>OFFSET k ROWS FETCH FIRST n ROWS ONLY</code></div><div class="fx-n">The SQL standard form, used by PostgreSQL, Oracle 12c and later, and SQL Server (with ORDER BY). SQL Server also has SELECT TOP n.</div></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: page 2 of a shopping site</div><p>You search "school bag" and see 20 results. You click page 2. The site runs the same query with <code>ORDER BY</code> on relevance, <code>LIMIT 20 OFFSET 20</code>. If the query had no ORDER BY, the database could return rows in any order, and the same bag might appear on both pages while another never shows up.</p></div>
+<div class="note note-warn"><b>Common mistake</b><div>LIMIT without ORDER BY gives "some" rows, not "the first" rows. Always sort before you limit.</div></div>
+<div class="sq-lab" data-lab="l-cities"></div>
+<div class="sq-lab" data-lab="l-cheap"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>SELECT is like telling a photocopier which columns of a page to copy, with a little calculator for each line.</p></div><div class="ld-p" data-ld="college" hidden><p>The SELECT list is evaluated per row after FROM and WHERE. DISTINCT then removes duplicate result rows, ORDER BY sorts, and LIMIT and OFFSET cut the sorted list.</p></div><div class="ld-p" data-ld="masters" hidden><p>In relational algebra the SELECT list is projection (π). Pure projection removes duplicates, but SQL keeps them unless you write DISTINCT, because SQL works on multisets. DISTINCT costs a sort or a hash table over the result.</p></div><div class="ld-p" data-ld="research" hidden><p>Large OFFSET values are slow because the engine still produces and throws away the skipped rows. Production systems use keyset pagination instead: remember the last key seen and ask for <code>WHERE id &gt; last_id ORDER BY id LIMIT 20</code>, which an index answers directly.</p></div></div>
+<details class="deep"><summary>Going deeper: Why SELECT * is risky in real programs</summary><div class="deep-b"><p>If someone adds a column to the table later, SELECT * suddenly returns more data, which can break code that reads columns by position and sends more data over the network. Naming columns keeps the result stable and lets the engine use a covering index.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-intro.html" data-topic="sql-intro"><small>Previous topic</small><b>What SQL is</b></a><a class="next" href="./sql-where.html" data-topic="sql-where"><small>Next topic</small><b>WHERE and ORDER BY</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-select", "topic": "sql-select", "subject": "sql", "title": "SELECT in depth: columns, sums, aliases and paging", "codes": {}, "quiz": [{"lv": "e", "q": "What does AS do in SELECT price * 2 AS double_price?", "o": ["Filters rows", "Names the result column", "Sorts the result", "Creates a table"], "a": 1, "hint": "Nickname.", "why": "AS gives an alias."}, {"lv": "e", "q": "Which quotes mark a piece of text in standard SQL?", "o": ["Double quotes", "Single quotes", "Back ticks", "Square brackets"], "a": 1, "hint": "Pune.", "why": "Text literals use single quotes, such as 'Pune'."}, {"lv": "e", "q": "What does DISTINCT do?", "o": ["Sorts rows", "Removes repeated result rows", "Removes NULL rows", "Counts rows"], "a": 1, "hint": "Once each.", "why": "It drops duplicate rows from the result."}, {"lv": "e", "q": "What does LIMIT 5 do?", "o": ["Returns at most 5 rows", "Returns rows with id up to 5", "Skips 5 rows", "Returns 5 columns"], "a": 0, "hint": "Cap.", "why": "LIMIT caps the number of rows."}, {"lv": "m", "q": "In SQLite, what is 7 / 2?", "o": ["3.5", "3", "4", "An error"], "a": 1, "hint": "Whole numbers.", "why": "Integer division drops the fraction."}, {"lv": "m", "q": "How do you join the text a and b in SQLite?", "o": ["'a' + 'b'", "'a' || 'b'", "'a' & 'b'", "'a'.'b'"], "a": 1, "hint": "Two bars.", "why": "|| is the standard concatenation operator."}, {"lv": "m", "q": "Why add ORDER BY before LIMIT?", "o": ["It is required syntax", "Without it the rows come in no promised order", "It makes LIMIT faster", "LIMIT needs a number"], "a": 1, "hint": "Which first?", "why": "Only a sort defines which rows are first."}, {"lv": "m", "q": "Which OFFSET shows page 3 when each page has 10 rows?", "o": ["10", "20", "30", "3"], "a": 1, "hint": "(p − 1) × n.", "why": "Skip pages 1 and 2: 20 rows."}, {"lv": "h", "q": "SELECT DISTINCT city, name FROM customers removes rows where", "o": ["The city repeats", "Both city and name repeat together", "The name repeats", "Either repeats"], "a": 1, "hint": "Whole row.", "why": "DISTINCT compares the whole result row."}, {"lv": "h", "q": "How do you write the text Kabir's as a literal?", "o": ["'Kabir's'", "'Kabir''s'", "\"Kabir's\"", "Kabir s"], "a": 1, "hint": "Double it.", "why": "Two single quotes stand for one inside a literal."}, {"lv": "x", "q": "Why is keyset pagination faster than a large OFFSET?", "o": ["It caches pages", "An index jumps straight to rows after the last key", "It skips ORDER BY", "It uses DISTINCT"], "a": 1, "hint": "No throwing away.", "why": "OFFSET still builds and discards the skipped rows."}], "calc": [{"lv": "e", "q": "What does SELECT 10 / 4 return in SQLite?", "ans": "2", "hint": "Both numbers are whole.", "steps": ["10 and 4 are integers.", "Integer division drops the fraction.", "<span class=\"eq\">10 / 4 = 2<\/span>"]}, {"lv": "e", "q": "What does SELECT 10 / 4.0 return?", "ans": "2.5", "hint": "One number has a decimal point.", "steps": ["4.0 is a real number.", "So the division keeps the fraction.", "<span class=\"eq\">10 / 4.0 = 2.5<\/span>"]}, {"lv": "e", "q": "What does SELECT 17 % 5 return?", "ans": "2", "hint": "Remainder.", "steps": ["5 goes into 17 three times.", "3 × 5 = 15.", "<span class=\"eq\">17 − 15 = 2<\/span>"]}, {"lv": "m", "q": "How many rows does SELECT DISTINCT city FROM customers return? Remember NULL counts as one value.", "ans": "5", "hint": "Pune, Delhi, Chennai, Bhubaneswar and NULL.", "steps": ["List the cities: Pune, Delhi, Chennai, Pune, Bhubaneswar, NULL, Delhi, Chennai.", "Keep each once: Pune, Delhi, Chennai, Bhubaneswar, NULL.", "<span class=\"eq\">5 rows<\/span>"]}, {"lv": "m", "q": "How many rows does SELECT DISTINCT category FROM products return?", "ans": "4", "hint": "Count the different categories.", "steps": ["Stationery, Kitchen, Electronics and Sports.", "Each appears once in the result.", "<span class=\"eq\">4 rows<\/span>"]}, {"lv": "m", "q": "What is the stock_value (price × stock) of the Headphones?", "ans": "17988", "hint": "Price 1499, stock 12.", "steps": ["Headphones cost 1499.", "There are 12 in stock.", "<span class=\"eq\">1499 × 12 = 17988<\/span>"]}, {"lv": "h", "q": "A site shows 25 rows per page. Which OFFSET gives page 4?", "ans": "75", "hint": "(p − 1) × n.", "steps": ["Pages 1 to 3 come before page 4.", "3 pages × 25 rows.", "<span class=\"eq\">OFFSET 75<\/span>"]}, {"lv": "h", "q": "products has 10 rows. How many rows does SELECT name FROM products LIMIT 4 OFFSET 8 return?", "ans": "2", "hint": "Only what is left after skipping.", "steps": ["Skip 8 of the 10 rows.", "2 rows are left.", "<span class=\"eq\">LIMIT 4 can only return 2<\/span>"]}], "assign": [], "must": [["Expressions", "Every SELECT item is an expression worked out per row: columns, literals, arithmetic and || for text."], ["Integer division", "In SQLite and PostgreSQL 7 / 2 is 3. Use 7 / 2.0 for 3.5."], ["Aliases", "AS names a result column or a table. Single quotes mean text, double quotes mean a name."], ["DISTINCT", "Removes duplicate result rows, comparing the whole row. NULLs count as equal here."], ["LIMIT and OFFSET", "Sort first, then LIMIT n OFFSET k. Page p uses OFFSET (p − 1) × n. Standard form: FETCH FIRST n ROWS ONLY."]], "summary": "<p>SELECT works out an expression per row, AS names it, DISTINCT removes repeats, and LIMIT with OFFSET pages through sorted results.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"calc": {"src": "SELECT name,\n       price,\n       stock,\n       price * stock AS stock_value\nFROM products;", "db": "shop", "setup": "", "title": "A calculated column", "notes": {"4": "price * stock is worked out for every row. AS gives the new column a name."}, "out": [{"sql": "SELECT name,\n       price,\n       stock,\n       price * stock AS stock_value\nFROM products;", "cols": ["name", "price", "stock", "stock_value"], "rows": [["Pencil box", 120, 40, 4800], ["Notebook", 60, 150, 9000], ["Water bottle", 250, 25, 6250], ["Lunch box", 399, 0, 0], ["Headphones", 1499, 12, 17988], ["Phone charger", 699, 30, 20970], ["Cricket ball", 180, 60, 10800], ["Football", 850, 8, 6800], ["Desk lamp", 1250, 0, 0], ["Geometry set", 95, 70, 6650]]}]}, "alias": {"src": "SELECT name AS product,\n       'Rs ' || price AS label,\n       price * 0.9 AS sale_price\nFROM products\nLIMIT 4;", "db": "shop", "setup": "", "title": "Aliases and text", "notes": {"1": "The column comes back named product instead of name.", "2": "Text in single quotes is a fixed value. || glues it in front of the price.", "3": "A 10 percent discount, worked out for every row."}, "out": [{"sql": "SELECT name AS product,\n       'Rs ' || price AS label,\n       price * 0.9 AS sale_price\nFROM products\nLIMIT 4;", "cols": ["product", "label", "sale_price"], "rows": [["Pencil box", "Rs 120", 108], ["Notebook", "Rs 60", 54], ["Water bottle", "Rs 250", 225], ["Lunch box", "Rs 399", 359.1]]}]}, "nofrom": {"src": "SELECT 2 + 3 AS answer,\n       10 / 4 AS whole_division,\n       10 / 4.0 AS real_division,\n       'Hello' || ' ' || 'SQL' AS greeting;", "db": "", "setup": "", "title": "SELECT works without a table too", "notes": {"2": "Both numbers are whole, so the answer is 2.", "3": "One number has a decimal point, so the answer is 2.5."}, "out": [{"sql": "SELECT 2 + 3 AS answer,\n       10 / 4 AS whole_division,\n       10 / 4.0 AS real_division,\n       'Hello' || ' ' || 'SQL' AS greeting;", "cols": ["answer", "whole_division", "real_division", "greeting"], "rows": [[5, 2, 2.5, "Hello SQL"]]}]}, "distinct": {"src": "SELECT DISTINCT city\nFROM customers;", "db": "shop", "setup": "", "title": "Every city once", "notes": {"1": "DISTINCT looks at the whole result row. Two NULL cities count as the same value here."}, "out": [{"sql": "SELECT DISTINCT city\nFROM customers;", "cols": ["city"], "rows": [["Pune"], ["Delhi"], ["Chennai"], ["Bhubaneswar"], [null]]}]}, "limit": {"src": "SELECT name, price\nFROM products\nORDER BY price DESC\nLIMIT 3 OFFSET 0;", "db": "shop", "setup": "", "title": "The three most expensive products", "notes": {"3": "Sort first, or \"the first three\" means nothing.", "4": "OFFSET 3 would give the next page of three."}, "out": [{"sql": "SELECT name, price\nFROM products\nORDER BY price DESC\nLIMIT 3 OFFSET 0;", "cols": ["name", "price"], "rows": [["Headphones", 1499], ["Desk lamp", 1250], ["Football", 850]]}]}}, "labs": [{"id": "l-label", "lv": "e", "title": "Price labels", "task": "Show each product <code>name<\/code> and a column named <code>with_tax<\/code> holding the price plus 18 percent GST (price times 1.18).", "db": "shop", "hint": "Multiply price by 1.18 and name the column with AS.", "why": "An expression in the SELECT list is worked out once for each row, and AS names the result column.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "with_tax"], "rows": [["Pencil box", 141.6], ["Notebook", 70.8], ["Water bottle", 295], ["Lunch box", 470.82], ["Headphones", 1768.82], ["Phone charger", 824.8199999999999], ["Cricket ball", 212.39999999999998], ["Football", 1003], ["Desk lamp", 1475], ["Geometry set", 112.1]]}, "solution": "SELECT name, price * 1.18 AS with_tax FROM products;"}, {"id": "l-cities", "lv": "e", "title": "Cities without repeats", "task": "List each <code>category<\/code> of product once.", "db": "shop", "hint": "DISTINCT goes right after SELECT.", "why": "DISTINCT removes duplicate result rows.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["category"], "rows": [["Stationery"], ["Kitchen"], ["Electronics"], ["Sports"]]}, "solution": "SELECT DISTINCT category FROM products;"}, {"id": "l-cheap", "lv": "m", "title": "Two cheapest products", "task": "Show the <code>name<\/code> and <code>price<\/code> of the two cheapest products, cheapest first.", "db": "shop", "hint": "Sort by price ascending, then LIMIT 2.", "why": "ORDER BY price puts the cheapest first, and LIMIT keeps two.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["name", "price"], "rows": [["Notebook", 60], ["Geometry set", 95]]}, "solution": "SELECT name, price FROM products ORDER BY price LIMIT 2;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

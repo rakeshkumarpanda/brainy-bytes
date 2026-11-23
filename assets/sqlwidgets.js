@@ -212,4 +212,121 @@
       return out;
     }
   }));
+
+  /* ---------- 2.1 CASE gives each row a label ---------- */
+  SQW('sqcase', (SQL, cfg) => ({
+    title: 'CASE labels every row',
+    sub: 'Set two price limits. CASE checks the WHEN tests from top to bottom and stops at the first one that is true.',
+    inputs: [{ k: 'lo', label: 'Cheap below', type: 'num', val: cfg.lo || 200, w: 90 }, { k: 'hi', label: 'Premium from', type: 'num', val: cfg.hi || 1000, w: 90 }],
+    check: v => v.lo >= v.hi ? 'The cheap limit must be smaller than the premium limit.' : '',
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const text = `SELECT name, price,\n  CASE\n    WHEN price < ${v.lo} THEN 'cheap'\n    WHEN price >= ${v.hi} THEN 'premium'\n    ELSE 'regular'\n  END AS band\nFROM products;`;
+      const r = q(d, `SELECT name, price, CASE WHEN price < ${+v.lo} THEN 'cheap' WHEN price >= ${+v.hi} THEN 'premium' ELSE 'regular' END FROM products ORDER BY id`);
+      const rows = r.rows.map(x => [x[0], x[1], '']);
+      const out = [{ msg: 'CASE is SQL’s if, else if, else. Each row gets one label.', mood: 'think', layers: [{ t: 'sql', text }, { t: 'tab', cols: ['name', 'price', 'band'], rows }] }];
+      const cls = {};
+      r.rows.forEach((x, i) => {
+        rows[i] = [x[0], x[1], x[2]];
+        const why = x[2] === 'cheap' ? `${x[1]} &lt; ${v.lo}, the first WHEN is true` : x[2] === 'premium' ? `${x[1]} is not below ${v.lo}, but ${x[1]} &gt;= ${v.hi}` : `neither WHEN is true, so ELSE`;
+        cls[i + ',2'] = x[2] === 'cheap' ? 'yes' : x[2] === 'premium' ? 'piv' : 'cur';
+        out.push({ msg: `<b>${esc(x[0])}</b>: ${why}. Label <b>${x[2]}</b>.`, mood: 'look', layers: [{ t: 'sql', text }, { t: 'tab', cols: ['name', 'price', 'band'], rows: rows.map(z => z.slice()), cls: Object.assign({}, cls), rcls: { [i]: 'look' } }] });
+      });
+      const n = k => r.rows.filter(x => x[2] === k).length;
+      out.push({ msg: `Every row has a label: ${n('cheap')} cheap, ${n('regular')} regular, ${n('premium')} premium.`, mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'tab', cols: ['name', 'price', 'band'], rows, cls }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 2.2 three valued logic ---------- */
+  SQW('sqnull', (SQL, cfg) => ({
+    title: 'TRUE, FALSE and the third value: NULL',
+    sub: 'Pick A and B. SQLite works out every operator, and Pip finds your pair in the truth tables.',
+    inputs: [{ k: 'a', label: 'A', type: 'seg', val: cfg.a || 'NULL', opts: [['TRUE', 'TRUE'], ['FALSE', 'FALSE'], ['NULL', 'NULL']] },
+      { k: 'b', label: 'B', type: 'seg', val: cfg.b || 'FALSE', opts: [['TRUE', 'TRUE'], ['FALSE', 'FALSE'], ['NULL', 'NULL']] }],
+    frames: v => {
+      const d = db(SQL, '');
+      const V = ['TRUE', 'FALSE', 'NULL'];
+      const word = x => x === null ? 'NULL' : x ? 'TRUE' : 'FALSE';
+      const tableFor = op => V.map(a => V.map(b => word(q(d, `SELECT ${a} ${op} ${b}`).rows[0][0])));
+      const ai = V.indexOf(v.a), bi = V.indexOf(v.b);
+      const and = tableFor('AND'), or = tableFor('OR'), eqt = V.map(a => V.map(b => word(q(d, `SELECT ${a} = ${b}`).rows[0][0])));
+      const not = word(q(d, `SELECT NOT ${v.a}`).rows[0][0]);
+      const mark = t => ({ t: 'grid', label: t.label, rows: t.rows, rlab: V, clab: V, cls: { [ai + ',' + bi]: t.rows[ai][bi] === 'NULL' ? 'no' : t.rows[ai][bi] === 'TRUE' ? 'yes' : 'cur' } });
+      return [
+        { msg: 'SQL logic has three values. NULL means <b>unknown</b>: maybe true, maybe false, we cannot tell.', mood: 'think', layers: [{ t: 'grid', label: 'A AND B', rows: and, rlab: V, clab: V }] },
+        { msg: `<b>${v.a} AND ${v.b}</b> is <b>${and[ai][bi]}</b>. AND is FALSE as soon as one side is FALSE, because then the unknown side cannot help.`, mood: 'look', layers: [mark({ label: 'A AND B (rows are A, columns are B)', rows: and })] },
+        { msg: `<b>${v.a} OR ${v.b}</b> is <b>${or[ai][bi]}</b>. OR is TRUE as soon as one side is TRUE.`, mood: 'look', layers: [mark({ label: 'A OR B', rows: or })] },
+        { msg: `<b>NOT ${v.a}</b> is <b>${not}</b>. The opposite of unknown is still unknown.`, mood: 'think', layers: [{ t: 'grid', label: 'NOT A', rows: [V.map(a => word(q(d, `SELECT NOT ${a}`).rows[0][0]))], clab: V, cls: { ['0,' + ai]: not === 'NULL' ? 'no' : 'yes' } }] },
+        { msg: `<b>${v.a} = ${v.b}</b> is <b>${eqt[ai][bi]}</b>. Anything compared with NULL, even NULL itself, gives NULL. That is why we write IS NULL.`, mood: eqt[ai][bi] === 'NULL' ? 'wow' : 'happy', fx: 'burst', layers: [mark({ label: 'A = B', rows: eqt })] }
+      ];
+    }
+  }));
+
+  /* ---------- 2.3 GROUP BY puts rows into buckets ---------- */
+  SQW('sqgroup', (SQL, cfg) => ({
+    title: 'GROUP BY drops rows into buckets',
+    sub: 'Choose how to group products and what to work out. Each row falls into the bucket of its value, then one answer comes out per bucket. HAVING can then remove buckets.',
+    inputs: [{ k: 'g', label: 'Group by', type: 'seg', val: cfg.g || 'category', opts: [['category', 'category'], ['stock = 0', 'out of stock?']] },
+      { k: 'f', label: 'Work out', type: 'seg', val: cfg.f || 'COUNT(*)', opts: [['COUNT(*)', 'COUNT(*)'], ['SUM(stock)', 'SUM(stock)'], ['AVG(price)', 'AVG(price)'], ['MAX(price)', 'MAX(price)']] },
+      { k: 'h', label: 'HAVING (optional)', type: 'text', val: cfg.h || '', w: 170 }],
+    check: v => v.h && tryq(db(SQL, 'shop'), `SELECT 1 FROM products GROUP BY ${v.g} HAVING ${v.h}`).error ? `SQLite says: ${esc(tryq(db(SQL, 'shop'), `SELECT 1 FROM products GROUP BY ${v.g} HAVING ${v.h}`).error)}` : '',
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const rows = q(d, `SELECT name, ${v.g} FROM products ORDER BY id`).rows;
+      const keys = q(d, `SELECT DISTINCT ${v.g} FROM products ORDER BY 1`).rows.map(r => r[0]);
+      const lab = keys.map(k => String(k === null ? 'NULL' : v.g === 'stock = 0' ? (k ? 'yes, stock = 0' : 'no') : k));
+      const res = q(d, `SELECT ${v.g} AS grp, ${v.f} AS answer${v.h ? `, (${v.h}) AS keep` : ''} FROM products GROUP BY ${v.g} ORDER BY 1`).rows;
+      const text = `SELECT ${v.g}, ${v.f}\nFROM products\nGROUP BY ${v.g}${v.h ? `\nHAVING ${v.h}` : ''};`;
+      const bk = keys.map(() => []);
+      const out = [{ msg: `One empty bucket for each different value of <b>${esc(v.g)}</b>: ${keys.length} buckets.`, mood: 'think', layers: [{ t: 'sql', text }, { t: 'buckets', buckets: bk.map(x => x.slice()), blab: lab }] }];
+      rows.forEach((r, i) => {
+        const b = keys.findIndex(k => k === r[1]);
+        bk[b].push(r[0]);
+        out.push({ msg: `<b>${esc(r[0])}</b> goes into the <b>${esc(lab[b])}</b> bucket.`, mood: 'work', layers: [{ t: 'sql', text }, { t: 'buckets', buckets: bk.map(x => x.slice()), blab: lab, cls: { [b + ',' + (bk[b].length - 1)]: 'yes' } }] });
+      });
+      const ans = keys.map(k => { const row = res.find(r => r[0] === k); const a = row[1]; return typeof a === 'number' && !Number.isInteger(a) ? a.toFixed(2) : a; });
+      out.push({ msg: `Now <b>${esc(v.f)}</b> runs once per bucket. One bucket becomes one result row.`, mood: 'wow', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'buckets', buckets: bk, blab: lab.map((l, i) => `${l}: ${ans[i]}`) }] });
+      if (v.h) {
+        const bcls = {};
+        keys.forEach((k, i) => { bcls[i] = res.find(r => r[0] === k)[2] ? 'yes' : 'no'; });
+        out.push({ msg: `HAVING <b>${esc(v.h)}</b> tests each bucket, not each row. Red buckets are removed.`, mood: 'look', layers: [{ t: 'sql', text }, { t: 'buckets', buckets: bk, blab: lab.map((l, i) => `${l}: ${ans[i]}`), bcls }] });
+      }
+      const fin = res.filter(r => !v.h || r[2]).map(r => [r[0] === null ? null : v.g === 'stock = 0' ? r[0] : r[0], typeof r[1] === 'number' && !Number.isInteger(r[1]) ? +r[1].toFixed(2) : r[1]]);
+      out.push({ msg: `The result: ${fin.length} ${fin.length === 1 ? 'row' : 'rows'}, one per bucket that survived.`, mood: 'happy', layers: [{ t: 'sql', text }, { t: 'tab', label: 'Result', cols: [v.g, v.f], rows: fin }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 2.3 the logical order of a query ---------- */
+  SQW('sqpipe', (SQL, cfg) => ({
+    title: 'The order SQL really works in',
+    sub: 'You write SELECT first, but the engine starts at FROM. Change the parts and watch the table shrink and change at each stage.',
+    inputs: [{ k: 'w', label: 'WHERE', type: 'text', val: cfg.w || "status <> 'cancelled'", w: 200 },
+      { k: 'g', label: 'GROUP BY', type: 'seg', val: cfg.g || 'customer_id', opts: [['customer_id', 'customer_id'], ['status', 'status']] },
+      { k: 'h', label: 'HAVING', type: 'text', val: cfg.h || 'COUNT(*) >= 2', w: 150 },
+      { k: 'n', label: 'LIMIT', type: 'num', val: cfg.n || 2, w: 70 }],
+    check: v => { const e = tryq(db(SQL, 'shop'), `SELECT ${v.g}, COUNT(*) FROM orders WHERE ${v.w || '1'} GROUP BY ${v.g} HAVING ${v.h || '1'} LIMIT ${+v.n || 1}`).error; return e ? `SQLite says: ${esc(e)}` : ''; },
+    frames: v => {
+      const d = db(SQL, 'shop'), W = v.w || '1', H = v.h || '1', N = Math.max(0, +v.n || 0);
+      const ST = ['FROM', 'WHERE', 'GROUP BY', 'HAVING', 'SELECT', 'ORDER BY', 'LIMIT'];
+      const text = `SELECT ${v.g}, COUNT(*) AS orders\nFROM orders\nWHERE ${W}\nGROUP BY ${v.g}\nHAVING ${H}\nORDER BY orders DESC, ${v.g}\nLIMIT ${N};`;
+      const F = (i, msg, t, mood, fx) => ({ msg, mood, fx, layers: [{ t: 'sql', text }, { t: 'flow', items: ST, on: i, done: i - 1 }, t] });
+      const all = q(d, 'SELECT * FROM orders'), wh = q(d, `SELECT * FROM orders WHERE ${W}`);
+      const gr = q(d, `SELECT ${v.g}, group_concat(id, ' ') AS order_ids FROM orders WHERE ${W} GROUP BY ${v.g}`);
+      const hv = q(d, `SELECT ${v.g}, group_concat(id, ' ') AS order_ids FROM orders WHERE ${W} GROUP BY ${v.g} HAVING ${H}`);
+      const se = q(d, `SELECT ${v.g}, COUNT(*) AS orders FROM orders WHERE ${W} GROUP BY ${v.g} HAVING ${H}`);
+      const ob = q(d, `SELECT ${v.g}, COUNT(*) AS orders FROM orders WHERE ${W} GROUP BY ${v.g} HAVING ${H} ORDER BY orders DESC, ${v.g}`);
+      const li = q(d, `SELECT ${v.g}, COUNT(*) AS orders FROM orders WHERE ${W} GROUP BY ${v.g} HAVING ${H} ORDER BY orders DESC, ${v.g} LIMIT ${N}`);
+      return [
+        F(0, `1. <b>FROM</b> picks the table: all ${all.rows.length} orders.`, { t: 'tab', cols: all.cols, rows: all.rows }, 'look'),
+        F(1, `2. <b>WHERE</b> keeps rows where ${esc(W)} is true: ${wh.rows.length} left.`, { t: 'tab', cols: wh.cols, rows: wh.rows }, 'look'),
+        F(2, `3. <b>GROUP BY</b> ${v.g} folds the rows into ${gr.rows.length} groups.`, { t: 'tab', cols: gr.cols, rows: gr.rows }, 'work'),
+        F(3, `4. <b>HAVING</b> keeps groups where ${esc(H)}: ${hv.rows.length} left.`, { t: 'tab', cols: hv.cols, rows: hv.rows }, 'look'),
+        F(4, '5. <b>SELECT</b> finally works out the columns, including COUNT(*) and the alias orders.', { t: 'tab', cols: se.cols, rows: se.rows }, 'wow'),
+        F(5, '6. <b>ORDER BY</b> sorts. It runs after SELECT, so it may use the alias orders.', { t: 'tab', cols: ob.cols, rows: ob.rows }, 'look'),
+        F(6, `7. <b>LIMIT</b> ${N} keeps the first ${N}. Done.`, { t: 'tab', cols: li.cols, rows: li.rows }, 'happy', 'burst')
+      ];
+    }
+  }));
 })();

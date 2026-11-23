@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aggregates, GROUP BY and HAVING · SQL and Databases</title>
+<meta name="description" content="COUNT, SUM, AVG, MIN, MAX, COUNT DISTINCT and group_concat, aggregates without GROUP BY, GROUP BY with one and two columns, the bare column rule, HAVING versus WHERE, FILTER, the logical processing order, ROLLUP.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 2: Shaping results</span><span>›</span><span>GROUP BY and HAVING</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 3 of 3 · Beginner</div>
+    <h1>Aggregates, GROUP BY and HAVING</h1>
+    <p class="lead">Count, add and average many rows at once, split them into groups, keep only the groups you want, and learn the real order in which SQL runs a query.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">2 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">5 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-aggregate" data-topic="cheatsheet" data-h="sql-aggregate">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#agg" data-l="agg"><span class="n">1</span><span class="t">Squeezing many rows into one answer</span></a></li><li><a href="#groupby" data-l="groupby"><span class="n">2</span><span class="t">GROUP BY: one answer per group</span></a></li><li><a href="#having" data-l="having"><span class="n">3</span><span class="t">HAVING filters groups, WHERE filters rows</span></a></li><li><a href="#order" data-l="order"><span class="n">4</span><span class="t">The order SQL really runs in</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="agg" data-l="agg" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Squeezing many rows into one answer</h2>
+<p>"How many orders did we get?" "What is our average price?" These questions take many rows and squeeze them into one number. The functions that do it are called <b>aggregate functions</b>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Function</th><th>Gives</th><th>NULLs</th></tr></thead><tbody><tr><td><code>COUNT(*)</code></td><td>number of rows</td><td>counted</td></tr><tr><td><code>COUNT(col)</code></td><td>number of values that are not NULL</td><td>skipped</td></tr><tr><td><code>COUNT(DISTINCT col)</code></td><td>number of different values</td><td>skipped</td></tr><tr><td><code>SUM(col)</code></td><td>total</td><td>skipped, and SUM of no values is NULL</td></tr><tr><td><code>AVG(col)</code></td><td>average (mean)</td><td>skipped</td></tr><tr><td><code>MIN(col)</code>, <code>MAX(col)</code></td><td>smallest, biggest</td><td>skipped</td></tr><tr><td><code>group_concat(col, sep)</code></td><td>all values joined into one text</td><td>skipped (string_agg in PostgreSQL and SQLite 3.44+)</td></tr></tbody></table></div>
+<div class="sq-run" data-q="totals"></div>
+<div class="note note-exam"><b>In the exam</b><div>An aggregate query with no GROUP BY always returns exactly one row, even when the table is empty. COUNT then gives 0 and SUM gives NULL.</div></div>
+<div class="sq-lab" data-lab="l-stats"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="groupby" data-l="groupby" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>GROUP BY: one answer per group</h2>
+<p>A shop owner wants "how many products in each category", not one number for the whole shop. <code>GROUP BY</code> splits the rows into groups that share a value, then runs the aggregate once per group. One group becomes one result row.</p>
+<div class="viz" data-viz="pk" data-pk="sqgroup"></div>
+<div class="sq-run" data-q="grp"></div>
+<div class="walk"><div class="walk-h"><span>The golden rule of GROUP BY</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>After grouping, each result row stands for a whole group of rows.</li><li>A column in the SELECT list must be either in GROUP BY or inside an aggregate.</li><li>Otherwise the engine does not know which row’s value to show. PostgreSQL, SQL Server and MySQL (by default) refuse such a query.</li><li><span class="eq">SQLite allows these bare columns and takes the value from some row of the group. Avoid relying on it</span></li></ol></div>
+<div class="sq-run" data-q="multi"></div>
+<div class="sq-lab" data-lab="l-percat"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="having" data-l="having" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>HAVING filters groups, WHERE filters rows</h2>
+<p>"Categories with at least 3 products" is a test on a <b>group</b>, not on a single row. <code>WHERE</code> cannot do it, because WHERE runs before the groups exist. <code>HAVING</code> runs after grouping, so it can use aggregates.</p>
+<div class="sq-run" data-q="having"></div>
+<div class="sq-run" data-q="bad"></div>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>WHERE</th><th>HAVING</th></tr></thead><tbody><tr><td>Filters</td><td>single rows</td><td>whole groups</td></tr><tr><td>Runs</td><td>before GROUP BY</td><td>after GROUP BY</td></tr><tr><td>Can use aggregates</td><td>no</td><td>yes</td></tr><tr><td>Example</td><td><code>WHERE stock &gt; 0</code></td><td><code>HAVING SUM(stock) &gt; 100</code></td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Grouped query</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>SELECT g, agg(x) FROM t WHERE row_test GROUP BY g HAVING group_test ORDER BY ...;</code></div><div class="fx-n">Clauses must be written in this order.</div></div><div class="fx"><div class="fx-h"><span>Conditional count</span></div><div class="fx-b"><code>COUNT(*) FILTER (WHERE cond)</code> or <code>SUM(CASE WHEN cond THEN 1 ELSE 0 END)</code></div><div class="fx-n">Counts only some rows of each group. FILTER works in PostgreSQL and SQLite 3.30+.</div></div></div>
+<div class="sq-lab" data-lab="l-busy"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="order" data-l="order" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>The order SQL really runs in</h2>
+<p>You write a query starting with SELECT, but the engine logically starts with FROM. Knowing the real order explains most beginner errors.</p>
+<div class="viz" data-viz="pk" data-pk="sqpipe"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Step</th><th>Clause</th><th>What it does</th><th>So you can</th></tr></thead><tbody><tr><td>1</td><td>FROM (and JOIN)</td><td>picks and combines tables</td><td>refer to their columns</td></tr><tr><td>2</td><td>WHERE</td><td>keeps rows</td><td>not use aggregates or SELECT aliases yet</td></tr><tr><td>3</td><td>GROUP BY</td><td>makes groups</td><td>only group columns survive as plain values</td></tr><tr><td>4</td><td>HAVING</td><td>keeps groups</td><td>use aggregates</td></tr><tr><td>5</td><td>SELECT</td><td>works out the result columns and aliases</td><td>name things with AS</td></tr><tr><td>6</td><td>DISTINCT</td><td>removes duplicate rows</td><td></td></tr><tr><td>7</td><td>ORDER BY</td><td>sorts</td><td>use aliases from SELECT</td></tr><tr><td>8</td><td>LIMIT / OFFSET</td><td>cuts the list</td><td></td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>This is the logical order, which defines what a query means. The engine may physically do things in another order, for example use an index to avoid sorting, as long as the answer is the same.</div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the monthly sales report</div><p>A manager asks for "the top 3 cities by revenue last month, only cities with more than 10 orders". Read it in the logical order: FROM orders joined to customers, WHERE the date is in last month, GROUP BY city, HAVING COUNT(*) &gt; 10, SELECT city and SUM of the amounts as revenue, ORDER BY revenue DESC, LIMIT 3. Each phrase of the request lands in exactly one clause.</p></div>
+<div class="sq-lab" data-lab="l-top"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>GROUP BY sorts things into piles, the aggregate counts or adds each pile, and HAVING throws away piles you do not want.</p></div><div class="ld-p" data-ld="college" hidden><p>Grouping is done with a sort or a hash table. Engines also support ROLLUP, CUBE and GROUPING SETS (PostgreSQL, SQL Server, Oracle, MySQL has WITH ROLLUP) to get subtotals and a grand total in one query.</p></div><div class="ld-p" data-ld="masters" hidden><p>Aggregates can be split for parallel work: SUM and COUNT combine easily, AVG is computed as SUM and COUNT combined at the end. MEDIAN cannot be combined so simply, which is why exact medians on huge data are expensive.</p></div><div class="ld-p" data-ld="research" hidden><p>Analytics engines use approximate aggregates such as HyperLogLog for COUNT DISTINCT on billions of rows, trading a small, known error for huge speed. Column stores keep each column separately, so SUM(price) reads only the price column.</p></div></div>
+<details class="deep"><summary>Going deeper: ROLLUP in action</summary><div class="deep-b"><p>In PostgreSQL, <code>SELECT category, status, SUM(qty) FROM sales GROUP BY ROLLUP (category, status)</code> returns one row per category and status, one subtotal row per category (status shown as NULL) and one grand total row. SQLite has no ROLLUP, but a UNION ALL of three grouped queries gives the same result.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-null.html" data-topic="sql-null"><small>Previous topic</small><b>NULL explained</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-aggregate", "topic": "sql-aggregate", "subject": "sql", "title": "Aggregates, GROUP BY and HAVING", "codes": {}, "quiz": [{"lv": "e", "q": "Which function counts rows?", "o": ["SUM(*)", "COUNT(*)", "TOTAL(*)", "ROWS()"], "a": 1, "hint": "Count.", "why": "COUNT(*) counts rows."}, {"lv": "e", "q": "What does GROUP BY category do?", "o": ["Sorts by category", "Makes one group per different category", "Removes categories", "Counts categories"], "a": 1, "hint": "Buckets.", "why": "Rows with the same category form one group."}, {"lv": "e", "q": "Which clause filters groups?", "o": ["WHERE", "HAVING", "ORDER BY", "LIMIT"], "a": 1, "hint": "After grouping.", "why": "HAVING tests groups."}, {"lv": "e", "q": "An aggregate query with no GROUP BY returns how many rows?", "o": ["One", "None", "One per row", "It fails"], "a": 0, "hint": "Whole table is one group.", "why": "Exactly one row."}, {"lv": "m", "q": "Why does WHERE COUNT(*) &gt; 2 fail?", "o": ["COUNT needs a column", "WHERE runs before groups exist", "Wrong spelling", "It does not fail"], "a": 1, "hint": "Order.", "why": "Aggregates belong in HAVING."}, {"lv": "m", "q": "COUNT(DISTINCT city) counts", "o": ["All rows", "Different known cities", "Cities including NULL", "Rows with NULL city"], "a": 1, "hint": "Distinct, no NULL.", "why": "Different values, NULL skipped."}, {"lv": "m", "q": "Which runs first logically?", "o": ["SELECT", "WHERE", "ORDER BY", "HAVING"], "a": 1, "hint": "FROM, WHERE, ...", "why": "WHERE comes right after FROM."}, {"lv": "m", "q": "Can ORDER BY use an alias defined in SELECT?", "o": ["Yes", "No", "Only in SQLite", "Only with quotes"], "a": 0, "hint": "Runs after SELECT.", "why": "ORDER BY sees the result columns."}, {"lv": "h", "q": "SELECT category, name, COUNT(*) FROM products GROUP BY category is a problem because", "o": ["name is not grouped or aggregated", "COUNT needs a column", "category is a keyword", "It has no WHERE"], "a": 0, "hint": "Golden rule.", "why": "Which name of the group should be shown is undefined."}, {"lv": "h", "q": "SUM over zero rows returns", "o": ["0", "NULL", "An error", "1"], "a": 1, "hint": "Nothing to add.", "why": "SUM of no values is NULL. COUNT gives 0."}, {"lv": "x", "q": "Why is an exact MEDIAN harder to parallelise than AVG?", "o": ["MEDIAN is not standard", "AVG combines from partial sums and counts, a median needs the whole order", "MEDIAN skips NULLs", "AVG is approximate"], "a": 1, "hint": "Combinable.", "why": "Partial results for AVG merge easily, a median needs all values ordered."}], "calc": [{"lv": "e", "q": "How many products are in the Electronics category?", "ans": "3", "hint": "Count the group.", "steps": ["Electronics: Headphones, Phone charger, Desk lamp.", "Count them.", "<span class=\"eq\">3<\/span>"]}, {"lv": "e", "q": "What is SUM(stock) over all products?", "ans": "395", "hint": "Add the stock column.", "steps": ["40 + 150 + 25 + 0 + 12 = 227.", "30 + 60 + 8 + 0 + 70 = 168.", "<span class=\"eq\">227 + 168 = 395<\/span>"]}, {"lv": "m", "q": "What is the average price of Stationery products, to 2 decimals?", "ans": "91.67", "hint": "Three products.", "steps": ["Prices: 120, 60, 95.", "Sum = 275.", "<span class=\"eq\">275 / 3 ≈ 91.67<\/span>"], "tol": 0.005}, {"lv": "m", "q": "How many rows does SELECT category FROM products GROUP BY category HAVING COUNT(*) &gt;= 3 return?", "ans": "2", "hint": "Count per category first.", "steps": ["Stationery 3, Kitchen 2, Electronics 3, Sports 2.", "Keep groups with 3 or more.", "<span class=\"eq\">2 rows<\/span>"]}, {"lv": "m", "q": "How many different customers have placed an order?", "ans": "5", "hint": "COUNT(DISTINCT customer_id).", "steps": ["Customer ids in orders: 1, 2, 1, 3, 5, 7, 2, 3, 5, 1.", "Different ones: 1, 2, 3, 5, 7.", "<span class=\"eq\">5 customers<\/span>"]}, {"lv": "m", "q": "Total quantity of items in order 101?", "ans": "7", "hint": "SUM(qty) for that order.", "steps": ["Order 101 has 2 pencil boxes and 5 notebooks.", "Add the quantities.", "<span class=\"eq\">2 + 5 = 7<\/span>"]}, {"lv": "h", "q": "Using WHERE stock &gt; 0, GROUP BY category, HAVING COUNT(*) &gt;= 2: how many categories remain?", "ans": "3", "hint": "Remove sold out rows first.", "steps": ["Sold out: Lunch box (Kitchen) and Desk lamp (Electronics).", "In stock counts: Stationery 3, Kitchen 1, Electronics 2, Sports 2.", "<span class=\"eq\">Kitchen drops out: 3 categories<\/span>"]}, {"lv": "h", "q": "What is SELECT SUM(price) FROM products WHERE price &gt; 5000? Answer 0 if you think 0, or type -1 for NULL.", "ans": "-1", "hint": "No rows match.", "steps": ["No product costs more than 5000.", "SUM of no values is NULL, not 0.", "<span class=\"eq\">NULL, typed -1<\/span>"]}], "assign": [], "must": [["Aggregates", "COUNT(*), COUNT(col), COUNT(DISTINCT col), SUM, AVG, MIN, MAX. All but COUNT(*) skip NULLs."], ["No GROUP BY", "An aggregate query without GROUP BY returns exactly one row. COUNT of nothing is 0, SUM of nothing is NULL."], ["GROUP BY", "One result row per group. Show only grouping columns or aggregates."], ["WHERE vs HAVING", "WHERE filters rows before grouping, HAVING filters groups after, and only HAVING can use aggregates."], ["Logical order", "FROM, WHERE, GROUP BY, HAVING, SELECT, DISTINCT, ORDER BY, LIMIT."]], "summary": "<p>Aggregates squeeze rows into one value, GROUP BY gives one value per group, HAVING filters the groups, and the logical order FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT explains every rule.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"totals": {"src": "SELECT COUNT(*)              AS products,\n       COUNT(DISTINCT category) AS categories,\n       SUM(stock)            AS items_in_store,\n       ROUND(AVG(price), 2)  AS average_price,\n       MIN(price)            AS cheapest,\n       MAX(price)            AS dearest\nFROM products;", "db": "shop", "setup": "", "title": "The whole shop in one row", "notes": {"1": "With no GROUP BY, the whole table is one group, so exactly one row comes back.", "2": "Each different category counted once."}, "out": [{"sql": "SELECT COUNT(*)              AS products,\n       COUNT(DISTINCT category) AS categories,\n       SUM(stock)            AS items_in_store,\n       ROUND(AVG(price), 2)  AS average_price,\n       MIN(price)            AS cheapest,\n       MAX(price)            AS dearest\nFROM products;", "cols": ["products", "categories", "items_in_store", "average_price", "cheapest", "dearest"], "rows": [[10, 4, 395, 540.2, 60, 1499]]}]}, "grp": {"src": "SELECT category,\n       COUNT(*)   AS products,\n       SUM(stock) AS items,\n       MAX(price) AS dearest\nFROM products\nGROUP BY category\nORDER BY products DESC, category;", "db": "shop", "setup": "", "title": "Products per category", "notes": {"6": "One group for each different category.", "1": "category can be shown because it is the grouping column, the same for every row in the group."}, "out": [{"sql": "SELECT category,\n       COUNT(*)   AS products,\n       SUM(stock) AS items,\n       MAX(price) AS dearest\nFROM products\nGROUP BY category\nORDER BY products DESC, category;", "cols": ["category", "products", "items", "dearest"], "rows": [["Electronics", 3, 42, 1499], ["Stationery", 3, 260, 120], ["Kitchen", 2, 25, 399], ["Sports", 2, 68, 850]]}]}, "multi": {"src": "SELECT o.customer_id, o.status, COUNT(*) AS orders\nFROM orders AS o\nGROUP BY o.customer_id, o.status\nORDER BY o.customer_id, o.status;", "db": "shop", "setup": "", "title": "Group by two columns", "notes": {"3": "A group is now each different pair of customer and status."}, "out": [{"sql": "SELECT o.customer_id, o.status, COUNT(*) AS orders\nFROM orders AS o\nGROUP BY o.customer_id, o.status\nORDER BY o.customer_id, o.status;", "cols": ["customer_id", "status", "orders"], "rows": [[1, "delivered", 1], [1, "pending", 1], [1, "shipped", 1], [2, "delivered", 1], [2, "pending", 1], [3, "delivered", 1], [3, "shipped", 1], [5, "cancelled", 1], [5, "delivered", 1], [7, "delivered", 1]]}]}, "having": {"src": "SELECT category, COUNT(*) AS products\nFROM products\nWHERE stock > 0\nGROUP BY category\nHAVING COUNT(*) >= 2;", "db": "shop", "setup": "", "title": "WHERE first, HAVING later", "notes": {"3": "Rows first: products that are sold out never join a group.", "5": "Groups next: only categories with 2 or more in stock products survive."}, "out": [{"sql": "SELECT category, COUNT(*) AS products\nFROM products\nWHERE stock > 0\nGROUP BY category\nHAVING COUNT(*) >= 2;", "cols": ["category", "products"], "rows": [["Electronics", 2], ["Sports", 2], ["Stationery", 3]]}]}, "bad": {"src": "SELECT category, COUNT(*)\nFROM products\nWHERE COUNT(*) >= 2\nGROUP BY category;", "db": "shop", "setup": "", "title": "This fails, try it", "notes": {"3": "WHERE cannot use an aggregate, because the groups do not exist yet."}, "out": [{"sql": "SELECT category, COUNT(*)\nFROM products\nWHERE COUNT(*) >= 2\nGROUP BY category;", "cols": [], "rows": [], "error": "misuse of aggregate: COUNT()"}]}}, "labs": [{"id": "l-stats", "lv": "e", "title": "Order statistics", "task": "Return one row with two columns: <code>orders<\/code>, the number of orders, and <code>first_day<\/code>, the earliest <code>order_date<\/code>.", "db": "shop", "hint": "COUNT(*) and MIN(order_date).", "why": "MIN works on text too, and ISO dates compare correctly.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["orders", "first_day"], "rows": [[10, "2025-06-01"]]}, "solution": "SELECT COUNT(*) AS orders, MIN(order_date) AS first_day FROM orders;"}, {"id": "l-percat", "lv": "m", "title": "Stock per category", "task": "Show each <code>category<\/code> with the column <code>total_stock<\/code>, the sum of stock in that category.", "db": "shop", "hint": "GROUP BY category and SUM(stock).", "why": "GROUP BY makes one row per category and SUM adds the stock inside each.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["category", "total_stock"], "rows": [["Electronics", 42], ["Kitchen", 25], ["Sports", 68], ["Stationery", 260]]}, "solution": "SELECT category, SUM(stock) AS total_stock FROM products GROUP BY category;"}, {"id": "l-busy", "lv": "m", "title": "Loyal customers", "task": "Show the <code>customer_id<\/code> and the number of orders (<code>orders<\/code>) for every customer with 2 or more orders.", "db": "shop", "hint": "GROUP BY customer_id, then HAVING COUNT(*) &gt;= 2.", "why": "The test is on the number of orders in a group, so it belongs in HAVING.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["customer_id", "orders"], "rows": [[1, 3], [2, 2], [3, 2], [5, 2]]}, "solution": "SELECT customer_id, COUNT(*) AS orders FROM orders GROUP BY customer_id HAVING COUNT(*) >= 2;"}, {"id": "l-top", "lv": "h", "title": "Busiest status", "task": "Show the <code>status<\/code> and number of orders (<code>n<\/code>) for the single most common order status.", "db": "shop", "hint": "Group by status, order by the count descending, keep 1.", "why": "ORDER BY can use the alias n because it runs after SELECT.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["status", "n"], "rows": [["delivered", 5]]}, "solution": "SELECT status, COUNT(*) AS n FROM orders GROUP BY status ORDER BY n DESC LIMIT 1;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

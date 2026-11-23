@@ -10369,6 +10369,81 @@ function sqlModules() {
         { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-select", title: "SELECT in depth: columns, sums, aliases and paging", emoji: "1.2", page: "content/sql/sql-select.html",
+        summary: "Calculated columns, aliases, text and quoting, DISTINCT, LIMIT and OFFSET paging.",
+        keywords: ["SELECT", "alias", "AS", "DISTINCT", "LIMIT", "OFFSET", "concatenation", "integer division"],
+        minutes: 35, counts: {"lessons": 4, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "columns", title: "Choosing columns and doing sums", emoji: "", group: "Lesson", keywords: ["SELECT list", "expression", "calculated column", "arithmetic", "integer division", "concatenation", "||"] },
+        { id: "alias", title: "Aliases, text and quoting", emoji: "", group: "Lesson", keywords: ["alias", "AS", "string literal", "single quotes", "double quotes", "identifier", "comment", "SELECT without FROM"] },
+        { id: "distinct", title: "DISTINCT, LIMIT and OFFSET", emoji: "", group: "Lesson", keywords: ["DISTINCT", "LIMIT", "OFFSET", "pagination", "FETCH FIRST", "TOP", "duplicates"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["projection", "multiset", "keyset pagination", "SELECT *"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-where", title: "Filtering and sorting: WHERE and ORDER BY", emoji: "1.3", page: "content/sql/sql-where.html",
+        summary: "WHERE and comparisons, AND OR NOT with brackets, LIKE patterns, IS NULL and ORDER BY.",
+        keywords: ["WHERE", "AND", "OR", "BETWEEN", "IN", "LIKE", "IS NULL", "ORDER BY", "NULLS LAST"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "where", title: "WHERE keeps only the rows you want", emoji: "", group: "Lesson", keywords: ["WHERE", "filter", "comparison", "BETWEEN", "IN", "not equal", "condition"] },
+        { id: "logic", title: "AND, OR, NOT and brackets", emoji: "", group: "Lesson", keywords: ["AND", "OR", "NOT", "precedence", "brackets", "truth table", "operator precedence"] },
+        { id: "patterns", title: "LIKE, GLOB and IS NULL", emoji: "", group: "Lesson", keywords: ["LIKE", "wildcard", "%", "_", "GLOB", "ILIKE", "case sensitive", "IS NULL", "IS NOT NULL"] },
+        { id: "order", title: "ORDER BY: sorting the result", emoji: "", group: "Lesson", keywords: ["ORDER BY", "ASC", "DESC", "NULLS FIRST", "NULLS LAST", "collation", "NOCASE", "multiple sort keys"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["logical order", "selection", "sargable", "selectivity", "histogram", "index"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-shape", title: "Shaping results", emoji: "2", step: 2, level: "Beginner", blurb: "Functions and CASE, the truth about NULL, and squeezing many rows into answers with GROUP BY.", topics: [
+      { id: "sql-functions", title: "Functions, CASE and dates", emoji: "2.1", page: "content/sql/sql-functions.html",
+        summary: "Text and number functions, CASE, COALESCE and NULLIF, CAST and types, dates and times.",
+        keywords: ["functions", "CASE", "COALESCE", "NULLIF", "CAST", "typeof", "date", "strftime", "substr"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "text", title: "Text functions", emoji: "", group: "Lesson", keywords: ["function", "upper", "lower", "length", "substr", "trim", "replace", "instr", "text functions"] },
+        { id: "numbers", title: "Numbers and CASE", emoji: "", group: "Lesson", keywords: ["round", "abs", "ceil", "floor", "CASE", "WHEN", "THEN", "ELSE", "IIF", "searched case", "simple case"] },
+        { id: "nulls", title: "COALESCE, NULLIF, CAST and typeof", emoji: "", group: "Lesson", keywords: ["COALESCE", "NULLIF", "IFNULL", "CAST", "typeof", "storage class", "divide by zero"] },
+        { id: "dates", title: "Dates and times", emoji: "", group: "Lesson", keywords: ["date", "datetime", "strftime", "julianday", "unixepoch", "ISO 8601", "modifiers", "date arithmetic"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["scalar function", "aggregate function", "expression index", "UTC", "time zone", "deterministic"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-null", title: "NULL and three valued logic", emoji: "2.2", page: "content/sql/sql-null.html",
+        summary: "NULL as unknown, three valued logic, vanishing rows, NOT IN and aggregate traps.",
+        keywords: ["NULL", "three valued logic", "IS NULL", "NOT IN", "COUNT(*)", "unknown"],
+        minutes: 35, counts: {"lessons": 4, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "unknown", title: "NULL means unknown", emoji: "", group: "Lesson", keywords: ["NULL", "unknown", "missing value", "empty string", "NULL arithmetic"] },
+        { id: "three", title: "Three valued logic: TRUE, FALSE and UNKNOWN", emoji: "", group: "Lesson", keywords: ["three valued logic", "UNKNOWN", "truth table", "AND", "OR", "NOT", "WHERE drops unknown"] },
+        { id: "traps", title: "NULL traps: NOT IN, aggregates and DISTINCT", emoji: "", group: "Lesson", keywords: ["NOT IN", "NULL in subquery", "COUNT(*)", "COUNT(column)", "AVG ignores NULL", "IS NOT DISTINCT FROM", "UNIQUE and NULL"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["CHECK and NULL", "certain answers", "Codd", "Date and Darwen", "three valued logic"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-aggregate", title: "Aggregates, GROUP BY and HAVING", emoji: "2.3", page: "content/sql/sql-aggregate.html",
+        summary: "Aggregate functions, GROUP BY, HAVING versus WHERE, and the logical order of a query.",
+        keywords: ["aggregate", "COUNT", "SUM", "AVG", "GROUP BY", "HAVING", "order of execution"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "agg", title: "Squeezing many rows into one answer", emoji: "", group: "Lesson", keywords: ["aggregate", "COUNT", "SUM", "AVG", "MIN", "MAX", "COUNT DISTINCT", "group_concat", "string_agg"] },
+        { id: "groupby", title: "GROUP BY: one answer per group", emoji: "", group: "Lesson", keywords: ["GROUP BY", "group", "bare column", "grouping columns", "one row per group"] },
+        { id: "having", title: "HAVING filters groups, WHERE filters rows", emoji: "", group: "Lesson", keywords: ["HAVING", "WHERE vs HAVING", "filter groups", "FILTER clause", "conditional aggregation"] },
+        { id: "order", title: "The order SQL really runs in", emoji: "", group: "Lesson", keywords: ["logical query processing", "order of execution", "FROM", "WHERE", "GROUP BY", "HAVING", "SELECT", "ORDER BY", "LIMIT"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ROLLUP", "CUBE", "GROUPING SETS", "hash aggregation", "HyperLogLog", "column store"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

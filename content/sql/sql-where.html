@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filtering and sorting: WHERE and ORDER BY · SQL and Databases</title>
+<meta name="description" content="WHERE and comparison operators, BETWEEN and IN, AND, OR, NOT and precedence, LIKE, GLOB, IS NULL, ORDER BY with several columns, NULLS FIRST and LAST and collations.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 1: Start here</span><span>›</span><span>WHERE and ORDER BY</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 3 of 3 · Beginner</div>
+    <h1>Filtering and sorting: WHERE and ORDER BY</h1>
+    <p class="lead">Keep only the rows you need with WHERE, combine tests with AND, OR and brackets, match patterns with LIKE, find missing values, and sort results the way a scoreboard does.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">3 animations</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">5 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-where" data-topic="cheatsheet" data-h="sql-where">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#where" data-l="where"><span class="n">1</span><span class="t">WHERE keeps only the rows you want</span></a></li><li><a href="#logic" data-l="logic"><span class="n">2</span><span class="t">AND, OR, NOT and brackets</span></a></li><li><a href="#patterns" data-l="patterns"><span class="n">3</span><span class="t">LIKE, GLOB and IS NULL</span></a></li><li><a href="#order" data-l="order"><span class="n">4</span><span class="t">ORDER BY: sorting the result</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="where" data-l="where" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>WHERE keeps only the rows you want</h2>
+<p>A library has thousands of books, but you only want the ones about cricket. <code>WHERE</code> is the librarian's filter. It tests every row with a condition, keeps the rows where the condition is <b>true</b>, and throws the rest away.</p>
+<div class="viz" data-viz="pk" data-pk="sqwhere"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Operator</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td><code>=</code></td><td>equal to</td><td><code>city = 'Pune'</code></td></tr><tr><td><code>&lt;&gt;</code> or <code>!=</code></td><td>not equal to</td><td><code>status &lt;&gt; 'cancelled'</code></td></tr><tr><td><code>&lt; &lt;= &gt; &gt;=</code></td><td>smaller, bigger</td><td><code>price &gt;= 500</code></td></tr><tr><td><code>BETWEEN a AND b</code></td><td>from a to b, both ends included</td><td><code>price BETWEEN 100 AND 300</code></td></tr><tr><td><code>IN (...)</code></td><td>equal to any value in the list</td><td><code>category IN ('Sports', 'Kitchen')</code></td></tr><tr><td><code>IS NULL</code></td><td>the value is missing</td><td><code>email IS NULL</code></td></tr></tbody></table></div>
+<div class="sq-run" data-q="w1"></div>
+<div class="note note-tip"><b>Remember</b><div>Text comparisons are exact in SQLite with = : 'pune' is not equal to 'Pune'. Dates stored as text in the ISO form YYYY-MM-DD sort and compare correctly as text.</div></div>
+<div class="sq-lab" data-lab="l-pune"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="logic" data-l="logic" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>AND, OR, NOT and brackets</h2>
+<p>Real questions have more than one condition. "Sports items under Rs 500" needs both tests to be true, so it uses <code>AND</code>. "Kitchen or Sports items" needs either one, so it uses <code>OR</code>. <code>NOT</code> flips true and false.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>A</th><th>B</th><th>A AND B</th><th>A OR B</th><th>NOT A</th></tr></thead><tbody><tr><td>true</td><td>true</td><td>true</td><td>true</td><td>false</td></tr><tr><td>true</td><td>false</td><td>false</td><td>true</td><td>false</td></tr><tr><td>false</td><td>true</td><td>false</td><td>true</td><td>true</td></tr><tr><td>false</td><td>false</td><td>false</td><td>false</td><td>true</td></tr></tbody></table></div>
+<p><b>AND is done before OR</b>, just as multiplication is done before addition in maths. Forgetting this is one of the most common SQL bugs.</p>
+<div class="sq-run" data-q="prec"></div>
+<div class="walk"><div class="walk-h"><span>Read the first query the way SQLite does</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>AND binds tighter than OR, so the condition is Sports OR (Kitchen AND price &lt; 300).</li><li>Every Sports product passes, whatever its price: Cricket ball and Football.</li><li>Kitchen products pass only under 300: Water bottle at 250 passes, Lunch box at 399 fails.</li><li><span class="eq">With brackets the price rule covers both, so only Cricket ball and Water bottle remain</span></li></ol></div>
+<div class="note note-warn"><b>Common mistake</b><div>When AND and OR appear together, add brackets even if you know the rule. The next reader may not.</div></div>
+<div class="sq-lab" data-lab="l-andor"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="patterns" data-l="patterns" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>LIKE, GLOB and IS NULL</h2>
+<p>Sometimes you know only part of a value, like "a product with box in its name". <code>LIKE</code> matches patterns. A <code>%</code> stands for any run of characters, even none. An <code>_</code> stands for exactly one character.</p>
+<div class="viz" data-viz="pk" data-pk="sqlike"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Pattern</th><th>Matches</th><th>Does not match</th></tr></thead><tbody><tr><td><code>'P%'</code></td><td>Pencil box, Phone charger</td><td>Notebook</td></tr><tr><td><code>'%box'</code></td><td>Pencil box, Lunch box</td><td>Boxing gloves (box is not at the end)</td></tr><tr><td><code>'_o%'</code></td><td>Notebook, Football (o is the second letter)</td><td>Pencil box</td></tr><tr><td><code>'%a_e%'</code></td><td>Water bottle (a, any letter, e)</td><td>Cricket ball</td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>In SQLite, LIKE ignores the difference between capital and small letters for plain English letters. GLOB is the case sensitive cousin and uses * and ? instead of % and _. PostgreSQL LIKE is case sensitive, and it has ILIKE for case insensitive matching.</div></div>
+<p>Missing values need special care. <code>email = NULL</code> never finds anything, because comparing with an unknown value gives unknown, not true. Use <code>IS NULL</code> and <code>IS NOT NULL</code>. The next step of this subject has a whole chapter on NULL.</p>
+<div class="sq-run" data-q="isnull"></div>
+<div class="sq-lab" data-lab="l-like"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="order" data-l="order" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>ORDER BY: sorting the result</h2>
+<p>A cricket scoreboard lists batters by runs, highest first. <code>ORDER BY</code> sorts the result. <code>ASC</code> (the default) puts small values first, <code>DESC</code> puts big values first. You can sort by several columns: the second one only breaks ties in the first.</p>
+<div class="viz" data-viz="pk" data-pk="sqorder"></div>
+<div class="sq-run" data-q="order2"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Rule</th><th>In SQLite</th></tr></thead><tbody><tr><td>Where do NULLs go in ASC order</td><td>First, because SQLite treats NULL as smaller than every other value</td></tr><tr><td>Choose yourself</td><td><code>ORDER BY city NULLS LAST</code> (supported since SQLite 3.30.0, also in PostgreSQL and Oracle)</td></tr><tr><td>Sort by an alias</td><td><code>SELECT price * stock AS v ... ORDER BY v DESC</code> works</td></tr><tr><td>Sort by position</td><td><code>ORDER BY 2</code> means the 2nd column of the SELECT list, allowed but hard to read</td></tr><tr><td>Text order</td><td>By character codes (BINARY collation): capital letters come before small ones. <code>COLLATE NOCASE</code> ignores case for English letters</td></tr></tbody></table></div>
+<div class="sq-run" data-q="nulls"></div>
+<div class="scene"><div class="scene-h">Real world scenario: the cricket points table</div><p>A league table sorts teams by points, highest first. Two teams on equal points are split by net run rate. In SQL that is <code>ORDER BY points DESC, net_run_rate DESC</code>. The second column only matters when the first one ties.</p></div>
+<div class="sq-lab" data-lab="l-sort"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>WHERE is a sieve that keeps the rows you want, and ORDER BY lines them up neatly.</p></div><div class="ld-p" data-ld="college" hidden><p>WHERE runs before SELECT and ORDER BY runs after it. That is why WHERE cannot use a column alias from the SELECT list but ORDER BY can.</p></div><div class="ld-p" data-ld="masters" hidden><p>A WHERE condition is selection (σ) in relational algebra. The planner can use an index when a condition compares a column directly with a value, such as <code>price &lt; 300</code>. Wrapping the column in a function, such as <code>lower(name) = ...</code>, usually stops a plain index from being used.</p></div><div class="ld-p" data-ld="research" hidden><p>Optimizers estimate how many rows each condition keeps (its selectivity) from statistics such as histograms, then order the work so the most selective, cheapest tests run first. Bad estimates are a top cause of slow queries in real systems.</p></div></div>
+<details class="deep"><summary>Going deeper: LIKE and indexes</summary><div class="deep-b"><p>A pattern that starts with a fixed prefix, such as 'Pen%', can use an index in many engines, because the matching values sit together in sorted order. A pattern that starts with %, such as '%box', must check every row. Full text search features exist for searching words inside long text.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-select.html" data-topic="sql-select"><small>Previous topic</small><b>SELECT in depth</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-where", "topic": "sql-where", "subject": "sql", "title": "Filtering and sorting: WHERE and ORDER BY", "codes": {}, "quiz": [{"lv": "e", "q": "Which rows does WHERE keep?", "o": ["Rows where the condition is true", "Rows where it is false", "Rows where it is NULL", "All rows"], "a": 0, "hint": "True only.", "why": "False and unknown rows are dropped."}, {"lv": "e", "q": "Does BETWEEN 100 AND 300 include 300?", "o": ["Yes", "No", "Only for whole numbers", "Only in MySQL"], "a": 0, "hint": "Both ends.", "why": "BETWEEN includes both end values."}, {"lv": "e", "q": "Which finds customers with no email?", "o": ["email = NULL", "email IS NULL", "email = ''", "email == NULL"], "a": 1, "hint": "IS.", "why": "Only IS NULL tests for a missing value."}, {"lv": "e", "q": "Which keyword sorts biggest first?", "o": ["ASC", "DESC", "UP", "DOWN"], "a": 1, "hint": "Descending.", "why": "DESC means descending."}, {"lv": "m", "q": "Which is evaluated first without brackets?", "o": ["OR", "AND", "Left to right always", "NOT never"], "a": 1, "hint": "Like × before +.", "why": "AND binds tighter than OR."}, {"lv": "m", "q": "What does '_a%' match?", "o": ["Names starting with a", "Names whose second letter is a", "Names ending with a", "Names with exactly 2 letters"], "a": 1, "hint": "One character, then a.", "why": "_ is one character, then a, then anything."}, {"lv": "m", "q": "In SQLite ascending order, where do NULLs go?", "o": ["First", "Last", "They are removed", "Random"], "a": 0, "hint": "Smallest.", "why": "SQLite treats NULL as smaller than any value."}, {"lv": "m", "q": "category IN ('Sports', 'Kitchen') is the same as", "o": ["category = 'Sports' AND category = 'Kitchen'", "category = 'Sports' OR category = 'Kitchen'", "category LIKE 'Sports%Kitchen'", "NOT category"], "a": 1, "hint": "Any of.", "why": "IN is a short form of several ORs."}, {"lv": "h", "q": "ORDER BY category, price DESC sorts price descending", "o": ["For the whole table", "Inside each category", "Only for NULLs", "Never, DESC applies to category"], "a": 1, "hint": "Tie breaker.", "why": "DESC applies only to price, which breaks ties within a category."}, {"lv": "h", "q": "Which pattern matching is case sensitive in SQLite by default?", "o": ["LIKE", "GLOB", "Both", "Neither"], "a": 1, "hint": "Unix style.", "why": "GLOB is case sensitive, LIKE is not for ASCII letters."}, {"lv": "x", "q": "Why can ORDER BY use a SELECT alias while WHERE cannot?", "o": ["A rule of SQLite only", "WHERE runs before SELECT, ORDER BY after it", "Aliases need quotes", "WHERE is faster"], "a": 1, "hint": "Logical order.", "why": "The alias does not exist yet when WHERE runs."}], "calc": [{"lv": "e", "q": "How many products cost from 100 to 300, both included?", "ans": "3", "hint": "BETWEEN includes both ends.", "steps": ["Prices: 120, 60, 250, 399, 1499, 699, 180, 850, 1250, 95.", "In range: 120, 250, 180.", "<span class=\"eq\">3 products<\/span>"]}, {"lv": "e", "q": "How many customers live in Delhi?", "ans": "2", "hint": "city = 'Delhi'.", "steps": ["Read the city column.", "Ravi and Nisha live in Delhi.", "<span class=\"eq\">2 customers<\/span>"]}, {"lv": "m", "q": "How many rows does WHERE category = 'Sports' OR category = 'Kitchen' AND price < 300 keep?", "ans": "3", "hint": "AND first.", "steps": ["It means Sports OR (Kitchen AND price &lt; 300).", "Sports: Cricket ball, Football. Cheap Kitchen: Water bottle.", "<span class=\"eq\">3 rows<\/span>"]}, {"lv": "m", "q": "And with brackets, (Sports OR Kitchen) AND price &lt; 300?", "ans": "2", "hint": "Price applies to both.", "steps": ["Sports under 300: Cricket ball.", "Kitchen under 300: Water bottle.", "<span class=\"eq\">2 rows<\/span>"]}, {"lv": "m", "q": "How many product names match LIKE '%o%'? (LIKE ignores case)", "ans": "8", "hint": "Any o anywhere.", "steps": ["Check each name for the letter o.", "Pencil box, Notebook, Water bottle, Lunch box, Headphones, Phone charger, Football, Geometry set.", "<span class=\"eq\">8 names<\/span>"]}, {"lv": "m", "q": "How many orders are not delivered? Use status &lt;&gt; delivered.", "ans": "5", "hint": "Count the rest.", "steps": ["There are 10 orders.", "5 are delivered.", "<span class=\"eq\">10 − 5 = 5<\/span>"]}, {"lv": "h", "q": "How many rows does WHERE email = NULL return?", "ans": "0", "hint": "Comparing with unknown.", "steps": ["email = NULL gives NULL for every row.", "WHERE keeps only true rows.", "<span class=\"eq\">0 rows<\/span>"]}, {"lv": "h", "q": "Products with stock 0 or price over 1000: how many rows?", "ans": "3", "hint": "Either test.", "steps": ["Stock 0: Lunch box, Desk lamp.", "Price over 1000: Headphones, Desk lamp.", "<span class=\"eq\">Desk lamp counts once: 3 rows<\/span>"]}], "assign": [], "must": [["WHERE", "Tests every row and keeps only rows where the condition is true. False and unknown rows are dropped."], ["Precedence", "NOT, then AND, then OR. Add brackets whenever AND and OR are mixed."], ["Ranges and lists", "BETWEEN a AND b includes both ends. IN (...) is a short form of several ORs."], ["Patterns", "LIKE: % any run, _ one character, case insensitive for ASCII in SQLite. GLOB is case sensitive."], ["NULL tests", "Use IS NULL and IS NOT NULL. = NULL never matches."], ["ORDER BY", "ASC default, DESC for big first, later columns break ties. NULLs sort first in SQLite, NULLS LAST moves them."]], "summary": "<p>WHERE keeps the rows where a test is true, brackets make AND and OR mean what you want, LIKE matches patterns, IS NULL finds gaps, and ORDER BY sorts.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"w1": {"src": "SELECT name, price, stock\nFROM products\nWHERE price BETWEEN 100 AND 300;", "db": "shop", "setup": "", "title": "Products from Rs 100 to Rs 300", "notes": {"3": "BETWEEN includes both ends, so a price of exactly 100 or 300 would count."}, "out": [{"sql": "SELECT name, price, stock\nFROM products\nWHERE price BETWEEN 100 AND 300;", "cols": ["name", "price", "stock"], "rows": [["Pencil box", 120, 40], ["Water bottle", 250, 25], ["Cricket ball", 180, 60]]}]}, "prec": {"src": "-- Without brackets: AND binds first\nSELECT name, category, price\nFROM products\nWHERE category = 'Sports' OR category = 'Kitchen' AND price < 300;\n\n-- With brackets: what we usually mean\nSELECT name, category, price\nFROM products\nWHERE (category = 'Sports' OR category = 'Kitchen') AND price < 300;", "db": "shop", "setup": "", "title": "Brackets change the answer", "notes": {"4": "Read as Sports OR (Kitchen AND under 300). The Football at 850 sneaks in.", "9": "Now the price test applies to both categories."}, "out": [{"sql": "-- Without brackets: AND binds first\nSELECT name, category, price\nFROM products\nWHERE category = 'Sports' OR category = 'Kitchen' AND price < 300;", "cols": ["name", "category", "price"], "rows": [["Water bottle", "Kitchen", 250], ["Cricket ball", "Sports", 180], ["Football", "Sports", 850]]}, {"sql": "-- With brackets: what we usually mean\nSELECT name, category, price\nFROM products\nWHERE (category = 'Sports' OR category = 'Kitchen') AND price < 300;", "cols": ["name", "category", "price"], "rows": [["Water bottle", "Kitchen", 250], ["Cricket ball", "Sports", 180]]}]}, "isnull": {"src": "SELECT name, email\nFROM customers\nWHERE email IS NULL;\n\nSELECT name, email\nFROM customers\nWHERE email = NULL;", "db": "shop", "setup": "", "title": "IS NULL works, = NULL finds nothing", "notes": {"3": "IS NULL is true when the value is missing.", "7": "This compares with unknown, the answer is unknown, so no row passes."}, "out": [{"sql": "SELECT name, email\nFROM customers\nWHERE email IS NULL;", "cols": ["name", "email"], "rows": [["Kabir", null], ["Vikram", null]]}, {"sql": "SELECT name, email\nFROM customers\nWHERE email = NULL;", "cols": ["name", "email"], "rows": []}]}, "order2": {"src": "SELECT name, category, price\nFROM products\nORDER BY category ASC, price DESC;", "db": "shop", "setup": "", "title": "Sort by category, then by price inside each category", "notes": {"3": "Rows are grouped A to Z by category. Inside one category the most expensive comes first."}, "out": [{"sql": "SELECT name, category, price\nFROM products\nORDER BY category ASC, price DESC;", "cols": ["name", "category", "price"], "rows": [["Headphones", "Electronics", 1499], ["Desk lamp", "Electronics", 1250], ["Phone charger", "Electronics", 699], ["Lunch box", "Kitchen", 399], ["Water bottle", "Kitchen", 250], ["Football", "Sports", 850], ["Cricket ball", "Sports", 180], ["Pencil box", "Stationery", 120], ["Geometry set", "Stationery", 95], ["Notebook", "Stationery", 60]]}]}, "nulls": {"src": "SELECT name, city\nFROM customers\nORDER BY city NULLS LAST, name;", "db": "shop", "setup": "", "title": "Missing cities at the end", "notes": {"3": "Without NULLS LAST, Arjun (no city) would be first."}, "out": [{"sql": "SELECT name, city\nFROM customers\nORDER BY city NULLS LAST, name;", "cols": ["name", "city"], "rows": [["Sara", "Bhubaneswar"], ["Meera", "Chennai"], ["Vikram", "Chennai"], ["Nisha", "Delhi"], ["Ravi", "Delhi"], ["Asha", "Pune"], ["Kabir", "Pune"], ["Arjun", null]]}]}}, "labs": [{"id": "l-pune", "lv": "e", "title": "Customers from Pune", "task": "Show the <code>name<\/code> of every customer who lives in Pune.", "db": "shop", "hint": "city = 'Pune' with single quotes.", "why": "WHERE keeps the rows where the test is true.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Asha"], ["Kabir"]]}, "solution": "SELECT name FROM customers WHERE city = 'Pune';"}, {"id": "l-andor", "lv": "m", "title": "Cheap stationery or any sports item", "task": "Show the <code>name<\/code> of products that are either Stationery costing under 100, or in the Sports category.", "db": "shop", "hint": "Group the two Stationery tests in brackets, then OR the Sports test.", "why": "Brackets make the meaning clear: (Stationery and cheap) or Sports.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Notebook"], ["Cricket ball"], ["Football"], ["Geometry set"]]}, "solution": "SELECT name FROM products WHERE (category = 'Stationery' AND price < 100) OR category = 'Sports';"}, {"id": "l-like", "lv": "m", "title": "Products with a two word name", "task": "Show the <code>name<\/code> of products whose name contains a space.", "db": "shop", "hint": "A space between two % signs.", "why": "'% %' means anything, a space, anything.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Pencil box"], ["Water bottle"], ["Lunch box"], ["Phone charger"], ["Cricket ball"], ["Desk lamp"], ["Geometry set"]]}, "solution": "SELECT name FROM products WHERE name LIKE '% %';"}, {"id": "l-sort", "lv": "m", "title": "Newest customers first", "task": "Show <code>name<\/code> and <code>joined<\/code> for every customer, newest join date first.", "db": "shop", "hint": "Dates in YYYY-MM-DD form sort correctly as text. Use DESC.", "why": "DESC puts the biggest date, the newest, first.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["name", "joined"], "rows": [["Vikram", "2025-05-09"], ["Nisha", "2025-04-22"], ["Arjun", "2025-04-01"], ["Sara", "2025-03-18"], ["Kabir", "2025-03-05"], ["Meera", "2025-02-20"], ["Ravi", "2025-02-02"], ["Asha", "2025-01-10"]]}, "solution": "SELECT name, joined FROM customers ORDER BY joined DESC;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>
