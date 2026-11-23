@@ -56,8 +56,8 @@ const LXSH = (() => {
     ]
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
-  const SBIN = 'tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'alias blkid fallocate curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const SBIN = 'sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
+  const CMDS = 'alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -2427,6 +2427,184 @@ const LXSH = (() => {
     this.out(`Server:\t\t127.0.0.53\nAddress:\t127.0.0.53#53\n\n` + (A.length ? `Non-authoritative answer:\n${A.map(r => `Name:\t${name}\nAddress: ${r[2]}`).join('\n')}\n\n` : `** server can't find ${name}: NXDOMAIN\n\n`));
     return A.length ? 0 : 1;
   };
+
+  /* ---------- ssh: keys, known_hosts, ~/.ssh/config, a remote file server (files, 192.168.1.20) and sshd -t ---------- */
+  const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const prng = seed => { let h = 2166136261; for (const ch of String(seed)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; return () => { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return h; }; };
+  const bytesOf = (seed, n) => { const r = prng(seed); return Array.from({ length: n }, () => r() & 255); };
+  const b64 = bytes => { let o = ''; for (let i = 0; i < bytes.length; i += 3) { const [a, b = 0, c = 0] = bytes.slice(i, i + 3), n = (a << 16) | (b << 8) | c; o += B64[n >> 18 & 63] + B64[n >> 12 & 63] + (i + 1 < bytes.length ? B64[n >> 6 & 63] : '=') + (i + 2 < bytes.length ? B64[n & 63] : '='); } return o; };
+  const fpOf = pub => 'SHA256:' + b64(bytesOf('fp' + pub, 32)).replace(/=+$/, '');
+  const randomart = (fp, type, bits) => {
+    const W = 17, H = 9, f = Array(W * H).fill(0), sym = ' .o+=*BOX@%&#/^SE', raw = bytesOf('fp' + fp, 32); let x = 8, y = 4;
+    raw.forEach(b => { for (let k = 0; k < 4; k++) { x += (b & 1) ? 1 : -1; y += (b & 2) ? 1 : -1; x = Math.max(0, Math.min(W - 1, x)); y = Math.max(0, Math.min(H - 1, y)); f[y * W + x]++; b >>= 2; } });
+    f[4 * W + 8] = 15; f[y * W + x] = 16;
+    const top = `[${type} ${bits}]`, padL = Math.floor((W - top.length) / 2);
+    const rows = []; for (let r = 0; r < H; r++) rows.push('|' + Array.from({ length: W }, (_, c) => { const v = f[r * W + c]; return v === 15 ? 'S' : v === 16 ? 'E' : sym[Math.min(v, 14)]; }).join('') + '|');
+    return '+' + '-'.repeat(padL) + top + '-'.repeat(W - padL - top.length) + '+\n' + rows.join('\n') + '\n+----[SHA256]-----+\n';
+  };
+  const khPrefix = host => `|1|${b64(bytesOf('s' + host, 20))}|${b64(bytesOf('h' + host, 20))}`;
+  const HOSTKEY = { files: 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFf1Lq2vY8bTzR0kXn3mPq7sWc5dHj9aUe4oKi6tBr2G' };
+  World.prototype.remote = function () {
+    if (!this.remoteState) this.remoteState = { keys: {}, files: {}, host: 'files', ip: '192.168.1.20' };
+    return this.remoteState;
+  };
+  World.prototype.sshConfig = function (alias) {
+    const n = this.node(this.abs('~/.ssh/config')), o = { HostName: alias };
+    if (!n) return o;
+    let on = false;
+    for (const raw of n.data.split('\n')) {
+      const l = raw.replace(/#.*/, '').trim(); if (!l) continue;
+      const m = /^(\S+)\s*=?\s*(.*)$/.exec(l); if (!m) continue;
+      const k = m[1].toLowerCase();
+      if (k === 'host') { on = m[2].split(/\s+/).some(pat => new RegExp('^' + pat.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.') + '$').test(alias)); continue; }
+      if (on) { const key = { hostname: 'HostName', user: 'User', port: 'Port', identityfile: 'IdentityFile', stricthostkeychecking: 'StrictHostKeyChecking', proxyjump: 'ProxyJump' }[k]; if (key && (o[key] === undefined || (key === 'HostName' && o.HostName === alias && !o._hn))) { o[key] = m[2]; if (key === 'HostName') o._hn = true; } }
+    }
+    return o;
+  };
+  C['ssh-keygen'] = function (a) {
+    let type = 'ed25519', bits = 0, file = '', pass = null, comment = `${this.user}@${HOST}`, quiet = false, list = false, remove = '';
+    for (let i = 0; i < a.length; i++) { const x = a[i]; if (x === '-t') type = a[++i]; else if (x === '-b') bits = +a[++i]; else if (x === '-f') file = a[++i]; else if (x === '-N') pass = a[++i]; else if (x === '-C') comment = a[++i]; else if (x === '-q') quiet = true; else if (x === '-l') list = true; else if (x === '-R') remove = a[++i]; else if (x === '-lf') { list = true; file = a[++i]; } }
+    const home = this.abs('~');
+    if (remove) {
+      const kh = this.abs(file || '~/.ssh/known_hosts'), n = this.node(kh);
+      if (!n) { this.eout(`Cannot stat ${kh}: No such file or directory\n`); return 255; }
+      const L = n.data.split('\n'), keep = [], tag = khPrefix(remove); let hit = 0;
+      L.forEach((l, i) => { if (l.includes(tag)) { hit = i + 1; } else keep.push(l); });
+      if (!hit) { this.out(`Host ${remove} not found in ${kh}\n`); return 0; }
+      this.mk(kh + '.old', 'f', 0o600, this.user, n.data); n.data = keep.join('\n');
+      this.out(`# Host ${remove} found: line ${hit}\n${kh} updated.\nOriginal contents retained as ${kh}.old\n`); return 0;
+    }
+    if (list) {
+      const f = this.abs(file || '~/.ssh/id_ed25519.pub'), n = this.node(f) || this.node(f + '.pub');
+      if (!n) { this.eout(`${file}: No such file or directory\n`); return 255; }
+      const pub = /\.pub$/.test(f) || !n.data.startsWith('-----') ? n.data.trim() : (this.node(f + '.pub') || { data: '' }).data.trim();
+      if (!/^ssh-|^ecdsa-/.test(pub)) { this.eout(`${file} is not a public key file.\n`); return 255; }
+      const [t, , ...c] = pub.split(' '), T = t === 'ssh-ed25519' ? ['256', 'ED25519'] : t === 'ssh-rsa' ? [String(pub.length > 500 ? 4096 : 3072), 'RSA'] : ['256', 'ECDSA'];
+      this.out(`${T[0]} ${fpOf(pub)} ${c.join(' ') || 'no comment'} (${T[1]})\n`); return 0;
+    }
+    if (!/^(ed25519|rsa|ecdsa)$/.test(type)) { this.eout(`unknown key type ${type}\n`); return 255; }
+    if (!bits) bits = type === 'ed25519' ? 256 : type === 'rsa' ? 3072 : 256;
+    const prompt = !file;
+    if (!file) file = '~/.ssh/id_' + type;
+    const f = this.abs(file), dir = dirName(f);
+    if (!quiet) this.out(`Generating public/private ${type} key pair.\n`);
+    if (prompt) this.out(`Enter file in which to save the key (${home}/.ssh/id_${type}): \n`);
+    if (dir === home + '/.ssh' && !this.node(dir)) { this.mk(dir, 'd', 0o700, this.user, ''); if (!quiet) this.out(`Created directory '${dir}'.\n`); }
+    if (!this.node(dir)) { this.eout(`Saving key "${f}" failed: No such file or directory\n`); return 255; }
+    if (this.node(f)) { this.out(`${f} already exists.\nOverwrite (y/n)? \n`); return 1; }
+    if (pass === null) this.out('Enter passphrase (empty for no passphrase): \nEnter same passphrase again: \n');
+    const id = `${type}${f}${this.clock}`, keyB = type === 'ed25519' ? 'AAAAC3NzaC1lZDI1NTE5AAAAI' + b64(bytesOf(id, 32)).slice(0, 43) : type === 'rsa' ? 'AAAAB3NzaC1yc2EAAAADAQABAAABgQ' + b64(bytesOf(id, bits / 8 + 12)).replace(/=+$/, '') : 'AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBB' + b64(bytesOf(id, 63)).replace(/=+$/, '');
+    const pub = `${type === 'ed25519' ? 'ssh-ed25519' : type === 'rsa' ? 'ssh-rsa' : 'ecdsa-sha2-nistp256'} ${keyB} ${comment}`;
+    this.mk(f, 'f', 0o600, this.user, `-----BEGIN OPENSSH PRIVATE KEY-----\n${('b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW' + b64(bytesOf('priv' + id, 240)).replace(/=+$/, '')).slice(0, type === 'ed25519' ? 334 : 1000 + bits / 4).replace(/(.{70})/g, '$1\n')}\n-----END OPENSSH PRIVATE KEY-----\n`).mtime = this.now();
+    this.node(f).sshPass = !!pass;
+    this.mk(f + '.pub', 'f', 0o644, this.user, pub + '\n').mtime = this.now();
+    if (!quiet) this.out(`Your identification has been saved in ${file === '~/.ssh/id_' + type && prompt ? f : file}\nYour public key has been saved in ${(file === '~/.ssh/id_' + type && prompt ? f : file)}.pub\nThe key fingerprint is:\n${fpOf(pub)} ${comment}\nThe key's randomart image is:\n${randomart(pub, type.toUpperCase(), bits)}`);
+    return 0;
+  };
+  World.prototype.sshTarget = function (spec) {
+    const [u, h0] = spec.includes('@') ? spec.split('@') : [null, spec], cfg = this.sshConfig(h0);
+    return { user: u || cfg.User || this.user, alias: h0, host: cfg.HostName || h0, port: +(cfg.Port || 22), identity: cfg.IdentityFile, strict: cfg.StrictHostKeyChecking };
+  };
+  World.prototype.sshConnect = function (t, opts) {
+    const ip = this.resolve(t.host);
+    if (!ip) { this.eout(`ssh: Could not resolve hostname ${t.host}: Name or service not known\n`); return null; }
+    const h = this.routeTo(ip) ? this.reach(ip) : null;
+    if (!h || !h.ports || !h.ports.includes(t.port)) { this.eout(h && h.unreachable ? `ssh: connect to host ${t.host} port ${t.port}: No route to host\n` : h && (h.mac || h.local || h.hops) ? `ssh: connect to host ${t.host} port ${t.port}: Connection refused\n` : `ssh: connect to host ${t.host} port ${t.port}: Connection timed out\n`); return null; }
+    if (ip !== '192.168.1.20') { this.eout(`${t.user}@${t.host}: Permission denied (publickey).\n`); return null; }
+    const khf = this.abs('~/.ssh/known_hosts'), kh = this.node(khf), tag = khPrefix(t.host), hk = HOSTKEY.files;
+    if (!kh || !kh.data.includes(tag)) {
+      const strict = opts.strict || t.strict;
+      if (strict === 'yes') { this.eout(`No ED25519 host key is known for ${t.host} and you have requested strict checking.\nHost key verification failed.\n`); return null; }
+      if (strict !== 'accept-new' && strict !== 'no') this.out(`The authenticity of host '${t.host} (${ip})' can't be established.\nED25519 key fingerprint is ${fpOf(hk)}.\nThis key is not known by any other names.\nAre you sure you want to continue connecting (yes/no/[fingerprint])? yes\n`);
+      this.eout(`Warning: Permanently added '${t.host}' (ED25519) to the list of known hosts.\n`);
+      if (!this.node(this.abs('~/.ssh'))) this.mk(this.abs('~/.ssh'), 'd', 0o700, this.user, '');
+      const line = `${tag} ${hk.split(' ').slice(0, 2).join(' ')}`;
+      if (kh) kh.data = kh.data.replace(/\n?$/, '\n') + line + '\n'; else this.mk(khf, 'f', 0o600, this.user, line + '\n');
+    }
+    return { ip, hk };
+  };
+  World.prototype.sshAuth = function (t, ident) {
+    const R = this.remote(), cands = (ident ? [ident] : t.identity ? [t.identity] : ['~/.ssh/id_ed25519', '~/.ssh/id_ecdsa', '~/.ssh/id_rsa']).map(x => this.abs(x));
+    for (const f of cands) {
+      const n = this.node(f), pub = this.node(f + '.pub');
+      if (!n) continue;
+      if (n.mode & 0o077) { this.eout(`@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n@         WARNING: UNPROTECTED PRIVATE KEY FILE!          @\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\nPermissions 0${(n.mode & 0o777).toString(8)} for '${f.replace(this.abs('~'), '~').replace(/^~/, this.abs('~'))}' are too open.\nIt is required that your private key files are NOT accessible by others.\nThis private key will be ignored.\nLoad key "${f}": bad permissions\n`); continue; }
+      if (pub && (R.keys[t.user] || []).includes(pub.data.trim())) return true;
+    }
+    return false;
+  };
+  const REMOTE_RUN = (w, t, cmd) => {
+    const R = w.remote(), home = t.user === 'root' ? '/root' : '/home/' + t.user, mine = Object.keys(R.files).filter(k => k.startsWith(home + '/')).map(k => k.slice(home.length + 1)).sort();
+    const out = [];
+    for (const part of cmd.split(/\s*;\s*|\s*&&\s*/)) {
+      const [c, ...x] = part.trim().split(/\s+/);
+      if (!c) continue;
+      if (c === 'hostname') out.push('files');
+      else if (c === 'whoami') out.push(t.user);
+      else if (c === 'uptime') out.push(' 09:31:00 up 12 days,  3:04,  1 user,  load average: 0.02, 0.04, 0.01');
+      else if (c === 'ls') out.push(...mine.filter(k => !k.startsWith('.')));
+      else if (c === 'cat' && x[0]) { const p = x[0].replace(/^~\//, home + '/').replace(/^(?!\/)/, home + '/'); if (/authorized_keys$/.test(p)) out.push(...(R.keys[t.user] || [])); else if (R.files[p] !== undefined) out.push(R.files[p].replace(/\n$/, '')); else { w.eout(`cat: ${x[0]}: No such file or directory\n`); return 1; } }
+      else if (c === 'id') out.push(`uid=1000(${t.user}) gid=1000(${t.user}) groups=1000(${t.user})`);
+      else { w.eout(`bash: line 1: ${c}: the practice file server only runs hostname, whoami, uptime, id, ls and cat\n`); return 127; }
+    }
+    if (out.length) w.out(out.join('\n') + '\n');
+    return 0;
+  };
+  C.ssh = function (a) {
+    let ident = '', port = 0, strict = '', i = 0, verbose = false; const rest = [];
+    for (; i < a.length; i++) { const x = a[i]; if (x === '-i') ident = a[++i]; else if (x === '-p') port = +a[++i]; else if (x === '-o') { const m = /^StrictHostKeyChecking=(\S+)$/i.exec(a[++i] || ''); if (m) strict = m[1]; } else if (x === '-v') verbose = true; else if (/^-[LRDJFlTt]$/.test(x)) { if (x !== '-T' && x !== '-t') i++; } else if (x.startsWith('-') && !rest.length) { } else { rest.push(...a.slice(i)); break; } }
+    if (!rest.length) { this.eout('usage: ssh [-46AaCfGgKkMNnqsTtVvXxYy] [-B bind_interface] [-b bind_address]\n           [-c cipher_spec] [-D [bind_address:]port] [-E log_file]\n           [-e escape_char] [-F configfile] [-I pkcs11] [-i identity_file]\n           [-J destination] [-L address] [-l login_name] [-m mac_spec]\n           [-O ctl_cmd] [-o option] [-P tag] [-p port] [-R address]\n           [-S ctl_path] [-W host:port] [-w local_tun[:remote_tun]]\n           destination [command [argument ...]]\n'); return 255; }
+    const t = this.sshTarget(rest[0]); if (port) t.port = port; void verbose;
+    const c = this.sshConnect(t, { strict }); if (!c) return 255;
+    if (!this.sshAuth(t, ident)) { this.out(`${t.user}@${t.host}'s password: \n`); this.eout(`The practice shell cannot type passwords. Log in with a key: create one with ssh-keygen, then install it with ssh-copy-id ${rest[0]}.\n`); return 255; }
+    const cmd = rest.slice(1).join(' ');
+    if (!cmd) { this.out(`Welcome to Ubuntu 24.04.1 LTS (GNU/Linux 6.8.0-49-generic x86_64)\n\nLast login: Mon Nov 23 08:12:44 2026 from 192.168.1.50\n`); this.eout(`The practice shell does not open remote sessions. Put the command on the line instead, for example: ssh ${rest[0]} hostname\nConnection to ${t.host} closed.\n`); return 0; }
+    return REMOTE_RUN(this, t, cmd);
+  };
+  C['ssh-copy-id'] = function (a) {
+    let ident = '', strict = ''; const rest = [];
+    for (let i = 0; i < a.length; i++) { if (a[i] === '-i') ident = a[++i]; else if (a[i] === '-o') { const m = /^StrictHostKeyChecking=(\S+)$/i.exec(a[++i] || ''); if (m) strict = m[1]; } else if (!a[i].startsWith('-')) rest.push(a[i]); }
+    if (!rest.length) { this.eout('Usage: /usr/bin/ssh-copy-id [-h|-?|-f|-n|-s|-x] [-i [identity_file]] [-p port] [-F alternative ssh_config file] [-t target_path] [[-o <ssh -o options>] ...] [user@]hostname\n'); return 1; }
+    const f = this.abs(ident ? ident.replace(/(\.pub)?$/, '.pub') : '~/.ssh/id_ed25519.pub'), n = this.node(f);
+    if (!n) { this.eout(`/usr/bin/ssh-copy-id: ERROR: failed to open ID file '${f.replace(/\.pub$/, '')}': No such file or directory\n`); return 1; }
+    this.eout(`/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "${f}"\n`);
+    const t = this.sshTarget(rest[0]), c = this.sshConnect(t, { strict }); if (!c) return 1;
+    const R = this.remote(), list = R.keys[t.user] = R.keys[t.user] || [], key = n.data.trim();
+    this.eout('/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed\n');
+    if (list.includes(key)) { this.eout(`\n/usr/bin/ssh-copy-id: WARNING: All keys were skipped because they already exist on the remote system.\n\t\t(if you think this is a mistake, you may want to use -f option)\n\n`); return 0; }
+    this.eout('/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys\n');
+    this.out(`${t.user}@${t.host}'s password: \n\nNumber of key(s) added: 1\n\nNow try logging into the machine, with:   "ssh '${rest[0]}'"\nand check to make sure that only the key(s) you wanted were added.\n\n`);
+    list.push(key);
+    return 0;
+  };
+  C.scp = function (a) {
+    const args = a.filter(x => !x.startsWith('-')), [src, dst] = args.slice(-2);
+    if (!src || !dst) { this.eout('usage: scp [-346ABCOpqRrsTv] [-c cipher] [-D sftp_server_path] [-F ssh_config]\n           [-i identity_file] [-J destination] [-l limit] [-o ssh_option]\n           [-P port] [-S program] [-X sftp_option] source ... target\n'); return 255; }
+    const remoteOf = x => { const m = /^([^/:]+):(.*)$/.exec(x); return m ? { spec: m[1], path: m[2] } : null; };
+    const rs = remoteOf(src), rd = remoteOf(dst);
+    if (!rs && !rd) { return C.cp.call(this, [src, dst]); }
+    const r = rd || rs, t = this.sshTarget(r.spec), c = this.sshConnect(t, {}); if (!c) return 255;
+    if (!this.sshAuth(t, '')) { this.out(`${t.user}@${t.host}'s password: \n`); this.eout('The practice shell cannot type passwords. Install a key with ssh-copy-id first.\n'); return 255; }
+    const R = this.remote(), home = '/home/' + t.user, rpath = p => (p || '').replace(/^~\/?/, home + '/').replace(/^(?!\/)/, home + '/').replace(/\/$/, '');
+    if (rd) {
+      const n = this.node(this.abs(src)); if (!n || n.type !== 'f') { this.eout(`scp: stat local "${src}": No such file or directory\n`); return 255; }
+      let p = rpath(rd.path); if (p === home || rd.path === '' || rd.path.endsWith('/')) p = (p === home ? home : p) + '/' + baseName(src);
+      R.files[p] = n.data; const sz = enc(n.data);
+      this.out(`${baseName(src).padEnd(50)} 100% ${String(sz).padStart(4)}    ${(sz / 1024 * 0.97).toFixed(1)}KB/s   00:00\n`); return 0;
+    }
+    const p = rpath(rs.path); if (R.files[p] === undefined) { this.eout(`scp: ${rs.path}: No such file or directory\n`); return 1; }
+    let d = this.abs(dst); const dn = this.node(d); if (dn && dn.type === 'd') d = d.replace(/\/$/, '') + '/' + baseName(p);
+    this.mk(d, 'f', 0o644 & ~this.umask, this.user, R.files[p]); this.out(`${baseName(p).padEnd(50)} 100% ${String(enc(R.files[p])).padStart(4)}    1.0KB/s   00:00\n`); return 0;
+  };
+  const SSHD_OPTS = 'port listenaddress addressfamily hostkey permitrootlogin passwordauthentication pubkeyauthentication kbdinteractiveauthentication challengeresponseauthentication usepam x11forwarding printmotd acceptenv subsystem include allowusers allowgroups denyusers denygroups maxauthtries maxsessions logingracetime clientaliveinterval clientalivecountmax permitemptypasswords allowtcpforwarding allowagentforwarding authorizedkeysfile loglevel syslogfacility banner match forcecommand chrootdirectory gatewayports permittunnel usedns compression authenticationmethods strictmodes tcpkeepalive pidfile'.split(' ');
+  C.sshd = function (a) {
+    if (!a.includes('-t') && !a.includes('-T')) { this.eout('sshd re-exec requires execution with an absolute path\n'); return 255; }
+    if (this.user !== 'root') { this.eout('sshd: no hostkeys available -- exiting.\n'); return 1; }
+    const cf = '/etc/ssh/sshd_config', n = this.node(cf); let bad = 0;
+    n.data.split('\n').forEach((l, i) => { const t = l.replace(/#.*/, '').trim(); if (!t) return; const k = t.split(/[\s=]+/)[0].toLowerCase(); if (!SSHD_OPTS.includes(k)) { this.eout(`${cf}: line ${i + 1}: Bad configuration option: ${t.split(/[\s=]+/)[0]}\n`); bad++; } else if (k === 'permitrootlogin' && !/^(yes|no|prohibit-password|without-password|forced-commands-only)$/i.test(t.split(/[\s=]+/)[1] || '')) { this.eout(`${cf} line ${i + 1}: unsupported option "${t.split(/[\s=]+/)[1] || ''}".\n`); bad++; } else if (/^(passwordauthentication|pubkeyauthentication|usepam|x11forwarding)$/.test(k) && !/^(yes|no)$/i.test(t.split(/[\s=]+/)[1] || '')) { this.eout(`${cf} line ${i + 1}: unsupported option "${t.split(/[\s=]+/)[1] || ''}".\n`); bad++; } });
+    if (bad) { this.eout(`${cf}: terminating, ${bad} bad configuration options\n`); return 255; }
+    return 0;
+  };
   C.lsblk = function (a) {
     const st = this.disks(), full = a.includes('-f') || a.includes('--fs'), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
     const mnt = p => (st.mounts.find(m => m.dev === p.name) || {}).dir || (st.swaps.some(x => x.dev === p) ? '[SWAP]' : '');
@@ -3586,7 +3764,7 @@ const LXSH = (() => {
   C.su = function () { this.eout('su: Authentication failure (in this practice shell use sudo instead)\n'); return 1; };
   const exitRoot = C.exit;
   C.exit = function (a) { if (this.user === 'root') { this.user = USER; if (this.rootPath) { this.vars.PATH = this.rootPath; this.rootPath = null; } return 0; } return exitRoot.call(this, a); };
-  ['dnf', 'ssh', 'wget', 'vim', 'vi', 'nano', 'htop', 'strace'].forEach(c => {
+  ['dnf', 'wget', 'vim', 'vi', 'nano', 'htop', 'strace'].forEach(c => {
     C[c] = function () { this.eout(`${c}: this command is explained in its own lesson, but the practice shell does not run it. Try it on a real Linux machine, a virtual machine or WSL.\n`); return 127; };
   });
   C.vim = C.vi = C.nano = function (a) { this.eout(`${a[0] ? a[0] + ': ' : ''}the practice shell has no full screen editor. Use echo "text" > file or cat > file with a here document instead.\n`); return 1; };
@@ -3872,6 +4050,7 @@ const LXSH = (() => {
     { t: T0 - 25 * 60e3, id: 'kernel', unit: '', msg: 'usb 1-1: new high-speed USB device number 3 using xhci_hcd', prio: 6, k: true },
     { t: T0 - 25 * 60e3 + 900, id: 'kernel', unit: '', msg: 'sd 2:0:0:0: [sdb] 62529536 512-byte logical blocks: (32.0 GB/29.8 GiB)', prio: 5, k: true },
     { t: T0 - 4 * 60e3, id: 'kernel', unit: '', msg: 'Out of memory: Killed process 2261 (java) total-vm:4194304kB, anon-rss:3145728kB, file-rss:0kB, shmem-rss:0kB, UID:1001 pgtables:6400kB oom_score_adj:0', prio: 3, k: true }];
+  const SSHD_CONFIG = '# This is the sshd server system-wide configuration file.  See\n# sshd_config(5) for more information.\n\nInclude /etc/ssh/sshd_config.d/*.conf\n\n#Port 22\n#ListenAddress 0.0.0.0\n\n#LoginGraceTime 2m\n#PermitRootLogin prohibit-password\n#MaxAuthTries 6\n\n#PubkeyAuthentication yes\n\n#PasswordAuthentication yes\n#PermitEmptyPasswords no\n\nKbdInteractiveAuthentication no\n\nUsePAM yes\n\nX11Forwarding yes\nPrintMotd no\n\nAcceptEnv LANG LC_* COLORTERM NO_COLOR\n\nSubsystem\tsftp\t/usr/lib/openssh/sftp-server\n';
   const UNITS0 = {
     'cron.service': { file: '/usr/lib/systemd/system/cron.service', pid: 618, data: '[Unit]\nDescription=Regular background program processing daemon\nDocumentation=man:cron(8)\nAfter=remote-fs.target nss-user-lookup.target\n\n[Service]\nEnvironmentFile=-/etc/default/cron\nExecStart=/usr/sbin/cron -f -P $EXTRA_OPTS\nKillMode=process\nRestart=on-failure\n\n[Install]\nWantedBy=multi-user.target\n' },
     'ssh.service': { file: '/usr/lib/systemd/system/ssh.service', pid: 412, data: '[Unit]\nDescription=OpenBSD Secure Shell server\nDocumentation=man:sshd(8) man:sshd_config(5)\nAfter=network.target auditd.service\n\n[Service]\nExecStartPre=/usr/sbin/sshd -t\nExecStart=/usr/sbin/sshd -D $SSHD_OPTS\nExecReload=/bin/kill -HUP $MAINPID\nKillMode=process\nRestart=on-failure\n\n[Install]\nWantedBy=multi-user.target\n' },
@@ -3886,6 +4065,7 @@ const LXSH = (() => {
     if (this.sdState) return this.sdState;
     const st = this.sdState = { units: {}, log: [], loaded: this.clock };
     this.mkdirs('/usr/lib/systemd/system'); this.mkdirs('/etc/systemd/system/multi-user.target.wants'); this.mkdirs('/usr/local/bin');
+    if (!this.node('/etc/ssh/sshd_config')) { this.mkdirs('/etc/ssh/sshd_config.d'); this.mk('/etc/ssh/sshd_config', 'f', 0o644, 'root', SSHD_CONFIG); }
     const boot = T0 - 3600e3;
     Object.entries(UNITS0).forEach(([name, u]) => {
       if (!this.node(u.file)) this.mk(u.file, 'f', 0o644, 'root', u.data);
