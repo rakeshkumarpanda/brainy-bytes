@@ -1065,6 +1065,8 @@ pre.pseudo{margin:6px 0 0; background:var(--code-bg); color:var(--code-ink); bor
 .pk-n.cur circle{fill:var(--pk-cur); stroke:var(--pk-cur-line); r:20px}
 .pk-n.mv circle{fill:var(--pk-mv); stroke:var(--pk-mv-line)}
 .pk-n.piv circle{fill:var(--pk-piv); stroke:var(--pk-piv-line)}
+.pk-n.sel circle{fill:var(--pk-cur); stroke:var(--pk-cur-line)}
+.pk-n.win circle{fill:var(--win); stroke:var(--win-line); r:20px}
 .pk-n.done{opacity:.45}
 .pk-stack{display:flex; flex-direction:column-reverse; gap:5px; align-items:flex-start; min-height:40px}
 .pk-plate{position:relative; min-width:120px; padding:7px 14px; border-radius:14px; border:2px solid var(--box-line); background:var(--box); color:var(--box-ink); font:800 13.5px var(--font-mono); animation:pk-drop .5s var(--pk-spring)}
@@ -3234,15 +3236,20 @@ const OUTS = {"maze": {"py": "found\npath RRRRDDDD\nsquares backed out of 4", "j
       const w = L.w || 420, h = L.h || 240, pos = {}, ncls = L.ncls || {}, ecls = L.ecls || {}, tag = L.tag || {};
       L.nodes.forEach(n => { pos[n[0]] = n; });
       const r = L.r || 17;
+      const has = new Set((L.edges || []).map(e => e[0] + '-' + e[1]));
       const edges = (L.edges || []).map(e => {
         const a = pos[e[0]], b = pos[e[1]];
         if (!a || !b) return '';
         const c = ecls[e[0] + '-' + e[1]] || (L.dir ? '' : ecls[e[1] + '-' + e[0]]) || '';
         const dx = b[1] - a[1], dy = b[2] - a[2], len = Math.hypot(dx, dy) || 1;
-        const x2 = b[1] - dx / len * (r + 3), y2 = b[2] - dy / len * (r + 3);
-        const mx = (a[1] + b[1]) / 2, my = (a[2] + b[2]) / 2;
-        return `<line class="pk-e ${c}" x1="${a[1]}" y1="${a[2]}" x2="${L.dir ? x2 : b[1]}" y2="${L.dir ? y2 : b[2]}"${L.dir ? ' marker-end="url(#pk-arrow)"' : ''}/>`
-          + (e[2] !== undefined && e[2] !== '' ? `<g class="pk-ew ${c}"><rect x="${mx - 11}" y="${my - 9}" width="22" height="18" rx="6"/><text x="${mx}" y="${my + 4}">${esc(e[2])}</text></g>` : '');
+        /* two arrows between the same pair, one each way: move each a little to its own side so both stay readable */
+        const off = L.dir && has.has(e[1] + '-' + e[0]) ? 7 : 0, ox = -dy / len * off, oy = dx / len * off;
+        const x1 = a[1] + ox, y1 = a[2] + oy, x2 = b[1] - dx / len * (r + 3) + ox, y2 = b[2] - dy / len * (r + 3) + oy;
+        const at = L.dir ? 0.42 : 0.5;          /* a directed label sits a little nearer its tail, so crossing edges keep their labels apart */
+        const mx = a[1] + dx * at + ox * 2.2, my = a[2] + dy * at + oy * 2.2;
+        const lw = Math.max(22, String(e[2] === undefined ? '' : e[2]).length * 7 + 8);
+        return `<line class="pk-e ${c}" x1="${x1}" y1="${y1}" x2="${L.dir ? x2 : b[1] + ox}" y2="${L.dir ? y2 : b[2] + oy}"${L.dir ? ' marker-end="url(#pk-arrow)"' : ''}/>`
+          + (e[2] !== undefined && e[2] !== '' ? `<g class="pk-ew ${c}"><rect x="${mx - lw / 2}" y="${my - 9}" width="${lw}" height="18" rx="6"/><text x="${mx}" y="${my + 4}">${esc(e[2])}</text></g>` : '');
       }).join('');
       const nodes = L.nodes.map(n => `<g class="pk-n ${ncls[n[0]] || ''}"><circle cx="${n[1]}" cy="${n[2]}" r="${r}"/><text x="${n[1]}" y="${n[2] + 5}">${esc(n[3] === undefined ? n[0] : n[3])}</text>${tag[n[0]] !== undefined ? `<text class="pk-nt" x="${n[1]}" y="${n[2] + r + 15}">${esc(tag[n[0]])}</text>` : ''}</g>`).join('');
       return `${lab(L.label)}<div class="pk-gw"><svg class="pk-svg" viewBox="0 0 ${w} ${h}" style="max-width:${w}px" role="img" aria-label="${esc(strip(L.label || 'diagram'))}"><defs><marker id="pk-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker></defs>${edges}${nodes}</svg></div>`;
@@ -3899,7 +3906,7 @@ const OUTS = {"maze": {"py": "found\npath RRRRDDDD\nsquares backed out of 4", "j
 })();
 
 </script>
-<!-- pathskin --><script src="../../assets/pathskin.js" data-kicker="Step 4 · Topic 2 of 3 · Advanced"></script>
+<!-- pathskin --><script src="../../assets/pathskin.js" data-kicker="Step 4 · Topic 2 of 3 · Intermediate" data-sheet="./cheatsheet.html#backtracking"></script>
 <!-- pathskin --><script src="../../assets/voiceteach.js"></script>
 </body>
 </html>
