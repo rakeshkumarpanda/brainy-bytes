@@ -1,0 +1,9 @@
+/* Background voice talks for content/java/assertions.html, read by assets/voiceteach.js (see data/talk/README.md) */
+VT_TALK("java/assertions", {
+ "intro": "Assertions check assumptions during development, such as a value never being negative. If the assumption is false, the program stops with an error, showing a bug early. Assertions are off by default in production. Think of a builder checking with a spirit level as they work.",
+ "keyword": "assert became a keyword in Java 1.4 in 2002. Code that used assert as a variable name stopped compiling after that. This is a common interview question about language history. Think of a new road rule that turns an old parking spot into a no parking zone.",
+ "forms": "There are two forms. assert condition checks a boolean. assert condition colon message also gives a message shown when it fails, which makes debugging easier. The message expression runs only when the assertion fails. Think of a smoke alarm with and without a voice that says which room.",
+ "flags": "Assertions are disabled by default. The flag ea, enable assertions, turns them on, and da turns them off, either for all classes or for specific packages or classes. esa enables them in system classes. Think of a training mode switch on a machine.",
+ "usage": "Use assertions to check internal assumptions in private code and impossible cases in switches. Do not use them to check public method arguments or user input, because they can be turned off. Never put side effects inside an assertion. Think of a pilot's personal checks, not the passenger safety rules.",
+ "assertion-error": "A failed assertion throws AssertionError, which extends Error, not Exception. It signals a bug, so it should not normally be caught. Testing frameworks such as JUnit also use AssertionError for failed checks. Think of a red warning light that means stop and fix the machine."
+});

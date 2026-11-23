@@ -1528,12 +1528,9 @@ const LEARN = (() => {
    It uses the speech voices already installed in the browser and prefers a female voice. */
 const VOICE = (() => {
   const LANGS = [
-    { k: 'en', native: 'English', bcp: 'en-US', listen: 'Listen' },
-    { k: 'hi', native: 'हिन्दी', bcp: 'hi-IN', listen: 'सुनिए' },
-    { k: 'kn', native: 'ಕನ್ನಡ', bcp: 'kn-IN', listen: 'ಆಲಿಸಿ' },
-    { k: 'or', native: 'ଓଡ଼ିଆ', bcp: 'or-IN', listen: 'ଶୁଣନ୍ତୁ' },
-    { k: 'ar', native: 'العربية', bcp: 'ar-SA', listen: 'استمع', rtl: true },
-    { k: 'de', native: 'Deutsch', bcp: 'de-DE', listen: 'Anhören' }
+    /* English only for now. The other languages' text stays in the pages, so a language comes back by adding its
+       row here again: { k: 'hi', native: 'हिन्दी', bcp: 'hi-IN', listen: 'सुनिए' } (also kn-IN, or-IN, ar-SA with rtl: true, de-DE) */
+    { k: 'en', native: 'English', bcp: 'en-US', listen: 'Listen' }
   ];
   const NAMES = { en: 'English', hi: 'Hindi', kn: 'Kannada', or: 'Odia', ar: 'Arabic', de: 'German' };
   const FEMALE = new Set('female woman girl samantha zira aria jenny ava emma michelle sonia libby maisie natasha clara swara kalpana heera neerja sapna subhasini hoda zariyah salma amina fatima layla laila mariam rana katja hedda amala seraphina tanja louisa marlene vicki anna petra helena karen moira tessa fiona victoria allison susan serena kate lekha veena kanya aditi raveena shruti kajal ananya isha lisa sara sarah amy joanna kendra kimberly salli ivy ruth olivia nicole marie'.split(' '));
@@ -1613,7 +1610,7 @@ const VOICE = (() => {
       <div class="vx-top"><div class="vx-face" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#ffd9c2"/><path d="M6 22c0-12 8-19 18-19s18 7 18 19c-3-6-8-9-18-9S9 16 6 22z" fill="#5b3a29"/><circle cx="17" cy="25" r="2.6" fill="#1b2a44"/><circle cx="31" cy="25" r="2.6" fill="#1b2a44"/><circle cx="13" cy="31" r="3" fill="#ff9fb0" opacity=".6"/><circle cx="35" cy="31" r="3" fill="#ff9fb0" opacity=".6"/><path class="vx-mouth" d="M19 32q5 4 10 0" stroke="#c2445a" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg></div>
         <div class="vx-tt"><b>Hi, I am Mira</b><span class="vx-sub">I will read this lesson to you</span></div>
         <button class="vx-x" type="button" aria-label="Close listen mode">✕</button></div>
-      <div class="vx-langs" role="radiogroup" aria-label="Language">${LANGS.map(l => `<button type="button" role="radio" data-k="${l.k}" lang="${l.k}">${l.native}</button>`).join('')}</div>
+      <div class="vx-langs" role="radiogroup" aria-label="Language"${LANGS.length < 2 ? ' style="display:none"' : ''}>${LANGS.map(l => `<button type="button" role="radio" data-k="${l.k}" lang="${l.k}">${l.native}</button>`).join('')}</div>
       <div class="vx-ctrl">
         <button type="button" class="vx-b" data-act="prev" title="Previous part">⏮</button>
         <button type="button" class="vx-b vx-play" data-act="play" title="Play or pause">▶</button>
@@ -2136,7 +2133,8 @@ const VIZ = (() => {
     let n = 1, i = 0, timer = null;
     const go = j => { i = clamp(j, 0, n - 1); range.value = i; cnt.textContent = `${i} / ${n - 1}`; show(i); };
     const pause = () => { clearTimeout(timer); timer = null; pb.textContent = '▶ Play'; };
-    const tick = () => { if (i >= n - 1) { pause(); return; } go(i + 1); timer = setTimeout(tick, ms / +sp.value); };
+    /* with "Voice on", wait until the voice has finished explaining this step (assets/voiceteach.js) */
+    const tick = () => { if (i >= n - 1) { pause(); return; } if (window.__vtHold && window.__vtHold(host)) { timer = setTimeout(tick, 150); return; } go(i + 1); timer = setTimeout(tick, ms / +sp.value); };
     const play = () => { if (i >= n - 1) go(0); pb.textContent = '⏸ Pause'; timer = setTimeout(tick, 250); };
     host.addEventListener('click', e => {
       const a = (e.target.closest('button') || {}).dataset;

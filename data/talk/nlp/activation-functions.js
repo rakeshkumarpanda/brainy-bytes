@@ -1,0 +1,6 @@
+/* Background voice talks for content/nlp/activation-functions.html, read by assets/voiceteach.js (see data/talk/README.md) */
+VT_TALK("nlp/activation-functions", {
+ "why": "Without a bend, stacking layers is pointless, because a chain of straight line functions is still a straight line. An activation function adds a non linear bend after each layer, which lets the network learn curved boundaries and complex patterns. This is why every hidden layer has one. Think of folding paper. Flat sheets stacked stay flat, but folds let you make any shape.",
+ "classic": "The threshold function outputs 0 or 1, but it has no useful slope for training. The sigmoid is smooth and outputs 0 to 1. Tanh is also smooth, outputs minus 1 to 1 and is centred on zero, which often trains faster. Hard tanh is a cheap straight line version. Sigmoid and tanh flatten at the ends, so gradients can vanish. Think of a light switch, a dimmer and a dimmer that also goes below off.",
+ "modern": "ReLU outputs the input if it is positive and zero otherwise. It is cheap, does not flatten for positive values and helped deep networks train well from around 2010, after work by Vinod Nair and Geoffrey Hinton. Smooth successors such as GELU, used in BERT and GPT, and SiLU or Swish curve gently near zero. Think of a one way valve. Water flows freely one way and not at all the other."
+});

@@ -1,9 +1,13 @@
 /* ===== Voice teaching, the same on every chapter page of every subject (English).
    1. Every step by step animation gets a "Voice off / Voice on" button in its control row, next to Play, Step,
       Back and Reset. While it is on, each time the reader steps forward or back (or presses Play) the explanation
-      of that step is read aloud. The choice is remembered for the whole site.
+      of that step is read aloud. The choice is remembered for the whole site. While Play runs with the voice on,
+      the animation waits for the voice to finish explaining a step before it moves to the next one
+      (window.__vtHold, asked by assets/cvviz.js and assets/viz.js before each automatic step).
    2. Every lesson gets a "Listen to this lesson" bar under its title, with a Speed choice. It first reads the
-      lesson's background talk when it has one (div.vt-talk, hidden on the page, used by the Cybersecurity subject),
+      lesson's background talk (div.vt-talk, hidden on the page). The Cybersecurity builder writes it into the page.
+      Every other subject keeps it in data/talk/<subject>/<page>.js, loaded from here, so a rebuild never loses it.
+      After the talk it reads
       then the lesson's explanations in order (headings, paragraphs, boxes, scenarios, notes and summary points) and marks the part
       being read. Code, tables and the animations themselves are skipped, because they are read by the eye.
    It works on both page families of the site:
@@ -26,6 +30,7 @@
   let rate = +(store.get('vt-voice-rate') || store.get('ml-voice-rate') || 0.95);
   if (!(rate >= 0.6 && rate <= 1.4)) rate = 0.95;
   let lessonRun = 0;
+  const here = (document.currentScript && document.currentScript.src) || '';
 
   /* ---------- look ---------- */
   const css = `
@@ -89,6 +94,7 @@ button.vt-vb.on::before{content:"\\1F50A  "}
   }
   function stopAll() {
     lessonRun++;
+    holdEl = null;
     synth.cancel();
     document.querySelectorAll('.vt-listen.on').forEach(b => stopLesson(b));
   }
@@ -102,6 +108,8 @@ button.vt-vb.on::before{content:"\\1F50A  "}
       read: h => h.querySelector('.vz-msg') || h.querySelector('[aria-live]') || h.querySelector('.wk-steps'), before: c => c.querySelector('.vz-cnt') }
   ];
   function stepText(read) {
+    /* a player may hold a longer spoken explanation of the step in data-say on its message line (DSA pages) */
+    if (read.matches && read.matches('.vz-msg') && read.dataset.say && read.dataset.say.trim()) return read.dataset.say.trim().slice(0, 1500);
     const now = read.querySelector('.cai-now') || read.querySelector('li.cur');
     if (now) return now.innerText || now.textContent;
     /* a copy without tables, code and drawings, so only the explanation is read */
@@ -119,6 +127,22 @@ button.vt-vb.on::before{content:"\\1F50A  "}
     });
   }
   const lastSaid = new WeakMap();
+  /* Play asks this before each automatic step. It says yes while the voice is still explaining the step shown
+     in that animation, and for a short breath after, so the reader hears every step in full. If a browser never
+     reports the end of the speech, the wait still ends after a generous time worked out from the length. */
+  let holdEl = null, holdUntil = 0, holdTok = 0;
+  window.__vtHold = x => {
+    if (!voiceOn || !holdEl || !x) return false;
+    if (Date.now() > holdUntil) { holdEl = null; return false; }
+    return holdEl === x || holdEl.contains(x) || x.contains(holdEl);
+  };
+  function sayStep(host, t) {
+    const tok = ++holdTok;
+    holdEl = host;
+    const words = spoken(t).split(' ').length;
+    holdUntil = Date.now() + 2500 + words * 650 / rate;
+    say(t, () => { if (tok === holdTok) holdUntil = Math.min(holdUntil, Date.now() + 350); });
+  }
   function addToggle(ctl, kind) {
     if (ctl.dataset.vt || !kind.stepped(ctl)) return;
     const host = kind.host(ctl);
@@ -141,7 +165,7 @@ button.vt-vb.on::before{content:"\\1F50A  "}
       voiceOn = !voiceOn;
       store.set('vt-voice-steps', voiceOn ? '1' : '0');
       paintAll();
-      if (voiceOn) { const t = stepText(read); if (t) { lastSaid.set(read, t); stopAll(); say(t); } } else synth.cancel();
+      if (voiceOn) { const t = stepText(read); if (t) { lastSaid.set(read, t); stopAll(); sayStep(host, t); } } else { holdEl = null; synth.cancel(); }
     });
     new MutationObserver(() => {
       if (!voiceOn || !read.isConnected) return;
@@ -150,8 +174,8 @@ button.vt-vb.on::before{content:"\\1F50A  "}
       if (!t || lastSaid.get(read) === t) return;
       lastSaid.set(read, t);
       stopAll();
-      say(t);
-    }).observe(read, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+      sayStep(host, t);
+    }).observe(read, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'data-say'] });
   }
   function scanWidgets() {
     KINDS.forEach(k => document.querySelectorAll(k.ctl + ':not([data-vt])').forEach(c => addToggle(c, k)));
@@ -235,8 +259,38 @@ button.vt-vb.on::before{content:"\\1F50A  "}
     if (lesson) lesson.querySelectorAll('.vt-reading').forEach(x => x.classList.remove('vt-reading'));
   }
 
+  /* the background talks of a page that keeps them outside the page: data/talk/<subject>/<page>.js calls
+     window.VT_TALK('<subject>/<page>', { 'lesson id': 'talk', ... }) */
+  function placeTalks(map) {
+    document.querySelectorAll(LESSONS).forEach(l => {
+      const t = l.id && map[l.id];
+      if (!t || l.querySelector(':scope > .vt-talk')) return;
+      const d = document.createElement('div');
+      d.className = 'vt-talk';
+      d.hidden = true;
+      d.textContent = t;
+      l.appendChild(d);
+      const note = l.querySelector(':scope > .vt-lbar .vt-lnote');
+      if (note) note.textContent = 'Starts with the background story of this lesson, then reads the explanations aloud. Code and tables are skipped.';
+    });
+  }
+  const TALKS = {};
+  window.VT_TALK = (key, map) => { TALKS[key] = map; if (key === pageKey) placeTalks(map); };
+  const pm = decodeURIComponent(location.pathname).match(/\/content\/([^/]+)\/([^/]+)\.html$/);
+  const pageKey = pm ? pm[1] + '/' + pm[2] : '';
+  function loadTalks() {
+    if (!pageKey || !here || document.querySelector('.vt-talk')) return;
+    const s = document.createElement('script');
+    s.src = new URL('../data/talk/' + pageKey + '.js', here).href;
+    s.async = true;
+    s.onerror = () => s.remove();
+    document.head.appendChild(s);
+  }
+
   function start() {
     document.querySelectorAll(LESSONS).forEach(addListen);
+    loadTalks();
+    if (TALKS[pageKey]) placeTalks(TALKS[pageKey]);
     scanWidgets();
     /* animations mount when their lesson opens, so look again whenever new controls appear */
     new MutationObserver(ms => {
