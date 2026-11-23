@@ -56,8 +56,8 @@ const LXSH = (() => {
     ]
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
-  const SBIN = 'pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'alias blkid fallocate findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const SBIN = 'tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
+  const CMDS = 'alias blkid fallocate curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -1965,7 +1965,7 @@ const LXSH = (() => {
     });
     return code;
   };
-  C.hostname = function () { this.out(HOST + '\n'); };
+  C.hostname = function (a) { if (a && (a[0] === '-I' || a[0] === '--all-ip-addresses')) { this.out(this.net().ifs.filter(i => i.up && i.name !== 'lo').flatMap(i => i.addrs.map(x => x.split('/')[0])).join(' ') + ' \n'); return 0; } this.out(HOST + '\n'); };
   C.uname = function (a) {
     const [f] = opts(a);
     if (f.a) this.out(`Linux ${HOST} 6.8.0-practice #1 SMP x86_64 GNU/Linux\n`);
@@ -2222,6 +2222,210 @@ const LXSH = (() => {
     if (a.includes('-a')) { st.swaps.length = 0; return 0; }
     for (const t of args) { const p = this.partOf(t), i = st.swaps.findIndex(x => x.name === this.abs(t) || (p && x.dev === p)); if (i < 0) { this.eout(`swapoff: ${t}: swapoff failed: Invalid argument\n`); return 255; } st.swaps.splice(i, 1); }
     return 0;
+  };
+
+  /* ---------- networking: one interface on a home or office network, a router, a file server and two web hosts ---------- */
+  const NGINX_PAGE = '<!DOCTYPE html>\n<html>\n<head>\n<title>Welcome to nginx!</title>\n<style>\nhtml { color-scheme: light dark; }\nbody { width: 35em; margin: 0 auto;\nfont-family: Tahoma, Verdana, Arial, sans-serif; }\n</style>\n</head>\n<body>\n<h1>Welcome to nginx!</h1>\n<p>If you see this page, the nginx web server is successfully installed and\nworking. Further configuration is required.</p>\n\n<p>For online documentation and support please refer to\n<a href="http://nginx.org/">nginx.org</a>.<br/>\nCommercial support is available at\n<a href="http://nginx.com/">nginx.com</a>.</p>\n\n<p><em>Thank you for using nginx.</em></p>\n</body>\n</html>\n';
+  const SERVICES = { 22: 'ssh', 25: 'smtp', 53: 'domain', 80: 'http', 443: 'https', 3306: 'mysql', 5432: 'postgresql', 8080: 'http-alt' };
+  const ip4 = x => x.split('.').reduce((t, o) => t * 256 + +o, 0);
+  const inNet = (ip, cidr) => { const [n, b] = cidr.split('/'), m = b === '0' ? 0 : (~0 << (32 - +b)) >>> 0; return ((ip4(ip) & m) >>> 0) === ((ip4(n) & m) >>> 0); };
+  const netOf = cidr => { const [n, b] = cidr.split('/'), m = (~0 << (32 - +b)) >>> 0, v = (ip4(n) & m) >>> 0; return [v >>> 24, (v >>> 16) & 255, (v >>> 8) & 255, v & 255].join('.') + '/' + b; };
+  const bcastOf = cidr => { const [n, b] = cidr.split('/'), m = (~0 << (32 - +b)) >>> 0, v = ((ip4(n) & m) | ~m) >>> 0; return [v >>> 24, (v >>> 16) & 255, (v >>> 8) & 255, v & 255].join('.'); };
+  World.prototype.net = function () {
+    if (this.netState) return this.netState;
+    const st = this.netState = {
+      ifs: [{ name: 'lo', idx: 1, mac: '00:00:00:00:00:00', up: true, mtu: 65536, addrs: ['127.0.0.1/8'] },
+            { name: 'enp0s3', idx: 2, mac: '52:54:00:12:34:56', up: true, mtu: 1500, addrs: ['192.168.1.50/24'] }],
+      routes: [{ dst: 'default', via: '192.168.1.1', dev: 'enp0s3', proto: 'static' }, { dst: '192.168.1.0/24', dev: 'enp0s3', proto: 'kernel', src: '192.168.1.50' }],
+      hosts: { '192.168.1.1': { mac: '52:54:00:aa:01:01', ms: 0.41, ttl: 64, ports: [53] }, '192.168.1.20': { mac: '52:54:00:aa:01:14', ms: 0.62, ttl: 64, ports: [22, 445] },
+               '198.51.100.80': { ms: 11.8, ttl: 56, ports: [80, 443], hops: ['192.168.1.1', '203.0.113.1', '198.51.100.1'] }, '198.51.100.25': { ms: 12.3, ttl: 56, ports: [25], hops: ['192.168.1.1', '203.0.113.1', '198.51.100.1'] } },
+      dns: { 'www.shop.lab': ['A', '198.51.100.80'], 'shop.lab': ['A', '198.51.100.80'], 'mail.shop.lab': ['A', '198.51.100.25'], 'files.shop.lab': ['A', '192.168.1.20'] },
+      mx: { 'shop.lab': '10 mail.shop.lab.' }, neigh: {}
+    };
+    if (!this.node('/etc/resolv.conf')) this.mk('/etc/resolv.conf', 'f', 0o644, 'root', '# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).\n# Do not edit.\n\nnameserver 127.0.0.53\noptions edns0 trust-ad\nsearch .\n');
+    if (!this.node('/etc/netplan/01-netcfg.yaml')) { this.mkdirs('/etc/netplan'); this.mk('/etc/netplan/01-netcfg.yaml', 'f', 0o600, 'root', 'network:\n  version: 2\n  ethernets:\n    enp0s3:\n      addresses:\n        - 192.168.1.50/24\n      routes:\n        - to: default\n          via: 192.168.1.1\n      nameservers:\n        addresses: [192.168.1.1]\n'); }
+    if (!this.node('/var/www/html/index.nginx-debian.html')) { this.mkdirs('/var/www/html'); this.mk('/var/www/html/index.nginx-debian.html', 'f', 0o644, 'root', NGINX_PAGE); }
+    return st;
+  };
+  World.prototype.resolve = function (name) {
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(name)) return name;
+    if (name === 'localhost') return '127.0.0.1';
+    const h = (this.node('/etc/hosts').data || '').split('\n').map(l => l.replace(/#.*/, '').trim().split(/\s+/)).find(f => f.length > 1 && f.slice(1).includes(name));
+    if (h) return h[0];
+    const st = this.net(), d = st.dns[name.replace(/\.$/, '')];
+    return d && this.routeTo('192.168.1.1') ? d[1] : null;
+  };
+  World.prototype.routeTo = function (ip) {
+    const st = this.net();
+    if (/^127\./.test(ip) || st.ifs.some(i => i.addrs.some(a => a.split('/')[0] === ip))) return { dev: 'lo', local: true, src: ip };
+    const up = r => { const i = st.ifs.find(x => x.name === r.dev); return i && i.up; };
+    const best = st.routes.filter(r => up(r) && (r.dst === 'default' || inNet(ip, r.dst))).sort((a, b) => (b.dst === 'default' ? 0 : +b.dst.split('/')[1]) - (a.dst === 'default' ? 0 : +a.dst.split('/')[1]))[0];
+    if (!best) return null;
+    const i = st.ifs.find(x => x.name === best.dev), src = (i.addrs[0] || '').split('/')[0];
+    return { dev: best.dev, via: best.via, src };
+  };
+  World.prototype.reach = function (ip) {
+    const r = this.routeTo(ip); if (!r) return null;
+    if (r.local) return { local: true, ms: 0.04, ttl: 64, ports: this.listening().map(l => l.port) };
+    const st = this.net(), gw = r.via, onLink = !gw;
+    if (onLink) { const h = st.hosts[ip]; if (h && h.mac) st.neigh[ip] = h.mac; return h && h.mac ? h : { unreachable: true }; }
+    if (!st.hosts[gw]) return { unreachable: true, gw };
+    st.neigh[gw] = st.hosts[gw].mac;
+    return st.hosts[ip] || { lost: true };
+  };
+  World.prototype.listening = function () {
+    const u = this.sd ? this.sd().units : {}, L = [{ addr: '127.0.0.54', port: 53, prog: 'systemd-resolve', pid: 388, fd: 16, q: 0, udp: true }, { addr: '127.0.0.53%lo', port: 53, prog: 'systemd-resolve', pid: 388, fd: 14, q: 0, udp: true }, { addr: '127.0.0.54', port: 53, prog: 'systemd-resolve', pid: 388, fd: 17, q: 4096 }, { addr: '127.0.0.53%lo', port: 53, prog: 'systemd-resolve', pid: 388, fd: 15, q: 4096 }];
+    if (u['ssh.service'] && u['ssh.service'].state === 'active') L.push({ addr: '0.0.0.0', port: 22, prog: 'sshd', pid: u['ssh.service'].mainPid, fd: 3, q: 4096 }, { addr: '[::]', port: 22, prog: 'sshd', pid: u['ssh.service'].mainPid, fd: 4, q: 4096 });
+    if (u['nginx.service'] && u['nginx.service'].state === 'active') L.push({ addr: '0.0.0.0', port: 80, prog: 'nginx', pid: u['nginx.service'].mainPid, fd: 6, q: 511 }, { addr: '[::]', port: 80, prog: 'nginx', pid: u['nginx.service'].mainPid, fd: 7, q: 511 });
+    return L;
+  };
+  C.ip = function (a0) {
+    const st = this.net(); let a = a0.slice(); const br = a.includes('-br') || a.includes('-brief'), only4 = a.includes('-4');
+    a = a.filter(x => !['-br', '-brief', '-4', '-c', '-color'].includes(x));
+    const obj = a[0] || 'help', verb = a[1] || 'show', rest = a.slice(2);
+    const need = () => { if (this.user !== 'root') { this.eout('RTNETLINK answers: Operation not permitted\n'); return true; } return false; };
+    const dev = n => st.ifs.find(i => i.name === n);
+    const devArg = () => { const k = rest.indexOf('dev'); return k >= 0 ? rest[k + 1] : rest.find(x => dev(x)); };
+    const flags = i => i.name === 'lo' ? (i.up ? '<LOOPBACK,UP,LOWER_UP>' : '<LOOPBACK>') : (i.up ? '<BROADCAST,MULTICAST,UP,LOWER_UP>' : '<BROADCAST,MULTICAST>');
+    const state = i => i.name === 'lo' ? (i.up ? 'UNKNOWN' : 'DOWN') : i.up ? 'UP' : 'DOWN';
+    const v6 = i => i.name === 'lo' ? '::1/128' : 'fe80::5054:ff:fe12:3456/64';
+    const linkLine = i => `${i.idx}: ${i.name}: ${flags(i)} mtu ${i.mtu} qdisc ${i.name === 'lo' ? 'noqueue' : 'fq_codel'} state ${state(i)} ${i.name === 'lo' ? '' : ''}mode DEFAULT group default qlen 1000\n    link/${i.name === 'lo' ? 'loopback' : 'ether'} ${i.mac} brd ${i.name === 'lo' ? '00:00:00:00:00:00' : 'ff:ff:ff:ff:ff:ff'}\n`;
+    if (/^(a|ad|add|addr|address)$/.test(obj)) {
+      if (verb === 'add' || verb === 'del' || verb === 'delete') {
+        if (need()) return 2;
+        const cidr = rest[0], i = dev(devArg());
+        if (!i) { this.eout(`Cannot find device "${devArg() || ''}"\n`); return 1; }
+        const c = /\//.test(cidr) ? cidr : cidr + '/32';
+        if (verb === 'add') { if (i.addrs.includes(c)) { this.eout('RTNETLINK answers: File exists\n'); return 2; } i.addrs.push(c); if (!st.routes.some(r => r.dst === netOf(c) && r.dev === i.name)) st.routes.push({ dst: netOf(c), dev: i.name, proto: 'kernel', src: c.split('/')[0] }); }
+        else { const k = i.addrs.indexOf(c); if (k < 0) { this.eout('RTNETLINK answers: Cannot assign requested address\n'); return 2; } i.addrs.splice(k, 1); if (!i.addrs.some(x => netOf(x) === netOf(c))) st.routes = st.routes.filter(r => !(r.dst === netOf(c) && r.dev === i.name)); }
+        return 0;
+      }
+      const list = st.ifs.filter(i => !devArg() || i.name === devArg());
+      if (devArg() && !list.length) { this.eout(`Device "${devArg()}" does not exist.\n`); return 1; }
+      if (br) { this.out(list.map(i => `${i.name.padEnd(16)} ${state(i).padEnd(14)} ${i.addrs.concat(only4 || !i.up ? [] : [v6(i)]).join(' ')} `).join('\n') + '\n'); return 0; }
+      this.out(list.map(i => linkLine(i).replace(' mode DEFAULT', '') + i.addrs.map(x => `    inet ${x} ${i.name === 'lo' ? 'scope host lo' : `brd ${bcastOf(x)} scope global ${i.name}`}\n       valid_lft forever preferred_lft forever\n`).join('') + (only4 || !i.up ? '' : `    inet6 ${v6(i)} scope ${i.name === 'lo' ? 'host noprefixroute' : 'link'} \n       valid_lft forever preferred_lft forever\n`)).join(''));
+      return 0;
+    }
+    if (/^(l|li|link)$/.test(obj)) {
+      if (verb === 'set') {
+        if (need()) return 2;
+        const i = dev(devArg()); if (!i) { this.eout(`Cannot find device "${devArg() || ''}"\n`); return 1; }
+        if (rest.includes('down')) { i.up = false; st.routes = st.routes.filter(r => r.dev !== i.name); }
+        if (rest.includes('up') && !i.up) { i.up = true; i.addrs.forEach(x => { if (!st.routes.some(r => r.dst === netOf(x) && r.dev === i.name) && i.name !== 'lo') st.routes.push({ dst: netOf(x), dev: i.name, proto: 'kernel', src: x.split('/')[0] }); }); }
+        return 0;
+      }
+      const list = st.ifs.filter(i => !devArg() || i.name === devArg());
+      if (br) { this.out(list.map(i => `${i.name.padEnd(16)} ${state(i).padEnd(14)} ${i.mac} ${flags(i)} `).join('\n') + '\n'); return 0; }
+      this.out(list.map(linkLine).join('')); return 0;
+    }
+    if (/^(r|ro|route)$/.test(obj)) {
+      if (verb === 'get') { const ip = rest[0], r = this.routeTo(ip || ''); if (!r) { this.eout('RTNETLINK answers: Network is unreachable\n'); return 2; } this.out(r.local ? `local ${ip} dev lo table local src ${r.src} uid ${this.uid()} \n    cache <local> \n` : `${ip} ${r.via ? `via ${r.via} ` : ''}dev ${r.dev} src ${r.src} uid ${this.uid()} \n    cache \n`); return 0; }
+      if (verb === 'add' || verb === 'del' || verb === 'delete' || verb === 'replace') {
+        if (need()) return 2;
+        const dst = rest[0], k = rest.indexOf('via'), via = k >= 0 ? rest[k + 1] : undefined, d = devArg() || (via ? (this.routeTo(via) || {}).dev : undefined);
+        if (verb === 'add' && st.routes.some(r => r.dst === dst)) { this.eout('RTNETLINK answers: File exists\n'); return 2; }
+        if (verb === 'add' || verb === 'replace') { if (via && !st.routes.some(r => r.dst !== 'default' && inNet(via, r.dst))) { this.eout('Error: Nexthop has invalid gateway.\n'); return 2; } st.routes = st.routes.filter(r => r.dst !== dst); st.routes.unshift({ dst, via, dev: d || 'enp0s3', proto: 'boot' }); }
+        else { const n = st.routes.length; st.routes = st.routes.filter(r => r.dst !== dst); if (st.routes.length === n) { this.eout('RTNETLINK answers: No such process\n'); return 2; } }
+        return 0;
+      }
+      const order = st.routes.slice().sort((x, y) => (x.dst === 'default' ? -1 : 0) - (y.dst === 'default' ? -1 : 0));
+      this.out(order.map(r => `${r.dst} ${r.via ? `via ${r.via} ` : ''}dev ${r.dev} proto ${r.proto} ${r.proto === 'kernel' ? `scope link src ${r.src} ` : ''}`).join('\n') + (order.length ? '\n' : ''));
+      return 0;
+    }
+    if (/^(n|ne|neigh|neighbor|neighbour)$/.test(obj)) { this.out(Object.entries(st.neigh).map(([ip, mac]) => `${ip} dev enp0s3 lladdr ${mac} REACHABLE`).join('\n') + (Object.keys(st.neigh).length ? '\n' : '')); return 0; }
+    this.eout(`Object "${obj}" is unknown, try "ip help".\n`); return 1;
+  };
+  World.prototype.uid = function () { const r = (this.node('/etc/passwd').data || '').split('\n').find(l => l.split(':')[0] === this.user); return r ? r.split(':')[2] : '1000'; };
+  C.ping = function (a) {
+    let n = 4, host = '';
+    for (let i = 0; i < a.length; i++) { if (a[i] === '-c') n = +a[++i]; else if (/^-c\d+$/.test(a[i])) n = +a[i].slice(2); else if (a[i] === '-W' || a[i] === '-i' || a[i] === '-w') i++; else if (!a[i].startsWith('-')) host = a[i]; }
+    if (!host) { this.eout('ping: usage error: Destination address required\n'); return 1; }
+    const ip = this.resolve(host);
+    if (!ip) { this.eout(`ping: ${host}: ${this.routeTo('192.168.1.1') ? 'Name or service not known' : 'Temporary failure in name resolution'}\n`); return 2; }
+    const r = this.routeTo(ip); if (!r) { this.eout('ping: connect: Network is unreachable\n'); return 2; }
+    const h = this.reach(ip), head = `PING ${host} (${ip}) 56(84) bytes of data.\n`, ms = this.clock;
+    const tail = (rx, err) => `\n--- ${host} ping statistics ---\n${n} packets transmitted, ${rx} received, ${err ? `+${n} errors, ` : ''}${rx ? Math.round(100 - rx * 100 / n) : 100}% packet loss, time ${n > 1 ? (n - 1) * 1001 + (rx ? 2 : 49) : 0}ms\n`;
+    this.clock += n * 1000;
+    if (h.unreachable) { this.out(head + Array.from({ length: n }, (_, i) => `From ${r.src} icmp_seq=${i + 1} Destination Host Unreachable\n`).join('') + tail(0, true)); return 1; }
+    if (h.lost) { this.out(head + tail(0)); return 1; }
+    const t = Array.from({ length: n }, (_, i) => +(h.ms * (0.94 + ((i * 37 + ms) % 13) / 100)).toFixed(h.ms < 1 ? 3 : 1));
+    const mn = Math.min(...t), mx = Math.max(...t), av = t.reduce((x, y) => x + y, 0) / n, md = Math.sqrt(t.reduce((x, y) => x + (y - av) ** 2, 0) / n);
+    this.out(head + t.map((x, i) => `64 bytes from ${host === ip ? ip : `${host} (${ip})`}: icmp_seq=${i + 1} ttl=${h.ttl} time=${x} ms\n`).join('') + tail(n) + `rtt min/avg/max/mdev = ${[mn, av, mx, md].map(x => x.toFixed(3)).join('/')} ms\n`);
+    return 0;
+  };
+  C.traceroute = C.tracepath = function (a) {
+    const host = a.filter(x => !x.startsWith('-') && !/^\d+$/.test(x))[0], ip = host && this.resolve(host);
+    if (!ip) { this.eout(`${host || ''}: Name or service not known\nCannot handle "host" cmdline arg \`${host || ''}' on position 1 (argc 1)\n`); return 2; }
+    const h = this.reach(ip) || {}, hops = (h.hops || []).concat([ip]);
+    this.out(`traceroute to ${host} (${ip}), 30 hops max, 60 byte packets\n` + hops.map((x, i) => ` ${i + 1}  ${x}  ${(0.4 + i * 3.8).toFixed(3)} ms`).join('\n') + '\n');
+    return 0;
+  };
+  C.ss = function (a) {
+    const f = a.join(' ').replace(/-/g, ''), tcp = /t/.test(f) || !/u/.test(f), udp = /u/.test(f), num = /n/.test(f), procs = /p/.test(f) && this.user === 'root';
+    const name = p => num ? p : ({ 22: 'ssh', 53: 'domain', 80: 'http' })[p] || p;
+    const L = this.listening().filter(l => (l.udp ? udp : tcp));
+    const net1 = udp && tcp, sp = x => { const k = x.lastIndexOf(':'); return [x.slice(0, k), x.slice(k + 1)]; };
+    const R = L.map(l => ({ id: l.udp ? 'udp' : 'tcp', st: l.udp ? 'UNCONN' : 'LISTEN', rq: '0', sq: String(l.udp ? 0 : l.q), la: l.addr, lp: String(name(l.port)), pa: l.addr.startsWith('[') ? '[::]' : '0.0.0.0', pp: '*', pr: procs ? `users:(("${l.prog}",pid=${l.pid},fd=${l.fd}))` : '' }));
+    const wA = Math.max(13, ...R.map(r => r.la.length)), wP = Math.max(4, ...R.map(r => r.lp.length)), wB = Math.max(12, ...R.map(r => r.pa.length));
+    const lead = (id, st, rq, sq) => (net1 ? id.padEnd(5) + ' ' : '') + st.padEnd(6) + ' ' + rq.padEnd(6) + ' ' + sq.padEnd(6) + ' ';
+    this.out(lead('Netid', 'State', 'Recv-Q', 'Send-Q') + 'Local Address'.padStart(wA) + ':' + 'Port'.padEnd(wP) + ' ' + 'Peer Address'.padStart(wB) + ':' + 'Port'.padEnd(4) + 'Process\n' + R.map(r => (lead(r.id, r.st, r.rq, r.sq) + r.la.padStart(wA) + ':' + r.lp.padEnd(wP) + ' ' + r.pa.padStart(wB) + ':' + r.pp.padEnd(4) + ' ' + r.pr).replace(/\s+$/, '')).join('\n') + '\n');
+    return 0;
+  };
+  C.curl = function (a) {
+    let head = false, quiet = false, out = '', url = '';
+    for (let i = 0; i < a.length; i++) { const x = a[i]; if (x === '-I' || x === '--head') head = true; else if (/^-[a-zA-Z]+$/.test(x) && x.includes('I')) { head = true; quiet = x.includes('s'); } else if (x === '-o') out = a[++i]; else if (/^-[a-zA-Z]+$/.test(x)) { if (x.includes('s')) quiet = true; } else url = x; }
+    const m = /^(?:(https?):\/\/)?([^/:]+)(?::(\d+))?(\/.*)?$/.exec(url || '');
+    if (!m) { this.eout('curl: (3) URL rejected: Malformed input to a URL function\n'); return 3; }
+    const scheme = m[1] || 'http', host = m[2], port = +(m[3] || (scheme === 'https' ? 443 : 80)), ip = this.resolve(host);
+    if (!ip) { this.eout(`curl: (6) Could not resolve host: ${host}\n`); return 6; }
+    if (!this.routeTo(ip)) { this.eout(`curl: (7) Failed to connect to ${host} port ${port} after 0 ms: Couldn't connect to server\n`); return 7; }
+    const h = this.reach(ip) || {};
+    if (!h.ports || !h.ports.includes(port)) { this.eout(`curl: (7) Failed to connect to ${host} port ${port} after ${h.local ? 0 : Math.round(h.ms || 0)} ms: Couldn't connect to server\n`); return 7; }
+    const d = new Date(this.clock), date = `${DAYS3[d.getUTCDay()]}, ${String(d.getUTCDate()).padStart(2, '0')} ${MON3[d.getUTCMonth()]} ${d.getUTCFullYear()} ${d.toISOString().slice(11, 19)} GMT`;
+    const local = h.local, file = local ? (this.node('/var/www/html/index.html') || this.node('/var/www/html/index.nginx-debian.html')) : null, body = local ? (file ? file.data : '') : '<h1>shop.lab</h1>\n';
+    if (scheme === 'https' && local) { this.eout(`curl: (7) Failed to connect to ${host} port 443 after 0 ms: Couldn't connect to server\n`); return 7; }
+    const hdr = `HTTP/1.1 200 OK\r\nServer: nginx/1.24.0 (Ubuntu)\r\nDate: ${date}\r\nContent-Type: text/html\r\nContent-Length: ${enc(body)}\r\nLast-Modified: Mon, 09 Nov 2026 10:00:00 GMT\r\nConnection: keep-alive\r\nETag: "${(enc(body) * 7919).toString(16)}-${enc(body).toString(16)}"\r\nAccept-Ranges: bytes\r\n\r\n`.replace(/\r/g, '');
+    if (head) { this.out(hdr); return 0; }
+    if (out) { this.mk(this.abs(out), 'f', 0o664 & ~this.umask, this.user, body); const b = String(enc(body)); if (!quiet) this.eout(`  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n100 ${b.padStart(5)}  100 ${b.padStart(5)}    0     0   600k      0 --:--:-- --:--:-- --:--:--  600k\n`); return 0; }
+    this.out(body); return 0;
+  };
+  C.nc = function (a) {
+    const z = a.some(x => /^-[a-z]*z/.test(x)), v = a.some(x => /^-[a-z]*v/.test(x));
+    const pos = a.filter((x, i) => !x.startsWith('-') && !(a[i - 1] === '-w')), host = pos[0], port = +pos[1];
+    if (!z) { this.eout('The practice shell runs nc only with -z, to test whether a port is open: nc -zv HOST PORT\n'); return 1; }
+    const ip = this.resolve(host || '');
+    if (!ip) { this.eout(`nc: getaddrinfo for host "${host}" port ${port}: Name or service not known\n`); return 1; }
+    const h = this.routeTo(ip) ? this.reach(ip) : null;
+    if (h && h.ports && h.ports.includes(port)) { if (v) this.eout(`Connection to ${host} ${port} port [tcp/${SERVICES[port] || '*'}] succeeded!\n`); return 0; }
+    if (v) this.eout(h && (h.local || h.mac || h.hops) ? `nc: connect to ${host} port ${port} (tcp) failed: Connection refused\n` : `nc: connect to ${host} port ${port} (tcp) timed out: Operation now in progress\n`);
+    return 1;
+  };
+  World.prototype.dnsAnswer = function (name, type) {
+    const st = this.net(), n = name.replace(/\.$/, '');
+    if (type === 'MX') return st.mx[n] ? [[n + '.', 'MX', st.mx[n]]] : [];
+    const d = st.dns[n]; return d ? [[n + '.', 'A', d[1]]] : [];
+  };
+  C.dig = function (a) {
+    const short = a.includes('+short'), args = a.filter(x => !x.startsWith('+') && !x.startsWith('@'));
+    const type = (args.find(x => /^(A|MX|AAAA|NS|TXT)$/i.test(x)) || 'A').toUpperCase(), name = args.find(x => !/^(A|MX|AAAA|NS|TXT)$/i.test(x)) || '.';
+    if (!this.routeTo('192.168.1.1')) { this.out(`;; communications error to 127.0.0.53#53: timed out\n`); return 9; }
+    const ans = this.dnsAnswer(name, type);
+    if (short) { this.out(ans.map(r => r[2]).join('\n') + (ans.length ? '\n' : '')); return 0; }
+    const ok = ans.length || this.net().dns[name.replace(/\.$/, '')];
+    this.out(`\n; <<>> DiG 9.18.39-0ubuntu0.24.04.9-Ubuntu <<>> ${a.join(' ')}\n;; global options: +cmd\n;; Got answer:\n;; ->>HEADER<<- opcode: QUERY, status: ${ok ? 'NOERROR' : 'NXDOMAIN'}, id: ${(this.clock / 1000 | 0) % 65536}\n;; flags: qr rd ra; QUERY: 1, ANSWER: ${ans.length}, AUTHORITY: 0, ADDITIONAL: 1\n\n;; OPT PSEUDOSECTION:\n; EDNS: version: 0, flags:; udp: 65494\n;; QUESTION SECTION:\n;${name.replace(/\.?$/, '.')}\t\t\tIN\t${type}\n\n` + (ans.length ? `;; ANSWER SECTION:\n${ans.map(r => `${r[0]}\t\t300\tIN\t${r[1]}\t${r[2]}`).join('\n')}\n\n` : '') + `;; Query time: 3 msec\n;; SERVER: 127.0.0.53#53(127.0.0.53) (UDP)\n;; WHEN: ${new Date(this.clock).toUTCString().replace(/^(\w+), (\d+) (\w+) (\d+) ([\d:]+) GMT$/, '$1 $3 $2 $5 UTC $4')}\n;; MSG SIZE  rcvd: ${40 + name.length + ans.length * 16}\n\n`);
+    return 0;
+  };
+  C.host = function (a) {
+    const name = a.filter(x => !x.startsWith('-'))[0] || '';
+    const A = this.dnsAnswer(name, 'A'), M = this.dnsAnswer(name, 'MX');
+    if (!A.length && !M.length) { this.out(`Host ${name} not found: 3(NXDOMAIN)\n`); return 1; }
+    this.out(A.map(r => `${name} has address ${r[2]}\n`).join('') + M.map(r => `${name} mail is handled by ${r[2]}\n`).join(''));
+    return 0;
+  };
+  C.nslookup = function (a) {
+    const name = a.filter(x => !x.startsWith('-'))[0] || '', A = this.dnsAnswer(name, 'A');
+    this.out(`Server:\t\t127.0.0.53\nAddress:\t127.0.0.53#53\n\n` + (A.length ? `Non-authoritative answer:\n${A.map(r => `Name:\t${name}\nAddress: ${r[2]}`).join('\n')}\n\n` : `** server can't find ${name}: NXDOMAIN\n\n`));
+    return A.length ? 0 : 1;
   };
   C.lsblk = function (a) {
     const st = this.disks(), full = a.includes('-f') || a.includes('--fs'), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
@@ -3382,7 +3586,7 @@ const LXSH = (() => {
   C.su = function () { this.eout('su: Authentication failure (in this practice shell use sudo instead)\n'); return 1; };
   const exitRoot = C.exit;
   C.exit = function (a) { if (this.user === 'root') { this.user = USER; if (this.rootPath) { this.vars.PATH = this.rootPath; this.rootPath = null; } return 0; } return exitRoot.call(this, a); };
-  ['dnf', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'strace'].forEach(c => {
+  ['dnf', 'ssh', 'wget', 'vim', 'vi', 'nano', 'htop', 'strace'].forEach(c => {
     C[c] = function () { this.eout(`${c}: this command is explained in its own lesson, but the practice shell does not run it. Try it on a real Linux machine, a virtual machine or WSL.\n`); return 127; };
   });
   C.vim = C.vi = C.nano = function (a) { this.eout(`${a[0] ? a[0] + ': ' : ''}the practice shell has no full screen editor. Use echo "text" > file or cat > file with a here document instead.\n`); return 1; };
