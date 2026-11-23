@@ -10836,6 +10836,23 @@ function lxAdminModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "logs-health", title: "Logs and health checks: journalctl, /var/log and logrotate", emoji: "2.2", page: "content/linux/logs-health.html",
+        summary: "The journal and journalctl, text logs in /var/log, log analysis, logrotate, quick health checks.",
+        keywords: ["journalctl", "journal", "/var/log", "syslog", "auth.log", "logrotate", "logger", "dmesg", "uptime", "free", "df", "vmstat"],
+        minutes: 55, counts: {"lessons": 7, "problems": 6, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "where", title: "Where Linux keeps its logs", emoji: "", group: "Lesson", keywords: ["logs", "/var/log", "systemd journal", "journald", "rsyslog", "syslog", "auth.log", "/var/log/secure", "kern.log", "dpkg.log", "apt history.log", "log priority", "adm group"] },
+        { id: "journalctl", title: "Searching the journal with journalctl", emoji: "", group: "Lesson", keywords: ["journalctl", "journalctl -u", "journalctl -p err", "journalctl -b", "journalctl --since", "journalctl -f", "journalctl -k", "journalctl -g", "_COMM", "persistent journal", "journald.conf", "vacuum"] },
+        { id: "text", title: "Reading text logs with grep, awk and friends", emoji: "", group: "Lesson", keywords: ["grep logs", "awk logs", "count failed logins", "uniq -c", "tail -f", "zgrep", "logger", "log analysis", "ssh brute force", "NF-3"] },
+        { id: "rotate", title: "Keeping logs small with logrotate", emoji: "", group: "Lesson", keywords: ["logrotate", "log rotation", "/etc/logrotate.d", "rotate 7", "compress", "delaycompress", "postrotate", "copytruncate", "logrotate -d", "logrotate -f", "disk full logs"] },
+        { id: "health", title: "Quick health checks: load, memory, disk and the kernel", emoji: "", group: "Lesson", keywords: ["uptime", "load average", "nproc", "free -h", "available memory", "df -h", "df -i", "inodes", "du -sh", "vmstat", "dmesg", "OOM killer", "health check"] },
+        { id: "practice", title: "Practice: investigate an incident in the practice shell", emoji: "", group: "Lesson", keywords: ["log lab", "incident investigation", "auth.log practice", "journalctl practice", "logger practice"] },
+        { id: "levels", title: "Logs and monitoring from school to research", emoji: "", group: "Lesson", keywords: ["persistent journal", "log forwarding", "central logging", "ELK", "Loki", "Prometheus", "node_exporter", "Grafana", "structured logging", "auditd", "OpenTelemetry", "log parsing", "monitoring alerts"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

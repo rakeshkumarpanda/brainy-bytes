@@ -1067,6 +1067,33 @@
     }
   }));
 
+  /* admin 2.2 journalctl filters: add one filter at a time and watch the journal shrink to the lines that matter */
+  def('lx-journal', el => W(el, {
+    title: 'Filter the journal',
+    sub: 'Choose filters. Pip adds them to journalctl one at a time on the practice server, which had ssh attacks, a failed backup and an out-of-memory kill, and shows how many lines are left.',
+    inputs: [{ k: 'unit', label: 'Unit (-u)', type: 'seg', val: 'any', opts: [['any', 'any'], ['ssh', 'ssh'], ['backup', 'backup'], ['nginx', 'nginx']] },
+             { k: 'prio', label: 'Priority (-p)', type: 'seg', val: 'err', opts: [['any', 'any'], ['warning', 'warning'], ['err', 'err']] },
+             { k: 'since', label: 'Since', type: 'seg', val: 'today', opts: [['any', 'any time'], ['today', 'today'], ['2 hours ago', '2 hours ago']] },
+             { k: 'grep', label: 'Grep (-g)', type: 'text', val: '', w: 140 }],
+    random: () => [{ unit: 'ssh', prio: 'any', since: 'any', grep: 'invalid user' }, { unit: 'any', prio: 'err', since: 'today', grep: '' }, { unit: 'backup', prio: 'any', since: 'any', grep: '' }, { unit: 'any', prio: 'any', since: '2 hours ago', grep: 'killed' }][Math.floor(Math.random() * 4)],
+    frames: v => {
+      const w = world(), q = x => /\s/.test(x) ? `"${x}"` : x;
+      const run = opts => w.run('sudo journalctl ' + opts.join(' ')).out.replace(/\n$/, '').split('\n').filter(x => x && x !== '-- No entries --');
+      const show = (L, n) => ({ t: 'term', label: n + ' line' + (n === 1 ? '' : 's'), lines: L.length ? L.slice(0, 9).map(x => [/Failed|error|Killed|incorrect|Invalid/.test(x) ? 'e' : 'o', x.length > 110 ? x.slice(0, 108) + '…' : x]).concat(L.length > 9 ? [['o', `… and ${L.length - 9} more`]] : []) : [['o', '-- No entries --']] });
+      const chips = opts => ({ t: 'flow', label: 'The command so far', items: [['sudo journalctl', '', 'yes']].concat(opts.map((o, i) => [o, '', i === opts.length - 1 ? 'cur' : 'yes'])), plain: true });
+      const opts = [], fr = [];
+      let L = run(opts);
+      fr.push({ msg: `With no filter, <code>sudo journalctl</code> prints every entry the journal kept: ${L.length} lines on this small server, millions on a busy one. Without sudo you would only see your own messages.`, mood: 'think', layers: [chips(opts), show(L, L.length)] });
+      const add = (o, why) => { const before = L.length; opts.push(o); L = run(opts); fr.push({ msg: `${why} ${before} lines became ${L.length}.`, mood: L.length ? 'look' : 'sad', fx: L.length ? undefined : 'shake', layers: [chips(opts), show(L, L.length)] }); };
+      if (v.unit !== 'any') add('-u ' + v.unit, `<code>-u ${v.unit}</code> keeps the messages of ${v.unit}.service only, including what its programs printed.`);
+      if (v.prio !== 'any') add('-p ' + v.prio, `<code>-p ${v.prio}</code> keeps priority ${v.prio} and more serious ones (${v.prio === 'err' ? 'err, crit, alert, emerg' : 'warning, err, crit, alert, emerg'}).`);
+      if (v.since !== 'any') add('--since ' + q(v.since), `<code>--since ${esc(q(v.since))}</code> drops older entries. It understands today, yesterday, times like 09:00, full dates and phrases like 2 hours ago.`);
+      if (String(v.grep).trim()) add('-g ' + q(String(v.grep).trim()), `<code>-g</code> keeps messages that match a regular expression, ignoring case when the pattern is all lower case.`);
+      fr.push({ msg: L.length ? `Done. Combine filters like this to go from a wall of text to the few lines that explain a problem. Add <code>-f</code> to keep watching new lines, or <code>-r</code> for newest first.` : 'Nothing matches all these filters. Remove one and try again.', mood: L.length ? 'happy' : 'sad', fx: L.length ? 'burst' : undefined, layers: [chips(opts), show(L, L.length)] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

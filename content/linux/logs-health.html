@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logs and health checks: journalctl, /var/log and logrotate · Unix and Linux</title>
+<meta name="description" content="The systemd journal and journalctl filters (-u, -p, -b, --since, -g, -k, -f, _COMM=), syslog priorities, persistent journals, rsyslog files such as syslog and auth.log, dpkg and apt logs, grep and awk on logs, logger, logrotate rules and testing, uptime and load average, free, df and inodes, du, vmstat, dmesg and the OOM killer.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=admin">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 2: Boot, services and logs</span><span>›</span><span>Logs and health</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 2 of 2 · Intermediate</div>
+    <h1>Logs and health checks: journalctl, /var/log and logrotate</h1>
+    <p class="lead">Find the lines that explain a problem in the systemd journal and the text logs of /var/log, keep logs from filling the disk with logrotate, and check load, memory, disk and the kernel in a minute.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">7 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#logs-health" data-topic="cheatsheet" data-h="logs-health">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#where" data-l="where"><span class="n">1</span><span class="t">Where Linux keeps its logs</span></a></li><li><a href="#journalctl" data-l="journalctl"><span class="n">2</span><span class="t">Searching the journal with journalctl</span></a></li><li><a href="#text" data-l="text"><span class="n">3</span><span class="t">Reading text logs with grep, awk and friends</span></a></li><li><a href="#rotate" data-l="rotate"><span class="n">4</span><span class="t">Keeping logs small with logrotate</span></a></li><li><a href="#health" data-l="health"><span class="n">5</span><span class="t">Quick health checks: load, memory, disk and the kernel</span></a></li><li><a href="#practice" data-l="practice"><span class="n">6</span><span class="t">Practice: investigate an incident in the practice shell</span></a></li><li><a href="#levels" data-l="levels"><span class="n">7</span><span class="t">Logs and monitoring from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="where" data-l="where" hidden><div class="cv-lno">Lesson 1 of 7</div><h2>Where Linux keeps its logs</h2>
+<p>Programs report what they do in <b>logs</b>. Modern systems keep two kinds side by side: the <b>systemd journal</b>, a structured store read with journalctl, and plain <b>text files in /var/log</b>, written by rsyslog and by programs themselves.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Log</th><th>Holds</th><th>Read with</th></tr></thead><tbody><tr><td>the journal (/var/log/journal, or /run/log/journal until the next boot)</td><td>everything systemd units, the kernel and programs report</td><td><code>journalctl</code></td></tr><tr><td><code>/var/log/syslog</code> (Debian, Ubuntu), <code>/var/log/messages</code> (RHEL)</td><td>general system messages, copied from the journal by rsyslog</td><td><code>less</code>, <code>tail -f</code>, <code>grep</code></td></tr><tr><td><code>/var/log/auth.log</code>, <code>/var/log/secure</code> (RHEL)</td><td>logins, ssh, sudo, failed passwords</td><td>root or the adm group</td></tr><tr><td><code>/var/log/kern.log</code>, <code>dmesg</code></td><td>kernel messages: hardware, drivers, out of memory</td><td><code>sudo dmesg -T</code></td></tr><tr><td><code>/var/log/dpkg.log</code>, <code>/var/log/apt/history.log</code></td><td>every package installed, upgraded or removed</td><td><code>grep</code></td></tr><tr><td><code>/var/log/nginx/</code>, <code>/var/log/postgresql/</code></td><td>logs of single applications</td><td>the application’s own format</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Priority</th><th>Number</th><th>Meaning</th></tr></thead><tbody><tr><td>emerg</td><td>0</td><td>the system is unusable</td></tr><tr><td>alert</td><td>1</td><td>act at once</td></tr><tr><td>crit</td><td>2</td><td>critical failure</td></tr><tr><td>err</td><td>3</td><td>error</td></tr><tr><td>warning</td><td>4</td><td>something may go wrong</td></tr><tr><td>notice</td><td>5</td><td>normal but worth noting</td></tr><tr><td>info</td><td>6</td><td>information</td></tr><tr><td>debug</td><td>7</td><td>details for developers</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-journal"></div>
+<div class="lx-run"><div class="lx-rh"><span>Text logs on a real Ubuntu system</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls /var/log | head -12</span>
+<span class="lx-o">README
+alternatives.log
+apt
+bootstrap.log
+btmp
+dpkg.log
+faillog
+fontconfig.log
+journal
+lastlog
+postgresql
+private</span>
+<span class="lx-cmd">ls -l /var/log/apt/</span>
+<span class="lx-o">total 368
+-rw-r--r-- 1 root root  32444 Nov 23 23:04 eipp.log.xz
+-rw-r--r-- 1 root root  66550 Nov 23 23:04 history.log
+-rw-r----- 1 root adm  268745 Nov 23 23:04 term.log</span>
+<span class="lx-cmd">grep ' install ' /var/log/dpkg.log | tail -3</span>
+<span class="lx-o">2026-11-23 23:03:59 install libtext-charwidth-perl:amd64 &lt;none&gt; 0.04-11build3
+2026-11-23 23:03:59 install cowsay:all &lt;none&gt; 3.03+dfsg2-8
+2026-11-23 23:04:04 install figlet:amd64 2.2.5-3 2.2.5-3</span>
+<span class="lx-cmd">grep -A3 '^Start-Date' /var/log/apt/history.log | tail -4</span>
+<span class="lx-o">Start-Date: 2026-11-23  23:04:03
+Commandline: apt-get autoremove -y -q
+Remove: libtext-charwidth-perl:amd64 (0.04-11build3)
+End-Date: 2026-11-23  23:04:03</span></pre><div class="lx-note">Not every program writes here: this container has no rsyslog, so there is no syslog or auth.log file, and the journal holds those messages instead. term.log belongs to the group adm, the usual group for reading logs. dpkg.log and history.log show exactly what changed and when, which is the first place to look after an update breaks something.</div></div>
+<div class="vt-talk" hidden>When something goes wrong on a Linux machine, the logs tell you what happened. Today most systems keep two kinds. The systemd journal collects messages from every service, the kernel and many programs, and stores them with extra facts such as the unit name and the priority. You read it with journalctl. Many systems also run rsyslog, which copies messages into plain text files in slash var slash log, such as syslog for general messages and auth dot log for logins, ssh and sudo. Package tools keep their own history in dpkg dot log and apt slash history dot log. Every message has a priority from zero, emergency, to seven, debug, and errors are priority three. Many log files can only be read by root or by members of the group adm. Try the animation to see how a few filters turn a wall of log lines into the handful that explain a problem.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="journalctl" data-l="journalctl" hidden><div class="cv-lno">Lesson 2 of 7</div><h2>Searching the journal with journalctl</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>journalctl -u NAME</code></td><td>Messages of one unit</td><td><code>journalctl -u nginx</code></td></tr><tr><td><code>journalctl -p err</code></td><td>Priority err and worse</td><td><code>journalctl -p err -b</code></td></tr><tr><td><code>journalctl -b, -b -1</code></td><td>This boot, the previous boot (needs a persistent journal)</td><td><code>journalctl -b -1 -p warning</code></td></tr><tr><td><code>journalctl --since, --until</code></td><td>A time window: today, yesterday, "2026-11-23 09:00", "2 hours ago"</td><td><code>journalctl --since "1 hour ago"</code></td></tr><tr><td><code>journalctl -f</code></td><td>Follow new messages as they come, like tail -f</td><td><code>journalctl -fu nginx</code></td></tr><tr><td><code>journalctl -k</code></td><td>Kernel messages only</td><td><code>journalctl -k -b</code></td></tr><tr><td><code>journalctl -g PATTERN</code></td><td>Messages that match a regular expression</td><td><code>journalctl -u ssh -g "Failed password"</code></td></tr><tr><td><code>journalctl _COMM=NAME, -t TAG</code></td><td>By program name, by syslog tag</td><td><code>journalctl _COMM=sudo</code></td></tr><tr><td><code>journalctl -o json-pretty</code></td><td>Show every stored field of each entry</td><td><code>journalctl -u ssh -n 1 -o json-pretty</code></td></tr><tr><td><code>journalctl --disk-usage, --vacuum-size=500M</code></td><td>Space used, and shrink it</td><td><code>sudo journalctl --vacuum-time=30d</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Narrowing the journal down (the build container has no running journald, so this output comes from the practice shell)</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">journalctl -u backup</span>
+<span class="lx-o">Hint: You are currently not seeing messages from other users and the system.
+      Users in groups 'adm', 'systemd-journal' can see all messages.
+      Pass -q to turn off this notice.
+-- No entries --</span>
+<span class="lx-cmd">sudo journalctl -p err --since today</span>
+<span class="lx-o">Nov 23 02:30:04 brainy backup.sh[4711]: rsync: [Receiver] mkdir "/mnt/backup/home" failed: No such file or directory (2)
+Nov 23 02:30:04 brainy backup.sh[4711]: rsync error: error in file IO (code 11) at main.c(791) [Receiver=3.2.7]
+Nov 23 02:30:05 brainy systemd[1]: Failed to start backup.service - Nightly backup.
+Nov 23 08:50:00 brainy sudo:     asha : 3 incorrect password attempts ; TTY=pts/1 ; PWD=/home/asha ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow
+Nov 23 09:26:00 brainy kernel: Out of memory: Killed process 2261 (java) total-vm:4194304kB, anon-rss:3145728kB, file-rss:0kB, shmem-rss:0kB, UID:1001 pgtables:6400kB oom_score_adj:0</span>
+<span class="lx-cmd">sudo journalctl -u ssh -g accepted</span>
+<span class="lx-o">Nov 23 07:20:00 brainy sshd[3402]: Accepted publickey for learner from 192.0.2.10 port 51515 ssh2: ED25519 SHA256:q2Y7v8dHkP0e3m1t5JZpLr4a9GxT6cUoWbNfK1sQe8A</span>
+<span class="lx-cmd">sudo journalctl _COMM=sudo</span>
+<span class="lx-o">Nov 23 08:05:00 brainy sudo:  learner : TTY=pts/0 ; PWD=/home/learner ; USER=root ; COMMAND=/usr/bin/apt update
+Nov 23 08:06:00 brainy sudo:  learner : TTY=pts/0 ; PWD=/home/learner ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx
+Nov 23 08:50:00 brainy sudo:     asha : 3 incorrect password attempts ; TTY=pts/1 ; PWD=/home/asha ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow</span></pre><div class="lx-note">A normal user sees only their own messages. One filter on priority found a failed backup, a user who typed the sudo password wrong three times, and a program killed because memory ran out. Every line of the journal has a time, the host, the program with its process ID, and the message.</div></div>
+<div class="note note-tip"><b>Remember</b><div>On some systems the journal lives only in memory (/run/log/journal) and is lost at reboot. Create /var/log/journal, or set Storage=persistent in /etc/systemd/journald.conf, to keep it, so that journalctl -b -1 can show why the last boot crashed.</div></div>
+<div class="vt-talk" hidden>Journalctl is a search tool for the journal. Without options it prints everything, which is far too much, so you add filters. Dash u picks one unit, such as nginx. Dash p err keeps errors and anything worse. Dash b limits it to the current boot, and dash b minus one to the boot before, which helps after a crash. Since and until set a time window, and they understand words like today and phrases like two hours ago. Dash g searches the text with a regular expression, and dash k shows only kernel messages. Dash f keeps the output open and prints new lines as they arrive, which is perfect while you restart a service in another window. Remember that normal users only see their own messages, so use sudo or join the adm group. And if the journal is kept only in memory, make it persistent, so you can read what happened before the last reboot.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="text" data-l="text" hidden><div class="cv-lno">Lesson 3 of 7</div><h2>Reading text logs with grep, awk and friends</h2>
+<p>Text logs are lines, so the tools from the power tools section answer most questions. A typical task: who is trying to guess passwords over ssh, and how often.</p>
+<div class="lx-run"><div class="lx-rh"><span>Count failed ssh logins by address</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; auth-sample.log &lt;&lt;'EOF'
+Nov 23 06:30:00 web1 sshd[3100]: Invalid user admin from 203.0.113.7 port 40000
+Nov 23 06:30:02 web1 sshd[3100]: Failed password for invalid user admin from 203.0.113.7 port 40000 ssh2
+Nov 23 06:36:28 web1 sshd[3107]: Failed password for root from 198.51.100.23 port 40211 ssh2
+Nov 23 06:42:54 web1 sshd[3114]: Failed password for root from 203.0.113.7 port 40422 ssh2
+Nov 23 06:49:03 web1 sshd[3121]: Invalid user test from 192.0.2.200 port 40633
+Nov 23 06:49:05 web1 sshd[3121]: Failed password for invalid user test from 192.0.2.200 port 40633 ssh2
+Nov 23 06:55:29 web1 sshd[3128]: Failed password for root from 203.0.113.7 port 40844 ssh2
+Nov 23 07:20:00 web1 sshd[3402]: Accepted publickey for learner from 192.0.2.10 port 51515 ssh2
+EOF</span>
+<span class="lx-cmd">grep -c 'Failed password' auth-sample.log</span>
+<span class="lx-o">5</span>
+<span class="lx-cmd">grep 'Failed password' auth-sample.log | grep -oE 'from [0-9.]+' | sort | uniq -c | sort -rn</span>
+<span class="lx-o">      3 from 203.0.113.7
+      1 from 198.51.100.23
+      1 from 192.0.2.200</span>
+<span class="lx-cmd">grep 'Failed password' auth-sample.log | awk '{print $(NF-3)}' | sort | uniq -c | sort -rn | head -1</span>
+<span class="lx-o">      3 203.0.113.7</span>
+<span class="lx-cmd">grep -oE 'for (invalid user )?[a-z]+' auth-sample.log | awk '{print $NF}' | sort | uniq -c</span>
+<span class="lx-o">      1 admin
+      1 learner
+      3 root
+      1 test</span>
+<span class="lx-cmd">awk '$3 &gt;= "06:40:00" &amp;&amp; $3 &lt; "07:00:00"' auth-sample.log | wc -l</span>
+<span class="lx-o">4</span>
+<span class="lx-cmd">grep 'Accepted' auth-sample.log | awk '{print $3, $9, "from", $11}'</span>
+<span class="lx-o">07:20:00 learner from 192.0.2.10</span></pre><div class="lx-note">The address is always the fourth field from the end of a Failed password line, so awk can pick it with $(NF-3) however long the line is. Comparing the time field as text works because the format has a fixed width. One address made most of the attempts, a typical sign of a password guessing robot.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>tail -f FILE, less +F FILE</code></td><td>Watch a log grow</td><td><code>sudo tail -f /var/log/nginx/access.log</code></td></tr><tr><td><code>zgrep, zcat</code></td><td>Search rotated logs that were compressed</td><td><code>zgrep "Failed password" /var/log/auth.log.2.gz</code></td></tr><tr><td><code>logger -t TAG MESSAGE</code></td><td>Write your own line into the system log, for example from a script</td><td><code>logger -t backup -p user.err "disk full"</code></td></tr><tr><td><code>lnav, goaccess</code></td><td>Extra tools: a log viewer and a web log report</td><td><code>lnav /var/log/syslog</code></td></tr></tbody></table></div>
+<div class="vt-talk" hidden>Text logs are just lines of text, so everything you learned about grep, awk, sort and uniq works on them. A classic job is to find who is trying to guess passwords over ssh. Grep finds the failed password lines, grep dash o pulls out the addresses, and sort, uniq dash c and sort dash r n count them and put the busiest first. Awk can pick fields by number, and dollar N F minus three counts from the end of the line, which works even when lines have different lengths. Tail dash f keeps a log open while it grows. Rotated logs are often compressed, and zgrep searches inside them without unpacking. And when you write your own scripts, the logger command puts your messages into the same system log, with a tag and a priority, so they appear next to everything else.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="rotate" data-l="rotate" hidden><div class="cv-lno">Lesson 4 of 7</div><h2>Keeping logs small with logrotate</h2>
+<p>Logs grow forever unless something trims them. <b>logrotate</b>, run once a day by a systemd timer or cron, renames the current file, starts a fresh one, compresses old ones and deletes the oldest.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>A logrotate rule in /etc/logrotate.d/myapp</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>/var/log/myapp/*.log {
+    daily               # or weekly, monthly, or size 100M
+    rotate 7            # keep 7 old files
+    compress            # gzip old files
+    delaycompress       # but leave the newest old file uncompressed
+    missingok           # no error if the log is missing
+    notifempty          # skip empty logs
+    create 0640 myapp adm
+    postrotate          # tell the program to reopen its log
+        systemctl reload myapp
+    endscript
+}</pre><div class="lx-note">Many programs keep writing to the old file after a rename. postrotate makes them reopen the log, and copytruncate is the fallback for programs that cannot.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>logrotate at work, run as root</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">apt-get install -y -qq logrotate &gt;/dev/null 2&gt;&amp;1; logrotate --version | head -1</span>
+<span class="lx-o">logrotate 3.21.0</span>
+<span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">printf 'line 1\nline 2\n' &gt; app.log</span>
+<span class="lx-cmd lx-root">printf '%s/app.log {\n    daily\n    rotate 3\n    compress\n    delaycompress\n    missingok\n    notifempty\n    create 0640 root adm\n}\n' "$PWD" &gt; app.conf</span>
+<span class="lx-cmd lx-root">logrotate -d -f -s state app.conf 2&gt;&amp;1 | grep -E '^(rotating log|  log needs)'</span>
+<span class="lx-o">  log needs rotating
+rotating log /tmp/tmp.6NpJfKddnD/app.log, log-&gt;rotateCount is 3</span>
+<span class="lx-cmd lx-root">logrotate -s state -f app.conf &amp;&amp; ls -l app.log*</span>
+<span class="lx-o">-rw-r----- 1 root adm   0 Nov 23 23:04 app.log
+-rw-r--r-- 1 root root 14 Nov 23 23:04 app.log.1</span>
+<span class="lx-cmd lx-root">echo "line 3" &gt;&gt; app.log</span>
+<span class="lx-cmd lx-root">logrotate -s state -f app.conf &amp;&amp; ls app.log*</span>
+<span class="lx-o">app.log
+app.log.1
+app.log.2.gz</span></pre><div class="lx-note">-d is a dry run that only explains what would happen, and -f forces a rotation now. The create line made a fresh, empty app.log with mode 640 for root and adm. After two rotations there is the fresh app.log, the newest old file app.log.1 kept plain because of delaycompress, and app.log.2.gz. The state file remembers when each log was last rotated.</div></div>
+<div class="vt-talk" hidden>Log files grow every day, and a full disk can stop a whole server. Logrotate prevents this. Once a day it checks each log against its rules in slash etc slash logrotate dot d. When a log is due, it renames app dot log to app dot log dot one, shifts older files up by one number, compresses them, deletes the oldest beyond the count you chose, and creates a fresh empty file. A rule says how often to rotate, by time or by size, how many old files to keep, and whether to compress them. Because many programs keep writing into the old renamed file, a postrotate script usually tells the program to reopen its log. Test a new rule with logrotate dash d, which only describes what it would do, and dash f to force a rotation now.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="health" data-l="health" hidden><div class="cv-lno">Lesson 5 of 7</div><h2>Quick health checks: load, memory, disk and the kernel</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>uptime</code></td><td>Time since boot and the load average over 1, 5 and 15 minutes</td><td><code>uptime</code></td></tr><tr><td><code>nproc</code></td><td>Number of CPUs. Compare it with the load</td><td><code>nproc</code></td></tr><tr><td><code>free -h</code></td><td>Memory and swap. Read the available column, not free</td><td><code>free -h</code></td></tr><tr><td><code>df -h, df -i</code></td><td>Free space and free inodes per file system</td><td><code>df -h /var</code></td></tr><tr><td><code>du -sh PATH, du -h --max-depth=1</code></td><td>What uses the space</td><td><code>sudo du -h --max-depth=1 /var | sort -h</code></td></tr><tr><td><code>vmstat 1 5</code></td><td>Every second: running and blocked processes, swap, I/O, CPU</td><td><code>vmstat 1 5</code></td></tr><tr><td><code>sudo dmesg -T</code></td><td>Kernel ring buffer with readable times: disk errors, USB, out of memory</td><td><code>sudo dmesg -T | tail</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>A one minute health check</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">uptime</span>
+<span class="lx-o"> 23:04:06 up 22 min,  0 user,  load average: 0.69, 0.35, 0.19</span>
+<span class="lx-cmd">nproc</span>
+<span class="lx-o">4</span>
+<span class="lx-cmd">cat /proc/loadavg</span>
+<span class="lx-o">0.69 0.35 0.19 1/146 15310</span>
+<span class="lx-cmd">free -h</span>
+<span class="lx-o">               total        used        free      shared  buff/cache   available
+Mem:            15Gi       749Mi        14Gi        12Mi       617Mi        14Gi
+Swap:             0B          0B          0B</span>
+<span class="lx-cmd">df -h / | tail -1</span>
+<span class="lx-o">/dev/vda        252G  9.4G   60G  14% /</span>
+<span class="lx-cmd">df -i / | tail -1</span>
+<span class="lx-o">/dev/vda       16777216 220169 16557047    2% /</span>
+<span class="lx-cmd">vmstat 1 3</span>
+<span class="lx-o">procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 15306396  25732 606764    0    0   375   283  545    1  4  1 95  0  0  0
+ 0  0      0 15319668  25732 606764    0    0     0     0  172  166  0  0 100  0  0  0
+ 0  0      0 15334056  25732 606764    0    0     0     0  121  110  0  0 100  0  0  0</span></pre><div class="lx-note">A load average below the number of CPUs means the CPUs keep up. In free, buff/cache is memory the kernel lends to the file cache and gives back when programs need it, so available is the number that matters. df -i counts inodes, since a disk can be full of tiny files while it still has free bytes. In vmstat the first line is an average since boot, the next ones are live, and wa is time spent waiting for disks.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>When memory runs out, the kernel’s OOM killer stops a process to save the system. The journal then has a line like “Out of memory: Killed process 2261 (java)”. Find it with <code>sudo journalctl -k -g "out of memory"</code> or <code>sudo dmesg -T | grep -i oom</code>.</div></div>
+<div class="vt-talk" hidden>Before you dig into logs, a quick health check often points to the problem. Uptime shows the load average, the number of processes that want a CPU, averaged over one, five and fifteen minutes. Compare it with nproc, the number of CPUs. A load of four on a four CPU machine means fully busy. Free dash h shows memory, and the available column is what counts, because Linux uses spare memory as a file cache and gives it back when needed. Df dash h shows free disk space, and df dash i shows free inodes, which can run out when there are millions of tiny files. Vmstat prints a line every second with processes, memory, input and output, and CPU use. And dmesg shows kernel messages, such as disk errors or the out of memory killer, which stops a program when memory runs out.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 6 of 7</div><h2>Practice: investigate an incident in the practice shell</h2>
+<p>The practice server had a busy night: password guessing over ssh, a failed backup and a program killed for using too much memory. Use the logs to find out what happened.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Read the logs like an admin&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Try to read /var/log/auth.log as yourself.&quot;, &quot;hint&quot;: &quot;cat /var/log/auth.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;auth\\.log&quot;}, {&quot;code&quot;: 1}]}, {&quot;t&quot;: &quot;Count the lines with Failed password in auth.log, using sudo.&quot;, &quot;hint&quot;: &quot;sudo grep -c \&quot;Failed password\&quot; /var/log/auth.log&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^12$&quot;}]}, {&quot;t&quot;: &quot;List the addresses of the failed logins with a count for each, busiest first.&quot;, &quot;hint&quot;: &quot;sudo grep \&quot;Failed password\&quot; /var/log/auth.log | grep -oE \&quot;from [0-9.]+\&quot; | sort | uniq -c | sort -rn&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;7 from 203\\.0\\.113\\.7&quot;}]}, {&quot;t&quot;: &quot;Show all journal entries of priority err or worse from today.&quot;, &quot;hint&quot;: &quot;sudo journalctl -p err --since today&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Out of memory&quot;}]}, {&quot;t&quot;: &quot;Show only the kernel messages that mention memory, ignoring case.&quot;, &quot;hint&quot;: &quot;sudo journalctl -k -g memory&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Killed process 2261&quot;}]}, {&quot;t&quot;: &quot;Find who ran sudo, using the journal field _COMM.&quot;, &quot;hint&quot;: &quot;sudo journalctl _COMM=sudo&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;incorrect password attempts&quot;}]}, {&quot;t&quot;: &quot;Write the message \&quot;incident reviewed\&quot; into the system log with the tag ops.&quot;, &quot;hint&quot;: &quot;logger -t ops \&quot;incident reviewed\&quot;&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;logger\\s+-t\\s+ops&quot;}]}, {&quot;t&quot;: &quot;Show the journal entries with the tag ops.&quot;, &quot;hint&quot;: &quot;sudo journalctl -t ops&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;ops: incident reviewed&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now you are the admin on call. The practice server had a busy night. Start by trying to read the auth log without sudo, to see that it is protected. Then count the failed password lines, and list the attacking addresses with a count for each, busiest first. Next ask the journal for every error since today, and narrow the kernel messages down to the one about memory. Find out who used sudo and whether anyone typed the password wrong. Finally, write a note into the system log with logger and a tag, and find it again with journalctl dash t.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 7 of 7</div><h2>Logs and monitoring from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Logs are the diary of a computer. When something breaks, look at the newest errors first: <code>sudo journalctl -p err -b</code> and the log of the program that failed.</p></div><div class="ld-p" data-ld="college" hidden><p>Make the journal persistent, set size limits in journald.conf, and rotate text logs. Ship logs off the machine (rsyslog forwarding, systemd-journal-upload), so an attacker who becomes root cannot erase the trail. Watch disk, memory, load and failed units, and alert before users notice.</p></div><div class="ld-p" data-ld="masters" hidden><p>Central stacks collect logs and metrics from many machines: the ELK stack (Elasticsearch, Logstash, Kibana) or Grafana Loki for logs, Prometheus with node_exporter and Grafana for metrics, and alerting rules on top. Structured logs (key=value or JSON) are much easier to search than free text. auditd records security events such as file access and commands for compliance.</p></div><div class="ld-p" data-ld="research" hidden><p>Observability research and practice join logs, metrics and traces (OpenTelemetry) to follow one request across many services. Studies of large outages, such as the published post-mortems of cloud providers, show that missing or misleading monitoring often delays recovery more than the fault itself. Log parsing research (for example the Drain algorithm and the LogHub data sets) turns free-text lines into templates so machine learning can spot unusual patterns.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the disk that filled up at 3 a.m.</div><p>A web server stopped answering at night. <code>df -h</code> showed / at 100 percent, and <code>du -h --max-depth=1 /var | sort -h</code> pointed at /var/log/myapp, where a debug log had grown to 40 GB because it had no rotation rule. The fix added a logrotate rule with <code>size 500M</code> and <code>rotate 5</code>, set <code>SystemMaxUse=1G</code> for the journal, and added a disk alert at 80 percent so the next problem pages someone hours earlier.</p></div>
+<div class="vt-talk" hidden>Here is how log work grows with experience. Beginners learn to look at the newest errors first. Professionals make sure logs survive reboots, rotate them so disks never fill up, and send copies to another machine, because an attacker with root could delete local logs. They also watch a few key numbers, such as disk space, memory, load and failed services, and get an alert before users notice a problem. Larger teams collect logs and metrics from all machines in central systems such as the E L K stack, Grafana Loki and Prometheus, and prefer structured logs that are easy to search. At the research level, observability joins logs, metrics and traces to follow a single request through many services, and log parsing algorithms turn millions of free text lines into patterns that machine learning can check for anything unusual.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./boot-systemd.html" data-topic="boot-systemd"><small>Previous topic</small><b>Boot and systemd</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "logs-health", "topic": "logs-health", "subject": "linux", "title": "Logs and health checks: journalctl, /var/log and logrotate", "codes": {}, "quiz": [{"lv": "e", "q": "Which command reads the systemd journal?", "o": ["syslog", "journalctl", "logread", "cat /var/journal"], "a": 1, "hint": "Journal control.", "why": "journalctl."}, {"lv": "e", "q": "Where are most text log files kept?", "o": ["/etc/log", "/var/log", "/tmp/log", "/usr/log"], "a": 1, "hint": "Variable data.", "why": "/var/log."}, {"lv": "e", "q": "Which log file holds ssh logins and sudo use on Ubuntu?", "o": ["/var/log/dpkg.log", "/var/log/auth.log", "/var/log/kern.log", "/var/log/boot.log"], "a": 1, "hint": "Authentication.", "why": "auth.log, or secure on RHEL."}, {"lv": "e", "q": "Which command shows free memory in readable units?", "o": ["df -h", "free -h", "du -h", "mem -h"], "a": 1, "hint": "Free.", "why": "free -h."}, {"lv": "m", "q": "Which option shows only the messages of one service?", "o": ["journalctl -p", "journalctl -u NAME", "journalctl -k", "journalctl -b"], "a": 1, "hint": "Unit.", "why": "-u selects a unit."}, {"lv": "m", "q": "journalctl -p err shows which priorities?", "o": ["Only err", "err and everything more serious", "Everything except err", "Only warnings"], "a": 1, "hint": "And worse.", "why": "err, crit, alert, emerg."}, {"lv": "m", "q": "Which command follows new journal lines as they arrive?", "o": ["journalctl -f", "journalctl -r", "journalctl -n", "journalctl -o"], "a": 0, "hint": "Follow.", "why": "-f follows."}, {"lv": "m", "q": "What does logrotate do with a log that is due?", "o": ["Deletes it", "Renames it, starts a new one, compresses and removes old copies", "Emails it", "Encrypts it"], "a": 1, "hint": "Rotate.", "why": "The old copies are numbered and limited."}, {"lv": "m", "q": "In free -h, which column tells how much memory programs can still get?", "o": ["free", "available", "shared", "total"], "a": 1, "hint": "Available.", "why": "The cache is given back on demand."}, {"lv": "h", "q": "The load average is 8.0 on a machine with 4 CPUs. What does it mean?", "o": ["The machine is idle", "Twice as much work wants CPU time as the CPUs can do", "8 users are logged in", "Memory is full"], "a": 1, "hint": "Compare with nproc.", "why": "Load above the CPU count means waiting."}, {"lv": "h", "q": "df -h shows free space, but writing a file fails with No space left on device. What should you check?", "o": ["free -h", "df -i for inodes", "uptime", "nproc"], "a": 1, "hint": "Many tiny files.", "why": "Inodes can run out first."}, {"lv": "h", "q": "Why add postrotate with a reload to a logrotate rule?", "o": ["To compress faster", "So the program reopens its log instead of writing to the renamed file", "To send mail", "It is required syntax"], "a": 1, "hint": "Open file.", "why": "The program keeps the old file open otherwise."}, {"lv": "h", "q": "journalctl -b -1 says there is no such boot. What is the likely reason?", "o": ["The disk is broken", "The journal is kept only in memory", "You need -u", "The kernel is old"], "a": 1, "hint": "Persistent storage.", "why": "Create /var/log/journal or set Storage=persistent."}, {"lv": "x", "q": "Why ship logs to another machine?", "o": ["To save disk space only", "So an attacker who gains root cannot erase the evidence", "journalctl needs it", "It makes logs faster"], "a": 1, "hint": "Tamper.", "why": "Remote copies survive a compromise."}], "calc": [{"lv": "e", "q": "Priorities go from 0 (emerg) to 7 (debug). How many levels does journalctl -p err show?", "ans": "4", "hint": "err and more serious.", "steps": ["err is 3.", "Levels 0, 1, 2 and 3.", "<span class=\"eq\">4 levels<\/span>"]}, {"lv": "e", "q": "logrotate keeps rotate 7 old files plus the current one. How many files exist at most?", "ans": "8", "hint": "Add the current one.", "steps": ["7 old files.", "Plus app.log itself.", "<span class=\"eq\">7 + 1 = 8<\/span>"]}, {"lv": "m", "q": "Failed logins: 7 from one address, 3 from another, 2 from a third. What percent came from the busiest address, rounded?", "ans": "58", "hint": "Part of the total.", "steps": ["The total is 12.", "7 ÷ 12 = 0.583.", "<span class=\"eq\">58 %<\/span>"]}, {"lv": "m", "q": "A load average of 3.0 on 4 CPUs. What percent of CPU capacity is wanted?", "ans": "75", "hint": "Load divided by CPUs.", "steps": ["3 ÷ 4.", "Times 100.", "<span class=\"eq\">75 %<\/span>"]}, {"lv": "h", "q": "A log grows 2 GB a day, rotated daily with rotate 7 and compression that shrinks old files to 10 percent. About how many GB does it use in total?", "ans": "3.4", "hint": "One plain, seven compressed.", "steps": ["The current file is up to 2 GB.", "Seven old files at 0.2 GB are 1.4 GB.", "<span class=\"eq\">2 + 1.4 = 3.4 GB<\/span>"]}, {"lv": "h", "q": "A disk has 16777216 inodes and 16557104 are free. How many are used?", "ans": "220112", "hint": "Subtract.", "steps": ["Total minus free.", "16777216 − 16557104.", "<span class=\"eq\">220112<\/span>"]}], "assign": [], "must": [["Two log systems", "The journal (journalctl) and text files in /var/log (syslog, auth.log, kern.log, dpkg.log). Many need sudo or the adm group."], ["journalctl filters", "-u unit, -p err, -b boot, --since and --until, -g pattern, -k kernel, -f follow, _COMM=name."], ["Text logs", "grep, awk, sort, uniq -c and sort -rn answer most questions. zgrep for rotated files, logger to write your own lines."], ["logrotate", "Rules in /etc/logrotate.d: daily or size, rotate N, compress, postrotate reload. Test with -d, force with -f."], ["Health", "uptime and nproc for load, free -h available, df -h and df -i, du for big folders, vmstat, dmesg for the kernel and OOM kills."]], "summary": "<p>The journal, read with journalctl and its filters, and the text files in /var/log record what the system does. grep, awk and uniq turn text logs into answers, logrotate keeps them small, and uptime, free, df, vmstat and dmesg give a quick picture of load, memory, disk and kernel trouble.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

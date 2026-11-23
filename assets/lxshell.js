@@ -42,7 +42,7 @@ const LXSH = (() => {
       ['/etc/hostname', 'brainy\n', 0o644, 'root'],
       ['/etc/os-release', 'PRETTY_NAME="Practice Linux 1.0"\nNAME="Practice Linux"\nID=practice\nVERSION_ID="1.0"\n', 0o644, 'root'],
       ['/etc/passwd', 'root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nasha:x:1001:1001:Asha Rao:/home/asha:/bin/bash\nlearner:x:1000:1000:Learner:/home/learner:/bin/bash\n', 0o644, 'root'],
-      ['/etc/group', 'root:x:0:\nsudo:x:27:learner\nwww-data:x:33:\nlearner:x:1000:\nasha:x:1001:\n', 0o644, 'root'],
+      ['/etc/group', 'root:x:0:\nadm:x:4:\nsudo:x:27:learner\nwww-data:x:33:\nlearner:x:1000:\nasha:x:1001:\n', 0o644, 'root'],
       ['/etc/shadow', 'root:*:20415:0:99999:7:::\nlearner:$y$j9T$demo$demo:20415:0:99999:7:::\n', 0o640, 'root'],
       ['/etc/skel/.bashrc', '# ~/.bashrc: executed by bash(1) for non-login shells.\n', 0o644, 'root'],
       ['/etc/skel/.profile', '# ~/.profile: executed by the command interpreter for login shells.\n', 0o644, 'root'],
@@ -57,7 +57,7 @@ const LXSH = (() => {
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
   const SBIN = 'chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'alias journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const CMDS = 'alias dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -3230,6 +3230,30 @@ const LXSH = (() => {
   /* ---------- small builtins for scripts ---------- */
   C[':'] = function () { return 0; };
   /* ---------- systemd: units, systemctl and the journal (systemd 255 output) ---------- */
+  const AUTH_EVENTS = (() => {
+    const ev = [], t0 = T0 - 3 * 3600e3;
+    const bad = [['203.0.113.7', 'admin'], ['203.0.113.7', 'root'], ['198.51.100.23', 'root'], ['203.0.113.7', 'test'], ['192.0.2.200', 'oracle'], ['198.51.100.23', 'root'], ['203.0.113.7', 'admin'], ['203.0.113.7', 'ubuntu'], ['198.51.100.23', 'pi'], ['203.0.113.7', 'root'], ['192.0.2.200', 'root'], ['203.0.113.7', 'guest']];
+    let pid = 3100;
+    bad.forEach(([ip, u], i) => {
+      const t = t0 + i * 371e3 + (i % 3) * 17e3, real = u === 'root';
+      ev.push({ t, id: `sshd[${pid}]`, unit: 'ssh.service', msg: real ? `Failed password for root from ${ip} port ${40000 + i * 211} ssh2` : `Invalid user ${u} from ${ip} port ${40000 + i * 211}`, prio: 6 });
+      if (!real) ev.push({ t: t + 2000, id: `sshd[${pid}]`, unit: 'ssh.service', msg: `Failed password for invalid user ${u} from ${ip} port ${40000 + i * 211} ssh2`, prio: 6 });
+      pid += 7;
+    });
+    ev.push({ t: t0 + 50 * 60e3, id: 'sshd[3402]', unit: 'ssh.service', msg: 'Accepted publickey for learner from 192.0.2.10 port 51515 ssh2: ED25519 SHA256:q2Y7v8dHkP0e3m1t5JZpLr4a9GxT6cUoWbNfK1sQe8A', prio: 6 });
+    ev.push({ t: t0 + 50 * 60e3 + 1000, id: 'sshd[3402]', unit: 'ssh.service', msg: 'pam_unix(sshd:session): session opened for user learner(uid=1000) by learner(uid=0)', prio: 6 });
+    ev.push({ t: t0 + 95 * 60e3, id: 'sudo', unit: '', msg: ' learner : TTY=pts/0 ; PWD=/home/learner ; USER=root ; COMMAND=/usr/bin/apt update', prio: 5 });
+    ev.push({ t: t0 + 96 * 60e3, id: 'sudo', unit: '', msg: ' learner : TTY=pts/0 ; PWD=/home/learner ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx', prio: 5 });
+    ev.push({ t: t0 + 140 * 60e3, id: 'sudo', unit: '', msg: '    asha : 3 incorrect password attempts ; TTY=pts/1 ; PWD=/home/asha ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow', prio: 2 });
+    return ev.sort((a, b) => a.t - b.t);
+  })();
+  const KERNEL_EVENTS = [
+    { t: T0 - 3600e3, id: 'kernel', unit: '', msg: 'Linux version 6.8.0-practice (practice@brainy) #1 SMP', prio: 5, k: true },
+    { t: T0 - 3600e3, id: 'kernel', unit: '', msg: 'Command line: BOOT_IMAGE=/boot/vmlinuz-6.8.0-practice root=UUID=1b2c-77aa ro quiet', prio: 6, k: true },
+    { t: T0 - 3600e3 + 2000, id: 'kernel', unit: '', msg: 'EXT4-fs (sda1): mounted filesystem 1b2c-77aa ro with ordered data mode. Quota mode: none.', prio: 6, k: true },
+    { t: T0 - 25 * 60e3, id: 'kernel', unit: '', msg: 'usb 1-1: new high-speed USB device number 3 using xhci_hcd', prio: 6, k: true },
+    { t: T0 - 25 * 60e3 + 900, id: 'kernel', unit: '', msg: 'sd 2:0:0:0: [sdb] 62529536 512-byte logical blocks: (32.0 GB/29.8 GiB)', prio: 5, k: true },
+    { t: T0 - 4 * 60e3, id: 'kernel', unit: '', msg: 'Out of memory: Killed process 2261 (java) total-vm:4194304kB, anon-rss:3145728kB, file-rss:0kB, shmem-rss:0kB, UID:1001 pgtables:6400kB oom_score_adj:0', prio: 3, k: true }];
   const UNITS0 = {
     'cron.service': { file: '/usr/lib/systemd/system/cron.service', pid: 618, data: '[Unit]\nDescription=Regular background program processing daemon\nDocumentation=man:cron(8)\nAfter=remote-fs.target nss-user-lookup.target\n\n[Service]\nEnvironmentFile=-/etc/default/cron\nExecStart=/usr/sbin/cron -f -P $EXTRA_OPTS\nKillMode=process\nRestart=on-failure\n\n[Install]\nWantedBy=multi-user.target\n' },
     'ssh.service': { file: '/usr/lib/systemd/system/ssh.service', pid: 412, data: '[Unit]\nDescription=OpenBSD Secure Shell server\nDocumentation=man:sshd(8) man:sshd_config(5)\nAfter=network.target auditd.service\n\n[Service]\nExecStartPre=/usr/sbin/sshd -t\nExecStart=/usr/sbin/sshd -D $SSHD_OPTS\nExecReload=/bin/kill -HUP $MAINPID\nKillMode=process\nRestart=on-failure\n\n[Install]\nWantedBy=multi-user.target\n' },
@@ -3263,6 +3287,9 @@ const LXSH = (() => {
       }
     });
     ['/usr/sbin/cron', '/usr/sbin/sshd', '/usr/sbin/nginx'].forEach(f => { if (!this.node(f)) this.mk(f, 'f', 0o755, 'root', '#!practice ' + baseName(f) + '\n'); });
+    AUTH_EVENTS.concat(KERNEL_EVENTS).forEach(e => st.log.push(Object.assign({}, e)));
+    if (!this.node('/var/log/auth.log')) { const n = this.mk('/var/log/auth.log', 'f', 0o640, 'syslog', AUTH_EVENTS.map(e => `${jDate(e.t)} ${HOST} ${e.id}: ${e.msg}`).join('\n') + '\n'); n.group = 'adm'; }
+    ['/var/log/syslog'].forEach(f => { const n = this.node(f); if (n) { n.owner = 'syslog'; n.group = 'adm'; } });
     if (!this.node('/usr/local/bin/backup.sh')) this.mk('/usr/local/bin/backup.sh', 'f', 0o755, 'root', '#!/bin/bash\nrsync -a /home/ /mnt/backup/home/\n');
     st.log.sort((a, b) => a.t - b.t);
     return st;
@@ -3433,12 +3460,44 @@ const LXSH = (() => {
       else if (x === '-n' || x === '--lines') { const k = +a[++i]; rows = rows.slice(-k); }
       else if (/^-n\d+$/.test(x)) rows = rows.slice(-+x.slice(2));
       else if (x === '-p' || x === '--priority') { const lv = { emerg: 0, alert: 1, crit: 2, err: 3, warning: 4, notice: 5, info: 6, debug: 7 }; const p = a[++i], max = lv[p] !== undefined ? lv[p] : +p; rows = rows.filter(e => (e.prio !== undefined ? e.prio : 6) <= max); }
-      else if (x === '--since' || x === '-S' || x === '--until' || x === '-U') i++;
+      else if (x === '--since' || x === '-S' || x === '--until' || x === '-U') {
+        const v = String(a[++i] || '').trim(), base = this.clock - this.clock % 864e5; let t = NaN, m;
+        if (v === 'today') t = base; else if (v === 'yesterday') t = base - 864e5; else if (v === 'now') t = this.clock;
+        else if ((m = /^(\d+)\s*(min|minute|minutes|h|hour|hours) ago$/.exec(v))) t = this.clock - +m[1] * (m[2][0] === 'h' ? 36e5 : 6e4);
+        else if ((m = /^(?:(\d{4})-(\d\d)-(\d\d)\s*)?(\d\d?):(\d\d)(?::(\d\d))?$/.exec(v))) t = m[1] ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)) : base + (+m[4] * 3600 + +m[5] * 60 + +(m[6] || 0)) * 1000;
+        else if ((m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(v))) t = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+        if (isNaN(t)) { this.eout(`Failed to parse timestamp: ${v}\n`); return 1; }
+        rows = rows.filter(e => (x === '--since' || x === '-S') ? e.t >= t : e.t <= t);
+      }
+      else if (x === '-g' || x === '--grep') { const re = new RegExp(a[++i], /[A-Z]/.test(a[i]) ? '' : 'i'); rows = rows.filter(e => re.test(e.msg)); }
+      else if (x === '-k' || x === '--dmesg') rows = rows.filter(e => e.k);
+      else if (/^_COMM=/.test(x)) { const c = x.slice(6); rows = rows.filter(e => e.id.split('[')[0] === c); }
+      else if (/^SYSLOG_IDENTIFIER=/.test(x) || x === '-t') { const c = x === '-t' ? a[++i] : x.split('=')[1]; rows = rows.filter(e => e.id.split('[')[0] === c); }
+      else if (x === '--disk-usage') { this.out('Archived and active journals take up 24.0M in the file system.\n'); return 0; }
+      else if (x === '-o' || x === '--output') { if (a[++i] === 'cat') this.jcat = true; }
       else if (/^-[xebrfq]+$/.test(x) || x === '--no-pager' || x === '--reverse') { if (x.includes('r')) rows.reverse(); }
     }
     if (a.some(x => /^-[a-z]*f/.test(x) && x !== '--no-pager')) this.eout('(journalctl -f keeps waiting for new lines. The practice shell shows what is there now.)\n');
     if (!rows.length) { this.out('-- No entries --\n'); return 0; }
-    this.out(rows.map(e => `${jDate(e.t)} ${HOST} ${e.id}: ${e.msg}`).join('\n') + '\n');
+    const cat = this.jcat; this.jcat = false;
+    this.out(rows.map(e => cat ? e.msg : `${jDate(e.t)} ${HOST} ${e.id}: ${e.msg}`).join('\n') + '\n');
+    return 0;
+  };
+  /* dmesg: the kernel ring buffer, readable by root only (kernel.dmesg_restrict=1 on Ubuntu) */
+  C.dmesg = function (a) {
+    if (this.user !== 'root') { this.eout('dmesg: read kernel buffer failed: Operation not permitted\n'); return 1; }
+    const boot = T0 - 3600e3, rows = this.sd().log.filter(e => e.k);
+    this.out(rows.map(e => a.includes('-T') ? `[${sdDate(e.t).replace(/^(\w+) (\d+)-(\d+)-(\d+) (.*) UTC$/, (_, d, y, mo, da, hms) => `${d} ${MON3[+mo - 1]} ${+da} ${hms} ${y}`)}] ${e.msg}` : `[${((e.t - boot) / 1000 + 0.000001).toFixed(6).padStart(12)}] ${e.msg}`).join('\n') + '\n');
+    return 0;
+  };
+  /* logger: write a line into the journal and the syslog */
+  C.logger = function (a, input) {
+    let tag = this.user, prio = 'user.notice'; const words = [];
+    for (let i = 0; i < a.length; i++) { if (a[i] === '-t') tag = a[++i]; else if (a[i] === '-p') prio = a[++i]; else words.push(a[i]); }
+    const msg = words.join(' ') || (input || '').replace(/\n$/, '');
+    const lv = { emerg: 0, alert: 1, crit: 2, err: 3, error: 3, warning: 4, warn: 4, notice: 5, info: 6, debug: 7 }[prio.split('.').pop()];
+    this.sd().log.push({ t: this.now(), id: tag, unit: '', msg, prio: lv === undefined ? 5 : lv });
+    const sl = this.node('/var/log/syslog'); if (sl) sl.data += `${jDate(this.clock)} ${HOST} ${tag}: ${msg}\n`;
     return 0;
   };
   /* ---------- apt and dpkg: a small package database with real Ubuntu 24.04 (noble) data ---------- */
