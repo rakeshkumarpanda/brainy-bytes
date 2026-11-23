@@ -70,7 +70,11 @@ def relabel(fn):
 
 def pk_names():
     src = open(os.path.join(B.ROOT, 'assets', 'lxwidgets.js'), encoding='utf-8').read()
-    return set(re.findall(r"def\('([\w-]+)'", src))
+    names = re.findall(r"def\('([\w-]+)'", src)
+    twice = sorted({n for n in names if names.count(n) > 1})
+    if twice:
+        raise SystemExit('assets/lxwidgets.js defines these animations twice, the second hides the first: ' + ', '.join(twice))
+    return set(names)
 
 
 _viz_names = B.viz_names

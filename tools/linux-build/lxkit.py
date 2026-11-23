@@ -194,6 +194,14 @@ def _box(title, rows, note, real, root=False):
             f'<button type="button" class="lx-copy">Copy</button></div><pre>{chr(10).join(body)}</pre>{n}</div>')
 
 
+def shape(title, text, note=''):
+    """The general form of a command or block, shown without prompts or output. Comments start with #."""
+    body = '\n'.join(f'<span class="lx-cmt">{_esc(l)}</span>' if l.lstrip().startswith('#') else _esc(l) for l in text.strip('\n').split('\n'))
+    n = f'<div class="lx-note">{note}</div>' if note else ''
+    return (f'<div class="lx-run lx-shape"><div class="lx-rh"><span>{_esc(title)}</span><span class="lx-real">The general form</span>'
+            f'<button type="button" class="lx-copy">Copy</button></div><pre>{body}</pre>{n}</div>')
+
+
 def run(title, script, note='', root=False, keep=False, cwd='~'):
     return _box(title, execute(script, root, keep, cwd), note, True, root)
 

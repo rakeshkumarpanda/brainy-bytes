@@ -309,9 +309,11 @@ const LXSH = (() => {
             i++;
             const body = { t: 'list', items: [] };
             skipSep();
-            while (i < toks.length && !(isOp(';') && toks[i + 1] && toks[i + 1].op === ';') && peekW() !== 'esac') { const p = andor(); body.items.push({ p }); if (isOp(';') && !(toks[i + 1] && toks[i + 1].op === ';')) i++; skipSepSingle(); }
-            if (isOp(';')) i += 2;
-            arms.push([pats, body]); skipSep();
+            const armEnd = () => isOp(';') && toks[i + 1] && (toks[i + 1].op === ';' || toks[i + 1].op === '&');
+            while (i < toks.length && !armEnd() && peekW() !== 'esac') { const p = andor(); body.items.push({ p }); if (isOp(';') && !armEnd()) i++; skipSepSingle(); }
+            let fall = '';
+            if (armEnd()) { if (toks[i + 1].op === '&') { fall = ';&'; i += 2; } else { i += 2; if (isOp('&')) { fall = ';;&'; i++; } } }
+            arms.push([pats, body, fall]); skipSep();
           }
           expectWord('esac');
           return { t: 'case', word, arms };
@@ -334,7 +336,7 @@ const LXSH = (() => {
         if (!words.length && !redir.length) throw new Error(`syntax error near "${toks[i] ? toks[i].op || this.wordText(toks[i].w) : 'end of line'}"`);
         return { t: 'cmd', words, redir };
       };
-      const skipSepSingle = () => { while (toks[i] && toks[i].op === ';' && !(toks[i + 1] && toks[i + 1].op === ';')) i++; };
+      const skipSepSingle = () => { while (toks[i] && toks[i].op === ';' && !(toks[i + 1] && (toks[i + 1].op === ';' || toks[i + 1].op === '&'))) i++; };
       const redirOne = () => {
         const tk = toks[i++];
         if (tk.op === '2>&1' || tk.op === '>&2') return { op: tk.op };
@@ -425,7 +427,15 @@ const LXSH = (() => {
       return buf;
     }
     braces(s) {
-      const m = /^(.*?)\{([^{}]*)\}(.*)$/.exec(s);
+      let m = null;
+      for (let i = 0; i < s.length; i++) {
+        if (s[i] === '$' && s[i + 1] === '{') { const k = s.indexOf('}', i); if (k < 0) break; i = k; continue; }
+        if (s[i] !== '{') continue;
+        const k = s.indexOf('}', i + 1); if (k < 0) break;
+        const body = s.slice(i + 1, k);
+        if (body.includes('{') || !(body.includes(',') || /^(-?\d+\.\.-?\d+|[a-z]\.\.[a-z])$/.test(body))) continue;
+        m = [s, s.slice(0, i), body, s.slice(k + 1)]; break;
+      }
       if (!m) return [s];
       let items;
       const r = /^(-?\d+)\.\.(-?\d+)$/.exec(m[2]) || /^([a-z])\.\.([a-z])$/.exec(m[2]);
@@ -667,8 +677,16 @@ const LXSH = (() => {
       if (node.t === 'dbl') return this.dbl(node.text);
       if (node.t === 'case') {
         const v = this.expandWord(node.word).join(' ');
-        for (const [pats, body] of node.arms) if (pats.some(p => globRe(p.parts.map(q => q.q === 1 ? q.t : this.expandStr(q.t)).join('')).test(v))) return this.exec(body, input);
-        return 0;
+        const hit = p => globRe(p.parts.map(q => q.q === 1 ? q.t : this.expandStr(q.t)).join('')).test(v);
+        let code = 0, run = false;
+        for (const [pats, body, fall] of node.arms) {
+          if (!run && !pats.some(hit)) continue;
+          code = this.exec(body, input);
+          if (fall === ';&') { run = true; continue; }
+          run = false;
+          if (fall !== ';;&') return code;
+        }
+        return code;
       }
       if (node.t === 'fn') { (this.fns = this.fns || {})[node.name] = node.body; return 0; }
       if (node.t === 'sub') {
@@ -2616,6 +2634,24 @@ const LXSH = (() => {
     names.forEach((n, k) => { this.vars[n] = parts[k] ?? ''; });
     return 0;
   };
+  /* the unary file tests of test(1) and [[ ]]. undefined means the operator is not a file test */
+  World.prototype.fileTest = function (op, x) {
+    const n = this.node(this.abs(x)), ln = this.node(this.abs(x), false);
+    switch (op) {
+      case '-e': case '-a': return !!n; case '-f': return !!n && n.type === 'f'; case '-d': return !!n && n.type === 'd'; case '-s': return !!n && this.size(n) > 0;
+      case '-r': return !!n && this.can(n, 'r'); case '-w': return !!n && this.can(n, 'w'); case '-x': return !!n && this.can(n, 'x');
+      case '-L': case '-h': return !!ln && ln.type === 'l'; case '-c': return !!n && n.type === 'c'; case '-b': case '-p': case '-S': return false;
+      case '-O': return !!n && n.owner === this.user; case '-G': return !!n && n.group === this.user;
+      case '-u': return !!n && (n.mode & 0o4000) !== 0; case '-g': return !!n && (n.mode & 0o2000) !== 0; case '-k': return !!n && (n.mode & 0o1000) !== 0;
+      case '-z': return x === ''; case '-n': return x !== '';
+    }
+  };
+  World.prototype.fileCmp = function (op, l, r) {
+    const a = this.node(this.abs(l)), b = this.node(this.abs(r));
+    if (op === '-ef') return !!a && a === b;
+    if (!a || !b) return op === '-nt' ? !!a && !b : !a && !!b;
+    return op === '-nt' ? a.mtime > b.mtime : a.mtime < b.mtime;
+  };
   C.test = C['['] = function (a, _, nm) {
     if (nm === '[') { if (a[a.length - 1] !== ']') { this.eout("[: missing `]'\n"); return 2; } a = a.slice(0, -1); }
     const one = x => {
@@ -2626,14 +2662,11 @@ const LXSH = (() => {
       if (ai > 0) return one(x.slice(0, ai)) && one(x.slice(ai + 1));
       if (x.length === 1) return x[0] !== '';
       if (x.length === 2) {
-        const n = this.node(this.abs(x[1]));
-        switch (x[0]) {
-          case '-e': return !!n; case '-f': return !!n && n.type === 'f'; case '-d': return !!n && n.type === 'd'; case '-s': return !!n && this.size(n) > 0;
-          case '-r': return !!n && this.can(n, 'r'); case '-w': return !!n && this.can(n, 'w'); case '-x': return !!n && this.can(n, 'x');
-          case '-L': case '-h': return !!this.node(this.abs(x[1]), false) && this.node(this.abs(x[1]), false).type === 'l';
-          case '-z': return x[1] === ''; case '-n': return x[1] !== '';
-        }
+        const v = this.fileTest(x[0], x[1]);
+        if (v !== undefined) return v;
+        throw new Error(`${x[0]}: unary operator expected`);
       }
+      if (x.length > 3) throw new Error('too many arguments');
       const [l, op, r] = x;
       const N = v => { if (!/^-?\d+$/.test(v.trim())) throw new Error(`${v}: integer expression expected`); return +v; };
       switch (op) {
@@ -2641,10 +2674,11 @@ const LXSH = (() => {
         case '-eq': return N(l) === N(r); case '-ne': return N(l) !== N(r); case '-lt': return N(l) < N(r);
         case '-le': return N(l) <= N(r); case '-gt': return N(l) > N(r); case '-ge': return N(l) >= N(r);
         case '<': return l < r; case '>': return l > r;
+        case '-nt': case '-ot': case '-ef': return this.fileCmp(op, l, r);
       }
       throw new Error(`${op}: binary operator expected`);
     };
-    try { return one(a) ? 0 : 1; } catch (e) { this.eout(`${nm}: ${e.message}\n`); return 2; }
+    try { return one(a) ? 0 : 1; } catch (e) { this.eout(`bash: ${nm}: ${e.message}\n`); return 2; }
   };
   C.expr = function (a) {
     let v;
@@ -2912,13 +2946,11 @@ const LXSH = (() => {
       const w = W();
       if (!w) throw new Error(`syntax error in conditional expression${toks[k] ? ` near "${toks[k].op}"` : ''}`);
       const r0 = raw(w);
-      if (/^-[a-zA-Z]$/.test(r0) && !w.parts[0].q && toks[k + 1] && toks[k + 1].w && !(toks[k + 2] && toks[k + 2].w && /^(==?|!=|=~|-eq|-ne|-lt|-le|-gt|-ge|-nt|-ot)$/.test(raw(toks[k + 2].w)))) {
+      if (/^-[a-zA-Z]$/.test(r0) && !w.parts[0].q && toks[k + 1] && toks[k + 1].w && !(toks[k + 2] && toks[k + 2].w && /^(==?|!=|=~|-eq|-ne|-lt|-le|-gt|-ge|-nt|-ot|-ef)$/.test(raw(toks[k + 2].w)))) {
         k++; const x = val(W()); k++;
-        const n = this.node(this.abs(x)), ln = this.node(this.abs(x), false);
+        const ft = this.fileTest(r0, x);
+        if (ft !== undefined) return ft;
         switch (r0) {
-          case '-e': case '-a': return !!n; case '-f': return !!n && n.type === 'f'; case '-d': return !!n && n.type === 'd'; case '-s': return !!n && this.size(n) > 0;
-          case '-r': return !!n && this.can(n, 'r'); case '-w': return !!n && this.can(n, 'w'); case '-x': return !!n && this.can(n, 'x');
-          case '-L': case '-h': return !!ln && ln.type === 'l'; case '-z': return x === ''; case '-n': return x !== '';
           case '-v': { const m = /^(\w+)(?:\[(.+)\])?$/.exec(x); if (!m) return false; if (m[2] !== undefined) return this.arrKeys(m[1]).map(String).includes(this.isAssoc(m[1]) ? this.expandStr(m[2]) : String(this.arith(m[2]))); return m[1] in this.vars || !!(this.arrays && this.arrays[m[1]] !== undefined); }
           case '-o': return !!(this.opts && this.opts[x]);
         }
@@ -2927,7 +2959,7 @@ const LXSH = (() => {
       k++;
       const opTok = toks[k];
       const op = opTok && opTok.w && !opTok.w.parts.some(p => p.q) ? raw(opTok.w) : opTok && (opTok.op === '<' || opTok.op === '>') ? opTok.op : null;
-      if (op && ['==', '=', '!=', '=~', '<', '>', '-eq', '-ne', '-lt', '-le', '-gt', '-ge', '-nt', '-ot'].includes(op)) {
+      if (op && ['==', '=', '!=', '=~', '<', '>', '-eq', '-ne', '-lt', '-le', '-gt', '-ge', '-nt', '-ot', '-ef'].includes(op)) {
         k++; const rw = W(); if (!rw) throw new Error(`unexpected argument to conditional binary operator`); k++;
         const l = val(w);
         if (op === '=~') {
@@ -2942,7 +2974,7 @@ const LXSH = (() => {
           case '<': return l < r; case '>': return l > r;
           case '-eq': return N(l) === N(r); case '-ne': return N(l) !== N(r); case '-lt': return N(l) < N(r);
           case '-le': return N(l) <= N(r); case '-gt': return N(l) > N(r); case '-ge': return N(l) >= N(r);
-          case '-nt': case '-ot': { const a = this.node(this.abs(l)), b = this.node(this.abs(r)); if (!a || !b) return op === '-nt' ? !!a && !b : !a && !!b; return op === '-nt' ? a.mtime > b.mtime : a.mtime < b.mtime; }
+          case '-nt': case '-ot': case '-ef': return this.fileCmp(op, l, r);
         }
       }
       return val(w) !== '';

@@ -10685,6 +10685,23 @@ function lxScriptModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-script-2", title: "Decisions and loops", emoji: "2", step: 2, part: "scripting", level: "Intermediate", blurb: "Let scripts choose and repeat: if, test, [[ ]], (( )) and case, then for, while and until loops over files, lines and numbers.", topics: [
+      { id: "conditions", title: "Decisions: if, test and case", emoji: "2.1", page: "content/linux/conditions.html",
+        summary: "if and exit statuses, test and [ ], [[ ]] and (( )), and case.",
+        keywords: ["if", "elif", "test", "[ ]", "[[ ]]", "(( ))", "case", "condition", "BASH_REMATCH", "file test", "string comparison", "number comparison"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "if", title: "if, elif and else: decisions by exit status", emoji: "", group: "Lesson", keywords: ["if", "then", "elif", "else", "fi", "condition", "exit status", "grep -q", "! negation", "&& ||", "if statement"] },
+        { id: "test", title: "test and [ ]: files, strings and numbers", emoji: "", group: "Lesson", keywords: ["test", "[ ]", "-f", "-d", "-e", "-z", "-n", "-eq", "-lt", "-gt", "string comparison", "number comparison", "unary operator expected", "file tests"] },
+        { id: "dbl", title: "The bash way: [[ ]] and (( ))", emoji: "", group: "Lesson", keywords: ["[[ ]]", "(( ))", "pattern matching", "==", "=~", "BASH_REMATCH", "regular expression", "arithmetic condition", "string sort order", "test vs [["] },
+        { id: "case", title: "case: choose by pattern", emoji: "", group: "Lesson", keywords: ["case", "esac", "pattern", ";;", ";&", ";;&", "*)", "catch-all", "service script", "start stop restart", "usage message"] },
+        { id: "levels", title: "Decisions from school to research", emoji: "", group: "Lesson", keywords: ["condition list", "test argument count", "regex in a variable", "nocasematch", "octal in (( ))", "10#08", "set -e and if", "ShellCheck", "deployment check"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

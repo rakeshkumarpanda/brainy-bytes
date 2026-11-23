@@ -462,7 +462,7 @@
   }));
 
   /* power 4.2 how bash finds a command: alias, function, builtin, then each folder of PATH in order */
-  def('lx-path', el => W(el, {
+  def('lx-cmdpath', el => W(el, {
     title: 'How bash finds a command',
     sub: 'Type a command name and a PATH. Pip checks aliases and builtins first, then looks in each PATH folder from left to right and runs the first match. The practice computer has a script called tool in ~/bin.',
     inputs: [{ k: 'name', label: 'Command', type: 'text', val: 'tool', w: 120 }, { k: 'path', label: 'PATH', type: 'text', val: '/home/learner/bin:/usr/local/bin:/usr/bin:/bin', w: 360 }],
@@ -559,6 +559,77 @@
       stage(6, 'Quote removal', ps => [[{ t: ps.map(p => p.t).join(''), q: 0 }]], 'Finally the quote characters themselves are removed. What is left are the exact arguments the command receives.');
       const r = w.run(line);
       fr.push({ msg: `The command now runs with ${words.length - 1} argument${words.length === 2 ? '' : 's'}.`, mood: 'happy', fx: 'burst', layers: L('Final arguments', words, words.map(() => 'cur')).concat([{ t: 'term', label: 'What the terminal shows', lines: [['c', line]].concat(r.out.replace(/\n$/, '').split('\n').filter(x => x !== '').map(x => ['o', x])) }]) });
+      return fr;
+    }
+  }));
+
+  /* scripting 2.1 what test and [ ] really receive, and why [[ ]] is safer */
+  def('lx-test', el => W(el, {
+    title: 'What the test command really sees',
+    sub: 'Set some variables, then type a test in [ ] or [[ ]]. Pip expands it exactly as bash would, counts the arguments that reach test, and shows which rule decides the answer.',
+    inputs: [{ k: 'setup', label: 'Variables', type: 'text', val: 'x=""; n=7', w: 200 }, { k: 'test', label: 'Test', type: 'text', val: '[ $x = yes ]', w: 260 }],
+    random: () => [{ setup: 'x=""; n=7', test: '[ $x = yes ]' }, { setup: 'x=""; n=7', test: '[[ $x = yes ]]' }, { setup: 'n=7', test: '[ $n -gt 5 ]' }, { setup: 'f="My Report.txt"', test: '[ -f $f ]' }, { setup: 'name=asha', test: '[[ $name == a* ]]' }, { setup: 'n=abc', test: '[ $n -eq 3 ]' }, { setup: 'x=hello', test: '[ -n "$x" ]' }][Math.floor(Math.random() * 7)],
+    frames: v => {
+      const w = world(), setup = String(v.setup || '').trim(), line = String(v.test || '').trim();
+      if (setup) w.run(setup);
+      const dbl = /^\[\[\s.*\s\]\]$/.test(line), sq = /^\[\s.*\s\]$/.test(line) || /^test\s/.test(line);
+      if (!dbl && !sq) return [{ msg: 'Type a test that starts with [ and a space and ends with a space and ], or one in [[ ]], for example [ -f notes.txt ].', mood: 'think', layers: [] }];
+      const fr = [{ msg: `${setup ? `First the variables are set: <code>${esc(setup)}</code>. ` : ''}Now bash reads <code>${esc(line)}</code>.`, mood: 'think', layers: [{ t: 'term', label: 'The line', lines: [['c', line]] }] }];
+      const r = w.run(line), err = r.out.replace(/\n$/, '');
+      const status = [{ t: 'flow', label: 'Exit status', items: [[String(r.code), r.code === 0 ? 'true' : r.code === 1 ? 'false' : 'error', r.code === 0 ? 'yes' : r.code === 1 ? 'look' : 'no']], plain: true }];
+      if (dbl) {
+        fr.push({ msg: '<code>[[ ]]</code> is part of the bash language, not a command. Inside it bash does <b>no word splitting and no globbing</b>, so an empty or spaced variable stays exactly one value.', mood: 'look', layers: [] });
+        const inner = line.replace(/^\[\[\s*|\s*\]\]$/g, '');
+        let toks = []; try { toks = w.lex(inner).filter(t => t.w).map(t => t.w); } catch (e) { toks = []; }
+        const items = toks.map(t => { const raw = t.parts.map(p => p.t).join(''); const val = /^(==?|!=|=~|<|>|-[a-z]{1,2}|&&|\|\||!)$/.test(raw) && !t.parts.some(p => p.q) ? raw : t.parts.map(p => p.q === 1 ? p.t : w.expandStr(p.t)).join(''); return [val === '' ? '(empty)' : val, raw === val ? '' : raw, val === '' ? 'look' : 'cur']; });
+        fr.push({ msg: 'These are the values [[ ]] compares. After <code>==</code> and <code>!=</code> an unquoted right side is a <b>pattern</b>, and after <code>=~</code> it is a regular expression.', mood: 'look', layers: [{ t: 'flow', label: 'Values inside [[ ]]', items, plain: true }] });
+        fr.push({ msg: err ? `bash says: <code>${esc(err)}</code>` : `The test is <b>${r.code === 0 ? 'true' : 'false'}</b>, so the exit status is ${r.code}.`, mood: r.code === 0 ? 'happy' : r.code === 1 ? 'look' : 'sad', fx: r.code === 0 ? 'burst' : r.code > 1 ? 'shake' : undefined, layers: status });
+        return fr;
+      }
+      let toks = []; try { toks = w.lex(line).filter(t => t.w).map(t => t.w); } catch (e) { return [{ msg: 'bash could not read that line: ' + esc(e.message), mood: 'sad', fx: 'shake', layers: [] }]; }
+      const words = toks.flatMap(t => w.expandWord(t));
+      const args = words.slice(1, words[0] === '[' && words[words.length - 1] === ']' ? -1 : undefined);
+      const lost = toks.length - words.length;
+      fr.push({ msg: `<code>[</code> is an ordinary command, another name for <code>test</code>. So its arguments go through normal expansion and word splitting first${lost > 0 ? `. ${lost} word${lost === 1 ? '' : 's'} vanished because an unquoted variable was empty` : lost < 0 ? '. An unquoted variable with spaces was split into extra words' : ''}.`, mood: lost ? 'wow' : 'look', fx: lost ? 'shake' : undefined, layers: [{ t: 'flow', label: `test receives ${args.length} argument${args.length === 1 ? '' : 's'}`, items: args.map(a => [a === '' ? '(empty)' : a, '', lost ? 'no' : 'cur']), plain: true }] });
+      const n = args.length;
+      const rule = n === 0 ? 'With <b>0 arguments</b> the answer is always false.'
+        : n === 1 ? 'With <b>1 argument</b> test is true when that argument is not empty.'
+        : n === 2 ? (args[0] === '!' ? 'With <b>2 arguments</b> starting with !, test negates the 1-argument rule.' : `With <b>2 arguments</b> the first must be a unary operator such as -f, -d, -z or -n. Here it is <code>${esc(args[0])}</code>.`)
+        : n === 3 ? `With <b>3 arguments</b> the middle one must be a binary operator such as =, !=, -eq or -lt. Here it is <code>${esc(args[1])}</code>.`
+        : 'With <b>4 or more arguments</b> test needs ! or the -a and -o connectors, otherwise there are too many arguments.';
+      fr.push({ msg: rule + ' These rules by argument count come from the test entry in the bash manual.', mood: 'think', layers: [{ t: 'flow', label: `test receives ${n} argument${n === 1 ? '' : 's'}`, items: args.map(a => [a === '' ? '(empty)' : a, '', 'cur']), plain: true }] });
+      fr.push({ msg: err ? `bash says: <code>${esc(err)}</code>${lost > 0 ? ' Quote the variable, as in "$x", or use [[ ]], and the empty value stays an argument.' : lost < 0 ? ' Quote the variable, as in "$f", or use [[ ]], and the value stays one argument.' : ''}` : `The test is <b>${r.code === 0 ? 'true' : 'false'}</b>, so the exit status is ${r.code}.`, mood: r.code === 0 ? 'happy' : r.code === 1 ? 'look' : 'sad', fx: r.code === 0 ? 'burst' : r.code > 1 ? 'shake' : undefined, layers: status });
+      return fr;
+    }
+  }));
+
+  /* scripting 2.1 case: patterns tried from top to bottom, the first match wins */
+  def('lx-case', el => W(el, {
+    title: 'case: the first matching pattern wins',
+    sub: 'Type a value and some case arms, separated by semicolons. Pip tries every pattern from the top, as bash does, and runs the first arm that matches.',
+    inputs: [{ k: 'value', label: 'Value', type: 'text', val: 'holiday.JPG', w: 160 }, { k: 'arms', label: 'Arms', type: 'text', val: '*.txt) text file ; *.jpg|*.[Jj][Pp][Gg]) photo ; *) something else', w: 420 }],
+    random: () => [{ value: 'holiday.JPG', arms: '*.txt) text file ; *.jpg|*.[Jj][Pp][Gg]) photo ; *) something else' }, { value: 'YES', arms: '[yY]|[yY][eE][sS]) agreed ; [nN]*) refused ; *) please answer' }, { value: 'start', arms: 'start) starting ; stop) stopping ; restart) restarting ; *) usage: start or stop' }, { value: 'report-2026.csv', arms: '*.csv) table ; report-*) report ; *) other' }, { value: '42', arms: '*[!0-9]*) not a number ; ?|??) small number ; *) big number' }][Math.floor(Math.random() * 5)],
+    frames: v => {
+      const w = world(), val = String(v.value);
+      const arms = String(v.arms).split(';').map(x => x.trim()).filter(Boolean).map(a => { const k = a.indexOf(')'); return k < 0 ? null : [a.slice(0, k).trim().replace(/^\(/, ''), a.slice(k + 1).trim()]; });
+      if (!arms.length || arms.some(a => !a || !a[0])) return [{ msg: 'Write each arm as pattern) words, for example *.txt) text file, and separate arms with semicolons.', mood: 'think', layers: [] }];
+      const q = s => "'" + s.replace(/'/g, "'\\''") + "'";
+      const rows = arms.map(([p, act]) => [p + ')', act, '']);
+      const fr = [{ msg: `bash compares <b>${esc(val)}</b> with each pattern in turn. Patterns use the same wildcards as file names: * ? and [ ], and | separates choices.`, mood: 'think', layers: [{ t: 'flow', label: 'case "$value" in', items: rows.map(r => r.slice()), plain: true }] }];
+      let hit = -1;
+      for (let i = 0; i < arms.length && hit < 0; i++) {
+        const pats = arms[i][0].split('|');
+        for (const p of pats) {
+          const ok = w.run(`[[ ${q(val)} == ${p} ]]`).code === 0;
+          const cur = rows.map((r, j) => [r[0], r[1], j < i ? 'no' : j === i ? (ok ? 'yes' : 'look') : '']);
+          fr.push({ msg: `Does <b>${esc(val)}</b> match <code>${esc(p)}</code>? ${ok ? '<b>Yes.</b>' : 'No.'}${!ok && val !== val.toLowerCase() && w.run(`[[ ${q(val.toLowerCase())} == ${p} ]]`).code === 0 ? ' It would match in small letters, because patterns are case sensitive.' : ''}`, mood: ok ? 'wow' : 'look', layers: [{ t: 'flow', label: 'case "$value" in', items: cur, plain: true }] });
+          if (ok) { hit = i; break; }
+        }
+      }
+      const final = rows.map((r, j) => [r[0], r[1], j === hit ? 'yes' : j < hit || hit < 0 ? 'no' : 'ghost']);
+      fr.push(hit < 0
+        ? { msg: 'No pattern matched, so case runs nothing and its exit status is 0. A last arm <code>*)</code> catches everything else.', mood: 'sad', layers: [{ t: 'flow', label: 'case "$value" in', items: final, plain: true }] }
+        : { msg: `The arm <code>${esc(arms[hit][0])})</code> runs and prints <b>${esc(arms[hit][1])}</b>. With <code>;;</code> at its end, case stops here and the later arms are never tried.`, mood: 'happy', fx: 'burst', layers: [{ t: 'flow', label: 'case "$value" in', items: final, plain: true }, { t: 'term', label: 'Output', lines: [['o', arms[hit][1]]] }] });
       return fr;
     }
   }));
@@ -811,7 +882,7 @@
       if (b.dataset.on) return;
       b.dataset.on = '1';
       b.addEventListener('click', () => {
-        const cmds = [...b.closest('.lx-run').querySelectorAll('.lx-cmd')].map(x => x.textContent).join('\n');
+        const box = b.closest('.lx-run'), cmds = box.classList.contains('lx-shape') ? box.querySelector('pre').textContent : [...box.querySelectorAll('.lx-cmd')].map(x => x.textContent).join('\n');
         (navigator.clipboard ? navigator.clipboard.writeText(cmds) : Promise.reject()).then(() => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1200); }, () => { b.textContent = 'Select and copy'; });
       });
     });

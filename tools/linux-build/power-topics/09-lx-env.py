@@ -46,7 +46,7 @@ env | sort""", note='bash -c starts a child shell. It sees city only after expor
 
 K.lesson('path', 'PATH: how bash finds commands', f'''
 <p>When you type a command name with no slash in it, bash looks for it in this order: an <b>alias</b>, a <b>function</b>, a <b>builtin</b> command, and then each folder listed in <code>PATH</code>, from left to right. The first executable file with that name wins. A name with a slash, such as <code>./run.sh</code>, is used as a path and PATH is not searched.</p>
-{play('lx-path')}
+{play('lx-cmdpath')}
 {run('Adding your own folder of tools', """echo "$PATH"
 mkdir -p ~/bin
 printf '#!/bin/bash\\necho "hello from my tool"\\n' > ~/bin/tool
