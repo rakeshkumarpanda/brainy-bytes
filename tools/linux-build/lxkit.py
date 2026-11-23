@@ -199,7 +199,9 @@ def run(title, script, note='', root=False, keep=False, cwd='~'):
 
 def sample(title, script, out='', note='', root=False):
     rows = [('#', l, '') if l.startswith('#') else ('$', l, '') for l in script.strip('\n').split('\n')]
-    if out:
+    if isinstance(out, (list, tuple)):   # one output per command line
+        rows = [(k, c, (out[i] if i < len(out) else '').strip('\n')) for i, (k, c, _) in enumerate(rows)]
+    elif out:
         rows[-1] = (rows[-1][0], rows[-1][1], out.strip('\n'))
     return _box(title, rows, note, False, root)
 

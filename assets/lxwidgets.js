@@ -30,7 +30,7 @@
   D.term = L => `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-term">${(L.lines || []).map(([k, s]) => `<div class="${k}">${k === 'h' ? `<span class="h">${esc(s)}</span>` : esc(s)}</div>`).join('') || '<span class="pk-empty">empty screen</span>'}</div>`;
   D.flow = L => {
     const items = L.items || [], ar = L.arrows || [];
-    return `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-flow">${items.map(([t, s, c], i) => `${i ? `<span class="pk-arr ${ar[i - 1] || ''}">${L.back ? '⇄' : '→'}</span>` : ''}<div class="pk-box ${c || ''}">${esc(t)}${s ? `<small>${esc(s)}</small>` : ''}</div>`).join('')}</div>`;
+    return `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-flow">${items.map(([t, s, c], i) => `${i && !L.plain ? `<span class="pk-arr ${ar[i - 1] || ''}">${L.back ? '⇄' : '→'}</span>` : ''}<div class="pk-box ${c || ''}">${esc(t)}${s ? `<small>${esc(s)}</small>` : ''}</div>`).join('')}</div>`;
   };
   D.perm = L => {
     const m = L.mode, cls = L.cls || {}, names = ['owner (u)', 'group (g)', 'others (o)'], ch = 'rwx';
@@ -436,7 +436,7 @@
       const table = () => {
         w.jobs.forEach(j => seen.set(j.id + ':' + j.pid, j));
         const items = [...seen.values()].map(j => [`[${j.id}] ${j.cmd}`, `${j.state} · PID ${j.pid}`, j.state === 'Running' ? 'cur' : j.state === 'Stopped' ? 'look' : j.state === 'Done' ? 'yes' : 'no']);
-        return items.length ? [{ t: 'flow', label: 'Jobs of this shell', items, arrows: items.map(() => 'ghost') }] : [{ t: 'flow', label: 'Jobs of this shell', items: [['no jobs yet', 'start one with &', '']] }];
+        return items.length ? [{ t: 'flow', label: 'Jobs of this shell', items, plain: true }] : [{ t: 'flow', label: 'Jobs of this shell', items: [['no jobs yet', 'start one with &', '']] }];
       };
       const says = c => /&\s*$/.test(c) ? 'The trailing & starts it in the background. bash prints the job number in brackets and the process ID, then gives the prompt back at once.'
         : /^kill\s+-(STOP|19|TSTP)/i.test(c) ? 'SIGSTOP freezes the process. It keeps its memory but gets no CPU time. Ctrl+Z sends SIGTSTP, which does the same for the job in the foreground.'

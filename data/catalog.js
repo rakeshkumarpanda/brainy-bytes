@@ -10617,6 +10617,23 @@ function lxPowerModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-power-4", title: "Processes and the shell environment", emoji: "4", step: 4, part: "power", level: "Intermediate", blurb: "See and control running programs with ps, top, signals and job control, then shape your shell with variables, PATH, aliases and startup files.", topics: [
+      { id: "processes", title: "Processes, jobs and signals", emoji: "4.1", page: "content/linux/processes.html",
+        summary: "PIDs and states, ps and top, kill and signals, background jobs, nohup and nice.",
+        keywords: ["process", "ps", "top", "kill", "signal", "SIGTERM", "SIGKILL", "jobs", "fg", "bg", "nohup", "nice", "pgrep", "background job"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "what", title: "What a process is", emoji: "", group: "Lesson", keywords: ["process", "program", "PID", "PPID", "fork", "exec", "process state", "zombie", "/proc", "$$", "init", "systemd"] },
+        { id: "watch", title: "Watching processes: ps, top and pgrep", emoji: "", group: "Lesson", keywords: ["ps", "ps aux", "ps -ef", "ps -o", "top", "htop", "pgrep", "pstree", "load average", "RSS", "VSZ", "STAT"] },
+        { id: "signals", title: "Signals: asking and forcing processes to stop", emoji: "", group: "Lesson", keywords: ["signal", "kill", "kill -9", "SIGTERM", "SIGKILL", "SIGINT", "SIGHUP", "SIGSTOP", "SIGCONT", "Ctrl+C", "pkill", "killall", "exit status 143", "128+N"] },
+        { id: "jobs", title: "Job control: &, Ctrl+Z, fg, bg and nohup", emoji: "", group: "Lesson", keywords: ["job control", "background", "foreground", "&", "Ctrl+Z", "jobs", "fg", "bg", "wait", "nohup", "disown", "tmux", "screen", "SIGHUP"] },
+        { id: "levels", title: "Processes from school to research", emoji: "", group: "Lesson", keywords: ["nice", "renice", "niceness", "scheduler", "EEVDF", "CFS", "task_struct", "clone", "threads", "process group", "session", "cgroups", "sched_ext", "PSI"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
