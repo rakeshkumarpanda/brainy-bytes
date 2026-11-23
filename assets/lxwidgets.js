@@ -1094,6 +1094,42 @@
     }
   }));
 
+  /* admin 3.1 mount: a file system appears inside a folder, hides what the folder held, and leaves again with umount */
+  def('lx-mount', el => W(el, {
+    title: 'Mount a file system into the tree',
+    sub: 'Pick a partition and a folder. Pip mounts it in the practice shell, so you can watch the folder show the partition’s files, see what happens to files that were already there, and unmount it again.',
+    inputs: [{ k: 'dev', label: 'Partition', type: 'seg', val: 'usb', opts: [['usb', '/dev/sdb1 (USB stick, vfat)'], ['new', '/dev/sdc1 (new ext4 disk)']] },
+             { k: 'dir', label: 'Mount point', type: 'seg', val: 'empty', opts: [['empty', 'an empty folder in /mnt'], ['full', '/srv, which has files']] },
+             { k: 'busy', label: 'Before umount', type: 'seg', val: 'no', opts: [['no', 'leave the folder'], ['yes', 'stay inside it']] }],
+    random: () => ({ dev: Math.random() < 0.5 ? 'usb' : 'new', dir: Math.random() < 0.5 ? 'empty' : 'full', busy: Math.random() < 0.5 ? 'no' : 'yes' }),
+    frames: v => {
+      const w = world(), dev = v.dev === 'usb' ? '/dev/sdb1' : '/dev/sdc1', name = dev.slice(5);
+      if (v.dev === 'new') { w.run('sudo parted -s /dev/sdc mklabel gpt mkpart data ext4 1MiB 100%'); w.run('sudo mkfs.ext4 -L data /dev/sdc1'); }
+      const dir = v.dir === 'full' ? '/srv' : v.dev === 'usb' ? '/mnt/usb' : '/mnt/data';
+      if (v.dir === 'full') { w.run('sudo mkdir -p /srv/www'); w.run('echo "quarterly numbers" | sudo tee /srv/report.txt'); }
+      else w.run('sudo mkdir -p ' + dir);
+      const kidsOf = p => { const n = w.node(p); return n && n.kids ? Object.keys(n.kids).sort().map(k => n.kids[k].type === 'd' ? [k, (n.kids[k].kids && Object.keys(n.kids[k].kids).length) ? Object.keys(n.kids[k].kids).sort().slice(0, 3).map(x => [x]) : []] : [k]) : []; };
+      const top = dir.split('/')[1], tree = () => ['/', [['etc', []], ['home', []], [top, top === 'mnt' ? [[dir.split('/')[2], kidsOf(dir)]] : kidsOf(dir)], ['usr', []]]];
+      const lay = (label, cls, tag) => ({ t: 'fs', label, tree: tree(), cls, tag });
+      const t = (cmd, r) => ({ t: 'term', label: 'Practice shell', lines: [['c', cmd]].concat(r.out.replace(/\n$/, '').split('\n').filter(x => x).map(x => [r.code ? 'e' : 'o', x])) });
+      const before = kidsOf(dir).map(k => k[0]), fr = [];
+      const r0 = w.run('lsblk -f ' + (v.dev === 'usb' ? '/dev/sdb' : '/dev/sdc'));
+      fr.push({ msg: `${dev} holds ${v.dev === 'usb' ? 'a vfat' : 'an ext4'} file system, but no path leads to it yet: lsblk shows an empty MOUNTPOINTS column. ${before.length ? `The folder ${dir} has its own files: ${before.join(', ')}.` : `The folder ${dir} is empty.`}`, mood: 'think', layers: [t('lsblk -f ' + (v.dev === 'usb' ? '/dev/sdb' : '/dev/sdc'), r0), lay('The tree before mounting', { [dir]: 'cur' }, { [dir]: before.length ? 'its own files' : 'empty folder' })] });
+      const r1 = w.run(`sudo mount ${dev} ${dir}`), after = kidsOf(dir).map(k => k[0]);
+      fr.push({ msg: `<code>sudo mount ${dev} ${dir}</code> attaches the file system to the folder. Every path under ${dir} now leads into the partition, so ${dir} shows ${after.join(' and ')}.${before.length ? ` The old files (${before.join(', ')}) are hidden, not deleted. They come back after umount.` : ''}`, mood: 'wow', fx: 'pop', layers: [t(`sudo mount ${dev} ${dir}`, r1), lay(`The tree with ${dev} mounted`, Object.fromEntries([[dir, 'yes']]), { [dir]: 'now shows ' + dev })] });
+      const r2 = w.run('df -h ' + dir), r3 = w.run('findmnt ' + dir);
+      fr.push({ msg: `df and findmnt confirm it. df shows the size and free space of the partition, not of the root disk, and findmnt shows the source, type and options.`, mood: 'look', layers: [t('df -h ' + dir, r2), t('findmnt ' + dir, r3)] });
+      if (v.busy === 'yes') {
+        w.run('cd ' + dir); const r4 = w.run('sudo umount ' + dir);
+        fr.push({ msg: `Your shell is still inside ${dir}, so the kernel refuses to unmount it. Any open file or working directory keeps a mount busy. <code>fuser -vm ${dir}</code> or <code>lsof +f -- ${dir}</code> show who holds it.`, mood: 'sad', fx: 'shake', layers: [t(`cd ${dir}; sudo umount ${dir}`, r4), lay('Still mounted', { [dir]: 'no' }, { [dir]: 'busy' })] });
+        w.run('cd ~');
+      }
+      const r5 = w.run('sudo umount ' + dir);
+      fr.push({ msg: `${v.busy === 'yes' ? 'After <code>cd ~</code>, u' : 'U'}mount succeeds. ${dir} ${before.length ? 'shows its own files again' : 'is empty again'}, and the data on ${dev} stays safe on the partition, ready to be mounted anywhere else.${v.dev === 'usb' ? ' Always unmount a USB stick before you pull it out, so cached writes reach it.' : ''}`, mood: 'happy', fx: 'burst', layers: [t('sudo umount ' + dir, r5), lay('The tree after umount', { [dir]: 'cur' }, { [dir]: before.length ? 'old files are back' : 'empty again' })] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

@@ -2184,9 +2184,9 @@ const LXSH = (() => {
         const [src, dir, t, o, dump, pass] = f, msgs = [];
         if (f.length < 4) { msgs.push(['E', 'not enough fields']); }
         else {
-          if (t !== 'swap' && !this.node(dir)) msgs.push(['E', `target ${dir} does not exist`]);
-          if (!this.partOf(src)) msgs.push([(o || '').includes('nofail') ? 'W' : 'E', `unreachable source: ${src}: No such file or directory`]);
-          else { const p = this.partOf(src); if (p.fs && t !== 'auto' && p.fs.type !== t) msgs.push(['E', `${t} does not match with on-disk ${p.fs.type}`]); }
+          if (t !== 'swap' && !this.node(dir)) msgs.push(['E', 'unreachable on boot required target: No such file or directory']);
+          if (!this.partOf(src)) { if (/^(UUID|LABEL|PARTUUID|PARTLABEL)=/.test(src)) msgs.push(['E', `unreachable on boot required source: ${src}`]); else msgs.push(['W', `unreachable source: ${src}: No such file or directory`], ['W', 'cannot detect on-disk filesystem type (No such file or directory)']); }
+          else { const p = this.partOf(src); if (p.fs && t !== 'auto' && p.fs.type !== t) msgs.push(['W', `${t} does not match with on-disk ${p.fs.type}`]); }
           if (pass !== undefined && !/^[0-2]$/.test(pass)) msgs.push(['W', `fs_passno ${pass} is not 0, 1 or 2`]);
         }
         if (msgs.length) { out += dir + '\n' + msgs.map(([k, m]) => `   [${k}] ${m}`).join('\n') + '\n'; msgs.forEach(([k]) => k === 'E' ? errs++ : warns++); }

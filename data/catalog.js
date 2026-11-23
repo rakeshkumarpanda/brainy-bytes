@@ -10854,6 +10854,26 @@ function lxAdminModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-admin-3", title: "Storage", emoji: "3", step: 3, part: "admin", level: "Advanced", blurb: "Partition and format disks, mount them by hand and at boot, keep them healthy and growing, and make storage flexible and safe with LVM, RAID, swap and backups.", topics: [
+      { id: "disks-filesystems", title: "Disks and file systems: partitions, mkfs, mount and fstab", emoji: "3.1", page: "content/linux/disks-filesystems.html",
+        summary: "Disk names, partition tables, file systems, mounting, /etc/fstab, checking and growing.",
+        keywords: ["lsblk", "blkid", "parted", "GPT", "MBR", "mkfs", "ext4", "xfs", "mount", "umount", "fstab", "fsck", "resize2fs"],
+        minutes: 60, counts: {"lessons": 8, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "devices", title: "Disks, partitions and their names", emoji: "", group: "Lesson", keywords: ["block device", "/dev/sda", "nvme0n1", "/dev/vda", "mmcblk0", "partition", "lsblk", "lsblk -f", "blkid", "UUID", "LABEL", "/dev/disk/by-uuid", "loop device", "losetup", "truncate sparse file"] },
+        { id: "partitions", title: "Partition tables: MBR, GPT and parted", emoji: "", group: "Lesson", keywords: ["partition table", "MBR", "msdos label", "GPT", "GUID partition table", "EFI System Partition", "parted", "mklabel", "mkpart", "sfdisk", "fdisk", "gdisk", "cfdisk", "partition alignment", "2 TiB limit"] },
+        { id: "mkfs", title: "Making a file system: ext4, xfs and vfat", emoji: "", group: "Lesson", keywords: ["mkfs", "mkfs.ext4", "mke2fs", "mkfs.xfs", "mkfs.vfat", "FAT32", "exfat", "btrfs", "ext4", "xfs", "superblock", "inode", "inode table", "journal", "reserved blocks", "tune2fs", "file system label"] },
+        { id: "mount", title: "Mounting: attaching a file system to the tree", emoji: "", group: "Lesson", keywords: ["mount", "mount point", "umount", "target is busy", "findmnt", "df -hT", "mount options", "ro", "noexec", "nosuid", "nodev", "noatime", "remount", "fuser", "lsof", "lost+found"] },
+        { id: "fstab", title: "Mounting at boot with /etc/fstab", emoji: "", group: "Lesson", keywords: ["/etc/fstab", "fstab fields", "fs_spec", "fs_passno", "UUID in fstab", "LABEL=", "defaults", "noatime", "nofail", "noauto", "x-systemd.automount", "findmnt --verify", "mount -a", "daemon-reload", "emergency mode"] },
+        { id: "check", title: "Checking, repairing and growing file systems", emoji: "", group: "Lesson", keywords: ["fsck", "e2fsck", "e2fsck -n", "xfs_repair", "resize2fs", "xfs_growfs", "growpart", "grow root disk", "cloud disk resize", "dumpe2fs", "smartctl", "SMART", "file system check"] },
+        { id: "practice", title: "Practice: set up a new data disk in the practice shell", emoji: "", group: "Lesson", keywords: ["disk lab", "new disk practice", "parted practice", "mkfs practice", "fstab practice", "mount -a practice"] },
+        { id: "levels", title: "Storage from school to research", emoji: "", group: "Lesson", keywords: ["separate /var", "mount hardening", "noexec /tmp", "NFS", "SMB", "automount", "EBS", "persistent volume", "copy on write", "ZFS", "F2FS", "disk failure statistics", "fstab device name problem"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
