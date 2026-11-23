@@ -1,95 +1,31 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="md3">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Learning Hub</title>
-<meta name="description" content="Free, fun and deep learning notes with animations, line by line code runs and practice problems.">
+<title>Brainy Bytes</title>
+<meta name="description" content="Free, deep learning notes with animations, line by line code runs and practice problems.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
 <link rel="stylesheet" href="assets/theme.css">
 <link rel="stylesheet" href="assets/portal.css">
+<link rel="stylesheet" href="assets/md3.css">
 </head>
-<body>
-<header class="hdr" id="hdr">
+<body class="md-home">
+<header class="md-bar" id="bar">
   <span id="brandSlot"></span>
   <span class="grow"></span>
-  <button class="ibtn searchpill" data-search title="Search everything (Ctrl+K)">🔎 <span class="lbl">Search everything</span><kbd class="k">Ctrl K</kbd></button>
+  <button class="md-search" data-search type="button" aria-label="Search everything"><span class="msr">search</span><span class="ph" id="ph">Search any topic</span><kbd>Ctrl K</kbd></button>
+  <span class="grow"></span>
   <span id="themeSlot"></span>
 </header>
 
-<section class="hero">
-  <div class="doodles" id="doodles" aria-hidden="true"></div>
-  <div class="hero-in">
-    <div class="hero-main">
-      <span class="hello"><i></i><span id="hello">Fresh notes are live</span></span>
-      <h1 id="headline"></h1>
-      <p class="lede" id="lede"></p>
-      <div class="searchrow">
-        <div class="bigsearch" data-search role="button" tabindex="0" aria-label="Open search">
-          <span>🔎</span><span class="ph" id="ph">Search any topic</span><span class="ibtn primary">Search</span>
-        </div>
-        <div class="herobtns">
-          <a class="ibtn" href="#subjects">📚 Browse subjects</a>
-          <button class="ibtn" id="surprise">🎲 Surprise me</button>
-        </div>
-      </div>
-      <div class="stats" id="stats"></div>
-      <div id="resume"></div>
-    </div>
-    <div class="mascot-wrap">
-      <div class="bubble" id="bubble" aria-live="polite"></div>
-      <div id="mascotSlot"></div>
-    </div>
-  </div>
-</section>
+<main class="md-page" id="view" aria-live="polite"></main>
 
-<section class="section" id="subjects">
-  <div class="sechead">
-    <div><h2>Pick your adventure</h2><p>Ready subjects come first, then the ones still cooking. Both lists are A to Z.</p></div>
-    <span class="grow"></span>
-    <label class="sfind"><span aria-hidden="true">🔎</span><input id="subjFind" type="search" placeholder="Filter subjects" aria-label="Filter subjects"></label>
-    <div class="filters" id="filters" role="tablist" aria-label="Show subjects"></div>
-  </div>
-  <div class="subgroup" id="bakedGroup">
-    <h3 class="subhead">🍪 Already baked <span class="cnt" id="bakedCnt"></span><small>Open any card to start learning</small></h3>
-    <div class="subjects" id="subjectGrid"></div>
-    <p class="swipehint" aria-hidden="true">Swipe sideways to see every subject →</p>
-  </div>
-  <div class="subgroup" id="soonGroup">
-    <h3 class="subhead">⏳ Coming Soon <span class="cnt" id="soonCnt"></span><small>Still in the oven. Each one moves up as soon as its first topic is ready</small></h3>
-    <div class="soonlist" id="soonList"></div>
-    <p class="swipehint" aria-hidden="true">Swipe sideways to see what is cooking →</p>
-  </div>
-</section>
-
-<section class="section" id="moreSec">
-  <div class="infotabs" role="tablist" aria-label="More on Brainy Bytes" id="infoTabs">
-    <button class="itab" role="tab" data-tab="new" aria-selected="true">🍪 <span class="lg">Freshly baked</span><span class="sh">New</span></button>
-    <button class="itab" role="tab" data-tab="how" aria-selected="false">🧭 <span class="lg">How each topic teaches</span><span class="sh">How it teaches</span></button>
-    <button class="itab" role="tab" data-tab="joke" aria-selected="false">😂 <span class="lg">Joke of the day</span><span class="sh">Joke</span></button>
-  </div>
-  <div class="ipanel" role="tabpanel" data-panel="new" id="newSec">
-    <p class="ipanel-sub">The newest topics, straight out of the oven.</p>
-    <div class="newlist" id="newList"></div>
-  </div>
-  <div class="ipanel" role="tabpanel" data-panel="how" hidden>
-    <p class="ipanel-sub">Same friendly recipe everywhere.</p>
-    <div class="howto">
-      <div class="step"><span class="n">1</span><div><h4>See it move</h4><p>Animations with play, pause and your own inputs show the idea step by step.</p></div></div>
-      <div class="step"><span class="n">2</span><div><h4>Laugh and relate</h4><p>Everyday examples and comic infographics connect each concept to real life.</p></div></div>
-      <div class="step"><span class="n">3</span><div><h4>Run the code</h4><p>Watch Java, JavaScript and Python run line by line with live variables and output.</p></div></div>
-      <div class="step"><span class="n">4</span><div><h4>Practice</h4><p>Problems from easy to expert, each with a brute force and an optimized solution.</p></div></div>
-    </div>
-  </div>
-  <div class="ipanel" role="tabpanel" data-panel="joke" hidden>
-    <div class="jokebox"><span class="em">😂</span><div><b>Joke of the day</b><span id="jotd"></span></div></div>
-  </div>
-</section>
-
-<footer class="footer"><span id="foot"></span><span>Press <b>/</b> or <b>Ctrl K</b> anywhere to search.</span></footer>
+<footer class="md-foot"><span id="foot"></span><span>Press / or Ctrl K anywhere to search.</span></footer>
 
 <script src="assets/fun.js"></script>
 <script src="assets/portal.js"></script>

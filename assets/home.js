@@ -1,188 +1,157 @@
-/* ===== Home page: fun dashboard built from data/catalog.js ===== */
+/* ===== Home page on Material 3: one tile per domain, then its categories, then the subjects of a category =====
+   Views live in the address hash so Back works and every level can be shared:
+     index.html            the landing page with one tile per domain (today only Computer Science)
+     index.html#/cs        the categories of Computer Science
+     index.html#/cs/testing  the subjects of one category
+   Everything is built from data/catalog.js (domains, categories and subjects). */
 (async () => {
   let cat;
   try { cat = await LH.loadCatalog(); } catch (e) { LH.errorPage(e); return; }
-  const { esc } = LH;
+  const { esc, icon } = LH;
   const site = cat.site;
-  document.title = site.name + (site.tagline ? ' · ' + site.tagline : '');
-  document.getElementById('brandSlot').outerHTML = LH.brandHtml(site);
+  const view = document.getElementById('view');
+  document.getElementById('brandSlot').outerHTML = LH.brandHtml(site).replace('class="brand"', 'class="md-brand"');
   document.getElementById('themeSlot').replaceWith(LH.themeButton());
-  LH.showWarnings(cat, document.getElementById('subjects'));
+  document.getElementById('foot').textContent = site.footer || `© ${new Date().getFullYear()} ${site.name}`;
   LH.buildIndex(cat);
 
   const live = cat.subjects.flatMap(s => s.liveTopics);
   const examples = site.searchExamples && site.searchExamples.length ? site.searchExamples : live.slice(0, 6).map(t => t.title);
-  LH.initSearch({ target: '_blank', suggest: examples });
-
-  /* headline with letters that jump when touched */
-  const head = site.headline || ['Learn it deep.', 'Laugh along.'];
-  const letters = (txt, cls) => `<span class="${cls || ''}">${txt.split(' ').map(w => `<span style="white-space:nowrap">${[...w].map(ch => `<span class="wl">${esc(ch)}</span>`).join('')}</span>`).join(' ')}</span>`;
-  document.getElementById('headline').innerHTML = letters(head[0]) + '<br>' + letters(head[1] || '', 'grad');
-  document.getElementById('lede').textContent = site.intro || '';
-  if (site.hello) document.getElementById('hello').textContent = site.hello;
-  document.getElementById('foot').textContent = site.footer || `© ${new Date().getFullYear()} ${site.name}`;
-
-  /* rotating search placeholder */
+  LH.initSearch({ suggest: examples });
   let pi = 0;
   const ph = document.getElementById('ph');
-  const rot = () => { ph.textContent = 'Try “' + examples[pi++ % examples.length] + '”'; };
-  if (examples.length) { rot(); setInterval(rot, 2600); }
+  if (examples.length) { const rot = () => { ph.textContent = 'Try “' + examples[pi++ % examples.length] + '”'; }; rot(); setInterval(rot, 2800); }
 
-  /* stats that count up */
-  const nSections = live.reduce((n, t) => n + t.sections.length, 0);
-  const nItems = live.reduce((n, t) => n + t.sections.reduce((k, s) => k + s.items.length, 0), 0);
-  const stats = [[cat.subjects.length, 'Subjects'], [live.length, 'Topics ready'], [nSections, 'Lessons inside'], [nItems, 'Practice problems']].filter(s => s[0] > 0);
-  document.getElementById('stats').innerHTML = stats.map(([n, l]) => `<div class="stat"><b data-n="${n}">0</b><span>${l}</span></div>`).join('');
-  document.querySelectorAll('.stat b').forEach(b => {
-    const n = +b.dataset.n, t0 = performance.now();
-    const step = t => { const k = Math.min(1, (t - t0) / 1200); b.textContent = Math.round(n * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
-    FUN.reduce ? (b.textContent = n) : requestAnimationFrame(step);
-  });
+  /* the app bar lifts once the page scrolls, as Material top app bars do */
+  const bar = document.getElementById('bar');
+  addEventListener('scroll', () => bar.classList.toggle('lifted', scrollY > 4), { passive: true });
 
-  /* floating doodles */
-  const syms = site.doodles || ['{ }', 'O(n)', '[ ]', '∑', '🐞', '0101', '</>', 'π', '✓', 'if', '∞', '√', '++', '→'];
-  const dd = document.getElementById('doodles');
-  dd.innerHTML = Array.from({ length: 18 }, (_, i) => {
-    const s = syms[i % syms.length];
-    return `<span class="doodle" style="left:${(i * 53) % 96}%;top:${(i * 37) % 88}%;font-size:${18 + (i * 7) % 26}px;animation-delay:-${i * 1.3}s;animation-duration:${11 + (i % 6)}s">${esc(s)}</span>`;
-  }).join('');
-  document.addEventListener('mousemove', e => {
-    if (FUN.reduce) return;
-    const x = e.clientX / innerWidth - .5, y = e.clientY / innerHeight - .5;
-    dd.style.transform = `translate(${x * -24}px, ${y * -18}px)`;
-  }, { passive: true });
-
-  /* mascot: eyes follow the pointer, a click tells a joke */
-  document.getElementById('mascotSlot').outerHTML = LH.mascotSvg(true);
-  const mascot = document.getElementById('mascot');
-  const jokes = site.jokes && site.jokes.length ? site.jokes : [['Why did the array break up with the loop', 'It needed some space between elements.']];
-  const bubble = document.getElementById('bubble');
-  let ji = Math.floor(Math.random() * jokes.length);
-  const say = () => {
-    const j = jokes[ji++ % jokes.length];
-    bubble.style.animation = 'none'; void bubble.offsetWidth; bubble.style.animation = '';
-    bubble.innerHTML = Array.isArray(j) ? `${esc(j[0])}…<br><span style="color:var(--accent-deep)">${esc(j[1])}</span><small>Tap me for another one</small>` : `${esc(j)}<small>Tap me for another one</small>`;
-  };
-  say();
-  mascot.addEventListener('click', e => {
-    say();
-    FUN.confetti(e.clientX, e.clientY, 60);
-    mascot.animate([{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-26px) scale(1.05,0.95)' }, { transform: 'translateY(0) scale(1)' }], { duration: 500, easing: 'cubic-bezier(.2,1.6,.4,1)' });
-  });
-  const pupils = mascot.querySelectorAll('.pupil');
-  const base = [...pupils].map(p => [+p.getAttribute('cx'), +p.getAttribute('cy')]);
-  document.addEventListener('mousemove', e => {
-    const r = mascot.getBoundingClientRect();
-    const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    const d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 300) * 4;
-    pupils.forEach((p, i) => { p.setAttribute('cx', base[i][0] + dx / d * k); p.setAttribute('cy', base[i][1] + dy / d * k); });
-  }, { passive: true });
-  const whites = mascot.querySelectorAll('.eyewhite');
-  setInterval(() => {
-    if (FUN.reduce) return;
-    whites.forEach(w => w.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(.1)' }, { transform: 'scaleY(1)' }], { duration: 220, transformOrigin: 'center' }));
-    pupils.forEach(w => w.animate([{ opacity: 1 }, { opacity: 0 }, { opacity: 1 }], { duration: 220 }));
-  }, 4200);
-
-  /* subjects: ready ones first as clickable tiles, then a Coming Soon list of plain banners.
-     The split comes from the catalog itself (a subject is ready once it has a page or any live topic),
-     and both lists are A to Z, so a subject moves up on its own as soon as its first topic goes live. */
-  let filter = 'all', query = '';
   const byTitle = (a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base', numeric: true });
-  const baked = cat.subjects.filter(s => !s.soon).sort(byTitle);
-  const cooking = cat.subjects.filter(s => s.soon).sort(byTitle);
-  const fbtns = [['all', 'All', cat.subjects.length], ['ready', 'Already baked', baked.length], ['soon', 'Coming soon', cooking.length]];
-  const fbox = document.getElementById('filters');
-  const grid = document.getElementById('subjectGrid');
-  const soonList = document.getElementById('soonList');
-  const bakedGroup = document.getElementById('bakedGroup');
-  const soonGroup = document.getElementById('soonGroup');
-  const find = document.getElementById('subjFind');
-  const hay = s => [s.title, s.blurb, ...(s.tags || [])].join(' ').toLowerCase();
-  function card(s) {
-    const total = s.topics.length, ready = s.liveTopics.length;
-    const pct = s.page ? 100 : total ? Math.round(ready / total * 100) : 0;
-    const status = s.page ? 'Ready to read' : `${ready} of ${total} topics ready`;
-    const prog = PROGRESS.stats(s.topics);
-    return `<a class="scard" href="${LH.subjectUrl(s)}" target="_blank" rel="noopener" style="--c:${esc(s.color || 'var(--accent)')}">
-      <div class="top"><span class="em">${esc(s.emoji)}</span><h3>${esc(s.title)}</h3></div>
-      <p>${esc(s.blurb || '')}</p>
-      ${s.tags && s.tags.length ? `<div class="tags">${s.tags.slice(0, 5).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
-      <div class="meter"><i data-w="${pct}"></i></div>
-      <div class="foot"><span>${status}</span>${prog.done ? `<span class="donechip">🌟 ${prog.done} done</span>` : ''}<span class="go">Open ↗</span></div>
-    </a>`;
-  }
-  const banner = s => `<div class="soonban" style="--c:${esc(s.color || 'var(--accent)')}" title="${esc(s.title + (s.blurb ? ': ' + s.blurb : ''))}">
-      <span class="em" aria-hidden="true">${esc(s.emoji)}</span>
-      <span class="bt"><b>${esc(s.title)}</b><small>${esc(s.blurb || '')}</small></span>
-      <span class="soon">Soon</span>
-    </div>`;
-  function renderGrid() {
-    fbox.innerHTML = fbtns.map(([k, l, n]) => `<button class="qchip" role="tab" aria-selected="${filter === k}" data-f="${k}" style="${filter === k ? 'background:var(--accent);color:var(--accent-ink);border-color:var(--accent)' : ''}">${l} <span class="cnt">${n}</span></button>`).join('');
-    const q = query.trim().toLowerCase();
-    const match = s => !q || hay(s).includes(q);
-    const b = filter === 'soon' ? [] : baked.filter(match);
-    const c = filter === 'ready' ? [] : cooking.filter(match);
-    bakedGroup.hidden = !b.length && c.length > 0;
-    soonGroup.hidden = !c.length;
-    document.getElementById('bakedCnt').textContent = b.length;
-    document.getElementById('soonCnt').textContent = c.length;
-    grid.innerHTML = b.map(card).join('') || '<p class="nosubj">No subjects match. Try another word or pick All.</p>';
-    soonList.innerHTML = c.map(banner).join('');
-    grid.scrollLeft = 0; soonList.scrollLeft = 0;
-    requestAnimationFrame(() => grid.querySelectorAll('.meter i').forEach(i => { i.style.width = i.dataset.w + '%'; }));
-    grid.querySelectorAll('.scard').forEach(c => {
-      c.addEventListener('mousemove', e => {
-        if (FUN.reduce) return;
-        const r = c.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
-        c.style.transform = `perspective(700px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg) translateY(-4px)`;
-      });
-      c.addEventListener('mouseleave', () => { c.style.transform = ''; });
-    });
-  }
-  fbox.addEventListener('click', e => { const b = e.target.closest('[data-f]'); if (b) { filter = b.dataset.f; renderGrid(); } });
-  find.addEventListener('input', () => { query = find.value; renderGrid(); });
-  renderGrid();
-
-  /* surprise me */
-  document.getElementById('surprise').onclick = e => {
-    if (!live.length) return;
-    const t = live[Math.floor(Math.random() * live.length)];
-    FUN.confetti(e.clientX, e.clientY, 40);
-    setTimeout(() => window.open(LH.topicUrl(t), '_blank', 'noopener'), 250);
+  const ready = s => !s.soon;
+  /* coming soon subjects and chapters are not shown anywhere on the home page (asked 2026-11-23) */
+  cat.domains.forEach(d => d.categories.forEach(c => { c.items = c.items.filter(ready); }));
+  cat.domains.forEach(d => { d.categories = d.categories.filter(c => c.items.length); });
+  const counts = subs => {
+    const ts = subs.flatMap(s => s.liveTopics);
+    return { subjects: subs.length, ready: subs.filter(ready).length, topics: ts.length };
   };
+  const crumbs = parts => `<nav class="md-crumbs" aria-label="Breadcrumb">${parts.map((p, i) => i === parts.length - 1
+    ? `<span class="cur" aria-current="page">${esc(p[0])}</span>`
+    : `<a href="${p[1]}">${i === 0 ? icon('home') : ''}${esc(p[0])}</a>${icon('chevron_right', 'sep')}`).join('')}</nav>`;
 
-  /* pick up where you left off */
-  const last = PROGRESS.lastTopic(cat);
-  if (last) {
+  function resumeHtml() {
+    const last = PROGRESS.lastTopic(cat);
+    if (!last) return '';
     const t = last.topic, p = PROGRESS.stats(t.subject.topics);
-    document.getElementById('resume').innerHTML = `<a class="resume" href="${LH.topicUrl(t)}${last.hash ? '#' + esc(last.hash) : ''}" target="_blank" rel="noopener" style="--c:${esc(t.subject.color || 'var(--accent)')}">
-      <span class="em">${esc(t.emoji)}</span>
+    return `<a class="md-resume" href="${LH.topicUrl(t)}${last.hash ? '#' + esc(last.hash) : ''}">
+      <span class="em">${esc(t.subject.emoji)}</span>
       <span class="rt"><small>Pick up where you left off</small><b>${esc(t.title)}</b><small>${esc(t.subject.title)} · ${p.done} of ${p.total} topics complete</small></span>
-      <span class="go">Continue ▶</span></a>`;
+      <span class="md-btn tonal">${icon('play_arrow')}Continue</span></a>`;
   }
 
-  /* newest topics */
-  const fresh = live.filter(t => t.added).sort((a, b) => String(b.added).localeCompare(String(a.added))).slice(0, 6);
-  if (!fresh.length) { document.getElementById('newSec').remove(); document.querySelector('[data-tab="new"]').remove(); }
-  else document.getElementById('newList').innerHTML = fresh.map(t => `<a class="ncard reveal" href="${LH.topicUrl(t)}" target="_blank" rel="noopener"><span class="em">${esc(t.emoji)}</span><span><b>${esc(t.title)}</b><small>${esc(t.subject.title)} · added ${esc(t.added)}</small></span></a>`).join('');
+  /* ---------- the landing page ---------- */
+  function landing() {
+    const all = counts(cat.subjects);
+    const nLessons = live.reduce((n, t) => n + ((t.counts && t.counts.lessons) || t.sections.length), 0);
+    const head = site.headline || ['Learn it deep.', 'Laugh along the way.'];
+    document.title = site.name + (site.tagline ? ' · ' + site.tagline : '');
+    view.innerHTML = `<div class="md-view">
+      <section class="md-hero">
+        <div>
+          <span class="eyebrow">${icon('school')} Free and deep learning</span>
+          <h1>${esc(head[0])}<br>${esc(head[1] || '')}</h1>
+          <p>${esc(site.intro || '')}</p>
+          <div class="row">
+            <a class="md-btn" href="${cat.domains[0] ? LH.domainUrl(cat.domains[0]) : '#'}">${icon('auto_stories')}Start learning</a>
+            <button class="md-btn tonal" type="button" id="surprise">${icon('casino')}Surprise me</button>
+          </div>
+          <div class="md-stats">
+            <div><b>${all.ready}</b><span>Subjects ready</span></div>
+            <div><b>${all.topics}</b><span>Chapters</span></div>
+            ${nLessons ? `<div><b>${nLessons}</b><span>Lessons inside</span></div>` : ''}
+          </div>
+          ${resumeHtml()}
+        </div>
+        <div class="mascot-box"><div id="mascotSlot"></div></div>
+      </section>
+      <div class="md-sechead"><div><h2>Choose where to begin</h2><p>Open a domain to see its categories and courses.</p></div></div>
+      <div class="md-tiles${cat.domains.length === 1 ? ' one' : ''}">${cat.domains.map(d => {
+        const subs = d.categories.flatMap(c => c.items), c = counts(subs);
+        return `<a class="md-tile hero-tile" href="${LH.domainUrl(d)}" style="--c:${esc(d.color || 'var(--md-primary)')}">
+          <span class="ic">${icon(d.icon || 'school', 'fill')}</span>
+          <span class="body"><h3>${esc(d.title)}</h3>
+          <p>${esc(d.blurb || '')}</p>
+          <span class="peek">${d.categories.map(x => `<span>${icon(x.icon || 'list')}${esc(x.title)}</span>`).join('')}</span>
+          <span class="meta"><span>${d.categories.length} categories</span><span>·</span><span>${c.ready} subjects ready</span><span>·</span><span>${c.topics} chapters</span><span class="go">${icon('arrow_forward')}</span></span></span>
+        </a>`;
+      }).join('')}</div>
+    </div>`;
+    document.getElementById('mascotSlot').outerHTML = LH.mascotSvg(true);
+    const m = document.getElementById('mascot');
+    if (m) m.addEventListener('click', e => FUN.confetti(e.clientX, e.clientY, 50));
+    document.getElementById('surprise').onclick = e => {
+      if (!live.length) return;
+      const t = live[Math.floor(Math.random() * live.length)];
+      FUN.confetti(e.clientX, e.clientY, 40);
+      setTimeout(() => { location.href = LH.topicUrl(t); }, 260);
+    };
+  }
 
-  /* joke of the day */
-  const day = Math.floor(Date.now() / 864e5);
-  const j = jokes[day % jokes.length];
-  document.getElementById('jotd').textContent = Array.isArray(j) ? j[0] + '… ' + j[1] : j;
+  /* ---------- the categories of one domain ---------- */
+  function domainView(d) {
+    document.title = d.title + ' · ' + site.name;
+    view.innerHTML = `<div class="md-view">
+      ${crumbs([['Home', 'index.html'], [d.title]])}
+      <div class="md-sechead"><div><h2>${esc(d.title)}</h2><p>${esc(d.blurb || '')}</p></div></div>
+      <div class="md-tiles">${d.categories.map(c => {
+        const n = counts(c.items);
+        const done = c.items.reduce((a, s) => a + PROGRESS.stats(s.topics).done, 0);
+        return `<a class="md-tile" href="${LH.categoryUrl(c)}" style="--c:${esc(c.color || 'var(--md-primary)')}">
+          <span class="ic">${icon(c.icon || 'list', 'fill')}</span>
+          <h3>${esc(c.title)}</h3>
+          <p>${esc(c.blurb || '')}</p>
+          <div class="peek">${c.items.slice().sort(byTitle).slice(0, 4).map(s => `<span>${esc(s.emoji)} ${esc(s.title)}</span>`).join('')}${c.items.length > 4 ? `<span>+${c.items.length - 4} more</span>` : ''}</div>
+          <div class="meta"><span>${n.subjects} subject${n.subjects === 1 ? '' : 's'}</span><span>·</span><span>${n.topics} chapters</span>${done ? `<span class="md-done">${icon('task_alt')}${done} done</span>` : ''}<span class="go">${icon('arrow_forward')}</span></div>
+        </a>`;
+      }).join('')}</div>
+    </div>`;
+  }
 
-  /* one tabbed card holds the smaller sections, so they sit side by side instead of stacking */
-  const tabs = [...document.querySelectorAll('#infoTabs .itab')];
-  const panels = [...document.querySelectorAll('#moreSec .ipanel')];
-  const show = k => {
-    tabs.forEach(t => t.setAttribute('aria-selected', t.dataset.tab === k));
-    panels.forEach(p => { p.hidden = p.dataset.panel !== k; });
-  };
-  document.getElementById('infoTabs').addEventListener('click', e => { const t = e.target.closest('.itab'); if (t) show(t.dataset.tab); });
-  if (tabs.length) show(tabs[0].dataset.tab);
+  /* ---------- the subjects of one category ---------- */
+  function categoryView(c) {
+    document.title = c.title + ' · ' + c.domain.title + ' · ' + site.name;
+    const subs = c.items.slice().sort(byTitle);
+    view.innerHTML = `<div class="md-view">
+      ${crumbs([['Home', 'index.html'], [c.domain.title, LH.domainUrl(c.domain)], [c.title]])}
+      <div class="md-sechead"><div><h2>${esc(c.title)}</h2><p>${esc(c.blurb || '')}</p></div></div>
+      <div class="md-cards">${subs.map(card).join('')}</div>
+    </div>`;
+    requestAnimationFrame(() => view.querySelectorAll('.md-meter i').forEach(i => { i.style.width = i.dataset.w + '%'; }));
+  }
+  function card(s) {
+    const rd = s.liveTopics.length;
+    const prog = PROGRESS.stats(s.liveTopics);
+    const pct = rd ? Math.round(prog.done / rd * 100) : 0;
+    const status = s.page && !rd ? 'Ready to read' : `${rd} chapter${rd === 1 ? '' : 's'}${prog.done ? '' : ' to explore'}`;
+    const inner = `<div class="top"><span class="em">${esc(s.emoji)}</span><h3>${esc(s.title)}</h3></div>
+      <p>${esc(s.blurb || '')}</p>
+      ${s.tags && s.tags.length ? `<div class="tags">${s.tags.slice(0, 4).map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+      <div class="md-meter"><i data-w="${pct}"></i></div>
+      <div class="foot"><span>${status}</span>${prog.done ? `<span class="md-done">${icon('task_alt')}${prog.done} done</span>` : ''}<span class="open">Open${icon('arrow_forward')}</span></div>`;
+    return `<a class="md-card" href="${LH.subjectUrl(s)}" style="--c:${esc(s.color || 'var(--md-primary)')}">${inner}</a>`;
+  }
 
-  FUN.initScroll();
-  FUN.observe();
+  /* ---------- routing ---------- */
+  function route() {
+    const [dId, cId] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+    const d = cat.domains.find(x => x.id === dId);
+    const c = d && d.categories.find(x => x.id === cId);
+    if (c) categoryView(c);
+    else if (d) domainView(d);
+    else landing();
+    window.scrollTo({ top: 0 });
+  }
+  addEventListener('hashchange', route);
+  route();
+  LH.showWarnings(cat, view);
 })();

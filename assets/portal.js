@@ -53,6 +53,22 @@ const LH = (() => {
       s.liveTopics = s.topics.filter(t => !t.soon);
       s.soon = !s.page && s.liveTopics.length === 0;
     });
+    /* domains and categories: the home page tiles. Each subject learns its category and domain for the breadcrumb */
+    cat.domains = Array.isArray(cat.domains) ? cat.domains : [];
+    const byId = Object.fromEntries(cat.subjects.map(s => [s.id, s]));
+    cat.domains.forEach(d => {
+      d.categories = Array.isArray(d.categories) ? d.categories : [];
+      d.categories.forEach(c => {
+        c.domain = d;
+        c.items = (c.subjects || []).map(id => {
+          const s = byId[id];
+          if (!s) { warnings.push(`Category "${c.title}" lists a subject "${id}" that does not exist.`); return null; }
+          s.category = c; s.domain = d;
+          return s;
+        }).filter(Boolean);
+      });
+    });
+    if (cat.domains.length) cat.subjects.filter(s => !s.category).forEach(s => warnings.push(`Subject "${s.title}" is not in any category, so the home page does not show it.`));
     cat.warnings = warnings;
     return cat;
   }
@@ -61,6 +77,8 @@ const LH = (() => {
   const subjectUrl = s => `subject.html?s=${encodeURIComponent(s.id)}`;
   const moduleUrl = m => `${subjectUrl(m.subject)}&m=${encodeURIComponent(m.id)}`;
   const topicUrl = t => `${subjectUrl(t.subject)}&t=${encodeURIComponent(t.id)}`;
+  const domainUrl = d => `index.html#/${encodeURIComponent(d.id)}`;
+  const categoryUrl = c => `index.html#/${encodeURIComponent(c.domain.id)}/${encodeURIComponent(c.id)}`;
   const sectionUrl = (t, anchor) => `${topicUrl(t)}#${encodeURIComponent(anchor).replace(/%2F/g, '/')}`;
 
   /* ===== universal search ===== */
@@ -248,16 +266,24 @@ const LH = (() => {
       ${big ? '<path d="M14 70 Q2 62 6 50" stroke="#2b7de9" stroke-width="7" fill="none" stroke-linecap="round" class="arm"/><path d="M106 70 Q118 62 114 50" stroke="#2b7de9" stroke-width="7" fill="none" stroke-linecap="round"/>' : ''}
     </svg>`;
   }
+  /* a Material Symbols icon (the font is loaded by md3.css pages with only the icons the site uses) */
+  const icon = (name, cls) => `<span class="msr${cls ? ' ' + cls : ''}" aria-hidden="true">${esc(name)}</span>`;
   function brandHtml(site, href = 'index.html') {
     return `<a class="brand" href="${href}" title="Home">${mascotSvg(false)}<span><b>${esc(site.name)}</b><small>${esc(site.tagline || '')}</small></span></a>`;
   }
   function themeButton(onToggle) {
     const b = document.createElement('button');
-    b.className = 'ibtn';
-    const label = () => { b.innerHTML = FUN.currentTheme() === 'dark' ? '☀️ <span class="lbl">Light</span>' : '🌙 <span class="lbl">Dark</span>'; };
+    b.type = 'button';
+    b.className = 'md-ibtn md-theme';
+    const label = () => {
+      const dark = FUN.currentTheme() === 'dark';
+      b.innerHTML = icon(dark ? 'light_mode' : 'dark_mode');
+      b.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
+      b.setAttribute('aria-label', b.title);
+    };
     label();
-    b.title = 'Switch light or dark';
     b.onclick = () => { const t = FUN.toggleTheme(); label(); if (onToggle) onToggle(t); };
+    b.relabel = label;
     return b;
   }
   function showWarnings(cat, where) {
@@ -272,5 +298,5 @@ const LH = (() => {
     document.body.innerHTML = `<div class="empty" style="height:100vh"><div><div class="em">🙈</div><h2>The catalog could not be read</h2><p>${esc(err.message)}. Check that data/catalog.js exists and that it has no typing mistakes such as a missing comma or bracket. Your browser's developer console shows the exact line.</p></div></div>`;
   }
 
-  return { esc, norm, loadCatalog, buildIndex, search, openSearch, closeSearch, initSearch, subjectUrl, moduleUrl, topicUrl, sectionUrl, mascotSvg, brandHtml, themeButton, showWarnings, errorPage };
+  return { esc, norm, loadCatalog, buildIndex, search, openSearch, closeSearch, initSearch, subjectUrl, moduleUrl, domainUrl, categoryUrl, icon, topicUrl, sectionUrl, mascotSvg, brandHtml, themeButton, showWarnings, errorPage };
 })();

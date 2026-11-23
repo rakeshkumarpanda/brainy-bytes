@@ -11,6 +11,10 @@
 <link rel="stylesheet" href="../../assets/cv.css">
 <link rel="stylesheet" href="../../assets/ai.css">
 <link rel="stylesheet" href="../../assets/python.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
 </head>
 <body class="cvp aip caip pyp">
 <header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=python&amp;p=core">Python learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
@@ -39,6 +43,12 @@
 <div class="walk"><div class="walk-h"><span>What happens when you type python3 hello.py</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Python opens hello.py and reads the text.</li><li>It splits the text into tokens (words, numbers, symbols) and checks the grammar. A grammar mistake here gives a SyntaxError and nothing runs.</li><li>It compiles the grammar tree into bytecode, small instructions such as LOAD_CONST and CALL.</li><li>The Python virtual machine runs the bytecode from top to bottom. print() sends text to the screen.</li><li><span class="eq">source code (.py) &rarr; tokens &rarr; syntax tree &rarr; bytecode &rarr; run &rarr; output</span></li></ol></div>
 <div class="note note-tip"><b>Remember</b><div>Python is often called an interpreted language, but CPython does compile your code to bytecode first. Both words are partly true. The Advanced Python step 7 chapter "How Python runs" opens every one of these stages with an animation.</div></div>
 <div class="tw"><table class="cvt "><thead><tr><th>Python implementation</th><th>Written in</th><th>Where it is used</th></tr></thead><tbody><tr><td>CPython</td><td>C</td><td>The standard one from python.org. This course uses CPython 3.14</td></tr><tr><td>PyPy</td><td>Python (RPython)</td><td>Has a just in time compiler, often several times faster on long loops</td></tr><tr><td>MicroPython</td><td>C</td><td>Small boards like the Raspberry Pi Pico and ESP32</td></tr><tr><td>Pyodide</td><td>CPython compiled to WebAssembly</td><td>Runs Python inside your web browser. The Run buttons on this page use it</td></tr></tbody></table></div>
+<!-- cj --><h3>Watch hello.py travel from your keyboard to the screen</h3>
+<p>Here is the whole journey in one animation. A three line program is typed, saved, compiled to bytecode by CPython, run by the PVM evaluation loop, and its output travels as bytes through the operating system to the terminal, where a font turns the numbers into letters. Press Play, or use Step to go one stage at a time.</p>
+<div class="cj-card" data-cj="journey" data-lang="python"></div>
+<h3>Compiler or interpreter: the kitchen story</h3>
+<p>Two chefs cook the same dish in two different ways, then the same idea is shown with five lines of code. Tick the mistake box and watch <b>when</b> each one finds the error. This is exactly why a <code>SyntaxError</code> stops Python before line 1, while a <code>NameError</code> appears only when its line is reached.</p>
+<div class="cj-card" data-cj="ci"></div><!-- /cj -->
 <nav class="cv-lnav"></nav></article><article class="cv-lesson" id="setup" data-l="setup" hidden><div class="cv-lno">Lesson 3 of 11</div><h2>Install Python and run your first program</h2>
 <p>You can try every example on this page with the <b>Run</b> button, which runs real Python in your browser. To work on your own computer, install Python once.</p>
 <div class="walk"><div class="walk-h"><span>Install Python</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Go to python.org/downloads and download the newest Python 3 for your system (Windows, macOS or Linux). On Linux it is often already installed.</li><li>On Windows, tick "Add python.exe to PATH" in the installer. This lets you type python in any terminal.</li><li>Open a terminal (Command Prompt, PowerShell or Terminal) and type python3 --version (on Windows: python --version or py --version).</li><li><span class="eq">If you see a version such as Python 3.14.0, Python is ready</span></li></ol></div>
@@ -239,5 +249,9 @@ if __name__ == '__main__':
 <script src="../../assets/pywidgets3.js"></script>
 <script src="../../assets/voiceteach.js"></script>
 <script src="../../assets/cv.js"></script>
+
+<!-- cj --><script src="../../assets/vendor/gsap.min.js"></script><script src="../../assets/vendor/MotionPathPlugin.min.js"></script><script src="../../assets/codejourney.js"></script><!-- /cj -->
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
 </body>
 </html>

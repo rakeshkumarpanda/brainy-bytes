@@ -69,6 +69,35 @@ window.CATALOG = {
     doodles: ['{ }', 'O(n)', '[ ]', '∑', '🐞', '0101', '</>', 'π', '✓', 'if', '∞', '√', '++', '→', 'gcd', 'i++']
   },
 
+  /* DOMAINS: the home page shows one tile per domain. A domain holds categories, and each category lists
+     subject ids from the subjects list below. Every subject belongs to exactly one category. */
+  domains: [
+    {
+      id: 'cs', title: 'Computer Science', icon: 'computer', color: '#3b5bdb',
+      blurb: 'Programming languages, testing, data structures, AI, security and the tools that ship real software.',
+      categories: [
+        { id: 'languages', title: 'Programming Languages', icon: 'code', color: '#3b5bdb',
+          blurb: 'Learn to write real programs, from your first line of code to how the language runs on the machine.',
+          subjects: ['python', 'java', 'javascript'] },
+        { id: 'testing', title: 'Test, QA and SDET', icon: 'bug_report', color: '#c2185b',
+          blurb: 'Manual testing, API testing, browser automation with Selenium and Playwright, TestNG and security testing.',
+          subjects: ['manual-testing', 'api-manual-testing', 'api-automation', 'selenium', 'playwright', 'testng', 'security-testing'] },
+        { id: 'dsa', title: 'Data Structures and Algorithms', icon: 'account_tree', color: '#1565c0',
+          blurb: 'Arrays to graphs, recursion to dynamic programming, with every program in Java, JavaScript, Python and TypeScript.',
+          subjects: ['dsa'] },
+        { id: 'ai', title: 'AI and Machine Learning', icon: 'psychology', color: '#6a1b9a',
+          blurb: 'The maths, machine learning, deep learning, computer vision, language processing, AI and MLOps, plus working with Claude.',
+          subjects: ['ml-maths', 'machine-learning', 'neural-networks', 'deep-learning', 'computer-vision', 'nlp', 'ai', 'mlops', 'master-claude'] },
+        { id: 'security', title: 'Cybersecurity', icon: 'shield', color: '#00695c',
+          blurb: 'Cryptography, networks, application security and security operations, from the basics to expert level.',
+          subjects: ['cyber-security'] },
+        { id: 'systems', title: 'Systems and DevOps', icon: 'dns', color: '#e65100',
+          blurb: 'Version control and CI/CD pipelines with Git, and parallel programming on the GPU with CUDA.',
+          subjects: ['git', 'cuda'] }
+      ]
+    }
+  ],
+
   subjects: [
     {
       id: 'dsa',

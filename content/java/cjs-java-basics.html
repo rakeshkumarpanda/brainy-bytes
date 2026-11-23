@@ -985,6 +985,10 @@ pre.pseudo{margin:6px 0 0; background:var(--code-bg); color:var(--code-ink); bor
 
 </style>
 <!-- pathskin --><link rel="stylesheet" href="../../assets/pathskin.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
 </head>
 <body>
 <header class="topbar"><span class="tb-brand">☕ Brainy Bytes · Java</span><span class="tb-sp"></span><button type="button" class="tb-btn" id="themeBtn">🌙 Dark</button></header>
@@ -1007,6 +1011,48 @@ pre.pseudo{margin:6px 0 0; background:var(--code-bg); color:var(--code-ink); bor
 <div class="rule">The same <code>.class</code> file runs on Windows, macOS and Linux because each has its own JVM. This is what "write once, run anywhere" means: the bytecode is platform independent, the JVM is not.</div>
 <div class="c3" data-k="cjb_hello" data-label="Hello, and a first calculation"></div>
 <div class="tip">Python also compiles to bytecode (<code>.pyc</code>) and runs it in a virtual machine. JavaScript engines such as V8 parse the source and JIT compile it. Java makes the compile step visible and separate.</div>
+<!-- cj --><h3>Watch one program travel from your keyboard to the screen</h3>
+<p>The diagram above shows the big picture. The animation below zooms in. It follows a tiny program that prints <code>Sum = 8</code>, from the moment a programmer types it until the letters glow on the monitor. Press Play, or use Step to move one stage at a time. Every stage names who is responsible: the programmer, <code>javac</code>, the JVM and its parts, the CPU, the operating system, the terminal and the monitor.</p>
+<div class="cj-card" data-cj="journey" data-lang="java"></div>
+<h3>What javac does inside, phase by phase</h3>
+<p>Think of <code>javac</code> as a very strict teacher who reads your whole essay before handing it back. It works in fixed phases, and an error in any phase stops the build before a single <code>.class</code> file is written.</p>
+<div class="tw"><table class="jt"><tr><th>Phase</th><th>What happens</th><th>An error you may see here</th></tr>
+<tr><td>Parse</td><td>The text is split into tokens (<code>int</code>, <code>a</code>, <code>=</code>, <code>5</code>) and arranged into a syntax tree.</td><td><code>';' expected</code></td></tr>
+<tr><td>Enter</td><td>Every class, method and field is recorded in symbol tables, so later phases can look names up.</td><td><code>duplicate class</code></td></tr>
+<tr><td>Annotation processing</td><td>Annotation processors (for example Lombok or MapStruct) may read the code and generate new source files.</td><td>Errors reported by the processor</td></tr>
+<tr><td>Attribute</td><td>Names are resolved and types are checked. This is where most mistakes are caught.</td><td><code>cannot find symbol</code>, <code>incompatible types</code></td></tr>
+<tr><td>Flow</td><td>Checks that every variable is assigned before use and that no statement can never be reached.</td><td><code>variable might not have been initialized</code>, <code>unreachable statement</code></td></tr>
+<tr><td>Desugar</td><td>Convenient syntax is rewritten into simpler forms: generics are erased, inner classes and the enhanced for loop are expanded.</td><td>Rare</td></tr>
+<tr><td>Generate</td><td>Bytecode is written into one <code>.class</code> file per class.</td><td>Rare (disk or path problems)</td></tr></table></div>
+<div class="rule">A compile error means no new <code>.class</code> file and nothing runs. This is the big safety benefit of compiling first: many mistakes are found on your desk, not in front of your users.</div>
+<h3>Inside the .class file</h3>
+<p>Open any <code>.class</code> file in a hex viewer and the first four bytes are always <code>CA FE BA BE</code>, a "magic number" the JVM checks before anything else. Next come the minor and major version numbers, then a constant pool (every name and literal the class uses), the fields, the methods with their bytecode, and extra attributes. You can read the bytecode yourself with <code>javap -c Hello</code>.</p>
+<div class="tw"><table class="jt"><tr><th>Java release</th><th>Class file major version</th></tr>
+<tr><td>Java 8</td><td>52</td></tr><tr><td>Java 11</td><td>55</td></tr><tr><td>Java 17</td><td>61</td></tr><tr><td>Java 21</td><td>65</td></tr><tr><td>Java 25</td><td>69</td></tr></table></div>
+<div class="tip">Real life: a teammate builds the project with JDK 21 and your laptop runs Java 17. Running their classes fails with <code>UnsupportedClassVersionError</code>, because 65 is newer than your JVM understands. The fix is either a newer JVM, or compiling with <code>javac --release 17</code> so the output targets the older version.</div>
+<h3>How the JVM loads and prepares a class</h3>
+<p>The JVM does not load every class at start. It loads a class the first time the program needs it, through three class loaders that ask each other in order. This order is called the <b>parent delegation model</b>: a loader first asks its parent, and only searches itself if the parent cannot find the class. That is why nobody can replace <code>java.lang.String</code> with a fake one placed on the classpath.</p>
+<div class="grid2"><div class="box"><h4>The three class loaders</h4><p><b>Bootstrap</b> loads the core platform classes such as <code>java.lang</code>. <b>Platform</b> loads the other Java SE modules. <b>Application</b> (also called system) loads your classes and libraries from the classpath or module path.</p></div>
+<div class="box"><h4>The life of a class</h4><p><b>Loading</b> reads the bytes. <b>Linking</b> has three parts: verification (is the bytecode safe), preparation (static fields get default values) and resolution (symbolic names become real references). <b>Initialization</b> runs the static initializers the first time the class is really used.</p></div></div>
+<h3>Interpreter, JIT and tiered compilation</h3>
+<p>HotSpot, the JVM in most JDKs, starts by interpreting bytecode because that begins instantly. It counts how often each method runs. A busy ("hot") method is first compiled quickly by the <b>C1</b> compiler, and if it stays busy it is compiled again by <b>C2</b>, which spends more time to produce faster machine code. This mix is called <b>tiered compilation</b> and has been on by default since Java 8. It is why a Java service often gets faster during its first minutes of traffic, a pattern engineers call "warm up".</p>
+<div class="tw"><table class="jt"><tr><th>Way to run</th><th>When work happens</th><th>Good for</th></tr>
+<tr><td>Interpreter</td><td>Each bytecode is carried out as it is reached</td><td>Code that runs once, fast start</td></tr>
+<tr><td>JIT (C1, then C2)</td><td>Hot methods are compiled while the program runs</td><td>Long running servers and apps</td></tr>
+<tr><td>Ahead of time (for example GraalVM Native Image)</td><td>Everything is compiled to a native program before it runs</td><td>Very fast start, small cloud functions</td></tr></table></div>
+<h3>Shortcuts you will meet</h3>
+<p>Since Java 11 (JEP 330) you can run a single source file directly with <code>java Hello.java</code>. The launcher still compiles the file, only in memory, and no <code>.class</code> file is left behind. Since Java 22 (JEP 458) the same works for a program spread over several source files. Build tools such as Maven and Gradle simply call the compiler for you on every file of a project.</p>
+<div class="tip">Real life: an Android app is often written in Java or Kotlin and compiled to Java bytecode first. The Android build then converts that bytecode into DEX format, and the phone's Android Runtime (ART) compiles it further to machine code for the phone's chip. Same first stage, a different virtual machine at the end.</div>
+<h3>Errors when starting a program, and what they mean</h3>
+<div class="tw"><table class="jt"><tr><th>Message</th><th>What went wrong</th><th>Usual fix</th></tr>
+<tr><td><code>Error: Could not find or load main class Hello</code></td><td>The JVM could not find <code>Hello.class</code> on the classpath, or the name or package is wrong</td><td>Run from the right folder, use the full name with its package, check <code>-cp</code></td></tr>
+<tr><td><code>UnsupportedClassVersionError</code></td><td>The class was compiled for a newer Java than the JVM running it</td><td>Use a newer JVM or compile with <code>--release</code></td></tr>
+<tr><td><code>NoClassDefFoundError</code></td><td>A class was there at compile time but is missing at run time</td><td>Add the missing library jar to the classpath</td></tr>
+<tr><td><code>VerifyError</code></td><td>The verifier rejected bytecode that breaks the rules</td><td>Rebuild cleanly, check bytecode tools and library versions</td></tr></table></div>
+<h3>Compiler or interpreter: the kitchen story</h3>
+<p>Java uses both a compiler (<code>javac</code>) and an interpreter (inside the JVM). To see clearly what each one does on its own, watch two chefs cook the same dish, then the same idea with five lines of code. Tick the mistake box to see the most important difference: <b>when an error is found</b>.</p>
+<div class="cj-card" data-cj="ci"></div>
+<!-- /cj -->
 </section>
 
 <section class="card reveal jsec" id="class-object" data-say="class-object"><div class="sec-num">Part 2</div><h2><span class="sec-em">🏗️</span><span>Classes and objects</span></h2>
@@ -3540,5 +3586,9 @@ const OUTS = {"cjb_hello": {"py": "Hello, Java!\na + b = 30\n15 / 2 = 7 but 15 /
 </script>
 <!-- pathskin --><script src="../../assets/pathskin.js" data-kicker="Step 1 · Topic 1 of 7 · Beginner" data-sheet="./cheatsheet.html#cjs-java-basics"></script>
 <!-- pathskin --><script src="../../assets/voiceteach.js"></script>
+
+<!-- cj --><script src="../../assets/vendor/gsap.min.js"></script><script src="../../assets/vendor/MotionPathPlugin.min.js"></script><script src="../../assets/codejourney.js"></script><!-- /cj -->
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
 </body>
 </html>
