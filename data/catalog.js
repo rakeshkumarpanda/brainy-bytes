@@ -10819,6 +10819,24 @@ function lxAdminModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-admin-2", title: "Boot, services and logs", emoji: "2", step: 2, part: "admin", level: "Intermediate", blurb: "Follow the boot from firmware to login, manage services with systemd, and read the logs to find out what went wrong.", topics: [
+      { id: "boot-systemd", title: "Boot and services: GRUB, systemd and systemctl", emoji: "2.1", page: "content/linux/boot-systemd.html",
+        summary: "The boot stages, targets, unit files, systemctl, and writing your own service.",
+        keywords: ["boot", "GRUB", "initramfs", "systemd", "systemctl", "unit file", "target", "service", "enable", "daemon-reload"],
+        minutes: 55, counts: {"lessons": 6, "problems": 6, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "boot", title: "How Linux starts: firmware to login", emoji: "", group: "Lesson", keywords: ["boot process", "UEFI", "BIOS", "GRUB", "update-grub", "kernel command line", "initramfs", "dracut", "systemd PID 1", "targets", "runlevels", "multi-user.target", "rescue mode", "emergency mode"] },
+        { id: "units", title: "Units and unit files", emoji: "", group: "Lesson", keywords: ["systemd unit", "unit file", ".service", ".timer", ".socket", ".target", "/etc/systemd/system", "/usr/lib/systemd/system", "drop-in", "systemctl edit", "systemd-analyze verify", "daemon-reload", "WantedBy"] },
+        { id: "systemctl", title: "Managing services with systemctl", emoji: "", group: "Lesson", keywords: ["systemctl status", "systemctl start", "systemctl stop", "systemctl restart", "systemctl reload", "systemctl enable", "enable --now", "systemctl disable", "systemctl mask", "is-active", "is-enabled", "systemctl --failed", "list-units"] },
+        { id: "write", title: "Writing your own service", emoji: "", group: "Lesson", keywords: ["write systemd service", "ExecStart", "Type=simple", "Type=oneshot", "Type=forking", "Restart=on-failure", "User=", "EnvironmentFile", "ProtectSystem", "PrivateTmp", "DynamicUser", "network-online.target", "custom service"] },
+        { id: "practice", title: "Practice: fix and add services in the practice shell", emoji: "", group: "Lesson", keywords: ["systemctl practice", "service lab", "journalctl practice", "enable --now practice", "failed unit practice"] },
+        { id: "levels", title: "Boot and services from school to research", emoji: "", group: "Lesson", keywords: ["After vs Wants", "Requires", "systemd-analyze blame", "critical-chain", "socket activation", "cgroups", "MemoryMax", "systemd-analyze security", "Secure Boot", "measured boot", "TPM", "SysV init", "unified kernel image", "Firecracker"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

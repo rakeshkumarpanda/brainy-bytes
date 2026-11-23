@@ -1021,6 +1021,52 @@
     }
   }));
 
+  /* admin 2.1 the boot sequence, stage by stage, with a chosen place where it can break */
+  def('lx-boot', el => W(el, {
+    title: 'From power button to login',
+    sub: 'Press Play to follow a Linux machine as it starts. Pick a fault to see where the boot stops, what the screen shows, and how an admin fixes it.',
+    inputs: [{ k: 'fault', label: 'Fault', type: 'seg', val: 'none', opts: [['none', 'no fault'], ['grub', 'broken boot loader'], ['initramfs', 'root disk not found'], ['fstab', 'typo in /etc/fstab'], ['service', 'a service fails']] }],
+    random: () => ({ fault: ['none', 'grub', 'initramfs', 'fstab', 'service'][Math.floor(Math.random() * 5)] }),
+    frames: v => {
+      const S = ['Firmware', 'Boot loader', 'Kernel', 'initramfs', 'systemd', 'Login'];
+      const sm = ['UEFI or BIOS', 'GRUB', 'vmlinuz', 'early root', 'PID 1', 'getty, sshd'];
+      const stop = { grub: 1, initramfs: 3, fstab: 4 }[v.fault];
+      const flow = (k, bad) => ({ t: 'flow', label: 'Boot stages', items: S.map((x, i) => [x, sm[i], bad && i === k ? 'no' : i === k ? 'cur' : i < k ? 'yes' : stop !== undefined && i > stop && bad ? 'ghost' : '']), arrows: S.slice(1).map((_, i) => i < k ? 'yes' : '') });
+      const say = [
+        'Power on. The firmware (UEFI on modern PCs, BIOS on old ones) tests the hardware and looks for something to boot. UEFI reads a boot loader file from the EFI System Partition, usually mounted at /boot/efi.',
+        'GRUB shows its menu, reads /boot/grub/grub.cfg, then loads the kernel file (/boot/vmlinuz-VERSION) and the initramfs into memory, and passes the kernel command line, such as root=UUID=... ro quiet.',
+        'The kernel unpacks itself, detects CPUs, memory and devices, and mounts the initramfs, a small file system in memory, as a temporary root.',
+        'The initramfs loads the drivers needed to reach the real root disk, for example for NVMe, RAID, LVM or disk encryption, where it asks for the passphrase. Then it mounts the real root and switches to it.',
+        'The kernel starts /sbin/init, which is systemd, as process 1. systemd reads its units, mounts the file systems in /etc/fstab and starts services in parallel, in the order their dependencies need, until default.target is reached.',
+        'Login prompts appear: getty on the text consoles, a display manager on a desktop, and sshd for remote logins. The machine is up.'];
+      const screen = {
+        grub: ['error: unknown filesystem.', 'Entering rescue mode...', 'grub rescue>'],
+        initramfs: ['Gave up waiting for root file system device.', 'ALERT!  UUID=6c1f0d3a-... does not exist.  Dropping to a shell!', '(initramfs)'],
+        fstab: ['[FAILED] Failed to mount data.mount - /data.', '[DEPEND] Dependency failed for local-fs.target - Local File Systems.', 'You are in emergency mode. After logging in, type "journalctl -xb" to view', 'system logs, "systemctl reboot" to reboot, "systemctl default" or "exit"', 'to boot into default mode.', 'Give root password for maintenance']
+      };
+      const fix = {
+        grub: 'Fix: boot from a live USB, mount the installed system, and run grub-install and update-grub (grub2-mkconfig on Fedora) inside a chroot.',
+        initramfs: 'Fix: check the disk is connected and healthy, compare the UUID with blkid, and rebuild the initramfs with update-initramfs -u (dracut -f on Fedora) if a driver is missing.',
+        fstab: 'Fix: log in as root, mount / read-write with mount -o remount,rw /, correct /etc/fstab, test it with findmnt --verify or mount -a, and reboot. Adding nofail to lines for disks that may be missing prevents this.'
+      };
+      const fr = [];
+      for (let k = 0; k < S.length; k++) {
+        if (stop === k) {
+          fr.push({ msg: `The boot stops at the ${S[k].toLowerCase()} stage. This is what the screen shows.`, mood: 'sad', fx: 'shake', layers: [flow(k, true), { t: 'term', label: 'Console', lines: screen[v.fault].map(x => [/^(error|ALERT|\[FAILED\]|Gave)/.test(x) ? 'e' : 'o', x]) }] });
+          fr.push({ msg: fix[v.fault], mood: 'think', layers: [flow(k, true)] });
+          return fr;
+        }
+        fr.push({ msg: say[k], mood: k === S.length - 1 ? 'happy' : 'look', fx: k === S.length - 1 && v.fault !== 'service' ? 'burst' : undefined, layers: [flow(k)] });
+      }
+      if (v.fault === 'service') {
+        const w = world(), r = w.run('systemctl --failed'), r2 = w.run('sudo journalctl -u backup -p err');
+        fr.push({ msg: 'A failing service does not stop the boot. The machine comes up, but systemctl reports a degraded state, so always check for failed units after a boot.', mood: 'wow', fx: 'shake', layers: [flow(S.length), { t: 'term', label: '$ systemctl --failed', lines: r.out.split('\n').slice(0, 2).map(x => ['o', x]) }] });
+        fr.push({ msg: 'The journal of the unit tells why it failed. Here the backup target folder is missing.', mood: 'think', layers: [{ t: 'term', label: '$ sudo journalctl -u backup -p err', lines: r2.out.replace(/\n$/, '').split('\n').map(x => ['e', x]) }] });
+      }
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
