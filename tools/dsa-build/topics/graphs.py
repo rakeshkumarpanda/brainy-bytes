@@ -1923,5 +1923,5 @@ T = {
     'parts': PARTS, 'codes': CODES, 'info': INFO, 'real': REAL, 'say': SAY, 'practice': PRACTICE, 'quiz': QUIZ, 'calc': CALC,
     'viz': VIZ_JS, 'css': CSS,
     'prev': ('balanced-trees', 'balanced-trees', '🔄 Balanced trees'),
-    'next': None,
+    'next': ('advanced-graphs', 'advanced-graphs', '🧭 Advanced graphs'),
 }
