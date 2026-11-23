@@ -57,7 +57,7 @@ const LXSH = (() => {
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
   const SBIN = 'chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'alias apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const CMDS = 'alias journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -135,6 +135,7 @@ const LXSH = (() => {
       this.hist = []; this.last = 0; this.umask = 0o022; this.args = []; this.clock = T0 + 60000; this.jobs = [];
       this.procs = [[1, 0, 'root', '/sbin/init', 'systemd'], [412, 1, 'root', 'sshd: /usr/sbin/sshd -D', 'sshd'], [618, 1, 'root', '/usr/sbin/cron -f', 'cron'], [905, 1, 'root', 'nginx: master process /usr/sbin/nginx', 'nginx'], [1200, 905, 'www-data', 'nginx: worker process', 'nginx'], [2001, 1, USER, '-bash', 'bash']].map(([pid, ppid, user, cmd, comm]) => ({ pid, ppid, user, cmd, comm, stat: 'S', ni: 0 }));
       this.nextPid = 2400;
+      this.sd();
     }
     now() { this.clock += 1000; return this.clock; }
     abs(p) { p = String(p); if (p === '~' || p.startsWith('~/')) p = HOME + p.slice(1); return norm(p.startsWith('/') ? p : this.cwd + '/' + p); }
@@ -2967,7 +2968,7 @@ const LXSH = (() => {
   C.su = function () { this.eout('su: Authentication failure (in this practice shell use sudo instead)\n'); return 1; };
   const exitRoot = C.exit;
   C.exit = function (a) { if (this.user === 'root') { this.user = USER; if (this.rootPath) { this.vars.PATH = this.rootPath; this.rootPath = null; } return 0; } return exitRoot.call(this, a); };
-  ['dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'strace'].forEach(c => {
+  ['dnf', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'strace'].forEach(c => {
     C[c] = function () { this.eout(`${c}: this command is explained in its own lesson, but the practice shell does not run it. Try it on a real Linux machine, a virtual machine or WSL.\n`); return 127; };
   });
   C.vim = C.vi = C.nano = function (a) { this.eout(`${a[0] ? a[0] + ': ' : ''}the practice shell has no full screen editor. Use echo "text" > file or cat > file with a here document instead.\n`); return 1; };
@@ -3228,6 +3229,218 @@ const LXSH = (() => {
 
   /* ---------- small builtins for scripts ---------- */
   C[':'] = function () { return 0; };
+  /* ---------- systemd: units, systemctl and the journal (systemd 255 output) ---------- */
+  const UNITS0 = {
+    'cron.service': { file: '/usr/lib/systemd/system/cron.service', pid: 618, data: '[Unit]\nDescription=Regular background program processing daemon\nDocumentation=man:cron(8)\nAfter=remote-fs.target nss-user-lookup.target\n\n[Service]\nEnvironmentFile=-/etc/default/cron\nExecStart=/usr/sbin/cron -f -P $EXTRA_OPTS\nKillMode=process\nRestart=on-failure\n\n[Install]\nWantedBy=multi-user.target\n' },
+    'ssh.service': { file: '/usr/lib/systemd/system/ssh.service', pid: 412, data: '[Unit]\nDescription=OpenBSD Secure Shell server\nDocumentation=man:sshd(8) man:sshd_config(5)\nAfter=network.target auditd.service\n\n[Service]\nExecStartPre=/usr/sbin/sshd -t\nExecStart=/usr/sbin/sshd -D $SSHD_OPTS\nExecReload=/bin/kill -HUP $MAINPID\nKillMode=process\nRestart=on-failure\n\n[Install]\nWantedBy=multi-user.target\n' },
+    'nginx.service': { file: '/usr/lib/systemd/system/nginx.service', pid: 905, data: '[Unit]\nDescription=A high performance web server and a reverse proxy server\nDocumentation=man:nginx(8)\nAfter=network.target\n\n[Service]\nType=forking\nPIDFile=/run/nginx.pid\nExecStartPre=/usr/sbin/nginx -t -q -g \'daemon on; master_process on;\'\nExecStart=/usr/sbin/nginx -g \'daemon on; master_process on;\'\nExecReload=/usr/sbin/nginx -g \'daemon on; master_process on;\' -s reload\n\n[Install]\nWantedBy=multi-user.target\n' },
+    'backup.service': { file: '/etc/systemd/system/backup.service', failed: 23, data: '[Unit]\nDescription=Nightly backup\n\n[Service]\nType=oneshot\nExecStart=/usr/local/bin/backup.sh\n\n[Install]\nWantedBy=multi-user.target\n' }
+  };
+  const iniGet = (txt, key) => { const m = new RegExp('^' + key + '=(.*)$', 'm').exec(txt || ''); return m ? m[1].trim() : ''; };
+  const sdDate = ms => { const d = new Date(ms), z = n => String(n).padStart(2, '0'); return `${DAYS3[d.getUTCDay()]} ${d.getUTCFullYear()}-${z(d.getUTCMonth() + 1)}-${z(d.getUTCDate())} ${z(d.getUTCHours())}:${z(d.getUTCMinutes())}:${z(d.getUTCSeconds())} UTC`; };
+  const jDate = ms => { const d = new Date(ms), z = n => String(n).padStart(2, '0'); return `${MON3[d.getUTCMonth()]} ${z(d.getUTCDate())} ${z(d.getUTCHours())}:${z(d.getUTCMinutes())}:${z(d.getUTCSeconds())}`; };
+  const ago = ms => { const s = Math.max(0, Math.round(ms / 1000)); if (s < 60) return s + 's'; const m = Math.floor(s / 60); if (m < 60) return m + 'min'; const h = Math.floor(m / 60); return h + 'h ' + (m % 60) + 'min'; };
+  World.prototype.sd = function () {
+    if (this.sdState) return this.sdState;
+    const st = this.sdState = { units: {}, log: [], loaded: this.clock };
+    this.mkdirs('/usr/lib/systemd/system'); this.mkdirs('/etc/systemd/system/multi-user.target.wants'); this.mkdirs('/usr/local/bin');
+    const boot = T0 - 3600e3;
+    Object.entries(UNITS0).forEach(([name, u]) => {
+      if (!this.node(u.file)) this.mk(u.file, 'f', 0o644, 'root', u.data);
+      const l = this.node('/etc/systemd/system/multi-user.target.wants/' + name, false); if (!l) this.mk('/etc/systemd/system/multi-user.target.wants/' + name, 'l', 0o777, 'root', u.file);
+      st.units[name] = { state: u.failed ? 'failed' : 'active', since: u.failed ? T0 - 7 * 3600e3 + 5000 : boot, pid: u.pid, code: u.failed, mainPid: u.failed ? 4711 : u.pid, file: u.file };
+      const desc = iniGet(u.data, 'Description');
+      if (u.failed) {
+        st.log.push({ t: T0 - 7 * 3600e3, id: 'systemd[1]', unit: name, msg: `Starting ${name} - ${desc}...` });
+        st.log.push({ t: T0 - 7 * 3600e3 + 4000, id: 'backup.sh[4711]', unit: name, msg: 'rsync: [Receiver] mkdir "/mnt/backup/home" failed: No such file or directory (2)', prio: 3 });
+        st.log.push({ t: T0 - 7 * 3600e3 + 4000, id: 'backup.sh[4711]', unit: name, msg: 'rsync error: error in file IO (code 11) at main.c(791) [Receiver=3.2.7]', prio: 3 });
+        st.log.push({ t: T0 - 7 * 3600e3 + 5000, id: 'systemd[1]', unit: name, msg: `${name}: Main process exited, code=exited, status=23/n/a` });
+        st.log.push({ t: T0 - 7 * 3600e3 + 5000, id: 'systemd[1]', unit: name, msg: `${name}: Failed with result 'exit-code'.`, prio: 4 });
+        st.log.push({ t: T0 - 7 * 3600e3 + 5000, id: 'systemd[1]', unit: name, msg: `Failed to start ${name} - ${desc}.`, prio: 3 });
+      } else {
+        st.log.push({ t: boot, id: 'systemd[1]', unit: name, msg: `Starting ${name} - ${desc}...` });
+        st.log.push({ t: boot, id: 'systemd[1]', unit: name, msg: `Started ${name} - ${desc}.` });
+      }
+    });
+    ['/usr/sbin/cron', '/usr/sbin/sshd', '/usr/sbin/nginx'].forEach(f => { if (!this.node(f)) this.mk(f, 'f', 0o755, 'root', '#!practice ' + baseName(f) + '\n'); });
+    if (!this.node('/usr/local/bin/backup.sh')) this.mk('/usr/local/bin/backup.sh', 'f', 0o755, 'root', '#!/bin/bash\nrsync -a /home/ /mnt/backup/home/\n');
+    st.log.sort((a, b) => a.t - b.t);
+    return st;
+  };
+  World.prototype.unitName = function (n) { return /\.(service|timer|socket|target|mount|path)$/.test(n) ? n : n + '.service'; };
+  World.prototype.unitFile = function (name) { const st = this.sd(); const u = st.units[name]; if (u && this.node(u.file)) return u.file; for (const d of ['/etc/systemd/system', '/usr/lib/systemd/system']) if (this.node(d + '/' + name)) return d + '/' + name; return null; };
+  World.prototype.unitData = function (name) { const f = this.unitFile(name); return f ? this.node(f).data : null; };
+  World.prototype.unitEnabled = function (name) {
+    const m = this.node('/etc/systemd/system/' + name, false); if (m && m.type === 'l' && m.target === '/dev/null') return 'masked';
+    if (this.node('/etc/systemd/system/multi-user.target.wants/' + name, false)) return 'enabled';
+    return /\[Install\]/.test(this.unitData(name) || '') ? 'disabled' : 'static';
+  };
+  World.prototype.sdLog = function (unit, id, msg, prio) { this.sd().log.push({ t: this.clock, id, unit, msg, prio }); };
+  World.prototype.unitStart = function (name) {
+    const st = this.sd(), data = this.unitData(name), desc = iniGet(data, 'Description') || name;
+    const u = st.units[name] || (st.units[name] = { state: 'inactive', file: this.unitFile(name) });
+    if (u.state === 'active') return 0;
+    this.sdLog(name, 'systemd[1]', `Starting ${name} - ${desc}...`);
+    const exec = iniGet(data, 'ExecStart').replace(/^[-@+!]+/, ''), prog = exec.split(/\s+/)[0], n = prog && this.node(prog);
+    const pid = 3000 + Math.floor(this.clock / 1000) % 5000 + Object.keys(st.units).length;
+    if (!prog || !n || !(n.mode & 0o111)) {
+      Object.assign(u, { state: 'failed', since: this.clock, code: 203, mainPid: pid, pid: undefined, exec });
+      this.sdLog(name, `(${baseName(prog || 'unknown')})[${pid}]`, `${name}: Unable to locate executable '${prog}': No such file or directory`, 3);
+      this.sdLog(name, `(${baseName(prog || 'unknown')})[${pid}]`, `${name}: Failed at step EXEC spawning ${prog}: No such file or directory`, 3);
+      this.sdLog(name, 'systemd[1]', `${name}: Main process exited, code=exited, status=203/EXEC`);
+      this.sdLog(name, 'systemd[1]', `${name}: Failed with result 'exit-code'.`, 4);
+      this.sdLog(name, 'systemd[1]', `Failed to start ${name} - ${desc}.`, 3);
+      return 1;
+    }
+    const oneshot = iniGet(data, 'Type') === 'oneshot';
+    if (oneshot) { Object.assign(u, { state: 'inactive', since: this.clock, ran: true, mainPid: pid, code: 0, exec }); this.sdLog(name, 'systemd[1]', `${name}: Deactivated successfully.`); this.sdLog(name, 'systemd[1]', `Finished ${name} - ${desc}.`); return 0; }
+    Object.assign(u, { state: 'active', since: this.clock, pid, mainPid: pid, code: undefined, exec });
+    const user = iniGet(data, 'User') || 'root';
+    const nginx = name === 'nginx.service';
+    this.procs.push({ pid, ppid: 1, user, cmd: nginx ? 'nginx: master process /usr/sbin/nginx -g daemon on; master_process on;' : exec, comm: baseName(prog), stat: 'S', ni: 0, start: this.clock });
+    if (nginx) this.procs.push({ pid: pid + 1, ppid: pid, user: 'www-data', cmd: 'nginx: worker process', comm: 'nginx', stat: 'S', ni: 0, start: this.clock });
+    this.sdLog(name, 'systemd[1]', `Started ${name} - ${desc}.`);
+    return 0;
+  };
+  World.prototype.unitStop = function (name) {
+    const st = this.sd(), u = st.units[name], desc = iniGet(this.unitData(name), 'Description') || name;
+    if (!u || u.state !== 'active') { if (u && u.state === 'failed') { u.state = 'inactive'; } return 0; }
+    this.sdLog(name, 'systemd[1]', `Stopping ${name} - ${desc}...`);
+    this.procs = this.procs.filter(p => p.pid !== u.pid && p.ppid !== u.pid);
+    Object.assign(u, { state: 'inactive', since: this.clock, pid: undefined });
+    this.sdLog(name, 'systemd[1]', `${name}: Deactivated successfully.`);
+    this.sdLog(name, 'systemd[1]', `Stopped ${name} - ${desc}.`);
+    return 0;
+  };
+  C.systemctl = function (a) {
+    const st = this.sd(), flags = a.filter(x => x.startsWith('-')), args = a.filter(x => !x.startsWith('-') && !/^(service|timer)$/.test(x) || false);
+    const verb = args[0] || 'list-units', names = args.slice(1).map(n => this.unitName(n));
+    const typeArg = (a.find(x => x.startsWith('--type=')) || '').split('=')[1] || (a.includes('-t') ? a[a.indexOf('-t') + 1] : '');
+    const root = () => this.user === 'root';
+    const deny = (what, n, see) => { this.eout(`Failed to ${what} ${n}: Interactive authentication required.\n${see ? `See system logs and 'systemctl status ${n}' for details.\n` : ''}`); return 1; };
+    const exists = n => !!this.unitFile(n);
+    const desc = n => iniGet(this.unitData(n), 'Description') || n;
+    const sub = u => !u ? 'dead' : u.state === 'active' ? 'running' : u.state === 'failed' ? 'failed' : 'dead';
+    const changed = n => { const f = this.unitFile(n); return f && st.units[n] && this.node(f).mtime > st.loaded; };
+    const warnChanged = n => { if (changed(n)) this.eout(`Warning: The unit file, source configuration file or drop-ins of ${n} changed on disk. Run 'systemctl daemon-reload' to reload units.\n`); };
+    if (verb === 'daemon-reload') { if (!root()) { this.eout('Failed to reload daemon: Interactive authentication required.\n'); return 1; } st.loaded = this.clock + 1; return 0; }
+    if (['start', 'stop', 'restart', 'reload', 'try-restart'].includes(verb)) {
+      if (!names.length) { this.eout(`Too few arguments.\n`); return 1; }
+      let code = 0;
+      for (const n of names) {
+        if (!exists(n)) { this.eout(`Failed to ${verb} ${n}: Unit ${n} not found.\n`); code = 5; continue; }
+        if (!root()) { code = deny(verb, n, verb !== 'stop'); continue; }
+        if (this.unitEnabled(n) === 'masked') { this.eout(`Failed to ${verb} ${n}: Unit ${n} is masked.\n`); code = 1; continue; }
+        warnChanged(n);
+        if (verb === 'stop') this.unitStop(n);
+        else if (verb === 'reload') { const u = st.units[n]; if (!u || u.state !== 'active') { this.eout(`${n} is not active, cannot reload.\n`); code = 1; } else if (!iniGet(this.unitData(n), 'ExecReload')) { this.eout(`Failed to reload ${n}: Job type reload is not applicable for unit ${n}.\n`); code = 1; } else this.sdLog(n, 'systemd[1]', `Reloaded ${n} - ${desc(n)}.`); }
+        else { if (verb !== 'start') this.unitStop(n); if (this.unitStart(n)) { this.eout(`Job for ${n} failed because the control process exited with error code.\nSee "systemctl status ${n}" and "journalctl -xeu ${n}" for details.\n`); code = 1; } }
+      }
+      return code;
+    }
+    if (['enable', 'disable', 'mask', 'unmask'].includes(verb)) {
+      let code = 0;
+      for (const n of names) {
+        if (!exists(n) && verb !== 'unmask') { this.eout(`Failed to ${verb} unit: Unit file ${n} does not exist.\n`); code = 1; continue; }
+        if (!root()) { this.eout(`Failed to ${verb} unit: Interactive authentication required.\n`); code = 1; continue; }
+        const wants = '/etc/systemd/system/multi-user.target.wants/' + n, f = this.unitFile(n);
+        if (verb === 'enable') {
+          if (!/\[Install\]/.test(this.unitData(n))) { this.eout(`The unit files have no installation config (WantedBy=, RequiredBy=, UpheldBy=,\nAlso=, or Alias= settings in the [Install] section, and DefaultInstance= for\ntemplate units). This means they are not meant to be enabled or disabled using systemctl.\n`); continue; }
+          if (!this.node(wants, false)) { this.mk(wants, 'l', 0o777, 'root', f); this.out(`Created symlink ${wants} → ${f}.\n`); }
+          if (a.includes('--now')) this.unitStart(n);
+        } else if (verb === 'disable') {
+          if (this.node(wants, false)) { this.removeNode(wants); this.out(`Removed "${wants}".\n`); }
+          if (a.includes('--now')) this.unitStop(n);
+        } else if (verb === 'mask') { const p = '/etc/systemd/system/' + n; if (!this.node(p, false)) { this.mk(p, 'l', 0o777, 'root', '/dev/null'); this.out(`Created symlink ${p} → /dev/null.\n`); } }
+        else { const p = '/etc/systemd/system/' + n, m = this.node(p, false); if (m && m.type === 'l') { this.removeNode(p); this.out(`Removed "${p}".\n`); } }
+      }
+      return code;
+    }
+    if (verb === 'is-active' || verb === 'is-enabled' || verb === 'is-failed') {
+      let code = 0;
+      names.forEach(n => {
+        const u = st.units[n];
+        if (verb === 'is-enabled') { if (!exists(n)) { this.eout(`Failed to get unit file state for ${n}: No such file or directory\n`); code = 1; return; } const e = this.unitEnabled(n); this.out(e + '\n'); if (e !== 'enabled' && e !== 'static') code = 1; return; }
+        const s2 = u ? u.state : 'inactive'; this.out(s2 + '\n');
+        if (verb === 'is-active' ? s2 !== 'active' : s2 !== 'failed') code = verb === 'is-active' ? 3 : 1;
+      });
+      return code;
+    }
+    if (verb === 'cat') {
+      let code = 0;
+      names.forEach((n, i) => { const f = this.unitFile(n); if (!f) { this.eout(`No files found for ${n}.\n`); code = 1; return; } this.out(`${i ? '\n' : ''}# ${f}\n${this.node(f).data}`); });
+      return code;
+    }
+    if (verb === 'status') {
+      let code = 0;
+      const list = names.length ? names : [];
+      if (!list.length) { this.out(`● ${HOST}\n    State: ${Object.values(st.units).some(u => u.state === 'failed') ? 'degraded' : 'running'}\n    Units: ${Object.keys(st.units).length} loaded (incl. loaded aliases)\n     Jobs: 0 queued\n   Failed: ${Object.values(st.units).filter(u => u.state === 'failed').length} units\n    Since: ${sdDate(T0 - 3600e3)}; ${ago(this.clock - T0 + 3600e3)} ago\n`); return 0; }
+      list.forEach((n, i) => {
+        if (!exists(n)) { this.eout(`Unit ${n} could not be found.\n`); code = 4; return; }
+        const u = st.units[n], data = this.unitData(n), en = this.unitEnabled(n);
+        const mark = u && u.state === 'active' ? '●' : u && u.state === 'failed' ? '×' : '○';
+        let o = `${i ? '\n' : ''}${mark} ${n} - ${desc(n)}\n     Loaded: ${en === 'masked' ? 'masked (Reason: Unit ' + n + ' is masked.)' : `loaded (${this.unitFile(n)}; ${en}; preset: enabled)`}\n`;
+        if (changed(n)) o += `    Warning: The unit file, source configuration file or drop-ins of ${n} changed on disk. Run 'systemctl daemon-reload' to reload units.\n`;
+        if (!u || (u.state === 'inactive' && !u.since)) o += '     Active: inactive (dead)\n';
+        else if (u.state === 'active') o += `     Active: active (running) since ${sdDate(u.since)}; ${ago(this.clock - u.since)} ago\n`;
+        else if (u.state === 'failed') o += `     Active: failed (Result: exit-code) since ${sdDate(u.since)}; ${ago(this.clock - u.since)} ago\n`;
+        else o += `     Active: inactive (dead)${u.since ? ` since ${sdDate(u.since)}; ${ago(this.clock - u.since)} ago` : ''}\n`;
+        const docs = iniGet(data, 'Documentation'); if (docs) o += `       Docs: ${docs.split(/\s+/).join('\n             ')}\n`;
+        const exec = iniGet(data, 'ExecStart');
+        if (u && u.state === 'failed') o += `    Process: ${u.mainPid} ExecStart=${exec} (code=exited, status=${u.code === 203 ? '203/EXEC' : u.code})\n   Main PID: ${u.mainPid} (code=exited, status=${u.code === 203 ? '203/EXEC' : u.code})\n`;
+        else if (u && u.ran && u.state === 'inactive') o += `    Process: ${u.mainPid} ExecStart=${exec} (code=exited, status=0/SUCCESS)\n   Main PID: ${u.mainPid} (code=exited, status=0/SUCCESS)\n`;
+        if (u && u.state === 'active') {
+          const kids = this.procs.filter(p => p.ppid === u.pid);
+          const me = this.procs.find(p => p.pid === u.pid);
+          o += `   Main PID: ${u.pid} (${me ? me.comm || baseName(me.cmd.split(' ')[0]) : '?'})\n      Tasks: ${1 + kids.length} (limit: 4558)\n     Memory: ${(1.2 + kids.length * 1.6).toFixed(1)}M\n        CPU: ${12 + kids.length * 9}ms\n     CGroup: /system.slice/${n}\n`;
+          const ps = [me].concat(kids).filter(Boolean);
+          ps.forEach((p, j) => { o += `             ${j === ps.length - 1 ? '└─' : '├─'}${p.pid} ${/\s/.test(p.cmd) && /^nginx/.test(p.cmd) ? '"' + p.cmd + '"' : p.cmd}\n`; });
+        }
+        const lines = st.log.filter(e => e.unit === n).slice(-10);
+        if (lines.length) o += '\n' + lines.map(e => `${jDate(e.t)} ${HOST} ${e.id}: ${e.msg}`).join('\n') + '\n';
+        this.out(o);
+        if (!u || u.state !== 'active') code = 3;
+      });
+      return code;
+    }
+    if (verb === 'list-units' || verb === 'list-unit-files' || (a.includes('--failed') && !args.length)) {
+      const all = Object.keys(st.units).concat(this.node('/etc/systemd/system') ? Object.keys(this.node('/etc/systemd/system').kids).filter(k => /\.(service|timer)$/.test(k) && !st.units[k]) : []).sort();
+      if (verb === 'list-unit-files') {
+        const rows = all.filter(n => !typeArg || n.endsWith('.' + typeArg));
+        const w = Math.max(9, ...rows.map(n => n.length));
+        this.out(`${'UNIT FILE'.padEnd(w)} STATE    PRESET\n` + rows.map(n => `${n.padEnd(w)} ${this.unitEnabled(n).padEnd(8)} enabled`).join('\n') + `\n\n${rows.length} unit files listed.\n`);
+        return 0;
+      }
+      const failedOnly = a.includes('--failed') || a.includes('--state=failed');
+      const rows = all.filter(n => st.units[n] && (a.includes('--all') || st.units[n].state !== 'inactive') && (!failedOnly || st.units[n].state === 'failed') && (!typeArg || n.endsWith('.' + typeArg)));
+      if (!rows.length) { this.out('  UNIT LOAD ACTIVE SUB DESCRIPTION\n\n0 loaded units listed.\n'); return 0; }
+      const w = Math.max(4, ...rows.map(n => n.length));
+      this.out(`  ${'UNIT'.padEnd(w)} LOAD   ACTIVE SUB     DESCRIPTION\n` + rows.map(n => { const u = st.units[n]; return `${u.state === 'failed' ? '●' : ' '} ${n.padEnd(w)} loaded ${u.state.padEnd(6)} ${sub(u).padEnd(7)} ${desc(n)}`; }).join('\n') +
+        `\n\nLegend: LOAD   → Reflects whether the unit definition was properly loaded.\n        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.\n        SUB    → The low-level unit activation state, values depend on unit type.\n\n${rows.length} loaded units listed.${failedOnly ? '' : ' Pass --all to see loaded but inactive units, too.\nTo show all installed unit files use \'systemctl list-unit-files\'.'}\n`);
+      return 0;
+    }
+    if (verb === 'reboot' || verb === 'poweroff' || verb === 'halt') { this.eout(`The practice computer cannot ${verb}. On a real machine sudo systemctl ${verb} would ${verb === 'reboot' ? 'restart' : 'switch off'} it now.\n`); return 1; }
+    if (verb === 'get-default') { this.out('multi-user.target\n'); return 0; }
+    this.eout(`Unknown command verb '${verb}'.\n`); return 1;
+  };
+  C.journalctl = function (a) {
+    const st = this.sd(); let rows = st.log.slice();
+    if (this.user !== 'root') { this.eout("Hint: You are currently not seeing messages from other users and the system.\n      Users in groups 'adm', 'systemd-journal' can see all messages.\n      Pass -q to turn off this notice.\n"); this.out('-- No entries --\n'); return 0; }
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      if (x === '-u' || x === '--unit') { const n = this.unitName(a[++i]); rows = rows.filter(e => e.unit === n); }
+      else if (/^-u./.test(x)) { const n = this.unitName(x.slice(2)); rows = rows.filter(e => e.unit === n); }
+      else if (x === '-n' || x === '--lines') { const k = +a[++i]; rows = rows.slice(-k); }
+      else if (/^-n\d+$/.test(x)) rows = rows.slice(-+x.slice(2));
+      else if (x === '-p' || x === '--priority') { const lv = { emerg: 0, alert: 1, crit: 2, err: 3, warning: 4, notice: 5, info: 6, debug: 7 }; const p = a[++i], max = lv[p] !== undefined ? lv[p] : +p; rows = rows.filter(e => (e.prio !== undefined ? e.prio : 6) <= max); }
+      else if (x === '--since' || x === '-S' || x === '--until' || x === '-U') i++;
+      else if (/^-[xebrfq]+$/.test(x) || x === '--no-pager' || x === '--reverse') { if (x.includes('r')) rows.reverse(); }
+    }
+    if (a.some(x => /^-[a-z]*f/.test(x) && x !== '--no-pager')) this.eout('(journalctl -f keeps waiting for new lines. The practice shell shows what is there now.)\n');
+    if (!rows.length) { this.out('-- No entries --\n'); return 0; }
+    this.out(rows.map(e => `${jDate(e.t)} ${HOST} ${e.id}: ${e.msg}`).join('\n') + '\n');
+    return 0;
+  };
   /* ---------- apt and dpkg: a small package database with real Ubuntu 24.04 (noble) data ---------- */
   /* name: [version, arch, installed KiB, summary, depends, download bytes, archive/component, files, multi-arch same, section] */
   const PKGDB = {
