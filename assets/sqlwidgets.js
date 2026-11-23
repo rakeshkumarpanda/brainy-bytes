@@ -427,4 +427,95 @@
       ];
     }
   }));
+
+  /* a fresh writable copy for widgets that change data, thrown away after each run */
+  function scratch(SQL, name, extra) { return SQ.openSync(SQL, name, extra); }
+  function err(d, sql) { try { d.exec(sql); return ''; } catch (e) { return String(e.message || e); } }
+
+  /* ---------- 4.1 constraints guard the door ---------- */
+  SQW('sqcheck', (SQL, cfg) => ({
+    title: 'Constraints check every new row',
+    sub: 'The members table has rules. Type a new member and watch each rule test the row before SQLite lets it in. Try a missing name, a repeated email or an age under 18.',
+    inputs: [{ k: 'name', label: 'name', type: 'text', val: cfg.name !== undefined ? cfg.name : 'Kiran', w: 110 },
+      { k: 'email', label: 'email', type: 'text', val: cfg.email || 'kiran@mail.in', w: 150 },
+      { k: 'age', label: 'age', type: 'text', val: cfg.age || '21', w: 70 }],
+    frames: v => {
+      const DDL = `CREATE TABLE members (\n  id    INTEGER PRIMARY KEY,\n  name  TEXT NOT NULL,\n  email TEXT UNIQUE,\n  age   INTEGER CHECK (age >= 18)\n) STRICT;`;
+      const seed = "INSERT INTO members (name, email, age) VALUES ('Asha', 'asha@mail.in', 30), ('Ravi', 'ravi@mail.in', 24);";
+      const d = scratch(SQL, '', DDL + seed);
+      const lit = x => x.trim() === '' ? 'NULL' : /^-?\d+$/.test(x.trim()) ? x.trim() : `'${x.replace(/'/g, "''")}'`;
+      const ins = `INSERT INTO members (name, email, age)\nVALUES (${lit(v.name)}, ${lit(v.email)}, ${lit(v.age)});`;
+      const before = q(d, 'SELECT * FROM members');
+      const nm = v.name.trim(), em = v.email.trim(), ag = v.age.trim();
+      const dup = em && before.rows.some(r => r[2] === em);
+      const isInt = ag === '' || /^-?\d+$/.test(ag);
+      const tests = [
+        ['STRICT type check', isInt, isInt ? 'age is a whole number (or empty), so it fits INTEGER.' : `"${esc(ag)}" is not a whole number, and a STRICT table refuses it.`],
+        ['name NOT NULL', nm !== '', nm ? `name is "${esc(nm)}", so it is not NULL.` : 'name is empty, which we send as NULL. NOT NULL says no.'],
+        ['email UNIQUE', !dup, dup ? `${esc(em)} already belongs to another member.` : 'No other member has this email.'],
+        ['CHECK (age >= 18)', !isInt || ag === '' || +ag >= 18, ag === '' ? 'age is NULL. A CHECK that is unknown counts as passed.' : isInt ? `${ag} >= 18 is ${+ag >= 18 ? 'true' : 'false'}.` : 'skipped, the type check already failed.']
+      ];
+      const e = err(d, ins);
+      const after = q(d, 'SELECT * FROM members');
+      const out = [{ msg: 'These rules live in the table definition, so every program that writes to the table must obey them.', mood: 'think', layers: [{ t: 'sql', text: DDL }, { t: 'tab', label: 'members now', cols: before.cols, rows: before.rows }] },
+        { msg: 'Your new row asks to come in.', mood: 'look', layers: [{ t: 'sql', text: ins }, { t: 'tab', label: 'members now', cols: before.cols, rows: before.rows }] }];
+      tests.forEach((t, i) => out.push({ msg: `<b>${t[0]}</b>: ${t[2]}`, mood: t[1] ? 'happy' : 'sad', layers: [{ t: 'sql', text: ins }, { t: 'flow', items: tests.map(x => x[0]), on: i, done: i - 1 }] }));
+      out.push(e ? { msg: `SQLite refuses the row and says: <b>${esc(e)}</b>. The table is unchanged.`, mood: 'sad', layers: [{ t: 'sql', text: ins }, { t: 'tab', label: 'members', cols: after.cols, rows: after.rows }] }
+        : { msg: 'Every rule passed, so the row is stored. SQLite also gave it the next id by itself.', mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text: ins }, { t: 'tab', label: 'members', cols: after.cols, rows: after.rows, rcls: { [after.rows.length - 1]: 'yes' } }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 4.2 UPDATE and DELETE touch the rows WHERE picks ---------- */
+  SQW('sqdml', (SQL, cfg) => ({
+    title: 'WHERE decides which rows change',
+    sub: 'Pick a change and a WHERE test. Pip marks the rows the test picks, then runs the statement on a throwaway copy of products. Clear the WHERE box to see why people fear a missing WHERE.',
+    inputs: [{ k: 'a', label: 'Change', type: 'seg', val: cfg.a || 'UPDATE', opts: [['UPDATE', 'UPDATE price + 10%'], ['DELETE', 'DELETE']] },
+      { k: 'w', label: 'WHERE', type: 'text', val: cfg.w !== undefined ? cfg.w : "category = 'Kitchen'", w: 200 }],
+    check: v => { const e = tryq(db(SQL, 'shop'), `SELECT 1 FROM products${v.w.trim() ? ' WHERE ' + v.w : ''}`).error; return e ? `SQLite says: ${esc(e)}` : ''; },
+    frames: v => {
+      const W = v.w.trim();
+      const d = scratch(SQL, 'shop', 'DELETE FROM order_items;');
+      const stmt = v.a === 'UPDATE' ? `UPDATE products\nSET price = price * 11 / 10${W ? '\nWHERE ' + W : ''};` : `DELETE FROM products${W ? '\nWHERE ' + W : ''};`;
+      const cols = 'id, name, category, price';
+      const before = q(d, `SELECT ${cols} FROM products ORDER BY id`);
+      const hit = new Set(q(d, `SELECT id FROM products${W ? ' WHERE ' + W : ''}`).rows.map(r => r[0]));
+      const rc = Object.fromEntries(before.rows.map((r, i) => [i, hit.has(r[0]) ? 'look' : '']));
+      const e = err(d, stmt.replace(/\n/g, ' '));
+      const n = d.getRowsModified();
+      const after = q(d, `SELECT ${cols} FROM products ORDER BY id`);
+      const out = [
+        { msg: 'The table before the change.', mood: 'think', layers: [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products', cols: before.cols, rows: before.rows }] },
+        { msg: W ? `First the engine finds the rows where <b>${esc(W)}</b> is true: ${hit.size} of ${before.rows.length}.` : `There is no WHERE, so <b>every row</b> is picked: all ${before.rows.length}.`, mood: W ? 'look' : 'wow', layers: [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products', cols: before.cols, rows: before.rows, rcls: rc }] }];
+      if (e) out.push({ msg: `SQLite says: ${esc(e)}`, mood: 'sad', layers: [{ t: 'sql', text: stmt }] });
+      else if (v.a === 'UPDATE') out.push({ msg: `${n} ${n === 1 ? 'row was' : 'rows were'} changed. Prices went up by 10 percent, using integer division, only in the marked rows.`, mood: n === before.rows.length && !W ? 'sad' : 'happy', fx: 'burst', layers: [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products after', cols: after.cols, rows: after.rows, rcls: rc, ccls: { 3: 'piv' } }] });
+      else out.push({ msg: `${n} ${n === 1 ? 'row is' : 'rows are'} gone. ${!W ? 'The table is empty. Without a backup or an open transaction there is no undo.' : 'The other rows are untouched.'}`, mood: W ? 'happy' : 'sad', fx: W ? 'burst' : undefined, layers: [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products after', cols: after.cols, rows: after.rows }] });
+      out.push({ msg: 'Habit worth keeping: run the same WHERE in a SELECT first, check the rows, and only then change them.', mood: 'happy', layers: [{ t: 'sql', text: `SELECT * FROM products${W ? '\nWHERE ' + W : ''};` }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 4.3 a CTE builds a query in named steps ---------- */
+  SQW('sqcte', (SQL, cfg) => ({
+    title: 'A CTE is a query in named steps',
+    sub: 'Each WITH step is a small named result that the next step can read. Change the spending limit and watch every step recompute.',
+    inputs: [{ k: 'n', label: 'Big spender means total at least', type: 'num', val: cfg.n || 2000, w: 90 }],
+    frames: v => {
+      const d = db(SQL, 'shop'), N = Math.max(0, +v.n || 0);
+      const s1 = 'SELECT o.customer_id, SUM(oi.qty * p.price) AS total\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p ON p.id = oi.product_id\n  WHERE o.status <> \'cancelled\'\n  GROUP BY o.customer_id';
+      const s2 = `SELECT customer_id, total FROM spend WHERE total >= ${N}`;
+      const s3 = 'SELECT c.name, b.total FROM big b JOIN customers c ON c.id = b.customer_id ORDER BY b.total DESC';
+      const full = `WITH spend AS (\n  ${s1}\n),\nbig AS (\n  ${s2}\n)\n${s3};`;
+      const r1 = q(d, `WITH spend AS (${s1}) SELECT * FROM spend ORDER BY customer_id`);
+      const r2 = q(d, `WITH spend AS (${s1}), big AS (${s2}) SELECT * FROM big ORDER BY customer_id`);
+      const r3 = q(d, `WITH spend AS (${s1}), big AS (${s2}) ${s3}`);
+      const ST = ['spend', 'big', 'final SELECT'];
+      return [
+        { msg: 'The whole statement. Read it top to bottom like a recipe: each step has a name.', mood: 'think', layers: [{ t: 'sql', text: full }, { t: 'flow', items: ST, on: -1 }] },
+        { msg: `Step <b>spend</b>: total money per customer, cancelled orders left out. ${r1.rows.length} customers.`, mood: 'work', layers: [{ t: 'flow', items: ST, on: 0 }, { t: 'sql', text: 'spend AS (\n  ' + s1 + '\n)' }, { t: 'tab', label: 'spend', cols: r1.cols, rows: r1.rows }] },
+        { msg: `Step <b>big</b> reads spend as if it were a table and keeps totals of at least ${N}: ${r2.rows.length} left.`, mood: 'look', layers: [{ t: 'flow', items: ST, on: 1, done: 0 }, { t: 'sql', text: 'big AS (\n  ' + s2 + '\n)' }, { t: 'tab', label: 'spend', cols: r1.cols, rows: r1.rows, rcls: Object.fromEntries(r1.rows.map((r, i) => [i, r[1] >= N ? 'yes' : 'no'])) }] },
+        { msg: 'The final SELECT joins big to customers to show names. The named steps vanish when the statement ends.', mood: 'happy', fx: 'burst', layers: [{ t: 'flow', items: ST, on: 2, done: 1 }, { t: 'sql', text: s3 + ';' }, { t: 'tab', label: 'Result', cols: r3.cols, rows: r3.rows }] }
+      ];
+    }
+  }));
 })();

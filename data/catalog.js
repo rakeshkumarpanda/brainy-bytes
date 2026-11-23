@@ -10506,6 +10506,52 @@ function sqlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "sql-make", title: "Building and changing data", emoji: "4", step: 4, level: "Intermediate", blurb: "Create your own tables with types and rules, change rows safely, and name steps with views and CTEs.", topics: [
+      { id: "sql-create", title: "Building tables: CREATE, types and constraints", emoji: "4.1", page: "content/sql/sql-create.html",
+        summary: "CREATE TABLE, types, constraints, SQLite affinity and STRICT, ALTER and DROP.",
+        keywords: ["CREATE TABLE", "data types", "constraints", "CHECK", "STRICT", "ALTER TABLE", "DROP TABLE"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "create", title: "CREATE TABLE: drawing the empty form", emoji: "", group: "Lesson", keywords: ["CREATE TABLE", "data types", "IF NOT EXISTS", "INTEGER PRIMARY KEY", "VARCHAR", "DECIMAL", "money type"] },
+        { id: "constraints", title: "Constraints: rules every row must obey", emoji: "", group: "Lesson", keywords: ["constraint", "NOT NULL", "UNIQUE", "CHECK", "DEFAULT", "data integrity", "CHECK and NULL"] },
+        { id: "affinity", title: "How SQLite treats types, and STRICT tables", emoji: "", group: "Lesson", keywords: ["type affinity", "STRICT", "typeof", "storage class", "NUMERIC affinity", "dynamic typing"] },
+        { id: "alter", title: "ALTER TABLE and DROP TABLE", emoji: "", group: "Lesson", keywords: ["ALTER TABLE", "ADD COLUMN", "RENAME COLUMN", "DROP COLUMN", "DROP TABLE", "migration", "information_schema", "sqlite_schema"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["schema", "DDL", "domain constraint", "entity integrity", "online schema change", "flexible typing"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-modify", title: "Changing data: INSERT, UPDATE, DELETE and UPSERT", emoji: "4.2", page: "content/sql/sql-modify.html",
+        summary: "INSERT, UPDATE, DELETE, UPSERT, RETURNING and foreign key actions.",
+        keywords: ["INSERT", "UPDATE", "DELETE", "UPSERT", "RETURNING", "ON DELETE CASCADE"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "insert", title: "INSERT: adding rows", emoji: "", group: "Lesson", keywords: ["INSERT", "VALUES", "INSERT SELECT", "multi row insert", "column list", "add rows"] },
+        { id: "update", title: "UPDATE and DELETE: changing and removing rows", emoji: "", group: "Lesson", keywords: ["UPDATE", "DELETE", "SET", "UPDATE FROM", "missing WHERE", "change rows", "remove rows"] },
+        { id: "upsert", title: "UPSERT and RETURNING", emoji: "", group: "Lesson", keywords: ["UPSERT", "ON CONFLICT", "excluded", "MERGE", "ON DUPLICATE KEY UPDATE", "INSERT OR REPLACE", "INSERT OR IGNORE", "RETURNING"] },
+        { id: "fkact", title: "Foreign key actions: what happens to the children", emoji: "", group: "Lesson", keywords: ["ON DELETE CASCADE", "SET NULL", "RESTRICT", "NO ACTION", "referential action", "orphan rows"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["DML", "atomic statement", "MVCC", "bulk load", "COPY", "soft delete"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-views", title: "Views and CTEs: naming your queries", emoji: "4.3", page: "content/sql/sql-views.html",
+        summary: "Views, CTEs, temporary tables and materialized views.",
+        keywords: ["view", "CTE", "WITH", "temporary table", "materialized view"],
+        minutes: 35, counts: {"lessons": 4, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "views", title: "Views: a saved query with a name", emoji: "", group: "Lesson", keywords: ["view", "CREATE VIEW", "DROP VIEW", "saved query", "virtual table", "read only view", "updatable view"] },
+        { id: "cte", title: "WITH: common table expressions", emoji: "", group: "Lesson", keywords: ["CTE", "WITH", "common table expression", "named step", "readability", "nested subquery"] },
+        { id: "compare", title: "CTE, subquery, view or temporary table", emoji: "", group: "Lesson", keywords: ["temporary table", "TEMP TABLE", "materialized view", "REFRESH", "CTE vs view", "MATERIALIZED hint"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["logical data independence", "view inlining", "incremental view maintenance", "GRANT on view", "materialize"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

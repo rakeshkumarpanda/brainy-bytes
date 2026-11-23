@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Views and CTEs: naming your queries · SQL and Databases</title>
+<meta name="description" content="CREATE VIEW and DROP VIEW, live views, read only views in SQLite, WITH and several CTEs, rewriting nested subqueries, temporary tables, materialized views and refresh, MATERIALIZED hints.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 4: Building and changing data</span><span>›</span><span>Views and CTEs</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 3 of 3 · Intermediate</div>
+    <h1>Views and CTEs: naming your queries</h1>
+    <p class="lead">Save a query as a view, break a long query into named WITH steps, and choose between subqueries, CTEs, views, temporary tables and materialized views.</p>
+    <div class="cv-chips"><span class="cv-chip">About 35 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">2 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">5 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-views" data-topic="cheatsheet" data-h="sql-views">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#views" data-l="views"><span class="n">1</span><span class="t">Views: a saved query with a name</span></a></li><li><a href="#cte" data-l="cte"><span class="n">2</span><span class="t">WITH: common table expressions</span></a></li><li><a href="#compare" data-l="compare"><span class="n">3</span><span class="t">CTE, subquery, view or temporary table</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="views" data-l="views" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Views: a saved query with a name</h2>
+<p>Some queries get written again and again, such as "money spent by each customer". A <b>view</b> stores that query under a name. After that you can SELECT from the view as if it were a table, and the engine runs the saved query each time, so the answer is always up to date.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Make a view</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>CREATE VIEW name AS SELECT ... ;</code></div><div class="fx-n">Only the query is stored, not the rows.</div></div><div class="fx"><div class="fx-h"><span>Remove a view</span></div><div class="fx-b"><code>DROP VIEW IF EXISTS name;</code></div><div class="fx-n">The underlying tables are untouched.</div></div></div>
+<div class="sq-run" data-q="view"></div>
+<div class="sq-run" data-q="viewlive"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Why people use views</th><th>Example</th></tr></thead><tbody><tr><td>Hide a long query behind a short name</td><td>SELECT * FROM customer_spend</td></tr><tr><td>Give each team only the columns it needs</td><td>a view of employees without the salary column</td></tr><tr><td>Keep one definition of a business rule</td><td>what counts as an active customer, written once</td></tr><tr><td>Keep old programs working after a table changes</td><td>a view with the old table name and old column names</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>In SQLite a view is read only: you cannot INSERT, UPDATE or DELETE through it unless you add INSTEAD OF triggers (chapter 8.1). PostgreSQL and MySQL allow changes through simple views on one table.</div></div>
+<div class="sq-lab" data-lab="l-view"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="cte" data-l="cte" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>WITH: common table expressions</h2>
+<p>A <b>CTE</b> (common table expression) is a view that lives for one statement only. You write <code>WITH name AS (query)</code> before the main SELECT, and the main query, or later CTEs, can read it by name. Long queries become a list of small named steps you can read top to bottom.</p>
+<div class="viz" data-viz="pk" data-pk="sqcte"></div>
+<div class="sq-run" data-q="cte"></div>
+<div class="sq-run" data-q="cteavg"></div>
+<div class="walk"><div class="walk-h"><span>Turning a nested subquery into a CTE</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Find the innermost subquery in FROM.</li><li>Move it to the top: <code>WITH step1 AS ( that subquery )</code>.</li><li>Replace it in the main query with the name step1.</li><li>Repeat for the next level. The query now reads top to bottom instead of inside out.</li></ol></div>
+<div class="sq-lab" data-lab="l-cte"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="compare" data-l="compare" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>CTE, subquery, view or temporary table</h2>
+<p>All four give a name or a place to an intermediate result. They differ in how long they live and whether the rows are stored.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Tool</th><th>Lives for</th><th>Stores rows</th><th>Use it when</th></tr></thead><tbody><tr><td>Subquery</td><td>one spot in one query</td><td>no</td><td>a small inner step used once</td></tr><tr><td>CTE (WITH)</td><td>one statement</td><td>usually no</td><td>a long query reads better as named steps</td></tr><tr><td>View</td><td>until dropped</td><td>no</td><td>many queries or people need the same logic</td></tr><tr><td>Temporary table</td><td>until the connection closes</td><td>yes</td><td>a big result is reused by several statements</td></tr><tr><td>Materialized view</td><td>until dropped, refreshed on demand</td><td>yes</td><td>a slow report that may be a little out of date</td></tr></tbody></table></div>
+<div class="sq-run" data-q="temp"></div>
+<p>A <b>materialized view</b> stores the result of its query like a table. Reading it is fast, but it is only as fresh as its last refresh. PostgreSQL writes <code>CREATE MATERIALIZED VIEW</code> and <code>REFRESH MATERIALIZED VIEW</code>, Oracle has them too, SQL Server uses indexed views. SQLite has none, a table filled by INSERT ... SELECT plays the same part.</p>
+<div class="scene"><div class="scene-h">Real world scenario: the morning sales dashboard</div><p>A retail chain shows managers yesterday’s sales by store on a dashboard. The query scans millions of rows and takes a minute. The team stores it as a materialized view and refreshes it at 6 every morning. Opening the dashboard now takes a fraction of a second, and nobody minds that it ignores sales from the last few hours.</p></div>
+<div class="note note-tip"><b>Remember</b><div>SQLite and PostgreSQL 12+ accept <code>WITH x AS MATERIALIZED (...)</code> or <code>NOT MATERIALIZED</code> to ask the planner to compute a CTE once or to fold it into the main query. Without the hint the planner decides.</div></div>
+<div class="sq-lab" data-lab="l-temp"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A view is a saved question with a name. A CTE is a named step inside one big question.</p></div><div class="ld-p" data-ld="college" hidden><p>Views give logical data independence: programs read the view, and the tables behind it can change. CTEs make long queries readable and let one step be reused several times in the same statement.</p></div><div class="ld-p" data-ld="masters" hidden><p>The planner usually inlines views and CTEs into the main query, as if you had typed the subquery. Updatable views need a clear mapping from each view row to one base row. CTEs may be computed once and reused when that is cheaper.</p></div><div class="ld-p" data-ld="research" hidden><p>Keeping materialized views fresh without recomputing them from scratch is incremental view maintenance, a long running research area. Systems such as Materialize and features like Oracle fast refresh update only the rows affected by each change.</p></div></div>
+<details class="deep"><summary>Going deeper: Security through views</summary><div class="deep-b"><p>In server databases you can GRANT SELECT on a view without granting it on the table behind it. An analyst can then read <code>employees_public</code>, which leaves out salary and phone number, but cannot read the full employees table. Chapter 8.2 covers GRANT and row level security.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-modify.html" data-topic="sql-modify"><small>Previous topic</small><b>Changing data</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-views", "topic": "sql-views", "subject": "sql", "title": "Views and CTEs: naming your queries", "codes": {}, "quiz": [{"lv": "e", "q": "A view stores", "o": ["A copy of the rows", "A saved query", "An index", "A backup"], "a": 1, "hint": "Only the query.", "why": "The rows are computed when you read it."}, {"lv": "e", "q": "A CTE starts with the word", "o": ["VIEW", "WITH", "TEMP", "USING"], "a": 1, "hint": "With.", "why": "WITH name AS (query)."}, {"lv": "e", "q": "After a base table changes, a normal view shows", "o": ["The old data", "The current data", "An error", "Nothing"], "a": 1, "hint": "Runs again.", "why": "The saved query runs on current data."}, {"lv": "e", "q": "How long does a CTE live?", "o": ["Forever", "One statement", "One day", "Until DROP"], "a": 1, "hint": "One statement.", "why": "It vanishes when the statement ends."}, {"lv": "m", "q": "Which really stores rows?", "o": ["View", "CTE", "Temporary table", "Subquery"], "a": 2, "hint": "A table.", "why": "A temporary table stores rows until the connection closes."}, {"lv": "m", "q": "Can a later CTE read an earlier one in the same WITH?", "o": ["No", "Yes", "Only in PostgreSQL", "Only with RECURSIVE"], "a": 1, "hint": "Chain.", "why": "Each CTE can use those defined before it."}, {"lv": "m", "q": "In SQLite, UPDATE on a view without INSTEAD OF triggers", "o": ["Works", "Fails, views are read only", "Updates the view only", "Drops the view"], "a": 1, "hint": "Read only.", "why": "SQLite views are read only."}, {"lv": "m", "q": "A materialized view is fresh", "o": ["Always", "As of its last refresh", "Never", "Only on Mondays"], "a": 1, "hint": "Refresh.", "why": "It stores a result that must be refreshed."}, {"lv": "m", "q": "Which gives a team access to some columns only?", "o": ["A view of those columns", "A CTE", "A temporary table", "An index"], "a": 0, "hint": "Lasting and shareable.", "why": "Grant access on a view that lists only those columns."}, {"lv": "h", "q": "What does NOT MATERIALIZED ask the planner to do with a CTE?", "o": ["Store it on disk", "Fold it into the main query", "Drop it", "Refresh it"], "a": 1, "hint": "Inline.", "why": "It asks for the CTE to be inlined."}, {"lv": "x", "q": "Updating a materialized view by touching only changed rows is called", "o": ["Vacuum", "Incremental view maintenance", "Normalization", "Sharding"], "a": 1, "hint": "Incremental.", "why": "Incremental view maintenance avoids a full recompute."}], "calc": [{"lv": "e", "q": "How many customers have spent at least 2000 (cancelled orders left out)?", "ans": "3", "hint": "Read the spend step.", "steps": ["Work out the total per customer.", "Keep totals of 2000 or more.", "<span class=\"eq\">3 customers<\/span>"]}, {"lv": "e", "q": "What is Asha’s total spend (orders 101, 103, 110)?", "ans": "2180", "hint": "qty × price for each line.", "steps": ["101: 2 × 120 + 5 × 60 = 540.", "103: 1 × 250 + 3 × 180 = 790. 110: 1 × 850 = 850.", "<span class=\"eq\">540 + 790 + 850 = 2180<\/span>"]}, {"lv": "m", "q": "What is the largest total in customer_spend?", "ans": "3697", "hint": "The top row.", "steps": ["Compute every customer total.", "Take the biggest.", "<span class=\"eq\">3697<\/span>"]}, {"lv": "m", "q": "The view low_stock shows products with stock under 20. How many rows does it show before and after Notebook drops to 5? Give the after count.", "ans": "5", "hint": "The view reruns.", "steps": ["Before: 4 rows.", "Notebook now has stock 5, under 20.", "<span class=\"eq\">4 + 1 = 5<\/span>"]}, {"lv": "m", "q": "How many products cost more than the average of their own category?", "ans": "6", "hint": "Compare each with its category.", "steps": ["Stationery average 91.67: Pencil box, Geometry set. Kitchen 324.5: Lunch box.", "Electronics 1149.33: Headphones, Desk lamp. Sports 515: Football.", "<span class=\"eq\">6 products<\/span>"]}, {"lv": "m", "q": "How many different customers ordered in June 2025?", "ans": "5", "hint": "Distinct customer ids.", "steps": ["June orders are 101 to 108.", "Their customers: 1, 2, 3, 5, 7.", "<span class=\"eq\">5 customers<\/span>"]}, {"lv": "h", "q": "How many order lines have qty of at least 3?", "ans": "5", "hint": "Scan the qty column.", "steps": ["Lines with qty 5, 3, 10, 4 and 3.", "Count them.", "<span class=\"eq\">5 lines<\/span>"]}, {"lv": "h", "q": "A report reads a materialized view refreshed at 06:00. A sale happens at 09:30. At 10:00, how many hours of sales is the view missing?", "ans": "4", "hint": "Since the refresh.", "steps": ["The view holds data up to 06:00.", "From 06:00 to 10:00 is 4 hours.", "<span class=\"eq\">4 hours<\/span>"]}], "assign": [], "must": [["View", "CREATE VIEW stores a query under a name. It shows current data each time. Read only in SQLite."], ["CTE", "WITH name AS (query) names a step for one statement. Later steps and the main query can read it."], ["Temporary table", "CREATE TEMP TABLE stores rows until the connection closes, good for reuse."], ["Materialized view", "Stores the result, fast to read, as fresh as its last REFRESH. PostgreSQL, Oracle, SQL Server indexed views."], ["Choosing", "Subquery for once, CTE for readable steps, view for shared logic, temp table or materialized view for reused heavy results."]], "summary": "<p>A view is a saved query, a CTE is a named step for one statement, a temporary table stores rows for one connection, and a materialized view stores a result until refreshed.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"view": {"src": "CREATE VIEW customer_spend AS\nSELECT o.customer_id, SUM(oi.qty * p.price) AS total\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p ON p.id = oi.product_id\nWHERE o.status <> 'cancelled'\nGROUP BY o.customer_id;\n\nSELECT c.name, s.total\nFROM customer_spend s JOIN customers c ON c.id = s.customer_id\nORDER BY s.total DESC;", "db": "shop", "setup": "", "title": "Save the spending query once, use it like a table", "notes": {"1": "The view stores this SELECT, not its result.", "10": "Now the view joins like any table."}, "out": [{"sql": "CREATE VIEW customer_spend AS\nSELECT o.customer_id, SUM(oi.qty * p.price) AS total\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.id\nJOIN products p ON p.id = oi.product_id\nWHERE o.status <> 'cancelled'\nGROUP BY o.customer_id;", "cols": [], "rows": []}, {"sql": "SELECT c.name, s.total\nFROM customer_spend s JOIN customers c ON c.id = s.customer_id\nORDER BY s.total DESC;", "cols": ["name", "total"], "rows": [["Ravi", 3697], ["Meera", 2358], ["Asha", 2180], ["Sara", 680], ["Nisha", 500]]}]}, "viewlive": {"src": "CREATE VIEW low_stock AS\nSELECT name, stock FROM products WHERE stock < 20;\n\nSELECT * FROM low_stock;\nUPDATE products SET stock = 5 WHERE name = 'Notebook';\nSELECT * FROM low_stock;", "db": "shop", "setup": "", "title": "A view always shows the current data", "notes": {"4": "Lunch box, Desk lamp, Headphones and Football.", "6": "Notebook now has stock 5, and the view includes it straight away."}, "out": [{"sql": "CREATE VIEW low_stock AS\nSELECT name, stock FROM products WHERE stock < 20;", "cols": [], "rows": []}, {"sql": "SELECT * FROM low_stock;", "cols": ["name", "stock"], "rows": [["Lunch box", 0], ["Headphones", 12], ["Football", 8], ["Desk lamp", 0]]}, {"sql": "UPDATE products SET stock = 5 WHERE name = 'Notebook';", "cols": [], "rows": [], "changes": 1}, {"sql": "SELECT * FROM low_stock;", "cols": ["name", "stock"], "rows": [["Notebook", 5], ["Lunch box", 0], ["Headphones", 12], ["Football", 8], ["Desk lamp", 0]]}]}, "cte": {"src": "WITH spend AS (\n  SELECT o.customer_id, SUM(oi.qty * p.price) AS total\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p ON p.id = oi.product_id\n  WHERE o.status <> 'cancelled'\n  GROUP BY o.customer_id\n),\nbig AS (\n  SELECT customer_id, total FROM spend WHERE total >= 2000\n)\nSELECT c.name, b.total\nFROM big b JOIN customers c ON c.id = b.customer_id\nORDER BY b.total DESC;", "db": "shop", "setup": "", "title": "Two named steps, then the answer", "notes": {"1": "Step 1: total per customer.", "10": "Step 2 reads step 1 by its name.", "12": "The final query reads step 2."}, "out": [{"sql": "WITH spend AS (\n  SELECT o.customer_id, SUM(oi.qty * p.price) AS total\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p ON p.id = oi.product_id\n  WHERE o.status <> 'cancelled'\n  GROUP BY o.customer_id\n),\nbig AS (\n  SELECT customer_id, total FROM spend WHERE total >= 2000\n)\nSELECT c.name, b.total\nFROM big b JOIN customers c ON c.id = b.customer_id\nORDER BY b.total DESC;", "cols": ["name", "total"], "rows": [["Ravi", 3697], ["Meera", 2358], ["Asha", 2180]]}]}, "cteavg": {"src": "WITH cat AS (\n  SELECT category, AVG(price) AS avg_price\n  FROM products GROUP BY category\n)\nSELECT p.name, p.category, p.price, ROUND(cat.avg_price) AS category_avg\nFROM products p JOIN cat ON cat.category = p.category\nWHERE p.price > cat.avg_price\nORDER BY p.category;", "db": "shop", "setup": "", "title": "Products priced above their own category’s average", "notes": {"2": "One average per category.", "7": "Each product is compared with the average of its own category."}, "out": [{"sql": "WITH cat AS (\n  SELECT category, AVG(price) AS avg_price\n  FROM products GROUP BY category\n)\nSELECT p.name, p.category, p.price, ROUND(cat.avg_price) AS category_avg\nFROM products p JOIN cat ON cat.category = p.category\nWHERE p.price > cat.avg_price\nORDER BY p.category;", "cols": ["name", "category", "price", "category_avg"], "rows": [["Headphones", "Electronics", 1499, 1149], ["Desk lamp", "Electronics", 1250, 1149], ["Lunch box", "Kitchen", 399, 325], ["Football", "Sports", 850, 515], ["Pencil box", "Stationery", 120, 92], ["Geometry set", "Stationery", 95, 92]]}]}, "temp": {"src": "CREATE TEMP TABLE june AS\nSELECT * FROM orders WHERE order_date LIKE '2025-06%';\n\nSELECT status, COUNT(*) AS n FROM june GROUP BY status;\nSELECT COUNT(DISTINCT customer_id) AS buyers FROM june;", "db": "shop", "setup": "", "title": "A temporary table reused by two queries", "notes": {"1": "The rows are copied once into a table that disappears when the connection closes.", "4": "Both queries read the stored copy."}, "out": [{"sql": "CREATE TEMP TABLE june AS\nSELECT * FROM orders WHERE order_date LIKE '2025-06%';", "cols": [], "rows": []}, {"sql": "SELECT status, COUNT(*) AS n FROM june GROUP BY status;", "cols": ["status", "n"], "rows": [["cancelled", 1], ["delivered", 4], ["pending", 1], ["shipped", 2]]}, {"sql": "SELECT COUNT(DISTINCT customer_id) AS buyers FROM june;", "cols": ["buyers"], "rows": [[5]]}]}}, "labs": [{"id": "l-view", "lv": "e", "title": "A view of cheap products", "task": "Create a view <code>cheap<\/code> holding the <code>name<\/code> and <code>price<\/code> of products under 200. Then select every row from the view.", "db": "shop", "hint": "CREATE VIEW cheap AS SELECT ..., then SELECT * FROM cheap.", "why": "The view runs its saved query when you select from it.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "price"], "rows": [["Pencil box", 120], ["Notebook", 60], ["Cricket ball", 180], ["Geometry set", 95]]}, "solution": "CREATE VIEW cheap AS SELECT name, price FROM products WHERE price < 200;\nSELECT * FROM cheap;"}, {"id": "l-cte", "lv": "m", "title": "Busy customers by name", "task": "Using a CTE named <code>n<\/code> that counts orders per <code>customer_id<\/code>, show the <code>name<\/code> and order count <code>orders<\/code> of customers with 2 or more orders.", "db": "shop", "hint": "WITH n AS (SELECT customer_id, COUNT(*) AS orders FROM orders GROUP BY customer_id) then join customers.", "why": "The CTE does the counting, the main query adds names and filters.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "orders"], "rows": [["Asha", 3], ["Ravi", 2], ["Meera", 2], ["Sara", 2]]}, "solution": "WITH n AS (SELECT customer_id, COUNT(*) AS orders FROM orders GROUP BY customer_id)\nSELECT c.name, n.orders FROM n JOIN customers c ON c.id = n.customer_id WHERE n.orders >= 2;"}, {"id": "l-temp", "lv": "m", "title": "A temporary list of big orders", "task": "Create a temporary table <code>big_lines<\/code> with every row of <code>order_items<\/code> whose <code>qty<\/code> is at least 3. Then show how many rows it has, as <code>n<\/code>.", "db": "shop", "hint": "CREATE TEMP TABLE big_lines AS SELECT ... WHERE qty >= 3", "why": "The temporary table stores the copied rows, and COUNT(*) counts them.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["n"], "rows": [[5]]}, "solution": "CREATE TEMP TABLE big_lines AS SELECT * FROM order_items WHERE qty >= 3;\nSELECT COUNT(*) AS n FROM big_lines;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>
