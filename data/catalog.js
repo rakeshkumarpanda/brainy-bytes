@@ -10632,6 +10632,53 @@ function sqlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "sql-perf", title: "Performance and transactions", emoji: "7", step: 7, level: "Advanced", blurb: "How indexes and query plans make queries fast, and how transactions keep data correct when many people work at once.", topics: [
+      { id: "sql-indexes", title: "Indexes: making queries fast", emoji: "7.1", page: "content/sql/sql-indexes.html",
+        summary: "Full scans, B-tree indexes, index shapes, when they are skipped and what they cost.",
+        keywords: ["index", "B-tree", "composite index", "covering index", "EXPLAIN QUERY PLAN", "performance"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "why", title: "Why queries slow down, and what an index is", emoji: "", group: "Lesson", keywords: ["index", "full table scan", "CREATE INDEX", "binary search", "log n", "EXPLAIN QUERY PLAN", "slow query"] },
+        { id: "btree", title: "Inside an index: the B-tree", emoji: "", group: "Lesson", keywords: ["B-tree", "B+tree", "root page", "leaf page", "fanout", "balanced tree", "range scan", "Bayer McCreight"] },
+        { id: "kinds", title: "Unique, composite, covering, partial and expression indexes", emoji: "", group: "Lesson", keywords: ["unique index", "composite index", "leftmost prefix", "covering index", "partial index", "expression index", "functional index"] },
+        { id: "costs", title: "When indexes do not help, and what they cost", emoji: "", group: "Lesson", keywords: ["index not used", "sargable", "leading wildcard", "write amplification", "ANALYZE", "index maintenance", "selectivity"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["clustered index", "WITHOUT ROWID", "hash index", "GIN", "GiST", "BRIN", "LSM tree", "learned index"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-plans", title: "Query plans and tuning", emoji: "7.2", page: "content/sql/sql-plans.html",
+        summary: "Reading query plans, join algorithms, statistics and rewriting slow queries.",
+        keywords: ["query plan", "EXPLAIN", "optimizer", "hash join", "ANALYZE", "sargable", "N+1"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "explain", title: "Asking the optimizer: EXPLAIN QUERY PLAN", emoji: "", group: "Lesson", keywords: ["query optimizer", "query planner", "EXPLAIN QUERY PLAN", "EXPLAIN ANALYZE", "SCAN", "SEARCH", "TEMP B-TREE"] },
+        { id: "joins", title: "How joins are executed", emoji: "", group: "Lesson", keywords: ["nested loop join", "hash join", "merge join", "join order", "automatic index", "join algorithm"] },
+        { id: "stats", title: "Statistics and the cost based optimizer", emoji: "", group: "Lesson", keywords: ["cost based optimizer", "statistics", "ANALYZE", "sqlite_stat1", "cardinality estimate", "System R", "Selinger"] },
+        { id: "tuning", title: "Writing queries the optimizer can help", emoji: "", group: "Lesson", keywords: ["sargable", "query tuning", "keyset pagination", "OFFSET", "N+1 problem", "SELECT star", "rewrite"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["join ordering", "dynamic programming", "Cascades", "cardinality estimation", "learned optimizer", "adaptive query processing"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-transactions", title: "Transactions and concurrency", emoji: "7.3", page: "content/sql/sql-transactions.html",
+        summary: "ACID transactions, savepoints, isolation levels, locks, MVCC and deadlocks.",
+        keywords: ["transaction", "ACID", "COMMIT", "ROLLBACK", "isolation level", "MVCC", "deadlock"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "acid", title: "All or nothing: transactions and ACID", emoji: "", group: "Lesson", keywords: ["transaction", "BEGIN", "COMMIT", "ROLLBACK", "ACID", "atomicity", "durability", "autocommit"] },
+        { id: "failure", title: "Errors, savepoints and failed transfers", emoji: "", group: "Lesson", keywords: ["SAVEPOINT", "ROLLBACK TO", "error handling", "failed transaction", "nested transaction"] },
+        { id: "isolation", title: "Isolation levels and anomalies", emoji: "", group: "Lesson", keywords: ["isolation level", "dirty read", "non repeatable read", "phantom read", "lost update", "write skew", "READ COMMITTED", "SERIALIZABLE"] },
+        { id: "locks", title: "Locks, MVCC, deadlocks and the journal", emoji: "", group: "Lesson", keywords: ["lock", "row lock", "MVCC", "deadlock", "write ahead log", "WAL", "BEGIN IMMEDIATE", "SELECT FOR UPDATE", "race condition"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["serializability", "two phase locking", "snapshot isolation", "SSI", "two phase commit", "Spanner", "Jim Gray"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

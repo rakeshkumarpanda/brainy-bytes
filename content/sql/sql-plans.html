@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Query plans and tuning · SQL and Databases</title>
+<meta name="description" content="The query optimizer, EXPLAIN QUERY PLAN and EXPLAIN ANALYZE, SCAN, SEARCH, covering index and temp B-tree, nested loop, hash and merge joins, join order, ANALYZE and statistics, sargable conditions, keyset pagination, the N+1 problem.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 7: Performance and transactions</span><span>›</span><span>Query plans</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 7 · Topic 2 of 3 · Advanced</div>
+    <h1>Query plans and tuning</h1>
+    <p class="lead">Read what the optimizer plans to do with EXPLAIN, understand join algorithms and statistics, and rewrite slow queries so indexes can help.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">6 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-plans" data-topic="cheatsheet" data-h="sql-plans">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#explain" data-l="explain"><span class="n">1</span><span class="t">Asking the optimizer: EXPLAIN QUERY PLAN</span></a></li><li><a href="#joins" data-l="joins"><span class="n">2</span><span class="t">How joins are executed</span></a></li><li><a href="#stats" data-l="stats"><span class="n">3</span><span class="t">Statistics and the cost based optimizer</span></a></li><li><a href="#tuning" data-l="tuning"><span class="n">4</span><span class="t">Writing queries the optimizer can help</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="explain" data-l="explain" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Asking the optimizer: EXPLAIN QUERY PLAN</h2>
+<p>SQL says <b>what</b> you want, not <b>how</b> to get it. The <b>query optimizer</b> (also called the planner) picks the how: which index, which table first, whether to sort. <code>EXPLAIN QUERY PLAN</code> shows its choice without running the query.</p>
+<div class="viz" data-viz="pk" data-pk="sqplan"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Plan line in SQLite</th><th>Meaning</th></tr></thead><tbody><tr><td>SCAN t</td><td>read every row of t</td></tr><tr><td>SCAN t USING COVERING INDEX i</td><td>read all of index i, which is smaller than the table</td></tr><tr><td>SEARCH t USING INDEX i (col=?)</td><td>jump into index i, then fetch matching rows</td></tr><tr><td>SEARCH t USING INTEGER PRIMARY KEY (rowid=?)</td><td>jump straight to rows by their key</td></tr><tr><td>USE TEMP B-TREE FOR ORDER BY</td><td>sort the result in a temporary structure</td></tr><tr><td>AUTOMATIC COVERING INDEX</td><td>build a throwaway index for this one query</td></tr><tr><td>SCALAR SUBQUERY, CORRELATED SCALAR SUBQUERY</td><td>an inner query run once, or once per outer row</td></tr></tbody></table></div>
+<div class="sq-run" data-q="eqp"></div>
+<div class="note note-tip"><b>Remember</b><div>PostgreSQL and MySQL write EXPLAIN, and EXPLAIN ANALYZE also runs the query and reports real row counts and times. SQL Server shows graphical execution plans. The ideas are the same.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="joins" data-l="joins" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>How joins are executed</h2>
+<p>A join is a question, and engines have several algorithms to answer it. The optimizer also picks the <b>join order</b>: which table drives the loop.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Algorithm</th><th>How it works</th><th>Good when</th></tr></thead><tbody><tr><td>Nested loop</td><td>for each row of the outer table, look up matching rows in the inner table</td><td>the inner table has an index on the join column</td></tr><tr><td>Hash join</td><td>build a hash table of the smaller input, then probe it with each row of the other</td><td>big unsorted inputs, equality joins (PostgreSQL, MySQL 8, SQL Server)</td></tr><tr><td>Merge join</td><td>sort both inputs on the key, then walk them side by side</td><td>inputs already sorted, for example by an index</td></tr></tbody></table></div>
+<div class="sq-run" data-q="nl"></div>
+<div class="sq-run" data-q="auto"></div>
+<div class="walk"><div class="walk-h"><span>Cost of a nested loop join</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Outer table with N rows, inner table with M rows.</li><li>Without an index: each outer row scans the inner table.</li><li>With an index on the inner join column: each outer row does about log M steps.</li><li><span class="eq">N × M without an index, about N × log M with one</span></li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="stats" data-l="stats" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Statistics and the cost based optimizer</h2>
+<p>Most optimizers are <b>cost based</b>: they estimate how many rows each step returns and pick the plan with the lowest estimated cost. The idea goes back to IBM’s System R (Selinger and colleagues, 1979). Estimates come from <b>statistics</b> about the data.</p>
+<div class="sq-run" data-q="analyze"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>Gather statistics</th><th>See estimates and reality</th></tr></thead><tbody><tr><td>SQLite</td><td>ANALYZE, or PRAGMA optimize</td><td>EXPLAIN QUERY PLAN</td></tr><tr><td>PostgreSQL</td><td>ANALYZE (autovacuum runs it automatically)</td><td>EXPLAIN ANALYZE: estimated rows versus actual rows</td></tr><tr><td>MySQL</td><td>ANALYZE TABLE</td><td>EXPLAIN ANALYZE (8.0.18+)</td></tr><tr><td>SQL Server</td><td>UPDATE STATISTICS, automatic by default</td><td>actual execution plan</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: the report that got slow overnight</div><p>A sales report ran in one second for months, then suddenly took two minutes. A bulk import had added millions of rows, but the statistics still described the old, small table. The optimizer kept choosing a nested loop that was perfect for a few rows. Running ANALYZE gave it fresh numbers, it switched to a hash join, and the report was fast again.</p></div>
+<div class="note note-tip"><b>Remember</b><div>When estimated and actual row counts in EXPLAIN ANALYZE differ by a factor of 10 or more, look at statistics first. Bad estimates are the most common cause of bad plans.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="tuning" data-l="tuning" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Writing queries the optimizer can help</h2>
+<p>Many slow queries are fixed by small rewrites. A condition the engine can answer with an index is called <b>sargable</b> (search argument able).</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Slow pattern</th><th>Faster rewrite</th></tr></thead><tbody><tr><td>WHERE substr(order_date, 1, 7) = '2025-06'</td><td>WHERE order_date >= '2025-06-01' AND order_date < '2025-07-01'</td></tr><tr><td>WHERE price * 1.18 > 1000</td><td>WHERE price > 1000 / 1.18</td></tr><tr><td>SELECT * when you need two columns</td><td>name the columns, which may allow a covering index</td></tr><tr><td>LIMIT 10 OFFSET 100000</td><td>keyset paging: WHERE id > last_seen_id ORDER BY id LIMIT 10</td></tr><tr><td>one query per customer inside a loop in the app</td><td>one query with a JOIN or IN for all customers</td></tr></tbody></table></div>
+<div class="sq-run" data-q="sarg"></div>
+<div class="sq-run" data-q="keyset"></div>
+<div class="scene"><div class="scene-h">Real world scenario: the N+1 problem</div><p>A web page lists 50 customers with their order counts. The code runs one query for the customers, then one more query per customer: 51 queries, each with network delay. Rewriting it as one query with a JOIN and GROUP BY returns the same page in a single round trip. ORM tools make this mistake easy, and most offer eager loading to avoid it.</p></div>
+<div class="sq-lab" data-lab="l-sarg"></div>
+<div class="sq-lab" data-lab="l-keyset"></div>
+<div class="sq-lab" data-lab="l-nplus"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>The database decides how to run your query. EXPLAIN shows its plan, and you can help with indexes and simple conditions.</p></div><div class="ld-p" data-ld="college" hidden><p>Read plans for scans, searches and sorts. Know nested loop, hash and merge joins. Keep statistics fresh. Write sargable predicates and avoid N+1 query patterns.</p></div><div class="ld-p" data-ld="masters" hidden><p>Optimizers enumerate join orders with dynamic programming (System R) or rule based search spaces (Volcano and Cascades, Graefe 1993 to 1995). Cardinality estimation errors grow with each join and are the main source of bad plans (Leis et al., "How Good Are Query Optimizers, Really", VLDB 2015).</p></div><div class="ld-p" data-ld="research" hidden><p>Research explores learned optimizers and learned cardinality estimators, adaptive query processing that changes plan mid flight, and worst case optimal join algorithms for many way joins.</p></div></div>
+<details class="deep"><summary>Going deeper: Why join order matters so much</summary><div class="deep-b"><p>Joining 3 tables of 1,000, 1,000,000 and 10 rows: starting with the 10 row table and reaching the others by index touches a few thousand rows. Starting with the million row table and nesting the others without indexes can touch billions. For n tables there are n! orders, so optimizers prune the search with dynamic programming and heuristics.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-indexes.html" data-topic="sql-indexes"><small>Previous topic</small><b>Indexes</b></a><a class="next" href="./sql-transactions.html" data-topic="sql-transactions"><small>Next topic</small><b>Transactions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-plans", "topic": "sql-plans", "subject": "sql", "title": "Query plans and tuning", "codes": {}, "quiz": [{"lv": "e", "q": "Which part of the engine chooses how to run a query?", "o": ["The parser", "The optimizer", "The disk", "The client"], "a": 1, "hint": "Planner.", "why": "The query optimizer picks the plan."}, {"lv": "e", "q": "In a SQLite plan, SCAN means", "o": ["Jump through an index", "Read every row", "Sort", "Join"], "a": 1, "hint": "Every row.", "why": "A full scan."}, {"lv": "e", "q": "EXPLAIN QUERY PLAN", "o": ["Runs the query twice", "Shows the plan without running it", "Deletes the plan", "Creates indexes"], "a": 1, "hint": "Shows.", "why": "It only describes the plan."}, {"lv": "e", "q": "USE TEMP B-TREE FOR ORDER BY means", "o": ["An index sorted it", "A temporary sort was needed", "An error", "No sorting"], "a": 1, "hint": "Temporary.", "why": "No index gave the order, so it sorts."}, {"lv": "m", "q": "A hash join suits", "o": ["Tiny tables with indexes", "Big unsorted inputs with equality conditions", "Range conditions only", "No joins"], "a": 1, "hint": "Hash.", "why": "Build a hash table of one input, probe with the other."}, {"lv": "m", "q": "Which join algorithm does SQLite use?", "o": ["Hash join", "Merge join", "Nested loop", "All three"], "a": 2, "hint": "Loops.", "why": "SQLite uses nested loops, with automatic indexes when useful."}, {"lv": "m", "q": "ANALYZE", "o": ["Runs every query", "Gathers statistics for the optimizer", "Checks syntax", "Backs up data"], "a": 1, "hint": "Statistics.", "why": "Fresh numbers give better estimates."}, {"lv": "m", "q": "WHERE substr(order_date, 1, 7) = '2025-06' is", "o": ["Sargable", "Not sargable", "Invalid", "A join"], "a": 1, "hint": "Function on column.", "why": "Rewrite as a date range."}, {"lv": "m", "q": "Keyset paging uses", "o": ["OFFSET", "WHERE id > last_id ORDER BY id LIMIT n", "RANDOM()", "GROUP BY"], "a": 1, "hint": "Remember the last key.", "why": "It jumps straight to the next page."}, {"lv": "h", "q": "The N+1 problem is", "o": ["A math error", "One query per item instead of one query for all", "A missing index", "A NULL bug"], "a": 1, "hint": "Many round trips.", "why": "Replace the loop with one join."}, {"lv": "x", "q": "Which 1979 system introduced cost based join ordering?", "o": ["Ingres", "System R", "Oracle 2", "PostgreSQL"], "a": 1, "hint": "IBM.", "why": "Selinger et al., System R."}], "calc": [{"lv": "e", "q": "Outer table 1,000 rows, inner table 1,000 rows, no index. How many row pairs does a nested loop compare?", "ans": "1000000", "hint": "N × M.", "steps": ["Each outer row scans the inner table.", "That is 1,000 comparisons per outer row.", "<span class=\"eq\">1,000 × 1,000 = 1,000,000<\/span>"]}, {"lv": "e", "q": "Same tables, with an index on the inner join column (about 10 steps per lookup). About how many steps?", "ans": "10000", "hint": "N × log M.", "steps": ["Each outer row does one index lookup.", "log₂ 1,000 ≈ 10.", "<span class=\"eq\">1,000 × 10 = 10,000<\/span>"]}, {"lv": "m", "q": "A page shows 20 rows. Page 500 with LIMIT 20 OFFSET n. What is n?", "ans": "9980", "hint": "(page − 1) × size.", "steps": ["Pages before page 500: 499.", "Each page has 20 rows.", "<span class=\"eq\">499 × 20 = 9,980<\/span>"]}, {"lv": "m", "q": "With OFFSET 9980 LIMIT 20, how many rows does the engine walk past before returning results?", "ans": "9980", "hint": "It reads and discards them.", "steps": ["OFFSET does not jump.", "It produces and throws away the skipped rows.", "<span class=\"eq\">9,980 rows wasted<\/span>"]}, {"lv": "m", "q": "A page lists 50 customers and runs one extra query per customer. How many queries in total?", "ans": "51", "hint": "N + 1.", "steps": ["1 query for the list.", "50 queries, one per customer.", "<span class=\"eq\">1 + 50 = 51<\/span>"]}, {"lv": "m", "q": "Each query costs 2 ms of network delay. How much delay does fixing the N+1 above save?", "ans": "100", "hint": "Queries saved × delay.", "steps": ["Before: 51 queries. After: 1 query.", "50 queries saved.", "<span class=\"eq\">50 × 2 = 100 ms<\/span>"]}, {"lv": "h", "q": "After ANALYZE, sqlite_stat1 says \"10 3\" for idx_status. The first number is the row count. What is the average number of rows per status, the second number?", "ans": "3", "hint": "Rows ÷ distinct statuses, rounded up.", "steps": ["10 orders.", "4 distinct statuses: delivered, shipped, cancelled, pending.", "<span class=\"eq\">10 ÷ 4 = 2.5, stored as 3<\/span>"]}, {"lv": "h", "q": "How many possible join orders exist for 5 tables (left deep, any order)?", "ans": "120", "hint": "n factorial.", "steps": ["Choose the first of 5, then 4, and so on.", "Multiply.", "<span class=\"eq\">5! = 5 × 4 × 3 × 2 × 1 = 120<\/span>"]}], "assign": [], "must": [["Optimizer", "SQL says what, the optimizer decides how. EXPLAIN QUERY PLAN or EXPLAIN shows its choice."], ["Plan words", "SCAN reads all rows, SEARCH jumps by index, COVERING INDEX skips the table, TEMP B-TREE sorts."], ["Joins", "Nested loop wants an index on the inner column, hash join suits big equality joins, merge join suits sorted inputs."], ["Statistics", "Cost based optimizers need fresh statistics. Run ANALYZE after big changes."], ["Rewrites", "Sargable ranges instead of functions on columns, keyset instead of deep OFFSET, one join instead of N+1 queries."]], "summary": "<p>The optimizer picks the plan, EXPLAIN shows it, statistics guide it, and sargable conditions let indexes do their job.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"eqp": {"src": "EXPLAIN QUERY PLAN\nSELECT c.name, COUNT(*) AS orders\nFROM customers c JOIN orders o ON o.customer_id = c.id\nGROUP BY c.id\nORDER BY orders DESC;", "db": "shop", "setup": "", "title": "Read a plan from the top", "notes": {"3": "One table is scanned, the other is reached by key or a temporary index.", "5": "Sorting by a computed count always needs a temporary B-tree."}, "out": [{"sql": "EXPLAIN QUERY PLAN\nSELECT c.name, COUNT(*) AS orders\nFROM customers c JOIN orders o ON o.customer_id = c.id\nGROUP BY c.id\nORDER BY orders DESC;", "cols": ["id", "parent", "notused", "detail"], "rows": [[8, 0, 216, "SCAN o"], [10, 0, 45, "SEARCH c USING INTEGER PRIMARY KEY (rowid=?)"], [13, 0, 0, "USE TEMP B-TREE FOR GROUP BY"], [49, 0, 0, "USE TEMP B-TREE FOR ORDER BY"]]}]}, "nl": {"src": "EXPLAIN QUERY PLAN\nSELECT p.name, oi.qty\nFROM order_items oi JOIN products p ON p.id = oi.product_id;", "db": "shop", "setup": "", "title": "SQLite uses nested loops", "notes": {"3": "Scan order_items, and for each line jump to its product by primary key."}, "out": [{"sql": "EXPLAIN QUERY PLAN\nSELECT p.name, oi.qty\nFROM order_items oi JOIN products p ON p.id = oi.product_id;", "cols": ["id", "parent", "notused", "detail"], "rows": [[3, 0, 216, "SCAN oi"], [5, 0, 45, "SEARCH p USING INTEGER PRIMARY KEY (rowid=?)"]]}]}, "auto": {"src": "CREATE TABLE visits (customer_id INTEGER, page TEXT);\nINSERT INTO visits VALUES (1, 'home'), (2, 'cart'), (1, 'cart');\nEXPLAIN QUERY PLAN\nSELECT c.name, v.page FROM customers c JOIN visits v ON v.customer_id = c.id;", "db": "shop", "setup": "", "title": "No useful index: the plan still finds a way", "notes": {"4": "The plan either scans visits and looks up customers by key, or builds an automatic index when that is cheaper. Either way, an index on visits(customer_id) would remove the guesswork."}, "out": [{"sql": "CREATE TABLE visits (customer_id INTEGER, page TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO visits VALUES (1, 'home'), (2, 'cart'), (1, 'cart');", "cols": [], "rows": [], "changes": 3}, {"sql": "EXPLAIN QUERY PLAN\nSELECT c.name, v.page FROM customers c JOIN visits v ON v.customer_id = c.id;", "cols": ["id", "parent", "notused", "detail"], "rows": [[3, 0, 216, "SCAN v"], [5, 0, 45, "SEARCH c USING INTEGER PRIMARY KEY (rowid=?)"]]}]}, "analyze": {"src": "CREATE INDEX idx_status ON orders(status);\nANALYZE;\nSELECT tbl, idx, stat FROM sqlite_stat1 WHERE tbl = 'orders';", "db": "shop", "setup": "", "title": "ANALYZE gathers statistics", "notes": {"2": "Reads the tables and indexes and stores summaries.", "3": "stat holds the row count and the average rows per distinct key, for example 10 3."}, "out": [{"sql": "CREATE INDEX idx_status ON orders(status);", "cols": [], "rows": []}, {"sql": "ANALYZE;", "cols": [], "rows": []}, {"sql": "SELECT tbl, idx, stat FROM sqlite_stat1 WHERE tbl = 'orders';", "cols": ["tbl", "idx", "stat"], "rows": [["orders", "idx_status", "10 3"]]}]}, "sarg": {"src": "CREATE INDEX idx_date ON orders(order_date);\nEXPLAIN QUERY PLAN SELECT id FROM orders WHERE substr(order_date, 1, 7) = '2025-06';\nEXPLAIN QUERY PLAN SELECT id FROM orders WHERE order_date >= '2025-06-01' AND order_date < '2025-07-01';", "db": "shop", "setup": "", "title": "Same rows, different plans", "notes": {"2": "A function on the column: the index cannot be searched.", "3": "A plain range on the column: SEARCH using idx_date."}, "out": [{"sql": "CREATE INDEX idx_date ON orders(order_date);", "cols": [], "rows": []}, {"sql": "EXPLAIN QUERY PLAN SELECT id FROM orders WHERE substr(order_date, 1, 7) = '2025-06';", "cols": ["id", "parent", "notused", "detail"], "rows": [[2, 0, 213, "SCAN orders USING COVERING INDEX idx_date"]]}, {"sql": "EXPLAIN QUERY PLAN SELECT id FROM orders WHERE order_date >= '2025-06-01' AND order_date < '2025-07-01';", "cols": ["id", "parent", "notused", "detail"], "rows": [[2, 0, 153, "SEARCH orders USING COVERING INDEX idx_date (order_date>? AND order_date<?)"]]}]}, "keyset": {"src": "SELECT id, order_date FROM orders ORDER BY id LIMIT 3 OFFSET 6;\nSELECT id, order_date FROM orders WHERE id > 106 ORDER BY id LIMIT 3;", "db": "shop", "setup": "", "title": "OFFSET paging versus keyset paging", "notes": {"1": "OFFSET still walks past the first 6 rows. On page 10,000 that is a lot of wasted reading.", "2": "Keyset paging remembers the last id shown and jumps straight there."}, "out": [{"sql": "SELECT id, order_date FROM orders ORDER BY id LIMIT 3 OFFSET 6;", "cols": ["id", "order_date"], "rows": [[107, "2025-06-21"], [108, "2025-06-25"], [109, "2025-07-02"]]}, {"sql": "SELECT id, order_date FROM orders WHERE id > 106 ORDER BY id LIMIT 3;", "cols": ["id", "order_date"], "rows": [[107, "2025-06-21"], [108, "2025-06-25"], [109, "2025-07-02"]]}]}}, "labs": [{"id": "l-sarg", "lv": "m", "title": "June orders, the sargable way", "task": "Show the <code>id<\/code> of every order placed in June 2025 using a range on <code>order_date<\/code>, not a function.", "db": "shop", "hint": "order_date >= '2025-06-01' AND order_date < '2025-07-01'", "why": "ISO dates sort as text in date order, so a range works and an index on order_date can be searched.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["id"], "rows": [[101], [102], [103], [104], [105], [106], [107], [108]]}, "solution": "SELECT id FROM orders WHERE order_date >= '2025-06-01' AND order_date < '2025-07-01';"}, {"id": "l-keyset", "lv": "m", "title": "The next page", "task": "Orders are shown 3 per page in id order. The last id on the current page was 104. Show the <code>id<\/code> and <code>status<\/code> of the next page using keyset paging.", "db": "shop", "hint": "WHERE id > 104 ORDER BY id LIMIT 3", "why": "The next page starts right after the last id seen.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["id", "status"], "rows": [[105, "cancelled"], [106, "delivered"], [107, "pending"]]}, "solution": "SELECT id, status FROM orders WHERE id > 104 ORDER BY id LIMIT 3;"}, {"id": "l-nplus", "lv": "h", "title": "Fix the N+1", "task": "Replace one query per customer with one query: show every customer’s <code>name<\/code> and number of orders as <code>orders<\/code>, including customers with none.", "db": "shop", "hint": "LEFT JOIN orders and GROUP BY the customer.", "why": "One round trip replaces nine.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "orders"], "rows": [["Asha", 3], ["Ravi", 2], ["Meera", 2], ["Kabir", 0], ["Sara", 2], ["Arjun", 0], ["Nisha", 1], ["Vikram", 0]]}, "solution": "SELECT c.name, COUNT(o.id) AS orders FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

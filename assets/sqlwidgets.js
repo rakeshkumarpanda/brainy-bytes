@@ -685,4 +685,123 @@ CREATE TABLE teachers AS SELECT DISTINCT teacher, room FROM sheet;`;
       ];
     }
   }));
+
+  function plan(d, sql) {             /* EXPLAIN QUERY PLAN as indented text lines */
+    const r = q(d, 'EXPLAIN QUERY PLAN ' + sql).rows, depth = { 0: -1 };
+    return r.map(x => { depth[x[0]] = (depth[x[1]] === undefined ? -1 : depth[x[1]]) + 1; return '  '.repeat(depth[x[0]]) + x[3]; });
+  }
+
+  /* ---------- 7.1 an index turns a scan into a search ---------- */
+  SQW('sqindex', (SQL, cfg) => ({
+    title: 'Full scan versus index search',
+    sub: 'Find the product with a given price. Without an index SQLite reads every row. With an index on price it jumps through a sorted structure, halving the search each step.',
+    inputs: [{ k: 'p', label: 'Find price', type: 'seg', val: String(cfg.p || 850), opts: ['60', '250', '850', '1499', '999'].map(x => [x, x]) }],
+    frames: v => {
+      const P = +v.p;
+      const d = scratch(SQL, 'shop');
+      const rows = q(d, 'SELECT id, name, price FROM products ORDER BY id').rows;
+      const sql = `SELECT name FROM products WHERE price = ${P}`;
+      const p1 = plan(d, sql);
+      d.exec('CREATE INDEX idx_price ON products(price)');
+      const p2 = plan(d, sql);
+      const sorted = q(d, 'SELECT price FROM products ORDER BY price').rows.map(r => r[0]);
+      const out = [{ msg: `No index yet. SQLite’s plan says <b>${esc(p1.join(' '))}</b>: read the whole table.`, mood: 'think', layers: [{ t: 'sql', text: sql + ';' }, { t: 'tab', label: 'products, stored in id order', cols: ['id', 'name', 'price'], rows }] }];
+      let found = -1;
+      rows.forEach((r, i) => {
+        if (found >= 0) return;
+        if (r[2] === P) found = i;
+        if (i % 3 === 2 || r[2] === P || i === rows.length - 1)
+          out.push({ msg: `Scan: ${i + 1} ${i ? 'rows' : 'row'} read so far${r[2] === P ? `, and row ${i + 1} matches. But a scan cannot stop, another row might match too.` : '.'}`, mood: r[2] === P ? 'happy' : 'work',
+            layers: [{ t: 'sql', text: sql + ';' }, { t: 'tab', label: 'full scan', cols: ['id', 'name', 'price'], rows, rcls: Object.assign(Object.fromEntries(rows.slice(0, i + 1).map((x, k) => [k, x[2] === P ? 'yes' : 'look'])), {}) }] });
+      });
+      out.push({ msg: `The scan reads all ${rows.length} rows whatever happens. With a million rows, it reads a million.`, mood: 'sad', layers: [{ t: 'sql', text: sql + ';' }, { t: 'note', html: `Rows read: <b>${rows.length}</b>` }] });
+      out.push({ msg: 'Now <b>CREATE INDEX idx_price ON products(price)</b>. The index keeps every price in sorted order, each with a pointer to its row.', mood: 'wow', layers: [{ t: 'sql', text: 'CREATE INDEX idx_price ON products(price);' }, { t: 'row', label: 'index on price (sorted)', cells: sorted, idx: true }] });
+      let lo = 0, hi = sorted.length - 1, steps = 0, hit = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1; steps++;
+        const c = sorted[mid];
+        const cls = {}; for (let k = 0; k < sorted.length; k++) cls[k] = k < lo || k > hi ? 'ghost' : '';
+        cls[mid] = c === P ? 'yes' : 'look';
+        out.push({ msg: `Step ${steps}: look at the middle, ${c}. ${c === P ? 'Found it.' : c < P ? `${P} is bigger, so throw away the left half.` : `${P} is smaller, so throw away the right half.`}`, mood: c === P ? 'happy' : 'work',
+          layers: [{ t: 'sql', text: sql + ';' }, { t: 'row', label: 'index on price', cells: sorted, idx: true, cls, ptr: { [lo]: 'lo', [hi]: 'hi' } }] });
+        if (c === P) { hit = mid; break; }
+        if (c < P) lo = mid + 1; else hi = mid - 1;
+      }
+      if (hit < 0) out.push({ msg: `After ${steps} steps the range is empty: no product costs ${P}. The index proved it without reading the table.`, mood: 'look', layers: [{ t: 'row', label: 'index on price', cells: sorted, idx: true }] });
+      out.push({ msg: `SQLite’s new plan: <b>${esc(p2.join(' '))}</b>. About log₂(n) steps: 20 steps for a million rows. Real indexes are B-trees with hundreds of keys per page, so even fewer page reads.`, mood: 'happy', fx: 'burst',
+        layers: [{ t: 'sql', text: 'EXPLAIN QUERY PLAN\n' + sql + ';' }, { t: 'note', html: `Before: ${esc(p1.join(' '))}<br>After: ${esc(p2.join(' '))}` }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 7.2 read a query plan ---------- */
+  SQW('sqplan', (SQL, cfg) => ({
+    title: 'What will SQLite do with your query',
+    sub: 'Pick a query, or type your own on the shop tables, and switch indexes on or off. EXPLAIN QUERY PLAN shows the real plan SQLite chose.',
+    inputs: [{ k: 'sql', label: 'Query', type: 'text', val: cfg.sql || "SELECT c.name, o.id FROM customers c JOIN orders o ON o.customer_id = c.id WHERE o.status = 'pending'", w: 520 },
+      { k: 'ix', label: 'Indexes', type: 'seg', val: cfg.ix || 'none', opts: [['none', 'none'], ['some', 'on orders(status) and orders(customer_id)']] }],
+    check: v => { const e = tryq(db(SQL, 'shop'), 'EXPLAIN QUERY PLAN ' + v.sql).error; return e ? `SQLite says: ${esc(e)}` : ''; },
+    frames: v => {
+      const d = scratch(SQL, 'shop', v.ix === 'some' ? 'CREATE INDEX idx_o_status ON orders(status); CREATE INDEX idx_o_cust ON orders(customer_id);' : '');
+      const lines = plan(d, v.sql);
+      const say = l => /SCAN/.test(l) && /COVERING/.test(l) ? 'reads a whole index instead of the table, which is smaller' : /SCAN/.test(l) ? 'reads every row of the table, fine when small, slow when big'
+        : /SEARCH/.test(l) && /COVERING/.test(l) ? 'finds rows through an index that holds every needed column, so it never touches the table' : /SEARCH/.test(l) && /PRIMARY KEY|INTEGER PRIMARY KEY/.test(l) ? 'jumps straight to rows by their primary key'
+        : /SEARCH/.test(l) ? 'uses an index to jump to matching rows only' : /TEMP B-TREE/.test(l) ? 'builds a temporary sorted structure, for ORDER BY, GROUP BY or DISTINCT that no index already provides'
+        : /AUTOMATIC/.test(l) ? 'builds a throwaway index just for this query, a hint that a real index would help' : /SUBQUERY|CO-ROUTINE|MATERIALIZE|COMPOUND/.test(l) ? 'runs an inner query as its own step' : 'is a step of the plan';
+      const out = [{ msg: 'EXPLAIN QUERY PLAN asks the planner what it would do, without running the query.', mood: 'think', layers: [{ t: 'sql', text: 'EXPLAIN QUERY PLAN\n' + v.sql + ';' }, { t: 'note', html: v.ix === 'some' ? 'Indexes on orders(status) and orders(customer_id) exist.' : 'Only the primary keys and UNIQUE columns have indexes.' }] }];
+      lines.forEach((l, i) => out.push({ msg: `<b>${esc(l.trim())}</b>: this ${say(l)}.`, mood: /SCAN/.test(l) && !/COVERING/.test(l) ? 'look' : 'happy',
+        layers: [{ t: 'sql', text: lines.map((x, k) => (k === i ? '>> ' : '   ') + x).join('\n') }] }));
+      out.push({ msg: `${lines.filter(l => /SCAN/.test(l) && !/COVERING/.test(l)).length} full ${lines.filter(l => /SCAN/.test(l) && !/COVERING/.test(l)).length === 1 ? 'scan' : 'scans'} in this plan. ${v.ix === 'none' ? 'Switch the indexes on and compare.' : 'Switch the indexes off and compare.'}`, mood: 'wow', fx: 'burst', layers: [{ t: 'sql', text: lines.join('\n') }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 7.3 transactions on a timeline ---------- */
+  SQW('sqtx', (SQL, cfg) => ({
+    title: 'Two people, one bank account',
+    sub: 'Pick a story. Each step runs on a real SQLite copy, one statement at a time in the order shown, to act out what two sessions do.',
+    inputs: [{ k: 's', label: 'Story', type: 'seg', val: cfg.s || 'lost', opts: [['commit', 'transfer that commits'], ['rollback', 'transfer that fails'], ['lost', 'lost update'], ['fixed', 'lost update fixed']] }],
+    frames: v => {
+      const d = scratch(SQL, '', "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);");
+      const show = () => q(d, 'SELECT name, balance FROM accounts ORDER BY name');
+      const F = (who, sqlText, msg, mood, extra) => { const t = show(); return { msg, mood, layers: [{ t: 'flow', items: ['Session A', 'Session B'], on: who === 'A' ? 0 : who === 'B' ? 1 : -1 }, { t: 'sql', text: sqlText }, { t: 'tab', label: 'accounts (committed view)', cols: t.cols, rows: t.rows, ...(extra || {}) }] }; };
+      const run = s => { try { d.exec(s); return ''; } catch (e) { return String(e.message || e); } };
+      const out = [F('', '-- start', 'Asha has 500, Ravi has 200. Money must never appear or vanish.', 'think')];
+      if (v.s === 'commit' || v.s === 'rollback') {
+        const amt = v.s === 'commit' ? 300 : 700;
+        run('BEGIN');
+        out.push(F('A', 'BEGIN;', 'BEGIN starts a transaction: the next statements succeed together or not at all.', 'look'));
+        const e1 = run(`UPDATE accounts SET balance = balance + ${amt} WHERE name = 'Ravi'`);
+        out.push(F('A', `UPDATE accounts SET balance = balance + ${amt}\nWHERE name = 'Ravi';`, `Ravi gets ${amt}. This change is not yet permanent.`, 'work', { rcls: { 1: 'look' } }));
+        const e2 = run(`UPDATE accounts SET balance = balance - ${amt} WHERE name = 'Asha'`);
+        if (!e2) { run('COMMIT'); out.push(F('A', `UPDATE accounts SET balance = balance - ${amt}\nWHERE name = 'Asha';\nCOMMIT;`, 'Asha pays 300 and COMMIT makes both changes permanent at once. Total still 700.', 'happy', { rcls: { 0: 'yes', 1: 'yes' } })); out[out.length - 1].fx = 'burst'; }
+        else {
+          out.push(F('A', `UPDATE accounts SET balance = balance - ${amt}\nWHERE name = 'Asha';`, `SQLite refuses: <b>${esc(e2)}</b>. Asha cannot go below 0. But Ravi already got the money.`, 'sad', { rcls: { 1: 'no' } }));
+          run('ROLLBACK');
+          const t = show(); out.push({ msg: 'ROLLBACK undoes everything since BEGIN. Ravi is back to 200, nobody lost or gained money.', mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text: 'ROLLBACK;' }, { t: 'tab', label: 'accounts', cols: t.cols, rows: t.rows, rcls: { 0: 'yes', 1: 'yes' } }] });
+        }
+        if (e1) out.push(F('', '', esc(e1), 'sad'));
+        return out;
+      }
+      /* lost update: both read, both write a value computed from their own read */
+      if (v.s === 'lost') {
+        const a = q(d, "SELECT balance FROM accounts WHERE name = 'Asha'").rows[0][0];
+        out.push(F('A', "SELECT balance FROM accounts WHERE name = 'Asha';", `Session A (a shop refund of 100) reads Asha’s balance: ${a}.`, 'look', { rcls: { 0: 'look' } }));
+        const b = q(d, "SELECT balance FROM accounts WHERE name = 'Asha'").rows[0][0];
+        out.push(F('B', "SELECT balance FROM accounts WHERE name = 'Asha';", `Session B (salary of 1000) also reads ${b}, before A writes.`, 'look', { rcls: { 0: 'look' } }));
+        run(`UPDATE accounts SET balance = ${a + 100} WHERE name = 'Asha'`);
+        out.push(F('A', `UPDATE accounts SET balance = ${a + 100}\nWHERE name = 'Asha';  -- ${a} + 100`, `A writes ${a} + 100 = ${a + 100}.`, 'work', { rcls: { 0: 'yes' } }));
+        run(`UPDATE accounts SET balance = ${b + 1000} WHERE name = 'Asha'`);
+        out.push(F('B', `UPDATE accounts SET balance = ${b + 1000}\nWHERE name = 'Asha';  -- ${b} + 1000`, `B writes ${b} + 1000 = ${b + 1000}, overwriting A’s change. The refund of 100 is lost. Asha should have ${a + 1100}.`, 'sad', { rcls: { 0: 'no' } }));
+        return out;
+      }
+      run("UPDATE accounts SET balance = balance + 100 WHERE name = 'Asha'");
+      out.push(F('A', "UPDATE accounts\nSET balance = balance + 100\nWHERE name = 'Asha';", 'Fix 1: let the database do the arithmetic. A adds 100 to whatever the balance is at that moment. The row is locked until A commits.', 'work', { rcls: { 0: 'yes' } }));
+      run("UPDATE accounts SET balance = balance + 1000 WHERE name = 'Asha'");
+      out.push(F('B', "UPDATE accounts\nSET balance = balance + 1000\nWHERE name = 'Asha';", 'B waits for A’s lock, then adds 1000 to the new value. Asha has 1600, nothing lost.', 'happy', { rcls: { 0: 'yes' } }));
+      out[out.length - 1].fx = 'burst';
+      out.push(F('', "-- Fix 2, when the program must read first:\nBEGIN;\nSELECT balance FROM accounts WHERE name = 'Asha' FOR UPDATE;  -- PostgreSQL, MySQL\nUPDATE accounts SET balance = ... WHERE name = 'Asha';\nCOMMIT;", 'Fix 2: lock the row while reading with SELECT ... FOR UPDATE (PostgreSQL, MySQL), or run at SERIALIZABLE isolation so the engine refuses the second writer. SQLite locks the whole database for writing, which also prevents this.', 'look'));
+      return out;
+    }
+  }));
 })();

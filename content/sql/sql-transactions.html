@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transactions and concurrency · SQL and Databases</title>
+<meta name="description" content="BEGIN, COMMIT, ROLLBACK, autocommit, ACID, SAVEPOINT, error handling, isolation levels, dirty reads, non repeatable reads, phantoms, lost updates, write skew, engine defaults, locks, MVCC, deadlocks, WAL, SELECT FOR UPDATE, distributed transactions.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 7: Performance and transactions</span><span>›</span><span>Transactions</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 7 · Topic 3 of 3 · Advanced</div>
+    <h1>Transactions and concurrency</h1>
+    <p class="lead">Keep data correct with all or nothing transactions, undo safely with ROLLBACK and savepoints, and understand isolation levels, locks, MVCC and deadlocks when many users write at once.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">2 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">6 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-transactions" data-topic="cheatsheet" data-h="sql-transactions">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#acid" data-l="acid"><span class="n">1</span><span class="t">All or nothing: transactions and ACID</span></a></li><li><a href="#failure" data-l="failure"><span class="n">2</span><span class="t">Errors, savepoints and failed transfers</span></a></li><li><a href="#isolation" data-l="isolation"><span class="n">3</span><span class="t">Isolation levels and anomalies</span></a></li><li><a href="#locks" data-l="locks"><span class="n">4</span><span class="t">Locks, MVCC, deadlocks and the journal</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="acid" data-l="acid" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>All or nothing: transactions and ACID</h2>
+<p>Moving 300 rupees from Asha to Ravi takes two UPDATEs. If the power fails between them, money vanishes. A <b>transaction</b> groups statements so they succeed together or not at all.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Transaction</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>BEGIN; ... ; COMMIT;</code></div><div class="fx-n">COMMIT makes every change permanent at once.</div></div><div class="fx"><div class="fx-h"><span>Undo</span></div><div class="fx-b"><code>ROLLBACK;</code></div><div class="fx-n">Throws away every change since BEGIN.</div></div></div>
+<div class="sq-run" data-q="commit"></div>
+<div class="sq-run" data-q="rollback"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Letter</th><th>Promise</th><th>In the transfer</th></tr></thead><tbody><tr><td>A, atomicity</td><td>all statements happen, or none</td><td>never only one of the two UPDATEs</td></tr><tr><td>C, consistency</td><td>every rule holds after the transaction</td><td>CHECK (balance >= 0) is never broken</td></tr><tr><td>I, isolation</td><td>running transactions do not see each other’s half done work</td><td>nobody sees the money in mid air</td></tr><tr><td>D, durability</td><td>once committed, the change survives a crash</td><td>after COMMIT returns, a power cut cannot undo it</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Without BEGIN, each statement is its own transaction (autocommit). Many small INSERTs inside one BEGIN ... COMMIT also run far faster, because the engine syncs to disk once instead of once per row.</div></div>
+<div class="sq-lab" data-lab="l-transfer"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="failure" data-l="failure" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Errors, savepoints and failed transfers</h2>
+<p>When a statement inside a transaction fails, you decide: roll back everything, or go back to a <b>savepoint</b> and carry on.</p>
+<div class="viz" data-viz="pk" data-pk="sqtx"></div>
+<div class="sq-run" data-q="fail"></div>
+<div class="sq-run" data-q="savepoint"></div>
+<div class="walk"><div class="walk-h"><span>What an app does around a transaction</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>BEGIN.</li><li>Run each statement and check for an error.</li><li>On any error, ROLLBACK and report the problem.</li><li>If every statement worked, COMMIT. Most database libraries wrap this in a "with transaction" block.</li></ol></div>
+<div class="note note-warn"><b>Common mistake</b><div>In SQLite a failed statement inside a transaction undoes only that statement by default. The transaction stays open, and it is the program’s job to ROLLBACK. PostgreSQL marks the whole transaction as failed until you ROLLBACK.</div></div>
+<div class="sq-lab" data-lab="l-save"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="isolation" data-l="isolation" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Isolation levels and anomalies</h2>
+<p>Many users run transactions at the same time. Full isolation is expensive, so the SQL standard defines four <b>isolation levels</b>, each preventing more <b>anomalies</b>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Anomaly</th><th>What goes wrong</th></tr></thead><tbody><tr><td>Dirty read</td><td>you read another transaction’s change before it commits, and it later rolls back</td></tr><tr><td>Non repeatable read</td><td>you read a row twice and get different values, because someone committed in between</td></tr><tr><td>Phantom</td><td>you run the same WHERE twice and new rows appear</td></tr><tr><td>Lost update</td><td>two transactions read the same value and both write, so one change is overwritten</td></tr><tr><td>Write skew</td><td>two transactions each check a rule, then write different rows, and together break the rule</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Level</th><th>Dirty read</th><th>Non repeatable read</th><th>Phantom</th></tr></thead><tbody><tr><td>READ UNCOMMITTED</td><td>possible</td><td>possible</td><td>possible</td></tr><tr><td>READ COMMITTED</td><td>prevented</td><td>possible</td><td>possible</td></tr><tr><td>REPEATABLE READ</td><td>prevented</td><td>prevented</td><td>possible in the standard</td></tr><tr><td>SERIALIZABLE</td><td>prevented</td><td>prevented</td><td>prevented</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>Default level</th></tr></thead><tbody><tr><td>PostgreSQL</td><td>READ COMMITTED</td></tr><tr><td>MySQL InnoDB</td><td>REPEATABLE READ</td></tr><tr><td>SQL Server, Oracle</td><td>READ COMMITTED</td></tr><tr><td>SQLite</td><td>SERIALIZABLE in effect: one writer at a time</td></tr></tbody></table></div>
+<div class="sq-run" data-q="atomicupd"></div>
+<div class="note note-tip"><b>Remember</b><div>The lost update in the animation happens because the app read a value, computed in its own memory, and wrote a fixed number back. Writing balance = balance + 100, or locking with SELECT ... FOR UPDATE, prevents it.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="locks" data-l="locks" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Locks, MVCC, deadlocks and the journal</h2>
+<p>How do engines keep the promises? Two main tools: <b>locks</b>, which make others wait, and <b>MVCC</b> (multi version concurrency control), which lets readers see an older version while a writer works.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Tool</th><th>How it works</th><th>Used by</th></tr></thead><tbody><tr><td>Row locks</td><td>a writer locks the rows it changes until commit, other writers wait</td><td>PostgreSQL, MySQL InnoDB, SQL Server, Oracle</td></tr><tr><td>MVCC</td><td>each change creates a new row version, readers see the versions committed before they started</td><td>PostgreSQL, Oracle, InnoDB, SQL Server snapshot isolation</td></tr><tr><td>Database lock</td><td>one writer for the whole database at a time</td><td>SQLite</td></tr><tr><td>Write ahead log</td><td>changes go to a log first, so a crash can replay or undo them</td><td>almost every engine, SQLite in WAL mode</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>A deadlock</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Transaction 1 locks Asha’s row, then asks for Ravi’s.</li><li>Transaction 2 locked Ravi’s row first, and now asks for Asha’s.</li><li>Each waits for the other forever.</li><li>The engine detects the cycle and aborts one of them with a deadlock error. The app should retry it.</li><li>Prevention: always lock rows in the same order, for example by account id.</li></ol></div>
+<div class="sq-run" data-q="modes"></div>
+<div class="scene"><div class="scene-h">Real world scenario: booking the last train seat</div><p>Two people press Book on the last seat at the same moment. With SELECT ... FOR UPDATE on the seat row (PostgreSQL, MySQL), the second request waits until the first commits, then sees the seat is taken and gets a polite "sold out". Without a lock, both could read "free" and both get tickets for the same seat, a classic race condition.</p></div>
+<div class="sq-lab" data-lab="l-fail"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A transaction is all or nothing. COMMIT keeps the changes, ROLLBACK throws them away.</p></div><div class="ld-p" data-ld="college" hidden><p>ACID, isolation levels and their anomalies, autocommit, savepoints. Use atomic UPDATEs or row locks to avoid lost updates, and retry on deadlock or serialization errors.</p></div><div class="ld-p" data-ld="masters" hidden><p>Serializability means the result equals some one at a time order. Two phase locking guarantees it with locks. Snapshot isolation, used by many MVCC engines, still allows write skew (Berenson et al., 1995), and PostgreSQL’s SERIALIZABLE adds Serializable Snapshot Isolation to catch it (Cahill et al., 2008).</p></div><div class="ld-p" data-ld="research" hidden><p>Distributed transactions across machines use two phase commit, and consensus protocols such as Paxos and Raft replicate the log. Systems such as Google Spanner (2012) use synchronized clocks to give global ordering, and CockroachDB and TiDB follow similar ideas.</p></div></div>
+<details class="deep"><summary>Going deeper: Where ACID came from</summary><div class="deep-b"><p>Jim Gray described the transaction concept in 1981, and Theo Haerder and Andreas Reuter named the four properties ACID in 1983. Gray received the Turing Award in 1998 largely for this work.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-plans.html" data-topic="sql-plans"><small>Previous topic</small><b>Query plans</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-transactions", "topic": "sql-transactions", "subject": "sql", "title": "Transactions and concurrency", "codes": {}, "quiz": [{"lv": "e", "q": "Which statement makes a transaction’s changes permanent?", "o": ["SAVE", "COMMIT", "END ONLY", "STORE"], "a": 1, "hint": "Commit.", "why": "COMMIT ends the transaction and keeps the changes."}, {"lv": "e", "q": "ROLLBACK", "o": ["Repeats the transaction", "Undoes changes since BEGIN", "Deletes the table", "Commits twice"], "a": 1, "hint": "Undo.", "why": "Everything since BEGIN is thrown away."}, {"lv": "e", "q": "The A in ACID stands for", "o": ["Accuracy", "Atomicity", "Availability", "Access"], "a": 1, "hint": "All or nothing.", "why": "Atomicity."}, {"lv": "e", "q": "Without BEGIN, each statement", "o": ["Fails", "Is its own transaction", "Waits forever", "Is ignored"], "a": 1, "hint": "Autocommit.", "why": "Each statement commits by itself."}, {"lv": "m", "q": "Reading another transaction’s uncommitted change is a", "o": ["Phantom", "Dirty read", "Lost update", "Deadlock"], "a": 1, "hint": "Not yet committed.", "why": "A dirty read."}, {"lv": "m", "q": "PostgreSQL’s default isolation level is", "o": ["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE"], "a": 1, "hint": "Committed.", "why": "READ COMMITTED."}, {"lv": "m", "q": "MySQL InnoDB’s default isolation level is", "o": ["READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE", "READ UNCOMMITTED"], "a": 1, "hint": "Repeatable.", "why": "REPEATABLE READ."}, {"lv": "m", "q": "ROLLBACK TO sp undoes", "o": ["Everything", "Only changes after savepoint sp", "Only the last statement", "Nothing"], "a": 1, "hint": "Partial.", "why": "Work before the savepoint stays."}, {"lv": "m", "q": "Which update avoids a lost update?", "o": ["SET balance = 600", "SET balance = balance + 100", "DELETE then INSERT", "SELECT then SET"], "a": 1, "hint": "Atomic arithmetic.", "why": "The read and write happen in one step."}, {"lv": "h", "q": "Two transactions wait for each other’s locks. This is a", "o": ["Phantom", "Deadlock", "Dirty read", "Savepoint"], "a": 1, "hint": "Cycle of waits.", "why": "The engine aborts one of them."}, {"lv": "x", "q": "Which anomaly can snapshot isolation still allow?", "o": ["Dirty read", "Write skew", "Non repeatable read", "Lost commit"], "a": 1, "hint": "Disjoint writes.", "why": "Write skew, caught by SSI."}], "calc": [{"lv": "e", "q": "Asha 500, Ravi 200. After a committed transfer of 300 from Asha to Ravi, what is Ravi’s balance?", "ans": "500", "hint": "Add 300.", "steps": ["Asha drops to 200.", "Ravi gains 300.", "<span class=\"eq\">200 + 300 = 500<\/span>"]}, {"lv": "e", "q": "What is the total of both balances after that transfer?", "ans": "700", "hint": "Money is conserved.", "steps": ["Asha 200 and Ravi 500.", "Add them.", "<span class=\"eq\">200 + 500 = 700, unchanged<\/span>"]}, {"lv": "m", "q": "In the lost update story, Asha has 500. A refund of 100 and a salary of 1000 both read 500 first. What balance is left at the end?", "ans": "1500", "hint": "The second write wins.", "steps": ["A writes 500 + 100 = 600.", "B writes 500 + 1000 = 1500 over it.", "<span class=\"eq\">1500, while 1600 was correct<\/span>"]}, {"lv": "m", "q": "How much money did the lost update make disappear?", "ans": "100", "hint": "Correct minus actual.", "steps": ["Correct: 500 + 100 + 1000 = 1600.", "Actual: 1500.", "<span class=\"eq\">1600 − 1500 = 100<\/span>"]}, {"lv": "m", "q": "In the savepoint example, Asha pays 100, Ravi gets +999 which is rolled back to the savepoint, then Ravi gets 100. What is Ravi’s final balance?", "ans": "300", "hint": "The 999 is undone.", "steps": ["ROLLBACK TO removes the +999.", "Then Ravi gets 100.", "<span class=\"eq\">200 + 100 = 300<\/span>"]}, {"lv": "m", "q": "10,000 INSERTs in autocommit mode, each needing a 5 ms disk sync. How long do the syncs take?", "ans": "50", "hint": "Seconds.", "steps": ["Each INSERT is its own transaction.", "10,000 × 5 ms = 50,000 ms.", "<span class=\"eq\">50 seconds<\/span>"]}, {"lv": "h", "q": "The same 10,000 INSERTs inside one BEGIN ... COMMIT need one sync. How many times fewer syncs is that?", "ans": "10000", "hint": "Divide.", "steps": ["Before: 10,000 syncs.", "After: 1 sync.", "<span class=\"eq\">10,000 ÷ 1 = 10,000 times fewer<\/span>"]}, {"lv": "h", "q": "Two transactions lock rows in opposite orders. How many locks does each one hold when the deadlock starts?", "ans": "1", "hint": "Each holds one and waits for one.", "steps": ["T1 holds Asha and waits for Ravi.", "T2 holds Ravi and waits for Asha.", "<span class=\"eq\">1 lock each<\/span>"]}], "assign": [], "must": [["Transactions", "BEGIN ... COMMIT groups statements, ROLLBACK undoes them. Autocommit makes each statement its own transaction."], ["ACID", "Atomicity, consistency, isolation, durability."], ["Savepoints", "SAVEPOINT name, ROLLBACK TO name undoes part of a transaction."], ["Isolation", "READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE prevent more anomalies in turn. Know your engine’s default."], ["Concurrency", "Use balance = balance + x or SELECT ... FOR UPDATE against lost updates. Lock in a fixed order and retry on deadlock."]], "summary": "<p>Transactions are all or nothing, isolation levels decide what concurrent users can see, and locks or MVCC keep the promises.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"commit": {"src": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);\nBEGIN;\nUPDATE accounts SET balance = balance - 300 WHERE name = 'Asha';\nUPDATE accounts SET balance = balance + 300 WHERE name = 'Ravi';\nCOMMIT;\nSELECT name, balance, (SELECT SUM(balance) FROM accounts) AS total FROM accounts;", "db": "", "setup": "", "title": "A transfer that commits", "notes": {"2": "Start the transaction.", "5": "Both changes become permanent together. The total stays 700."}, "out": [{"sql": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0));", "cols": [], "rows": []}, {"sql": "INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);", "cols": [], "rows": [], "changes": 2}, {"sql": "BEGIN;", "cols": [], "rows": []}, {"sql": "UPDATE accounts SET balance = balance - 300 WHERE name = 'Asha';", "cols": [], "rows": [], "changes": 1}, {"sql": "UPDATE accounts SET balance = balance + 300 WHERE name = 'Ravi';", "cols": [], "rows": [], "changes": 1}, {"sql": "COMMIT;", "cols": [], "rows": []}, {"sql": "SELECT name, balance, (SELECT SUM(balance) FROM accounts) AS total FROM accounts;", "cols": ["name", "balance", "total"], "rows": [["Asha", 200, 700], ["Ravi", 500, 700]]}]}, "rollback": {"src": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);\nBEGIN;\nUPDATE accounts SET balance = balance - 300 WHERE name = 'Asha';\nROLLBACK;\nSELECT * FROM accounts;", "db": "", "setup": "", "title": "Changed your mind: ROLLBACK", "notes": {"4": "Asha’s 300 comes back. Nothing since BEGIN is kept."}, "out": [{"sql": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0));", "cols": [], "rows": []}, {"sql": "INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);", "cols": [], "rows": [], "changes": 2}, {"sql": "BEGIN;", "cols": [], "rows": []}, {"sql": "UPDATE accounts SET balance = balance - 300 WHERE name = 'Asha';", "cols": [], "rows": [], "changes": 1}, {"sql": "ROLLBACK;", "cols": [], "rows": []}, {"sql": "SELECT * FROM accounts;", "cols": ["name", "balance"], "rows": [["Asha", 500], ["Ravi", 200]]}]}, "fail": {"src": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);\nBEGIN;\nUPDATE accounts SET balance = balance + 700 WHERE name = 'Ravi';\nUPDATE accounts SET balance = balance - 700 WHERE name = 'Asha';", "db": "", "setup": "", "title": "The second step breaks a rule", "notes": {"3": "Ravi gets 700 inside the transaction.", "4": "Asha only has 500: the CHECK refuses. The app must now ROLLBACK, so Ravi’s extra 700 disappears too."}, "out": [{"sql": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0));", "cols": [], "rows": []}, {"sql": "INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);", "cols": [], "rows": [], "changes": 2}, {"sql": "BEGIN;", "cols": [], "rows": []}, {"sql": "UPDATE accounts SET balance = balance + 700 WHERE name = 'Ravi';", "cols": [], "rows": [], "changes": 1}, {"sql": "UPDATE accounts SET balance = balance - 700 WHERE name = 'Asha';", "cols": [], "rows": [], "error": "CHECK constraint failed: balance >= 0"}]}, "savepoint": {"src": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);\nBEGIN;\nUPDATE accounts SET balance = balance - 100 WHERE name = 'Asha';\nSAVEPOINT bonus;\nUPDATE accounts SET balance = balance + 999 WHERE name = 'Ravi';\nROLLBACK TO bonus;\nUPDATE accounts SET balance = balance + 100 WHERE name = 'Ravi';\nCOMMIT;\nSELECT * FROM accounts;", "db": "", "setup": "", "title": "SAVEPOINT undoes part of a transaction", "notes": {"4": "A named point inside the transaction.", "6": "Undo only what came after the savepoint. The first UPDATE stays."}, "out": [{"sql": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0));", "cols": [], "rows": []}, {"sql": "INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);", "cols": [], "rows": [], "changes": 2}, {"sql": "BEGIN;", "cols": [], "rows": []}, {"sql": "UPDATE accounts SET balance = balance - 100 WHERE name = 'Asha';", "cols": [], "rows": [], "changes": 1}, {"sql": "SAVEPOINT bonus;", "cols": [], "rows": []}, {"sql": "UPDATE accounts SET balance = balance + 999 WHERE name = 'Ravi';", "cols": [], "rows": [], "changes": 1}, {"sql": "ROLLBACK TO bonus;", "cols": [], "rows": []}, {"sql": "UPDATE accounts SET balance = balance + 100 WHERE name = 'Ravi';", "cols": [], "rows": [], "changes": 1}, {"sql": "COMMIT;", "cols": [], "rows": []}, {"sql": "SELECT * FROM accounts;", "cols": ["name", "balance"], "rows": [["Asha", 400], ["Ravi", 300]]}]}, "atomicupd": {"src": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);\nUPDATE accounts SET balance = balance + 100 WHERE name = 'Asha';\nUPDATE accounts SET balance = balance + 1000 WHERE name = 'Asha';\nSELECT * FROM accounts WHERE name = 'Asha';", "db": "", "setup": "", "title": "Let the database do the arithmetic", "notes": {"2": "balance = balance + 100 reads and writes in one step, so no other update can slip in between.", "3": "Both changes count: 1600."}, "out": [{"sql": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0));", "cols": [], "rows": []}, {"sql": "INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);", "cols": [], "rows": [], "changes": 2}, {"sql": "UPDATE accounts SET balance = balance + 100 WHERE name = 'Asha';", "cols": [], "rows": [], "changes": 1}, {"sql": "UPDATE accounts SET balance = balance + 1000 WHERE name = 'Asha';", "cols": [], "rows": [], "changes": 1}, {"sql": "SELECT * FROM accounts WHERE name = 'Asha';", "cols": ["name", "balance"], "rows": [["Asha", 1600]]}]}, "modes": {"src": "PRAGMA journal_mode;\nBEGIN IMMEDIATE;\nCREATE TABLE t (x INTEGER);\nCOMMIT;\nSELECT name FROM sqlite_schema WHERE name = 't';", "db": "", "setup": "", "title": "SQLite transaction modes", "notes": {"1": "In memory databases report memory. Files default to delete, and many apps switch to wal for better concurrency.", "2": "IMMEDIATE takes the write lock at BEGIN. DEFERRED (the default) waits until the first write."}, "out": [{"sql": "PRAGMA journal_mode;", "cols": ["journal_mode"], "rows": [["delete"]]}, {"sql": "BEGIN IMMEDIATE;", "cols": [], "rows": []}, {"sql": "CREATE TABLE t (x INTEGER);", "cols": [], "rows": []}, {"sql": "COMMIT;", "cols": [], "rows": []}, {"sql": "SELECT name FROM sqlite_schema WHERE name = 't';", "cols": ["name"], "rows": [["t"]]}]}}, "labs": [{"id": "l-transfer", "lv": "e", "title": "Transfer 150", "task": "Inside one transaction, move 150 from Asha to Ravi and commit. Then show every account ordered by name.", "db": "", "hint": "BEGIN, two UPDATEs, COMMIT, then SELECT.", "why": "Asha 350, Ravi 350, total still 700.", "ordered": true, "setup": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);", "starter": "", "want": {"cols": ["name", "balance"], "rows": [["Asha", 350], ["Ravi", 350]]}, "solution": "BEGIN;\nUPDATE accounts SET balance = balance - 150 WHERE name = 'Asha';\nUPDATE accounts SET balance = balance + 150 WHERE name = 'Ravi';\nCOMMIT;\nSELECT * FROM accounts ORDER BY name;"}, {"id": "l-save", "lv": "m", "title": "Keep the first change only", "task": "In one transaction: take 50 from Asha, set a savepoint <code>s1<\/code>, add 5000 to Ravi by mistake, roll back to s1, and commit. Show every account ordered by name.", "db": "", "hint": "BEGIN, UPDATE, SAVEPOINT s1, UPDATE, ROLLBACK TO s1, COMMIT, SELECT.", "why": "Only the change before the savepoint survives: Asha 450, Ravi 200.", "ordered": true, "setup": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);", "starter": "", "want": {"cols": ["name", "balance"], "rows": [["Asha", 450], ["Ravi", 200]]}, "solution": "BEGIN;\nUPDATE accounts SET balance = balance - 50 WHERE name = 'Asha';\nSAVEPOINT s1;\nUPDATE accounts SET balance = balance + 5000 WHERE name = 'Ravi';\nROLLBACK TO s1;\nCOMMIT;\nSELECT * FROM accounts ORDER BY name;"}, {"id": "l-fail", "lv": "h", "title": "Roll back a failed transfer", "task": "Start a transaction, add 700 to Ravi, then roll back (the matching withdrawal from Asha would fail). Show every account ordered by name.", "db": "", "hint": "BEGIN, the UPDATE, ROLLBACK, SELECT.", "why": "Nothing changed: Asha 500, Ravi 200.", "ordered": true, "setup": "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);", "starter": "", "want": {"cols": ["name", "balance"], "rows": [["Asha", 500], ["Ravi", 200]]}, "solution": "BEGIN;\nUPDATE accounts SET balance = balance + 700 WHERE name = 'Ravi';\nROLLBACK;\nSELECT * FROM accounts ORDER BY name;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>
