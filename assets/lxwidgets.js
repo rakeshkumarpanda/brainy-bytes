@@ -41,6 +41,17 @@
     return `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-perm">${groups}</div>`;
   };
 
+  /* a text buffer with a cursor, for the vim animation */
+  D.buf = L => {
+    const lines = L.lines.length ? L.lines : [''];
+    const rows = lines.map((s, r) => {
+      const chars = [...(s.length ? s : ' ')].map((ch, c) => `<span class="${r === L.r && c === Math.min(L.c, Math.max(s.length - (L.mode === 'INSERT' ? 0 : 1), 0)) ? (L.mode === 'INSERT' ? 'ins' : 'cur') : ''}">${esc(ch)}</span>`).join('');
+      const tail = L.mode === 'INSERT' && r === L.r && L.c >= s.length && s.length ? '<span class="ins"> </span>' : '';
+      return `<div class="${r === L.r ? 'on' : ''}"><i>${r + 1}</i>${chars}${tail}</div>`;
+    }).join('');
+    return `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-buf">${rows}<div class="pk-bufbar"><b>${L.mode === 'INSERT' ? '-- INSERT --' : L.mode === 'CMD' ? ':' + esc(L.cmd || '') : 'NORMAL'}</b><span>${L.r + 1},${L.c + 1}</span>${L.reg ? `<span>register: ${esc(L.reg)}</span>` : ''}</div></div>`;
+  };
+
   /* ---------- 1.1 Meet Unix and Linux ---------- */
   const HISTORY = [
     [1969, 'Ken Thompson and Dennis Ritchie start Unix at Bell Labs, on a spare PDP-7 computer.'],
@@ -207,6 +218,115 @@
       });
       const got = names.filter((_, i) => hits[i] === 'yes');
       fr.push({ msg: got.length ? `The shell replaces <code>${esc(pat)}</code> with: <code>${esc(got.sort().join(' '))}</code> before the command even starts.` : `Nothing matches, so bash leaves the pattern as it is: the command receives the text <code>${esc(pat)}</code>.`, mood: got.length ? 'wow' : 'think', fx: got.length ? 'rain' : undefined, layers: [{ t: 'row', label: 'Files in the folder', cells: names, idx: false, cls: Object.fromEntries(Object.entries(hits).map(([k, c]) => [k, c === 'yes' ? 'win' : 'done'])) }] });
+      return fr;
+    }
+  }));
+
+  /* 2.3 head, tail and wc on a real file of the practice shell */
+  def('lx-headtail', el => W(el, {
+    title: 'head, tail and wc, line by line',
+    sub: 'Pick a command and a number. Pip walks through the file and picks the lines that command prints.',
+    inputs: [{ k: 'cmd', label: 'Command', type: 'seg', val: 'head', opts: [['head', 'head -n N'], ['tail', 'tail -n N'], ['from', 'tail -n +N'], ['wc', 'wc -l']] },
+             { k: 'n', label: 'N', type: 'num', val: 3, min: 0, max: 20, w: 70 },
+             { k: 'file', label: 'File', type: 'seg', val: 'logs/app.log', opts: [['logs/app.log', 'logs/app.log'], ['fruits.txt', 'fruits.txt'], ['poem.txt', 'poem.txt']] }],
+    random: () => ({ cmd: ['head', 'tail', 'from', 'wc'][Math.floor(Math.random() * 4)], n: 1 + Math.floor(Math.random() * 5) }),
+    check: v => Number.isInteger(Number(v.n)) && v.n >= 0 && v.n <= 20 ? '' : 'N should be a whole number from 0 to 20.',
+    frames: v => {
+      const w = world(), path = String(v.file), n = Number(v.n);
+      const nd = w.node(w.abs(path)), body = nd && nd.type === 'f' ? nd.data : '';
+      const lines = body.replace(/\n$/, '').split('\n'), L = lines.length;
+      const label = { head: `head -n ${n} ${path}`, tail: `tail -n ${n} ${path}`, from: `tail -n +${n} ${path}`, wc: `wc -l ${path}` }[v.cmd];
+      const view = (pick, cur) => [{ t: 'term', label: `${path} has ${L} lines`, lines: lines.map((s, i) => [i === cur || pick.has(i) ? 'h' : 'o', `${String(i + 1).padStart(2)}  ${s}`]) }];
+      const fr = [{ msg: `<code>${esc(label)}</code>. ${v.cmd === 'head' ? 'head prints the first N lines, then stops reading.' : v.cmd === 'tail' ? 'tail prints the last N lines.' : v.cmd === 'from' ? 'With a plus sign, tail starts at line N and prints everything after it. tail -n +2 is the classic way to skip a header line.' : 'wc -l counts newline characters, which is the number of lines.'}`, mood: 'think', layers: view(new Set(), -1) }];
+      const pick = new Set();
+      if (v.cmd === 'wc') {
+        lines.forEach((_, i) => { pick.add(i); if (i < 3 || i === L - 1) fr.push({ msg: `Line ${i + 1} ends with a newline. Count so far: <b>${i + 1}</b>.`, mood: 'look', layers: view(pick, i) }); });
+        fr.push({ msg: `Result: <code>${L} ${esc(path)}</code>`, mood: 'happy', fx: 'burst', layers: view(pick, -1) });
+        return fr;
+      }
+      let idx = [];
+      if (v.cmd === 'head') idx = lines.map((_, i) => i).slice(0, n);
+      else if (v.cmd === 'tail') idx = n ? lines.map((_, i) => i).slice(-n) : [];
+      else idx = lines.map((_, i) => i).slice(Math.max(n, 1) - 1);
+      idx.forEach((i, k) => { pick.add(i); if (k < 4 || k === idx.length - 1) fr.push({ msg: `Line ${i + 1} is picked${k === idx.length - 1 ? ', and that is the last one.' : '.'}`, mood: 'look', layers: view(pick, i) }); });
+      if (v.cmd === 'head' && n > L) fr.push({ msg: `You asked for ${n} lines but the file has only ${L}, so head prints them all without any error.`, mood: 'think', layers: view(pick, -1) });
+      if (v.cmd === 'from' && n === 0) fr.push({ msg: 'tail -n +0 behaves like tail -n +1: the whole file.', mood: 'think', layers: view(pick, -1) });
+      fr.push({ msg: idx.length ? `Output: ${idx.length} line${idx.length > 1 ? 's' : ''}, shown in their original order.` : 'Output: nothing at all.', mood: idx.length ? 'happy' : 'sad', fx: idx.length ? 'burst' : undefined, layers: [{ t: 'term', label: 'What the terminal shows', lines: [['c', label]].concat(idx.map(i => ['o', lines[i]])) }] });
+      return fr;
+    }
+  }));
+
+  /* 3.2 vim: modes and keys on a small buffer */
+  def('lx-vim', el => W(el, {
+    title: 'Drive vim one key at a time',
+    sub: 'Type keys as you would in vim. Write &lt;Esc&gt; for the Escape key. Spaces between keys in Normal mode are ignored here, so you can write dd p. Pip shows the mode and the cursor after every key.',
+    inputs: [{ k: 'keys', label: 'Keys', type: 'text', val: 'j dd p 0 i- <Esc> :wq', w: 360 }, { k: 'text', label: 'Start text (lines split by |)', type: 'text', val: 'Buy milk|Call grandma|Finish the Linux lesson', w: 360 }],
+    random: () => ({ keys: ['x x x', 'A today<Esc>', 'oWater the plants<Esc>', 'yy p p', 'G dd u', 'w cwPhone<Esc>', 'jj$x', 'dd dd u u'][Math.floor(Math.random() * 8)] }),
+    frames: v => {
+      let lines = String(v.text).split('|'), r = 0, c = 0, mode = 'NORMAL', reg = '', cmd = '', saved = false;
+      const undo = [], fr = [], toks = [];
+      const src = String(v.keys);
+      for (let i = 0; i < src.length; i++) { if (src.startsWith('<Esc>', i)) { toks.push('<Esc>'); i += 4; } else toks.push(src[i]); }
+      const snap = () => undo.push({ lines: lines.slice(), r, c });
+      const clampC = () => { const n = lines[r].length; c = Math.max(0, Math.min(c, mode === 'INSERT' ? n : Math.max(n - 1, 0))); };
+      const show = (msg, mood, fx) => fr.push({ msg, mood: mood || 'look', fx, layers: [{ t: 'buf', label: 'notes.txt in vim', lines: lines.slice(), r, c, mode, reg, cmd }] });
+      show('vim opens in <b>Normal</b> mode, where every key is a command, not text. Press <code>i</code> to start typing and <code>Esc</code> to come back.', 'think');
+      let pend = '', typed = '', steps = 0, quit = false;
+      const runCmd = () => {
+        const c2 = cmd.trim(); mode = 'NORMAL'; cmd = '';
+        if (c2 === 'w' || c2 === 'wq' || c2 === 'x') { saved = true; if (c2 !== 'w') quit = true; undo.length = 0; fr.push({ msg: `<code>:${esc(c2)}</code> writes the file${c2 === 'w' ? '' : ' and quits'}. vim reports "notes.txt" ${lines.length}L written.`, mood: 'wow', fx: 'burst', layers: [{ t: 'buf', label: 'notes.txt in vim', lines: lines.slice(), r, c, mode: 'CMD', cmd: c2 }] }); }
+        else if (c2 === 'q!') { quit = true; show('<code>:q!</code> quits and throws away every unsaved change. The file on disk stays as it was at the last write.', 'think'); }
+        else if (c2 === 'q') { if (undo.length) show('<code>:q</code> refuses with E37: No write since last change (add ! to override).', 'sad', 'shake'); else { quit = true; show('<code>:q</code> quits, there were no unsaved changes.', 'happy'); } }
+        else show(`Command <code>:${esc(c2)}</code> is not shown in this animation. Try :w, :wq, :q or :q!.`, 'think');
+      };
+      const flushTyped = () => { if (typed) { show(`Typed <code>${esc(typed)}</code> as text.`, 'look'); typed = ''; } };
+      for (const k of toks) {
+        if (++steps > 80) { show('That is a lot of keys. I stopped after 80.', 'think'); break; }
+        if (mode === 'INSERT') {
+          if (k === '<Esc>') { flushTyped(); mode = 'NORMAL'; c = Math.max(c - 1, 0); clampC(); show('<code>Esc</code> leaves Insert mode. The cursor steps back one place, as in real vim.', 'happy'); continue; }
+          lines[r] = lines[r].slice(0, c) + k + lines[r].slice(c); c++; typed += k; continue;
+        }
+        if (mode === 'CMD') {
+          if (k === '<Esc>') { mode = 'NORMAL'; cmd = ''; show('Esc cancels the command line.', 'think'); continue; }
+          if (k === ' ') { runCmd(); continue; }
+          cmd += k; continue;
+        }
+        if (k === ' ') continue;
+        const key = pend + k; pend = '';
+        if (key === 'd' || key === 'y' || key === 'g' || key === 'c') { pend = key; continue; }
+        if (key === ':') { mode = 'CMD'; cmd = ''; continue; }
+        if (key === 'h') { c--; clampC(); show('<code>h</code> moves left.'); }
+        else if (key === 'l') { c++; clampC(); show('<code>l</code> moves right.'); }
+        else if (key === 'j') { if (r < lines.length - 1) r++; clampC(); show('<code>j</code> moves down one line.'); }
+        else if (key === 'k') { if (r > 0) r--; clampC(); show('<code>k</code> moves up one line.'); }
+        else if (key === '0') { c = 0; show('<code>0</code> jumps to the start of the line.'); }
+        else if (key === '$') { c = Math.max(lines[r].length - 1, 0); show('<code>$</code> jumps to the end of the line.'); }
+        else if (key === 'w') { const m = /\S*\s+/.exec(lines[r].slice(c)); if (m && c + m[0].length < lines[r].length) c += m[0].length; show('<code>w</code> jumps to the start of the next word.'); }
+        else if (key === 'b') { const left = lines[r].slice(0, c).replace(/\s+$/, ''); c = Math.max(left.lastIndexOf(' ') + 1, 0); show('<code>b</code> jumps back to the start of a word.'); }
+        else if (key === 'gg') { r = 0; c = 0; show('<code>gg</code> goes to the first line.'); }
+        else if (key === 'G') { r = lines.length - 1; c = 0; show('<code>G</code> goes to the last line.'); }
+        else if (key === 'x') { if (lines[r].length) { snap(); reg = lines[r][c]; lines[r] = lines[r].slice(0, c) + lines[r].slice(c + 1); clampC(); show(`<code>x</code> deletes the character under the cursor (${esc(reg)}).`, 'look'); } }
+        else if (key === 'dd') { snap(); reg = lines[r] + '⏎'; lines.splice(r, 1); if (!lines.length) lines = ['']; if (r >= lines.length) r = lines.length - 1; c = 0; show('<code>dd</code> deletes the whole line and keeps it in the register, ready to paste.', 'look', 'shake'); }
+        else if (key === 'yy') { reg = lines[r] + '⏎'; show('<code>yy</code> yanks (copies) the line into the register. The text does not change.', 'look'); }
+        else if (key === 'p' || key === 'P') { if (!reg) { show('The register is empty, nothing to paste.', 'sad'); continue; } snap(); if (reg.endsWith('⏎')) { const at = key === 'p' ? r + 1 : r; lines.splice(at, 0, reg.slice(0, -1)); r = at; c = 0; } else { const at = key === 'p' ? c + 1 : c; lines[r] = lines[r].slice(0, at) + reg + lines[r].slice(at); c = at; } show(`<code>${key}</code> pastes ${key === 'p' ? 'after' : 'before'} the cursor.`, 'happy'); }
+        else if (key === 'u') { const u = undo.pop(); if (u) { ({ lines, r, c } = u); show('<code>u</code> undoes the last change.', 'happy'); } else show('Nothing left to undo.', 'think'); }
+        else if (key === 'cw') { snap(); const m = /^\S*/.exec(lines[r].slice(c)); lines[r] = lines[r].slice(0, c) + lines[r].slice(c + m[0].length); mode = 'INSERT'; show('<code>cw</code> deletes to the end of the word and switches to Insert mode.', 'look'); }
+        else if ('iaAoO'.includes(key)) {
+          snap();
+          if (key === 'a') c = Math.min(c + 1, lines[r].length);
+          if (key === 'A') c = lines[r].length;
+          if (key === 'o') { lines.splice(r + 1, 0, ''); r++; c = 0; }
+          if (key === 'O') { lines.splice(r, 0, ''); c = 0; }
+          mode = 'INSERT';
+          show({ i: '<code>i</code> inserts before the cursor.', a: '<code>a</code> appends after the cursor.', A: '<code>A</code> appends at the end of the line.', o: '<code>o</code> opens a new line below.', O: '<code>O</code> opens a new line above.' }[key] + ' Insert mode: now keys are text.', 'happy');
+        }
+        else if (key === '<Esc>') show('Already in Normal mode. Pressing Esc again is harmless, which is why people press it when unsure.', 'think');
+        else show(`<code>${esc(key)}</code> is not one of the keys this animation knows. Try h j k l w b 0 $ gg G x dd yy p P u i a A o O cw and :wq.`, 'sad');
+      }
+      flushTyped();
+      if (mode === 'CMD') runCmd();
+      if (!quit && mode === 'INSERT') show('Still in Insert mode. Press Esc before any Normal command or before :wq.', 'think');
+      else if (!quit && !saved) show('Done. To save and quit, type <code>:wq</code> and press Enter.', 'happy');
       return fr;
     }
   }));

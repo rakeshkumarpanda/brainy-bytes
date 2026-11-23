@@ -24,6 +24,7 @@ outside <pre> and <code>.
 import html as _h
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -160,6 +161,8 @@ def execute(script, root=False, keep=False, cwd='~'):
             buf.append(line)
     if cur != 'end':
         raise SystemExit(f'run(): the script stopped early, last output:\n{r.stdout[-800:]}')
+    # bash names the script file in its own error messages, an interactive shell says bash instead
+    chunks = {k: re.sub(r'(?m)^' + re.escape(path) + r': line \d+: ', 'bash: ', v) for k, v in chunks.items()}
     res = []
     for k, (kind, c) in enumerate(parts):
         res.append((kind, c, chunks.get(str(k), '').rstrip('\n') if kind == '$' else ''))

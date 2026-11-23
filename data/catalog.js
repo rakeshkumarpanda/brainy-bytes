@@ -10456,6 +10456,52 @@ function lxBasicsModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "read-files", title: "Reading and inspecting files", emoji: "2.3", page: "content/linux/read-files.html",
+        summary: "cat, less, head, tail -f, wc, file, stat and diff.",
+        keywords: ["cat", "less", "head", "tail", "tail -f", "wc", "file", "stat", "diff", "read file", "log file"],
+        minutes: 30, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "cat", title: "Printing a whole file: cat and friends", emoji: "", group: "Lesson", keywords: ["cat", "concatenate", "cat -n", "cat -A", "tac", "nl", "print file", "hidden characters"] },
+        { id: "less", title: "Reading long files page by page: less", emoji: "", group: "Lesson", keywords: ["less", "pager", "more", "search in file", "/pattern", "less -N", "less -S", "less F follow"] },
+        { id: "headtail", title: "The start and the end: head and tail", emoji: "", group: "Lesson", keywords: ["head", "tail", "head -n", "tail -n", "tail -n +2", "tail -f", "tail -F", "log rotation", "first lines", "last lines"] },
+        { id: "inspect", title: "Measuring and comparing files: wc, file, stat, diff", emoji: "", group: "Lesson", keywords: ["wc", "wc -l", "file", "magic number", "stat", "inode", "mtime", "ctime", "diff", "diff -u", "cmp", "od", "line endings"] },
+        { id: "levels", title: "Reading files from school to research", emoji: "", group: "Lesson", keywords: ["read system call", "seek", "inotify", "Myers diff", "patience diff", "Magika", "log analysis"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-basics-3", title: "Permissions and editing", emoji: "3", step: 3, part: "basics", level: "Beginner", blurb: "Who may read, change or run each file, and how to edit text in the terminal with nano and vim.", topics: [
+      { id: "permissions", title: "Users, groups and permissions", emoji: "3.1", page: "content/linux/permissions.html",
+        summary: "rwx, 644 and 755, chmod, chown, umask, setuid, setgid and the sticky bit.",
+        keywords: ["permissions", "chmod", "chown", "chgrp", "umask", "rwx", "octal", "setuid", "setgid", "sticky bit", "Permission denied"],
+        minutes: 40, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "who", title: "Users, groups and the ls -l mode string", emoji: "", group: "Lesson", keywords: ["owner", "group", "others", "rwx", "mode string", "ls -l", "id", "octal permissions", "644", "755"] },
+        { id: "decide", title: "How the kernel decides", emoji: "", group: "Lesson", keywords: ["permission check", "root", "CAP_DAC_OVERRIDE", "search permission", "folder x bit", "path resolution", "Permission denied"] },
+        { id: "chmod", title: "Changing permissions: chmod, chown, chgrp", emoji: "", group: "Lesson", keywords: ["chmod", "chmod numeric", "chmod symbolic", "u+x", "go-w", "chmod -R", "capital X", "chown", "chgrp", "777", "600"] },
+        { id: "special", title: "umask and the special bits", emoji: "", group: "Lesson", keywords: ["umask", "022", "077", "setuid", "setgid", "sticky bit", "/tmp", "passwd", "S_ISUID", "team folder", "chmod 2775"] },
+        { id: "levels", title: "Permissions from school to research", emoji: "", group: "Lesson", keywords: ["capabilities", "ACL", "getfacl", "setfacl", "SELinux", "AppArmor", "MAC", "DAC", "privilege escalation", "Bell LaPadula"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "editors", title: "Editing text: nano and vim", emoji: "3.2", page: "content/linux/editors.html",
+        summary: "nano, vim modes and keys, :wq and :q!, EDITOR, visudo and sudoedit.",
+        keywords: ["nano", "vim", "vi", "exit vim", ":wq", "editor", "EDITOR variable", "visudo", "sudoedit", "vimtutor"],
+        minutes: 35, counts: {"lessons": 4, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "nano", title: "nano: the friendly editor", emoji: "", group: "Lesson", keywords: ["nano", "Ctrl+O", "Ctrl+X", "write out", "cut paste line", "terminal editor", "Pico"] },
+        { id: "vim", title: "vim: the editor with modes", emoji: "", group: "Lesson", keywords: ["vim", "vi", "Normal mode", "Insert mode", ":wq", ":q!", "dd", "yy", "how to exit vim", "vimtutor", "operator motion"] },
+        { id: "choose", title: "Choosing an editor and editing without one", emoji: "", group: "Lesson", keywords: ["EDITOR", "VISUAL", "select-editor", "sudoedit", "visudo", "here document", "append line", "vim -Es", "view"] },
+        { id: "levels", title: "Editors from school to research", emoji: "", group: "Lesson", keywords: ["buffer", "terminfo", "swap file", "recovery", "modal editing", "piece table", "rope", "CRDT"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

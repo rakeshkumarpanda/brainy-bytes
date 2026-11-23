@@ -1271,13 +1271,16 @@ const LXSH = (() => {
     rest.forEach(t => {
       const n = this.node(this.abs(t));
       if (!n) { this.eout(`chown: cannot access '${t}': No such file or directory\n`); code = 1; return; }
-      if (this.user !== 'root') { this.eout(`chown: changing ownership of '${t}': Operation not permitted\n`); code = 1; return; }
+      const mine = this.user === 'learner' ? ['learner', 'sudo'] : [this.user];
+      const okGroupOnly = !own && grp && n.owner === this.user && mine.includes(grp);
+      if (grp && !(grp in UIDS) && grp !== 'sudo' && grp !== 'www-data') { this.eout(`${this.cmdName || 'chown'}: invalid group: '${grp}'\n`); code = 1; return; }
+      if (this.user !== 'root' && !okGroupOnly) { this.eout(own ? `chown: changing ownership of '${t}': Operation not permitted\n` : `chgrp: changing group of '${t}': Operation not permitted\n`); code = 1; return; }
       const walk = m => { if (own) m.owner = own; if (grp !== undefined) m.group = grp || own; if (f.R && m.type === 'd') Object.values(m.kids).forEach(walk); };
       walk(n);
     });
     return code;
   };
-  C.chgrp = function (a) { return C.chown.call(this, [':' + a[0]].concat(a.slice(1))); };
+  C.chgrp = function (a) { this.cmdName = 'chgrp'; try { return C.chown.call(this, [':' + a[0]].concat(a.slice(1))); } finally { this.cmdName = ''; } };
   C.whoami = function () { this.out(this.user + '\n'); };
   C.id = function (a) {
     const u = a[0] || this.user, uid = UIDS[u];
@@ -1364,9 +1367,16 @@ const LXSH = (() => {
     });
   };
   C.stat = function (a) {
-    a.forEach(t => {
+    const [f, rest] = opts(a, 'c');
+    rest.forEach(t => {
       const n = this.node(this.abs(t), false);
       if (!n) { this.eout(`stat: cannot statx '${t}': No such file or directory\n`); this.err = true; return; }
+      if (f.c) {
+        const typ = n.type === 'd' ? 'directory' : n.type === 'l' ? 'symbolic link' : this.size(n) ? 'regular file' : 'regular empty file';
+        const map = { a: n.mode.toString(8), A: modeStr(n), n: t, U: n.owner, G: n.group, u: String(UIDS[n.owner] ?? 1000), g: String(UIDS[n.group] ?? 1000), s: String(this.size(n)), F: typ, '%': '%' };
+        this.out(String(f.c).replace(/%(.)/g, (m, k) => map[k] ?? m) + '\n');
+        return;
+      }
       const ty = n.type === 'd' ? 'directory' : n.type === 'l' ? 'symbolic link' : n.type === 'c' ? 'character special file' : this.size(n) ? 'regular file' : 'regular empty file';
       const dt = new Date(n.mtime).toISOString().replace('T', ' ').replace(/\.\d+Z/, '.000000000 +0000');
       this.out(`  File: ${t}${n.type === 'l' ? ' -> ' + n.target : ''}\n  Size: ${this.size(n)}\t\tBlocks: ${n.type === 'd' ? 8 : this.size(n) ? 8 : 0}\tIO Block: 4096   ${ty}\nAccess: (${n.mode.toString(8).padStart(4, '0')}/${modeStr(n)})  Uid: (${pad(UIDS[n.owner] ?? 1000, 5)}/${pad(n.owner, 8)})   Gid: (${pad(UIDS[n.group] ?? 1000, 5)}/${pad(n.group, 8)})\nModify: ${dt}\n`);

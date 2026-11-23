@@ -91,3 +91,14 @@
 .pk-pg .pk-row{gap:4px}
 .pk-pg .pk-cell{min-width:36px; height:38px; font-size:15px}
 .pk-pv{font:800 12px var(--font-mono); color:var(--accent-deep)}
+/* the vim buffer of lx-vim */
+.pk-buf{background:var(--lx-bg); color:var(--lx-ink); border-radius:16px; padding:10px 0 0; font:500 14px/1.6 var(--font-mono); overflow-x:auto}
+.pk-buf>div{padding:0 14px; white-space:pre} .pk-buf>div.on{background:rgba(255,255,255,.06)}
+.pk-buf i{display:inline-block; width:2.2em; color:#7f8a99; font-style:normal}
+.pk-buf .cur{background:#f4ffcf; color:#1b1f24; border-radius:2px} .pk-buf .ins{box-shadow:inset 2px 0 0 #f4ffcf}
+.pk-bufbar{display:flex; gap:18px; margin-top:8px; padding:6px 14px!important; background:rgba(255,255,255,.1); border-radius:0 0 16px 16px; font-size:12px}
+.pk-bufbar b{color:#ffd28a}
+/* choice buttons of the playful animations */
+.vz .vz-seg button{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 12px; font:inherit; font-size:13.5px; font-weight:800; cursor:pointer}
+.vz .vz-seg button.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.vz .vz-seg button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
