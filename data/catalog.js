@@ -10701,6 +10701,20 @@ function lxScriptModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "loops", title: "Loops: for, while and until", emoji: "2.2", page: "content/linux/loops.html",
+        summary: "for, C-style for, while and until, while read, break and continue.",
+        keywords: ["for loop", "while loop", "until", "while read", "read line by line", "break", "continue", "nullglob", "subshell", "select", "find -print0", "IFS"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "for", title: "for loops: one pass per item", emoji: "", group: "Lesson", keywords: ["for loop", "for in", "do done", "C-style for", "for (( ))", "loop over files", "glob in for", "brace range", "nullglob", "for arg in \"$@\""] },
+        { id: "while", title: "while and until, and reading files line by line", emoji: "", group: "Lesson", keywords: ["while loop", "until loop", "while true", "while read", "read line by line", "IFS= read -r", "CSV fields", "process substitution", "pipe subshell", "last line without newline"] },
+        { id: "control", title: "break, continue and whole-loop redirection", emoji: "", group: "Lesson", keywords: ["break", "continue", "break 2", "nested loops", "done > file", "loop output", "select menu", "PS3", "find -print0", "read -d", "safe file names"] },
+        { id: "levels", title: "Loops from school to research", emoji: "", group: "Lesson", keywords: ["loop performance", "subshell in pipeline", "lastpipe", "mapfile", "awk instead of loop", "xargs -P", "GNU parallel", "PaSh", "ShellCheck SC2045"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

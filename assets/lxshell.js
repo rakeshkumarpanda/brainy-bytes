@@ -53,7 +53,7 @@ const LXSH = (() => {
     ]
   };
   const CMDS = 'alias awk basename bash bg bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp cut date df diff dirname disown du echo env exit export expr false fg file find free grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
-  const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval'.split(' '));
+  const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt'.split(' '));
 
   /* ---------- small helpers ---------- */
   function norm(path) {
@@ -472,11 +472,11 @@ const LXSH = (() => {
         bs.forEach(b => {
           const v = this.expandStr(b);
           const pieces = /\$/.test(b) ? this.ifsSplit(v) : [v];
-          pieces.forEach(pc => { if (hasGlob(pc)) { const g = this.glob(pc); if (g.length) out.push(...g); else out.push(pc); } else out.push(pc); });
+          pieces.forEach(pc => { if (hasGlob(pc)) { const g = this.glob(pc); if (g.length) out.push(...g); else if (!this.shopt('nullglob')) out.push(pc); } else out.push(pc); });
         });
         return out;
       }
-      if (hasGlob(globbable.replace(/\\[*?[]/g, ''))) { const g = this.glob(globbable); if (g.length) return g; }
+      if (hasGlob(globbable.replace(/\\[*?[]/g, ''))) { const g = this.glob(globbable); if (g.length) return g; if (this.shopt('nullglob')) return []; }
       return [text];
     }
     /* word splitting with $IFS: white space runs count as one break, every other IFS character is a break of its own */
@@ -500,8 +500,8 @@ const LXSH = (() => {
           const dir = this.node(base === '' ? this.cwd : this.abs(base));
           if (!hasGlob(part.replace(/\\[*?[]/g, ''))) { const name = part.replace(/\\(.)/g, '$1'); const p = base === '' ? name : base.replace(/\/$/, '') + '/' + name; if (this.node(this.abs(p), false)) next.push(p); return; }
           if (!dir || dir.type !== 'd') return;
-          const re = globRe(part);
-          Object.keys(dir.kids).sort().forEach(n => { if (n.startsWith('.') && !part.startsWith('.')) return; if (re.test(n)) next.push(base === '' ? n : base.replace(/\/$/, '') + '/' + n); });
+          const re = this.shopt('nocaseglob') ? new RegExp(globRe(part).source, 'i') : globRe(part);
+          Object.keys(dir.kids).sort().forEach(n => { if (n.startsWith('.') && !part.startsWith('.') && !this.shopt('dotglob')) return; if (re.test(n)) next.push(base === '' ? n : base.replace(/\/$/, '') + '/' + n); });
         });
         paths = next;
         if (idx < parts.length - 1) paths = paths.filter(p => { const n = this.node(this.abs(p)); return n && n.type === 'd'; });
@@ -677,7 +677,7 @@ const LXSH = (() => {
       if (node.t === 'dbl') return this.dbl(node.text);
       if (node.t === 'case') {
         const v = this.expandWord(node.word).join(' ');
-        const hit = p => globRe(p.parts.map(q => q.q === 1 ? q.t : this.expandStr(q.t)).join('')).test(v);
+        const hit = p => { const re = globRe(p.parts.map(q => q.q === 1 ? q.t : this.expandStr(q.t)).join('')); return (this.shopt('nocasematch') ? new RegExp(re.source, 'i') : re).test(v); };
         let code = 0, run = false;
         for (const [pats, body, fall] of node.arms) {
           if (!run && !pats.some(hit)) continue;
@@ -2610,9 +2610,10 @@ const LXSH = (() => {
   C.read = function (a, input) {
     const [f, rest] = opts(a, 'pad');
     let line;
+    const dl = f.d === undefined ? '\n' : f.d === '' ? '\u0000' : f.d[0];
     if (this.cur && input === this.cur.s) {
       if (this.cur.pos >= this.cur.s.length) return 1;
-      const k = this.cur.s.indexOf('\n', this.cur.pos);
+      const k = this.cur.s.indexOf(dl, this.cur.pos);
       line = k < 0 ? this.cur.s.slice(this.cur.pos) : this.cur.s.slice(this.cur.pos, k);
       const full = k >= 0; this.cur.pos = k < 0 ? this.cur.s.length : k + 1;
       if (!full && line === '') return 1;
@@ -2620,7 +2621,7 @@ const LXSH = (() => {
     } else {
       if (f.p && !input) this.eout(f.p);
       if (!input) return 1;
-      line = input.split('\n')[0];
+      line = input.split(dl)[0];
     }
     if (!f.r) line = line.replace(/\\(.)/g, '$1');
     const ifs = this.vars.IFS ?? ' \t\n', white = /^[ \t\n]*$/.test(ifs);
@@ -2968,7 +2969,7 @@ const LXSH = (() => {
           const hit = R.exec(l); this.arrays = this.arrays || {}; this.arrays.BASH_REMATCH = hit ? hit.map(x => x ?? '') : [];
           return !!hit;
         }
-        if (op === '==' || op === '=' || op === '!=') { const pr = patRe(rw.parts.map(p => [p.q === 1 ? p.t : this.expandStr(p.t), !!p.q])); return op === '!=' ? !pr.test(l) : pr.test(l); }
+        if (op === '==' || op === '=' || op === '!=') { let pr = patRe(rw.parts.map(p => [p.q === 1 ? p.t : this.expandStr(p.t), !!p.q])); if (this.shopt('nocasematch')) pr = new RegExp(pr.source, 'i'); return op === '!=' ? !pr.test(l) : pr.test(l); }
         const r = val(rw);
         switch (op) {
           case '<': return l < r; case '>': return l > r;
@@ -3014,6 +3015,20 @@ const LXSH = (() => {
 
   /* ---------- small builtins for scripts ---------- */
   C[':'] = function () { return 0; };
+  /* shopt: the bash options that change globbing and matching */
+  const SHOPTS = ['dotglob', 'expand_aliases', 'extglob', 'failglob', 'globstar', 'nocaseglob', 'nocasematch', 'nullglob'];
+  C.shopt = function (a) {
+    const on = this.shopts = this.shopts || new Set(['expand_aliases', 'extglob']);
+    let mode = '', q = false; const names = [];
+    a.forEach(x => { if (x === '-s' || x === '-u') mode = x; else if (x === '-q') q = true; else names.push(x); });
+    const bad = names.find(n => !SHOPTS.includes(n));
+    if (bad) { this.eout(`bash: shopt: ${bad}: invalid shell option name\n`); return 1; }
+    if (mode) { names.forEach(n => mode === '-s' ? on.add(n) : on.delete(n)); return 0; }
+    const list = names.length ? names : SHOPTS;
+    if (!q) list.forEach(n => this.out(`${n.padEnd(15)}\t${on.has(n) ? 'on' : 'off'}\n`));
+    return list.every(n => on.has(n)) ? 0 : 1;
+  };
+  World.prototype.shopt = function (n) { return !!(this.shopts && this.shopts.has(n)); };
   C.eval = function (a) { if (!a.length) return 0; this.runSrc(a.join(' '), true); return this.last; };
   C.shift = function (a) { const n = a.length ? +a[0] : 1; if (!(n >= 0) || n > this.args.length) { if (a.length) this.eout(`bash: shift: ${a[0]}: shift count out of range\n`); return 1; } this.args = this.args.slice(n); return 0; };
   C.let = function (a) { if (!a.length) { this.eout('bash: let: expression expected\n'); return 1; } let v = 0; try { a.forEach(x => { v = this.arith(x); }); } catch (e) { this.eout(`bash: let: ${e.message}\n`); return 1; } return v ? 0 : 1; };

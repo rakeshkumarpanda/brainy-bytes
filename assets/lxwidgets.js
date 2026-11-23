@@ -634,6 +634,72 @@
     }
   }));
 
+  /* scripting 2.2 a loop, one pass at a time: for over words, C-style for, and while read over the lines of a file */
+  def('lx-loop', el => W(el, {
+    title: 'A loop, one pass at a time',
+    sub: 'Type a loop header and a body. Pip works out the list first, then runs the body once per item and shows the loop variable and the output of every pass.',
+    inputs: [{ k: 'head', label: 'Loop header', type: 'text', val: 'for f in *.txt', w: 260 }, { k: 'body', label: 'Body', type: 'text', val: 'echo "$f: $(wc -l < "$f") lines"', w: 300 }],
+    random: () => [{ head: 'for f in *.txt', body: 'echo "$f: $(wc -l < "$f") lines"' }, { head: 'for n in {1..5}', body: 'echo "$n squared is $((n * n))"' }, { head: 'for ((i = 10; i > 0; i -= 3))', body: 'echo "countdown $i"' }, { head: 'while IFS=, read -r name subject score', body: 'echo "$name scored $score"', file: 'marks.csv' }, { head: 'for word in "New Delhi" Pune "Navi Mumbai"', body: 'echo "city: $word"' }, { head: 'while read -r fruit', body: 'echo "${fruit^^}"' }][Math.floor(Math.random() * 6)],
+    frames: v => {
+      const w = world(), head = String(v.head).trim().replace(/;?\s*do$/, ''), body = String(v.body).trim();
+      const passes = [], cap = 12;
+      let m, fr = [], kind = '';
+      const out = r => r.out.replace(/\n$/, '').split('\n').filter(x => x !== '');
+      const term = [];
+      const pass = (label, vars) => {
+        Object.assign(w.vars, vars);
+        const r = w.run(body); const o = out(r);
+        o.forEach(x => term.push(['o', x]));
+        passes.push(label);
+        return o;
+      };
+      if ((m = /^for\s+([A-Za-z_]\w*)\s+in\s+(.*)$/.exec(head))) {
+        kind = 'list';
+        let words; try { words = w.lex(m[2]).filter(t => t.w).flatMap(t => w.expandWord(t.w)); } catch (e) { return [{ msg: 'bash could not read that list: ' + esc(e.message), mood: 'sad', fx: 'shake', layers: [] }]; }
+        fr.push({ msg: `First bash expands the list after <code>in</code>, once, before the loop starts. Here it gives <b>${words.length}</b> item${words.length === 1 ? '' : 's'}.${!words.length ? ' An empty list means the body never runs.' : ''}`, mood: 'think', layers: [{ t: 'flow', label: 'The list', items: words.map(x => [x, '', 'cur']), plain: true }] });
+        words.slice(0, cap).forEach((x, i) => {
+          const o = pass(x, { [m[1]]: x });
+          fr.push({ msg: `Pass ${i + 1}: <code>${esc(m[1])}</code> is <b>${esc(x)}</b>. The body runs${o.length ? ` and prints <b>${esc(o.join(' / '))}</b>` : ' and prints nothing'}.`, mood: 'work', layers: [{ t: 'flow', label: 'The list', items: words.map((y, j) => [y, '', j < i ? 'no' : j === i ? 'yes' : 'cur']), plain: true }, { t: 'term', label: 'Output so far', lines: term.slice() }] });
+        });
+        if (words.length > cap) fr.push({ msg: `The animation stops after ${cap} passes. The real loop would go on for all ${words.length} items.`, mood: 'look', layers: [] });
+      } else if ((m = /^for\s*\(\((.*);(.*);(.*)\)\)$/.exec(head))) {
+        kind = 'c';
+        const [init, cond, step] = [m[1].trim(), m[2].trim(), m[3].trim()];
+        try { if (init) w.arith(init); } catch (e) { return [{ msg: 'The first part could not be worked out: ' + esc(e.message), mood: 'sad', fx: 'shake', layers: [] }]; }
+        fr.push({ msg: `A C-style loop has three parts. <code>${esc(init || '(nothing)')}</code> runs once at the start. <code>${esc(cond || '(always true)')}</code> is checked before every pass. <code>${esc(step || '(nothing)')}</code> runs after every pass.`, mood: 'think', layers: [] });
+        let i = 0;
+        while (i < cap) {
+          let ok; try { ok = cond ? w.arith(cond) !== 0 : true; } catch (e) { fr.push({ msg: 'The test could not be worked out: ' + esc(e.message), mood: 'sad', layers: [] }); break; }
+          const shown = Object.keys(w.vars).filter(k => new RegExp('\\b' + k + '\\b').test(cond || init)).map(k => `${k}=${w.vars[k]}`).join(', ');
+          if (!ok) { fr.push({ msg: `Check <code>${esc(cond)}</code> with ${esc(shown)}: <b>false</b>, so the loop ends.`, mood: 'look', layers: [{ t: 'term', label: 'Output', lines: term.slice() }] }); break; }
+          const o = pass(shown, {});
+          fr.push({ msg: `Check <code>${esc(cond || 'true')}</code> with ${esc(shown || 'no variables')}: true. Pass ${i + 1} prints <b>${esc(o.join(' / ') || 'nothing')}</b>. Then <code>${esc(step || 'nothing')}</code> runs.`, mood: 'work', layers: [{ t: 'term', label: 'Output so far', lines: term.slice() }] });
+          try { if (step) w.arith(step); } catch (e) { break; }
+          i++;
+        }
+        if (i >= cap) fr.push({ msg: `The animation stops after ${cap} passes.`, mood: 'look', layers: [] });
+      } else if ((m = /^while\s+(?:(IFS=\S*)\s+)?read\s+(?:-r\s+)?(.+)$/.exec(head))) {
+        kind = 'read';
+        const file = v.file || (/IFS=,/.test(head) ? 'marks.csv' : 'fruits.txt'), n = w.node(w.abs(file));
+        const names = m[2].trim().split(/\s+/), ifs = m[1] ? m[1].slice(4).replace(/^['"]|['"]$/g, '') : null;
+        const lines = n ? n.data.replace(/\n$/, '').split('\n') : [];
+        fr.push({ msg: `<code>while read</code> reads one line of input per pass, here from <code>done &lt; ${esc(file)}</code>. It splits the line at ${ifs === null ? 'spaces and tabs' : ifs === '' ? 'nothing (IFS is empty)' : `<code>${esc(ifs)}</code>`} into ${names.map(x => '<code>' + esc(x) + '</code>').join(', ')}, the last name taking the rest. When no line is left, read fails and the loop ends.`, mood: 'think', layers: [{ t: 'flow', label: file, items: lines.map(x => [x, '', 'cur']), plain: true }] });
+        lines.slice(0, cap).forEach((line, i) => {
+          if (ifs !== null) w.vars.IFS = ifs;
+          w.run(`read -r ${names.join(' ')} <<< ${"'" + line.replace(/'/g, "'\\''") + "'"}`);
+          if (ifs !== null) delete w.vars.IFS;
+          const vals = names.map(x => [x + '=' + (w.vars[x] ?? ''), '', 'look']);
+          const o = pass(line, {});
+          fr.push({ msg: `Pass ${i + 1} reads <b>${esc(line)}</b>. The body prints <b>${esc(o.join(' / ') || 'nothing')}</b>.`, mood: 'work', layers: [{ t: 'flow', label: file, items: lines.map((y, j) => [y, '', j < i ? 'no' : j === i ? 'yes' : 'cur']), plain: true }, { t: 'flow', label: 'Variables', items: vals, plain: true }, { t: 'term', label: 'Output so far', lines: term.slice() }] });
+        });
+        if (lines.length > cap) fr.push({ msg: `The animation stops after ${cap} lines.`, mood: 'look', layers: [] });
+        else fr.push({ msg: 'No line is left, so read returns status 1 and the while loop stops.', mood: 'look', layers: [] });
+      } else return [{ msg: 'Try a header like for f in *.txt, for ((i = 0; i < 5; i++)) or while read -r line.', mood: 'think', layers: [] }];
+      fr.push({ msg: `Done: the body ran <b>${passes.length}</b> time${passes.length === 1 ? '' : 's'}.${kind === 'list' ? ' The loop variable keeps its last value after done.' : ''}`, mood: 'happy', fx: 'burst', layers: [{ t: 'term', label: 'All output', lines: term.slice() }] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
