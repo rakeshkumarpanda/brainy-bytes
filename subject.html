@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="md3">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,18 +7,20 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
 <link rel="stylesheet" href="assets/theme.css">
 <link rel="stylesheet" href="assets/portal.css">
+<link rel="stylesheet" href="assets/md3.css">
 </head>
 <body class="subj">
 <header class="hdr">
-  <button class="ibtn drawerbtn" id="drawerBtn" aria-label="Show contents">📚</button>
+  <button class="md-ibtn drawerbtn" id="drawerBtn" type="button" aria-label="Show or hide the chapter list" title="Show or hide the chapter list"><span class="msr">menu</span></button>
   <span id="brandSlot"></span>
   <nav class="crumbbar" id="crumbbar" aria-label="Breadcrumb"></nav>
   <span class="grow"></span>
-  <button class="ibtn searchpill subjpill" data-subjsearch hidden title="Search inside this subject (press /)">🔎 <span class="lbl">Search in this subject</span><kbd class="k">/</kbd></button>
-  <button class="ibtn searchpill allpill" data-search title="Search every subject (Ctrl+K)">🌐 <span class="lbl">All subjects</span><kbd class="k">Ctrl K</kbd></button>
+  <button class="ibtn searchpill subjpill" data-subjsearch hidden title="Search inside this subject (press /)"><span class="msr">search</span> <span class="lbl">Search in this subject</span><kbd class="k">/</kbd></button>
+  <button class="ibtn searchpill allpill" data-search title="Search every subject (Ctrl+K)"><span class="msr">travel_explore</span> <span class="lbl">All subjects</span><kbd class="k">Ctrl K</kbd></button>
   <span id="themeSlot"></span>
 </header>
 <div class="layout" id="layout">

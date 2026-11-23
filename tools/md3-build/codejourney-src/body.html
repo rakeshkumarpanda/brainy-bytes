@@ -1,0 +1,167 @@
+<body>
+<div class="wrap">
+<header class="top">
+  <div class="logo"></div>
+  <div><h1>How Code Runs on a Computer</h1>
+  <p>Press Play to watch the full story, or use Step to move one stage at a time. Keyboard: Space = Play/Pause, Right arrow = Step, Left arrow = Back, R = Reset.</p></div>
+  <div class="top-actions">
+    <button class="icon-btn" id="themeBtn" title="Switch light or dark theme">🌙</button>
+    <button class="icon-btn" id="fsBtn" title="Full screen for the classroom">⛶</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab on" data-tab="p1">① Source Code to Screen</button>
+  <button class="tab" data-tab="p2">② Compiler vs Interpreter (Butter Chicken)</button>
+</nav>
+
+<!-- =================== TAB 1 =================== -->
+<section class="page on" id="p1">
+  <div class="toolbar" id="c1">
+    <div class="chips" id="langChips">
+      <button class="chip on" data-lang="java"><span class="dt" style="background:#e76f00"></span>Java</button>
+      <button class="chip" data-lang="python"><span class="dt" style="background:#3776ab"></span>Python</button>
+      <button class="chip" data-lang="js"><span class="dt" style="background:#e5c100"></span>JavaScript</button>
+      <button class="chip" data-lang="cs"><span class="dt" style="background:#7b3fe4"></span>C#</button>
+    </div>
+    <span class="vsep"></span>
+    <button class="fab" data-act="play">▶ Play</button>
+    <select class="sel" data-act="speed" title="Play speed"><option value="0.5">0.5x</option><option value="1" selected>1x speed</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option></select>
+    <button class="btn" data-act="back">⏮ Back</button>
+    <button class="btn" data-act="step">Step ⏭</button>
+    <button class="btn" data-act="reset">⟲ Reset</button>
+    <div class="prog"><span class="count" data-role="count">Step 0 / 0</span><div class="wavy" data-role="wavy"></div></div>
+  </div>
+  <div class="dots" data-role="dots" id="dots1"></div>
+
+  <div class="stage-wrap">
+  <div class="stage" id="stage">
+    <svg class="edges" id="edges"><g id="edgeG"></g></svg>
+    <div class="blank" id="blank"><div class="bshape">💻</div><b>Blank canvas</b>Press ▶ Play to run the full journey, or Step ⏭ to go one stage at a time.</div>
+    <div class="node" id="n-dev"   style="left:2%;top:4%"></div>
+    <div class="node" id="n-src"   style="left:2%;top:38%"></div>
+    <div class="node" id="n-comp"  style="left:20.5%;top:38%"></div>
+    <div class="node" id="n-bc"    style="left:39%;top:38%"></div>
+    <div class="vm" id="n-vm"><div class="vm-title" id="vmTitle"></div>
+      <div class="vm-grid">
+        <div class="node" id="n-n1"></div><div class="node" id="n-n2"></div>
+        <div class="node" id="n-n3"></div><div class="node" id="n-n4"></div>
+      </div>
+    </div>
+    <div class="node" id="n-screen" style="left:2%;top:74%"></div>
+    <div class="node" id="n-term"   style="left:20.5%;top:74%"></div>
+    <div class="node" id="n-os"     style="left:39%;top:74%"></div>
+    <div class="node" id="n-cpu"    style="left:62%;top:74%"></div>
+  </div>
+  </div>
+  <div class="legend">
+    <span style="--c:var(--k-text)">Human readable text</span>
+    <span style="--c:var(--k-bc)">Bytecode / IL</span>
+    <span style="--c:var(--k-native)">Native machine code</span>
+    <span style="--c:var(--k-bytes)">Raw bytes (encoded characters)</span>
+    <span style="--c:var(--k-pixels)">Pixels</span>
+    <span style="--c:var(--k-ctl)">Command / control</span>
+  </div>
+
+  <div class="narr">
+    <div class="nshape shape-0" id="nShape"><div><small>STEP</small><b id="nNo">0</b></div></div>
+    <div>
+      <div class="who" id="nWho">Ready</div>
+      <h3 id="nTitle">Choose a language and press Play</h3>
+      <p id="nText"></p>
+    </div>
+  </div>
+
+  <div class="decoder">
+    <div class="dec-head"><b>🔢 Byte decoder: how the output really travels</b><span id="decLabel"></span></div>
+    <div class="cells" id="decCells"></div>
+  </div>
+
+  <div class="panels">
+    <div class="pane"><h4 id="srcTitle">Source code</h4><div class="body" id="srcBody"></div></div>
+    <div class="pane"><h4 id="bcTitle">Bytecode</h4><div class="body" id="bcBody"></div></div>
+    <div class="pane console"><h4>Terminal / Screen</h4><div class="body" id="conBody"></div></div>
+  </div>
+
+  <details class="notes" open>
+    <summary>Teaching notes and corrections for <span id="noteLang">Java</span></summary>
+    <div id="notesBody"></div>
+  </details>
+  <details class="notes">
+    <summary>Key ideas true for all four languages</summary>
+    <ul>
+      <li>The CPU understands only <b>native machine code</b> for its own instruction set (for example x86-64 or ARM64). Bytecode and IL are never executed by the CPU directly. A virtual machine or engine (itself native code) executes them or converts them to machine code.</li>
+      <li><b>Bytecode is not one universal format.</b> Java bytecode, Python bytecode, V8 bytecode and .NET CIL are completely different and work only with their own runtime.</li>
+      <li><b>JVM is only for Java</b> (and other JVM languages such as Kotlin and Scala). Python uses the PVM inside CPython, JavaScript uses an engine such as V8, and C# uses the CLR.</li>
+      <li>A program never draws text on the screen by itself. It asks the <b>operating system</b> through a system call to write bytes to standard output. The terminal, the font renderer and the graphics hardware turn those bytes into pixels.</li>
+      <li>Output is not "translated into human language" by the virtual machine. Text is always stored as numbers (a character encoding such as UTF-8, where S = 83). A <b>font</b> gives each number a visible shape, called a glyph.</li>
+      <li>"Compiled" and "interpreted" describe an <b>implementation</b>, not a language. Modern runtimes mix both: compile to bytecode, interpret it, and JIT compile the busy parts.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- =================== TAB 2 =================== -->
+<section class="page" id="p2">
+  <h2 class="sec-title">Part A. The kitchen story: preparing Butter Chicken 🍛</h2>
+  <p class="sec-desc">Two chefs cook the same Butter Chicken with 5 ingredients. The <b>interpreter style chef</b> reads one recipe step, goes to the market for that one item, comes back and cooks it, then repeats. The <b>compiler style chef</b> first reads the whole recipe and writes a complete shopping list, makes one trip, and then cooks everything without stopping. Both chefs do one action per time tick, so the comparison is fair.</p>
+  <div class="toolbar" id="c2">
+    <button class="fab" data-act="play">▶ Play</button>
+    <select class="sel" data-act="speed" title="Play speed"><option value="0.5">0.5x</option><option value="1" selected>1x speed</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option></select>
+    <button class="btn" data-act="back">⏮ Back</button>
+    <button class="btn" data-act="step">Step ⏭</button>
+    <button class="btn" data-act="reset">⟲ Reset</button>
+    <label class="chk"><input type="checkbox" id="kMistake"> Mistake in recipe step 4</label>
+    <div class="prog"><span class="count" data-role="count">Tick 0 / 0</span><div class="wavy" data-role="wavy"></div></div>
+  </div>
+  <div class="lanes">
+    <div class="lane" id="kInt"></div>
+    <div class="lane" id="kCmp"></div>
+  </div>
+
+  <hr class="sep">
+
+  <h2 class="sec-title">Part B. The same idea with real code</h2>
+  <p class="sec-desc">Now the recipe is a 5 line program. The <b>interpreter</b> translates one line and executes it immediately, then moves on. The <b>compiler</b> translates and checks every line first, saves the result as an executable file, and only then runs it. Turn on the mistake to see the most important difference: <b>when the error is discovered</b>.</p>
+  <div class="toolbar" id="c3">
+    <button class="fab" data-act="play">▶ Play</button>
+    <select class="sel" data-act="speed" title="Play speed"><option value="0.5">0.5x</option><option value="1" selected>1x speed</option><option value="1.5">1.5x</option><option value="2">2x</option><option value="3">3x</option></select>
+    <button class="btn" data-act="back">⏮ Back</button>
+    <button class="btn" data-act="step">Step ⏭</button>
+    <button class="btn" data-act="reset">⟲ Reset</button>
+    <label class="chk"><input type="checkbox" id="cMistake"> Mistake in line 4 (undefined name qtty)</label>
+    <div class="prog"><span class="count" data-role="count">Tick 0 / 0</span><div class="wavy" data-role="wavy"></div></div>
+  </div>
+  <div class="lanes">
+    <div class="lane" id="cInt"></div>
+    <div class="lane" id="cCmp"></div>
+  </div>
+
+  <hr class="sep">
+  <h2 class="sec-title">Summary table</h2>
+  <div class="tablewrap">
+  <table class="gridtable">
+    <tr><th>Point</th><th>Compiler</th><th>Interpreter</th></tr>
+    <tr><td>What it does</td><td>Translates the <b>whole program</b> into another language (machine code, or bytecode/IL) <b>before</b> it runs.</td><td><b>Executes</b> the program directly, one statement (or one instruction) at a time. No separate translated program file is produced.</td></tr>
+    <tr><td>Kitchen analogy</td><td>Read the full recipe, write the full shopping list, one market trip, then cook non stop.</td><td>Read one step, fetch that one item, cook it, then read the next step.</td></tr>
+    <tr><td>Output</td><td>A file you can keep and run again (for example <code>program.exe</code>, <code>Hello.class</code>, <code>Hello.dll</code>).</td><td>No translated file. The work is done again on every run.</td></tr>
+    <tr><td>Errors</td><td>Found during translation, before anything runs. With an error, no program is created.</td><td>Found only when the bad line is reached. Earlier lines have already run.</td></tr>
+    <tr><td>Start time</td><td>Slower to start (translation happens first).</td><td>Starts producing results quickly.</td></tr>
+    <tr><td>Running speed</td><td>Usually faster at run time, because translation is already done.</td><td>Usually slower, because translating and executing happen together, and a line inside a loop is processed again on every repetition.</td></tr>
+    <tr><td>Examples</td><td>C, C++, Rust, Go (to machine code). javac, Roslyn csc (to bytecode/IL).</td><td>The CPython PVM, V8 Ignition, the JVM interpreter (all of them interpret <b>bytecode</b>). Classic BASIC and shell scripts interpret source more directly.</td></tr>
+  </table>
+  </div>
+
+  <details class="notes" open>
+    <summary>Precise facts to teach (corrections to common simplifications)</summary>
+    <ul>
+      <li><span class="fix">Simplified</span> "A compiler converts the entire source code into bytecode, and an interpreter does the same line by line." <span class="good">More precise</span> A compiler translates the whole program into a <b>target language</b>. That target can be machine code (C, C++, Go, Rust) or bytecode (Java, C#). An interpreter does <b>not</b> produce a translated program. It reads and <b>executes</b> the code as it goes.</li>
+      <li><span class="good">Most modern languages use both.</span> Java: javac compiles to bytecode, then the JVM interprets it and JIT compiles hot methods. Python: CPython compiles the whole file to bytecode, then the PVM interprets that bytecode. JavaScript: V8 compiles to bytecode, interprets it, and JIT compiles hot code. C#: Roslyn compiles to IL, then the CLR JIT compiles it to machine code.</li>
+      <li><span class="fix">Common myth</span> "Python runs the source file line by line." <span class="good">Fact</span> CPython compiles the whole file to bytecode first. That is why a <b>SyntaxError</b> anywhere in the file stops the program before line 1 runs. Errors such as <b>NameError</b> or <b>ZeroDivisionError</b> appear only when the bad line executes, which matches the interpreter behaviour shown in Part B.</li>
+      <li>"Line by line" is a teaching simplification. Real interpreters work statement by statement or bytecode instruction by instruction.</li>
+      <li>A <b>JIT (Just In Time) compiler</b> sits between the two. It compiles code to machine code while the program is running, usually only for code that runs often.</li>
+      <li>"Compiled language" and "interpreted language" are informal labels. The same language can have both: for example PyPy runs Python with a JIT, and there are C interpreters too.</li>
+    </ul>
+  </details>
+</section>
+<footer>Single offline HTML file. Animations powered by the embedded GSAP library (no internet needed). Bytecode listings are simplified for teaching. Exact output varies slightly by compiler and runtime version.</footer>
+</div>
