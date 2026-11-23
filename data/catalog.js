@@ -10891,6 +10891,27 @@ function lxAdminModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-admin-4", title: "Networking and security", emoji: "4", step: 4, part: "admin", level: "Advanced", blurb: "Configure and troubleshoot networks, log in and copy files securely with SSH, and protect a server with a firewall and sensible hardening.", topics: [
+      { id: "networking", title: "Networking: addresses, routes, DNS and sockets", emoji: "4.1", page: "content/linux/networking.html",
+        summary: "Addresses and subnets, the ip command, routing, DNS, sockets, troubleshooting, netplan.",
+        keywords: ["ip", "ip addr", "ip route", "ping", "traceroute", "DNS", "dig", "/etc/hosts", "ss", "curl", "nc", "tcpdump", "netplan", "nmcli"],
+        minutes: 65, counts: {"lessons": 9, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "basics", title: "Addresses, subnets, gateways, names and ports", emoji: "", group: "Lesson", keywords: ["IP address", "IPv4", "CIDR", "prefix length", "subnet", "subnet mask", "MAC address", "default gateway", "router", "DNS", "port", "TCP", "UDP", "RFC 1918", "private addresses", "loopback", "localhost", "interface name", "enp0s3"] },
+        { id: "ip", title: "The ip command: interfaces, addresses and routes", emoji: "", group: "Lesson", keywords: ["ip command", "ip addr", "ip -br addr", "ip link", "ip route", "ip route get", "ip neigh", "ARP", "neighbour table", "ip addr add", "ip link set up", "ping", "network namespace", "ip netns", "veth"] },
+        { id: "routing", title: "Routing between networks", emoji: "", group: "Lesson", keywords: ["routing", "default route", "routing table", "longest prefix match", "router", "ip_forward", "sysctl net.ipv4.ip_forward", "traceroute", "tracepath", "TTL", "Network is unreachable", "Destination Host Unreachable"] },
+        { id: "dns", title: "Names: /etc/hosts, DNS and systemd-resolved", emoji: "", group: "Lesson", keywords: ["DNS", "name resolution", "/etc/hosts", "nsswitch.conf", "systemd-resolved", "127.0.0.53", "resolvectl", "resolv.conf", "dig", "dig +short", "host", "getent hosts", "A record", "AAAA", "CNAME", "MX record", "TXT record", "PTR reverse lookup", "NXDOMAIN", "dnsmasq"] },
+        { id: "ports", title: "Ports and sockets: ss, curl and nc", emoji: "", group: "Lesson", keywords: ["port", "socket", "listening socket", "ss", "ss -tlnp", "ss -tulpn", "netstat", "0.0.0.0", "bind address", "curl", "curl -I", "curl -v", "nc -zv", "netcat", "Connection refused", "backlog"] },
+        { id: "trouble", title: "Troubleshooting step by step, and tcpdump", emoji: "", group: "Lesson", keywords: ["network troubleshooting", "bottom-up troubleshooting", "tcpdump", "packet capture", "pcap", "Wireshark", "three-way handshake", "SYN", "SYN-ACK", "ACK", "TCP flags", "curl -v"] },
+        { id: "config", title: "Permanent settings: netplan and NetworkManager", emoji: "", group: "Lesson", keywords: ["netplan", "/etc/netplan", "netplan try", "netplan apply", "YAML", "dhcp4", "static IP", "systemd-networkd", "NetworkManager", "nmcli", "nmcli connection", "hostnamectl", "set-hostname"] },
+        { id: "practice", title: "Practice: diagnose the network of the practice server", emoji: "", group: "Lesson", keywords: ["network lab", "ip practice", "ping practice", "dig practice", "ss practice", "curl practice", "hosts file practice"] },
+        { id: "levels", title: "Networking from school to research", emoji: "", group: "Lesson", keywords: ["container networking", "bridge", "NAT", "VLAN", "bonding", "WireGuard", "IPv6", "SLAAC", "reverse proxy", "load balancer", "VPC", "security group", "SDN", "eBPF", "XDP", "BBR", "QUIC", "HTTP/3", "BGP"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

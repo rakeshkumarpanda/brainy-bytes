@@ -1181,6 +1181,38 @@
     }
   }));
 
+  /* admin 4.1 one request from name to answer: DNS, the routing decision, ARP, the TCP handshake, then HTTP */
+  def('lx-packet', el => W(el, {
+    title: 'Follow one request across the network',
+    sub: 'Choose what to connect to. Pip follows the request from the practice server step by step: the name lookup, the route, the next hop’s MAC address, the TCP handshake and the answer, and shows where it fails.',
+    inputs: [{ k: 'to', label: 'Connect to', type: 'seg', val: 'web', opts: [['web', 'http://www.shop.lab'], ['lan', 'ssh port on files.shop.lab'], ['closed', 'port 80 on files.shop.lab'], ['typo', 'http://wwww.shop.lab'], ['nogw', 'www.shop.lab with no default route']] }],
+    random: () => ({ to: ['web', 'lan', 'closed', 'typo', 'nogw'][Math.floor(Math.random() * 5)] }),
+    frames: v => {
+      const w = world(), fr = [], host = { web: 'www.shop.lab', lan: 'files.shop.lab', closed: 'files.shop.lab', typo: 'wwww.shop.lab', nogw: 'www.shop.lab' }[v.to], port = v.to === 'lan' ? 22 : 80;
+      if (v.to === 'nogw') w.run('sudo ip route del default');
+      const sh = cmd => { const r = w.run(cmd); return { t: 'term', label: 'Practice shell', lines: [['c', cmd]].concat((r.out + (r.err || '')).replace(/\n+$/, '').split('\n').filter(x => x).map(x => [r.code ? 'e' : 'o', x])), code: r.code, out: r.out }; };
+      const hops = ['brainy 192.168.1.50', 'resolver 127.0.0.53', 'router 192.168.1.1', host];
+      const flow = (k, bad) => ({ t: 'flow', label: 'Where the request is', items: hops.map((x, i) => [x.split(' ')[0], x.split(' ')[1] || '', bad && i === k ? 'no' : i === k ? 'cur' : i < k ? 'yes' : '']), arrows: hops.slice(1).map((_, i) => i < k ? 'yes' : '') });
+      fr.push({ msg: `You type a command that needs ${host}, port ${port}. Computers connect to numbers, not names, so the first job is to turn the name into an IP address. Linux looks in /etc/hosts first, then asks the DNS resolver listed in /etc/resolv.conf, which is systemd-resolved at 127.0.0.53 on Ubuntu.`, mood: 'think', layers: [flow(0)] });
+      const d = sh('dig +short ' + host);
+      if (!d.out.trim()) { fr.push({ msg: `The resolver answers NXDOMAIN: no such name. Nothing is sent to any server, and programs report it at once, such as curl with “Could not resolve host”. Check the spelling, then the DNS records.`, mood: 'sad', fx: 'shake', layers: [flow(1, true), d, sh('curl -I http://' + host)] }); return fr; }
+      const ip = d.out.trim();
+      fr.push({ msg: `The resolver returns ${ip}. Results are cached for a while, so the next lookup is instant.`, mood: 'look', layers: [flow(1), d] });
+      const g = sh('ip route get ' + ip);
+      if (g.code) { fr.push({ msg: `The kernel looks for a route to ${ip} and finds none: the only route is for the local network 192.168.1.0/24, and the default route is missing. The request never leaves the machine. Add it back with <code>sudo ip route add default via 192.168.1.1</code>, or fix the gateway in the netplan file.`, mood: 'sad', fx: 'shake', layers: [flow(2, true), g, sh('ip route')] }); return fr; }
+      const via = /via (\S+)/.exec(g.out), next = via ? via[1] : ip;
+      fr.push({ msg: via ? `${ip} is not on the local network 192.168.1.0/24, so the kernel uses the default route and sends the packet to the router ${next}, which passes it on toward the destination.` : `${ip} is on the local network 192.168.1.0/24, so the packet goes straight to it, with no router in between.`, mood: 'look', layers: [flow(2), g] });
+      w.run('ping -c 1 ' + next);
+      fr.push({ msg: `On Ethernet and Wi-Fi, frames are addressed to MAC addresses. ARP asks the local network “who has ${next}?”, and the answer is stored in the neighbour table.`, mood: 'look', layers: [flow(2), sh('ip neigh')] });
+      const hand = (ok) => ({ t: 'flow', label: `TCP to port ${port}`, items: [['SYN', 'brainy asks', 'yes'], [ok ? 'SYN-ACK' : 'RST', ok ? 'server agrees' : 'port closed', ok ? 'yes' : 'no'], [ok ? 'ACK' : '', ok ? 'connected' : '', ok ? 'yes' : 'ghost']] });
+      if (v.to === 'closed') { fr.push({ msg: `The packet reaches files.shop.lab, but no program listens on port 80 there, so the server answers the SYN with a reset (RST). Programs report “Connection refused”. A firewall that silently drops packets causes a timeout instead.`, mood: 'sad', fx: 'shake', layers: [flow(3, true), hand(false), sh(`nc -zv ${host} 80`)] }); return fr; }
+      fr.push({ msg: `TCP opens a connection with a three-way handshake: SYN, SYN-ACK, ACK. Port ${port} tells the server which program should get the data${port === 22 ? ', here sshd' : ', here the web server'}.`, mood: 'wow', layers: [flow(3), hand(true), sh(`nc -zv ${host} ${port}`)] });
+      if (v.to === 'web') fr.push({ msg: 'Now the real conversation starts. curl sends an HTTP request and the web server answers with a status line, headers and the page. The whole trip took a few milliseconds.', mood: 'happy', fx: 'burst', layers: [flow(4), sh('curl -I http://' + host)] });
+      else fr.push({ msg: 'The ssh port is open, so ssh could now start its own protocol over this connection: key exchange, then your login. You will do that in chapter 4.2.', mood: 'happy', fx: 'burst', layers: [flow(4)] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
