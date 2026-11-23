@@ -1910,7 +1910,7 @@ VIZ_JS = r'''
       });
       const size = chosen.filter(Boolean).length, opt = bestSet(g, isCover(g)), O = members(opt, n);
       F.push({ mood: 'look', msg: `Quick cover: ${size} vertices. The picked edges ${picked.join(', ')} share no vertex, and any cover needs one end of each, so the best cover has at least ${picked.length}. ${size} is at most 2 × ${picked.length}.`, vars: { quick: size, 'at least': picked.length }, layers: [gpic(g, 'Gold edges: the ones we took both ends of', ncls(), Object.assign({}, ecls))] });
-      F.push({ mood: size === O.length ? 'wow' : 'happy', fx: 'rain', msg: `The best cover, found by trying every subset, is <b>{${O.join(', ')}}</b> with ${O.length} vertices. Our quick answer used ${size}, ${size === O.length ? 'a perfect match this time' : 'within twice the best, as promised'}, and it took one pass instead of ${1 << n} tries.`, vars: { quick: size, best: O.length }, layers: [gpic(g, 'Green: a best cover', Object.fromEntries(O.map(v => [v, 'win'])))] });
+      F.push({ mood: size === O.length ? 'wow' : 'happy', fx: 'rain', msg: `The best cover, found by trying every subset, is <b>{${O.join(', ')}}</b> with ${O.length} vertices. Our quick answer used ${size}, ${size === O.length ? 'a perfect match this time' : 'within twice the best, as promised'}, and it took one pass instead of ${1 << n} tries.`, vars: { quick: size, best: O.length }, layers: [gpic(g, 'Teal: a best cover', Object.fromEntries(O.map(v => [v, 'win'])))] });
       return F;
     }
   });

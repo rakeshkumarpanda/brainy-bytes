@@ -1957,5 +1957,5 @@ T = t.finish({
     'parts': PARTS, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'talk': TALK,
     'viz': VIZ_JS, 'css': '',
     'prev': ('advanced-strings', 'advanced-strings', '🧵 Advanced strings'),
-    'next': None,
+    'next': ('hard-problems', 'hard-problems', '🎲 Hard problems'),
 })
