@@ -329,4 +329,102 @@
       ];
     }
   }));
+
+  /* ---------- 3.1 a foreign key points at a parent row ---------- */
+  SQW('sqlink', (SQL, cfg) => ({
+    title: 'Follow the foreign key',
+    sub: 'Pick an order. Its customer_id points at exactly one row of customers, the way a roll number points at one student.',
+    inputs: [{ k: 'o', label: 'Order id', type: 'seg', val: String(cfg.o || 103), opts: ['101', '103', '105', '107', '110'].map(x => [x, x]) }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const o = q(d, 'SELECT id, customer_id, order_date, status FROM orders ORDER BY id'), c = q(d, 'SELECT id, name, city FROM customers ORDER BY id');
+      const oi = o.rows.findIndex(r => String(r[0]) === v.o), cid = o.rows[oi][1], ci = c.rows.findIndex(r => r[0] === cid);
+      const two = (ol, cl) => [{ t: 'tab', label: 'orders (child)', cols: o.cols, rows: o.rows, ...ol }, { t: 'tab', label: 'customers (parent)', cols: c.cols, rows: c.rows, ...cl }];
+      const kids = o.rows.map((r, i) => r[1] === cid ? i : -1).filter(i => i >= 0);
+      return [
+        { msg: `Order <b>${v.o}</b> does not store the customer’s name. It stores only <b>customer_id = ${cid}</b>.`, mood: 'look', layers: two({ rcls: { [oi]: 'look' }, cls: { [oi + ',1']: 'piv' } }, {}) },
+        { msg: `Follow the number to customers.id = ${cid}. That row is <b>${esc(c.rows[ci][1])}</b> from ${esc(c.rows[ci][2] || 'an unknown city')}.`, mood: 'happy', fx: 'burst', layers: two({ rcls: { [oi]: 'look' }, cls: { [oi + ',1']: 'piv' } }, { rcls: { [ci]: 'yes' }, cls: { [ci + ',0']: 'piv' } }) },
+        { msg: `The link works backwards too: ${esc(c.rows[ci][1])} has <b>${kids.length}</b> ${kids.length === 1 ? 'order' : 'orders'}. One customer, many orders: a <b>one to many</b> relationship.`, mood: 'wow', layers: two({ rcls: Object.fromEntries(kids.map(i => [i, 'yes'])) }, { rcls: { [ci]: 'yes' } }) },
+        { msg: 'The name lives in one place only. If the customer changes their name, one row changes, and every order shows the new name. That is why we link instead of copying.', mood: 'happy', layers: two({}, { rcls: { [ci]: 'cur' } }) }
+      ];
+    }
+  }));
+
+  /* ---------- 3.2 joins pair rows ---------- */
+  SQW('sqjoin', (SQL, cfg) => ({
+    title: 'How a JOIN pairs rows',
+    sub: 'Pick a join type. Pip takes each customer, looks for matching orders, and builds the result row by row. Unmatched rows show NULLs.',
+    inputs: [{ k: 'j', label: 'Join', type: 'seg', val: cfg.j || 'INNER', opts: [['INNER', 'INNER'], ['LEFT', 'LEFT'], ['RIGHT', 'RIGHT'], ['FULL', 'FULL']] }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const L = q(d, 'SELECT id, name FROM customers WHERE id IN (1, 4, 5, 7) ORDER BY id').rows;
+      const R = q(d, "SELECT id, customer_id FROM orders WHERE id IN (101, 103, 105, 106, 107) ORDER BY id").rows.concat([[120, 9]]);
+      const text = `SELECT c.name, o.id AS order_id\nFROM customers AS c\n${v.j} JOIN orders AS o ON o.customer_id = c.id;`;
+      const res = [], rused = new Set();
+      const lay = (lc, rc, msg, mood, fx) => ({ msg, mood, fx, layers: [{ t: 'sql', text }, { t: 'note', html: 'Small sample: 4 customers and 6 orders (order 120 points at customer 9, who does not exist, to show RIGHT and FULL joins).' },
+        { t: 'tab', label: 'customers c', cols: ['id', 'name'], rows: L, rcls: lc }, { t: 'tab', label: 'orders o', cols: ['id', 'customer_id'], rows: R, rcls: rc }, { t: 'tab', label: 'Result', cols: ['name', 'order_id'], rows: res.slice() }] });
+      const out = [lay({}, {}, `A <b>${v.j} JOIN</b> compares every customer with every order using the ON test: o.customer_id = c.id.`, 'think')];
+      L.forEach((l, i) => {
+        const m = R.map((r, k) => r[1] === l[0] ? k : -1).filter(k => k >= 0);
+        m.forEach(k => { res.push([l[1], R[k][0]]); rused.add(k); });
+        if (m.length) out.push(lay({ [i]: 'yes' }, Object.fromEntries(m.map(k => [k, 'yes'])), `<b>${esc(l[1])}</b> (id ${l[0]}) matches ${m.length} ${m.length === 1 ? 'order' : 'orders'}: ${m.map(k => R[k][0]).join(', ')}. Each match makes one result row.`, 'happy'));
+        else {
+          if (v.j === 'LEFT' || v.j === 'FULL') res.push([l[1], null]);
+          out.push(lay({ [i]: 'no' }, {}, `<b>${esc(l[1])}</b> has no order. ${v.j === 'LEFT' || v.j === 'FULL' ? 'A ' + v.j + ' JOIN keeps every left row, so we add it with NULL for the order.' : 'An ' + v.j + ' JOIN drops a left row with no match.'}`, v.j === 'LEFT' || v.j === 'FULL' ? 'wow' : 'sad'));
+        }
+      });
+      const lone = R.map((r, k) => rused.has(k) ? -1 : k).filter(k => k >= 0);
+      if (lone.length) {
+        if (v.j === 'RIGHT' || v.j === 'FULL') lone.forEach(k => res.push([null, R[k][0]]));
+        out.push(lay({}, Object.fromEntries(lone.map(k => [k, 'no'])), `Orders with no matching customer: ${lone.map(k => R[k][0]).join(', ')}. ${v.j === 'RIGHT' || v.j === 'FULL' ? 'A ' + v.j + ' JOIN keeps them, with NULL for the name.' : 'This join leaves them out.'}`, v.j === 'RIGHT' || v.j === 'FULL' ? 'wow' : 'sad'));
+      }
+      out.push(lay({}, {}, `Done: ${res.length} result rows for ${v.j} JOIN.`, 'happy', 'burst'));
+      return out;
+    }
+  }));
+
+  /* ---------- 3.3 a correlated subquery runs once per outer row ---------- */
+  SQW('sqexists', (SQL, cfg) => ({
+    title: 'EXISTS asks a question for every row',
+    sub: 'For each customer the inner query runs again with that customer’s id. EXISTS is true as soon as one row comes back.',
+    inputs: [{ k: 'neg', label: 'Test', type: 'seg', val: cfg.neg || 'EXISTS', opts: [['EXISTS', 'EXISTS'], ['NOT EXISTS', 'NOT EXISTS']] }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const C = q(d, 'SELECT id, name FROM customers ORDER BY id').rows;
+      const text = `SELECT c.name\nFROM customers AS c\nWHERE ${v.neg} (\n  SELECT 1 FROM orders AS o\n  WHERE o.customer_id = c.id\n);`;
+      const rc = {}, keep = [];
+      const out = [{ msg: 'The inner query mentions <b>c.id</b> from the outer query. That makes it a <b>correlated</b> subquery: it depends on the current outer row.', mood: 'think', layers: [{ t: 'sql', text }, { t: 'tab', label: 'customers', cols: ['id', 'name'], rows: C }] }];
+      C.forEach((c, i) => {
+        const n = q(d, `SELECT count(*) FROM orders WHERE customer_id = ${c[0]}`).rows[0][0];
+        const pass = v.neg === 'EXISTS' ? n > 0 : n === 0;
+        rc[i] = pass ? 'yes' : 'no';
+        if (pass) keep.push([c[1]]);
+        out.push({ msg: `For <b>${esc(c[1])}</b> the inner query looks for orders with customer_id = ${c[0]} and finds ${n ? 'at least one' : 'none'}. ${v.neg} is <b>${pass ? 'true' : 'false'}</b>.`, mood: pass ? 'happy' : 'sad',
+          layers: [{ t: 'sql', text: text.replace(/c\.id/, String(c[0])) }, { t: 'tab', label: 'customers', cols: ['id', 'name'], rows: C, rcls: Object.assign({}, rc) }] });
+      });
+      out.push({ msg: `${keep.length} customers pass. EXISTS stops at the first match, so it never needs to count all the orders.`, mood: 'wow', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'tab', label: 'Result', cols: ['name'], rows: keep }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 3.4 set operations ---------- */
+  SQW('sqset', (SQL, cfg) => ({
+    title: 'UNION, INTERSECT and EXCEPT',
+    sub: 'Two lists of cities: where customers live, and where we have a warehouse. Pick an operator and see which cities survive.',
+    inputs: [{ k: 'op', label: 'Operator', type: 'seg', val: cfg.op || 'UNION', opts: [['UNION', 'UNION'], ['UNION ALL', 'UNION ALL'], ['INTERSECT', 'INTERSECT'], ['EXCEPT', 'EXCEPT']] }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const A = q(d, 'SELECT city FROM customers WHERE city IS NOT NULL ORDER BY id').rows.map(r => r[0]);
+      const B = q(d, 'SELECT city FROM warehouses ORDER BY rowid').rows.map(r => r[0]);
+      const res = q(d, `SELECT city FROM customers WHERE city IS NOT NULL ${v.op} SELECT city FROM warehouses`).rows.map(r => r[0]);
+      const sa = new Set(res), inB = new Set(B), inA = new Set(A);
+      const text = `SELECT city FROM customers WHERE city IS NOT NULL\n${v.op}\nSELECT city FROM warehouses;`;
+      const why = { 'UNION': 'every city from either list, each only once', 'UNION ALL': 'everything from both lists, repeats kept', 'INTERSECT': 'only cities in both lists', 'EXCEPT': 'cities in the first list that are not in the second' }[v.op];
+      return [
+        { msg: 'Two queries with the same number of columns can be stacked with a set operator.', mood: 'think', layers: [{ t: 'sql', text }, { t: 'row', label: 'Customer cities (first query)', cells: A, idx: false }, { t: 'row', label: 'Warehouse cities (second query)', cells: B, idx: false }] },
+        { msg: `${v.op} keeps ${why}.`, mood: 'look', layers: [{ t: 'sql', text }, { t: 'row', label: 'Customer cities', cells: A, idx: false, cls: Object.fromEntries(A.map((c, i) => [i, sa.has(c) ? 'yes' : 'no'])) }, { t: 'row', label: 'Warehouse cities', cells: B, idx: false, cls: Object.fromEntries(B.map((c, i) => [i, sa.has(c) ? 'yes' : 'no'])) }] },
+        { msg: `Result: ${res.length} ${res.length === 1 ? 'row' : 'rows'}${v.op === 'UNION ALL' ? ', repeats and all' : v.op === 'UNION' ? ', duplicates removed' : ''}.`, mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'row', label: 'Result', cells: res, idx: false, cls: Object.fromEntries(res.map((c, i) => [i, inA.has(c) && inB.has(c) ? 'piv' : 'yes'])) }] }
+      ];
+    }
+  }));
 })();

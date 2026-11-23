@@ -10445,6 +10445,67 @@ function sqlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "sql-many", title: "Many tables", emoji: "3", step: 3, level: "Intermediate", blurb: "Keys and relationships, every kind of join, subqueries and set operations.", topics: [
+      { id: "sql-keys", title: "Keys and relationships between tables", emoji: "3.1", page: "content/sql/sql-keys.html",
+        summary: "Why tables are split, primary and foreign keys, delete actions, and one to many and many to many relationships.",
+        keywords: ["primary key", "foreign key", "surrogate key", "composite key", "one to many", "many to many", "ER diagram", "CASCADE"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "why", title: "Why one table is not enough", emoji: "", group: "Lesson", keywords: ["redundancy", "update anomaly", "insert anomaly", "delete anomaly", "separate tables", "link with keys"] },
+        { id: "keys", title: "Primary keys, natural and surrogate", emoji: "", group: "Lesson", keywords: ["primary key", "candidate key", "natural key", "surrogate key", "composite key", "alternate key", "rowid", "IDENTITY", "AUTO_INCREMENT"] },
+        { id: "fk", title: "Foreign keys keep links honest", emoji: "", group: "Lesson", keywords: ["foreign key", "parent", "child", "referential integrity", "ON DELETE", "CASCADE", "SET NULL", "RESTRICT", "PRAGMA foreign_keys"] },
+        { id: "rel", title: "One to one, one to many, many to many", emoji: "", group: "Lesson", keywords: ["one to many", "many to many", "one to one", "junction table", "bridge table", "ER diagram", "crow’s foot", "Chen 1976", "cardinality"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["referential integrity", "deferred constraint", "index foreign keys", "UUID", "sharding"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-joins", title: "Joins: putting tables back together", emoji: "3.2", page: "content/sql/sql-joins.html",
+        summary: "Inner and outer joins, anti joins, self and cross joins, ON versus WHERE, and how engines run joins.",
+        keywords: ["JOIN", "INNER JOIN", "LEFT JOIN", "FULL OUTER JOIN", "self join", "CROSS JOIN", "anti join", "hash join"],
+        minutes: 50, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "inner", title: "INNER JOIN: rows that match", emoji: "", group: "Lesson", keywords: ["JOIN", "INNER JOIN", "ON", "table alias", "ambiguous column", "matching rows"] },
+        { id: "outer", title: "LEFT, RIGHT and FULL joins: keeping the unmatched", emoji: "", group: "Lesson", keywords: ["LEFT JOIN", "RIGHT JOIN", "FULL OUTER JOIN", "outer join", "anti join", "COUNT with LEFT JOIN", "NULL padding"] },
+        { id: "more", title: "Three tables, self joins and CROSS JOIN", emoji: "", group: "Lesson", keywords: ["multiple joins", "self join", "manager hierarchy", "CROSS JOIN", "Cartesian product", "accidental cross join"] },
+        { id: "onwhere", title: "ON versus WHERE, USING and NATURAL", emoji: "", group: "Lesson", keywords: ["ON vs WHERE", "outer join filter", "USING", "NATURAL JOIN", "comma join", "implicit join"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["nested loop join", "hash join", "merge join", "join order", "genetic optimizer", "semi join", "anti join"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-subqueries", title: "Subqueries: questions inside questions", emoji: "3.3", page: "content/sql/sql-subqueries.html",
+        summary: "Scalar, list and table subqueries, EXISTS and correlated subqueries, and derived tables.",
+        keywords: ["subquery", "scalar subquery", "IN", "EXISTS", "NOT EXISTS", "correlated subquery", "derived table"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "scalar", title: "A query inside a query", emoji: "", group: "Lesson", keywords: ["subquery", "nested query", "scalar subquery", "inner query", "outer query", "above average"] },
+        { id: "in", title: "IN and NOT IN with a list from a query", emoji: "", group: "Lesson", keywords: ["IN subquery", "NOT IN subquery", "ANY", "ALL", "membership", "list subquery"] },
+        { id: "exists", title: "EXISTS and correlated subqueries", emoji: "", group: "Lesson", keywords: ["EXISTS", "NOT EXISTS", "correlated subquery", "SELECT 1", "semi join", "per row subquery", "greatest per group"] },
+        { id: "derived", title: "Subqueries in FROM: derived tables", emoji: "", group: "Lesson", keywords: ["derived table", "subquery in FROM", "inline view", "aggregate then filter", "nested aggregate"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["unnesting", "decorrelation", "semi join", "anti join", "Neumann and Kemper"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-setops", title: "Set operations: UNION, INTERSECT and EXCEPT", emoji: "3.4", page: "content/sql/sql-setops.html",
+        summary: "UNION, UNION ALL, INTERSECT and EXCEPT, their rules, and comparing tables.",
+        keywords: ["UNION", "UNION ALL", "INTERSECT", "EXCEPT", "MINUS", "set operations"],
+        minutes: 30, counts: {"lessons": 4, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "union", title: "UNION and UNION ALL: stacking results", emoji: "", group: "Lesson", keywords: ["UNION", "UNION ALL", "set operation", "compound select", "stack results", "duplicates"] },
+        { id: "intersect", title: "INTERSECT and EXCEPT", emoji: "", group: "Lesson", keywords: ["INTERSECT", "EXCEPT", "MINUS", "Venn diagram", "set difference", "intersection"] },
+        { id: "rules", title: "Set operations versus joins and NULLs", emoji: "", group: "Lesson", keywords: ["NULL in set operations", "compare tables", "data migration check", "EXCEPT vs NOT EXISTS"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["union compatible", "multiset", "bag semantics", "INTERSECT ALL", "EXCEPT ALL", "partition view"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

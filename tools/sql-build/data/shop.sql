@@ -67,3 +67,9 @@ INSERT INTO order_items VALUES
  (108, 7, 2),
  (109, 2, 3), (109, 3, 2),
  (110, 8, 1);
+CREATE TABLE warehouses (
+  city      TEXT PRIMARY KEY,
+  capacity  INTEGER NOT NULL
+);
+INSERT INTO warehouses VALUES
+ ('Pune', 5000), ('Mumbai', 8000), ('Chennai', 4000), ('Kolkata', 3000);
