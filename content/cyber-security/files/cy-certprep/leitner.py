@@ -1,4 +1,4 @@
-# 3.1 Certification revision: exams, recall, formulas and scenarios
+# 5.1 Certification revision: exams, recall, formulas and scenarios
 # Example "leitner" from the lesson.
 # From the Brainy Bytes Cybersecurity subject. Run it with: python3 <this file>
 # Every attack here runs on made up data on your own computer. Never point it at a system you do not own.

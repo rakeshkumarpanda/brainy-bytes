@@ -289,7 +289,7 @@ K.lesson('recap', 'Chapter summary', f'''
     '<b>Composition</b>: sequential sum, parallel max, post processing free, group k&epsilon;, advanced and Rényi accountants. Budgets.',
     '<b>Mechanisms</b>: Gaussian &sigma; = &Delta;<sub>2</sub>&radic;(2 ln(1.25/&delta;))/&epsilon;, clipping bounds sensitivity, exponential mechanism P &prop; e<sup>&epsilon;u/(2&Delta;u)</sup>.',
     '<b>ML</b>: DP-SGD clips per example gradients to C and adds N(0, &sigma;<sup>2</sup>C<sup>2</sup>), accountant gives (&epsilon;, &delta;). DP-FedAvg for users. Adv &le; e<sup>&epsilon;</sup> &minus; 1.'],
-    'Advanced 3.1: certification revision, bringing the whole subject together for exams such as Security+, CISSP and CEH style theory.')}
+    'Advanced 3.1: blockchain security, where hashes, signatures and consensus protect money that has no bank behind it.')}
 {files('Three tasks: a Laplace scale, the randomised response estimate, and a privacy budget checker.')}
 ''', kw=['summary', 'recap'])
 

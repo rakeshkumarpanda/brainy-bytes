@@ -1,4 +1,4 @@
-# Advanced 3.1: certification revision. Exam facts checked against the official outlines and exam pages: CompTIA
+# Advanced 5.1: certification revision. Exam facts checked against the official outlines and exam pages: CompTIA
 # Security+ SY0-701 (2023) and CySA+ CS0-003 (2023), the ISC2 CISSP outline effective April 2024 (CAT of 100 to 150
 # items in 3 hours), ISC2 Certified in Cybersecurity, and the EC-Council CEH exam page. Process facts from NIST SP
 # 800-61 Revisions 2 (2012) and 3 (2025), NIST SP 800-207 (zero trust), RFC 3227 (order of volatility), GDPR
@@ -163,7 +163,7 @@ K.lesson('domains', 'Exam domains mapped to this subject', f'''
     ['6. Security assessment and testing', '12%', 'Vulnerabilities, Secure development, Logging and SIEM'],
     ['7. Security operations', '13%', 'Incident response, Digital forensics, Threat intelligence'],
     ['8. Software development security', '10%', 'Web security, Injection, XSS and CSRF, Secure development, Attacks on ML']])}
-{note('The Advanced section (machine learning security, federated learning, differential privacy) goes beyond these exams. It is asked in research interviews, university exams and newer credentials on AI security, and it appears in CISSP domain 2 and Security+ domain 2 as privacy and data protection.')}
+{note('The Advanced section (machine learning security, federated learning, differential privacy) goes beyond these exams. It is asked in research interviews, university exams and newer credentials on AI security, and it appears in CISSP domain 2 and Security+ domain 2 as privacy and data protection. Steps 3 and 4 of the Advanced section (blockchain, smart contracts, social engineering, mobile, IoT and industrial systems, APIs) map more directly: social engineering, mobile, IoT, ICS and API security all appear in the Security+ threats and architecture domains, and blockchain appears in its cryptography objectives.')}
 ''', kw=['exam domains', 'domain weights', 'Security+ domains', 'CISSP domains', 'CySA+ domains', 'syllabus map'])
 
 K.lesson('recall', 'Facts to recall quickly: ports, crypto and controls', f'''
@@ -364,8 +364,8 @@ K.calc('x', 'CISSP adaptive exam: 180 minutes for at most 150 items. Average min
 
 T = K.topic(
     slug='cy-certprep', topic='cy-certprep', kind='revision',
-    step=(3, 'Certification revision', 'cy-a3', 'Revising the whole subject for security certifications, interviews and university exams.', 'All levels'),
-    title='Certification revision: exams, recall, formulas and scenarios', short='Certification revision', badge='3.1', minutes=70,
+    step=(5, 'Certification revision', 'cy-a5', 'Revising the whole subject for security certifications, interviews and university exams.', 'All levels'),
+    title='Certification revision: exams, recall, formulas and scenarios', short='Certification revision', badge='5.1', minutes=70,
     lead='Bring the whole subject together for exams: how Security+, CySA+, CISSP, ISC2 CC and CEH work, which chapters cover each domain, the facts and formulas to recall, how to answer first and best scenario questions, research style questions on the advanced section, a study plan and a mock exam.',
     desc='certification, exam revision, Security+, SY0-701, CySA+, CS0-003, CISSP, ISC2 CC, CEH, exam domains, domain weights, ports, control types, access control models, formulas, ALE, entropy, birthday bound, RSA, Diffie-Hellman, Bayes, availability, Laplace, scenario questions, NIST incident response, order of volatility, RTO, RPO, Bell-LaPadula, Biba, interview questions, spaced repetition, Leitner, mock exam',
     summary='Exam formats and domains mapped to the chapters, recall tables, every formula, scenario answering, research style questions and a mock exam.',
