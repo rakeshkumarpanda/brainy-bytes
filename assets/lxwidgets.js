@@ -963,6 +963,64 @@
     }
   }));
 
+  /* admin 1.2 apt: resolving dependencies, downloading, unpacking, setting up, and removing with autoremove */
+  def('lx-apt', el => W(el, {
+    title: 'What apt does for you',
+    sub: 'Pick a package and an action. Pip runs apt in the practice shell, which uses real Ubuntu 24.04 package data, and shows each stage: dependencies, download, unpack, set up, and cleaning up.',
+    inputs: [{ k: 'pkg', label: 'Package', type: 'seg', val: 'jq', opts: [['jq', 'jq'], ['cowsay', 'cowsay'], ['figlet', 'figlet'], ['tree', 'tree']] },
+             { k: 'act', label: 'Action', type: 'seg', val: 'install', opts: [['install', 'install'], ['remove', 'remove, then autoremove']] }],
+    random: () => ({ pkg: ['jq', 'cowsay', 'figlet', 'tree'][Math.floor(Math.random() * 4)], act: Math.random() < 0.6 ? 'install' : 'remove' }),
+    frames: v => {
+      const pkg = ['jq', 'cowsay', 'figlet', 'tree'].includes(v.pkg) ? v.pkg : 'jq', w = world();
+      const deps = n => { const o = w.run('apt-cache depends ' + n).out; return [...o.matchAll(/Depends: (\S+)/g)].map(m => m[1]); };
+      const chain = []; const walk = n => { if (chain.includes(n)) return; chain.push(n); deps(n).forEach(walk); }; walk(pkg);
+      const lines = o => o.replace(/\n$/, '').split('\n').filter(x => x !== '').map(x => [/^E:/.test(x) ? 'e' : 'o', x]);
+      const box = (st, label) => ({ t: 'flow', label: label || 'Packages', items: chain.map(n => [n, st[n] || '', st[n] === 'installed' || st[n] === 'set up' ? 'yes' : st[n] === 'removed' ? 'no' : st[n] ? 'cur' : '']), arrows: chain.slice(1).map(() => ''), plain: true });
+      const fr = [];
+      if (v.act !== 'remove') {
+        const pre = w.run('dpkg -l ' + pkg + ' 2>/dev/null').code === 0;
+        fr.push({ msg: `You type <code>sudo apt install ${pkg}</code>. apt first reads its package lists, which <code>sudo apt update</code> downloads from the repositories in /etc/apt/sources.list.d.`, mood: 'think', layers: [box({ [pkg]: 'requested' })] });
+        if (pre) {
+          const r = w.run('sudo apt install -y ' + pkg);
+          fr.push({ msg: `${pkg} is part of the base system here, so apt has nothing to do.`, mood: 'happy', fx: 'burst', layers: [box({ [pkg]: 'installed' }), { t: 'term', label: '$ sudo apt install ' + pkg, lines: lines(r.out) }] });
+          return fr;
+        }
+        const st = {}; chain.forEach((n, i) => { st[n] = i ? 'needed' : 'requested'; });
+        fr.push({ msg: chain.length > 1 ? `apt reads the Depends field of each package. ${pkg} needs ${chain.slice(1).join(', then ')}. These are installed automatically and marked as automatic.` : `${pkg} has no dependencies that are missing here.`, mood: 'look', layers: [box(st, 'Dependency chain')] });
+        const r = w.run('sudo apt install -y ' + pkg), L = lines(r.out);
+        const head = L.filter(([, x]) => /^(The following|  |\d+ upgraded|Need to get|After this)/.test(x));
+        fr.push({ msg: 'apt prints a plan: what is new, how much it downloads and how much disk space it uses. Without -y it asks before it goes on.', mood: 'look', layers: [box(st), { t: 'term', label: 'The plan', lines: head }] });
+        chain.forEach(n => { st[n] = 'downloaded'; });
+        fr.push({ msg: 'Every .deb file is downloaded into /var/cache/apt/archives. apt checks the signature of the package lists, so a changed file is refused.', mood: 'look', layers: [box(st), { t: 'term', label: 'Download', lines: L.filter(([, x]) => /^(Get|Fetched)/.test(x)) }] });
+        chain.forEach(n => { st[n] = 'unpacked'; });
+        fr.push({ msg: 'apt hands the files to dpkg, which unpacks each one into place and records every file it owns in /var/lib/dpkg.', mood: 'look', layers: [box(st), { t: 'term', label: 'Unpack', lines: L.filter(([, x]) => /^(Selecting|Preparing|Unpacking)/.test(x)) }] });
+        const setup = L.filter(([, x]) => /^Setting up/.test(x));
+        setup.forEach(([, x], i) => { const n = x.split(' ')[2].split(':')[0]; st[n] = 'set up'; fr.push({ msg: `dpkg sets up <b>${esc(n)}</b>${i < setup.length - 1 ? ', a dependency, before the package that needs it' : ', last, because everything it needs is ready'}. Setting up runs the package’s own scripts, for example to create a system user or start a service.`, mood: i === setup.length - 1 ? 'happy' : 'look', layers: [box(st), { t: 'term', label: 'Set up', lines: setup.slice(0, i + 1) }] }); });
+        const t = pkg === 'jq' ? w.run('jq --version') : pkg === 'cowsay' ? w.run('/usr/games/cowsay done') : w.run('dpkg -L ' + pkg + ' | tail -1');
+        const lst = w.run('apt list --installed ' + chain.join(' ')).out;
+        fr.push({ msg: `Done. apt list shows which packages you asked for and which came automatically.${pkg === 'cowsay' ? ' cowsay lives in /usr/games, which sudo and this shell do not have in PATH, so the full path is used.' : ''}`, mood: 'happy', fx: 'burst', layers: [box(Object.fromEntries(chain.map(n => [n, 'installed']))), { t: 'term', label: 'Check', lines: lines(lst).concat(lines(t.out)) }] });
+        return fr;
+      }
+      const pre = w.run('dpkg -l ' + pkg + ' 2>/dev/null').code === 0;
+      if (pre) {
+        const r = w.run('echo n | sudo apt remove ' + pkg);
+        return [{ msg: `${pkg} belongs to the base system of the practice computer. apt would remove it, but here Pip stops at the question. Removing base tools is how systems break, so read the plan every time.`, mood: 'wow', fx: 'shake', layers: [box({ [pkg]: 'base system' }), { t: 'term', label: '$ sudo apt remove ' + pkg, lines: lines(r.out) }] }];
+      }
+      w.run('sudo apt install -y ' + pkg);
+      const st = Object.fromEntries(chain.map((n, i) => [n, i ? 'automatic' : 'manual']));
+      fr.push({ msg: `${pkg} is installed. apt remembers that you asked for ${pkg} by hand, while ${chain.length > 1 ? chain.slice(1).join(' and ') + ' came automatically' : 'nothing else came with it'}.`, mood: 'think', layers: [box(st, 'Installed packages')] });
+      const r = w.run('echo y | sudo apt remove ' + pkg);
+      st[pkg] = 'removed';
+      fr.push({ msg: chain.length > 1 ? `<code>sudo apt remove ${pkg}</code> removes only ${pkg}. The automatic packages stay, and apt says they are no longer required.` : `<code>sudo apt remove ${pkg}</code> removes it. Its configuration files would stay unless you use apt purge.`, mood: 'look', layers: [box(st), { t: 'term', label: '$ sudo apt remove ' + pkg, lines: lines(r.out) }] });
+      if (chain.length > 1) {
+        const r2 = w.run('sudo apt autoremove -y');
+        chain.forEach(n => { st[n] = 'removed'; });
+        fr.push({ msg: '<code>sudo apt autoremove</code> removes automatic packages that nothing needs any more. Read its list before you agree, because it can include packages you used directly.', mood: 'happy', fx: 'burst', layers: [box(st), { t: 'term', label: '$ sudo apt autoremove', lines: lines(r2.out) }] });
+      }
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

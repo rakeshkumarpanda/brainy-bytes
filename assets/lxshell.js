@@ -55,8 +55,9 @@ const LXSH = (() => {
       ['/var/www/index.html', '<h1>It works</h1>\n', 0o644, 'root']
     ]
   };
+  const PKGCMDS = ['cowsay', 'jq', 'figlet'];
   const SBIN = 'chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'alias at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const CMDS = 'alias apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -785,7 +786,8 @@ const LXSH = (() => {
       if (!BUILTIN.has(name) && !(this.fns && this.fns[name])) {
         const hit = this.lookup(name);
         if (hit && !/^#!practice /.test(hit.n.data)) return this.runFile(hit.path, args.slice(1), input, true);
-        if (!hit && (CMDS.includes(name) || SBIN.includes(name))) { this.eout(`${name}: command not found\n`); return 127; }
+        const direct = this.viaPath; this.viaPath = false;
+        if (!hit && !direct && (CMDS.includes(name) || SBIN.includes(name) || PKGCMDS.includes(name))) { this.eout(`${name}: command not found\n`); return 127; }
       }
       const f = C[name];
       if (!f) { this.eout(`${name}: command not found\n`); return 127; }
@@ -802,7 +804,7 @@ const LXSH = (() => {
       if (n.type === 'd') { this.eout(`bash: ${path}: Is a directory\n`); return 126; }
       if (needX && !this.can(n, 'x')) { this.eout(`bash: ${path}: Permission denied\n`); return 126; }
       if (!this.can(n, 'r')) { this.eout(`bash: ${path}: Permission denied\n`); return 126; }
-      if (/^#!practice /.test(n.data)) return this.call([n.data.slice(10).trim()].concat(args), input);
+      if (/^#!practice /.test(n.data)) { this.viaPath = true; return this.call([n.data.slice(10).trim()].concat(args), input); }
       const keep = { args: this.args, script: this.script, vars: Object.assign({}, this.vars), exported: new Set(this.exported) };
       this.args = args; this.script = path;
       if (isNew) this.vars = this.childVars();
@@ -2965,7 +2967,7 @@ const LXSH = (() => {
   C.su = function () { this.eout('su: Authentication failure (in this practice shell use sudo instead)\n'); return 1; };
   const exitRoot = C.exit;
   C.exit = function (a) { if (this.user === 'root') { this.user = USER; if (this.rootPath) { this.vars.PATH = this.rootPath; this.rootPath = null; } return 0; } return exitRoot.call(this, a); };
-  ['apt', 'dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'strace'].forEach(c => {
+  ['dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'strace'].forEach(c => {
     C[c] = function () { this.eout(`${c}: this command is explained in its own lesson, but the practice shell does not run it. Try it on a real Linux machine, a virtual machine or WSL.\n`); return 127; };
   });
   C.vim = C.vi = C.nano = function (a) { this.eout(`${a[0] ? a[0] + ': ' : ''}the practice shell has no full screen editor. Use echo "text" > file or cat > file with a here document instead.\n`); return 1; };
@@ -3226,6 +3228,191 @@ const LXSH = (() => {
 
   /* ---------- small builtins for scripts ---------- */
   C[':'] = function () { return 0; };
+  /* ---------- apt and dpkg: a small package database with real Ubuntu 24.04 (noble) data ---------- */
+  /* name: [version, arch, installed KiB, summary, depends, download bytes, archive/component, files, multi-arch same, section] */
+  const PKGDB = {
+    bash: ['5.2.21-2ubuntu4', 'amd64', 1900, 'GNU Bourne Again SHell', [], 0, 'noble/main', ['/usr/bin/bash'], false, 'shells'],
+    coreutils: ['9.4-3ubuntu6.3', 'amd64', 6944, 'GNU core utilities', [], 0, 'noble-updates/main', 'basename cat chmod chown cp cut date df dirname du echo env false head id ln ls mkdir mv nl printenv printf pwd readlink rm rmdir seq sleep sort stat tac tail tee test touch tr true uname uniq wc whoami yes'.split(' ').map(x => '/usr/bin/' + x), false, 'utils'],
+    findutils: ['4.9.0-5build1', 'amd64', 552, 'utilities for finding files--find, xargs', [], 0, 'noble/main', ['/usr/bin/find', '/usr/bin/xargs'], false, 'utils'],
+    grep: ['3.11-4build1', 'amd64', 344, 'GNU grep, egrep and fgrep', [], 0, 'noble/main', ['/usr/bin/grep'], false, 'utils'],
+    gzip: ['1.12-1ubuntu3.2', 'amd64', 244, 'GNU compression utilities', [], 0, 'noble-updates/main', ['/usr/bin/gzip', '/usr/bin/gunzip', '/usr/bin/zcat'], false, 'utils'],
+    passwd: ['1:4.13+dfsg1-4ubuntu3.2', 'amd64', 2419, 'change and administer password and group data', [], 0, 'noble-updates/main', ['/usr/bin/passwd', '/usr/bin/chage', '/usr/sbin/chpasswd', '/usr/sbin/groupadd', '/usr/sbin/groupdel', '/usr/sbin/useradd', '/usr/sbin/userdel', '/usr/sbin/usermod'], false, 'admin'],
+    sed: ['4.9-2ubuntu0.24.04.1', 'amd64', 340, 'GNU stream editor for filtering/transforming text', [], 0, 'noble-updates/main', ['/usr/bin/sed'], false, 'utils'],
+    sudo: ['1.9.15p5-3ubuntu5.24.04.4', 'amd64', 3472, 'Provide limited super user privileges to specific users', [], 0, 'noble-updates/main', ['/usr/bin/sudo'], false, 'admin'],
+    tar: ['1.35+dfsg-3ubuntu0.4', 'amd64', 716, 'GNU version of the tar archiving utility', [], 0, 'noble-updates/main', ['/usr/bin/tar'], false, 'utils'],
+    tree: ['2.1.1-2ubuntu3.24.04.2', 'amd64', 108, 'displays an indented directory tree, in color', [], 0, 'noble-updates/universe', ['/usr/bin/tree'], false, 'universe/utils'],
+    cowsay: ['3.03+dfsg2-8', 'all', 91, 'configurable talking cow', ['libtext-charwidth-perl'], 18572, 'noble/universe', ['/usr/games/cowsay'], false, 'universe/games'],
+    'libtext-charwidth-perl': ['0.04-11build3', 'amd64', 41, 'get display widths of characters on the terminal', [], 9358, 'noble/main', ['/usr/lib/x86_64-linux-gnu/perl5/5.38/Text/CharWidth.pm'], true, 'perl'],
+    jq: ['1.7.1-3ubuntu0.24.04.2', 'amd64', 113, 'lightweight and flexible command-line JSON processor', ['libjq1'], 65694, 'noble-updates/main', ['/usr/bin/jq'], false, 'utils'],
+    libjq1: ['1.7.1-3ubuntu0.24.04.2', 'amd64', 359, 'lightweight and flexible command-line JSON processor - shared library', ['libonig5'], 141902, 'noble-updates/main', ['/usr/lib/x86_64-linux-gnu/libjq.so.1'], true, 'utils'],
+    libonig5: ['6.9.9-1build1', 'amd64', 629, 'regular expressions library', [], 172336, 'noble/main', ['/usr/lib/x86_64-linux-gnu/libonig.so.5'], true, 'libs'],
+    figlet: ['2.2.5-3', 'amd64', 734, 'Make large character ASCII banners out of ordinary text', [], 133198, 'noble/universe', ['/usr/bin/figlet'], false, 'universe/text']
+  };
+  const BASE_PKGS = 'bash coreutils findutils grep gzip passwd sed sudo tar tree'.split(' ');
+  const aptSize = b => { let x = b, i = 0; const u = ['B', 'kB', 'MB', 'GB']; for (;;) { if (x < 100 && i) return x.toFixed(1) + ' ' + u[i]; if (x < 10000) return Math.round(x) + ' ' + u[i]; x /= 1000; i++; } };
+  World.prototype.pk = function () { if (!this.pkgs) { this.pkgs = {}; BASE_PKGS.forEach(n => { this.pkgs[n] = { auto: false }; }); } return this.pkgs; };
+  const pkName = n => n + (PKGDB[n][8] ? ':' + PKGDB[n][1] : '');
+  const aptHead = 'Reading package lists... Done\nBuilding dependency tree... Done\nReading state information... Done\n';
+  const wrapList = names => '  ' + names.join(' ') + '\n';
+  World.prototype.aptNeedRoot = function (lists) {
+    if (this.user === 'root') return false;
+    this.eout(lists ? 'E: Could not open lock file /var/lib/apt/lists/lock - open (13: Permission denied)\nE: Unable to lock directory /var/lib/apt/lists/\n' : 'E: Could not open lock file /var/lib/dpkg/lock-frontend - open (13: Permission denied)\nE: Unable to acquire the dpkg frontend lock (/var/lib/dpkg/lock-frontend), are you root?\n');
+    return true;
+  };
+  World.prototype.aptOrphans = function () {
+    const inst = this.pk(), need = new Set();
+    const keep = n => { if (need.has(n)) return; need.add(n); (PKGDB[n][4] || []).forEach(keep); };
+    Object.keys(inst).filter(n => !inst[n].auto).forEach(keep);
+    return Object.keys(inst).filter(n => !need.has(n)).sort();
+  };
+  World.prototype.aptConfirm = function (y, input) {
+    if (y) return true;
+    if (input && /^\s*[yY]/.test(input)) { this.out('Do you want to continue? [Y/n] Y\n'); return true; }
+    this.out('Do you want to continue? [Y/n] Abort.\n'); return false;
+  };
+  World.prototype.aptFiles = function (n, add) {
+    PKGDB[n][7].forEach(f => {
+      if (add) { this.mkdirs(dirName(f)); if (!this.node(f)) this.mk(f, 'f', /\/s?bin\/|\/games\//.test(f) ? 0o755 : 0o644, 'root', /\/s?bin\/|\/games\//.test(f) ? '#!practice ' + baseName(f) + '\n' : '').mtime = this.now(); }
+      else if (this.node(f)) this.removeNode(f);
+    });
+  };
+  C.apt = C['apt-get'] = function (a, input) {
+    const y = a.some(x => /^-[a-z]*y/.test(x) || x === '--yes' || x === '--assume-yes'), args = a.filter(x => !x.startsWith('-')), cmd = args[0], names = args.slice(1);
+    const flags = a.filter(x => x.startsWith('--'));
+    const inst = this.pk();
+    if (!cmd) { this.out('apt 2.8.3 (amd64)\nUsage: apt [options] command\n\nMost used commands:\n  list - list packages based on package names\n  search - search in package descriptions\n  show - show package details\n  install - install packages\n  remove - remove packages\n  autoremove - automatically remove all unused packages\n  update - update list of available packages\n  upgrade - upgrade the system by installing/upgrading packages\n'); return 1; }
+    if (cmd === 'update') {
+      if (this.aptNeedRoot(true)) return 100;
+      this.out('Hit:1 http://archive.ubuntu.com/ubuntu noble InRelease\nHit:2 http://archive.ubuntu.com/ubuntu noble-updates InRelease\nHit:3 http://archive.ubuntu.com/ubuntu noble-backports InRelease\nHit:4 http://security.ubuntu.com/ubuntu noble-security InRelease\n' + aptHead + 'All packages are up to date.\n');
+      this.aptUpdated = true; return 0;
+    }
+    if (cmd === 'upgrade' || cmd === 'full-upgrade' || cmd === 'dist-upgrade') {
+      if (this.aptNeedRoot(false)) return 100;
+      this.out(aptHead + 'Calculating upgrade... Done\n0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.\n'); return 0;
+    }
+    if (cmd === 'list') {
+      const only = flags.includes('--installed'), up = flags.includes('--upgradable');
+      this.out('Listing... Done\n');
+      if (up) return 0;
+      Object.keys(PKGDB).sort().filter(n => (!only || inst[n]) && (!names.length || names.some(g => new RegExp('^' + g.replace(/[.+]/g, '\\$&').replace(/\*/g, '.*') + '$').test(n)))).forEach(n => {
+        const P = PKGDB[n], arch = P[6].split('/')[0];
+        this.out(`${n}/${arch}${inst[n] ? ',now' : ''} ${P[0]} ${P[1]}${inst[n] ? (inst[n].auto ? ' [installed,automatic]' : ' [installed]') : ''}\n`);
+      });
+      return 0;
+    }
+    if (cmd === 'search') {
+      const re = new RegExp(names.join('|') || '.', 'i');
+      this.out('Sorting... Done\nFull Text Search... Done\n');
+      Object.keys(PKGDB).sort().filter(n => re.test(n) || (!flags.includes('--names-only') && re.test(PKGDB[n][3]))).forEach(n => {
+        const P = PKGDB[n]; this.out(`${n}/${P[6].split('/')[0]}${inst[n] ? ',now' : ''} ${P[0]} ${P[1]}${inst[n] ? (inst[n].auto ? ' [installed,automatic]' : ' [installed]') : ''}\n  ${P[3]}\n\n`);
+      });
+      return 0;
+    }
+    if (cmd === 'show') {
+      let code = 0;
+      names.forEach(n => {
+        const P = PKGDB[n]; if (!P) { this.eout(`N: Unable to locate package ${n}\nE: No packages found\n`); code = 100; return; }
+        const [suite, comp] = P[6].split('/'), host = suite === 'noble-security' ? 'security' : 'archive';
+        this.out(`Package: ${n}\nVersion: ${P[0]}\nPriority: optional\nSection: ${P[9]}\nOrigin: Ubuntu\nInstalled-Size: ${aptSize(P[2] * 1024)}\n${P[4].length ? 'Depends: ' + P[4].join(', ') + '\n' : ''}${P[5] ? 'Download-Size: ' + aptSize(P[5]) + '\n' : ''}${inst[n] ? `APT-Manual-Installed: ${inst[n].auto ? 'no' : 'yes'}\n` : ''}APT-Sources: http://${host}.ubuntu.com/ubuntu ${suite}/${comp} amd64 Packages\nDescription: ${P[3]}\n\n`);
+      });
+      return code;
+    }
+    if (cmd === 'install' || cmd === 'reinstall') {
+      if (this.aptNeedRoot(false)) return 100;
+      if (!names.length) { this.out(aptHead + '0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.\n'); return 0; }
+      const bad = names.find(n => !PKGDB[n]);
+      if (bad) { this.out(aptHead); this.eout(`E: Unable to locate package ${bad}\n`); return 100; }
+      this.out(aptHead);
+      const add = [], seen = new Set();
+      const want = n => { if (seen.has(n)) return; seen.add(n); PKGDB[n][4].forEach(want); if (!inst[n]) add.push(n); };
+      names.forEach(n => {
+        if (inst[n]) { this.out(`${n} is already the newest version (${PKGDB[n][0]}).\n`); if (inst[n].auto) { inst[n].auto = false; this.out(`${n} set to manually installed.\n`); } }
+        want(n);
+      });
+      if (!add.length) { this.out('0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.\n'); return 0; }
+      const extra = add.filter(n => !names.includes(n)).sort(), all = add.slice().sort();
+      if (extra.length) this.out('The following additional packages will be installed:\n' + wrapList(extra));
+      this.out('The following NEW packages will be installed:\n' + wrapList(all));
+      const dl = add.reduce((t, n) => t + PKGDB[n][5], 0), kib = add.reduce((t, n) => t + PKGDB[n][2], 0);
+      this.out(`0 upgraded, ${add.length} newly installed, 0 to remove and 0 not upgraded.\nNeed to get ${aptSize(dl)} of archives.\nAfter this operation, ${aptSize(kib * 1024)} of additional disk space will be used.\n`);
+      if (extra.length && !this.aptConfirm(y, input)) return 1;
+      add.forEach((n, i) => { const P = PKGDB[n], [suite, comp] = P[6].split('/'); this.out(`Get:${i + 1} http://archive.ubuntu.com/ubuntu ${suite}/${comp} amd64 ${n} ${P[1]} ${P[0]} [${aptSize(P[5])}]\n`); });
+      this.out(`Fetched ${aptSize(dl)} in 0s (${aptSize(dl * 10)}/s)\n`);
+      add.forEach(n => { const P = PKGDB[n]; this.out(`Selecting previously unselected package ${pkName(n)}.\nPreparing to unpack .../${n}_${P[0].replace(/^\d+:/, '')}_${P[1]}.deb ...\nUnpacking ${pkName(n)} (${P[0]}) ...\n`); });
+      add.forEach(n => { this.out(`Setting up ${pkName(n)} (${PKGDB[n][0]}) ...\n`); inst[n] = { auto: !names.includes(n) }; this.aptFiles(n, true); });
+      return 0;
+    }
+    if (cmd === 'remove' || cmd === 'purge' || cmd === 'autoremove') {
+      if (this.aptNeedRoot(false)) return 100;
+      if (cmd !== 'autoremove') { const bad = names.find(n => !PKGDB[n]); if (bad) { this.out(aptHead); this.eout(`E: Unable to locate package ${bad}\n`); return 100; } }
+      this.out(aptHead);
+      let gone = cmd === 'autoremove' ? this.aptOrphans() : names.filter(n => inst[n]);
+      names.filter(n => PKGDB[n] && !inst[n]).forEach(n => this.out(`Package '${n}' is not installed, so not removed\n`));
+      if (cmd !== 'autoremove' && flags.includes('--auto-remove')) { const keep = this.pkgs; const t = Object.assign({}, inst); gone.forEach(n => delete t[n]); this.pkgs = t; gone = gone.concat(this.aptOrphans()); this.pkgs = keep; }
+      if (!gone.length) { this.out('0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.\n'); return 0; }
+      if (cmd !== 'autoremove') {
+        const t = Object.assign({}, inst); gone.forEach(n => delete t[n]); const keep = this.pkgs; this.pkgs = t; const orph = this.aptOrphans().filter(n => !gone.includes(n)); this.pkgs = keep;
+        if (orph.length) this.out((orph.length > 1 ? 'The following packages were automatically installed and are no longer required:\n' : 'The following package was automatically installed and is no longer required:\n') + wrapList(orph) + `Use 'sudo apt autoremove' to remove ${orph.length > 1 ? 'them' : 'it'}.\n`);
+      }
+      const kib = gone.reduce((t, n) => t + PKGDB[n][2], 0);
+      this.out('The following packages will be REMOVED:\n' + wrapList(gone.slice().sort().map(n => n + (cmd === 'purge' ? '*' : ''))) + `0 upgraded, 0 newly installed, ${gone.length} to remove and 0 not upgraded.\nAfter this operation, ${aptSize(kib * 1024)} disk space will be freed.\n`);
+      if (!this.aptConfirm(y, input)) return 1;
+      gone.forEach(n => { this.out(`Removing ${pkName(n)} (${PKGDB[n][0]}) ...\n`); delete inst[n]; this.aptFiles(n, false); });
+      return 0;
+    }
+    this.eout(`E: Invalid operation ${cmd}\n`); return 100;
+  };
+  C['apt-cache'] = function (a) {
+    const [cmd, ...names] = a.filter(x => !x.startsWith('-')), inst = this.pk();
+    if (cmd === 'policy') { names.forEach(n => { const P = PKGDB[n]; if (!P) return; const [suite, comp] = P[6].split('/'); this.out(`${n}:\n  Installed: ${inst[n] ? P[0] : '(none)'}\n  Candidate: ${P[0]}\n  Version table:\n ${inst[n] ? '***' : '   '} ${P[0]} 500\n        500 http://archive.ubuntu.com/ubuntu ${suite}/${comp} amd64 Packages\n${inst[n] ? '        100 /var/lib/dpkg/status\n' : ''}`); }); return 0; }
+    if (cmd === 'depends') { names.forEach(n => { const P = PKGDB[n]; if (!P) { this.eout(`E: No packages found\n`); return; } this.out(n + '\n' + P[4].map(d => `  Depends: ${d}\n`).join('')); }); return 0; }
+    if (cmd === 'rdepends') { names.forEach(n => { this.out(`${n}\nReverse Depends:\n` + Object.keys(PKGDB).filter(m => PKGDB[m][4].includes(n)).map(m => `  ${m}\n`).join('')); }); return 0; }
+    if (cmd === 'search') return C.apt.call(this, ['search'].concat(names));
+    if (cmd === 'show') return C.apt.call(this, ['show'].concat(names));
+    this.eout(`E: Invalid operation ${cmd || ''}\n`); return 100;
+  };
+  C.dpkg = C['dpkg-query'] = function (a) {
+    const inst = this.pk(), op = a[0], names = a.slice(1);
+    if (op === '-l') {
+      const rows = (names.length ? names : Object.keys(inst).sort()).map(n => [n, inst[n] && PKGDB[n]]);
+      const miss = rows.filter(r => !r[1]); const ok = rows.filter(r => r[1]);
+      if (ok.length) {
+        const w1 = Math.max(14, ...ok.map(r => r[0].length)), w2 = Math.max(15, ...ok.map(r => r[1][0].length));
+        this.out(`Desired=Unknown/Install/Remove/Purge/Hold\n| Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend\n|/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)\n||/ ${'Name'.padEnd(w1)} ${'Version'.padEnd(w2)} Architecture Description\n+++-${'='.repeat(w1)}-${'='.repeat(w2)}-============-=================================\n`);
+        ok.forEach(([n, P]) => this.out(`ii  ${n.padEnd(w1)} ${P[0].padEnd(w2)} ${P[1].padEnd(12)} ${P[3]}\n`));
+      }
+      miss.forEach(r => this.eout(`dpkg-query: no packages found matching ${r[0]}\n`));
+      return miss.length ? 1 : 0;
+    }
+    if (op === '-L') { let code = 0; names.forEach(n => { if (!inst[n]) { this.eout(`dpkg-query: package '${n}' is not installed\nUse dpkg --contents (= dpkg-deb --contents) to list archive files contents.\n`); code = 1; } else { const dirs = new Set(['/.']); PKGDB[n][7].forEach(f => { let d = dirName(f); const up = []; while (d !== '/') { up.unshift(d); d = dirName(d); } up.forEach(x => dirs.add(x)); }); this.out([...dirs].concat(PKGDB[n][7]).join('\n') + '\n'); } }); return code; }
+    if (op === '-S') { let code = 0; names.forEach(f => { const path = f.startsWith('/') ? f : null; const hit = Object.keys(inst).find(n => PKGDB[n][7].some(x => path ? x === path : baseName(x) === f)); if (hit) this.out(`${hit}: ${path || PKGDB[hit][7].find(x => baseName(x) === f)}\n`); else { this.eout(`dpkg-query: no path found matching pattern ${f}\n`); code = 1; } }); return code; }
+    if (op === '-s' || op === '--status') { let code = 0; names.forEach(n => { const P = PKGDB[n]; if (!inst[n]) { this.eout(`dpkg-query: package '${n}' is not installed and no information is available\n`); code = 1; return; } this.out(`Package: ${n}\nStatus: install ok installed\nPriority: optional\nSection: ${P[9]}\nInstalled-Size: ${P[2]}\nArchitecture: ${P[1]}\nVersion: ${P[0]}\n${P[4].length ? 'Depends: ' + P[4].join(', ') + '\n' : ''}Description: ${P[3]}\n`); }); return code; }
+    if (op === '-i' || op === '-r' || op === '-P') { if (this.user !== 'root') { this.eout('dpkg: error: requested operation requires superuser privilege\n'); return 2; } this.eout('dpkg: the practice shell has no .deb files. Use apt install, which downloads the .deb and calls dpkg for you.\n'); return 2; }
+    this.eout('dpkg: error: need an action option\n\nType dpkg --help for help about installing and deinstalling packages [*];\nUse \'apt\' or \'aptitude\' for user-friendly package management;\nType dpkg -Dhelp for a list of dpkg debug flag values;\nType dpkg --force-help for a list of forcing options;\nType dpkg-deb --help for help about manipulating *.deb files;\n\nOptions marked [*] produce a lot of output - pipe it through \'less\' or \'more\' !\n'); return 2;
+  };
+  /* the programs the packages bring */
+  C.figlet = function () { this.eout('figlet: the practice shell cannot draw the big letters. Try it on a real Linux machine.\n'); return 1; };
+  C.cowsay = function (a, input) {
+    const msg = (a.join(' ') || (input || '').replace(/\n$/, '')).replace(/\s+/g, ' ');
+    const line = '_'.repeat(msg.length + 2), low = '-'.repeat(msg.length + 2);
+    this.out(` ${line}\n< ${msg} >\n ${low}\n        \\   ^__^\n         \\  (oo)\\_______\n            (__)\\       )\\/\\\n                ||----w |\n                ||     ||\n`); return 0;
+  };
+  C.jq = function (a, input) {
+    if (a[0] === '--version' || a[0] === '-V') { this.out('jq-1.7.1\n'); return 0; }
+    const raw = a.includes('-r'), args = a.filter(x => !x.startsWith('-')), filt = args[0] || '.', file = args[1];
+    let src = input || '';
+    if (file) { const n = this.node(this.abs(file)); if (!n) { this.eout(`jq: error: Could not open ${file}: No such file or directory\n`); return 2; } src = n.data; }
+    let data; try { data = JSON.parse(src); } catch (e) { this.eout('jq: error (at <stdin>:1): Cannot parse the input as JSON. The practice jq reads one JSON value.\n'); return 2; }
+    const steps = filt === '.' ? [] : filt.replace(/^\./, '').split('.');
+    let outs = [data];
+    for (const st of steps) {
+      const m = /^([\w-]*)(\[\])?$/.exec(st);
+      if (!m) { this.eout(`jq: the practice jq understands paths such as .name, .a.b and .items[].name, not ${filt}\n`); return 3; }
+      outs = outs.flatMap(v => { let x = m[1] ? (v === null || typeof v !== 'object' ? null : v[m[1]]) : v; if (x === undefined) x = null; return m[2] ? (Array.isArray(x) ? x : [x]) : [x]; });
+    }
+    outs.forEach(v => this.out((raw && typeof v === 'string' ? v : JSON.stringify(v, null, 2)) + '\n'));
+    return 0;
+  };
   /* ---------- cron and at ---------- */
   /* one crontab line: '' when fine, else the reason, using the words of the cron man pages */
   const CRON_AT = ['@reboot', '@yearly', '@annually', '@monthly', '@weekly', '@daily', '@midnight', '@hourly'];

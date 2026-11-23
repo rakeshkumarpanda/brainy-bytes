@@ -10802,6 +10802,22 @@ function lxAdminModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "packages", title: "Installing software: apt, dpkg and other package managers", emoji: "1.2", page: "content/linux/packages.html",
+        summary: "Repositories and dependencies, apt and dpkg, .deb files, other package managers, snap and Flatpak, source builds.",
+        keywords: ["apt", "apt-get", "dpkg", "deb", "rpm", "dnf", "pacman", "zypper", "snap", "flatpak", "repository", "dependency"],
+        minutes: 50, counts: {"lessons": 6, "problems": 6, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "what", title: "Packages, repositories and dependencies", emoji: "", group: "Lesson", keywords: ["package", "package manager", "repository", "dependencies", ".deb", ".rpm", "dpkg -S", "dpkg -l", "sources.list", "ubuntu.sources", "main universe", "apt-cache policy"] },
+        { id: "apt", title: "Installing, upgrading and removing with apt", emoji: "", group: "Lesson", keywords: ["apt update", "apt upgrade", "apt full-upgrade", "apt install", "apt remove", "apt purge", "apt autoremove", "apt search", "apt show", "apt list --installed", "apt-mark hold", "apt-get", "automatic packages"] },
+        { id: "deb", title: "Inside a .deb file, and dpkg", emoji: "", group: "Lesson", keywords: ["dpkg", "dpkg -i", "dpkg -L", "dpkg -r", "dpkg-deb", ".deb file", "control archive", "maintainer scripts", "postinst", "apt install ./file.deb", "apt-get download", "apt install -f"] },
+        { id: "other", title: "Other package managers, universal packages and source builds", emoji: "", group: "Lesson", keywords: ["dnf", "rpm -qf", "yum", "pacman", "zypper", "snap", "flatpak", "AppImage", "build from source", "./configure make make install", "/usr/local", "apt vs dnf"] },
+        { id: "practice", title: "Practice: install a tool in the practice shell", emoji: "", group: "Lesson", keywords: ["apt practice", "install jq", "apt lab", "dpkg -S practice", "autoremove practice"] },
+        { id: "levels", title: "Software management from school to research", emoji: "", group: "Lesson", keywords: ["unattended-upgrades", "dnf-automatic", "reboot-required", "apt history.log", "repository mirror", "Ansible packages", "image based OS", "reproducible builds", "Nix", "Guix", "supply chain", "xz backdoor"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
