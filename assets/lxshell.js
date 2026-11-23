@@ -1143,132 +1143,395 @@ const LXSH = (() => {
       if (f.i && fname !== '-') { const p0 = this.abs(fname), n = this.node(p0); if (f.suffix) { const b = this.mk(p0 + f.suffix, 'f', n.mode, this.user, n.data); b.mtime = n.mtime; } n.data = join(out); n.mtime = this.now(); } else this.out(join(out));
     });
   };
-  /* awk: enough of the language for one line programs, see the awk lesson */
-  C.awk = function (a, input) {
-    const [f, rest] = opts(a, 'Fv');
-    if (!rest.length) { this.eout("usage: awk [-F fs][-v var=value][prog | -f progfile][file ...]\n"); return 2; }
-    const prog = rest.shift();
-    const files = rest.length ? rest : ['-'];
-    const vars = { NR: 0, NF: 0, FS: f.F === undefined ? ' ' : f.F === '\\t' || f.F === 't' ? '\t' : f.F, OFS: ' ', FILENAME: '' };
-    if (f.v) { const [k, v] = f.v.split('='); vars[k] = isNaN(+v) ? v : +v; }
-    const blocks = parseAwk(prog);
-    let out = '';
-    const ctx = { vars, fields: [], print: s => { out += s; } };
-    blocks.filter(b => b.pat === 'BEGIN').forEach(b => runAwk(b.body, ctx));
-    files.forEach(fn => {
-      const src = fn === '-' ? input : (this.node(this.abs(fn)) || {}).data;
-      if (src === undefined) { this.eout(`awk: cannot open "${fn}" (No such file or directory)\n`); return; }
-      vars.FILENAME = fn === '-' ? '' : fn;
-      lines(src).forEach(l => {
-        vars.NR++;
-        ctx.line = l;
-        ctx.fields = vars.FS === ' ' ? l.trim().split(/\s+/).filter(x => x !== '') : l.split(vars.FS.length === 1 ? vars.FS : new RegExp(vars.FS));
-        vars.NF = ctx.fields.length;
-        blocks.filter(b => b.pat !== 'BEGIN' && b.pat !== 'END').forEach(b => {
-          if (b.pat && !truthy(evalAwk(b.pat, ctx))) return;
-          if (b.body) runAwk(b.body, ctx); else ctx.print(l + '\n');
-        });
-      });
-    });
-    blocks.filter(b => b.pat === 'END').forEach(b => runAwk(b.body, ctx));
-    this.out(out);
-  };
-  const truthy = v => typeof v === 'number' ? v !== 0 : v !== '' && v !== '0';
-  function parseAwk(p) {
-    const blocks = []; let i = 0;
-    while (i < p.length) {
-      while (p[i] === ' ' || p[i] === '\n' || p[i] === ';') i++;
-      if (i >= p.length) break;
-      let pat = '';
-      while (i < p.length && p[i] !== '{') pat += p[i++];
-      pat = pat.trim();
-      if (p[i] !== '{') { blocks.push({ pat, body: null }); break; }
-      let d = 0, j = i, inS = false;
-      for (; j < p.length; j++) { if (p[j] === '"' && p[j - 1] !== '\\') inS = !inS; if (inS) continue; if (p[j] === '{') d++; else if (p[j] === '}') { d--; if (!d) break; } }
-      blocks.push({ pat, body: p.slice(i + 1, j) });
-      i = j + 1;
+  /* ---------- awk: a small but real interpreter (POSIX awk language, see the awk lesson) ----------
+     Values are numbers, strings, or {sn} for input text that looks like a number (fields, split pieces, -v values),
+     which compare as numbers, as POSIX "strnum" values do. */
+  const AWK_KW = new Set(['BEGIN', 'END', 'function', 'func', 'if', 'else', 'while', 'for', 'do', 'in', 'break', 'continue', 'next', 'nextfile', 'exit', 'return', 'delete', 'print', 'printf', 'getline']);
+  const AWK_FN = new Set(['length', 'substr', 'index', 'split', 'sub', 'gsub', 'match', 'sprintf', 'toupper', 'tolower', 'int', 'sqrt', 'exp', 'log', 'sin', 'cos', 'atan2', 'rand', 'srand', 'system', 'close', 'fflush']);
+  function awkLex(src) {
+    const t = []; let i = 0;
+    const operand = () => { const p = t[t.length - 1]; return p && (p.k === 'num' || p.k === 'str' || p.k === 'name' || p.k === 'ere' || p.k === 'fn' && false || [')', ']', '$', '++', '--'].includes(p.v) && p.k === 'op'); };
+    while (i < src.length) {
+      const c = src[i];
+      if (c === ' ' || c === '\t' || c === '\r') { i++; continue; }
+      if (c === '\\' && src[i + 1] === '\n') { i += 2; continue; }
+      if (c === '#') { while (i < src.length && src[i] !== '\n') i++; continue; }
+      if (c === '\n') { t.push({ k: 'nl', v: '\n' }); i++; continue; }
+      if (c === '"') {
+        let j = i + 1, s = '';
+        while (j < src.length && src[j] !== '"') { if (src[j] === '\\') { const e = src[j + 1]; s += { n: '\n', t: '\t', r: '\r', '\\': '\\', '"': '"', '/': '/', a: '\x07', b: '\b', f: '\f', v: '\v' }[e] ?? '\\' + e; j += 2; continue; } s += src[j++]; }
+        if (j >= src.length) throw new Error('non-terminated string');
+        t.push({ k: 'str', v: s }); i = j + 1; continue;
+      }
+      if (c === '/' && !operand()) {
+        let j = i + 1, s = '';
+        while (j < src.length && src[j] !== '/') { if (src[j] === '\\' && src[j + 1] === '/') { s += '/'; j += 2; continue; } if (src[j] === '\\') { s += src[j] + src[j + 1]; j += 2; continue; } if (src[j] === '\n') throw new Error('non-terminated regular expression'); s += src[j++]; }
+        t.push({ k: 'ere', v: s }); i = j + 1; continue;
+      }
+      let m = /^(\d+\.?\d*([eE][-+]?\d+)?|\.\d+([eE][-+]?\d+)?)/.exec(src.slice(i));
+      if (m) { t.push({ k: 'num', v: +m[0] }); i += m[0].length; continue; }
+      m = /^[A-Za-z_]\w*/.exec(src.slice(i));
+      if (m) {
+        const w = m[0]; i += w.length;
+        if (AWK_KW.has(w)) t.push({ k: 'kw', v: w });
+        else if (AWK_FN.has(w)) t.push({ k: 'bi', v: w });
+        else if (src[i] === '(') t.push({ k: 'fn', v: w });
+        else t.push({ k: 'name', v: w });
+        continue;
+      }
+      m = /^(\+=|-=|\*=|\/=|%=|\^=|==|<=|>=|!=|\+\+|--|&&|\|\||!~|>>|\*\*=|\*\*|[{}()[\];,+\-*/%^!<>|?:~$=])/.exec(src.slice(i));
+      if (!m) throw new Error(`syntax error at source line 1: unexpected character '${c}'`);
+      t.push({ k: 'op', v: m[0] === '**' ? '^' : m[0] === '**=' ? '^=' : m[0] }); i += m[0].length;
     }
-    return blocks;
+    t.push({ k: 'eof', v: '' });
+    return t;
   }
-  function splitTop(s, sep) {
-    const out = []; let d = 0, inS = false, cur = '';
-    for (let i = 0; i < s.length; i++) { const c = s[i]; if (c === '"' && s[i - 1] !== '\\') inS = !inS; if (!inS) { if ('({['.includes(c)) d++; if (')}]'.includes(c)) d--; if (d === 0 && sep.includes(c)) { out.push(cur); cur = ''; continue; } } cur += c; }
-    out.push(cur); return out.map(x => x.trim()).filter(x => x !== '');
-  }
-  function runAwk(body, ctx) {
-    splitTop(body, ';\n').forEach(st => {
-      let m;
-      if ((m = /^if\s*\((.*)\)\s*(.*)$/.exec(st))) { if (truthy(evalAwk(m[1], ctx))) runAwk(m[2].replace(/^\{|\}$/g, ''), ctx); return; }
-      if ((m = /^print(?:\s+(.*))?$/.exec(st))) { const parts = m[1] ? splitTop(m[1], ',').map(x => fmtNum(evalAwk(x, ctx))) : [ctx.line]; ctx.print(parts.join(ctx.vars.OFS) + '\n'); return; }
-      if ((m = /^printf\s*\(?(.*?)\)?$/.exec(st))) { const parts = splitTop(m[1], ','); const fmt = String(evalAwk(parts[0], ctx)); let k = 1; ctx.print(fmt.replace(/%(-?)(\d*)(?:\.(\d+))?([sdf%])/g, (_, l, w, pr, ty) => { if (ty === '%') return '%'; let v = evalAwk(parts[k++] || '""', ctx); v = ty === 'd' ? String(Math.trunc(+v || 0)) : ty === 'f' ? (+v || 0).toFixed(pr === undefined ? 6 : +pr) : String(v); return w ? pad(v, +w, !!l) : v; })); return; }
-      if ((m = /^(\w+)\[(.+)\]\s*(\+\+|\+=|=)\s*(.*)$/.exec(st))) { const arr = ctx.vars[m[1]] = ctx.vars[m[1]] || {}; const k = String(evalAwk(m[2], ctx)); const cur = +arr[k] || 0; arr[k] = m[3] === '++' ? cur + 1 : m[3] === '+=' ? cur + +evalAwk(m[4], ctx) : evalAwk(m[4], ctx); return; }
-      if ((m = /^for\s*\(\s*(\w+)\s+in\s+(\w+)\s*\)\s*(.*)$/.exec(st))) { Object.keys(ctx.vars[m[2]] || {}).forEach(k => { ctx.vars[m[1]] = k; runAwk(m[3].replace(/^\{|\}$/g, ''), ctx); }); return; }
-      if ((m = /^(\w+)\s*(\+\+|--)$/.exec(st))) { ctx.vars[m[1]] = (+ctx.vars[m[1]] || 0) + (m[2] === '++' ? 1 : -1); return; }
-      if ((m = /^(\w+)\s*([+\-*/]?=)\s*(.*)$/.exec(st)) && !/^=/.test(m[3])) { const v = evalAwk(m[3], ctx), cur = +ctx.vars[m[1]] || 0; ctx.vars[m[1]] = m[2] === '=' ? v : { '+=': cur + +v, '-=': cur - v, '*=': cur * v, '/=': cur / v }[m[2]]; return; }
-      evalAwk(st, ctx);
-    });
-  }
-  const fmtNum = v => typeof v === 'number' ? (Number.isInteger(v) ? String(v) : String(+v.toPrecision(6))) : String(v);
-  function evalAwk(e, ctx) {
-    e = e.trim();
-    const toks = []; let i = 0;
-    while (i < e.length) {
-      const c = e[i];
-      if (c === ' ') { i++; continue; }
-      if (c === '"') { let j = i + 1, s = ''; while (j < e.length && e[j] !== '"') { if (e[j] === '\\') { s += { n: '\n', t: '\t' }[e[j + 1]] ?? e[j + 1]; j += 2; continue; } s += e[j++]; } toks.push({ s }); i = j + 1; continue; }
-      if (c === '/' && (!toks.length || toks[toks.length - 1].op)) { const j = e.indexOf('/', i + 1); toks.push({ re: new RegExp(e.slice(i + 1, j)) }); i = j + 1; continue; }
-      const m = /^(\d+(\.\d+)?|\$\w+|\$\(|\w+\[[^\]]+\]|\w+\(|\w+|==|!=|<=|>=|&&|\|\||!~|[~<>+\-*/%()!,])/.exec(e.slice(i));
-      if (!m) throw new Error('awk: syntax error at ' + e.slice(i));
-      const t = m[0];
-      if (/^\d/.test(t)) toks.push({ n: +t });
-      else if (/^\$/.test(t)) toks.push(t === '$(' ? { op: '$(' } : { f: t.slice(1) });
-      else if (/^\w+\[/.test(t)) { const nm = t.slice(0, t.indexOf('[')); toks.push({ idx: [nm, t.slice(nm.length + 1, -1)] }); }
-      else if (/^\w+\($/.test(t)) toks.push({ fn: t.slice(0, -1) });
-      else if (/^\w/.test(t)) toks.push({ v: t });
-      else toks.push({ op: t });
-      i += t.length;
-    }
-    let k = 0;
-    const field = n => { n = Math.trunc(+n); return n === 0 ? ctx.line : ctx.fields[n - 1] ?? ''; };
-    const num = v => typeof v === 'number' ? v : (/^\s*-?\d+(\.\d+)?/.exec(v) || [0])[0] * 1;
+  function awkParse(toks) {
+    let i = 0;
+    const peek = (o = 0) => toks[i + o], is = (v, k) => toks[i].v === v && (!k || toks[i].k === k) && (toks[i].k === 'op' || toks[i].k === 'kw' || k);
+    const eat = v => { if (toks[i].v !== v) throw new Error(`syntax error near "${toks[i].v === '\n' ? 'newline' : toks[i].v || 'end of program'}"`); return toks[i++]; };
+    const nls = () => { while (toks[i].k === 'nl') i++; };
+    const term = () => { let any = false; while (toks[i].k === 'nl' || is(';')) { i++; any = true; } return any; };
+    const items = [], funcs = {};
+    const expr = (noIn, noGt) => ternary(noIn, noGt);
+    const ternary = (noIn, noGt) => {
+      const c = orE(noIn, noGt);
+      if (is('?')) { i++; nls(); const a = ternary(noIn, noGt); nls(); eat(':'); nls(); const b = ternary(noIn, noGt); return { t: '?:', c, a, b }; }
+      if (toks[i].k === 'op' && ['=', '+=', '-=', '*=', '/=', '%=', '^='].includes(toks[i].v) && (c.t === 'var' || c.t === 'idx' || c.t === 'fld')) { const op = toks[i++].v; nls(); return { t: 'asg', op, l: c, r: ternary(noIn, noGt) }; }
+      return c;
+    };
+    const orE = (noIn, noGt) => { let l = andE(noIn, noGt); while (is('||')) { i++; nls(); l = { t: '||', l, r: andE(noIn, noGt) }; } return l; };
+    const andE = (noIn, noGt) => { let l = inE(noIn, noGt); while (is('&&')) { i++; nls(); l = { t: '&&', l, r: inE(noIn, noGt) }; } return l; };
+    const inE = (noIn, noGt) => { let l = matchE(noIn, noGt); while (!noIn && toks[i].k === 'kw' && toks[i].v === 'in') { i++; l = { t: 'in', k: l, a: toks[i++].v }; } return l; };
+    const matchE = (noIn, noGt) => { let l = relE(noIn, noGt); while (is('~') || is('!~')) { const op = toks[i++].v; l = { t: op, l, r: relE(noIn, noGt) }; } return l; };
+    const relE = (noIn, noGt) => {
+      const l = catE(noIn, noGt);
+      if (toks[i].k === 'op' && ['<', '<=', '==', '!=', '>=', '>'].includes(toks[i].v) && !(noGt && toks[i].v === '>')) { const op = toks[i++].v; return { t: 'cmp', op, l, r: catE(noIn, noGt) }; }
+      return l;
+    };
+    const startsOperand = () => { const x = toks[i]; return x.k === 'num' || x.k === 'str' || x.k === 'ere' || x.k === 'name' || x.k === 'fn' || x.k === 'bi' || x.k === 'op' && ['$', '!', '(', '-', '+', '++', '--'].includes(x.v); };
+    const catE = (noIn, noGt) => { let l = addE(); while (startsOperand() && !(toks[i].k === 'kw' && toks[i].v === 'in')) { l = { t: 'cat', l, r: addE() }; } return l; };
+    const addE = () => { let l = mulE(); while (is('+') || is('-')) { const op = toks[i++].v; l = { t: 'bin', op, l, r: mulE() }; } return l; };
+    const mulE = () => { let l = unE(); while (is('*') || is('/') || is('%')) { const op = toks[i++].v; l = { t: 'bin', op, l, r: unE() }; } return l; };
+    const unE = () => { if (is('!')) { i++; return { t: '!', e: unE() }; } if (is('-')) { i++; return { t: 'neg', e: unE() }; } if (is('+')) { i++; return { t: 'pos', e: unE() }; } return powE(); };
+    const powE = () => { const b = postE(); if (is('^')) { i++; return { t: 'bin', op: '^', l: b, r: unE() }; } return b; };
+    const postE = () => {
+      if (is('++') || is('--')) { const op = toks[i++].v; return { t: 'pre', op, e: postE() }; }
+      const e = prim();
+      if ((is('++') || is('--')) && (e.t === 'var' || e.t === 'idx' || e.t === 'fld')) { const op = toks[i++].v; return { t: 'post', op, e }; }
+      return e;
+    };
+    const args = () => { eat('('); const a = []; nls(); if (!is(')')) { a.push(expr()); nls(); while (is(',')) { i++; nls(); a.push(expr()); nls(); } } eat(')'); return a; };
+    const subscript = () => { eat('['); const a = [expr()]; while (is(',')) { i++; a.push(expr()); } eat(']'); return a; };
     const prim = () => {
-      const t = toks[k++];
-      if (!t) return '';
-      if (t.op === '(') { const v = or(); k++; return v; }
-      if (t.op === '!') return truthy(prim()) ? 0 : 1;
-      if (t.op === '-') return -num(prim());
-      if (t.op === '$(') { const v = or(); k++; return field(v); }
-      if (t.n !== undefined) return t.n;
-      if (t.s !== undefined) return t.s;
-      if (t.re) return t.re.test(ctx.line) ? 1 : 0;
-      if (t.f !== undefined) return /^\d+$/.test(t.f) ? field(t.f) : field(ctx.vars[t.f]);
-      if (t.idx) { const arr = ctx.vars[t.idx[0]] || {}; return arr[String(evalAwk(t.idx[1], ctx))] ?? ''; }
-      if (t.fn) {
-        const args = []; while (toks[k] && toks[k].op !== ')') { args.push(or()); if (toks[k] && toks[k].op === ',') k++; } k++;
-        const s = String(args[0] ?? ctx.line);
-        return { length: () => s.length, toupper: () => s.toUpperCase(), tolower: () => s.toLowerCase(), substr: () => s.substr(num(args[1]) - 1, args[2] === undefined ? undefined : num(args[2])), int: () => Math.trunc(num(args[0])), index: () => s.indexOf(String(args[1])) + 1, sqrt: () => Math.sqrt(num(args[0])) }[t.fn]?.() ?? '';
+      const x = toks[i];
+      if (x.k === 'num') { i++; return { t: 'num', v: x.v }; }
+      if (x.k === 'str') { i++; return { t: 'str', v: x.v }; }
+      if (x.k === 'ere') { i++; return { t: 'ere', v: x.v }; }
+      if (x.k === 'op' && x.v === '$') { i++; const e = (is('++') || is('--')) ? postE() : prim(); return { t: 'fld', e }; }
+      if (x.k === 'op' && x.v === '(') {
+        i++; const e = expr();
+        if (is(',')) { const list = [e]; while (is(',')) { i++; list.push(expr()); } eat(')'); if (toks[i].k === 'kw' && toks[i].v === 'in') { i++; return { t: 'in', k: { t: 'group', list }, a: toks[i++].v }; } return { t: 'group', list }; }
+        eat(')'); return { t: 'grp', e };
       }
-      if (t.v !== undefined) { if (t.v === 'length') return ctx.line.length; const v = ctx.vars[t.v]; return v === undefined ? '' : v; }
-      return '';
-    };
-    const mul = () => { let v = prim(); while (toks[k] && ['*', '/', '%'].includes(toks[k].op)) { const o = toks[k++].op, r = num(prim()); v = o === '*' ? num(v) * r : o === '/' ? num(v) / r : num(v) % r; } return v; };
-    const add = () => { let v = mul(); while (toks[k] && ['+', '-'].includes(toks[k].op)) { const o = toks[k++].op, r = num(mul()); v = o === '+' ? num(v) + r : num(v) - r; } return v; };
-    const cat = () => { let v = add(); while (toks[k] && !toks[k].op && !(toks[k].op === ')')) { v = fmtNum(v) + fmtNum(add()); } while (toks[k] && (toks[k].op === '(' || toks[k].op === '$(' || toks[k].op === '!')) { v = fmtNum(v) + fmtNum(add()); } return v; };
-    const cmp = () => {
-      let v = cat();
-      while (toks[k] && ['==', '!=', '<', '>', '<=', '>=', '~', '!~'].includes(toks[k].op)) {
-        const o = toks[k++].op;
-        if (o === '~' || o === '!~') { const t = toks[k++]; const re = t.re || new RegExp(String(t.s ?? '')); v = re.test(String(v)) === (o === '~') ? 1 : 0; continue; }
-        const r = cat(), isNum = x => typeof x === 'number' || /^\s*-?\d+(\.\d+)?\s*$/.test(x);
-        const [x, y] = isNum(v) && isNum(r) ? [num(v), num(r)] : [String(v), String(r)];
-        v = { '==': x === y, '!=': x !== y, '<': x < y, '>': x > y, '<=': x <= y, '>=': x >= y }[o] ? 1 : 0;
+      if (x.k === 'bi') {
+        i++;
+        if (x.v === 'length' && !is('(')) return { t: 'call', f: 'length', a: [] };
+        return { t: 'call', f: x.v, a: args() };
       }
-      return v;
+      if (x.k === 'fn') { i++; return { t: 'ucall', f: x.v, a: args() }; }
+      if (x.k === 'name') { i++; if (is('[')) return { t: 'idx', a: x.v, s: subscript() }; return { t: 'var', v: x.v }; }
+      if (x.k === 'kw' && x.v === 'getline') { i++; return { t: 'getline' }; }
+      throw new Error(`syntax error near "${x.v === '\n' ? 'newline' : x.v || 'end of program'}"`);
     };
-    const and = () => { let v = cmp(); while (toks[k] && toks[k].op === '&&') { k++; const r = cmp(); v = truthy(v) && truthy(r) ? 1 : 0; } return v; };
-    const or = () => { let v = and(); while (toks[k] && toks[k].op === '||') { k++; const r = and(); v = truthy(v) || truthy(r) ? 1 : 0; } return v; };
-    return or();
+    const simpleStmt = () => {
+      const x = toks[i];
+      if (x.k === 'kw' && (x.v === 'print' || x.v === 'printf')) {
+        i++; let list = [];
+        if (!(toks[i].k === 'nl' || is(';') || is('}') || is('>') || is('>>') || is('|') || toks[i].k === 'eof')) {
+          if (is('(')) { const save = i; try { i++; const l = [expr(false, false)]; while (is(',')) { i++; l.push(expr(false, false)); } eat(')'); if (toks[i].k === 'nl' || is(';') || is('}') || is('>') || is('>>') || is('|') || toks[i].k === 'eof') list = l; else { i = save; list = null; } } catch (e) { i = save; list = null; } }
+          if (!list || !list.length) { list = [expr(false, true)]; while (is(',')) { i++; nls(); list.push(expr(false, true)); } }
+        }
+        let to = null;
+        if (is('>') || is('>>') || is('|')) { const op = toks[i++].v; to = { op, e: catE(false, true) }; }
+        return { t: x.v, list, to };
+      }
+      if (x.k === 'kw' && x.v === 'next') { i++; return { t: 'next' }; }
+      if (x.k === 'kw' && x.v === 'exit') { i++; const e = toks[i].k === 'nl' || is(';') || is('}') || toks[i].k === 'eof' ? null : expr(); return { t: 'exit', e }; }
+      if (x.k === 'kw' && x.v === 'return') { i++; const e = toks[i].k === 'nl' || is(';') || is('}') ? null : expr(); return { t: 'return', e }; }
+      if (x.k === 'kw' && x.v === 'break') { i++; return { t: 'break' }; }
+      if (x.k === 'kw' && x.v === 'continue') { i++; return { t: 'continue' }; }
+      if (x.k === 'kw' && x.v === 'delete') { i++; const a = toks[i++].v; return { t: 'delete', a, s: is('[') ? subscript() : null }; }
+      return { t: 'expr', e: expr() };
+    };
+    const stmt = () => {
+      nls();
+      const x = toks[i];
+      if (is('{')) { i++; const b = block(); return b; }
+      if (x.k === 'kw' && x.v === 'if') { i++; eat('('); const c = expr(); eat(')'); nls(); const a = stmt(); const save = i; term(); if (toks[i].k === 'kw' && toks[i].v === 'else') { i++; nls(); return { t: 'if', c, a, b: stmt() }; } i = save; return { t: 'if', c, a, b: null }; }
+      if (x.k === 'kw' && x.v === 'while') { i++; eat('('); const c = expr(); eat(')'); if (is(';')) { i++; return { t: 'while', c, b: { t: 'block', list: [] } }; } nls(); return { t: 'while', c, b: stmt() }; }
+      if (x.k === 'kw' && x.v === 'do') { i++; nls(); const b = stmt(); term(); eat('while'); eat('('); const c = expr(); eat(')'); return { t: 'do', c, b }; }
+      if (x.k === 'kw' && x.v === 'for') {
+        i++; eat('(');
+        if (toks[i].k === 'name' && toks[i + 1].k === 'kw' && toks[i + 1].v === 'in' && toks[i + 2].k === 'name' && toks[i + 3].v === ')') { const v = toks[i].v, a = toks[i + 2].v; i += 4; nls(); return { t: 'forin', v, a, b: stmt() }; }
+        const init = is(';') ? null : simpleStmt(); eat(';'); nls();
+        const c = is(';') ? null : expr(); eat(';'); nls();
+        const inc = is(')') ? null : simpleStmt(); eat(')');
+        if (is(';')) { i++; return { t: 'for', init, c, inc, b: { t: 'block', list: [] } }; }
+        nls(); return { t: 'for', init, c, inc, b: stmt() };
+      }
+      if (is(';')) { i++; return { t: 'block', list: [] }; }
+      const s = simpleStmt();
+      if (!(term() || is('}') || toks[i].k === 'eof')) throw new Error(`syntax error near "${toks[i].v}"`);
+      return s;
+    };
+    const block = () => { const list = []; nls(); while (!is('}')) { if (toks[i].k === 'eof') throw new Error('syntax error: a { was not closed'); list.push(stmt()); nls(); while (is(';')) { i++; nls(); } } eat('}'); return { t: 'block', list }; };
+    term();
+    while (toks[i].k !== 'eof') {
+      const x = toks[i];
+      if (x.k === 'kw' && (x.v === 'function' || x.v === 'func')) {
+        i++; const name = toks[i++].v; eat('('); const params = []; while (!is(')')) { params.push(toks[i++].v); if (is(',')) { i++; nls(); } } eat(')'); nls(); eat('{');
+        funcs[name] = { params, body: block() };
+      } else if (x.k === 'kw' && (x.v === 'BEGIN' || x.v === 'END')) { i++; nls(); eat('{'); items.push({ kind: x.v, body: block() }); }
+      else {
+        let pat = null, pat2 = null;
+        if (!is('{')) { pat = expr(); if (is(',')) { i++; nls(); pat2 = expr(); } }
+        const body = is('{') ? (i++, block()) : null;
+        items.push({ kind: 'main', pat, pat2, body, inRange: false });
+      }
+      term();
+    }
+    return { items, funcs };
   }
+  const awkFmtG = (v, p) => {
+    if (!isFinite(v)) return isNaN(v) ? 'nan' : v < 0 ? '-inf' : 'inf';
+    if (v === 0) return '0';
+    const e = Math.floor(Math.log10(Math.abs(v)));
+    if (e < -4 || e >= p) { let [m, x] = v.toExponential(Math.max(p - 1, 0)).split('e'); if (m.includes('.')) m = m.replace(/0+$/, '').replace(/\.$/, ''); const n = +x; return m + 'e' + (n < 0 ? '-' : '+') + String(Math.abs(n)).padStart(2, '0'); }
+    let s = v.toFixed(Math.max(p - 1 - e, 0)); if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, ''); return s;
+  };
+  function awkSprintf(fmt, args, toNum, toStr) {
+    let k = 0;
+    return fmt.replace(/%([-+ #0]*)(\*|\d+)?(?:\.(\*|\d+))?([diouxXeEfFgGcs%])/g, (all, fl, w, pr, ty) => {
+      if (ty === '%') return '%';
+      if (w === '*') w = toNum(args[k++]); if (pr === '*') pr = toNum(args[k++]);
+      const a = args[k++]; let s;
+      const neg = fl.includes('-'), zero = fl.includes('0') && !neg, plus = fl.includes('+'), sp = fl.includes(' ');
+      if ('di'.includes(ty)) { const n = Math.trunc(toNum(a)); s = String(Math.abs(n)); if (pr !== undefined) s = s.padStart(+pr, '0'); s = (n < 0 ? '-' : plus ? '+' : sp ? ' ' : '') + s; }
+      else if ('ouxX'.includes(ty)) { const n = Math.trunc(toNum(a)) >>> 0; s = n.toString({ o: 8, u: 10, x: 16, X: 16 }[ty]); if (ty === 'X') s = s.toUpperCase(); }
+      else if ('eE'.includes(ty)) { const n = toNum(a); let [m, x] = n.toExponential(pr === undefined ? 6 : +pr).split('e'); s = m + 'e' + (+x < 0 ? '-' : '+') + String(Math.abs(+x)).padStart(2, '0'); if (ty === 'E') s = s.toUpperCase(); if (n >= 0 && plus) s = '+' + s; }
+      else if ('fF'.includes(ty)) { const n = toNum(a); s = n.toFixed(pr === undefined ? 6 : +pr); if (n >= 0 && plus) s = '+' + s; else if (n >= 0 && sp) s = ' ' + s; }
+      else if ('gG'.includes(ty)) { s = awkFmtG(toNum(a), pr === undefined ? 6 : Math.max(+pr, 1)); if (ty === 'G') s = s.toUpperCase(); }
+      else if (ty === 'c') { s = typeof a === 'number' ? String.fromCharCode(a) : toStr(a).charAt(0); }
+      else { s = toStr(a); if (pr !== undefined) s = s.slice(0, +pr); }
+      if (w !== undefined && s.length < +w) s = neg ? s.padEnd(+w) : zero && !'sc'.includes(ty) ? (s[0] === '-' || s[0] === '+' ? s[0] + s.slice(1).padStart(+w - 1, '0') : s.padStart(+w, '0')) : s.padStart(+w);
+      return s;
+    });
+  }
+  C.awk = function (a, input) {
+    const pre = [], files = []; let fs = null, progSrc = null;
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      if (x === '--') { files.push(...a.slice(i + 1)); break; }
+      if (progSrc === null && x === '-F') { fs = a[++i]; continue; }
+      if (progSrc === null && /^-F./.test(x)) { fs = x.slice(2); continue; }
+      if (progSrc === null && x === '-v') { pre.push(a[++i]); continue; }
+      if (progSrc === null && /^-v./.test(x)) { pre.push(x.slice(2)); continue; }
+      if (progSrc === null && x === '-f') { const n = this.node(this.abs(a[++i] || '')); if (!n) { this.eout(`awk: can't open file ${a[i]}\n`); return 2; } progSrc = n.data; continue; }
+      if (progSrc === null) { progSrc = x; continue; }
+      files.push(x);
+    }
+    if (progSrc === null) { this.eout('usage: awk [-F fs][-v var=value][prog | -f progfile][file ...]\n'); return 2; }
+    let P;
+    try { P = awkParse(awkLex(progSrc)); } catch (e) { this.eout(`awk: ${e.message}\n awk: ${progSrc.split('\n')[0]}\n`); return 2; }
+    const sn = s => ({ sn: String(s) }), UN = { sn: '', un: true };
+    const looksNum = s => /^\s*[-+]?(\d+\.?\d*([eE][-+]?\d+)?|\.\d+([eE][-+]?\d+)?)\s*$/.test(s);
+    const unesc = s => s.replace(/\\(.)/g, (m, c) => ({ n: '\n', t: '\t', '\\': '\\' }[c] ?? m));
+    const V = { NR: 0, FNR: 0, NF: 0, FS: fs === null ? ' ' : fs === 't' ? '\t' : unesc(fs), OFS: ' ', ORS: '\n', RS: '\n', FILENAME: '', SUBSEP: '\x1c', RSTART: 0, RLENGTH: -1, CONVFMT: '%.6g', OFMT: '%.6g', ENVIRON: Object.assign({}, this.vars) };
+    pre.forEach(p => { const k = p.indexOf('='); if (k > 0) V[p.slice(0, k)] = sn(unesc(p.slice(k + 1))); });
+    const A = {}, fns = P.funcs;
+    let fields = [''], out = '';
+    const pipes = {}, filesOut = {};
+    const num = v => typeof v === 'number' ? v : (() => { const m = /^\s*[-+]?(\d+\.?\d*([eE][-+]?\d+)?|\.\d+([eE][-+]?\d+)?)/.exec(typeof v === 'object' && v !== null ? v.sn : String(v ?? '')); return m ? +m[0] : 0; })();
+    const str = (v, ofmt) => typeof v === 'number' ? (Number.isInteger(v) && Math.abs(v) < 1e16 ? String(v) : awkSprintf(ofmt ? String(V.OFMT) : String(V.CONVFMT), [v], num, x => String(x))) : typeof v === 'object' && v !== null ? v.sn : String(v ?? '');
+    const truth = v => typeof v === 'number' ? v !== 0 : typeof v === 'object' && v !== null ? (looksNum(v.sn) ? num(v) !== 0 : v.sn !== '') : v !== '' && v !== undefined;
+    const isNumish = v => typeof v === 'number' || (typeof v === 'object' && v !== null && (v.un || looksNum(v.sn))) || v === undefined;
+    const splitRec = (s, f) => {
+      if (f === ' ') return s.split(/[ \t\n]+/).filter(x => x !== '');
+      if (s === '') return [];
+      if (f.length === 1 && f !== '\\') return s.split(f);
+      return s.split(LXSH_RE(f));
+    };
+    const LXSH_RE = (p, g) => toRe(p, true, g || '');
+    const setRecord = s => { fields = [s].concat(splitRec(s, str(V.FS))); V.NF = fields.length - 1; };
+    const rebuild = () => { fields[0] = fields.slice(1).map(x => str(x)).join(str(V.OFS)); };
+    const getF = n => { n = Math.trunc(num(n)); if (n < 0) throw new Error(`trying to access out of range field ${n}`); return n === 0 ? sn(fields[0]) : n < fields.length ? sn(str(fields[n])) : UN; };
+    const setF = (n, v) => { n = Math.trunc(num(n)); if (n === 0) { setRecord(str(v)); return; } while (fields.length <= n) fields.push(''); fields[n] = str(v); V.NF = Math.max(V.NF, n); if (fields.length - 1 > V.NF) fields.length = V.NF + 1; rebuild(); };
+    const key = s => s.map(x => str(ev(x))).join(str(V.SUBSEP));
+    const scopes = [];
+    const getVar = n => { for (let k = scopes.length - 1; k >= 0 && k >= scopes.length - 1; k--) if (n in scopes[k]) return scopes[k][n]; return n === 'NF' ? V.NF : V[n]; };
+    const setVar = (n, v) => { const sc = scopes[scopes.length - 1]; if (sc && n in sc) { sc[n] = v; return; } if (n === 'NF') { V.NF = Math.trunc(num(v)); fields.length = Math.min(fields.length, V.NF + 1); while (fields.length <= V.NF) fields.push(''); rebuild(); return; } V[n] = v; };
+    const arr = n => { const sc = scopes[scopes.length - 1]; if (sc && n in sc) { if (typeof sc[n] !== 'object' || sc[n] === null || sc[n].sn !== undefined || sc[n] === '') sc[n] = sc[n] && sc[n].__arr ? sc[n] : { __arr: true, m: new Map() }; return sc[n].m; } if (n === 'ENVIRON') { if (!A.ENVIRON) A.ENVIRON = new Map(Object.entries(V.ENVIRON).map(([k, v]) => [k, sn(v)])); } return A[n] || (A[n] = new Map()); };
+    const lval = (e, v) => { if (e.t === 'var') setVar(e.v, v); else if (e.t === 'idx') arr(e.a).set(key(e.s), v); else if (e.t === 'fld') setF(ev(e.e), v); return v; };
+    const reOf = e => e.t === 'ere' ? LXSH_RE(e.v) : LXSH_RE(str(ev(e)));
+    const self = this;
+    const ev = e => {
+      switch (e.t) {
+        case 'num': return e.v;
+        case 'str': return e.v;
+        case 'ere': return LXSH_RE(e.v).test(fields[0]) ? 1 : 0;
+        case 'grp': return ev(e.e);
+        case 'group': return e.list.map(x => str(ev(x))).join(str(V.SUBSEP));
+        case 'var': { const v = getVar(e.v); return v === undefined ? UN : v; }
+        case 'idx': { const m = arr(e.a), k = key(e.s); if (!m.has(k)) m.set(k, UN); return m.get(k); }
+        case 'fld': return getF(ev(e.e));
+        case 'in': { const k = e.k.t === 'group' ? e.k.list.map(x => str(ev(x))).join(str(V.SUBSEP)) : str(ev(e.k)); return arr(e.a).has(k) ? 1 : 0; }
+        case 'asg': {
+          if (e.op === '=') return lval(e.l, (() => { const v = ev(e.r); return typeof v === 'object' && v !== null && v.__arr ? '' : v; })());
+          const a = num(ev(e.l)), b = num(ev(e.r));
+          return lval(e.l, { '+=': a + b, '-=': a - b, '*=': a * b, '/=': (() => { if (b === 0) throw new Error('division by zero in /='); return a / b; })(), '%=': a % b, '^=': a ** b }[e.op]);
+        }
+        case '?:': return truth(ev(e.c)) ? ev(e.a) : ev(e.b);
+        case '||': return truth(ev(e.l)) || truth(ev(e.r)) ? 1 : 0;
+        case '&&': return truth(ev(e.l)) && truth(ev(e.r)) ? 1 : 0;
+        case '~': case '!~': { const s = str(ev(e.l)); return reOf(e.r).test(s) === (e.t === '~') ? 1 : 0; }
+        case 'cmp': {
+          const l = ev(e.l), r = ev(e.r);
+          const both = isNumish(l) && isNumish(r) && !(typeof l === 'string' && l !== '') && !(typeof r === 'string' && r !== '');
+          const x = both ? num(l) : str(l), y = both ? num(r) : str(r);
+          return { '<': x < y, '<=': x <= y, '==': x === y, '!=': x !== y, '>=': x >= y, '>': x > y }[e.op] ? 1 : 0;
+        }
+        case 'cat': return str(ev(e.l)) + str(ev(e.r));
+        case 'bin': {
+          const a = num(ev(e.l)), b = num(ev(e.r));
+          if ((e.op === '/' || e.op === '%') && b === 0) throw new Error('division by zero');
+          return { '+': a + b, '-': a - b, '*': a * b, '/': a / b, '%': a % b, '^': a ** b }[e.op];
+        }
+        case '!': return truth(ev(e.e)) ? 0 : 1;
+        case 'neg': return -num(ev(e.e));
+        case 'pos': return num(ev(e.e));
+        case 'pre': { const v = num(ev(e.e)) + (e.op === '++' ? 1 : -1); lval(e.e, v); return v; }
+        case 'post': { const v = num(ev(e.e)); lval(e.e, v + (e.op === '++' ? 1 : -1)); return v; }
+        case 'getline': return 0;
+        case 'ucall': {
+          const fd = fns[e.f]; if (!fd) throw new Error(`calling undefined function ${e.f}`);
+          const sc = {}; fd.params.forEach((p, k) => { const x = e.a[k]; if (x && x.t === 'var' && (A[x.v] || (scopes.length && scopes[scopes.length - 1][x.v] && scopes[scopes.length - 1][x.v].__arr))) sc[p] = { __arr: true, m: arr(x.v) }; else sc[p] = x ? ev(x) : ''; });
+          if (scopes.length > 200) throw new Error('function call nesting too deep');
+          scopes.push(sc);
+          try { run(fd.body); } catch (x) { if (x && x.awkRet !== undefined) return x.awkRet; throw x; } finally { scopes.pop(); }
+          return '';
+        }
+        case 'call': {
+          const g = e.a;
+          switch (e.f) {
+            case 'length': { if (!g.length) return fields[0].length; if (g[0].t === 'var' && (A[g[0].v] || (scopes.length && scopes[scopes.length - 1][g[0].v] && scopes[scopes.length - 1][g[0].v].__arr))) return arr(g[0].v).size; return str(ev(g[0])).length; }
+            case 'substr': { const s = str(ev(g[0])); let m = Math.round(num(ev(g[1]))), n = g[2] ? Math.round(num(ev(g[2]))) : Infinity; let st = m, en = n === Infinity ? Infinity : m + n; st = Math.max(st, 1); en = Math.min(en, s.length + 1); return en > st ? s.slice(st - 1, en - 1) : ''; }
+            case 'index': { return str(ev(g[0])).indexOf(str(ev(g[1]))) + 1; }
+            case 'split': { const s = str(ev(g[0])), m = arr(g[1].v), sep = g[2] ? (g[2].t === 'ere' ? null : str(ev(g[2]))) : str(V.FS); m.clear(); const parts = g[2] && g[2].t === 'ere' ? (s === '' ? [] : s.split(LXSH_RE(g[2].v))) : splitRec(s, sep); parts.forEach((p, k) => m.set(String(k + 1), sn(p))); return parts.length; }
+            case 'sub': case 'gsub': {
+              const re = reOf(g[0]), target = g[2] || { t: 'fld', e: { t: 'num', v: 0 } }, s = str(ev(target)), rep = str(ev(g[1]));
+              let n = 0;
+              const R = new RegExp(re.source, re.flags.replace('g', '') + (e.f === 'gsub' ? 'g' : ''));
+              const res = s.replace(R, m => { n++; return rep.replace(/\\\\&|\\&|&/g, x => x === '&' ? m : x === '\\&' ? '&' : '\\&'); });
+              if (n) lval(target, res);
+              return n;
+            }
+            case 'match': { const s = str(ev(g[0])), m = reOf(g[1]).exec(s); V.RSTART = m ? m.index + 1 : 0; V.RLENGTH = m ? m[0].length : -1; return V.RSTART; }
+            case 'sprintf': return awkSprintf(str(ev(g[0])), g.slice(1).map(ev), num, str);
+            case 'toupper': return str(ev(g[0])).toUpperCase();
+            case 'tolower': return str(ev(g[0])).toLowerCase();
+            case 'int': return Math.trunc(num(ev(g[0])));
+            case 'sqrt': return Math.sqrt(num(ev(g[0])));
+            case 'exp': return Math.exp(num(ev(g[0])));
+            case 'log': return Math.log(num(ev(g[0])));
+            case 'sin': return Math.sin(num(ev(g[0])));
+            case 'cos': return Math.cos(num(ev(g[0])));
+            case 'atan2': return Math.atan2(num(ev(g[0])), num(ev(g[1])));
+            case 'rand': return Math.random();
+            case 'srand': return 0;
+            case 'system': { const c = str(ev(g[0])); self.runSrc(c, true); return self.last; }
+            case 'close': case 'fflush': return 0;
+          }
+          return '';
+        }
+      }
+      throw new Error('cannot evaluate ' + e.t);
+    };
+    const emit = (s, to) => {
+      if (!to) { out += s; return; }
+      const dest = str(ev(to.e));
+      if (to.op === '|') { pipes[dest] = (pipes[dest] || '') + s; return; }
+      if (dest === '/dev/stdout' || dest === '-') { out += s; return; }
+      if (dest === '/dev/stderr') { self.eout(s); return; }
+      const p = self.abs(dest);
+      let n = self.node(p);
+      if (!(dest in filesOut)) { if (!n) n = self.mk(p, 'f', 0o666 & ~self.umask, self.user, ''); if (to.op === '>') n.data = ''; filesOut[dest] = true; }
+      n.data += s; n.mtime = self.now();
+    };
+    const run = s => {
+      switch (s.t) {
+        case 'block': s.list.forEach(run); return;
+        case 'expr': ev(s.e); return;
+        case 'print': emit((s.list.length ? s.list.map(x => str(ev(x), true)).join(str(V.OFS)) : fields[0]) + str(V.ORS), s.to); return;
+        case 'printf': { if (!s.list.length) throw new Error('printf: no format'); const vals = s.list.map(ev); emit(awkSprintf(str(vals[0]), vals.slice(1), num, str), s.to); return; }
+        case 'if': if (truth(ev(s.c))) run(s.a); else if (s.b) run(s.b); return;
+        case 'while': { let n = 0; while (truth(ev(s.c))) { if (++n > 1e6) throw new Error('loop ran too long'); try { run(s.b); } catch (x) { if (x === BRK) break; if (x === CNT) continue; throw x; } } return; }
+        case 'do': { let n = 0; do { if (++n > 1e6) throw new Error('loop ran too long'); try { run(s.b); } catch (x) { if (x === BRK) break; if (x === CNT) continue; throw x; } } while (truth(ev(s.c))); return; }
+        case 'for': { let n = 0; if (s.init) run(s.init); while (!s.c || truth(ev(s.c))) { if (++n > 1e6) throw new Error('loop ran too long'); try { run(s.b); } catch (x) { if (x === BRK) break; if (x !== CNT) throw x; } if (s.inc) run(s.inc); } return; }
+        case 'forin': { for (const k of [...arr(s.a).keys()]) { setVar(s.v, looksNum(k) ? sn(k) : k); try { run(s.b); } catch (x) { if (x === BRK) break; if (x === CNT) continue; throw x; } } return; }
+        case 'next': throw NXT;
+        case 'exit': throw { awkExit: s.e ? Math.trunc(num(ev(s.e))) : null };
+        case 'return': throw { awkRet: s.e ? ev(s.e) : '' };
+        case 'break': throw BRK;
+        case 'continue': throw CNT;
+        case 'delete': { const m = arr(s.a); if (s.s) m.delete(key(s.s)); else m.clear(); return; }
+      }
+    };
+    const BRK = { brk: 1 }, CNT = { cnt: 1 }, NXT = { nxt: 1 };
+    let code = 0, exiting = false;
+    const guard = f => { try { f(); } catch (x) { if (x && x.awkExit !== undefined) { exiting = true; if (x.awkExit !== null) code = x.awkExit; return; } throw x; } };
+    try {
+      P.items.filter(it => it.kind === 'BEGIN').forEach(it => { if (!exiting) guard(() => run(it.body)); });
+      const mains = P.items.filter(it => it.kind === 'main');
+      const ends = P.items.filter(it => it.kind === 'END');
+      if (!exiting && (mains.length || ends.length)) {
+        const srcs = files.length ? files : ['-'];
+        for (const fn of srcs) {
+          if (exiting) break;
+          let src;
+          if (fn === '-') src = input || '';
+          else { const n = this.node(this.abs(fn)); if (!n || n.type === 'd') { this.eout(`awk: cannot open "${fn}" (${n ? 'Is a directory' : 'No such file or directory'})\n`); code = 2; continue; } if (!this.can(n, 'r')) { this.eout(`awk: cannot open "${fn}" (Permission denied)\n`); code = 2; continue; } src = n.data; }
+          V.FILENAME = fn === '-' ? '' : fn; V.FNR = 0;
+          const recs = str(V.RS) === '' ? src.split(/\n\n+/).map(x => x.replace(/^\n+|\n+$/g, '')).filter(Boolean) : lines(src);
+          for (const r of recs) {
+            if (exiting) break;
+            V.NR++; V.FNR++;
+            setRecord(r);
+            try {
+              guard(() => {
+                for (const it of mains) {
+                  let on;
+                  if (it.pat2) { if (it.inRange) { on = true; if (truth(ev(it.pat2))) it.inRange = false; } else if (truth(ev(it.pat))) { on = true; it.inRange = !truth(ev(it.pat2)); } else on = false; }
+                  else on = !it.pat || truth(ev(it.pat));
+                  if (!on) continue;
+                  if (it.body) run(it.body); else out += fields[0] + str(V.ORS);
+                }
+              });
+            } catch (x) { if (x !== NXT) throw x; }
+          }
+        }
+      }
+      exiting = false;
+      ends.forEach(it => { if (!exiting) guard(() => run(it.body)); });
+    } catch (e) {
+      this.out(out); out = '';
+      if (e === BRK || e === CNT || e === NXT) { this.eout('awk: break, continue or next used outside a loop\n'); return 2; }
+      this.eout(`awk: ${e && e.message ? e.message : e}\n`); return 2;
+    }
+    this.out(out);
+    Object.entries(pipes).forEach(([cmd, data]) => { try { this.exec(this.parse(this.lex(cmd)), data); } catch (e) { this.eout(`awk: ${e.message}\n`); } });
+    return code;
+  };
   C.chmod = function (a) {
     const [f, rest] = opts(a.map(x => /^[-+=][rwxXst]+$/.test(x) ? '\u0001' + x : x));
     const args = rest.map(x => x.replace('\u0001', ''));

@@ -334,6 +334,29 @@
     }
   }));
 
+  /* power 2.3 awk: split each line into fields, then run the program in the practice shell */
+  def('lx-awk', el => W(el, {
+    title: 'How awk sees a line',
+    sub: 'Choose a file, a field separator and a program. Pip splits the first lines into fields $1, $2 and so on, then runs the whole program in the practice shell.',
+    inputs: [{ k: 'prog', label: 'Program', type: 'text', val: 'NR > 1 { print $1, $3 }', w: 330 }, { k: 'fs', label: 'Field separator -F', type: 'seg', val: ',', opts: [[' ', 'spaces (default)'], [',', ','], [':', ':']] },
+             { k: 'file', label: 'File', type: 'seg', val: 'marks.csv', opts: [['marks.csv', 'marks.csv'], ['logs/app.log', 'logs/app.log'], ['/etc/passwd', '/etc/passwd'], ['poem.txt', 'poem.txt']] }],
+    random: () => ([['NR > 1 { sum += $3 } END { print sum / (NR - 1) }', ',', 'marks.csv'], ['$3 >= 85', ',', 'marks.csv'], ['{ print $3, $4 }', ' ', 'logs/app.log'], ['/ERROR/ { print $NF }', ' ', 'logs/app.log'], ['{ print $1, $7 }', ':', '/etc/passwd'], ['{ print NF, $1 }', ' ', 'poem.txt'], ['NR > 1 { n[$2]++ } END { for (s in n) print s, n[s] }', ',', 'marks.csv']].map(([prog, fs, file]) => ({ prog, fs, file })))[Math.floor(Math.random() * 7)],
+    frames: v => {
+      const w = world(), nd = w.node(w.abs(v.file)), L = (nd && nd.data || '').replace(/\n$/, '').split('\n'), fs = v.fs;
+      const split = l => fs === ' ' ? l.trim().split(/[ \t]+/).filter(Boolean) : l.split(fs);
+      const fr = [{ msg: `awk reads <code>${esc(v.file)}</code> one line (record) at a time. ${fs === ' ' ? 'By default fields are separated by runs of spaces and tabs.' : `With -F'${fs}' every ${fs === ',' ? 'comma' : 'colon'} separates two fields.`} $0 is the whole line, NR counts lines and NF counts fields.`, mood: 'think', layers: [{ t: 'term', label: v.file, lines: L.slice(0, 6).map(x => ['o', x]).concat(L.length > 6 ? [['o', '...']] : []) }] }];
+      L.slice(0, Math.min(3, L.length)).forEach((l, i) => {
+        const f = split(l);
+        fr.push({ msg: `Line ${i + 1}: NR = ${i + 1}, NF = ${f.length}. ${f.length ? `$1 is "${esc(f[0])}"${f.length > 1 ? `, $NF (the last field) is "${esc(f[f.length - 1])}"` : ''}.` : 'The line is empty.'}`, mood: 'look', layers: [{ t: 'term', label: '$0', lines: [['h', l]] }, { t: 'row', label: 'Fields', cells: f.map(x => x.length > 14 ? x.slice(0, 13) + '…' : x), idx: false, tag: Object.fromEntries(f.map((_, k) => [k, '$' + (k + 1)])) }] });
+      });
+      const cmd = `awk${fs === ' ' ? '' : ` -F'${fs}'`} '${v.prog}' ${v.file}`;
+      const r = w.run(cmd);
+      const bad = /^awk: /m.test(r.out);
+      fr.push({ msg: bad ? 'awk could not run that program. Read the message, fix the program and press Show me again.' : `The program <code>${esc(v.prog)}</code> runs on every line: a pattern chooses lines, the action in braces says what to do. BEGIN runs before the first line and END after the last.`, mood: bad ? 'sad' : 'wow', fx: bad ? 'shake' : 'burst', layers: [{ t: 'term', label: 'What the terminal shows', lines: [['c', cmd]].concat(r.out.replace(/\n$/, '').split('\n').filter((x, k, a) => x !== '' || k < a.length - 1).map(x => [bad ? 'e' : 'o', x])) }] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

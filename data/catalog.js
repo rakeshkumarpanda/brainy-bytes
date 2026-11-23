@@ -10569,6 +10569,21 @@ function lxPowerModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "awk", title: "awk: columns, patterns and reports", emoji: "2.3", page: "content/linux/awk.html",
+        summary: "Fields and -F, patterns, BEGIN and END, sums, arrays, printf and small awk programs.",
+        keywords: ["awk", "columns", "fields", "NR", "NF", "BEGIN", "END", "printf", "associative array", "sum column", "report", "gawk", "mawk"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "model", title: "Lines, fields and the pattern { action } idea", emoji: "", group: "Lesson", keywords: ["awk", "fields", "records", "$0", "$1", "$NF", "NR", "NF", "-F", "pattern action", "Aho Weinberger Kernighan"] },
+        { id: "patterns", title: "Choosing lines: patterns, BEGIN and END", emoji: "", group: "Lesson", keywords: ["awk pattern", "comparison", "regex match", "~", "!~", "NR > 1", "range pattern", "BEGIN", "END", "&&", "||"] },
+        { id: "calc", title: "Calculating: sums, averages, counts and printf", emoji: "", group: "Lesson", keywords: ["awk sum", "average", "maximum", "associative array", "count per group", "printf", "%d", "%s", "%.2f", "group by"] },
+        { id: "programs", title: "Real programs: if, loops, functions and options", emoji: "", group: "Lesson", keywords: ["awk if", "awk for loop", "awk while", "next", "awk -v", "awk -f", "OFS", "awk function", "gsub", "substr", "split", "mawk", "gawk"] },
+        { id: "levels", title: "awk from school to research", emoji: "", group: "Lesson", keywords: ["awk implementation", "mawk", "gawk", "one true awk", "Perl", "little languages", "CSV", "UTF-8", "Miller", "DuckDB"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
