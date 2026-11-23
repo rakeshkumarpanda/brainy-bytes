@@ -700,6 +700,35 @@
     }
   }));
 
+  /* scripting 3.1 the call stack and local: bash looks a variable up from the newest call outwards (dynamic scope) */
+  def('lx-scope', el => W(el, {
+    title: 'Who sees which variable',
+    sub: 'main sets x, then calls f, and f calls g. Choose whether f declares x as local and pick the values. Pip builds the call stack and shows which x every line reads, then checks it in the practice shell.',
+    inputs: [{ k: 'outer', label: 'main sets x to', type: 'text', val: 'red', w: 110 }, { k: 'inner', label: 'f sets x to', type: 'text', val: 'blue', w: 110 },
+             { k: 'mode', label: 'In f', type: 'seg', val: 'local', opts: [['local', 'local x=...'], ['plain', 'x=... (no local)']] }],
+    random: () => ({ outer: ['red', 'Pune', '10'][Math.floor(Math.random() * 3)], inner: ['blue', 'Delhi', '99'][Math.floor(Math.random() * 3)], mode: Math.random() < 0.5 ? 'local' : 'plain' }),
+    frames: v => {
+      const w = world(), O = String(v.outer).replace(/[^\w.-]/g, '') || 'red', I = String(v.inner).replace(/[^\w.-]/g, '') || 'blue', loc = v.mode === 'local';
+      const src = `x=${O}\ng() { echo "g sees $x"; }\nf() { ${loc ? 'local ' : ''}x=${I}; echo "f sees $x"; g; }\nf\necho "main sees $x"`;
+      const real = w.run(src.replace(/\n/g, '; ').replace(/\{; /g, '{ ')).out.replace(/\n$/, '').split('\n');
+      const stack = (rows, cur) => ({ t: 'flow', label: 'Call stack, newest on the right', items: rows.map(([n, vars], i) => [n, vars, i === cur ? 'cur' : '']), plain: true });
+      const term = [];
+      const code = { t: 'term', label: 'The script', lines: src.split('\n').map(l => ['c', l]) };
+      const fr = [{ msg: 'bash keeps a <b>call stack</b>: one frame for the script itself (main) and one more for each function call that is still running.', mood: 'think', layers: [code] }];
+      fr.push({ msg: `main runs <code>x=${esc(O)}</code>. That is a <b>global</b> variable, stored in main’s frame.`, mood: 'look', layers: [stack([['main', `x=${O}`]], 0)] });
+      const fVars = loc ? `local x=${I}` : '(no variables of its own)', mainX = loc ? O : I;
+      fr.push({ msg: loc ? `f runs <code>local x=${esc(I)}</code>. A new x is created in f’s own frame. main’s x is hidden, not changed.` : `f runs <code>x=${esc(I)}</code> without local. bash looks for an existing x, finds it in main, and <b>changes main’s x</b>.`, mood: loc ? 'look' : 'wow', fx: loc ? undefined : 'shake', layers: [stack([['main', `x=${mainX}`], ['f', fVars]], 1)] });
+      term.push(['o', real[0] || '']);
+      fr.push({ msg: `f prints its x: <b>${esc(real[0] || '')}</b>.`, mood: 'look', layers: [stack([['main', `x=${mainX}`], ['f', fVars]], 1), { t: 'term', label: 'Output', lines: term.slice() }] });
+      term.push(['o', real[1] || '']);
+      fr.push({ msg: `f calls g. g has no x of its own, so bash searches the stack from the newest frame outwards and finds ${loc ? 'f’s local x' : 'main’s x'}. This is called <b>dynamic scope</b>: g sees the variables of whoever called it. g prints <b>${esc(real[1] || '')}</b>.`, mood: 'wow', layers: [stack([['main', `x=${mainX}`], ['f', fVars], ['g', '(nothing)']], 2), { t: 'term', label: 'Output', lines: term.slice() }] });
+      fr.push({ msg: `g returns, then f returns. Their frames are removed${loc ? ', and the local x goes with them' : ''}.`, mood: 'look', layers: [stack([['main', `x=${mainX}`]], 0)] });
+      term.push(['o', real[2] || '']);
+      fr.push({ msg: loc ? `main still has its own value: <b>${esc(real[2] || '')}</b>. local protected it.` : `main now sees <b>${esc(real[2] || '')}</b>. The function changed a global variable by accident. Declare helper variables with local to avoid this.`, mood: loc ? 'happy' : 'sad', fx: loc ? 'burst' : 'shake', layers: [stack([['main', `x=${mainX}`]], 0), { t: 'term', label: 'Output, checked in the practice shell', lines: term.slice() }] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functions, scope and libraries · Unix and Linux</title>
+<meta name="description" content="Defining functions with name() and the function keyword, arguments inside functions, return statuses, returning text with $( ), printf -v, recursion, local variables and dynamic scope, FUNCNAME, functions in subshells, unset -f and declare -F, libraries loaded with source and guarded against double loading, log and die helpers, the main &quot;$@&quot; layout, namerefs, export -f and Shellshock.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=scripting">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=scripting" target="_top">Unix and Linux</a><span>›</span><span>Shell Scripting</span><span>›</span><span>Step 3: Functions and data</span><span>›</span><span>Functions</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 1 of 1 · Intermediate</div>
+    <h1>Functions, scope and libraries</h1>
+    <p class="lead">Split scripts into named functions: define and call them, return statuses and values, keep variables local, understand dynamic scope, and share helpers through a sourced library.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#functions" data-topic="cheatsheet" data-h="functions">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#define" data-l="define"><span class="n">1</span><span class="t">Defining and calling a function</span></a></li><li><a href="#return" data-l="return"><span class="n">2</span><span class="t">Getting results out: status, output and variables</span></a></li><li><a href="#scope" data-l="scope"><span class="n">3</span><span class="t">local variables and dynamic scope</span></a></li><li><a href="#library" data-l="library"><span class="n">4</span><span class="t">Function libraries and the main layout</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Functions from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="define" data-l="define" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Defining and calling a function</h2>
+<p>A <b>function</b> gives a name to a group of commands. You call it like any other command, with arguments. Inside the function, <code>$1</code>, <code>$2</code>, <code>$#</code> and <code>"$@"</code> are the function’s own arguments, not the script’s.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>Two ways to write a function</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>name() {
+  commands           # $1 $2 ... "$@" are the function's arguments
+}
+
+function name {      # the bash keyword form, same result
+  commands
+}</pre></div>
+<div class="lx-run"><div class="lx-rh"><span>Functions, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">greet() {
+  echo "Hello, $1! You gave $# argument(s)."
+}</span>
+<span class="lx-cmd">greet Asha</span>
+<span class="lx-o">Hello, Asha! You gave 1 argument(s).</span>
+<span class="lx-cmd">greet "Ravi Kumar" extra</span>
+<span class="lx-o">Hello, Ravi Kumar! You gave 2 argument(s).</span>
+<span class="lx-cmd">type greet</span>
+<span class="lx-o">greet is a function
+greet () 
+{ 
+    echo "Hello, $1! You gave $# argument(s)."
+}</span>
+<span class="lx-cmd">backup() {
+  local src=$1 dest=${2:-backup}
+  mkdir -p "$dest" &amp;&amp; cp -- "$src" "$dest/" &amp;&amp; echo "copied $src to $dest/"
+}</span>
+<span class="lx-cmd">backup notes.txt</span>
+<span class="lx-o">copied notes.txt to backup/</span>
+<span class="lx-cmd">backup poem.txt archive</span>
+<span class="lx-o">copied poem.txt to archive/</span>
+<span class="lx-cmd">declare -F</span>
+<span class="lx-o">declare -f backup
+declare -f greet</span>
+<span class="lx-cmd">unset -f greet</span>
+<span class="lx-cmd">greet Meera</span>
+<span class="lx-o">bash: greet: command not found</span></pre><div class="lx-note">Each call gets its own $1 and $#. type shows the stored body. backup used ${2:-backup} as a default folder. declare -F lists the names of all functions. After unset -f, greet is gone and bash reports command not found.</div></div>
+<div class="note note-tip"><b>Remember</b><div>A function must be defined before the line that calls it runs. In a script, put all functions at the top and the main commands at the bottom.</div></div>
+<div class="vt-talk" hidden>A function is a small named piece of a script. You write the name, a pair of round brackets, and then the commands between curly braces. After that, the name works like a new command. When you call it, any words after the name become its arguments, and inside the function dollar one, dollar two and dollar at sign refer to those arguments, not to the arguments of the whole script. Bash also accepts the keyword function in front of the name, which does the same thing. Functions must be defined before they are used, because bash reads and runs the script from top to bottom. The type command shows the body of a function, declare dash capital F lists all function names, and unset dash f removes one. Functions keep scripts short and readable: write a task once, give it a clear name, and call it wherever you need it.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="return" data-l="return" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Getting results out: status, output and variables</h2>
+<p>A bash function has three ways to hand back a result. Pick the one that fits.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Way</th><th>How</th><th>Use it for</th></tr></thead><tbody><tr><td>Exit status</td><td><code>return N</code> (0 to 255). Without return, the status of the last command</td><td>yes or no answers, used with if, && and ||</td></tr><tr><td>Output</td><td><code>echo</code> or <code>printf</code> the result, catch it with <code>v=$(fn ...)</code></td><td>text and numbers</td></tr><tr><td>A variable</td><td>set a global, or write into a name given by the caller with <code>printf -v "$1"</code></td><td>avoiding the subshell of $( ), several results</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Three ways to return</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">is_even() { (( $1 % 2 == 0 )); }</span>
+<span class="lx-cmd">for n in 3 8; do
+  if is_even "$n"; then echo "$n is even"; else echo "$n is odd"; fi
+done</span>
+<span class="lx-o">3 is odd
+8 is even</span>
+<span class="lx-cmd">check_file() {
+  [ -f "$1" ] || { echo "missing: $1" &gt;&amp;2; return 2; }
+  return 0
+}</span>
+<span class="lx-cmd">check_file nothere.txt; echo "status $?"</span>
+<span class="lx-o">missing: nothere.txt
+status 2</span>
+<span class="lx-cmd">square() { echo $(( $1 * $1 )); }</span>
+<span class="lx-cmd">area=$(square 12)</span>
+<span class="lx-cmd">echo "area is $area"</span>
+<span class="lx-o">area is 144</span>
+<span class="lx-cmd">to_upper() { printf -v "$1" '%s' "${2^^}"; }</span>
+<span class="lx-cmd">to_upper shout "quiet please"</span>
+<span class="lx-cmd">echo "$shout"</span>
+<span class="lx-o">QUIET PLEASE</span>
+<span class="lx-cmd">fact() {
+  (( $1 &lt;= 1 )) &amp;&amp; { echo 1; return; }
+  echo $(( $1 * $(fact $(( $1 - 1 ))) ))
+}</span>
+<span class="lx-cmd">echo "5! = $(fact 5)"</span>
+<span class="lx-o">5! = 120</span>
+<span class="lx-cmd">r() { return 300; }; r; echo "return 300 gives $?"</span>
+<span class="lx-o">return 300 gives 44</span></pre><div class="lx-note">is_even returns the status of (( )), so it works directly in if. check_file sends its message to stderr and returns 2. square prints its answer and $( ) catches it. printf -v wrote into the variable named by the first argument. fact calls itself, a recursive function. Statuses are 8 bits, so 300 became 44.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>return is for statuses, not data. return 1000 or return "text" cannot carry a result. Print the value and capture it with $( ) instead.</div></div>
+<div class="vt-talk" hidden>Functions return results in three ways. The first is the exit status, set with the word return and a number from zero to two hundred and fifty five. Zero means yes or success, anything else means no or failure. That makes a function perfect as an if condition, as in if is even. If you leave out return, the function gives the status of its last command. The second way is output. Print the answer with echo or printf, and the caller catches it with dollar and round brackets, like area equals dollar square twelve. This is the usual way to return text or numbers. The third way is a variable. A function can set a global variable, or use printf dash v to write into a variable whose name the caller passes in. That avoids starting a subshell and can hand back more than one value. A common mistake is to return a big number or a word with return, which cannot work, because a status is only eight bits.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="scope" data-l="scope" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>local variables and dynamic scope</h2>
+<p>Variables in bash are <b>global</b> unless you declare them with <code>local</code> inside a function. A local variable exists only while that function runs. bash uses <b>dynamic scope</b>: a function that reads a variable sees the value of the nearest caller that has one.</p>
+<div class="viz" data-viz="pk" data-pk="lx-scope"></div>
+<div class="lx-run"><div class="lx-rh"><span>local and global, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">total=0</span>
+<span class="lx-cmd">add_bad()  { total=$(( total + $1 )); tmp=$1; }</span>
+<span class="lx-cmd">add_good() { local tmp=$1; total=$(( total + tmp )); }</span>
+<span class="lx-cmd">add_bad 5; add_good 7</span>
+<span class="lx-cmd">echo "total=$total tmp=$tmp"</span>
+<span class="lx-o">total=12 tmp=5</span>
+<span class="lx-cmd">x=main</span>
+<span class="lx-cmd">show() { echo "show sees x=$x"; }</span>
+<span class="lx-cmd">caller_fn() { local x=caller; show; }</span>
+<span class="lx-cmd">caller_fn</span>
+<span class="lx-o">show sees x=caller</span>
+<span class="lx-cmd">show</span>
+<span class="lx-o">show sees x=main</span>
+<span class="lx-cmd">where() { echo "I am ${FUNCNAME[0]}, called by ${FUNCNAME[1]:-the script}"; }</span>
+<span class="lx-cmd">outer() { where; }</span>
+<span class="lx-cmd">outer</span>
+<span class="lx-o">I am where, called by outer</span>
+<span class="lx-cmd">counter=0</span>
+<span class="lx-cmd">bump() { (( counter++ )); }</span>
+<span class="lx-cmd">bump; bump; echo "counter=$counter"</span>
+<span class="lx-o">counter=2</span>
+<span class="lx-cmd">v=$(bump; echo "$counter"); echo "inside \$( ): $v, outside: $counter"</span>
+<span class="lx-o">inside $( ): 3, outside: 2</span>
+<span class="lx-cmd">in_sub() ( cd /tmp; pwd )</span>
+<span class="lx-cmd">in_sub; pwd</span>
+<span class="lx-o">/tmp
+/home/learner</span></pre><div class="lx-note">add_bad leaked tmp into the script, add_good kept it local. show saw the caller’s local x, which is dynamic scope. FUNCNAME lists the function names on the call stack. A function called inside $( ) runs in a subshell, so its change to counter was lost. A body in round brackets always runs in a subshell, so its cd did not move the script.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Start every function by copying its arguments into local variables with clear names: local file=$1 count=${2:-10}. It documents the function and protects the rest of the script.</div></div>
+<div class="vt-talk" hidden>By default, every variable in bash is global, even one you set inside a function. That is a common source of bugs, because a helper function can quietly overwrite a variable the main script needs. The fix is the local keyword. A local variable lives only while its function runs, and it hides any global with the same name. Bash also has dynamic scope, which surprises people who know other languages. When a function reads a variable it does not own, bash looks at the function that called it, then that function’s caller, and so on up to the script. So a helper can see the local variables of whoever called it. The animation shows the call stack and which value each line reads. The array FUNCNAME holds the names on the stack, which is handy for log messages. Finally, remember that a function run inside dollar and round brackets runs in a subshell, so changes to variables there never come back.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="library" data-l="library" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Function libraries and the main layout</h2>
+<p>Useful functions can live in their own file, a <b>library</b>, that several scripts load with <code>source</code>. A well-organised script then has three parts: settings, functions, and a short <code>main</code> function that is called with <code>"$@"</code>.</p>
+<div class="lx-run"><div class="lx-rh"><span>A small library and a script that uses it</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">mkdir -p lib</span>
+<span class="lx-cmd">cat &gt; lib/log.sh &lt;&lt;'EOF'
+# lib/log.sh: logging helpers, load with source
+[[ -n ${LOG_SH_LOADED:-} ]] &amp;&amp; return 0
+LOG_SH_LOADED=1
+_say() { printf '%s [%s] %s\n' "$(date +%H:%M)" "${FUNCNAME[2]:-main}" "$*" &gt;&amp;2; }
+log()  { _say "$*"; }
+die()  { _say "ERROR: $*"; exit 1; }
+EOF</span>
+<span class="lx-cmd">cat &gt; report.sh &lt;&lt;'EOF'
+#!/bin/bash
+source "$(dirname "$0")/lib/log.sh"
+source "$(dirname "$0")/lib/log.sh"
+count_lines() { wc -l &lt; "$1"; }
+main() {
+  [ $# -ge 1 ] || die "usage: report.sh FILE..."
+  local f
+  for f in "$@"; do
+    [ -r "$f" ] || die "cannot read $f"
+    echo "$f: $(count_lines "$f") lines"
+  done
+  log "done with $# file(s)"
+}
+main "$@"
+EOF</span>
+<span class="lx-cmd">bash report.sh fruits.txt poem.txt 2&gt;&amp;1 | sed 's/^[0-9][0-9]:[0-9][0-9]/HH:MM/'</span>
+<span class="lx-o">fruits.txt: 8 lines
+poem.txt: 4 lines
+HH:MM [main] done with 2 file(s)</span>
+<span class="lx-cmd">bash report.sh 2&gt;&amp;1 | sed 's/^[0-9][0-9]:[0-9][0-9]/HH:MM/'; echo "status ${PIPESTATUS[0]}"</span>
+<span class="lx-o">HH:MM [main] ERROR: usage: report.sh FILE...
+status 1</span>
+<span class="lx-cmd">bash report.sh nothere.txt 2&gt;&amp;1 | sed 's/^[0-9][0-9]:[0-9][0-9]/HH:MM/'</span>
+<span class="lx-o">HH:MM [main] ERROR: cannot read nothere.txt</span></pre><div class="lx-note">The library guards itself with LOG_SH_LOADED, so loading it twice is harmless. log and die write to stderr through _say, which prints the time and the name of the function that called log or die, FUNCNAME[2]. die then exits with status 1, which PIPESTATUS[0] shows even through the pipe. main "$@" passes every script argument to main unchanged. The sed only replaces the clock time so this page does not change on every build.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Write and use functions&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Define a function &lt;code&gt;hi&lt;/code&gt; that prints &lt;code&gt;Hi, NAME&lt;/code&gt; with its first argument, then call it with Asha.&quot;, &quot;hint&quot;: &quot;hi() { echo \&quot;Hi, $1\&quot;; }; hi Asha&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;hi\\s*\\(\\)\\s*\\{&quot;}, {&quot;out&quot;: &quot;^Hi, Asha$&quot;}]}, {&quot;t&quot;: &quot;Define &lt;code&gt;double&lt;/code&gt; that prints twice its argument with $(( )), and store double 21 in the variable d.&quot;, &quot;hint&quot;: &quot;double() { echo $(( $1 * 2 )); }; d=$(double 21)&quot;, &quot;check&quot;: [{&quot;env&quot;: [&quot;d&quot;, &quot;42&quot;]}]}, {&quot;t&quot;: &quot;Define &lt;code&gt;is_big&lt;/code&gt; that succeeds when its argument is over 100, then run is_big 500 &amp;&amp; echo big.&quot;, &quot;hint&quot;: &quot;is_big() { (( $1 &gt; 100 )); }; is_big 500 &amp;&amp; echo big&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;is_big&quot;}, {&quot;out&quot;: &quot;^big$&quot;}]}, {&quot;t&quot;: &quot;Set x=outside. Define &lt;code&gt;f&lt;/code&gt; that sets a local x=inside and prints it. Call f, then print $x.&quot;, &quot;hint&quot;: &quot;x=outside; f() { local x=inside; echo $x; }; f; echo $x&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\blocal\\b&quot;}, {&quot;out&quot;: &quot;^inside$&quot;}, {&quot;env&quot;: [&quot;x&quot;, &quot;outside&quot;]}]}, {&quot;t&quot;: &quot;Write &lt;code&gt;lib.sh&lt;/code&gt; containing a function &lt;code&gt;shout&lt;/code&gt; that prints its arguments in capitals, then load it with source and run shout hello.&quot;, &quot;hint&quot;: &quot;printf &#x27;shout() { echo \&quot;${*^^}\&quot;; }\\n&#x27; &gt; lib.sh; source lib.sh; shout hello&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;lib.sh&quot;, &quot;shout&quot;]}, {&quot;out&quot;: &quot;^HELLO$&quot;}]}, {&quot;t&quot;: &quot;List the names of all defined functions.&quot;, &quot;hint&quot;: &quot;declare -F&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;declare -f hi&quot;}]}]}"></div>
+<div class="vt-talk" hidden>As scripts grow, organise them the way professionals do. Put reusable functions, such as logging and error handling, into a library file, and load it with source at the top of each script. A small guard variable at the top of the library makes it safe to load twice. A helper called die prints an error message to standard error and exits with a failure status, so every check in the script becomes one short line. Then write the main logic inside a function called main, and make the very last line main followed by dollar at sign in double quotes. That passes all the script arguments to main unchanged, keeps the top level of the file clean, and makes sure every function is defined before any of them runs. The example shows a report script built this way, with clear usage and error messages.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Functions from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A function is a named list of commands. You define it once and call it by name with arguments. It answers with a status, or prints a result that you can catch with $( ).</p></div><div class="ld-p" data-ld="college" hidden><p>Functions run in the current shell, so they can change variables and the current folder, unless they run inside $( ), a pipeline or a ( ) body. Variables are global unless declared local, and scope is dynamic. return sets an 8-bit status, and the positional parameters are saved and restored around each call.</p></div><div class="ld-p" data-ld="masters" hidden><p>local -n declares a nameref, a variable that refers to another variable by name, so a function can fill an array the caller chose. export -f makes a function visible to child bash processes through the environment, a feature that was involved in the Shellshock bug (CVE-2014-6271) when old bash versions ran code found after a function definition in an environment variable. Redirections written after a function body apply to every call, and declare -f prints the body.</p></div><div class="ld-p" data-ld="research" hidden><p>Dynamic scoping, used by bash and early Lisp, contrasts with the lexical scoping of most modern languages. Programming language research treats it as harder to reason about, because a function’s meaning depends on its callers. Tools such as bats-core (Bash Automated Testing System) and shUnit2 test shell functions one by one, and sourcing a script whose last line is guarded with [[ ${BASH_SOURCE[0]} == "$0" ]] && main "$@" lets tests load its functions without running it.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the shared deploy helpers</div><p>A team had the same twenty lines of logging, retry and lock code copied into nine deploy scripts. They moved it into <code>lib/common.sh</code> with <code>log</code>, <code>die</code>, <code>retry</code> and <code>with_lock</code> functions, all using local variables. Each script became a short <code>main</code> function. When the retry logic needed a fix, one change in the library fixed all nine scripts, and bats tests now check every helper.</p></div>
+<div class="vt-talk" hidden>Let us look at functions from an expert point of view. Functions run inside the current shell, so they can change variables and even the current folder, unless they run in a subshell such as a pipeline or command substitution. Bash saves and restores the positional parameters around every call. A nameref, made with local dash n, lets a function write into a variable or array the caller names. Export dash f passes a function to child bash processes through the environment. That exact feature was the doorway for the famous Shellshock security bug in 2014, when old versions of bash ran extra commands hidden after a function definition. In language research, bash uses dynamic scope like early Lisp, while most modern languages use lexical scope, which is easier to reason about. For quality, teams test shell functions with tools such as bats, and guard the last line of a script so that tests can load its functions without running main.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./loops.html" data-topic="loops"><small>Previous topic</small><b>Loops</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "functions", "topic": "functions", "subject": "linux", "title": "Functions, scope and libraries", "codes": {}, "quiz": [{"lv": "e", "q": "Which line defines a function called hello?", "o": ["<code>hello: { echo hi }<\/code>", "<code>hello() { echo hi; }<\/code>", "<code>def hello: echo hi<\/code>", "<code>func hello echo hi<\/code>"], "a": 1, "hint": "Name, brackets, braces.", "why": "<code>name() { commands; }<\/code> defines a function."}, {"lv": "e", "q": "Inside a function, what is $1?", "o": ["The first argument of the script", "The first argument of the function call", "The function name", "Always empty"], "a": 1, "hint": "Its own arguments.", "why": "Each call has its own positional parameters."}, {"lv": "e", "q": "Which keyword keeps a variable inside its function?", "o": ["my", "var", "local", "private"], "a": 2, "hint": "local.", "why": "local limits the variable to the function."}, {"lv": "e", "q": "How do you load functions from lib.sh into the current shell?", "o": ["run lib.sh", "source lib.sh", "import lib.sh", "bash lib.sh"], "a": 1, "hint": "Run it here.", "why": "source runs the file in the current shell."}, {"lv": "m", "q": "What is the usual way to get text back from a function?", "o": ["return \"text\"", "Print it and use v=$(fn)", "exit \"text\"", "export it"], "a": 1, "hint": "Output.", "why": "Capture the output with $( )."}, {"lv": "m", "q": "A function has no return line. What status does it give?", "o": ["Always 0", "The status of its last command", "Always 1", "255"], "a": 1, "hint": "Last command.", "why": "Without return, the last status is used."}, {"lv": "m", "q": "Without local, what happens when a function sets tmp=5?", "o": ["tmp exists only in the function", "tmp becomes a global variable", "It is an error", "tmp is exported"], "a": 1, "hint": "Global by default.", "why": "Variables are global unless declared local."}, {"lv": "m", "q": "Why does main \"$@\" sit on the last line of a script?", "o": ["It is required by bash", "It passes all script arguments to main after every function is defined", "It exports main", "It makes main local"], "a": 1, "hint": "Defined first, called last.", "why": "All functions exist by then and the arguments stay intact."}, {"lv": "m", "q": "<code>f() { local x=in; g; }<\/code>, <code>g() { echo $x; }<\/code> and x=out. What does f print?", "o": ["out", "in", "nothing", "an error"], "a": 1, "hint": "Dynamic scope.", "why": "g sees the local x of its caller f."}, {"lv": "h", "q": "count=0 and <code>bump() { (( count++ )); }<\/code>. What is count after v=$(bump)?", "o": ["1", "0", "2", "empty"], "a": 1, "hint": "Subshell.", "why": "bump ran inside $( ), so the change was lost."}, {"lv": "h", "q": "What status does a function give after return 256?", "o": ["256", "0", "255", "1"], "a": 1, "hint": "8 bits.", "why": "256 mod 256 = 0."}, {"lv": "h", "q": "Which writes a result into a variable named by the caller?", "o": ["echo > $1", "printf -v \"$1\" \"%s\" \"$value\"", "return $1", "export $1"], "a": 1, "hint": "printf -v.", "why": "printf -v assigns to the named variable."}, {"lv": "x", "q": "Which 2014 bug involved bash functions passed through the environment?", "o": ["Heartbleed", "Shellshock", "Spectre", "Log4Shell"], "a": 1, "hint": "CVE-2014-6271.", "why": "Shellshock ran code after an exported function definition."}], "calc": [{"lv": "e", "q": "<code>f() { echo $#; }<\/code>. What does f a \"b c\" d print?", "ans": "3", "hint": "Quotes keep one argument.", "steps": ["a is one.", "\"b c\" is one.", "<span class=\"eq\">a, b c, d = 3<\/span>"]}, {"lv": "e", "q": "<code>square() { echo $(( $1 * $1 )); }<\/code>. What is $(square 15)?", "ans": "225", "hint": "Times itself.", "steps": ["15 × 15.", "= 225.", "<span class=\"eq\">225<\/span>"]}, {"lv": "m", "q": "fact 6 with the recursive fact function. What is printed?", "ans": "720", "hint": "6 × 5 × 4 × 3 × 2 × 1.", "steps": ["6 × 5 = 30.", "30 × 4 × 3 = 360.", "<span class=\"eq\">360 × 2 × 1 = 720<\/span>"]}, {"lv": "m", "q": "fact 6 calls itself until the argument is 1. How many calls of fact happen in total?", "ans": "6", "hint": "One per number.", "steps": ["fact 6, 5, 4, 3, 2 each call the next.", "fact 1 stops.", "<span class=\"eq\">6 calls<\/span>"]}, {"lv": "m", "q": "A function ends with return 257. What is $? afterwards?", "ans": "1", "hint": "Mod 256.", "steps": ["Statuses keep 8 bits.", "257 − 256.", "<span class=\"eq\">1<\/span>"]}, {"lv": "h", "q": "fib() returns fib(n−1) + fib(n−2), with fib 0 = 0 and fib 1 = 1. What is fib 10?", "ans": "55", "hint": "Build up the sequence.", "steps": ["0, 1, 1, 2, 3, 5, 8.", "13, 21, 34.", "<span class=\"eq\">fib 10 = 55<\/span>"]}], "assign": [], "must": [["Define and call", "<code>name() { ...; }<\/code> or <code>function name { ...; }<\/code>. Call it like a command. Inside, $1, $# and \"$@\" are the call’s own arguments."], ["Results", "Status with return N (0 to 255) for yes or no. Text and numbers by printing and catching with v=$(fn). printf -v NAME to set a variable."], ["Scope", "Variables are global unless declared local. Scope is dynamic, so a function sees its caller’s locals. $( ) and pipelines run functions in a subshell."], ["Libraries", "Keep helpers in a file and load it with source. Guard it against double loading. log to stderr, die to log and exit 1."], ["Layout", "Settings, then functions, then main() and a last line main \"$@\"."]], "summary": "<p>A function is a named list of commands with its own $1 and \"$@\". It answers with a status from return or prints a value for $( ). local keeps helper variables private, scope is dynamic, and libraries loaded with source share helpers between scripts.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

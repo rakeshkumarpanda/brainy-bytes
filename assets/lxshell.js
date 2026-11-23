@@ -319,11 +319,16 @@ const LXSH = (() => {
           return { t: 'case', word, arms };
         }
         if (isOp('(')) { i++; const body = list([]); if (!isOp(')')) throw new Error('syntax error: ( was not closed'); i++; return { t: 'sub', body, redir: redirs() }; }
-        if (toks[i] && toks[i].w && toks[i + 1] && toks[i + 1].op === '(' && toks[i + 2] && toks[i + 2].op === ')') {
-          const name = this.wordText(toks[i].w); i += 3; skipSep();
+        const kwFn = kw === 'function' && toks[i + 1] && toks[i + 1].w;
+        if (kwFn || (toks[i] && toks[i].w && toks[i + 1] && toks[i + 1].op === '(' && toks[i + 2] && toks[i + 2].op === ')')) {
+          if (kwFn) i++;
+          const name = this.wordText(toks[i].w); i++;
+          if (isOp('(') && toks[i + 1] && toks[i + 1].op === ')') i += 2;
+          skipSep();
           if (peekW() !== '{') throw new Error('syntax error: a function body starts with {');
-          i++; const body = list(['}']); expectWord('}');
-          return { t: 'fn', name, body };
+          i++; const inner = list(['}']); expectWord('}');
+          /* redirections written after the closing brace apply every time the function runs */
+          return { t: 'fn', name, body: { t: 'sub', body: inner, keep: true, redir: redirs() } };
         }
         if (kw === '{') { i++; const body = list(['}']); expectWord('}'); return { t: 'sub', body, keep: true, redir: redirs() }; }
         const words = [], redir = [];
@@ -377,6 +382,7 @@ const LXSH = (() => {
       if ((m = /^#(\w+)\[(.+)\]$/.exec(body))) return String(this.arrGet(m[1], m[2]).length);
       if ((m = /^(\w+)\[(.+)\]$/.exec(body))) return this.arrGet(m[1], m[2]);
       if ((m = /^@:(\d+)(?::(\d+))?$/.exec(body))) { const all = [this.script || 'bash'].concat(this.args); return (m[2] !== undefined ? all.slice(+m[1], +m[1] + +m[2]) : all.slice(+m[1])).join(' '); }
+      if ((m = /^([*@])(\^\^|,,|\^|,)$/.exec(body))) { const t = { '^^': x => x.toUpperCase(), ',,': x => x.toLowerCase(), '^': x => x && x[0].toUpperCase() + x.slice(1), ',': x => x && x[0].toLowerCase() + x.slice(1) }[m[2]]; return this.args.map(t).join(' '); }
       if ((m = /^(\w+)(\^|,)$/.exec(body))) { const v = this.param(m[1]); return v ? (m[2] === '^' ? v[0].toUpperCase() : v[0].toLowerCase()) + v.slice(1) : v; }
       if ((m = /^#(\w+|@)$/.exec(body))) return String(m[1] === '@' ? this.args.length : this.param(m[1]).length);
       if ((m = /^(\w+|\d+)(:?[-=+?])(.*)$/.exec(body))) {
@@ -733,9 +739,13 @@ const LXSH = (() => {
       if (this.opts && this.opts.xtrace && !this.inTrap) this.eout('+ ' + args.map(x => /^[\w.\/:=@%+,-]+$/.test(x) ? x : `'${x.replace(/'/g, "'\\''")}'`).join(' ') + '\n');
       if (this.fns && this.fns[name]) {
         const keep = this.args; this.args = args.slice(1);
+        const stack = this.fnStack = this.fnStack || [];
+        if (stack.length >= 150) throw new Error(`${name}: maximum function nesting level exceeded (150, the practice shell limit)`);
+        stack.push(name); (this.arrays = this.arrays || {}).FUNCNAME = stack.slice().reverse();
         (this.frames = this.frames || []).push([]); const keepFn = this.fnName; this.fnName = name;
         try { return this.exec(this.fns[name], input); } catch (e) { if (e && e.ret !== undefined) return e.ret; throw e; } finally {
           this.args = keep; this.fnName = keepFn;
+          stack.pop(); if (stack.length) this.arrays.FUNCNAME = stack.slice().reverse(); else delete this.arrays.FUNCNAME;
           this.frames.pop().reverse().forEach(([k, had, v, hadA, va, wasAssoc]) => {
             if (had) this.vars[k] = v; else delete this.vars[k];
             this.arrays = this.arrays || {}; if (hadA) this.arrays[k] = va; else delete this.arrays[k];
@@ -2248,6 +2258,7 @@ const LXSH = (() => {
   C.export = function (a) {
     if (!a.length || a[0] === '-p') { [...this.exported].sort().forEach(k => this.out(`declare -x ${k}="${this.vars[k] ?? ''}"\n`)); return 0; }
     if (a[0] === '-n') { a.slice(1).forEach(k => this.exported.delete(k)); return 0; }
+    if (a[0] === '-f') { let bad = 0; a.slice(1).forEach(k => { if (!(this.fns && this.fns[k])) { this.eout(`bash: export: ${k}: not a function\n`); bad = 1; } }); return bad; }
     let code = 0;
     a.forEach(x => { const k = x.indexOf('='); const nm = k > 0 ? x.slice(0, k) : x; if (!/^[A-Za-z_]\w*$/.test(nm)) { this.eout(`bash: export: \`${x}': not a valid identifier\n`); code = 1; return; } if (k > 0) { if (this.ro && this.ro.has(nm)) { this.eout(`bash: ${nm}: readonly variable\n`); code = 1; return; } this.vars[nm] = x.slice(k + 1); } this.exported.add(nm); });
     return code;
@@ -2816,6 +2827,8 @@ const LXSH = (() => {
   /* ---------- arithmetic: bash rules on whole numbers ---------- */
   World.prototype.arith = function (src) {
     src = String(src);
+    /* inside (( )) and let, $name, ${...} and $(...) are expanded before the maths is read */
+    if (src.includes('$')) src = this.expandStr(src);
     const toks = []; let i = 0;
     const OPS = ['**=', '<<=', '>>=', '&&', '||', '==', '!=', '<=', '>=', '<<', '>>', '++', '--', '+=', '-=', '*=', '/=', '%=', '&=', '^=', '|=', '**', '+', '-', '*', '/', '%', '<', '>', '=', '!', '~', '&', '^', '|', '?', ':', '(', ')', ',', '[', ']'];
     while (i < src.length) {

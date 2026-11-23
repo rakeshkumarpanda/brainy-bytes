@@ -10716,6 +10716,23 @@ function lxScriptModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-script-3", title: "Functions and data", emoji: "3", step: 3, part: "scripting", level: "Intermediate", blurb: "Build scripts from named, tested pieces: functions with local variables, libraries, arrays and option parsing with getopts.", topics: [
+      { id: "functions", title: "Functions, scope and libraries", emoji: "3.1", page: "content/linux/functions.html",
+        summary: "Functions, return statuses and values, local and dynamic scope, libraries and main \"$@\".",
+        keywords: ["function", "return", "local", "scope", "dynamic scope", "source", "library", "main", "FUNCNAME", "recursion", "printf -v"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "define", title: "Defining and calling a function", emoji: "", group: "Lesson", keywords: ["function", "define a function", "call a function", "name() { }", "function keyword", "function arguments", "type", "declare -F", "unset -f"] },
+        { id: "return", title: "Getting results out: status, output and variables", emoji: "", group: "Lesson", keywords: ["return", "exit status of a function", "return value", "command substitution", "printf -v", "recursion", "factorial", "function in if", "status is 8 bits"] },
+        { id: "scope", title: "local variables and dynamic scope", emoji: "", group: "Lesson", keywords: ["local", "global variable", "dynamic scope", "call stack", "FUNCNAME", "subshell", "function in $( )", "function body in ( )", "variable leak"] },
+        { id: "library", title: "Function libraries and the main layout", emoji: "", group: "Lesson", keywords: ["function library", "source", "include guard", "log function", "die function", "main \"$@\"", "script layout", "stderr logging", "FUNCNAME[1]"] },
+        { id: "levels", title: "Functions from school to research", emoji: "", group: "Lesson", keywords: ["nameref", "local -n", "export -f", "Shellshock", "CVE-2014-6271", "dynamic vs lexical scope", "bats", "shUnit2", "BASH_SOURCE", "testing shell functions"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }
