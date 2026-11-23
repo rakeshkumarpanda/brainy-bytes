@@ -41,7 +41,7 @@ import build as B  # noqa: E402
 sys.path.append(HERE)  # after the import above, so that 'build' still means the Computer Vision builder
 import lxkit  # noqa: E402
 
-WIDGETS = ['cvviz.js', 'viz.js', 'playkit.js', 'lxwidgets.js', 'lxshell.js']
+WIDGETS = ['cvviz.js', 'viz.js', 'playkit.js', 'lxshell.js', 'lxwidgets.js']
 BASE = {'builder': 'tools/linux-build/build.py', 'css': ['cv.css', 'viz.css', 'playkit.css', 'linux.css'],
         'body': 'cvp lxp', 'widgets': WIDGETS, 'subject': 'linux', 'badge': 'LX', 'name': 'Unix and Linux',
         'min_calc': 6, 'min_assign': 0, 'fx_word': ('Command', 'Commands', 'command card')}
@@ -147,7 +147,7 @@ def main():
         B.CFG.clear()
         B.CFG.update(BASE)
         B.CFG.update(P, topics=folder, marker='lx-' + P['part'] + '-build')
-        if (only and P['part'] != only) or (args and not any(a in ' '.join(os.listdir(folder)) for a in args)):
+        if only and P['part'] != only:
             chs = B.chapters()
             for T in chs:
                 T['part'], T['part_name'] = P['part'], P['part_name']

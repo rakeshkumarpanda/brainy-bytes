@@ -131,12 +131,12 @@ def execute(script, root=False, keep=False, cwd='~'):
     if not keep:
         reset_home()
     parts = split_cmds(script)
-    body = ['exec 2>&1', f'cd {cwd}']
+    body = ['exec 2>&1', "__m() { printf '\\036%s\\n' \"$1\"; }", "HISTIGNORE='__m *'", f'cd {cwd}']
     for k, (kind, c) in enumerate(parts):
         if kind == '$':
-            body.append(f"printf '\\036%d\\n' {k}")
+            body.append(f'__m {k}')
             body.append(c)
-    body.append(f"printf '\\036end\\n'")
+    body.append('__m end')
     with tempfile.NamedTemporaryFile('w', suffix='.sh', delete=False, dir='/tmp') as f:
         f.write('\n'.join(body) + '\n')
         path = f.name

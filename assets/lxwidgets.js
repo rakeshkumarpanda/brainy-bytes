@@ -131,6 +131,180 @@
     }
   }));
 
+  /* ---------- shared: a pretend computer from assets/lxshell.js, so animations show real behaviour ---------- */
+  const world = lab => new LXSH.World(lab || {});
+  const HOME_TREE = () => ['/', [['bin', []], ['etc', [['passwd'], ['hostname'], ['os-release']]], ['home', [['asha', []], ['learner', [['notes.txt'], ['fruits.txt'], ['logs', [['app.log'], ['old.log']]], ['scripts', [['hello.sh']]], ['projects', []]]]]], ['tmp', []], ['usr', [['bin', []]]], ['var', [['log', []]]]]];
+
+  /* 1.2 the parts of a command line */
+  def('lx-cmdparts', el => W(el, {
+    title: 'Take a command apart',
+    sub: 'Type any command. Pip splits it into words the way the shell does and names each part.',
+    inputs: [{ k: 'line', label: 'Command line', type: 'text', val: 'ls -l -a /etc', w: 300 }],
+    random: () => ({ line: ['ls -la ~/logs', 'grep -i error app.log', 'cp -r photos backup', 'head -n 3 notes.txt', 'echo "two words" one'][Math.floor(Math.random() * 5)] }),
+    frames: v => {
+      const w = world(); let toks;
+      try { toks = w.lex(String(v.line)).filter(t => t.w).map(t => w.wordText(t.w)); } catch (e) { return [{ msg: 'That line has an unclosed quote. Close it and try again.', mood: 'think', fx: 'shake', layers: [] }]; }
+      if (!toks.length) return [{ msg: 'Type a command first.', mood: 'think', layers: [] }];
+      const kind = toks.map((t, i) => i === 0 ? 'command' : /^--?\w/.test(t) ? 'option' : 'argument');
+      const fr = [{ msg: 'The shell reads the line and splits it at spaces into words. Quotes keep words together.', mood: 'look', layers: [{ t: 'row', label: 'Words', cells: toks, idx: true }] }];
+      toks.forEach((t, i) => {
+        const cls = {}; for (let j = 0; j < i; j++) cls[j] = kind[j] === 'command' ? 'piv' : kind[j] === 'option' ? 'mv' : 'cur'; cls[i] = 'look';
+        const say = kind[i] === 'command' ? `<code>${esc(t)}</code> is the <b>command</b>, the program to run. The shell looks for it in the folders listed in PATH.` : kind[i] === 'option' ? `<code>${esc(t)}</code> is an <b>option</b> (also called a flag). It starts with a dash and changes how the command behaves.${/^-[a-zA-Z]{2,}$/.test(t) ? ` Short options can be joined: ${esc(t)} means ${t.slice(1).split('').map(c => '-' + c).join(' ')}.` : ''}` : `<code>${esc(t)}</code> is an <b>argument</b>: what the command works on, often a file or folder name.`;
+        fr.push({ msg: say, mood: 'look', layers: [{ t: 'row', label: 'Words', cells: toks, idx: true, cls, tag: Object.fromEntries(kind.slice(0, i + 1).map((k, j) => [j, k])) }] });
+      });
+      const cls = Object.fromEntries(kind.map((k, j) => [j, k === 'command' ? 'piv' : k === 'option' ? 'mv' : 'cur']));
+      const r = w.run(String(v.line));
+      fr.push({ msg: `Done: 1 command, ${kind.filter(k => k === 'option').length} option(s), ${kind.filter(k => k === 'argument').length} argument(s). Here is what the practice shell prints for it.`, mood: 'happy', fx: 'burst', layers: [{ t: 'row', label: 'Words', cells: toks, idx: true, cls, tag: Object.fromEntries(kind.map((k, j) => [j, k])) }, { t: 'term', lines: [['c', String(v.line)]].concat(r.out.replace(/\n$/, '').split('\n').slice(0, 8).filter(x => x !== '').map(x => ['o', x])) }] });
+      return fr;
+    }
+  }));
+
+  /* 2.1 resolving a path one name at a time */
+  def('lx-path', el => W(el, {
+    title: 'Follow a path through the tree',
+    sub: 'Give a starting folder and a path. Pip walks the tree one name at a time, the way the kernel does.',
+    inputs: [{ k: 'cwd', label: 'You are in', type: 'text', val: '/home/learner', w: 170 }, { k: 'path', label: 'Path', type: 'text', val: '../learner/logs/app.log', w: 220 }],
+    random: () => ({ path: ['/etc/passwd', 'logs/../notes.txt', '~/scripts/hello.sh', './logs/old.log', '../../tmp', 'logs/missing.txt'][Math.floor(Math.random() * 6)] }),
+    frames: v => {
+      const w = world(); const cwd = String(v.cwd).trim() || '/';
+      if (!w.node(w.abs(cwd)) || w.node(w.abs(cwd)).type !== 'd') return [{ msg: `${esc(cwd)} is not a folder in this tree. Try /home/learner.`, mood: 'think', fx: 'shake', layers: [{ t: 'fs', tree: HOME_TREE() }] }];
+      let path = String(v.path).trim();
+      const fr = [], tree = HOME_TREE();
+      let at = path.startsWith('/') ? '/' : path.startsWith('~') ? '/home/learner' : w.abs(cwd);
+      const why = path.startsWith('/') ? 'The path starts with <b>/</b>, so it is <b>absolute</b>: start at the root.' : path.startsWith('~') ? '<b>~</b> means your home folder, /home/learner.' : `The path does not start with /, so it is <b>relative</b>: start where you are, ${esc(w.abs(cwd))}.`;
+      fr.push({ msg: why, mood: 'look', layers: [{ t: 'fs', tree, cls: { [at]: 'look' } }], vars: { at } });
+      const parts = path.replace(/^~/, '').split('/').filter(Boolean);
+      for (const p of parts) {
+        const next = p === '.' ? at : p === '..' ? (at === '/' ? '/' : at.replace(/\/[^/]+$/, '') || '/') : (at === '/' ? '' : at) + '/' + p;
+        const n = w.node(next);
+        const say = p === '.' ? '<b>.</b> means "this folder", so we stay.' : p === '..' ? `<b>..</b> means "the parent folder", so we go up to ${esc(next)}.` : n ? `Go into <b>${esc(p)}</b>: now at ${esc(next)}.` : `There is no <b>${esc(p)}</b> inside ${esc(at)}. The shell would say: No such file or directory.`;
+        if (!n) { fr.push({ msg: say, mood: 'sad', fx: 'shake', layers: [{ t: 'fs', tree, cls: { [at]: 'no' } }], vars: { at } }); return fr; }
+        at = next;
+        fr.push({ msg: say, mood: 'look', layers: [{ t: 'fs', tree, cls: { [at]: 'look' } }], vars: { at } });
+      }
+      fr.push({ msg: `Arrived. The full absolute path is <b>${esc(at)}</b>.`, mood: 'happy', fx: 'burst', layers: [{ t: 'fs', tree, cls: { [at]: 'yes' } }], vars: { at } });
+      return fr;
+    }
+  }));
+
+  /* 2.2 glob patterns */
+  def('lx-glob', el => W(el, {
+    title: 'Which files does a pattern match',
+    sub: 'Type a pattern with * ? or [ ]. Pip tests every file name and lights up the matches.',
+    inputs: [{ k: 'pat', label: 'Pattern', type: 'text', val: '*.txt', w: 140 }, { k: 'names', label: 'File names', type: 'text', val: 'notes.txt, fruits.txt, marks.csv, photo1.jpg, photo2.jpg, photo10.jpg, .bashrc, README', w: 380 }],
+    random: () => ({ pat: ['photo?.jpg', '*.jpg', '[nf]*', '*[0-9]*', '*', '.*', '[!a-m]*'][Math.floor(Math.random() * 7)] }),
+    frames: v => {
+      const names = PK.parseList(v.names, false), pat = String(v.pat).trim();
+      let re = '';
+      for (let i = 0; i < pat.length; i++) { const c = pat[i]; if (c === '*') re += '.*'; else if (c === '?') re += '.'; else if (c === '[') { const j = pat.indexOf(']', i + 1); if (j < 0) { re += '\\['; continue; } let set = pat.slice(i + 1, j); if (set[0] === '!' || set[0] === '^') set = '^' + set.slice(1); re += '[' + set + ']'; i = j; } else re += c.replace(/[.+^${}()|\\]/g, '\\$&'); }
+      const R = new RegExp('^' + re + '$'), hits = {};
+      const fr = [{ msg: `Pattern <code>${esc(pat)}</code>: <b>*</b> matches any text (even none), <b>?</b> exactly one character, <b>[abc]</b> one of those characters, <b>[!abc]</b> one character that is not.`, mood: 'think', layers: [{ t: 'row', label: 'Files in the folder', cells: names, idx: false }] }];
+      names.forEach((n, i) => {
+        const hidden = n.startsWith('.') && !pat.startsWith('.');
+        const ok = !hidden && R.test(n);
+        hits[i] = ok ? 'yes' : 'no';
+        fr.push({ msg: `<code>${esc(n)}</code>: ${ok ? 'matches.' : hidden ? 'starts with a dot, and a pattern only matches hidden files when it also starts with a dot.' : 'does not match.'}`, mood: ok ? 'happy' : 'sad', layers: [{ t: 'row', label: 'Files in the folder', cells: names, idx: false, cls: Object.assign({}, hits, { [i]: ok ? 'yes' : 'no' }) }] });
+      });
+      const got = names.filter((_, i) => hits[i] === 'yes');
+      fr.push({ msg: got.length ? `The shell replaces <code>${esc(pat)}</code> with: <code>${esc(got.sort().join(' '))}</code> before the command even starts.` : `Nothing matches, so bash leaves the pattern as it is: the command receives the text <code>${esc(pat)}</code>.`, mood: got.length ? 'wow' : 'think', fx: got.length ? 'rain' : undefined, layers: [{ t: 'row', label: 'Files in the folder', cells: names, idx: false, cls: Object.fromEntries(Object.entries(hits).map(([k, c]) => [k, c === 'yes' ? 'win' : 'done'])) }] });
+      return fr;
+    }
+  }));
+
+  /* 3.1 chmod: octal or symbolic to permission bits */
+  def('lx-chmod', el => W(el, {
+    title: 'chmod, bit by bit',
+    sub: 'Start from a mode, apply a chmod change in numbers (750) or letters (g+w, o-r, u=rwx). Watch every bit.',
+    inputs: [{ k: 'start', label: 'Start mode', type: 'text', val: '644', w: 90 }, { k: 'change', label: 'chmod', type: 'text', val: 'u+x,g+w', w: 150 }],
+    random: () => ({ change: ['755', '600', 'a+x', 'go-r', 'u=rwx,go=rx', 'o=', '+x', '711'][Math.floor(Math.random() * 8)] }),
+    check: v => /^[0-7]{3}$/.test(String(v.start)) ? '' : 'The start mode needs three octal digits, for example 644.',
+    frames: v => {
+      let m = parseInt(v.start, 8); const ch = String(v.change).trim(), fr = [];
+      const show = (cls, msg, mood, fx) => fr.push({ msg, mood, fx, layers: [{ t: 'perm', label: `Mode ${m.toString(8).padStart(3, '0')}  ${['---','--x','-w-','-wx','r--','r-x','rw-','rwx'][m >> 6 & 7]}${['---','--x','-w-','-wx','r--','r-x','rw-','rwx'][m >> 3 & 7]}${['---','--x','-w-','-wx','r--','r-x','rw-','rwx'][m & 7]}`, mode: m, cls }] });
+      show({}, `Each group has three switches: <b>r</b> read (4), <b>w</b> write (2), <b>x</b> execute (1). Add them up per group to get one digit. Start: ${v.start}.`, 'idle');
+      if (/^[0-7]{3}$/.test(ch)) {
+        const t = parseInt(ch, 8);
+        [0, 1, 2].forEach(g => {
+          const d = (t >> (6 - 3 * g)) & 7, cls = {};
+          [0, 1, 2].forEach(b => { cls[g * 3 + b] = 'look'; });
+          m = (m & ~(7 << (6 - 3 * g))) | (d << (6 - 3 * g));
+          const parts = [[4, 'r'], [2, 'w'], [1, 'x']].filter(([n]) => d & n).map(([n, c]) => `${c} (${n})`);
+          show(cls, `Digit ${g + 1} is <b>${d}</b> = ${parts.length ? parts.join(' + ') : 'nothing'}, so the ${['owner', 'group', 'others'][g]} get ${parts.length ? parts.map(p => p[0]).join('') : 'no rights'}.`, 'look');
+        });
+      } else {
+        for (const cl of ch.split(',')) {
+          const mm = /^([ugoa]*)([-+=])([rwx]*)$/.exec(cl);
+          if (!mm) { fr.push({ msg: `I do not understand <code>${esc(cl)}</code>. Use who (u, g, o, a), then + - or =, then letters r w x. Example: g+w.`, mood: 'sad', fx: 'shake' }); return fr; }
+          const who = mm[1] || 'a', cls = {};
+          ['u', 'g', 'o'].forEach((w2, g) => {
+            if (!who.includes(w2) && !who.includes('a')) return;
+            let bits = 0; [...mm[3]].forEach(c => { bits |= { r: 4, w: 2, x: 1 }[c]; });
+            const sh = 6 - 3 * g, before = (m >> sh) & 7;
+            const after = mm[2] === '+' ? before | bits : mm[2] === '-' ? before & ~bits : bits;
+            m = (m & ~(7 << sh)) | (after << sh);
+            [0, 1, 2].forEach(b => { const bit = 4 >> b; if ((before & bit) !== (after & bit)) cls[g * 3 + b] = after & bit ? 'yes' : 'no'; });
+          });
+          show(cls, `<code>${esc(cl)}</code>: ${mm[2] === '+' ? 'switch on' : mm[2] === '-' ? 'switch off' : 'set exactly'} ${mm[3] || 'nothing'} for ${who.replace('a', 'everyone').replace('u', 'owner ').replace('g', 'group ').replace('o', 'others ')}. Green bits turned on, red bits turned off.`, 'look');
+        }
+      }
+      show({}, `Result: <b>${m.toString(8).padStart(3, '0')}</b>. In ls -l you would see -${['---','--x','-w-','-wx','r--','r-x','rw-','rwx'][m >> 6 & 7]}${['---','--x','-w-','-wx','r--','r-x','rw-','rwx'][m >> 3 & 7]}${['---','--x','-w-','-wx','r--','r-x','rw-','rwx'][m & 7]} for a file.`, 'happy', 'burst');
+      return fr;
+    }
+  }));
+
+  /* 3.1 may this user do this? */
+  def('lx-access', el => W(el, {
+    title: 'May this person open the file',
+    sub: 'Pick a user, a file mode and an action. Pip follows the same order of checks as the kernel.',
+    inputs: [{ k: 'who', label: 'User', type: 'seg', val: 'asha', opts: [['learner', 'learner (owner)'], ['asha', 'asha (in group team)'], ['ravi', 'ravi (other)'], ['root', 'root']] },
+      { k: 'mode', label: 'Mode of report.txt', type: 'text', val: '640', w: 90 }, { k: 'act', label: 'Wants to', type: 'seg', val: 'r', opts: [['r', 'read'], ['w', 'write'], ['x', 'execute']] }],
+    check: v => /^[0-7]{3}$/.test(String(v.mode)) ? '' : 'Mode needs three octal digits.',
+    frames: v => {
+      const m = parseInt(v.mode, 8), bit = { r: 4, w: 2, x: 1 }[v.act], word = { r: 'read', w: 'write', x: 'execute' }[v.act];
+      const L = c => [{ t: 'perm', label: 'report.txt, owner learner, group team', mode: m, cls: c }];
+      const fr = [{ msg: `${v.who} wants to <b>${word}</b> report.txt (owner learner, group team, mode ${v.mode}).`, mood: 'think', layers: L({}) }];
+      if (v.who === 'root') {
+        const ok = v.act !== 'x' || (m & 0o111);
+        fr.push({ msg: ok ? 'root skips the read and write checks. Allowed.' : 'Even root may only execute a file when at least one x bit is set. Denied.', mood: ok ? 'happy' : 'sad', fx: ok ? 'burst' : 'shake', layers: L({}) });
+        return fr;
+      }
+      const g = v.who === 'learner' ? 0 : v.who === 'asha' ? 1 : 2, name = ['owner', 'group', 'others'][g];
+      if (g >= 1) fr.push({ msg: `${v.who} is not the owner, so the owner bits do not count for them at all.`, mood: 'look', layers: L({ 0: 'done', 1: 'done', 2: 'done' }) });
+      if (g === 2) fr.push({ msg: `${v.who} is not in the group team either, so only the <b>others</b> bits count.`, mood: 'look', layers: L({ 0: 'done', 1: 'done', 2: 'done', 3: 'done', 4: 'done', 5: 'done' }) });
+      const idx = g * 3 + [4, 2, 1].indexOf(bit), on = (m >> (8 - idx)) & 1;
+      fr.push({ msg: `The kernel uses only the <b>${name}</b> group of bits. The ${word} bit there is ${on ? 'on' : 'off'}. ${on ? 'Allowed.' : 'Denied: Permission denied.'}`, mood: on ? 'happy' : 'sad', fx: on ? 'burst' : 'shake', layers: L({ [idx]: on ? 'yes' : 'no' }) });
+      return fr;
+    }
+  }));
+
+  /* 2.x onward: run a pipeline stage by stage in the practice shell and show the data between stages */
+  def('lx-pipe', el => W(el, {
+    title: 'Watch data flow through a pipeline',
+    sub: 'Type a pipeline. Pip runs it in the practice shell one stage at a time and shows what passes through each pipe.',
+    inputs: [{ k: 'line', label: 'Pipeline', type: 'text', val: 'cat fruits.txt | sort | uniq -c | sort -rn | head -3', w: 420 }],
+    random: () => ({ line: ['grep ERROR logs/app.log | cut -d" " -f4- | sort', 'cut -d, -f2 marks.csv | tail -n +2 | sort | uniq -c', 'ls -l | grep "^d" | wc -l', 'cat poem.txt | tr a-z A-Z | head -2', "awk -F, 'NR>1 {print $3, $1}' marks.csv | sort -rn | head -2"][Math.floor(Math.random() * 5)] }),
+    frames: v => {
+      const line = String(v.line).trim(), w = world();
+      let tree; try { tree = w.parse(w.lex(line)); } catch (e) { return [{ msg: 'The shell could not read that line: ' + esc(e.message), mood: 'sad', fx: 'shake', layers: [] }]; }
+      const pipe = tree.items.length === 1 && tree.items[0].p.t === 'pipe' ? tree.items[0].p : null;
+      if (!pipe) return [{ msg: 'Type one pipeline, with commands joined by |.', mood: 'think', layers: [] }];
+      const stages = line.split(/\|(?![^"']*["'][^"']*$)/).map(s => s.trim());
+      if (stages.length !== pipe.cmds.length) stages.length = 0;
+      const names = pipe.cmds.map((c, i) => stages[i] || ('stage ' + (i + 1)));
+      const fr = [{ msg: `This pipeline has ${pipe.cmds.length} stage(s). All of them start at the same time, and each one reads the output of the one before it.`, mood: 'look', layers: [{ t: 'flow', items: names.map(n => [n, '']) }] }];
+      let data = '';
+      for (let i = 0; i < pipe.cmds.length; i++) {
+        let buf = ''; const save = w.outHook; w.outHook = s => { buf += s; };
+        try { w.withRedir(pipe.cmds[i], data, null); } catch (e) { buf += 'error: ' + e.message + '\n'; } finally { w.outHook = save; }
+        data = buf;
+        const shown = data.replace(/\n$/, '').split('\n');
+        fr.push({ msg: `<code>${esc(names[i])}</code> ${i ? 'reads the lines from the pipe and' : ''} writes ${shown.filter(x => x !== '').length} line(s)${i < pipe.cmds.length - 1 ? ' into the next pipe' : ' to your screen'}.`, mood: i === pipe.cmds.length - 1 ? 'happy' : 'work', fx: i === pipe.cmds.length - 1 ? 'burst' : undefined,
+          layers: [{ t: 'flow', items: names.map((n, k) => [n, '', k < i ? 'done' : k === i ? (i === pipe.cmds.length - 1 ? 'yes' : 'look') : '']), arrows: names.map((_, k) => k < i ? 'yes' : '') }, { t: 'term', label: i < pipe.cmds.length - 1 ? 'In the pipe now' : 'On your screen', lines: shown.slice(0, 10).map(x => ['o', x]).concat(shown.length > 10 ? [['o', `... ${shown.length - 10} more line(s)`]] : []) }] });
+      }
+      return fr;
+    }
+  }));
+
   /* ---------- wiring for lxkit.run() boxes ---------- */
   function wire(root) {
     root.querySelectorAll('.lx-run .lx-copy').forEach(b => {

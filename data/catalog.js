@@ -10393,6 +10393,69 @@ function lxBasicsModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "terminal-and-shell", title: "The terminal and the shell", emoji: "1.2", page: "content/linux/terminal-and-shell.html",
+        summary: "Terminal versus shell, the prompt, command syntax, options and arguments, builtins and PATH, history and keyboard shortcuts.",
+        keywords: ["terminal", "shell", "bash", "zsh", "prompt", "PS1", "options", "arguments", "PATH", "type", "which", "history", "tab completion", "ctrl r", "ctrl c"],
+        minutes: 35, counts: {"lessons": 6, "problems": 6, "quiz": 12, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "terminal", title: "Terminal, console and shell are three different things", emoji: "", group: "Lesson", keywords: ["terminal", "terminal emulator", "shell", "console", "tty", "bash", "zsh", "dash", "CLI"] },
+        { id: "prompt", title: "Reading the prompt", emoji: "", group: "Lesson", keywords: ["prompt", "PS1", "root", "$ and #", "hostname", "whoami", "home folder", "tilde"] },
+        { id: "anatomy", title: "The shape of every command", emoji: "", group: "Lesson", keywords: ["command syntax", "options", "flags", "arguments", "short options", "long options", "quotes", "spaces in names"] },
+        { id: "findcmd", title: "Where commands come from: builtins, PATH and type", emoji: "", group: "Lesson", keywords: ["builtin", "PATH", "type", "which", "command -v", "command not found", "alias", "function", "./"] },
+        { id: "keys", title: "History, Tab completion and shortcuts that save hours", emoji: "", group: "Lesson", keywords: ["tab completion", "history", "Ctrl R", "Ctrl C", "Ctrl D", "Ctrl L", "readline", "!!", "!$", "keyboard shortcuts"] },
+        { id: "levels", title: "The shell from school to research", emoji: "", group: "Lesson", keywords: ["shell language", "fork exec", "pseudo terminal", "pts", "SIGINT", "ShellCheck", "Nushell", "PowerShell"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "getting-help", title: "Getting help: man, --help and friends", emoji: "1.3", page: "content/linux/getting-help.html",
+        summary: "man pages, manual sections, apropos and whatis, --help, help for builtins, info and tldr, and reading error messages.",
+        keywords: ["man", "man page", "apropos", "whatis", "help", "--help", "info", "tldr", "manual sections", "error messages"],
+        minutes: 25, counts: {"lessons": 5, "problems": 6, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "man", title: "The manual: man pages", emoji: "", group: "Lesson", keywords: ["man", "manual page", "man pages", "SYNOPSIS", "less", "pager", "q to quit"] },
+        { id: "sections", title: "Manual sections and searching the manual", emoji: "", group: "Lesson", keywords: ["man sections", "man 5", "apropos", "man -k", "whatis", "mandb", "section 1", "section 8"] },
+        { id: "quick", title: "Quick help: --help, help, info and tldr", emoji: "", group: "Lesson", keywords: ["--help", "help builtin", "--version", "info", "tldr", "GNU coding standards", "BSD vs GNU"] },
+        { id: "practice", title: "Getting unstuck, step by step", emoji: "", group: "Lesson", keywords: ["error messages", "No such file or directory", "Permission denied", "command not found", "troubleshooting", "apropos"] },
+        { id: "levels", title: "Documentation from school to research", emoji: "", group: "Lesson", keywords: ["roff", "groff", "mandoc", "man-pages project", "explainshell", "documentation"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-basics-2", title: "Files and folders", emoji: "2", step: 2, part: "basics", level: "Beginner", blurb: "The single file tree, paths, making, copying, moving and deleting files and folders, wildcards, and reading files.", topics: [
+      { id: "file-tree", title: "The file tree and paths", emoji: "2.1", page: "content/linux/file-tree.html",
+        summary: "The single tree, standard folders (FHS), absolute and relative paths, pwd, cd and ls in depth, hidden files.",
+        keywords: ["file tree", "root directory", "fhs", "path", "absolute path", "relative path", "pwd", "cd", "ls", "hidden files", "/etc", "/var", "/home"],
+        minutes: 35, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "onetree", title: "One tree for everything", emoji: "", group: "Lesson", keywords: ["root directory", "slash", "single tree", "directory", "folder", "mount", "drive letters"] },
+        { id: "fhs", title: "What lives where: the standard folders", emoji: "", group: "Lesson", keywords: ["FHS", "Filesystem Hierarchy Standard", "/etc", "/home", "/var", "/usr", "/bin", "/tmp", "/dev", "/proc", "/opt", "usrmerge"] },
+        { id: "paths", title: "Absolute and relative paths, . .. and ~", emoji: "", group: "Lesson", keywords: ["absolute path", "relative path", "dot", "dot dot", "tilde", "cd -", "pwd", "cd", "parent directory"] },
+        { id: "ls", title: "Seeing what is there: ls in depth", emoji: "", group: "Lesson", keywords: ["ls", "ls -l", "ls -a", "hidden files", "dotfiles", "ls -lh", "ls -ltr", "ls -R", "ls -d", "long listing columns"] },
+        { id: "levels", title: "The file tree from school to research", emoji: "", group: "Lesson", keywords: ["namespace", "mount", "path resolution", "dentry", "chroot", "mount namespace", "openat2", "Plan 9"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "manage-files", title: "Working with files and folders", emoji: "2.2", page: "content/linux/manage-files.html",
+        summary: "mkdir, touch, cp, mv, rm and rmdir, safe deleting, wildcards and brace expansion.",
+        keywords: ["mkdir", "touch", "cp", "mv", "rm", "rmdir", "rename", "wildcards", "glob", "brace expansion", "delete files"],
+        minutes: 35, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "make", title: "Making folders and files: mkdir and touch", emoji: "", group: "Lesson", keywords: ["mkdir", "mkdir -p", "touch", "file names", "case sensitive", "extensions"] },
+        { id: "copymove", title: "Copying, moving and renaming: cp and mv", emoji: "", group: "Lesson", keywords: ["cp", "cp -r", "cp -a", "mv", "rename", "overwrite", "cp -i", "mv -n"] },
+        { id: "remove", title: "Deleting safely: rm and rmdir", emoji: "", group: "Lesson", keywords: ["rm", "rm -r", "rm -f", "rm -i", "rmdir", "no recycle bin", "preserve-root", "safe delete"] },
+        { id: "glob", title: "Wildcards and braces: many files at once", emoji: "", group: "Lesson", keywords: ["wildcards", "globbing", "*", "?", "[abc]", "brace expansion", "{1..5}", "pattern", "nullglob"] },
+        { id: "levels", title: "File operations from school to research", emoji: "", group: "Lesson", keywords: ["unlink", "rename atomic", "open file deleted", "reflink", "crash consistency", "secure delete"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
