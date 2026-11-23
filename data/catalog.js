@@ -10679,6 +10679,69 @@ function sqlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "sql-pro", title: "Professional SQL", emoji: "8", step: 8, level: "Advanced", blurb: "Logic inside the database, security, scaling to many machines, and the differences between engines.", topics: [
+      { id: "sql-programmable", title: "Triggers, generated columns and procedures", emoji: "8.1", page: "content/sql/sql-programmable.html",
+        summary: "Triggers, generated columns and stored procedures.",
+        keywords: ["trigger", "generated column", "stored procedure", "audit log", "INSTEAD OF", "PL/pgSQL"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "triggers", title: "Triggers: code that runs on every change", emoji: "", group: "Lesson", keywords: ["trigger", "CREATE TRIGGER", "BEFORE", "AFTER", "NEW", "OLD", "RAISE", "audit log"] },
+        { id: "uses", title: "Keeping data in step, and writable views", emoji: "", group: "Lesson", keywords: ["derived data", "stored total", "INSTEAD OF trigger", "writable view", "trigger risks", "side effects"] },
+        { id: "generated", title: "Generated columns", emoji: "", group: "Lesson", keywords: ["generated column", "computed column", "VIRTUAL", "STORED", "GENERATED ALWAYS AS"] },
+        { id: "procs", title: "Stored procedures and functions", emoji: "", group: "Lesson", keywords: ["stored procedure", "user defined function", "PL/pgSQL", "T-SQL", "PL/SQL", "CALL", "EXEC", "business logic"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["row level trigger", "statement level trigger", "active database", "change data capture", "Debezium", "temporal table"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-security", title: "Database security", emoji: "8.2", page: "content/sql/sql-security.html",
+        summary: "SQL injection, parameterized queries, least privilege, row level security and protecting personal data.",
+        keywords: ["SQL injection", "parameterized query", "GRANT", "least privilege", "row level security", "password hashing"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "injection", title: "SQL injection: when input becomes code", emoji: "", group: "Lesson", keywords: ["SQL injection", "injection attack", "string concatenation", "login bypass", "OWASP", "UNION injection"] },
+        { id: "params", title: "The fix: parameterized queries", emoji: "", group: "Lesson", keywords: ["parameterized query", "prepared statement", "bind parameter", "placeholder", "allow list", "ORM"] },
+        { id: "access", title: "Users, roles and GRANT", emoji: "", group: "Lesson", keywords: ["least privilege", "GRANT", "REVOKE", "role", "user account", "permissions", "security view"] },
+        { id: "rls", title: "Row level security and personal data", emoji: "", group: "Lesson", keywords: ["row level security", "CREATE POLICY", "data masking", "password hashing", "Argon2", "bcrypt", "encryption at rest", "TLS", "backup", "PII"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["defence in depth", "second order injection", "differential privacy", "encrypted database", "taint tracking"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-scale", title: "Databases at scale", emoji: "8.3", page: "content/sql/sql-scale.html",
+        summary: "Partitioning, replication, sharding, CAP, OLTP versus OLAP and column stores.",
+        keywords: ["scaling", "partitioning", "replication", "sharding", "CAP theorem", "OLAP", "column store"],
+        minutes: 40, counts: {"lessons": 6, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "grow", title: "When one server is not enough", emoji: "", group: "Lesson", keywords: ["scalability", "scale up", "scale out", "vertical scaling", "horizontal scaling", "caching", "read replica"] },
+        { id: "partition", title: "Partitioning a big table", emoji: "", group: "Lesson", keywords: ["partitioning", "partition pruning", "range partition", "list partition", "hash partition", "PARTITION BY"] },
+        { id: "replicate", title: "Replication: copies of the whole database", emoji: "", group: "Lesson", keywords: ["replication", "primary", "replica", "read replica", "replication lag", "synchronous replication", "failover", "read your writes"] },
+        { id: "shard", title: "Sharding and the CAP theorem", emoji: "", group: "Lesson", keywords: ["sharding", "shard key", "hot spot", "hash sharding", "CAP theorem", "consistency", "availability", "network partition"] },
+        { id: "olap", title: "OLTP, OLAP and column stores", emoji: "", group: "Lesson", keywords: ["OLTP", "OLAP", "column store", "row store", "data warehouse", "star schema", "fact table", "dimension table", "ETL"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["Raft", "Paxos", "eventual consistency", "distributed SQL", "Aurora", "lakehouse", "NoSQL", "NewSQL"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-dialects", title: "SQL standards and dialects", emoji: "8.4", page: "content/sql/sql-dialects.html",
+        summary: "The SQL standard, dialect differences, choosing an engine and portable SQL.",
+        keywords: ["SQL standard", "dialect", "PostgreSQL", "MySQL", "SQL Server", "Oracle", "portable SQL"],
+        minutes: 30, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "standard", title: "One language, one standard, many dialects", emoji: "", group: "Lesson", keywords: ["SQL standard", "ISO 9075", "dialect", "SQL-92", "SQL:1999", "SQL:2003", "SQL:2016", "SQL:2023", "portable SQL"] },
+        { id: "diffs", title: "Everyday differences between engines", emoji: "", group: "Lesson", keywords: ["dialect differences", "identifier quoting", "LIMIT vs TOP", "string concatenation", "boolean", "ILIKE", "collation"] },
+        { id: "choose", title: "Choosing an engine", emoji: "", group: "Lesson", keywords: ["SQLite", "PostgreSQL", "MySQL", "MariaDB", "SQL Server", "Oracle", "DuckDB", "choose a database"] },
+        { id: "portable", title: "Writing SQL that travels", emoji: "", group: "Lesson", keywords: ["portable SQL", "CAST", "COALESCE", "CASE", "GROUP BY strict", "integer division", "ISO date"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["SQLGlot", "transpiler", "ISO conformance", "SQL semantics", "text to SQL", "SEQUEL", "Chamberlin Boyce"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

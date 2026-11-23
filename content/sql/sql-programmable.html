@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triggers, generated columns and procedures · SQL and Databases</title>
+<meta name="description" content="CREATE TRIGGER, BEFORE, AFTER and INSTEAD OF, NEW and OLD, WHEN and RAISE, audit logs, stored totals, writable views, generated columns VIRTUAL and STORED, stored procedures and functions in PostgreSQL, SQL Server, MySQL and Oracle, database versus application logic.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 8: Professional SQL</span><span>›</span><span>Triggers and procedures</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 8 · Topic 1 of 1 · Advanced</div>
+    <h1>Triggers, generated columns and procedures</h1>
+    <p class="lead">Put logic inside the database: triggers that react to every change, generated columns that compute themselves, and stored procedures in server engines.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">2 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">6 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-programmable" data-topic="cheatsheet" data-h="sql-programmable">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#triggers" data-l="triggers"><span class="n">1</span><span class="t">Triggers: code that runs on every change</span></a></li><li><a href="#uses" data-l="uses"><span class="n">2</span><span class="t">Keeping data in step, and writable views</span></a></li><li><a href="#generated" data-l="generated"><span class="n">3</span><span class="t">Generated columns</span></a></li><li><a href="#procs" data-l="procs"><span class="n">4</span><span class="t">Stored procedures and functions</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="triggers" data-l="triggers" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Triggers: code that runs on every change</h2>
+<p>A <b>trigger</b> is a small program stored in the database that runs by itself when rows are inserted, updated or deleted. Inside it, <code>NEW</code> is the row after the change and <code>OLD</code> is the row before.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Trigger</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>CREATE TRIGGER name AFTER UPDATE OF col ON t WHEN condition BEGIN ... ; END;</code></div><div class="fx-n">BEFORE or AFTER, INSERT, UPDATE or DELETE. WHEN is optional.</div></div><div class="fx"><div class="fx-h"><span>Refuse a change</span></div><div class="fx-b"><code>SELECT RAISE(ABORT, 'message');</code></div><div class="fx-n">Inside a trigger, stops the statement with an error (SQLite).</div></div></div>
+<div class="viz" data-viz="pk" data-pk="sqtrig"></div>
+<div class="sq-run" data-q="audit"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Timing</th><th>NEW</th><th>OLD</th><th>Typical use</th></tr></thead><tbody><tr><td>BEFORE INSERT</td><td>the row about to be inserted</td><td>none</td><td>check or refuse values</td></tr><tr><td>AFTER INSERT</td><td>the inserted row</td><td>none</td><td>write a log, update a total</td></tr><tr><td>BEFORE or AFTER UPDATE</td><td>new values</td><td>old values</td><td>audit trails, history tables</td></tr><tr><td>BEFORE or AFTER DELETE</td><td>none</td><td>the deleted row</td><td>archive the row before it goes</td></tr><tr><td>INSTEAD OF (on a view)</td><td>values written to the view</td><td>old view row</td><td>make a view writable</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-trig"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="uses" data-l="uses" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Keeping data in step, and writable views</h2>
+<p>Triggers can keep a stored total correct, or let people write through a view.</p>
+<div class="sq-run" data-q="total"></div>
+<div class="sq-run" data-q="instead"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Good use of a trigger</th><th>Risky use of a trigger</th></tr></thead><tbody><tr><td>audit logs and history tables</td><td>business rules that hide surprising side effects</td></tr><tr><td>keeping a denormalized total in step</td><td>triggers that fire other triggers several levels deep</td></tr><tr><td>refusing values a CHECK cannot express</td><td>slow work inside a trigger on a busy table</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>Triggers are invisible from the app code. Document them, keep them short, and remember that bulk loads fire them once per row.</div></div>
+<div class="sq-lab" data-lab="l-instead"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="generated" data-l="generated" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Generated columns</h2>
+<p>A <b>generated column</b> is worked out from other columns of the same row. You never write it, and it can never be wrong. SQLite has them since 3.31 (2020), PostgreSQL since 12, MySQL since 5.7.</p>
+<div class="sq-run" data-q="gen"></div>
+<div class="sq-run" data-q="generr"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Option</th><th>Computed</th><th>Disk</th><th>Indexable</th></tr></thead><tbody><tr><td>VIRTUAL (SQLite default)</td><td>on every read</td><td>none</td><td>yes, through an index on the column</td></tr><tr><td>STORED</td><td>on every write</td><td>yes</td><td>yes</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-gen"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="procs" data-l="procs" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Stored procedures and functions</h2>
+<p>Server databases can store whole programs: <b>stored procedures</b> (run with CALL or EXEC) and <b>user defined functions</b> (used inside queries). SQLite has neither in SQL, because it runs inside your app, so the app registers functions in its own language instead.</p>
+<pre class="sq-code">-- PostgreSQL (PL/pgSQL)
+CREATE PROCEDURE transfer(src TEXT, dst TEXT, amt INTEGER)
+LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE accounts SET balance = balance - amt WHERE name = src;
+  UPDATE accounts SET balance = balance + amt WHERE name = dst;
+END $$;
+CALL transfer('Asha', 'Ravi', 300);
+
+-- SQL Server (T-SQL)
+CREATE PROCEDURE transfer @src NVARCHAR(50), @dst NVARCHAR(50), @amt INT AS
+BEGIN
+  UPDATE accounts SET balance = balance - @amt WHERE name = @src;
+  UPDATE accounts SET balance = balance + @amt WHERE name = @dst;
+END;
+EXEC transfer 'Asha', 'Ravi', 300;</pre>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>Procedural language</th><th>Run with</th></tr></thead><tbody><tr><td>PostgreSQL</td><td>PL/pgSQL, also PL/Python and others</td><td>CALL proc(...), SELECT func(...)</td></tr><tr><td>SQL Server</td><td>T-SQL</td><td>EXEC proc ...</td></tr><tr><td>MySQL</td><td>SQL/PSM style</td><td>CALL proc(...)</td></tr><tr><td>Oracle</td><td>PL/SQL</td><td>EXEC proc, or a BEGIN ... END block</td></tr><tr><td>SQLite</td><td>none in SQL, functions registered by the host app</td><td>used inside queries</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Logic in the database</th><th>Logic in the application</th></tr></thead><tbody><tr><td>one place guards the data for every app</td><td>easier to test, version and debug</td></tr><tr><td>fewer round trips for multi step work</td><td>scales out by adding app servers</td></tr><tr><td>tied to one engine’s language</td><td>portable across databases</td></tr></tbody></table></div>
+<div class="sq-run" data-q="udf"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Triggers are automatic reactions to changes. Generated columns are formulas. Procedures are saved programs.</p></div><div class="ld-p" data-ld="college" hidden><p>BEFORE triggers check, AFTER triggers log or update totals, INSTEAD OF triggers make views writable. Generated columns are VIRTUAL or STORED. Procedures and functions live in server engines.</p></div><div class="ld-p" data-ld="masters" hidden><p>Triggers run inside the same transaction as the statement, so a failing trigger rolls the statement back. Statement level triggers (PostgreSQL, SQL Server) fire once per statement with transition tables, while SQLite only has row level triggers.</p></div><div class="ld-p" data-ld="research" hidden><p>Active databases, which react to events with rules, were studied in the 1990s (the HiPAC and Starburst projects). Today change data capture streams every change from the log to other systems, using tools such as Debezium, instead of triggers.</p></div></div>
+<details class="deep"><summary>Going deeper: Temporal tables</summary><div class="deep-b"><p>SQL:2011 added system versioned tables, which keep every past version of each row automatically, so you can query the data AS OF a past time. SQL Server and MariaDB support them. In SQLite and PostgreSQL the same effect is built with an AFTER UPDATE trigger that copies the old row to a history table.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-transactions.html" data-topic="sql-transactions"><small>Previous topic</small><b>Transactions</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-programmable", "topic": "sql-programmable", "subject": "sql", "title": "Triggers, generated columns and procedures", "codes": {}, "quiz": [{"lv": "e", "q": "A trigger runs", "o": ["When a user clicks it", "Automatically on INSERT, UPDATE or DELETE", "Once a day", "Only on SELECT"], "a": 1, "hint": "By itself.", "why": "It reacts to data changes."}, {"lv": "e", "q": "Inside an UPDATE trigger, OLD.price is", "o": ["The new price", "The price before the change", "Always NULL", "An error"], "a": 1, "hint": "Before.", "why": "OLD is the row before, NEW the row after."}, {"lv": "e", "q": "A generated column is", "o": ["Typed by the user", "Computed from other columns", "A primary key", "A view"], "a": 1, "hint": "Formula.", "why": "It is derived from the row."}, {"lv": "e", "q": "An audit log is best written by", "o": ["A BEFORE trigger that refuses", "An AFTER trigger", "A view", "An index"], "a": 1, "hint": "After the change.", "why": "Log what really happened."}, {"lv": "m", "q": "How many times does a row level trigger fire for an UPDATE of 5 rows?", "o": ["Once", "5 times", "Never", "10 times"], "a": 1, "hint": "Per row.", "why": "FOR EACH ROW."}, {"lv": "m", "q": "INSTEAD OF triggers are attached to", "o": ["Indexes", "Views", "Columns", "Databases"], "a": 1, "hint": "Views.", "why": "They say what a write to a view should do."}, {"lv": "m", "q": "A STORED generated column", "o": ["Is computed on read", "Is computed on write and saved", "Cannot be indexed", "Can be written directly"], "a": 1, "hint": "Saved.", "why": "Computed on write."}, {"lv": "m", "q": "SELECT RAISE(ABORT, 'msg') in a SQLite trigger", "o": ["Logs a message", "Stops the statement with an error", "Commits", "Retries"], "a": 1, "hint": "Abort.", "why": "The change is refused."}, {"lv": "m", "q": "SQL Server runs a stored procedure with", "o": ["CALL", "EXEC", "RUN", "DO"], "a": 1, "hint": "Execute.", "why": "EXEC proc_name."}, {"lv": "h", "q": "Why does SQLite have no stored procedures in SQL?", "o": ["It is too old", "It runs inside the app, which supplies its own code", "A bug", "Licence limits"], "a": 1, "hint": "Embedded.", "why": "The host app registers functions."}, {"lv": "x", "q": "Streaming every committed change from the log to other systems is called", "o": ["Sharding", "Change data capture", "Vacuum", "Normalization"], "a": 1, "hint": "CDC.", "why": "Change data capture, for example with Debezium."}], "calc": [{"lv": "e", "q": "An UPDATE raises the price of both Sports products. How many rows does the price log get?", "ans": "2", "hint": "Once per changed row.", "steps": ["Two Sports products: Cricket ball and Football.", "The trigger fires once per row.", "<span class=\"eq\">2 log rows<\/span>"]}, {"lv": "e", "q": "Football was 850 and rose by 50. What are OLD.price and NEW.price? Give NEW.price.", "ans": "900", "hint": "Old plus 50.", "steps": ["OLD.price = 850.", "NEW.price = OLD.price + 50.", "<span class=\"eq\">850 + 50 = 900<\/span>"]}, {"lv": "m", "q": "Order 110 had 1 item. A line with qty 4 is inserted and the trigger adds it. What is item_count now?", "ans": "5", "hint": "Add qty.", "steps": ["Before: 1 item (one football).", "The trigger adds NEW.qty = 4.", "<span class=\"eq\">1 + 4 = 5<\/span>"]}, {"lv": "m", "q": "A generated total is qty × price. What is it for 12 notebooks at 60?", "ans": "720", "hint": "Multiply.", "steps": ["qty = 12, price = 60.", "The column multiplies them.", "<span class=\"eq\">12 × 60 = 720<\/span>"]}, {"lv": "m", "q": "is_bulk is (qty >= 10). How many of the lines Notebook 12 and Lamp 1 are bulk?", "ans": "1", "hint": "Test each.", "steps": ["12 >= 10 is true, 1.", "1 >= 10 is false, 0.", "<span class=\"eq\">1 bulk line<\/span>"]}, {"lv": "m", "q": "A bulk import inserts 50,000 rows into a table with one row level trigger. How many times does it fire?", "ans": "50000", "hint": "Once per row.", "steps": ["Row level triggers fire for each row.", "There are 50,000 rows.", "<span class=\"eq\">50,000 times<\/span>"]}, {"lv": "h", "q": "Each trigger run adds 0.02 ms. How many milliseconds do the 50,000 runs add?", "ans": "1000", "hint": "Multiply.", "steps": ["50,000 runs.", "0.02 ms each.", "<span class=\"eq\">50,000 × 0.02 = 1,000 ms, one second<\/span>"], "tol": 0.001}, {"lv": "h", "q": "A procedure replaces 4 separate statements sent from the app, each with 3 ms of network delay. How many ms of delay are saved?", "ans": "9", "hint": "One call instead of four.", "steps": ["Before: 4 round trips, 12 ms.", "After: 1 round trip, 3 ms.", "<span class=\"eq\">12 − 3 = 9 ms<\/span>"]}], "assign": [], "must": [["Triggers", "CREATE TRIGGER ... BEFORE or AFTER INSERT, UPDATE or DELETE. NEW is the new row, OLD the old one. Fires once per row in SQLite."], ["Uses", "Audit logs, history tables, stored totals, refusing bad values, INSTEAD OF to make views writable."], ["Generated columns", "GENERATED ALWAYS AS (expr) VIRTUAL or STORED. Computed, never written by hand."], ["Procedures", "Server engines store programs: PL/pgSQL, T-SQL, PL/SQL. SQLite uses functions from the host app."], ["Judgement", "Keep triggers short and documented. Choose database or app logic by who must be guarded and how it will be tested."]], "summary": "<p>Triggers react to changes, generated columns compute themselves, and procedures store programs in server engines.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"audit": {"src": "CREATE TABLE price_log (product_id INTEGER, old_price INTEGER, new_price INTEGER, changed_at TEXT);\nCREATE TRIGGER log_price AFTER UPDATE OF price ON products\nWHEN NEW.price <> OLD.price\nBEGIN\n  INSERT INTO price_log VALUES (OLD.id, OLD.price, NEW.price, '2025-07-15');\nEND;\nUPDATE products SET price = price + 50 WHERE category = 'Sports';\nSELECT * FROM price_log;", "db": "shop", "setup": "", "title": "An audit log that fills itself", "notes": {"2": "Fires after any UPDATE that touches the price column.", "3": "Skip updates that set the same price.", "7": "One UPDATE of two rows fires the trigger twice: once per row."}, "out": [{"sql": "CREATE TABLE price_log (product_id INTEGER, old_price INTEGER, new_price INTEGER, changed_at TEXT);", "cols": [], "rows": []}, {"sql": "CREATE TRIGGER log_price AFTER UPDATE OF price ON products\nWHEN NEW.price <> OLD.price\nBEGIN\n  INSERT INTO price_log VALUES (OLD.id, OLD.price, NEW.price, '2025-07-15');\nEND;", "cols": [], "rows": []}, {"sql": "UPDATE products SET price = price + 50 WHERE category = 'Sports';", "cols": [], "rows": [], "changes": 4}, {"sql": "SELECT * FROM price_log;", "cols": ["product_id", "old_price", "new_price", "changed_at"], "rows": [[7, 180, 230, "2025-07-15"], [8, 850, 900, "2025-07-15"]]}]}, "total": {"src": "ALTER TABLE orders ADD COLUMN item_count INTEGER NOT NULL DEFAULT 0;\nUPDATE orders SET item_count = (SELECT COALESCE(SUM(qty), 0) FROM order_items WHERE order_id = orders.id);\nCREATE TRIGGER add_item AFTER INSERT ON order_items\nBEGIN\n  UPDATE orders SET item_count = item_count + NEW.qty WHERE id = NEW.order_id;\nEND;\nINSERT INTO order_items VALUES (110, 2, 4);\nSELECT id, item_count FROM orders WHERE id = 110;", "db": "shop", "setup": "", "title": "A stored total that can never drift", "notes": {"2": "Fill the column once.", "5": "Every new order line adds its qty to its order.", "8": "Order 110 had 1 item, now 5."}, "out": [{"sql": "ALTER TABLE orders ADD COLUMN item_count INTEGER NOT NULL DEFAULT 0;", "cols": [], "rows": []}, {"sql": "UPDATE orders SET item_count = (SELECT COALESCE(SUM(qty), 0) FROM order_items WHERE order_id = orders.id);", "cols": [], "rows": [], "changes": 10}, {"sql": "CREATE TRIGGER add_item AFTER INSERT ON order_items\nBEGIN\n  UPDATE orders SET item_count = item_count + NEW.qty WHERE id = NEW.order_id;\nEND;", "cols": [], "rows": []}, {"sql": "INSERT INTO order_items VALUES (110, 2, 4);", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT id, item_count FROM orders WHERE id = 110;", "cols": ["id", "item_count"], "rows": [[110, 5]]}]}, "instead": {"src": "CREATE VIEW cheap AS SELECT id, name, price FROM products WHERE price < 200;\nCREATE TRIGGER cheap_update INSTEAD OF UPDATE ON cheap\nBEGIN\n  UPDATE products SET price = NEW.price WHERE id = OLD.id;\nEND;\nUPDATE cheap SET price = 99 WHERE name = 'Notebook';\nSELECT name, price FROM products WHERE id = 2;", "db": "shop", "setup": "", "title": "INSTEAD OF makes a view writable", "notes": {"2": "SQLite views are read only, so we say what an UPDATE on the view should really do.", "6": "The change lands in products."}, "out": [{"sql": "CREATE VIEW cheap AS SELECT id, name, price FROM products WHERE price < 200;", "cols": [], "rows": []}, {"sql": "CREATE TRIGGER cheap_update INSTEAD OF UPDATE ON cheap\nBEGIN\n  UPDATE products SET price = NEW.price WHERE id = OLD.id;\nEND;", "cols": [], "rows": []}, {"sql": "UPDATE cheap SET price = 99 WHERE name = 'Notebook';", "cols": [], "rows": [], "changes": 1}, {"sql": "SELECT name, price FROM products WHERE id = 2;", "cols": ["name", "price"], "rows": [["Notebook", 99]]}]}, "gen": {"src": "CREATE TABLE lines (\n  product TEXT, qty INTEGER, price INTEGER,\n  total INTEGER GENERATED ALWAYS AS (qty * price) VIRTUAL,\n  is_bulk INTEGER GENERATED ALWAYS AS (qty >= 10) STORED\n);\nINSERT INTO lines (product, qty, price) VALUES ('Notebook', 12, 60), ('Lamp', 1, 1250);\nSELECT * FROM lines;", "db": "", "setup": "", "title": "total and is_bulk fill themselves", "notes": {"3": "VIRTUAL: worked out each time the row is read.", "4": "STORED: worked out on write and saved on disk, so it can be indexed cheaply."}, "out": [{"sql": "CREATE TABLE lines (\n  product TEXT, qty INTEGER, price INTEGER,\n  total INTEGER GENERATED ALWAYS AS (qty * price) VIRTUAL,\n  is_bulk INTEGER GENERATED ALWAYS AS (qty >= 10) STORED\n);", "cols": [], "rows": []}, {"sql": "INSERT INTO lines (product, qty, price) VALUES ('Notebook', 12, 60), ('Lamp', 1, 1250);", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT * FROM lines;", "cols": ["product", "qty", "price", "total", "is_bulk"], "rows": [["Notebook", 12, 60, 720, 1], ["Lamp", 1, 1250, 1250, 0]]}]}, "generr": {"src": "CREATE TABLE lines (qty INTEGER, price INTEGER,\n  total INTEGER GENERATED ALWAYS AS (qty * price));\nINSERT INTO lines (qty, price, total) VALUES (2, 50, 999);", "db": "", "setup": "", "title": "You cannot write a generated column", "notes": {"3": "The engine refuses any attempt to set total directly."}, "out": [{"sql": "CREATE TABLE lines (qty INTEGER, price INTEGER,\n  total INTEGER GENERATED ALWAYS AS (qty * price));", "cols": [], "rows": []}, {"sql": "INSERT INTO lines (qty, price, total) VALUES (2, 50, 999);", "cols": [], "rows": [], "error": "cannot INSERT into generated column \"total\""}]}, "udf": {"src": "SELECT name, price, ROUND(price * 1.18) AS with_gst,\n       printf('%,d', price * 100) AS paise\nFROM products LIMIT 3;", "db": "shop", "setup": "", "title": "SQLite’s built in functions cover a lot", "notes": {"2": "printf formats numbers. Apps can add their own functions too, for example in Python with create_function."}, "out": [{"sql": "SELECT name, price, ROUND(price * 1.18) AS with_gst,\n       printf('%,d', price * 100) AS paise\nFROM products LIMIT 3;", "cols": ["name", "price", "with_gst", "paise"], "rows": [["Pencil box", 120, 142, "12,000"], ["Notebook", 60, 71, "6,000"], ["Water bottle", 250, 295, "25,000"]]}]}}, "labs": [{"id": "l-trig", "lv": "m", "title": "Log new customers", "task": "Create a table <code>signup_log (customer_name TEXT)<\/code> and a trigger that adds the name of every newly inserted customer to it. Then insert customer Tara (joined 2025-07-20) and show every row of signup_log.", "db": "shop", "hint": "AFTER INSERT ON customers ... INSERT INTO signup_log VALUES (NEW.name)", "why": "The trigger fired once, for Tara.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["customer_name"], "rows": [["Tara"]]}, "solution": "CREATE TABLE signup_log (customer_name TEXT);\nCREATE TRIGGER log_signup AFTER INSERT ON customers BEGIN INSERT INTO signup_log VALUES (NEW.name); END;\nINSERT INTO customers (name, joined) VALUES ('Tara', '2025-07-20');\nSELECT * FROM signup_log;"}, {"id": "l-instead", "lv": "h", "title": "Delete through a view", "task": "Create a view <code>sports<\/code> of <code>id<\/code> and <code>name<\/code> of Sports products, and an INSTEAD OF DELETE trigger that sets the product’s stock to 0 instead of deleting it. Delete Football from the view, then show <code>name<\/code> and <code>stock<\/code> of the Sports products.", "db": "shop", "hint": "Inside the INSTEAD OF DELETE trigger, run UPDATE products SET stock = 0 WHERE id = OLD.id.", "why": "The product stays, with stock 0, which is a kind of soft delete.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "stock"], "rows": [["Cricket ball", 60], ["Football", 0]]}, "solution": "CREATE VIEW sports AS SELECT id, name FROM products WHERE category = 'Sports';\nCREATE TRIGGER sports_del INSTEAD OF DELETE ON sports BEGIN UPDATE products SET stock = 0 WHERE id = OLD.id; END;\nDELETE FROM sports WHERE name = 'Football';\nSELECT name, stock FROM products WHERE category = 'Sports';"}, {"id": "l-gen", "lv": "m", "title": "A full name that cannot drift", "task": "Create <code>people (first TEXT, last TEXT, full TEXT GENERATED ALWAYS AS (first || ' ' || last))<\/code>, insert Asha Rao and Ravi Iyer, and show <code>full<\/code> for every row.", "db": "", "hint": "Insert only first and last. full fills itself.", "why": "The generated column joins the two names on every read.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["full"], "rows": [["Asha Rao"], ["Ravi Iyer"]]}, "solution": "CREATE TABLE people (first TEXT, last TEXT, full TEXT GENERATED ALWAYS AS (first || ' ' || last));\nINSERT INTO people (first, last) VALUES ('Asha', 'Rao'), ('Ravi', 'Iyer');\nSELECT full FROM people;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

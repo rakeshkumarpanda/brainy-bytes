@@ -804,4 +804,99 @@ CREATE TABLE teachers AS SELECT DISTINCT teacher, room FROM sheet;`;
       return out;
     }
   }));
+
+  /* ---------- 8.1 a trigger fires on every change ---------- */
+  SQW('sqtrig', (SQL, cfg) => ({
+    title: 'Triggers fire by themselves',
+    sub: 'Two triggers watch products: one writes every price change to an audit log, one refuses negative stock. Pick a change and watch them fire.',
+    inputs: [{ k: 'a', label: 'Change', type: 'seg', val: cfg.a || 'price', opts: [['price', 'raise Football price'], ['stock', 'set stock to −5'], ['name', 'rename Notebook']] }],
+    frames: v => {
+      const T1 = "CREATE TRIGGER log_price AFTER UPDATE OF price ON products\nWHEN NEW.price <> OLD.price\nBEGIN\n  INSERT INTO price_log (product_id, old_price, new_price)\n  VALUES (OLD.id, OLD.price, NEW.price);\nEND;";
+      const T2 = "CREATE TRIGGER no_negative BEFORE UPDATE OF stock ON products\nWHEN NEW.stock < 0\nBEGIN\n  SELECT RAISE(ABORT, 'stock cannot be negative');\nEND;";
+      const d = scratch(SQL, 'shop', 'CREATE TABLE price_log (product_id INTEGER, old_price INTEGER, new_price INTEGER);\n' + T1 + '\n' + T2);
+      const stmt = { price: "UPDATE products SET price = 900 WHERE name = 'Football';", stock: "UPDATE products SET stock = -5 WHERE name = 'Lunch box';", name: "UPDATE products SET name = 'Long notebook' WHERE name = 'Notebook';" }[v.a];
+      const prod = () => q(d, 'SELECT id, name, price, stock FROM products WHERE id IN (2, 4, 8) ORDER BY id');
+      const log = () => q(d, 'SELECT * FROM price_log');
+      const L = (extra) => { const p = prod(), l = log(); return [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products (3 of 10)', cols: p.cols, rows: p.rows, ...(extra || {}) }, { t: 'tab', label: 'price_log', cols: l.cols, rows: l.rows }]; };
+      const out = [{ msg: 'Two triggers are attached to products. They are stored in the database and run on every matching change, from any app.', mood: 'think', layers: [{ t: 'sql', text: T1 + '\n\n' + T2 }] },
+        { msg: 'Before the change.', mood: 'look', layers: L() }];
+      const e = err(d, stmt);
+      if (v.a === 'price') out.push({ msg: 'The UPDATE changes the price, then <b>log_price</b> fires AFTER it, with OLD.price = 850 and NEW.price = 900, and writes a log row. Nobody had to remember to log it.', mood: 'happy', fx: 'burst', layers: L({ rcls: { 2: 'yes' } }) });
+      else if (v.a === 'stock') out.push({ msg: `<b>no_negative</b> fires BEFORE the change, sees NEW.stock = −5 and raises an error: <b>${esc(e)}</b>. The row is untouched.`, mood: 'sad', layers: L({ rcls: { 1: 'no' } }) });
+      else out.push({ msg: 'Only the name changed. Both triggers listen to specific columns (UPDATE OF price, UPDATE OF stock), so neither fires and the log stays empty.', mood: 'look', layers: L({ rcls: { 0: 'yes' } }) });
+      return out;
+    }
+  }));
+
+  /* ---------- 8.2 SQL injection, and the fix ---------- */
+  SQW('sqinject', (SQL, cfg) => ({
+    title: 'How SQL injection works, and how parameters stop it',
+    sub: 'A login form looks up a user by name and PIN. Type into the boxes. Try a normal name, then the classic attack text in the name box. Everything runs on a throwaway table in your browser.',
+    inputs: [{ k: 'u', label: 'Name box', type: 'text', val: cfg.u !== undefined ? cfg.u : "x' OR '1'='1' --", w: 200 }, { k: 'p', label: 'PIN box', type: 'text', val: cfg.p || '0000', w: 80 }],
+    frames: v => {
+      const d = scratch(SQL, '', "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, pin TEXT, role TEXT); INSERT INTO users (name, pin, role) VALUES ('asha', '4821', 'admin'), ('ravi', '1937', 'staff'), ('meera', '5560', 'staff');");
+      const glued = `SELECT name, role FROM users WHERE name = '${v.u}' AND pin = '${v.p}'`;
+      let bad, badErr = '';
+      try { bad = q(d, glued); } catch (e) { badErr = String(e.message || e); }
+      const st = d.prepare('SELECT name, role FROM users WHERE name = ? AND pin = ?'); st.bind([v.u, v.p]);
+      const safe = { cols: st.getColumnNames(), rows: [] }; while (st.step()) safe.rows.push(st.get()); st.free();
+      const out = [
+        { msg: 'The unsafe way: the program glues the typed text straight into the SQL string.', mood: 'think', layers: [{ t: 'sql', text: "sql = \"SELECT name, role FROM users\n       WHERE name = '\" + nameBox + \"'\n       AND pin = '\" + pinBox + \"'\"" }] },
+        { msg: 'This is the SQL the database actually receives. Look at where the quotes now fall.', mood: 'look', layers: [{ t: 'sql', text: glued.replace(' WHERE', '\nWHERE').replace(' AND', '\nAND') + ';' }] },
+        badErr ? { msg: `The glued text broke the SQL: <b>${esc(badErr)}</b>. An attacker learns from error messages like this.`, mood: 'sad', layers: [{ t: 'sql', text: glued + ';' }] }
+          : { msg: bad.rows.length > 1 ? `<b>${bad.rows.length} users logged in at once</b>, including the admin, without knowing any PIN. The typed quote closed the string, OR '1'='1' is always true, and -- turned the PIN check into a comment.` : bad.rows.length ? 'One user matched. With correct details that is the expected result.' : 'No user matched.', mood: bad.rows.length > 1 ? 'sad' : 'look', layers: [{ t: 'tab', label: 'rows returned by the glued SQL', cols: bad.cols, rows: bad.rows, rcls: Object.fromEntries(bad.rows.map((r, i) => [i, bad.rows.length > 1 ? 'no' : 'yes'])) }] },
+        { msg: 'The safe way: a parameterized query. The SQL text is fixed, and the typed values are sent separately. The database never reads them as SQL.', mood: 'work', layers: [{ t: 'sql', text: 'SELECT name, role FROM users\nWHERE name = ? AND pin = ?;\n-- values sent separately: [nameBox, pinBox]' }] },
+        { msg: safe.rows.length ? `${safe.rows.length} user matched, because the name and PIN really match.` : `0 rows. The whole text <b>${esc(v.u)}</b> was compared as a name, and no user has that name. The attack is just harmless text.`, mood: 'happy', fx: 'burst', layers: [{ t: 'tab', label: 'rows returned with parameters', cols: safe.cols, rows: safe.rows }] }
+      ];
+      return out;
+    }
+  }));
+
+  /* ---------- 8.3 sharding spreads rows across machines ---------- */
+  SQW('sqshard', (SQL, cfg) => ({
+    title: 'Partitioning and sharding: where does each row live',
+    sub: 'Pick a sharding key and the number of servers. Pip sends each order to its server, then shows which servers a query must visit.',
+    inputs: [{ k: 'key', label: 'Shard by', type: 'seg', val: cfg.key || 'hash', opts: [['hash', 'customer_id mod N'], ['range', 'order month']] },
+      { k: 'n', label: 'Servers N', type: 'seg', val: String(cfg.n || 3), opts: [['2', '2'], ['3', '3'], ['4', '4']] }],
+    frames: v => {
+      const N = +v.n, d = db(SQL, 'shop');
+      const rows = q(d, `SELECT id, customer_id, order_date, ${v.key === 'hash' ? `customer_id % ${N}` : `(CAST(substr(order_date, 6, 2) AS INTEGER) - 6) % ${N}`} AS shard FROM orders ORDER BY id`).rows;
+      const bk = Array.from({ length: N }, () => []);
+      const lab = Array.from({ length: N }, (x, i) => v.key === 'hash' ? `server ${i}: customer_id mod ${N} = ${i}` : `server ${i}: ${['June', 'July', 'August', 'September'][i]}`);
+      const out = [{ msg: v.key === 'hash' ? `Hash sharding: each order goes to server (customer_id mod ${N}). All orders of one customer land together.` : 'Range sharding: each month goes to its own server, like one notebook per month.', mood: 'think', layers: [{ t: 'buckets', buckets: bk.map(b => b.slice()), blab: lab }] }];
+      rows.forEach(r => { bk[r[3]].push(String(r[0])); });
+      out.push({ msg: `All 10 orders placed. Sizes: ${bk.map(b => b.length).join(', ')}. ${v.key === 'range' ? 'Range sharding piles new data onto the newest server, a hot spot.' : 'Hash sharding spreads customers fairly evenly.'}`, mood: 'work', layers: [{ t: 'buckets', buckets: bk, blab: lab }] });
+      const s1 = v.key === 'hash' ? 1 % N : 0;
+      out.push({ msg: v.key === 'hash' ? `Query <b>WHERE customer_id = 1</b>: only server ${s1} holds that customer, so one server answers.` : "Query <b>WHERE order_date LIKE '2025-06%'</b>: only the June server is needed.", mood: 'happy',
+        layers: [{ t: 'buckets', buckets: bk, blab: lab, bcls: Object.fromEntries(bk.map((b, i) => [i, i === s1 ? 'yes' : ''])) }] });
+      out.push({ msg: v.key === 'hash' ? "Query <b>WHERE order_date LIKE '2025-06%'</b>: June orders are on every server, so all of them must answer and the results are merged." : 'Query <b>WHERE customer_id = 1</b>: a customer’s orders are spread over months, so every server must answer.', mood: 'look', fx: 'burst',
+        layers: [{ t: 'buckets', buckets: bk, blab: lab, bcls: Object.fromEntries(bk.map((b, i) => [i, 'look'])) }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 8.4 one task, five dialects ---------- */
+  SQW('sqdialect', (SQL, cfg) => ({
+    title: 'One task, five dialects',
+    sub: 'Pick a task. Pip shows how each engine writes it, then runs the SQLite version for real.',
+    inputs: [{ k: 't', label: 'Task', type: 'seg', val: cfg.t || 'top', opts: [['top', 'first 3 rows'], ['concat', 'join text'], ['now', 'today’s date'], ['auto', 'auto id column'], ['ifnull', 'replace NULL']] }],
+    frames: v => {
+      const T = {
+        top: { sqlite: 'SELECT name FROM products ORDER BY price DESC LIMIT 3;', rows: [['SQLite', 'LIMIT 3'], ['PostgreSQL', 'LIMIT 3, or FETCH FIRST 3 ROWS ONLY'], ['MySQL', 'LIMIT 3'], ['SQL Server', 'SELECT TOP 3 ..., or OFFSET 0 ROWS FETCH NEXT 3 ROWS ONLY'], ['Oracle', 'FETCH FIRST 3 ROWS ONLY (12c+), ROWNUM before that']] },
+        concat: { sqlite: "SELECT name || ' (' || city || ')' AS label FROM customers LIMIT 3;", rows: [['SQLite', "name || ' ' || city, or concat()"], ['PostgreSQL', "name || ' ' || city, or concat()"], ['MySQL', "CONCAT(name, ' ', city), || means OR by default"], ['SQL Server', "name + ' ' + city, or CONCAT()"], ['Oracle', "name || ' ' || city"]] },
+        now: { sqlite: "SELECT date('2025-07-15') AS fixed_day, typeof(date('now')) AS today_type;", rows: [['SQLite', "date('now'), datetime('now')"], ['PostgreSQL', 'CURRENT_DATE, now()'], ['MySQL', 'CURDATE(), NOW()'], ['SQL Server', 'CAST(GETDATE() AS date), SYSDATETIME()'], ['Oracle', 'SYSDATE, CURRENT_DATE']] },
+        auto: { sqlite: "CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT); INSERT INTO t (v) VALUES ('a'), ('b'); SELECT * FROM t;", rows: [['SQLite', 'id INTEGER PRIMARY KEY'], ['PostgreSQL', 'id integer GENERATED ALWAYS AS IDENTITY, or serial'], ['MySQL', 'id INT AUTO_INCREMENT PRIMARY KEY'], ['SQL Server', 'id INT IDENTITY(1,1) PRIMARY KEY'], ['Oracle', 'id NUMBER GENERATED AS IDENTITY (12c+)']] },
+        ifnull: { sqlite: "SELECT name, COALESCE(city, 'unknown') AS city FROM customers WHERE city IS NULL;", rows: [['SQLite', 'COALESCE(x, d), IFNULL(x, d)'], ['PostgreSQL', 'COALESCE(x, d)'], ['MySQL', 'COALESCE(x, d), IFNULL(x, d)'], ['SQL Server', 'COALESCE(x, d), ISNULL(x, d)'], ['Oracle', 'COALESCE(x, d), NVL(x, d)']] }
+      }[v.t];
+      const d = scratch(SQL, 'shop');
+      const parts = T.sqlite.split(';').map(x => x.trim()).filter(Boolean);
+      parts.slice(0, -1).forEach(p => d.exec(p));
+      const r = q(d, parts[parts.length - 1]);
+      return [
+        { msg: 'The SQL standard defines the core, but each engine has its own spelling for many everyday tasks.', mood: 'think', layers: [{ t: 'tab', label: 'how each engine writes it', cols: ['engine', 'syntax'], rows: T.rows, rcls: { 0: 'yes' } }] },
+        { msg: 'The SQLite version, run for real.', mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text: T.sqlite.replace(/; /g, ';\n') }, { t: 'tab', label: 'Result', cols: r.cols, rows: r.rows }] },
+        { msg: 'COALESCE, CASE, CAST, JOIN syntax, GROUP BY and window functions are standard and work almost everywhere. Prefer them when you can.', mood: 'look', layers: [{ t: 'note', html: 'Portable choices: COALESCE over IFNULL or NVL, FETCH FIRST or LIMIT, CAST(x AS type), CASE WHEN.' }] }
+      ];
+    }
+  }));
 })();
