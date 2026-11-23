@@ -23,7 +23,7 @@ const LXSH = (() => {
 
   /* ---------- the starting files ---------- */
   const SEED = {
-    dirs: [['/bin', 0o755, 'root'], ['/boot', 0o755, 'root'], ['/dev', 0o755, 'root'], ['/etc', 0o755, 'root'], ['/home', 0o755, 'root'],
+    dirs: [['/bin', 0o755, 'root'], ['/boot', 0o755, 'root'], ['/dev', 0o755, 'root'], ['/etc', 0o755, 'root'], ['/etc/skel', 0o755, 'root'], ['/home', 0o755, 'root'],
       [HOME, 0o750, USER], [HOME + '/logs', 0o755, USER], [HOME + '/scripts', 0o755, USER], [HOME + '/projects', 0o755, USER],
       [HOME + '/photos', 0o755, USER], ['/home/asha', 0o750, 'asha'], ['/opt', 0o755, 'root'], ['/proc', 0o555, 'root'], ['/root', 0o700, 'root'],
       ['/srv', 0o755, 'root'], ['/tmp', 0o1777, 'root'], ['/usr', 0o755, 'root'], ['/usr/bin', 0o755, 'root'], ['/usr/local', 0o755, 'root'],
@@ -44,6 +44,9 @@ const LXSH = (() => {
       ['/etc/passwd', 'root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nasha:x:1001:1001:Asha Rao:/home/asha:/bin/bash\nlearner:x:1000:1000:Learner:/home/learner:/bin/bash\n', 0o644, 'root'],
       ['/etc/group', 'root:x:0:\nsudo:x:27:learner\nwww-data:x:33:\nlearner:x:1000:\nasha:x:1001:\n', 0o644, 'root'],
       ['/etc/shadow', 'root:*:20415:0:99999:7:::\nlearner:$y$j9T$demo$demo:20415:0:99999:7:::\n', 0o640, 'root'],
+      ['/etc/skel/.bashrc', '# ~/.bashrc: executed by bash(1) for non-login shells.\n', 0o644, 'root'],
+      ['/etc/skel/.profile', '# ~/.profile: executed by the command interpreter for login shells.\n', 0o644, 'root'],
+      ['/etc/skel/.bash_logout', '# ~/.bash_logout: executed by bash(1) when login shell exits.\n', 0o644, 'root'],
       ['/etc/hosts', '127.0.0.1 localhost\n127.0.1.1 brainy\n', 0o644, 'root'],
       ['/etc/fstab', '# <file system> <mount point> <type> <options> <dump> <pass>\nUUID=1b2c-77aa / ext4 defaults 0 1\n', 0o644, 'root'],
       ['/var/log/syslog', 'Nov 23 09:00:00 brainy systemd[1]: Started Daily apt download activities.\nNov 23 09:00:02 brainy CRON[812]: (root) CMD (run-parts /etc/cron.hourly)\n', 0o640, 'root'],
@@ -52,7 +55,8 @@ const LXSH = (() => {
       ['/var/www/index.html', '<h1>It works</h1>\n', 0o644, 'root']
     ]
   };
-  const CMDS = 'alias at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp crontab cut date df diff dirname disown du echo env exit export expr false fg file find flock free grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const SBIN = 'chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
+  const CMDS = 'alias at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -117,6 +121,7 @@ const LXSH = (() => {
       this.mk('/bin', 'l', 0o777, 'root', 'usr/bin', true);
       CMDS.forEach(c => this.mk('/usr/bin/' + c, 'f', 0o755, 'root', '#!practice ' + c + '\n'));
       this.mk('/usr/bin/passwd', 'f', 0o4755, 'root', '#!practice passwd\n');
+      this.mkdirs('/usr/sbin'); SBIN.forEach(c => this.mk('/usr/sbin/' + c, 'f', 0o755, 'root', '#!practice ' + c + '\n'));
       this.mk('/dev/null', 'c', 0o666, 'root', '');
       this.cwd = HOME;
       this.mk(HOME + '/latest.log', 'l', 0o777, USER, 'logs/app.log');
@@ -780,7 +785,7 @@ const LXSH = (() => {
       if (!BUILTIN.has(name) && !(this.fns && this.fns[name])) {
         const hit = this.lookup(name);
         if (hit && !/^#!practice /.test(hit.n.data)) return this.runFile(hit.path, args.slice(1), input, true);
-        if (!hit && CMDS.includes(name)) { this.eout(`${name}: command not found\n`); return 127; }
+        if (!hit && (CMDS.includes(name) || SBIN.includes(name))) { this.eout(`${name}: command not found\n`); return 127; }
       }
       const f = C[name];
       if (!f) { this.eout(`${name}: command not found\n`); return 127; }
@@ -940,6 +945,7 @@ const LXSH = (() => {
     const parts = [];
     if (files.length) { widths(files); parts.push(files.map(([n, t]) => show(n, t)).join(long || f['1'] || this.notty ? '\n' : '  ')); }
     const walk = (n, t, head) => {
+      if (!this.can(n, 'r')) { listing(n, t); return ''; }
       const rows = listing(n, t);
       let s = head ? `${t}:\n` : '';
       if (long) s += `total ${rows.reduce((sum, [m]) => sum + (m.type === 'd' ? 4 : this.size(m) ? Math.ceil(this.size(m) / 4096) * 4 : 0), 0)}\n`;
@@ -1774,14 +1780,14 @@ const LXSH = (() => {
     const [f, rest] = opts(a);
     if (rest.length < 2) { this.eout('chown: missing operand\n'); return 1; }
     const [own, grp] = rest.shift().split(':');
-    if (own && !(own in UIDS)) { this.eout(`chown: invalid user: '${own}'\n`); return 1; }
+    if (own && !this.pwRow(own)) { this.eout(`chown: invalid user: '${own}'\n`); return 1; }
     let code = 0;
     rest.forEach(t => {
       const n = this.node(this.abs(t));
       if (!n) { this.eout(`chown: cannot access '${t}': No such file or directory\n`); code = 1; return; }
       const mine = this.user === 'learner' ? ['learner', 'sudo'] : [this.user];
       const okGroupOnly = !own && grp && n.owner === this.user && mine.includes(grp);
-      if (grp && !(grp in UIDS) && grp !== 'sudo' && grp !== 'www-data') { this.eout(`${this.cmdName || 'chown'}: invalid group: '${grp}'\n`); code = 1; return; }
+      if (grp && !this.grRow(grp)) { this.eout(`${this.cmdName || 'chown'}: invalid group: '${grp}'\n`); code = 1; return; }
       if (this.user !== 'root' && !okGroupOnly) { this.eout(own ? `chown: changing ownership of '${t}': Operation not permitted\n` : `chgrp: changing group of '${t}': Operation not permitted\n`); code = 1; return; }
       const walk = m => { if (own) m.owner = own; if (grp !== undefined) m.group = grp || own; if (f.R && m.type === 'd') Object.values(m.kids).forEach(walk); };
       walk(n);
@@ -1790,13 +1796,172 @@ const LXSH = (() => {
   };
   C.chgrp = function (a) { this.cmdName = 'chgrp'; try { return C.chown.call(this, [':' + a[0]].concat(a.slice(1))); } finally { this.cmdName = ''; } };
   C.whoami = function () { this.out(this.user + '\n'); };
-  C.id = function (a) {
-    const u = a[0] || this.user, uid = UIDS[u];
-    if (uid === undefined) { this.eout(`id: '${u}': no such user\n`); return 1; }
-    const extra = u === 'learner' ? ',27(sudo)' : '';
-    this.out(`uid=${uid}(${u}) gid=${uid}(${u}) groups=${uid}(${u})${extra}\n`);
+  /* ---------- user accounts: /etc/passwd, /etc/group and /etc/shadow are the only source ---------- */
+  World.prototype.dbRows = function (file) { const n = this.node(file); return n ? n.data.split('\n').filter(l => l && !l.startsWith('#')).map(l => l.split(':')) : []; };
+  World.prototype.dbSave = function (file, rows) { this.node(file).data = rows.map(r => r.join(':')).join('\n') + '\n'; this.node(file).mtime = this.now(); };
+  World.prototype.pwRow = function (u) { return this.dbRows('/etc/passwd').find(r => r[0] === u); };
+  World.prototype.grRow = function (g) { return this.dbRows('/etc/group').find(r => r[0] === g); };
+  World.prototype.userGroups = function (u) {
+    const pw = this.pwRow(u), gr = this.dbRows('/etc/group'), prim = gr.find(r => r[2] === pw[3]);
+    return [prim || [u, 'x', pw[3]]].concat(gr.filter(r => r !== prim && (r[3] || '').split(',').includes(u)));
   };
-  C.groups = function () { this.out(this.user === 'learner' ? 'learner sudo\n' : this.user + '\n'); };
+  C.id = function (a) {
+    const u = a.filter(x => !x.startsWith('-'))[0] || this.user, pw = this.pwRow(u);
+    if (!pw) { this.eout(`id: '${u}': no such user\n`); return 1; }
+    const gs = this.userGroups(u);
+    if (a.includes('-u')) { this.out((a.includes('-n') ? u : pw[2]) + '\n'); return 0; }
+    if (a.includes('-G')) { this.out(gs.map(g => a.includes('-n') ? g[0] : g[2]).join(' ') + '\n'); return 0; }
+    this.out(`uid=${pw[2]}(${u}) gid=${pw[3]}(${gs[0][0]}) groups=${gs.map(g => `${g[2]}(${g[0]})`).join(',')}\n`);
+    return 0;
+  };
+  C.groups = function (a) {
+    if (!a.length) { this.out(this.userGroups(this.user).map(g => g[0]).join(' ') + '\n'); return 0; }
+    let code = 0;
+    a.forEach(u => { if (!this.pwRow(u)) { this.eout(`groups: '${u}': no such user\n`); code = 1; } else this.out(`${u} : ${this.userGroups(u).map(g => g[0]).join(' ')}\n`); });
+    return code;
+  };
+  World.prototype.needRoot = function (cmd, file) {
+    if (this.user === 'root') return false;
+    this.eout(`${cmd}: Permission denied.\n${cmd}: cannot lock ${file}; try again later.\n`); return true;
+  };
+  const nextId = (rows, col) => { const used = rows.map(r => +r[col]).filter(n => n >= 1000 && n < 60000); return used.length ? Math.max(...used) + 1 : 1000; };
+  World.prototype.today = function () { return Math.floor(this.clock / 864e5); };
+  C.useradd = function (a) {
+    const o = { G: '' }; let name = null;
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      if (x === '-m' || x === '--create-home') o.m = true;
+      else if (x === '-M') o.m = false;
+      else if (x === '-r' || x === '--system') o.r = true;
+      else if (/^-[scudgGe]$/.test(x)) o[x[1]] = a[++i];
+      else if (x.startsWith('-')) { this.eout(`useradd: invalid option -- '${x.replace(/^-+/, '')}'\n`); return 2; }
+      else name = x;
+    }
+    if (!name) { this.eout('Usage: useradd [options] LOGIN\n'); return 2; }
+    if (this.needRoot('useradd', '/etc/passwd')) return 1;
+    if (!/^[a-z_][a-z0-9_-]*\$?$/.test(name)) { this.eout(`useradd: invalid user name '${name}': use --badname to ignore\n`); return 3; }
+    const pw = this.dbRows('/etc/passwd'), gr = this.dbRows('/etc/group');
+    if (pw.some(r => r[0] === name)) { this.eout(`useradd: user '${name}' already exists\n`); return 9; }
+    const extra = o.G ? o.G.split(',') : [];
+    for (const g of extra.concat(o.g ? [o.g] : [])) if (!gr.some(r => r[0] === g || r[2] === g)) { this.eout(`useradd: group '${g}' does not exist\n`); return 6; }
+    const uid = o.u !== undefined ? o.u : String(o.r ? 999 - pw.filter(r => +r[2] >= 100 && +r[2] < 1000 && r[0] !== 'www-data').length : nextId(pw, 2));
+    if (pw.some(r => r[2] === uid)) { this.eout(`useradd: UID ${uid} is not unique\n`); return 4; }
+    let gid;
+    if (o.g) gid = gr.find(r => r[0] === o.g || r[2] === o.g)[2];
+    else {
+      if (gr.some(r => r[0] === name)) { this.eout(`useradd: group ${name} exists - if you want to add this user to that group, use -g.\n`); return 9; }
+      gid = gr.some(r => r[2] === uid) ? String(nextId(gr, 2)) : uid; gr.push([name, 'x', gid, '']);
+    }
+    extra.forEach(g => { const r = gr.find(x => x[0] === g || x[2] === g); r[3] = (r[3] ? r[3].split(',') : []).concat(name).join(','); });
+    const home = o.d || '/home/' + name, shell = o.s || '/bin/sh';
+    pw.push([name, 'x', uid, gid, o.c || '', home, shell]);
+    this.dbSave('/etc/passwd', pw); this.dbSave('/etc/group', gr);
+    const sh = this.dbRows('/etc/shadow'); sh.push([name, '!', String(this.today()), '0', '99999', '7', '', '', '']); this.dbSave('/etc/shadow', sh);
+    if (o.m && !this.node(home)) { this.mkdirs(dirName(home)); const h = this.mk(home, 'd', 0o750, name, ''); h.group = gr.find(r => r[2] === gid)[0]; h.mtime = this.now();
+      ['.bashrc', '.profile', '.bash_logout'].forEach(f => { const src = this.node('/etc/skel/' + f); if (src) { const n = this.mk(home + '/' + f, 'f', 0o644, name, src.data); n.group = h.group; } }); }
+    return 0;
+  };
+  C.groupadd = function (a) {
+    const name = a.filter(x => !x.startsWith('-'))[0];
+    if (!name) { this.eout('Usage: groupadd [options] GROUP\n'); return 2; }
+    if (this.needRoot('groupadd', '/etc/group')) return 10;
+    const gr = this.dbRows('/etc/group');
+    if (gr.some(r => r[0] === name)) { this.eout(`groupadd: group '${name}' already exists\n`); return 9; }
+    gr.push([name, 'x', String(a.includes('-r') ? 999 - gr.filter(r => +r[2] >= 100 && +r[2] < 1000).length : nextId(gr, 2)), '']); this.dbSave('/etc/group', gr); return 0;
+  };
+  C.groupdel = function (a) {
+    const name = a[0]; if (this.needRoot('groupdel', '/etc/group')) return 10;
+    const gr = this.dbRows('/etc/group'), k = gr.findIndex(r => r[0] === name);
+    if (k < 0) { this.eout(`groupdel: group '${name}' does not exist\n`); return 6; }
+    const prim = this.dbRows('/etc/passwd').find(r => r[3] === gr[k][2]);
+    if (prim) { this.eout(`groupdel: cannot remove the primary group of user '${prim[0]}'\n`); return 8; }
+    gr.splice(k, 1); this.dbSave('/etc/group', gr); return 0;
+  };
+  C.usermod = function (a) {
+    const name = a[a.length - 1], o = {};
+    for (let i = 0; i < a.length - 1; i++) { const x = a[i]; if (x === '-a' || x === '--append') o.a = true; else if (x === '-aG') { o.a = true; o.G = a[++i]; } else if (x === '-L' || x === '-U') o[x[1]] = true; else if (/^-[GsclgdM]$/.test(x)) o[x[1]] = a[++i]; }
+    if (!name || name.startsWith('-')) { this.eout('Usage: usermod [options] LOGIN\n'); return 2; }
+    if (this.needRoot('usermod', '/etc/passwd')) return 1;
+    const pw = this.dbRows('/etc/passwd'), gr = this.dbRows('/etc/group'), row = pw.find(r => r[0] === name);
+    if (!row) { this.eout(`usermod: user '${name}' does not exist\n`); return 6; }
+    if (o.G !== undefined) {
+      const want = o.G ? o.G.split(',') : [];
+      for (const g of want) if (!gr.some(r => r[0] === g)) { this.eout(`usermod: group '${g}' does not exist\n`); return 6; }
+      gr.forEach(r => { let m = r[3] ? r[3].split(',') : []; if (!o.a) m = m.filter(x => x !== name); if (want.includes(r[0]) && !m.includes(name)) m.push(name); r[3] = m.join(','); });
+    }
+    if (o.s) row[6] = o.s; if (o.c !== undefined) row[4] = o.c; if (o.d) row[5] = o.d;
+    if (o.l) { if (pw.some(r => r[0] === o.l)) { this.eout(`usermod: user '${o.l}' already exists\n`); return 9; } row[0] = o.l; gr.forEach(r => { r[3] = (r[3] || '').split(',').map(x => x === name ? o.l : x).join(','); }); }
+    if (o.g) { const g = gr.find(r => r[0] === o.g || r[2] === o.g); if (!g) { this.eout(`usermod: group '${o.g}' does not exist\n`); return 6; } row[3] = g[2]; }
+    const sh = this.dbRows('/etc/shadow'), srow = sh.find(r => r[0] === name);
+    if (srow && o.L && !srow[1].startsWith('!')) srow[1] = '!' + srow[1];
+    if (srow && o.U && srow[1].startsWith('!')) { if (srow[1] === '!') { this.eout("usermod: unlocking the user's password would result in a passwordless account.\nYou should set a password with usermod -p to unlock this user's password.\n"); return 0; } srow[1] = srow[1].slice(1); }
+    if (srow && o.l) srow[0] = o.l;
+    this.dbSave('/etc/passwd', pw); this.dbSave('/etc/group', gr); if (srow) this.dbSave('/etc/shadow', sh);
+    return 0;
+  };
+  C.userdel = function (a) {
+    const name = a.filter(x => !x.startsWith('-'))[0], rmHome = a.includes('-r');
+    if (!name) { this.eout('Usage: userdel [options] LOGIN\n'); return 2; }
+    if (this.needRoot('userdel', '/etc/passwd')) return 1;
+    const pw = this.dbRows('/etc/passwd'), row = pw.find(r => r[0] === name);
+    if (!row) { this.eout(`userdel: user '${name}' does not exist\n`); return 6; }
+    if (this.procs && this.procs.some(p => p.user === name)) { this.eout(`userdel: user ${name} is currently used by process ${this.procs.find(p => p.user === name).pid}\n`); return 8; }
+    const gr = this.dbRows('/etc/group').filter(r => !(r[0] === name && r[2] === row[3] && !r[3]));
+    gr.forEach(r => { r[3] = (r[3] || '').split(',').filter(x => x && x !== name).join(','); });
+    this.dbSave('/etc/passwd', pw.filter(r => r !== row)); this.dbSave('/etc/group', gr); this.dbSave('/etc/shadow', this.dbRows('/etc/shadow').filter(r => r[0] !== name));
+    if (rmHome) { this.eout(`userdel: ${name} mail spool (/var/mail/${name}) not found\n`); if (this.node(row[5])) this.removeNode(row[5]); }
+    return 0;
+  };
+  const shadowDate = d => new Date(+d * 864e5).toISOString().slice(0, 10);
+  C.passwd = function (a) {
+    const flag = a.find(x => /^-[SlueS]$/.test(x) || x === '--status'), name = a.filter(x => !x.startsWith('-'))[0] || this.user;
+    if (name !== this.user && this.user !== 'root') { this.eout(`passwd: You may not view or modify password information for ${name}.\n`); return 1; }
+    const sh = this.dbRows('/etc/shadow'), r = sh.find(x => x[0] === name);
+    if (!this.pwRow(name)) { this.eout(`passwd: user '${name}' does not exist\n`); return 1; }
+    if (flag === '-S' || flag === '--status') { const st = !r || r[1] === '' ? 'NP' : r[1].startsWith('!') || r[1].startsWith('*') ? 'L' : 'P'; this.out(`${name} ${st} ${r ? shadowDate(r[2]) : '1970-01-01'} ${r ? r[3] : 0} ${r ? r[4] : 99999} ${r ? r[5] : 7} -1\n`); return 0; }
+    if (this.user !== 'root' && flag) { this.eout('passwd: Permission denied.\n'); return 1; }
+    if (flag === '-l') { if (r && !r[1].startsWith('!')) r[1] = '!' + r[1]; this.dbSave('/etc/shadow', sh); this.out('passwd: password changed.\n'); return 0; }
+    if (flag === '-u') { if (r && r[1].startsWith('!') && r[1].length > 1) r[1] = r[1].slice(1); this.dbSave('/etc/shadow', sh); this.out('passwd: password changed.\n'); return 0; }
+    if (flag === '-e') { if (r) r[2] = '0'; this.dbSave('/etc/shadow', sh); this.out('passwd: password changed.\n'); return 0; }
+    this.eout('passwd asks for the new password twice without showing it, which the practice shell cannot do. Try: echo "' + name + ':NewPass.42" | sudo chpasswd\n'); return 1;
+  };
+  C.chpasswd = function (a, input) {
+    if (this.user !== 'root') { this.eout('chpasswd: Permission denied.\nchpasswd: cannot lock /etc/passwd; try again later.\n'); return 1; }
+    const sh = this.dbRows('/etc/shadow'); let code = 0;
+    (input || '').split('\n').filter(Boolean).forEach((l, i) => {
+      const [u, pass] = [l.slice(0, l.indexOf(':')), l.slice(l.indexOf(':') + 1)];
+      if (l.indexOf(':') < 0 || !this.pwRow(u)) { this.eout(`chpasswd: line ${i + 1}: user '${u}' does not exist\n`); code = 1; return; }
+      let r = sh.find(x => x[0] === u); if (!r) { r = [u, '', '', '0', '99999', '7', '', '', '']; sh.push(r); }
+      let h = 0; for (const ch of pass) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+      r[1] = '$y$j9T$practice$' + h.toString(36); r[2] = String(this.today());
+    });
+    this.dbSave('/etc/shadow', sh); return code;
+  };
+  C.chage = function (a) {
+    const name = a.filter(x => !x.startsWith('-'))[0];
+    if (!a.includes('-l')) { if (this.user !== 'root') { this.eout('chage: Permission denied.\n'); return 1; } }
+    const r = this.dbRows('/etc/shadow').find(x => x[0] === name);
+    if (!this.pwRow(name || '')) { this.eout(`chage: user '${name}' does not exist in /etc/passwd\n`); return 1; }
+    if (this.user !== 'root' && name !== this.user) { this.eout('chage: Permission denied.\n'); return 1; }
+    const i = a.indexOf('-M'); if (i >= 0) { const sh = this.dbRows('/etc/shadow'); sh.find(x => x[0] === name)[4] = a[i + 1]; this.dbSave('/etc/shadow', sh); return 0; }
+    const fmt = d => { const t = new Date(+d * 864e5); return `${MON3[t.getUTCMonth()]} ${String(t.getUTCDate()).padStart(2, '0')}, ${t.getUTCFullYear()}`; };
+    const max = r ? r[4] : '99999', last = r ? r[2] : '0';
+    this.out(`Last password change\t\t\t\t\t: ${last === '0' ? 'password must be changed' : fmt(last)}\nPassword expires\t\t\t\t\t: ${max === '99999' || max === '' ? 'never' : fmt(+last + +max)}\nPassword inactive\t\t\t\t\t: never\nAccount expires\t\t\t\t\t\t: never\nMinimum number of days between password change\t\t: ${r ? r[3] : 0}\nMaximum number of days between password change\t\t: ${max}\nNumber of days of warning before password expires\t: ${r ? r[5] : 7}\n`);
+    return 0;
+  };
+  C.getent = function (a) {
+    const db = { passwd: '/etc/passwd', group: '/etc/group', shadow: '/etc/shadow', hosts: '/etc/hosts' }[a[0]];
+    if (!db) { this.eout(a[0] ? `Unknown database: ${a[0]}\nTry \`getent --help' or \`getent --usage' for more information.\n` : 'getent: wrong number of arguments\n'); return a[0] ? 1 : 1; }
+    if (a[0] === 'shadow' && this.user !== 'root') return 2;
+    const lines = this.node(db).data.split('\n').filter(l => l && !l.startsWith('#'));
+    if (a.length === 1) { this.out(lines.join('\n') + '\n'); return 0; }
+    let code = 0;
+    a.slice(1).forEach(k => {
+      const hit = a[0] === 'hosts' ? lines.find(l => l.split(/\s+/).slice(1).includes(k) || l.split(/\s+/)[0] === k) : lines.find(l => l.split(':')[0] === k || (a[0] !== 'shadow' && l.split(':')[2] === k));
+      if (hit) this.out((a[0] === 'hosts' ? hit.split(/\s+/)[0].padEnd(15) + ' ' + hit.split(/\s+/).slice(1).join(' ') : hit) + '\n'); else code = 2;
+    });
+    return code;
+  };
   C.hostname = function () { this.out(HOST + '\n'); };
   C.uname = function (a) {
     const [f] = opts(a);
@@ -1883,13 +2048,13 @@ const LXSH = (() => {
       if (!n) { this.eout(`stat: cannot statx '${t}': No such file or directory\n`); this.err = true; return; }
       if (f.c) {
         const typ = n.type === 'd' ? 'directory' : n.type === 'l' ? 'symbolic link' : this.size(n) ? 'regular file' : 'regular empty file';
-        const map = { a: n.mode.toString(8), A: modeStr(n), n: t, U: n.owner, G: n.group, u: String(UIDS[n.owner] ?? 1000), g: String(UIDS[n.group] ?? 1000), s: String(this.size(n)), F: typ, '%': '%' };
+        const map = { a: n.mode.toString(8), A: modeStr(n), n: t, U: n.owner, G: n.group, u: String(this.pwRow(n.owner) ? this.pwRow(n.owner)[2] : 1000), g: String(this.grRow(n.group) ? this.grRow(n.group)[2] : 1000), s: String(this.size(n)), F: typ, '%': '%' };
         this.out(String(f.c).replace(/%(.)/g, (m, k) => map[k] ?? m) + '\n');
         return;
       }
       const ty = n.type === 'd' ? 'directory' : n.type === 'l' ? 'symbolic link' : n.type === 'c' ? 'character special file' : this.size(n) ? 'regular file' : 'regular empty file';
       const dt = new Date(n.mtime).toISOString().replace('T', ' ').replace(/\.\d+Z/, '.000000000 +0000');
-      this.out(`  File: ${t}${n.type === 'l' ? ' -> ' + n.target : ''}\n  Size: ${this.size(n)}\t\tBlocks: ${n.type === 'd' ? 8 : this.size(n) ? 8 : 0}\tIO Block: 4096   ${ty}\nAccess: (${n.mode.toString(8).padStart(4, '0')}/${modeStr(n)})  Uid: (${pad(UIDS[n.owner] ?? 1000, 5)}/${pad(n.owner, 8)})   Gid: (${pad(UIDS[n.group] ?? 1000, 5)}/${pad(n.group, 8)})\nModify: ${dt}\n`);
+      this.out(`  File: ${t}${n.type === 'l' ? ' -> ' + n.target : ''}\n  Size: ${this.size(n)}\t\tBlocks: ${n.type === 'd' ? 8 : this.size(n) ? 8 : 0}\tIO Block: 4096   ${ty}\nAccess: (${n.mode.toString(8).padStart(4, '0')}/${modeStr(n)})  Uid: (${pad(this.pwRow(n.owner) ? this.pwRow(n.owner)[2] : 1000, 5)}/${pad(n.owner, 8)})   Gid: (${pad(this.grRow(n.group) ? this.grRow(n.group)[2] : 1000, 5)}/${pad(n.group, 8)})\nModify: ${dt}\n`);
     });
     return this.err ? 1 : 0;
   };
@@ -2790,16 +2955,17 @@ const LXSH = (() => {
   };
   World.prototype.runFileX = function (path, args, input) { const p = this.abs(path), n = this.node(p); if (!n) { this.eout(`bash: ${path}: No such file or directory\n`); return 127; } const src = 'set -x\n' + n.data; const keep = n.data; n.data = src; try { return this.runFile(path, args, input, false, true); } finally { n.data = keep; } };
   C.source = C['.'] = function (a, input) { if (!a.length) { this.eout('bash: source: filename argument required\n'); return 2; } const keep = this.vars; const code = this.runFile(a[0], a.slice(1), input, false); return code; };
+  const SECURE_PATH = '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin';
   C.sudo = function (a, input) {
     if (!a.length) { this.eout('usage: sudo command\n'); return 1; }
-    if (a[0] === '-i' || a[0] === 'su' || a[0] === '-s') { this.user = 'root'; this.out('(you are now root. Type exit to go back to learner. Be careful, root can delete anything)\n'); return 0; }
-    const keep = this.user; this.user = 'root';
-    try { return this.call(a, input); } finally { this.user = keep; }
+    if (a[0] === '-i' || a[0] === 'su' || a[0] === '-s') { this.user = 'root'; this.rootPath = this.vars.PATH; this.vars.PATH = SECURE_PATH; this.out('(you are now root. Type exit to go back to learner. Be careful, root can delete anything)\n'); return 0; }
+    const keep = this.user, path = this.vars.PATH; this.user = 'root'; this.vars.PATH = SECURE_PATH;
+    try { return this.call(a, input); } finally { this.user = keep; this.vars.PATH = path; }
   };
   C.su = function () { this.eout('su: Authentication failure (in this practice shell use sudo instead)\n'); return 1; };
   const exitRoot = C.exit;
-  C.exit = function (a) { if (this.user === 'root') { this.user = USER; return 0; } return exitRoot.call(this, a); };
-  ['apt', 'dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'useradd', 'passwd', 'strace'].forEach(c => {
+  C.exit = function (a) { if (this.user === 'root') { this.user = USER; if (this.rootPath) { this.vars.PATH = this.rootPath; this.rootPath = null; } return 0; } return exitRoot.call(this, a); };
+  ['apt', 'dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'strace'].forEach(c => {
     C[c] = function () { this.eout(`${c}: this command is explained in its own lesson, but the practice shell does not run it. Try it on a real Linux machine, a virtual machine or WSL.\n`); return 127; };
   });
   C.vim = C.vi = C.nano = function (a) { this.eout(`${a[0] ? a[0] + ': ' : ''}the practice shell has no full screen editor. Use echo "text" > file or cat > file with a here document instead.\n`); return 1; };
