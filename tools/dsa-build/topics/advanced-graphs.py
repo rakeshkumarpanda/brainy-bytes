@@ -2421,5 +2421,5 @@ T = t.finish({
     'parts': PARTS, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'talk': TALK,
     'viz': VIZ_JS, 'css': '',
     'prev': ('graphs', 'graphs', '🕸️ Graphs'),
-    'next': None,
+    'next': ('greedy', 'greedy', '🪙 Greedy algorithms'),
 })
