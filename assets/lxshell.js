@@ -2487,9 +2487,10 @@ const LXSH = (() => {
     const prompt = !file;
     if (!file) file = '~/.ssh/id_' + type;
     const f = this.abs(file), dir = dirName(f);
+    const mkDot = () => { if (dir === home + '/.ssh' && !this.node(dir)) { this.mk(dir, 'd', 0o700, this.user, ''); if (!quiet) this.out(`Created directory '${dir}'.\n`); } };
+    if (!prompt) mkDot();
     if (!quiet) this.out(`Generating public/private ${type} key pair.\n`);
-    if (prompt) this.out(`Enter file in which to save the key (${home}/.ssh/id_${type}): \n`);
-    if (dir === home + '/.ssh' && !this.node(dir)) { this.mk(dir, 'd', 0o700, this.user, ''); if (!quiet) this.out(`Created directory '${dir}'.\n`); }
+    if (prompt) { this.out(`Enter file in which to save the key (${home}/.ssh/id_${type}): \n`); mkDot(); }
     if (!this.node(dir)) { this.eout(`Saving key "${f}" failed: No such file or directory\n`); return 255; }
     if (this.node(f)) { this.out(`${f} already exists.\nOverwrite (y/n)? \n`); return 1; }
     if (pass === null) this.out('Enter passphrase (empty for no passphrase): \nEnter same passphrase again: \n');

@@ -1213,6 +1213,42 @@
     }
   }));
 
+  /* admin 4.2 an ssh login: host key check, key authentication, and the usual ways it fails */
+  def('lx-ssh', el => W(el, {
+    title: 'What happens when you type ssh',
+    sub: 'Pick a situation. Pip logs in from the practice server to the file server with a key, and shows what each side checks and what you see when a check fails.',
+    inputs: [{ k: 'host', label: 'Host key', type: 'seg', val: 'new', opts: [['new', 'first visit'], ['known', 'already known'], ['changed', 'key has changed']] },
+             { k: 'auth', label: 'Your key', type: 'seg', val: 'ok', opts: [['ok', 'installed'], ['none', 'not installed'], ['perm', 'private key mode 644']] }],
+    random: () => ({ host: ['new', 'known', 'changed'][Math.floor(Math.random() * 3)], auth: ['ok', 'none', 'perm'][Math.floor(Math.random() * 3)] }),
+    frames: v => {
+      const w = world(), fr = [];
+      const sh = (cmd, label) => { const r = w.run(cmd); return { t: 'term', label: label || 'Practice shell', lines: [['c', cmd]].concat(r.out.replace(/\n+$/, '').split('\n').filter(x => x).map(x => [r.code || /WARNING|denied|failed|too open/.test(x) ? 'e' : 'o', x])), code: r.code }; };
+      w.run('ssh-keygen -q -t ed25519 -N "" -f ~/.ssh/id_ed25519');
+      w.run('printf "Host fs\\n    HostName files.shop.lab\\n" > ~/.ssh/config');
+      if (v.auth !== 'none') { w.run('ssh-copy-id -o StrictHostKeyChecking=accept-new fs'); if (v.host === 'new') w.run('ssh-keygen -R files.shop.lab'); }
+      else if (v.host !== 'new') w.run('ssh -o StrictHostKeyChecking=accept-new fs true');
+      if (v.auth === 'perm') w.run('chmod 644 ~/.ssh/id_ed25519');
+      const steps = ['TCP to port 22', 'Key exchange', 'Host key check', 'User auth', 'Session'];
+      const flow = (k, bad) => ({ t: 'flow', label: 'ssh fs hostname', items: steps.map((x, i) => [x, '', bad && i === k ? 'no' : i === k ? 'cur' : i < k ? 'yes' : '']), arrows: steps.slice(1).map((_, i) => i < k ? 'yes' : '') });
+      fr.push({ msg: 'ssh reads ~/.ssh/config, where the alias fs points to files.shop.lab, resolves the name and opens a TCP connection to port 22, where sshd listens.', mood: 'look', layers: [flow(0), sh('cat ~/.ssh/config')] });
+      fr.push({ msg: 'Both sides agree on ciphers and run a key exchange (on OpenSSH 9.x a hybrid of sntrup761 and x25519, chosen to resist future quantum computers). From this moment everything, including passwords, travels encrypted, and an eavesdropper sees only noise.', mood: 'look', layers: [flow(1)] });
+      if (v.host === 'changed') {
+        fr.push({ msg: 'The server proves who it is with its host key. This key does not match the one stored in ~/.ssh/known_hosts. Either the server was reinstalled, or someone sits in the middle. ssh stops before sending anything about you.', mood: 'sad', fx: 'shake', layers: [flow(2, true), { t: 'term', label: '$ ssh fs hostname', lines: ['@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@', '@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @', '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@', 'IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!', 'Someone could be eavesdropping on you right now (man-in-the-middle attack)!', '...', 'Offending ED25519 key in /home/learner/.ssh/known_hosts:1', '  remove with:', "  ssh-keygen -f '/home/learner/.ssh/known_hosts' -R 'files.shop.lab'", 'Host key verification failed.'].map(x => ['e', x]) }] });
+        fr.push({ msg: 'Check with the server’s admin, or on the server’s console with <code>ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub</code>, that the new fingerprint is right. Only then remove the old line with <code>ssh-keygen -R files.shop.lab</code> and connect again.', mood: 'think', layers: [flow(2, true)] });
+        return fr;
+      }
+      const first = sh('ssh fs true');
+      if (v.host === 'new') fr.push({ msg: 'On the first visit ssh has never seen this host key, so it shows the fingerprint and asks. Compare it with the one the admin gave you before you answer yes. The key is then saved in ~/.ssh/known_hosts and checked on every later visit.', mood: 'wow', layers: [flow(2), { t: 'term', label: '$ ssh fs hostname', lines: first.lines.slice(1).filter(x => /authenticity|fingerprint|not known|continue|Permanently/.test(x[1])).map(x => ['o', x[1]]) }] });
+      else fr.push({ msg: 'The host key matches the line saved in ~/.ssh/known_hosts on an earlier visit, so ssh trusts the server without asking.', mood: 'look', layers: [flow(2), sh('cat ~/.ssh/known_hosts')] });
+      const r = sh('ssh fs hostname');
+      if (v.auth === 'perm') { fr.push({ msg: 'Your private key is readable by others (mode 644), so ssh refuses to use it, and without a key the server asks for a password. Fix it with <code>chmod 600 ~/.ssh/id_ed25519</code>.', mood: 'sad', fx: 'shake', layers: [flow(3, true), r] }); return fr; }
+      if (v.auth === 'none') { fr.push({ msg: 'The server has no matching public key in ~/.ssh/authorized_keys for you, so key login fails and it falls back to a password. Install your public key once with <code>ssh-copy-id fs</code>. On servers with password login switched off, you would see Permission denied (publickey) instead.', mood: 'sad', fx: 'shake', layers: [flow(3, true), r] }); return fr; }
+      fr.push({ msg: 'For user authentication, ssh proves that it holds the private key by signing a challenge, and the server checks the signature against the public keys in ~/.ssh/authorized_keys. The private key itself never leaves your machine.', mood: 'look', layers: [flow(3)] });
+      fr.push({ msg: 'Logged in. sshd starts your command, here hostname, as your user on the server and sends back its output. Without a command you would get an interactive shell.', mood: 'happy', fx: 'burst', layers: [flow(5), r] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

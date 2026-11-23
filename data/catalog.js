@@ -10911,6 +10911,24 @@ function lxAdminModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ssh", title: "SSH: keys, remote work, tunnels and a safe sshd", emoji: "4.2", page: "content/linux/ssh.html",
+        summary: "Key pairs, known hosts, logging in, copying files, tunnels, hardening sshd.",
+        keywords: ["ssh", "sshd", "ssh-keygen", "ssh-copy-id", "authorized_keys", "known_hosts", "ssh-agent", "scp", "sftp", "rsync", "ssh tunnel", "ProxyJump", "sshd_config"],
+        minutes: 60, counts: {"lessons": 8, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "how", title: "How an ssh login works", emoji: "", group: "Lesson", keywords: ["ssh", "sshd", "port 22", "secure shell", "key exchange", "host key", "known_hosts", "fingerprint", "public key authentication", "authorized_keys", "private key", "man-in-the-middle", "sntrup761x25519", "REMOTE HOST IDENTIFICATION HAS CHANGED"] },
+        { id: "keys", title: "Key pairs: ssh-keygen, passphrases and ssh-agent", emoji: "", group: "Lesson", keywords: ["ssh-keygen", "ed25519", "RSA key", "key pair", "passphrase", "ssh-keygen -lf", "fingerprint", "randomart", "ssh-agent", "ssh-add", "id_ed25519.pub", "key per device"] },
+        { id: "login", title: "Installing a key and logging in", emoji: "", group: "Lesson", keywords: ["ssh-copy-id", "authorized_keys", "first login", "StrictHostKeyChecking", "accept-new", "BatchMode", "Host key verification failed", "Permission denied (publickey)", "remote command", "SSH_CONNECTION", "ssh -v", "bad ownership or modes"] },
+        { id: "config", title: "Aliases, file copies and rsync over ssh", emoji: "", group: "Lesson", keywords: ["~/.ssh/config", "Host alias", "HostName", "IdentityFile", "scp", "scp -r", "sftp", "rsync over ssh", "rsync -e ssh", "remote copy", "file transfer"] },
+        { id: "tunnels", title: "Port forwarding and jump hosts", emoji: "", group: "Lesson", keywords: ["port forwarding", "ssh tunnel", "ssh -L", "local forwarding", "ssh -R", "remote forwarding", "ssh -D", "SOCKS proxy", "ProxyJump", "ssh -J", "jump host", "bastion", "ExitOnForwardFailure", "agent forwarding"] },
+        { id: "server", title: "Securing sshd", emoji: "", group: "Lesson", keywords: ["sshd_config", "sshd_config.d", "PasswordAuthentication no", "PermitRootLogin", "prohibit-password", "AllowUsers", "AllowGroups", "MaxAuthTries", "sshd -t", "sshd -T", "systemctl reload ssh", "SIGHUP", "fail2ban", "ssh hardening"] },
+        { id: "practice", title: "Practice: key login to the file server", emoji: "", group: "Lesson", keywords: ["ssh lab", "ssh-keygen practice", "ssh-copy-id practice", "scp practice", "sshd hardening practice"] },
+        { id: "levels", title: "Remote access from school to research", emoji: "", group: "Lesson", keywords: ["SSH certificates", "certificate authority", "ssh-keygen -s", "short-lived certificates", "FIDO2", "ed25519-sk", "bastion", "session recording", "Ansible", "post-quantum ssh", "ML-KEM", "Terrapin attack", "strict key exchange"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
