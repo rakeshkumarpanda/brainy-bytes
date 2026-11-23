@@ -48,7 +48,7 @@ const LXSH = (() => {
       ['/etc/skel/.profile', '# ~/.profile: executed by the command interpreter for login shells.\n', 0o644, 'root'],
       ['/etc/skel/.bash_logout', '# ~/.bash_logout: executed by bash(1) when login shell exits.\n', 0o644, 'root'],
       ['/etc/hosts', '127.0.0.1 localhost\n127.0.1.1 brainy\n', 0o644, 'root'],
-      ['/etc/fstab', '# <file system> <mount point> <type> <options> <dump> <pass>\nUUID=1b2c-77aa / ext4 defaults 0 1\n', 0o644, 'root'],
+      ['/etc/fstab', '# <file system> <mount point> <type> <options> <dump> <pass>\nUUID=b6e1c2a4-77aa-4e0f-9d3b-2f1c8a5e0d71 / ext4 errors=remount-ro 0 1\n', 0o644, 'root'],
       ['/var/log/syslog', 'Nov 23 09:00:00 brainy systemd[1]: Started Daily apt download activities.\nNov 23 09:00:02 brainy CRON[812]: (root) CMD (run-parts /etc/cron.hourly)\n', 0o640, 'root'],
       ['/proc/version', 'Linux version 6.8.0-practice (practice@brainy) #1 SMP\n', 0o444, 'root'],
       ['/proc/cpuinfo', 'processor\t: 0\nmodel name\t: Practice CPU\ncpu cores\t: 2\nprocessor\t: 1\nmodel name\t: Practice CPU\ncpu cores\t: 2\n', 0o444, 'root'],
@@ -56,8 +56,8 @@ const LXSH = (() => {
     ]
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
-  const SBIN = 'chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'alias dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const SBIN = 'mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
+  const CMDS = 'alias blkid findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -91,7 +91,7 @@ const LXSH = (() => {
     return { n: '\n', t: '\t', r: '\r', a: '\x07', b: '\b', e: '\x1b', E: '\x1b', f: '\f', v: '\v', '\\': '\\', "'": "'", '"': '"', '?': '?' }[c] ?? m;
   });
   function modeStr(n) {
-    const t = n.type === 'd' ? 'd' : n.type === 'l' ? 'l' : n.type === 'c' ? 'c' : '-';
+    const t = n.type === 'd' ? 'd' : n.type === 'l' ? 'l' : n.type === 'c' ? 'c' : n.type === 'b' ? 'b' : '-';
     const m = n.mode, b = (v, ch) => v ? ch : '-';
     let s = t;
     [[6, 0o4000, 's'], [3, 0o2000, 's'], [0, 0o1000, 't']].forEach(([sh, sp, ch]) => {
@@ -790,7 +790,7 @@ const LXSH = (() => {
         const direct = this.viaPath; this.viaPath = false;
         if (!hit && !direct && (CMDS.includes(name) || SBIN.includes(name) || PKGCMDS.includes(name))) { this.eout(`${name}: command not found\n`); return 127; }
       }
-      const f = C[name];
+      this.cmdNameReal = name; const f = C[name];
       if (!f) { this.eout(`${name}: command not found\n`); return 127; }
       const keepErr = this.err; this.err = false;
       try { return f.call(this, args.slice(1), input, name) || 0; } catch (e) {
@@ -1986,9 +1986,231 @@ const LXSH = (() => {
       : '               total        used        free      shared  buff/cache   available\nMem:         8048304     2201124     3142212      122880     2704968     5563880\nSwap:        2097148           0     2097148\n');
   };
   C.df = function (a) {
-    const [f] = opts(a);
-    this.out(f.h ? 'Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1        40G   15G   23G  40% /\ntmpfs           3.9G     0  3.9G   0% /dev/shm\n'
-      : 'Filesystem     1K-blocks     Used Available Use% Mounted on\n/dev/sda1       41152736 15204920  23834288  39% /\ntmpfs            4024152        0   4024152   0% /dev/shm\n');
+    const [f, rest] = opts(a);
+    let rows = this.mountTable();
+    if (rest.length) rows = rest.map(x => { const p = this.abs(x); return rows.filter(r => p === r.dir || p.startsWith(r.dir === '/' ? '/' : r.dir + '/')).sort((m, n) => n.dir.length - m.dir.length)[0]; }).filter(Boolean);
+    const hs = k => { const b = k * 1024; if (b === 0) return '0'; const u = ['K', 'M', 'G', 'T']; let x = k, i = 0; while (x >= 1024 && i < 3) { x /= 1024; i++; } return (x < 10 ? Math.ceil(x * 10) / 10 : Math.ceil(x)).toString().replace(/^(\d)$/, '$1.0') + u[i]; };
+    const T = f.T;
+    const head = f.i ? ['Filesystem', 'Inodes', 'IUsed', 'IFree', 'IUse%', 'Mounted on'] : f.h ? ['Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on'] : ['Filesystem', '1K-blocks', 'Used', 'Available', 'Use%', 'Mounted on'];
+    if (T) head.splice(1, 0, 'Type');
+    const body = rows.map(r => { const v = f.i ? [r.inodes, r.iused, r.inodes - r.iused] : [r.blocks, r.used, r.avail]; const pct = f.i ? (r.inodes ? Math.ceil(r.iused * 100 / r.inodes) + '%' : '-') : (r.used ? Math.ceil(r.used * 100 / (r.used + r.avail)) + '%' : '0%'); const cells = [r.src].concat(T ? [r.type] : [], f.h && !f.i ? v.map(hs) : v.map(String), [pct, r.dir]); return cells; });
+    const all = [head].concat(body), w = head.map((_, i) => Math.max(...all.map(c => c[i].length)));
+    w[0] = Math.max(w[0], 14);
+    this.out(all.map(c => c.map((x, i) => i === 0 ? x.padEnd(w[0]) : i === c.length - 1 ? x : (i === 1 && T ? x.padEnd(w[1]) : x.padStart(w[i]))).join(' ')).join('\n') + '\n');
+    return 0;
+  };
+  /* ---------- block devices, partitions, file systems and mounts ---------- */
+  const GiB = 1024 ** 3, MiB = 1024 ** 2;
+  World.prototype.disks = function () {
+    if (this.diskState) return this.diskState;
+    const root = { type: 'ext4', uuid: 'b6e1c2a4-77aa-4e0f-9d3b-2f1c8a5e0d71', label: '', blocks: 41152736, used: 15204920, avail: 23834288, inodes: 2621440, iused: 412530, keep: true };
+    const usbRoot = { type: 'd', name: '/', mode: 0o755, owner: 'root', group: 'root', mtime: T0 - 864e5 * 9, kids: {} };
+    const usb = { type: 'vfat', uuid: '4A1B-2C3D', label: 'USBSTICK', blocks: 31254512, used: 2160, avail: 31252352, inodes: 0, iused: 0, tree: usbRoot };
+    const st = this.diskState = {
+      devs: [
+        { name: 'sda', mm: '8:0', rm: 0, size: 40 * GiB, model: 'ATA QEMU HARDDISK (scsi)', label: 'gpt', parts: [{ name: 'sda1', mm: '8:1', size: 40 * GiB - 2 * MiB, start: MiB, pname: '', fs: root }] },
+        { name: 'sdb', mm: '8:16', rm: 1, size: 62529536 * 512, model: 'SanDisk Cruzer Blade (scsi)', label: 'msdos', parts: [{ name: 'sdb1', mm: '8:17', size: 62529536 * 512 - MiB, start: MiB, pname: '', fs: usb }] },
+        { name: 'sdc', mm: '8:32', rm: 0, size: 20 * GiB, model: 'ATA QEMU HARDDISK (scsi)', label: null, parts: [] }],
+      mounts: [{ dev: 'sda1', dir: '/', opts: 'rw,relatime,errors=remount-ro' }]
+    };
+    const put = (tree, path, data) => { let n = tree; const bits = path.split('/'); bits.slice(0, -1).forEach(b => { n.kids[b] = n.kids[b] || { type: 'd', name: b, mode: 0o755, owner: 'root', group: 'root', mtime: T0 - 864e5 * 9, kids: {} }; n = n.kids[b]; }); n.kids[bits[bits.length - 1]] = { type: 'f', name: bits[bits.length - 1], mode: 0o755, owner: 'root', group: 'root', mtime: T0 - 864e5 * 9, data }; };
+    put(usbRoot, 'notes.txt', 'Things to back up: photos, the thesis, the music folder\n');
+    put(usbRoot, 'photos/trip-01.jpg', 'JPEGDATA'); put(usbRoot, 'photos/trip-02.jpg', 'JPEGDATA');
+    st.devs.forEach(d => { this.mk('/dev/' + d.name, 'b', 0o660, 'root', '').group = 'disk'; d.parts.forEach(p => { this.mk('/dev/' + p.name, 'b', 0o660, 'root', '').group = 'disk'; }); });
+    return st;
+  };
+  World.prototype.partOf = function (dev) {
+    const st = this.disks(); let d = String(dev || '');
+    let m;
+    if ((m = /^UUID=(.+)$/.exec(d))) { for (const x of st.devs) for (const p of x.parts) if (p.fs && p.fs.uuid === m[1].replace(/"/g, '')) return p; return null; }
+    if ((m = /^LABEL=(.+)$/.exec(d))) { for (const x of st.devs) for (const p of x.parts) if (p.fs && p.fs.label === m[1].replace(/"/g, '')) return p; return null; }
+    d = d.replace(/^\/dev\//, '');
+    for (const x of st.devs) { if (x.name === d) return x; for (const p of x.parts) if (p.name === d) return p; }
+    return null;
+  };
+  World.prototype.mountTable = function () {
+    const st = this.disks();
+    const rows = st.mounts.map(m => { const p = this.partOf(m.dev), fs = p.fs; return { src: '/dev/' + m.dev, dir: m.dir, type: fs.type, opts: m.opts, blocks: fs.blocks, used: fs.used, avail: fs.avail, inodes: fs.inodes, iused: fs.iused }; });
+    rows.splice(1, 0, { src: 'tmpfs', dir: '/dev/shm', type: 'tmpfs', opts: 'rw,nosuid,nodev', blocks: 4024152, used: 0, avail: 4024152, inodes: 1006038, iused: 1 });
+    return rows;
+  };
+  const humanBin = b => { const u = ['B', 'K', 'M', 'G', 'T']; let x = b, i = 0; while (x >= 1024 && i < 4) { x /= 1024; i++; } return (Math.round(x * 10) / 10).toString().replace(/\.0$/, '') + u[i]; };
+  const newUuid = (w, seed) => { let h = 2166136261; for (const ch of seed + w.clock) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; const hex = n => { let s2 = ''; for (let i = 0; i < n; i++) { h = Math.imul(h ^ i, 16777619) >>> 0; s2 += (h % 16).toString(16); } return s2; }; return `${hex(8)}-${hex(4)}-4${hex(3)}-a${hex(3)}-${hex(12)}`; };
+  C.lsblk = function (a) {
+    const st = this.disks(), full = a.includes('-f') || a.includes('--fs'), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
+    const mnt = p => (st.mounts.find(m => m.dev === p.name) || {}).dir || '';
+    const devs = st.devs.filter(d => !names.length || names.includes(d.name));
+    const rows = [];
+    devs.forEach(d => { rows.push([d.name, d, 'disk']); d.parts.forEach((p, i) => rows.push([(i === d.parts.length - 1 ? '└─' : '├─') + p.name, p, 'part'])); });
+    if (!rows.length) { this.eout(`lsblk: ${names[0]}: not a block device\n`); return 32; }
+    const w = Math.max(4, ...rows.map(r => r[0].length));
+    if (full) {
+      const fsr = rows.map(([n, x]) => { const fs = x.fs; const m = mnt(x); const avail = fs && m ? humanBin(fs.avail * 1024) : ''; const pct = fs && m ? Math.ceil(fs.used * 100 / (fs.used + fs.avail)) + '%' : ''; return [n, fs ? fs.type : '', fs ? (fs.type === 'ext4' ? '1.0' : fs.type === 'vfat' ? 'FAT32' : fs.type === 'xfs' ? '' : '') : '', fs ? fs.label : '', fs ? fs.uuid : '', avail, pct, m]; });
+      const head = ['NAME', 'FSTYPE', 'FSVER', 'LABEL', 'UUID', 'FSAVAIL', 'FSUSE%', 'MOUNTPOINTS'], all = [head].concat(fsr), ww = head.map((_, i) => Math.max(...all.map(r => r[i].length)));
+      this.out(all.map(r => r.map((x, i) => i === 7 ? x : i === 5 || i === 6 ? x.padStart(ww[i]) : x.padEnd(ww[i])).join(' ').replace(/\s+$/, '')).join('\n') + '\n');
+      return 0;
+    }
+    this.out(`${'NAME'.padEnd(w)} MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS\n` + rows.map(([n, x, t]) => `${n.padEnd(w)} ${x.mm.padStart(5)}  ${(x.rm !== undefined ? x.rm : st.devs.find(d => d.parts.includes(x)).rm)} ${humanBin(x.size).padStart(5)}  0 ${t} ${mnt(x)}`.replace(/\s+$/, '')).join('\n') + '\n');
+    return 0;
+  };
+  C.blkid = function (a) {
+    const st = this.disks(), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
+    if (this.user !== 'root' && !names.length) { /* blkid as a user prints from its cache, which may be empty */ }
+    let any = false;
+    st.devs.forEach(d => d.parts.forEach(p => { if ((!names.length || names.includes(p.name)) && p.fs) { any = true; this.out(`/dev/${p.name}: ${p.fs.label ? `LABEL="${p.fs.label}" ` : ''}UUID="${p.fs.uuid}" ${p.fs.type === 'vfat' ? 'BLOCK_SIZE="512" ' : 'BLOCK_SIZE="4096" '}TYPE="${p.fs.type}"${d.label === 'gpt' && p.pname ? ` PARTLABEL="${p.pname}"` : ''} PARTUUID="${d.label === 'gpt' ? (d.name === 'sda' ? '7c9e4b1d' : 'e3a95f20') + '-0' + p.name.slice(-1) + '2a-4f3e-8d6c-5b1a9e7f3c2' + p.name.slice(-1) : 'a1b2c3d4-0' + p.name.slice(-1)}"\n`); } }));
+    return any ? 0 : 2;
+  };
+  World.prototype.needRootDisk = function (cmd) { if (this.user === 'root') return false; this.eout(cmd === 'mount' || cmd === 'umount' ? '' : `${cmd}: Permission denied\n`); return true; };
+  C.parted = function (a) {
+    let args = a.filter(x => x !== '-s' && x !== '--script'), script = a.includes('-s') || a.includes('--script');
+    const dev = args[0], d = this.partOf(dev);
+    if (!d || !d.parts) { this.eout(`Error: Could not stat device ${dev || ''} - No such file or directory.\n`); return 1; }
+    if (this.user !== 'root') { this.eout(`Error: Error opening ${dev}: Permission denied\n`); return 1; }
+    args = args.slice(1);
+    if (!args.length) { this.eout('parted would now open its own prompt, which the practice shell cannot do. Give the commands on the line instead, for example: sudo parted -s ' + dev + ' print\n'); return 1; }
+    const gb = b => (b / 1e9 >= 1 ? (Math.round(b / 1e8) / 10) + 'GB' : Math.round(b / 1e3) + 'kB');
+    const pos = (x, size) => { const m = /^([\d.]+)(%|MiB|GiB|MB|GB|s)?$/.exec(x); if (!m) return NaN; const v = +m[1]; return m[2] === '%' ? Math.min(size, Math.round(size * v / 100 / MiB) * MiB) : m[2] === 'GiB' ? v * GiB : m[2] === 'GB' ? v * 1e9 : m[2] === 's' ? v * 512 : v * MiB; };
+    while (args.length) {
+      const c = args.shift();
+      if (c === 'mklabel') { const t = args.shift(); if (!['gpt', 'msdos'].includes(t)) { this.eout(`Error: Invalid disk label type ${t}.\n`); return 1; } if (d.parts.some(p => this.disks().mounts.some(m => m.dev === p.name))) { this.eout(`Error: Partition(s) on ${dev} are being used.\n`); return 1; } d.label = t; d.parts = []; }
+      else if (c === 'mkpart') {
+        if (!d.label) { this.eout(`Error: ${dev}: unrecognised disk label\n`); return 1; }
+        let pname = ''; if (d.label === 'gpt') pname = args.shift(); else args.shift();
+        if (/^(ext4|xfs|fat32|linux-swap|btrfs)$/.test(args[0])) args.shift();
+        const st0 = pos(args.shift(), d.size), enArg = args.shift(); let en = pos(enArg, d.size); if (enArg === '100%' && d.label === 'gpt') en = d.size - MiB;
+        if (isNaN(st0) || isNaN(en) || en <= st0) { this.eout('Error: Invalid start or end of the partition.\n'); return 1; }
+        if (d.parts.some(p => st0 < p.start + p.size && en > p.start)) { this.eout("Error: You requested a partition from the given range, but it overlaps another partition.\n"); return 1; }
+        const k = d.parts.length + 1, base = { sda: 0, sdb: 16, sdc: 32 }[d.name] || 48;
+        d.parts.push({ name: d.name + k, mm: `8:${base + k}`, size: en - st0, start: st0, pname, fs: null });
+        this.mk('/dev/' + d.name + k, 'b', 0o660, 'root', '').group = 'disk';
+      }
+      else if (c === 'print') {
+        if (!d.label) { this.eout(`Error: ${dev}: unrecognised disk label\n`); this.out(`Model: ${d.model}\nDisk ${dev}: ${gb(d.size)}\nSector size (logical/physical): 512B/512B\nPartition Table: unknown\nDisk Flags: \n`); return 1; }
+        this.out(`Model: ${d.model}\nDisk ${dev}: ${gb(d.size)}\nSector size (logical/physical): 512B/512B\nPartition Table: ${d.label}\nDisk Flags: \n\nNumber  Start   End     Size    ${d.label === 'gpt' ? 'File system  Name  Flags' : 'Type     File system  Flags'}\n` + d.parts.map((p, i) => ` ${i + 1}      ${gb(p.start).padEnd(7)} ${gb(p.start + p.size).padEnd(7)} ${gb(p.size).padEnd(7)} ${d.label === 'gpt' ? `${(p.fs ? p.fs.type : '').padEnd(12)} ${p.pname}` : `primary  ${(p.fs ? (p.fs.type === 'vfat' ? 'fat32' : p.fs.type) : '').padEnd(12)} lba`}`).join('\n') + '\n\n');
+      }
+      else if (c === 'rm') { const n = +args.shift(); d.parts.splice(n - 1, 1); }
+      else { this.eout(`Error: the practice parted knows mklabel, mkpart, print and rm, not ${c}.\n`); return 1; }
+    }
+    return 0;
+  };
+  C['mkfs.ext4'] = C['mkfs.xfs'] = C['mkfs.vfat'] = C.mkfs = function (a, input) {
+    let type = { 'mkfs.ext4': 'ext4', 'mkfs.xfs': 'xfs', 'mkfs.vfat': 'vfat' }[this.cmdNameReal] || 'ext4', label = '', force = false; const rest = [];
+    for (let i = 0; i < a.length; i++) { if (a[i] === '-t') type = a[++i]; else if (a[i] === '-L' || a[i] === '-n') label = a[++i]; else if (a[i] === '-F' || a[i] === '-f') force = true; else if (!a[i].startsWith('-')) rest.push(a[i]); }
+    const dev = rest[0], p = this.partOf(dev), prog = type === 'ext4' ? 'mke2fs' : type === 'xfs' ? 'mkfs.xfs' : 'mkfs.fat';
+    if (!p) { this.eout(`${prog === 'mke2fs' ? 'mke2fs 1.47.0 (5-Feb-2023)\n' : ''}The file ${dev} does not exist and no size was specified.\n`); return 1; }
+    if (this.user !== 'root') { this.eout(`${prog === 'mke2fs' ? 'mke2fs 1.47.0 (5-Feb-2023)\nmkfs.ext4: ' : prog + ': '}Permission denied while trying to determine filesystem size\n`); return 1; }
+    if (p.parts) { this.eout(`${prog}: ${dev} is a whole disk. The practice shell formats partitions only, so create one with parted first.\n`); return 1; }
+    if (this.disks().mounts.some(m => m.dev === p.name)) { this.eout(`${prog === 'mke2fs' ? 'mke2fs 1.47.0 (5-Feb-2023)\n' : ''}${dev} is mounted; will not make a filesystem here!\n`); return 1; }
+    if (p.fs && !force && type === 'ext4') { this.out(`mke2fs 1.47.0 (5-Feb-2023)\n${dev} contains a ${p.fs.type} file system${p.fs.label ? ` labelled '${p.fs.label}'` : ''}\nProceed anyway? (y,N) `); if (!/^\s*y/i.test(input || '')) { this.out('\n'); return 1; } this.out('y\n'); }
+    const blocks4k = Math.floor(p.size / 4096), k = blocks4k * 4;
+    const uuid = type === 'vfat' ? newUuid(this, dev).slice(0, 4).toUpperCase() + '-' + newUuid(this, dev + 'x').slice(0, 4).toUpperCase() : newUuid(this, dev);
+    const real20 = blocks4k === 5242368;
+    if (type === 'ext4') {
+      const inodes = real20 ? 1310720 : Math.floor(blocks4k / 4 / 8192) * 8192 || 8192;
+      this.out(`${p.fs ? '' : 'mke2fs 1.47.0 (5-Feb-2023)\n'}Creating filesystem with ${blocks4k} 4k blocks and ${inodes} inodes\nFilesystem UUID: ${uuid}\nSuperblock backups stored on blocks: \n\t32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, \n\t4096000\n\nAllocating group tables: done                            \nWriting inode tables: done                            \nCreating journal (32768 blocks): done\nWriting superblocks and filesystem accounting information: done\n\n`);
+      p.fs = { type: 'ext4', uuid, label, blocks: real20 ? 20464208 : Math.round(k * 0.976), used: 24, avail: real20 ? 19399328 : Math.round(k * 0.925), inodes, iused: 11 };
+      p.fs.tree = { type: 'd', name: '/', mode: 0o755, owner: 'root', group: 'root', mtime: this.now(), kids: { 'lost+found': { type: 'd', name: 'lost+found', mode: 0o700, owner: 'root', group: 'root', mtime: this.clock, kids: {} } } };
+    } else if (type === 'xfs') {
+      this.out(`meta-data=${dev}              isize=512    agcount=4, agsize=${Math.ceil(blocks4k / 4)} blks\n         =                       sectsz=512   attr=2, projid32bit=1\n         =                       crc=1        finobt=1, sparse=1, rmapbt=1\n         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=0\ndata     =                       bsize=4096   blocks=${blocks4k}, imaxpct=25\n         =                       sunit=0      swidth=0 blks\nnaming   =version 2              bsize=4096   ascii-ci=0, ftype=1\nlog      =internal log           bsize=4096   blocks=16384, version=2\n         =                       sectsz=512   sunit=0 blks, lazy-count=1\nrealtime =none                   extsz=4096   blocks=0, rtextents=0\n`);
+      p.fs = { type: 'xfs', uuid, label, blocks: Math.round(k * 0.995), used: Math.round(k * 0.0075), avail: Math.round(k * 0.9875), inodes: Math.round(k / 2), iused: 3, tree: { type: 'd', name: '/', mode: 0o755, owner: 'root', group: 'root', mtime: this.now(), kids: {} } };
+    } else {
+      this.out('mkfs.fat 4.2 (2021-01-31)\n');
+      p.fs = { type: 'vfat', uuid, label: label.toUpperCase(), blocks: Math.round(k * 0.998), used: 4, avail: Math.round(k * 0.998) - 4, inodes: 0, iused: 0, tree: { type: 'd', name: '/', mode: 0o755, owner: 'root', group: 'root', mtime: this.now(), kids: {} } };
+    }
+    return 0;
+  };
+  World.prototype.doMount = function (devArg, dir, opts) {
+    const st = this.disks(), p = this.partOf(devArg), d = this.abs(dir), dn = this.node(d);
+    if (!dn || dn.type !== 'd') { this.eout(`mount: ${d}: mount point does not exist.\n`); return 32; }
+    if (!p) { this.eout(/^(UUID|LABEL)=/.test(devArg) ? `mount: ${d}: can't find ${devArg}.\n` : `mount: ${d}: special device ${devArg} does not exist.\n`); return 32; }
+    if (!p.fs || p.parts) { this.eout(`mount: ${d}: wrong fs type, bad option, bad superblock on /dev/${p.name}, missing codepage or helper program, or other error.\n       dmesg(1) may have more information after failed mount system call.\n`); return 32; }
+    const had = st.mounts.find(m => m.dev === p.name); if (had) { this.eout(`mount: ${d}: /dev/${p.name} already mounted on ${had.dir}.\n`); return 32; }
+    if (st.mounts.some(m => m.dir === d)) { /* stacking a second mount on the same folder is allowed, the newest hides the older */ }
+    const keep = dn.kids; dn.kids = p.fs.tree.kids; const saved = { mode: dn.mode, owner: dn.owner, group: dn.group };
+    dn.mode = p.fs.tree.mode; dn.owner = p.fs.tree.owner; dn.group = p.fs.tree.group;
+    st.mounts.push({ dev: p.name, dir: d, opts: opts || (p.fs.type === 'vfat' ? 'rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=ascii,shortname=mixed,utf8,errors=remount-ro' : 'rw,relatime'), under: keep, saved });
+    this.sdLog('', 'kernel', p.fs.type === 'ext4' ? `EXT4-fs (${p.name}): mounted filesystem ${p.fs.uuid} r/w with ordered data mode. Quota mode: none.` : p.fs.type === 'xfs' ? `XFS (${p.name}): Mounting V5 Filesystem ${p.fs.uuid}` : `FAT-fs (${p.name}): Volume was not properly unmounted. Some data may be corrupt. Please run fsck.`);
+    return 0;
+  };
+  C.mount = function (a) {
+    const st = this.disks();
+    let type = '', opts = ''; const rest = [];
+    for (let i = 0; i < a.length; i++) { if (a[i] === '-t') type = a[++i]; else if (a[i] === '-o') opts = a[++i]; else if (a[i] === '-a') rest.push('-a'); else if (a[i] === '-v') continue; else rest.push(a[i]); }
+    if (!rest.length || (type && !rest.length)) {
+      this.out(this.mountTable().filter(r => !type || r.type === type).map(r => `${r.src} on ${r.dir} type ${r.type} (${r.opts})`).join('\n') + '\n'); return 0;
+    }
+    if (this.user !== 'root') { const d = rest[rest.length - 1]; this.eout(`mount: ${d === '-a' ? '' : this.abs(d) + ': '}must be superuser to use mount.\n`); return 1; }
+    const fstab = () => (this.node('/etc/fstab').data || '').split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).map(l => l.trim().split(/\s+/));
+    if (rest[0] === '-a') {
+      let code = 0;
+      fstab().forEach(f => {
+        const [src, dir, t, o] = f; if (t === 'swap' || (o || '').split(',').includes('noauto') || dir === '/') return;
+        if (st.mounts.some(m => m.dir === dir)) return;
+        const p = this.partOf(src);
+        if (!p && (o || '').split(',').includes('nofail')) return;
+        if (this.doMount(src, dir, (o || 'defaults') === 'defaults' ? null : 'rw,relatime,' + o.split(',').filter(x => x !== 'defaults' && x !== 'nofail').join(','))) code = 32;
+      });
+      return code;
+    }
+    if (rest.length === 1) {
+      const row = fstab().find(f => f[1] === this.abs(rest[0]) || f[0] === rest[0] || f[0] === 'UUID=' + rest[0]);
+      if (!row) { this.eout(`mount: ${rest[0]}: can't find in /etc/fstab.\n`); return 1; }
+      return this.doMount(row[0], row[1]);
+    }
+    return this.doMount(rest[0], rest[1], opts ? 'rw,relatime,' + opts.split(',').filter(x => x !== 'rw').join(',') : null);
+  };
+  C.umount = function (a) {
+    const st = this.disks(), x = a.filter(y => !y.startsWith('-'))[0];
+    if (!x) { this.eout('Usage:\n umount [-hV]\n umount -a [options]\n umount [options] <source> | <directory>\n'); return 1; }
+    const d = this.abs(x), dev = x.replace(/^\/dev\//, '');
+    const k = st.mounts.map((m, i) => [m, i]).reverse().find(([m]) => m.dir === d || m.dev === dev);
+    if (this.user !== 'root') { this.eout(`umount: ${d}: must be superuser to unmount.\n`); return 1; }
+    if (!k) { this.eout(`umount: ${d}: not mounted.\n`); return 32; }
+    const [m, i] = k;
+    if (m.dir === '/') { this.eout('umount: /: target is busy.\n'); return 32; }
+    if (this.cwd === m.dir || this.cwd.startsWith(m.dir + '/')) { this.eout(`umount: ${m.dir}: target is busy.\n`); return 32; }
+    const dn = this.node(m.dir), p = this.partOf(m.dev);
+    p.fs.tree.kids = dn.kids; p.fs.tree.mode = dn.mode; p.fs.tree.owner = dn.owner; p.fs.tree.group = dn.group;
+    dn.kids = m.under; Object.assign(dn, m.saved);
+    st.mounts.splice(i, 1);
+    return 0;
+  };
+  C.findmnt = function (a) {
+    const rows = this.mountTable();
+    if (a.includes('--verify')) {
+      const lines = (this.node('/etc/fstab').data || '').split('\n').filter(l => l.trim() && !l.trim().startsWith('#')).map(l => l.trim().split(/\s+/));
+      let errs = 0, warns = 0, out = '';
+      lines.forEach(f => {
+        const [src, dir, t, o, dump, pass] = f, msgs = [];
+        if (f.length < 4) { msgs.push(['E', 'not enough fields']); }
+        else {
+          if (t !== 'swap' && !this.node(dir)) msgs.push(['E', `target ${dir} does not exist`]);
+          if (!this.partOf(src)) msgs.push([(o || '').includes('nofail') ? 'W' : 'E', `unreachable source: ${src}: No such file or directory`]);
+          else { const p = this.partOf(src); if (p.fs && t !== 'auto' && p.fs.type !== t) msgs.push(['E', `${t} does not match with on-disk ${p.fs.type}`]); }
+          if (pass !== undefined && !/^[0-2]$/.test(pass)) msgs.push(['W', `fs_passno ${pass} is not 0, 1 or 2`]);
+        }
+        if (msgs.length) { out += dir + '\n' + msgs.map(([k, m]) => `   [${k}] ${m}`).join('\n') + '\n'; msgs.forEach(([k]) => k === 'E' ? errs++ : warns++); }
+      });
+      this.out(out + (errs || warns ? `\n0 parse errors, ${errs} error${errs === 1 ? '' : 's'}, ${warns} warning${warns === 1 ? '' : 's'}\n` : 'Success, no errors or warnings detected\n'));
+      return errs ? 1 : 0;
+    }
+    const t = a.filter(x => !x.startsWith('-'))[0];
+    const show = t ? rows.filter(r => r.dir === this.abs(t) || r.src === t) : rows;
+    if (!show.length) return 1;
+    const w = [Math.max(6, ...show.map(r => r.dir.length)), Math.max(6, ...show.map(r => r.src.length)), Math.max(6, ...show.map(r => r.type.length))];
+    this.out(`${'TARGET'.padEnd(w[0])} ${'SOURCE'.padEnd(w[1])} ${'FSTYPE'.padEnd(w[2])} OPTIONS\n` + show.map(r => `${r.dir.padEnd(w[0])} ${r.src.padEnd(w[1])} ${r.type.padEnd(w[2])} ${r.opts}`).join('\n') + '\n');
+    return 0;
+  };
+  C.fsck = C.e2fsck = function (a) {
+    const dev = a.filter(x => !x.startsWith('-'))[0], p = this.partOf(dev);
+    const head = this.cmdNameReal === 'e2fsck' ? 'e2fsck 1.47.0 (5-Feb-2023)\n' : 'fsck from util-linux 2.39.3\ne2fsck 1.47.0 (5-Feb-2023)\n';
+    if (!p) { this.out('fsck from util-linux 2.39.3\n'); this.eout(`fsck.ext2: No such file or directory while trying to open ${dev}\n`); return 8; }
+    if (this.user !== 'root') { this.out(head); this.eout(`fsck.ext4: Permission denied while trying to open ${dev}\nYou must have r/w access to the filesystem or be root\n`); return 8; }
+    if (this.disks().mounts.some(m => m.dev === p.name)) { this.out(head + `${dev} is mounted.\ne2fsck: Cannot continue, aborting.\n\n`); return 8; }
+    if (!p.fs) { this.out(head); this.eout(`ext2fs_open2: Bad magic number in super-block\nfsck.ext2: Superblock invalid, trying backup blocks....\nfsck.ext2: Bad magic number in super-block while trying to open ${dev}\n`); return 8; }
+    if (p.fs.type === 'vfat') { this.out(`fsck from util-linux 2.39.3\nfsck.fat 4.2 (2021-01-31)\n${dev}: 3 files, 540/7813628 clusters\n`); return 0; }
+    this.out(head + `${p.fs.label || dev}: clean, ${p.fs.iused}/${p.fs.inodes} files, ${p.fs.type === 'ext4' && p.fs.inodes === 1310720 ? 126322 : Math.round(p.fs.used / 4) + 120000}/${Math.floor(p.size / 4096)} blocks\n`);
+    return 0;
   };
   C.du = function (a) {
     const [f, rest] = opts(a, 'd');
@@ -2968,7 +3190,7 @@ const LXSH = (() => {
   C.su = function () { this.eout('su: Authentication failure (in this practice shell use sudo instead)\n'); return 1; };
   const exitRoot = C.exit;
   C.exit = function (a) { if (this.user === 'root') { this.user = USER; if (this.rootPath) { this.vars.PATH = this.rootPath; this.rootPath = null; } return 0; } return exitRoot.call(this, a); };
-  ['dnf', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'strace'].forEach(c => {
+  ['dnf', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'strace'].forEach(c => {
     C[c] = function () { this.eout(`${c}: this command is explained in its own lesson, but the practice shell does not run it. Try it on a real Linux machine, a virtual machine or WSL.\n`); return 127; };
   });
   C.vim = C.vi = C.nano = function (a) { this.eout(`${a[0] ? a[0] + ': ' : ''}the practice shell has no full screen editor. Use echo "text" > file or cat > file with a here document instead.\n`); return 1; };
@@ -3249,8 +3471,8 @@ const LXSH = (() => {
   })();
   const KERNEL_EVENTS = [
     { t: T0 - 3600e3, id: 'kernel', unit: '', msg: 'Linux version 6.8.0-practice (practice@brainy) #1 SMP', prio: 5, k: true },
-    { t: T0 - 3600e3, id: 'kernel', unit: '', msg: 'Command line: BOOT_IMAGE=/boot/vmlinuz-6.8.0-practice root=UUID=1b2c-77aa ro quiet', prio: 6, k: true },
-    { t: T0 - 3600e3 + 2000, id: 'kernel', unit: '', msg: 'EXT4-fs (sda1): mounted filesystem 1b2c-77aa ro with ordered data mode. Quota mode: none.', prio: 6, k: true },
+    { t: T0 - 3600e3, id: 'kernel', unit: '', msg: 'Command line: BOOT_IMAGE=/boot/vmlinuz-6.8.0-practice root=UUID=b6e1c2a4-77aa-4e0f-9d3b-2f1c8a5e0d71 ro quiet', prio: 6, k: true },
+    { t: T0 - 3600e3 + 2000, id: 'kernel', unit: '', msg: 'EXT4-fs (sda1): mounted filesystem b6e1c2a4-77aa-4e0f-9d3b-2f1c8a5e0d71 ro with ordered data mode. Quota mode: none.', prio: 6, k: true },
     { t: T0 - 25 * 60e3, id: 'kernel', unit: '', msg: 'usb 1-1: new high-speed USB device number 3 using xhci_hcd', prio: 6, k: true },
     { t: T0 - 25 * 60e3 + 900, id: 'kernel', unit: '', msg: 'sd 2:0:0:0: [sdb] 62529536 512-byte logical blocks: (32.0 GB/29.8 GiB)', prio: 5, k: true },
     { t: T0 - 4 * 60e3, id: 'kernel', unit: '', msg: 'Out of memory: Killed process 2261 (java) total-vm:4194304kB, anon-rss:3145728kB, file-rss:0kB, shmem-rss:0kB, UID:1001 pgtables:6400kB oom_score_adj:0', prio: 3, k: true }];
