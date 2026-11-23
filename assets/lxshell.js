@@ -52,7 +52,7 @@ const LXSH = (() => {
       ['/var/www/index.html', '<h1>It works</h1>\n', 0o644, 'root']
     ]
   };
-  const CMDS = 'alias awk basename bash bg bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp cut date df diff dirname disown du echo env exit export expr false fg file find flock free grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const CMDS = 'alias at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp crontab cut date df diff dirname disown du echo env exit export expr false fg file find flock free grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -2799,7 +2799,7 @@ const LXSH = (() => {
   C.su = function () { this.eout('su: Authentication failure (in this practice shell use sudo instead)\n'); return 1; };
   const exitRoot = C.exit;
   C.exit = function (a) { if (this.user === 'root') { this.user = USER; return 0; } return exitRoot.call(this, a); };
-  ['apt', 'dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'useradd', 'passwd', 'crontab', 'strace'].forEach(c => {
+  ['apt', 'dnf', 'systemctl', 'journalctl', 'ssh', 'ping', 'curl', 'wget', 'ip', 'vim', 'vi', 'nano', 'htop', 'mount', 'useradd', 'passwd', 'strace'].forEach(c => {
     C[c] = function () { this.eout(`${c}: this command is explained in its own lesson, but the practice shell does not run it. Try it on a real Linux machine, a virtual machine or WSL.\n`); return 127; };
   });
   C.vim = C.vi = C.nano = function (a) { this.eout(`${a[0] ? a[0] + ': ' : ''}the practice shell has no full screen editor. Use echo "text" > file or cat > file with a here document instead.\n`); return 1; };
@@ -3060,6 +3060,87 @@ const LXSH = (() => {
 
   /* ---------- small builtins for scripts ---------- */
   C[':'] = function () { return 0; };
+  /* ---------- cron and at ---------- */
+  /* one crontab line: '' when fine, else the reason, using the words of the cron man pages */
+  const CRON_AT = ['@reboot', '@yearly', '@annually', '@monthly', '@weekly', '@daily', '@midnight', '@hourly'];
+  World.prototype.cronCheck = function (line) {
+    const t = line.trim();
+    if (!t || t.startsWith('#') || /^[A-Za-z_]\w*\s*=/.test(t)) return '';
+    const f = t.split(/\s+/);
+    if (f[0].startsWith('@')) return CRON_AT.includes(f[0]) ? (f.length > 1 ? '' : 'missing command') : 'bad time specifier';
+    if (f.length < 6) return f.length < 5 ? ['bad minute', 'bad hour', 'bad day-of-month', 'bad month', 'bad day-of-week'][f.length] || 'bad minute' : 'missing command';
+    const names = { 3: 'jan feb mar apr may jun jul aug sep oct nov dec'.split(' '), 4: 'sun mon tue wed thu fri sat'.split(' ') };
+    const lim = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]], what = ['minute', 'hour', 'day-of-month', 'month', 'day-of-week'];
+    for (let k = 0; k < 5; k++) {
+      const ok = f[k].split(',').every(part => {
+        const m = /^(\*|([0-9a-z]+)(?:-([0-9a-z]+))?)(?:\/(\d+))?$/i.exec(part);
+        if (!m) return false;
+        const num = x => { if (/^\d+$/.test(x)) return +x; const n = names[k] && names[k].indexOf(x.toLowerCase()); return n >= 0 ? n + (k === 3 ? 1 : 0) : NaN; };
+        if (m[1] === '*') return !m[4] || +m[4] > 0;
+        const a = num(m[2]), b = m[3] !== undefined ? num(m[3]) : a;
+        return a >= lim[k][0] && b <= lim[k][1] && a <= b && !(m[4] && +m[4] === 0);
+      });
+      if (!ok) return 'bad ' + what[k];
+    }
+    return '';
+  };
+  C.crontab = function (a, input) {
+    const user = (a[0] === '-u' && a[1]) ? a[1] : this.user;
+    if (a[0] === '-u') { if (this.user !== 'root') { this.eout('must be privileged to use -u\n'); return 1; } a = a.slice(2); }
+    const spool = '/var/spool/cron/crontabs', path = spool + '/' + user, have = this.node(path);
+    if (a[0] === '-l') { if (!have) { this.eout(`no crontab for ${user}\n`); return 1; } this.out(have.data); return 0; }
+    if (a[0] === '-r') { if (!have) { this.eout(`no crontab for ${user}\n`); return 1; } this.removeNode(path); return 0; }
+    if (a[0] === '-e') { this.eout('crontab -e opens your editor ($EDITOR), and the practice shell has no full-screen editor. Write the lines into a file and install it with: crontab FILE\n'); return 1; }
+    if (!a.length) { this.eout('usage:\tcrontab [-u user] file\n\tcrontab [-u user] { -e | -l | -r }\n'); return 1; }
+    const src = a[0] === '-' ? input : (() => { const n = this.node(this.abs(a[0])); return n ? n.data : null; })();
+    if (src === null) { this.eout(`${a[0]}: No such file or directory\n`); return 1; }
+    const bad = src.split('\n').map((l, i) => [i + 1, this.cronCheck(l)]).find(([, e]) => e);
+    if (bad) { this.eout(`"${a[0] === '-' ? '-' : a[0]}":${bad[0]}: ${bad[1]}\nerrors in crontab file, can't install.\n`); return 1; }
+    this.mkdirs(spool);
+    const n = this.node(path) || this.mk(path, 'f', 0o600, user, ''); n.group = 'crontab';
+    n.data = src.endsWith('\n') || !src ? src : src + '\n'; n.mtime = this.now();
+    return 0;
+  };
+  /* at: run commands once, later. Times: now + N minutes|hours|days, HH:MM, noon, midnight, teatime, optional tomorrow */
+  const DAYS3 = 'Sun Mon Tue Wed Thu Fri Sat'.split(' '), MON3 = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
+  const atDate = ms => { const d = new Date(ms), z = n => String(n).padStart(2, '0'); return `${DAYS3[d.getUTCDay()]} ${MON3[d.getUTCMonth()]} ${String(d.getUTCDate()).padStart(2, ' ')} ${z(d.getUTCHours())}:${z(d.getUTCMinutes())}:00 ${d.getUTCFullYear()}`; };
+  World.prototype.atTime = function (words) {
+    const t = words.join(' ').toLowerCase().trim(), now = this.clock - this.clock % 60000;
+    let m;
+    if ((m = /^now(?:\s*\+\s*(\d+)\s*(minute|min|hour|day|week)s?)?$/.exec(t))) return now + (m[1] ? +m[1] * { minute: 6e4, min: 6e4, hour: 36e5, day: 864e5, week: 6048e5 }[m[2]] : 0);
+    if ((m = /^(noon|midnight|teatime|(\d{1,2}):(\d{2})\s*(am|pm)?|(\d{1,2})\s*(am|pm))(\s+tomorrow)?$/.exec(t))) {
+      let h, mi = 0;
+      if (m[1] === 'noon') h = 12; else if (m[1] === 'midnight') h = 0; else if (m[1] === 'teatime') h = 16;
+      else if (m[2] !== undefined) { h = +m[2]; mi = +m[3]; if (m[4] === 'pm' && h < 12) h += 12; if (m[4] === 'am' && h === 12) h = 0; }
+      else { h = +m[5]; if (m[6] === 'pm' && h < 12) h += 12; if (m[6] === 'am' && h === 12) h = 0; }
+      if (h > 23 || mi > 59) return null;
+      const d = new Date(now); let when = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h, mi);
+      if (m[7]) when += 864e5; else if (when <= now) when += 864e5;
+      return when;
+    }
+    return null;
+  };
+  C.at = function (a, input) {
+    if (a[0] === '-l') return C.atq.call(this, a.slice(1));
+    if (a[0] === '-r' || a[0] === '-d') return C.atrm.call(this, a.slice(1));
+    let file = null; if (a[0] === '-f') { file = a[1]; a = a.slice(2); }
+    if (!a.length) { this.eout('Garbled time\n'); return 1; }
+    const when = this.atTime(a);
+    if (when === null) { this.eout('syntax error. Last token seen: ' + a[a.length - 1] + '\nGarbled time\n'); return 1; }
+    let body = input || '';
+    if (file) { const n = this.node(this.abs(file)); if (!n) { this.eout(`Cannot open input file ${file}: No such file or directory\n`); return 1; } body = n.data; }
+    this.atjobs = this.atjobs || []; this.atNext = (this.atNext || 0) + 1;
+    this.atjobs.push({ id: this.atNext, when, user: this.user, body });
+    this.eout(`warning: commands will be executed using /bin/sh\njob ${this.atNext} at ${atDate(when)}\n`);
+    return 0;
+  };
+  C.batch = function (a, input) { return C.at.call(this, ['now'], input); };
+  C.atq = function () { (this.atjobs || []).slice().sort((x, y) => x.when - y.when).forEach(j => this.out(`${j.id}\t${atDate(j.when)} a ${j.user}\n`)); return 0; };
+  C.atrm = function (a) {
+    let code = 0;
+    a.forEach(id => { const k = (this.atjobs || []).findIndex(j => String(j.id) === id); if (k < 0) { this.eout(`Cannot find jobid ${id}\n`); code = 1; } else this.atjobs.splice(k, 1); });
+    return code;
+  };
   /* command -v NAME tells where a command comes from, command NAME ... runs it without looking at functions */
   C.command = function (a, input) {
     if (a[0] === '-v' || a[0] === '-V') {

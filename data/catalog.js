@@ -10764,6 +10764,23 @@ function lxScriptModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "scheduling", title: "Scheduled jobs: cron, at and systemd timers", emoji: "4.2", page: "content/linux/scheduling.html",
+        summary: "crontab fields and rules, the cron environment, system cron folders and anacron, at and batch, systemd timers.",
+        keywords: ["cron", "crontab", "at", "atq", "batch", "anacron", "run-parts", "systemd timer", "OnCalendar", "systemd-analyze"],
+        minutes: 55, counts: {"lessons": 7, "problems": 6, "quiz": 15, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "fields", title: "cron: a schedule in five fields", emoji: "", group: "Lesson", keywords: ["cron", "crontab", "cron syntax", "five fields", "minute hour day month weekday", "cron step */15", "cron range", "@daily", "@reboot", "@hourly", "day of month or day of week", "cron expression"] },
+        { id: "crontab", title: "Managing your crontab and the cron environment", emoji: "", group: "Lesson", keywords: ["crontab -e", "crontab -l", "crontab -r", "install crontab", "cron environment", "cron PATH", "MAILTO", "cron percent sign", "cron job not running", "cron log output", "bad minute", "flock in cron"] },
+        { id: "system", title: "System crontabs, cron.daily and anacron", emoji: "", group: "Lesson", keywords: ["/etc/crontab", "/etc/cron.d", "cron.daily", "cron.hourly", "run-parts", "run-parts skips dot", "anacron", "anacrontab", "cron.allow", "cron.deny", "system crontab user field"] },
+        { id: "at", title: "Run once later: at, atq, atrm and batch", emoji: "", group: "Lesson", keywords: ["at command", "run once later", "atq", "atrm", "at -f", "batch", "at now + minutes", "teatime", "at -c", "atd"] },
+        { id: "timers", title: "systemd timers: the modern scheduler", emoji: "", group: "Lesson", keywords: ["systemd timer", "OnCalendar", "Persistent=true", "RandomizedDelaySec", "OnBootSec", "OnUnitActiveSec", "systemd-analyze calendar", "systemctl list-timers", "timers.target", "journalctl -u", "cron vs systemd timer"] },
+        { id: "levels", title: "Scheduled jobs from school to research", emoji: "", group: "Lesson", keywords: ["cron best practices", "flock -n cron", "daylight saving cron", "UTC servers", "thundering herd", "heartbeat monitoring", "Kubernetes CronJob", "Apache Airflow", "first Monday of month cron"] },
+        { id: "practice", title: "Practice: schedule jobs in the practice shell", emoji: "", group: "Lesson", keywords: ["practice cron", "crontab exercise", "at exercise", "install crontab", "atq atrm practice"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

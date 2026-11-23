@@ -831,6 +831,66 @@
     }
   }));
 
+  /* scripting 4.2 a crontab line: five time fields, read one by one, and the next times it fires */
+  def('lx-cron', el => W(el, {
+    title: 'Read a crontab line',
+    sub: 'Type the five time fields of a cron schedule (or a word like @daily). Pip explains every field and lists the next times cron would start the job, counting from Monday 23 November 2026, 09:30.',
+    inputs: [{ k: 'expr', label: 'Schedule', type: 'text', val: '*/15 9-17 * * 1-5', w: 240 }],
+    random: () => ({ expr: ['*/15 9-17 * * 1-5', '0 6 * * mon', '30 2 * * *', '0 0 1 * *', '0 9 * * 1', '0 8,20 * * *', '5 4 * * sun', '0 0 13 * fri', '@hourly', '0 */6 * * *'][Math.floor(Math.random() * 10)] }),
+    frames: v => {
+      let expr = String(v.expr).trim().toLowerCase();
+      const special = { '@yearly': '0 0 1 1 *', '@annually': '0 0 1 1 *', '@monthly': '0 0 1 * *', '@weekly': '0 0 * * 0', '@daily': '0 0 * * *', '@midnight': '0 0 * * *', '@hourly': '0 * * * *' };
+      const fr = [];
+      if (expr === '@reboot') return [{ msg: '<code>@reboot</code> runs the job once, each time the cron daemon starts, which normally means once after every boot. It has no clock time.', mood: 'look', layers: [] }];
+      if (special[expr]) { fr.push({ msg: `<code>${esc(expr)}</code> is a short name for <code>${special[expr]}</code>.`, mood: 'think', layers: [] }); expr = special[expr]; }
+      const f = expr.split(/\s+/);
+      if (f.length !== 5) return [{ msg: `A schedule has exactly 5 fields: minute, hour, day of month, month and day of week. You typed ${f.length}.`, mood: 'think', fx: 'shake', layers: [] }];
+      const names = [null, null, null, 'jan feb mar apr may jun jul aug sep oct nov dec'.split(' '), 'sun mon tue wed thu fri sat'.split(' ')];
+      const lim = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]], label = ['minute', 'hour', 'day of month', 'month', 'day of week'];
+      const sets = [];
+      for (let k = 0; k < 5; k++) {
+        const set = new Set(); let bad = false;
+        f[k].split(',').forEach(part => {
+          const m = /^(\*|([0-9a-z]+)(?:-([0-9a-z]+))?)(?:\/(\d+))?$/.exec(part);
+          if (!m) { bad = true; return; }
+          const num = x => { if (/^\d+$/.test(x)) return +x; const n = names[k] ? names[k].indexOf(x) : -1; return n >= 0 ? n + (k === 3 ? 1 : 0) : NaN; };
+          let a = lim[k][0], b = lim[k][1];
+          if (m[1] !== '*') { a = num(m[2]); b = m[3] !== undefined ? num(m[3]) : (m[4] ? lim[k][1] : a); }
+          const st = m[4] ? +m[4] : 1;
+          if (!(a >= lim[k][0] && b <= lim[k][1] && a <= b && st > 0)) { bad = true; return; }
+          for (let x = a; x <= b; x += st) set.add(k === 4 && x === 7 ? 0 : x);
+        });
+        if (bad) return [{ msg: `The ${label[k]} field <code>${esc(f[k])}</code> is not valid. It must use numbers from ${lim[k][0]} to ${lim[k][1]}${names[k] ? ' or names such as ' + names[k].slice(0, 3).join(', ') : ''}, with * , - and /.`, mood: 'sad', fx: 'shake', layers: [] }];
+        sets.push(set);
+      }
+      const say = (k) => {
+        const x = f[k];
+        if (x === '*') return 'every ' + label[k];
+        if (/^\*\/\d+$/.test(x)) return `every ${x.slice(2)} ${label[k]}s, starting at ${lim[k][0]}`;
+        const show = [...sets[k]].sort((p, q) => p - q).map(n => k === 4 ? 'Sun Mon Tue Wed Thu Fri Sat'.split(' ')[n] : k === 3 ? 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ')[n - 1] : String(n));
+        return (show.length > 8 ? show.slice(0, 8).join(', ') + ' ...' : show.join(', '));
+      };
+      const items = (hi) => f.map((x, k) => [x, label[k], k === hi ? 'cur' : k < hi ? 'yes' : '']);
+      f.forEach((x, k) => fr.push({ msg: `Field ${k + 1}, the <b>${label[k]}</b>: <code>${esc(x)}</code> means <b>${esc(say(k))}</b>.`, mood: 'look', layers: [{ t: 'flow', label: 'minute hour day-of-month month day-of-week', items: items(k), plain: true }] }));
+      const domR = f[2] !== '*', dowR = f[4] !== '*';
+      if (domR && dowR) fr.push({ msg: 'Both the day of month and the day of week are set. cron then runs the job when <b>either</b> matches, not only when both do. This rule surprises many people.', mood: 'wow', fx: 'shake', layers: [] });
+      const runs = []; let t = Date.UTC(2026, 10, 23, 9, 31);
+      const end = t + 366 * 864e5 * 2;
+      while (runs.length < 6 && t < end) {
+        const d = new Date(t), mi = d.getUTCMinutes(), h = d.getUTCHours(), dom = d.getUTCDate(), mo = d.getUTCMonth() + 1, dow = d.getUTCDay();
+        if (!sets[3].has(mo)) { t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1); continue; }
+        const dayOk = domR && dowR ? sets[2].has(dom) || sets[4].has(dow) : sets[2].has(dom) && sets[4].has(dow);
+        if (!dayOk) { t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), dom + 1); continue; }
+        if (!sets[1].has(h)) { t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), dom, h + 1); continue; }
+        if (sets[0].has(mi)) runs.push(t);
+        t += 6e4;
+      }
+      const fmt = ms => { const d = new Date(ms), z = n => String(n).padStart(2, '0'); return `${'Sun Mon Tue Wed Thu Fri Sat'.split(' ')[d.getUTCDay()]} ${d.getUTCFullYear()}-${z(d.getUTCMonth() + 1)}-${z(d.getUTCDate())} ${z(d.getUTCHours())}:${z(d.getUTCMinutes())}`; };
+      fr.push({ msg: runs.length ? `Starting from Monday 23 November 2026, 09:30, cron would start the job at these times.` : 'This schedule never matches a real date, for example 30 February, so the job would never run.', mood: runs.length ? 'happy' : 'sad', fx: runs.length ? 'burst' : 'shake', layers: [{ t: 'term', label: 'Next runs', lines: runs.map(x => ['o', fmt(x)]) }] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
