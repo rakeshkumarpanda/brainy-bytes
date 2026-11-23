@@ -461,6 +461,41 @@
     }
   }));
 
+  /* power 4.2 how bash finds a command: alias, function, builtin, then each folder of PATH in order */
+  def('lx-path', el => W(el, {
+    title: 'How bash finds a command',
+    sub: 'Type a command name and a PATH. Pip checks aliases and builtins first, then looks in each PATH folder from left to right and runs the first match. The practice computer has a script called tool in ~/bin.',
+    inputs: [{ k: 'name', label: 'Command', type: 'text', val: 'tool', w: 120 }, { k: 'path', label: 'PATH', type: 'text', val: '/home/learner/bin:/usr/local/bin:/usr/bin:/bin', w: 360 }],
+    random: () => [{ name: 'ls', path: '/usr/local/bin:/usr/bin:/bin' }, { name: 'tool', path: '/usr/local/bin:/usr/bin:/bin' }, { name: 'll', path: '/usr/bin:/bin' }, { name: 'cd', path: '/usr/bin' }, { name: 'grep', path: '/home/learner/bin' }, { name: 'tool', path: '/home/learner/bin:/usr/bin' }][Math.floor(Math.random() * 6)],
+    frames: v => {
+      const w = world(), name = String(v.name).trim(), path = String(v.path).trim();
+      if (!/^[\w.-]+$/.test(name)) return [{ msg: 'Type one command name without spaces or slashes, for example ls or tool.', mood: 'think', layers: [] }];
+      w.run('mkdir -p ~/bin'); w.run('printf "#!/bin/bash\\necho tool from ~/bin\\n" > ~/bin/tool && chmod +x ~/bin/tool');
+      w.vars.PATH = path;
+      const dirs = path.split(':');
+      const steps = [['alias?', '', ''], ['builtin?', '', '']].concat(dirs.map(d => [d || '(empty = current folder)', '', '']));
+      const L = (cls, note) => [{ t: 'flow', label: 'Where bash looks, in order', items: steps.map((x, i) => [x[0], note[i] || '', cls[i] || '']) }];
+      const cls = [], note = [];
+      const fr = [{ msg: `You typed <code>${esc(name)}</code>. Before it searches any folder, bash checks whether the word is an alias, a function or a builtin command.`, mood: 'think', layers: L(cls, note) }];
+      if (w.aliases[name]) { cls[0] = 'yes'; note[0] = esc(w.aliases[name]); fr.push({ msg: `<code>${esc(name)}</code> is an alias for <code>${esc(w.aliases[name])}</code>. bash swaps it in and starts again with the first word of that text.`, mood: 'wow', fx: 'burst', layers: L(cls, note) }); return fr; }
+      cls[0] = 'no'; note[0] = 'no';
+      fr.push({ msg: 'Not an alias.', mood: 'look', layers: L(cls, note) });
+      if (['cd', 'echo', 'pwd', 'export', 'alias', 'history', 'type', 'source', 'exit', 'read', 'test', 'jobs', 'fg', 'bg', 'kill', 'printf', 'set', 'unset', 'declare'].includes(name)) { cls[1] = 'yes'; note[1] = 'built in'; fr.push({ msg: `<code>${esc(name)}</code> is built into bash, so no folder is searched at all. cd must be a builtin: a separate program could not change the folder of the shell that started it.`, mood: 'wow', fx: 'burst', layers: L(cls, note) }); return fr; }
+      cls[1] = 'no'; note[1] = 'no';
+      fr.push({ msg: 'Not a builtin either, so bash walks through the folders of PATH, split at each colon.', mood: 'look', layers: L(cls, note) });
+      let found = null;
+      dirs.forEach((d, k) => {
+        if (found) return;
+        const i = k + 2, full = (d || '.') + '/' + name, n = w.node(w.abs(full));
+        if (n && n.type === 'f' && (n.mode & 0o111)) { found = full; cls[i] = 'yes'; note[i] = 'found ' + name; fr.push({ msg: `<code>${esc(full)}</code> exists and is executable. bash stops here and runs it. Folders further right are never checked.`, mood: 'happy', layers: L(cls, note) }); }
+        else { cls[i] = 'no'; note[i] = 'not here'; fr.push({ msg: `No executable <code>${esc(name)}</code> in <code>${esc(d || '.')}</code>.`, mood: 'look', layers: L(cls, note) }); }
+      });
+      const r = w.run(name);
+      fr.push({ msg: found ? `Done. bash remembers the place in a small table (see <code>hash</code>), so the next time it does not search again.` : `No folder had it, so bash prints the famous error and sets the exit status to 127.`, mood: found ? 'happy' : 'sad', fx: found ? 'burst' : 'shake', layers: L(cls, note).concat([{ t: 'term', label: 'What the terminal shows', lines: [['c', name]].concat(r.out.replace(/\n$/, '').split('\n').filter(Boolean).map(x => [/not found/.test(x) ? 'e' : 'o', x])) }]) });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

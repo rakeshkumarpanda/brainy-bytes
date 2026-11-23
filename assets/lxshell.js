@@ -12,6 +12,8 @@
      {"gone": "path"}            the path does not exist     {"has": ["path", "text"]}  the file contains the text
      {"mode": ["path", "755"]}   permission bits             {"lines": ["path", n]}     the file has n lines
      {"env": ["NAME", "value"]}  a shell variable            {"code": 0}            the exit status of the command
+     {"envre": ["NAME", "regex"]} a variable matching a regex  {"exported": "NAME"}  the variable is exported
+     {"alias": ["name", "text"]}  an alias with this text
    The engine (LXSH.World) has no DOM code, so tools can test it with node. ===== */
 const LXSH = (() => {
   const USER = 'learner', HOST = 'brainy', HOME = '/home/learner';
@@ -51,7 +53,7 @@ const LXSH = (() => {
     ]
   };
   const CMDS = 'alias awk basename bash bg bunzip2 bzcat bzip2 cal cat cd chmod chown clear cp cut date df diff dirname disown du echo env exit export expr false fg file find free grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
-  const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time'.split(' '));
+  const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local'.split(' '));
 
   /* ---------- small helpers ---------- */
   function norm(path) {
@@ -113,7 +115,7 @@ const LXSH = (() => {
       (lab.dirs || []).forEach(p => this.mkdirs(this.abs(p)));
       Object.entries(lab.files || {}).forEach(([p, c]) => { const a = this.abs(p); this.mkdirs(dirName(a)); this.mk(a, 'f', /\.sh$/.test(a) && lab.exec ? 0o755 : 0o644, USER, c); });
       this.user = USER; this.cwd = lab.cwd ? this.abs(lab.cwd) : HOME; this.oldpwd = this.cwd;
-      this.vars = { HOME, USER, LOGNAME: USER, SHELL: '/bin/bash', PATH: '/usr/local/bin:/usr/bin:/bin', PWD: this.cwd, LANG: 'C.UTF-8', HOSTNAME: HOST, EDITOR: 'nano', PS1: '\\u@\\h:\\w\\$ ' };
+      this.vars = { HOME, USER, LOGNAME: USER, SHELL: '/bin/bash', PATH: '/usr/local/bin:/usr/bin:/bin', PWD: this.cwd, LANG: 'C.UTF-8', HOSTNAME: HOST, EDITOR: 'nano', PS1: '\\u@\\h:\\w\\$ ', HISTSIZE: '1000', HISTFILESIZE: '2000', HISTFILE: HOME + '/.bash_history', OLDPWD: '' };
       this.exported = new Set(['HOME', 'USER', 'LOGNAME', 'SHELL', 'PATH', 'PWD', 'LANG', 'EDITOR']);
       this.aliases = { ll: 'ls -l', la: 'ls -A' };
       this.hist = []; this.last = 0; this.umask = 0o022; this.args = []; this.clock = T0 + 60000; this.jobs = [];
@@ -599,6 +601,8 @@ const LXSH = (() => {
         assigns.push([name, t[eqi - 1] === '+' ? (this.vars[name] || '') + val : val]);
       }
       let args = words.flatMap(w => this.expandWord(w));
+      const ro = assigns.find(([k]) => this.ro && this.ro.has(k));
+      if (ro) { this.eout(`bash: ${ro[0]}: readonly variable\n`); return 1; }
       if (!args.length) { assigns.forEach(([k, v]) => { this.vars[k] = v; }); return 0; }
       if (this.aliases[args[0]] && !this.inAlias) {
         const toks = this.lex(this.aliases[args[0]]).filter(t => t.w).map(t => this.wordText(t.w));
@@ -606,15 +610,21 @@ const LXSH = (() => {
       }
       const saved = assigns.map(([k]) => [k, this.vars[k]]);
       assigns.forEach(([k, v]) => { this.vars[k] = v; });
-      try { return this.call(args, input); } finally { saved.forEach(([k, v]) => { if (v === undefined) delete this.vars[k]; else this.vars[k] = v; }); }
+      const keepTmp = this.tmpEx; this.tmpEx = new Set([...(keepTmp || []), ...assigns.map(([k]) => k)]);
+      try { return this.call(args, input); } finally { this.tmpEx = keepTmp; saved.forEach(([k, v]) => { if (v === undefined) delete this.vars[k]; else this.vars[k] = v; }); }
     }
     call(args, input) {
-      const name = args[0];
+      let name = args[0];
       if (this.fns && this.fns[name]) {
         const keep = this.args; this.args = args.slice(1);
         try { return this.exec(this.fns[name], input); } catch (e) { if (e && e.ret !== undefined) return e.ret; throw e; } finally { this.args = keep; }
       }
       if (name.includes('/')) return this.runFile(name, args.slice(1), input, true);
+      if (!BUILTIN.has(name) && !(this.fns && this.fns[name])) {
+        const hit = this.lookup(name);
+        if (hit && !/^#!practice /.test(hit.n.data)) return this.runFile(hit.path, args.slice(1), input, true);
+        if (!hit && CMDS.includes(name)) { this.eout(`${name}: command not found\n`); return 127; }
+      }
       const f = C[name];
       if (!f) { this.eout(`${name}: command not found\n`); return 127; }
       const keepErr = this.err; this.err = false;
@@ -630,13 +640,24 @@ const LXSH = (() => {
       if (needX && !this.can(n, 'x')) { this.eout(`bash: ${path}: Permission denied\n`); return 126; }
       if (!this.can(n, 'r')) { this.eout(`bash: ${path}: Permission denied\n`); return 126; }
       if (/^#!practice /.test(n.data)) return this.call([n.data.slice(10).trim()].concat(args), input);
-      const keep = { args: this.args, script: this.script, vars: Object.assign({}, this.vars) };
+      const keep = { args: this.args, script: this.script, vars: Object.assign({}, this.vars), exported: new Set(this.exported) };
       this.args = args; this.script = path;
+      if (needX) this.vars = this.childVars();
       try { this.runSrc(n.data, true); } catch (e) { if (e && e.exit !== undefined) this.last = e.exit; else throw e; } finally {
         this.args = keep.args; this.script = keep.script;
-        if (needX) this.vars = keep.vars;   /* ./script runs in a new shell, so its variables vanish. source keeps them */
+        if (needX) { this.vars = keep.vars; this.exported = keep.exported; }   /* ./script runs in a new shell, so its variables vanish. source keeps them */
       }
       return this.last;
+    }
+    /* the variables a child process sees: only exported ones (and NAME=value given just for this command) */
+    childVars() { const v = {}; Object.keys(this.vars).forEach(k => { if (this.exported.has(k) || (this.tmpEx && this.tmpEx.has(k))) v[k] = this.vars[k]; }); ['PWD', 'HOME', 'PATH'].forEach(k => { if (k in this.vars && !(k in v) && this.exported.has(k)) v[k] = this.vars[k]; }); return v; }
+    /* search the folders in PATH for an executable file, the way bash does */
+    lookup(name) {
+      for (const d of (this.vars.PATH ?? '/usr/local/bin:/usr/bin:/bin').split(':')) {
+        const path = norm((d === '' ? this.cwd : this.abs(d)) + '/' + name), n = this.node(path);
+        if (n && n.type === 'f' && (n.mode & 0o111)) return { path, n };
+      }
+      return null;
     }
     /* read the files named in args, or the input when there are none */
     inputs(args, input, cmd) {
@@ -1669,12 +1690,13 @@ const LXSH = (() => {
       else if (this.fns && this.fns[c]) this.out(`${c} is a function\n`);
       else if (['if', 'then', 'else', 'fi', 'for', 'while', 'do', 'done', 'case', 'esac', 'until'].includes(c)) this.out(`${c} is a shell keyword\n`);
       else if (BUILTIN.has(c)) this.out(`${c} is a shell builtin\n`);
-      else if (C[c]) this.out(`${c} is /usr/bin/${c}\n`);
+      else if (this.lookup(c)) this.out(`${c} is ${this.lookup(c).path}\n`);
+      else if (C[c] && !CMDS.includes(c)) this.out(`${c} is /usr/bin/${c}\n`);
       else { this.eout(`bash: type: ${c}: not found\n`); code = 1; }
     });
     return code;
   };
-  C.which = function (a) { let code = 0; a.forEach(c => { if (C[c] && !BUILTIN.has(c) || ['echo', 'pwd', 'test', 'true', 'false', 'printf', 'kill'].includes(c)) this.out(`/usr/bin/${c}\n`); else code = 1; }); return code; };
+  C.which = function (a) { let code = 0; a.filter(c => !c.startsWith('-')).forEach(c => { const h = this.lookup(c); if (h) this.out(h.path + '\n'); else code = 1; }); return code; };
   C.file = function (a) {
     a.forEach(t => {
       const n = this.node(this.abs(t), false);
@@ -2090,11 +2112,61 @@ const LXSH = (() => {
   C.dirname = function (a) { this.out(dirName(a[0] || '.') === '/' && !(a[0] || '').startsWith('/') ? '.\n' : (a[0].includes('/') ? dirName(a[0]) : '.') + '\n'); };
   C.export = function (a) {
     if (!a.length || a[0] === '-p') { [...this.exported].sort().forEach(k => this.out(`declare -x ${k}="${this.vars[k] ?? ''}"\n`)); return 0; }
-    a.forEach(x => { const k = x.indexOf('='); if (k > 0) { this.vars[x.slice(0, k)] = x.slice(k + 1); this.exported.add(x.slice(0, k)); } else this.exported.add(x); });
+    if (a[0] === '-n') { a.slice(1).forEach(k => this.exported.delete(k)); return 0; }
+    let code = 0;
+    a.forEach(x => { const k = x.indexOf('='); const nm = k > 0 ? x.slice(0, k) : x; if (!/^[A-Za-z_]\w*$/.test(nm)) { this.eout(`bash: export: \`${x}': not a valid identifier\n`); code = 1; return; } if (k > 0) { if (this.ro && this.ro.has(nm)) { this.eout(`bash: ${nm}: readonly variable\n`); code = 1; return; } this.vars[nm] = x.slice(k + 1); } this.exported.add(nm); });
+    return code;
   };
-  C.env = C.printenv = function (a) {
-    if (a.length && !a[0].includes('=')) { const v = this.vars[a[0]]; if (v === undefined || !this.exported.has(a[0])) return 1; this.out(v + '\n'); return 0; }
+  C.printenv = function (a) {
+    if (a.length) { let code = 0; a.forEach(k => { const v = this.vars[k]; if (v === undefined || !this.exported.has(k)) code = 1; else this.out(v + '\n'); }); return code; }
     [...this.exported].sort().forEach(k => { if (this.vars[k] !== undefined) this.out(`${k}=${this.vars[k]}\n`); });
+    return 0;
+  };
+  C.env = function (a, input) {
+    let i = 0, clean = false; const unset = [], set = [];
+    for (; i < a.length; i++) {
+      if (a[i] === '-i' || a[i] === '-' || a[i] === '--ignore-environment') clean = true;
+      else if (a[i] === '-u') unset.push(a[++i]);
+      else if (/^[A-Za-z_]\w*=/.test(a[i])) set.push(a[i]);
+      else break;
+    }
+    const keep = { vars: this.vars, ex: this.exported };
+    const v = clean ? {} : this.childVars(); unset.forEach(k => delete v[k]);
+    set.forEach(x => { const k = x.indexOf('='); v[x.slice(0, k)] = x.slice(k + 1); });
+    this.vars = v; this.exported = new Set(Object.keys(v));
+    try {
+      if (i >= a.length) { Object.keys(v).sort().forEach(k => this.out(`${k}=${v[k]}\n`)); return 0; }
+      if (clean && !a[i].includes('/') && !C[a[i]]) { this.eout(`env: '${a[i]}': No such file or directory\n`); return 127; }
+      return this.call(a.slice(i), input);
+    } finally { this.vars = keep.vars; this.exported = keep.ex; }
+  };
+  C.declare = C.typeset = function (a) {
+    const flags = new Set(); const names = [];
+    a.forEach(x => { if (/^[-+][a-zA-Z]+$/.test(x)) [...x.slice(1)].forEach(c => flags.add((x[0] === '+' ? '+' : '') + c)); else names.push(x); });
+    const show = k => { const f = (this.exported.has(k) ? 'x' : '') + (this.ro && this.ro.has(k) ? 'r' : ''); this.out(`declare -${f || '-'} ${k}="${this.vars[k] ?? ''}"\n`); };
+    if (!names.length) {
+      const keys = Object.keys(this.vars).sort();
+      if (flags.has('x')) keys.filter(k => this.exported.has(k)).forEach(show);
+      else if (flags.has('r')) keys.filter(k => this.ro && this.ro.has(k)).forEach(show);
+      else if (flags.has('f') || flags.has('F')) Object.keys(this.fns || {}).sort().forEach(k => this.out(`declare -f ${k}\n`));
+      else keys.forEach(k => this.out(`${k}=${this.vars[k]}\n`));
+      return 0;
+    }
+    let code = 0;
+    names.forEach(x => {
+      const k = x.includes('=') ? x.slice(0, x.indexOf('=')) : x;
+      if (flags.has('p')) { if (k in this.vars) show(k); else { this.eout(`bash: declare: ${k}: not found\n`); code = 1; } return; }
+      if (this.ro && this.ro.has(k) && x.includes('=')) { this.eout(`bash: ${k}: readonly variable\n`); code = 1; return; }
+      if (x.includes('=')) { let val = x.slice(k.length + 1); if (flags.has('i')) { try { val = String(this.arith(val)); } catch (e) { val = '0'; } } if (flags.has('u')) val = val.toUpperCase(); if (flags.has('l')) val = val.toLowerCase(); this.vars[k] = val; }
+      else if (!(k in this.vars)) this.vars[k] = '';
+      if (flags.has('x')) this.exported.add(k); if (flags.has('+x')) this.exported.delete(k);
+      if (flags.has('r')) { this.ro = this.ro || new Set(); this.ro.add(k); }
+    });
+    return code;
+  };
+  C.readonly = function (a) {
+    if (!a.length || a[0] === '-p') { [...(this.ro || [])].sort().forEach(k => this.out(`declare -r ${k}="${this.vars[k] ?? ''}"\n`)); return 0; }
+    return C.declare.call(this, ['-r'].concat(a));
   };
   C.set = function (a) {
     if (!a.length) { Object.keys(this.vars).sort().forEach(k => this.out(`${k}=${this.vars[k]}\n`)); return 0; }
@@ -2487,7 +2559,8 @@ const LXSH = (() => {
   };
   C.bash = C.sh = function (a, input) {
     if (!a.length) { this.out('(a new shell would start here. In this practice shell you are already inside bash)\n'); return 0; }
-    if (a[0] === '-c') { const keep = this.vars; this.vars = Object.assign({}, keep); try { this.runSrc(a[1] || '', true); } finally { this.vars = keep; } return this.last; }
+    if (a[0] === '-c') { const keep = this.vars, kx = new Set(this.exported); this.vars = this.childVars(); const ka = this.args; this.args = a.slice(3); try { this.runSrc(a[1] || '', true); } finally { this.vars = keep; this.exported = kx; this.args = ka; } return this.last; }
+    if (a[0] !== '-x' && a[0] !== '-n') { const keep = this.vars, kx = new Set(this.exported); this.vars = this.childVars(); try { return this.runFile(a[0], a.slice(1), input, false); } finally { this.vars = keep; this.exported = kx; } }
     if (a[0] === '-x' || a[0] === '-n') return this.runFile(a[1], a.slice(2), input, false);
     return this.runFile(a[0], a.slice(1), input, false);
   };
@@ -2519,6 +2592,9 @@ const LXSH = (() => {
       if (c.mode) { const n = w.node(w.abs(c.mode[0])); return !!n && (n.mode & 0o7777).toString(8) === String(c.mode[1]).replace(/^0+(?=.)/, ''); }
       if (c.lines) { const n = w.node(w.abs(c.lines[0])); return !!n && lines(n.data).length === c.lines[1]; }
       if (c.env) return w.vars[c.env[0]] === c.env[1];
+      if (c.envre) return new RegExp(c.envre[1]).test(w.vars[c.envre[0]] ?? '');
+      if (c.exported) return w.exported.has(c.exported);
+      if (c.alias) return w.aliases[c.alias[0]] === c.alias[1];
       if (c.owner) { const n = w.node(w.abs(c.owner[0])); return !!n && n.owner === c.owner[1]; }
       return false;
     });

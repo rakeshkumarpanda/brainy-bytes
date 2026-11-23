@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The shell environment: variables, PATH and startup files · Unix and Linux</title>
+<meta name="description" content="Shell variables and environment variables, export, env, printenv, NAME=value before a command, declare and readonly, common variables, PATH and the lookup order of alias, function, builtin and PATH, hash, aliases and functions, login and non-login startup files, source, history expansion with !! !N !$ and Ctrl+R, PS1, and how the environment works inside and why it matters for security.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=power">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=power" target="_top">Unix and Linux</a><span>›</span><span>Shell Power Tools</span><span>›</span><span>Step 4: Processes and the shell environment</span><span>›</span><span>Variables and PATH</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 2 of 2 · Intermediate</div>
+    <h1>The shell environment: variables, PATH and startup files</h1>
+    <p class="lead">Set and export variables, understand what child processes can see, control where commands come from with PATH, keep your aliases and functions in ~/.bashrc, and reuse history like a professional.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#environment" data-topic="cheatsheet" data-h="environment">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#vars" data-l="vars"><span class="n">1</span><span class="t">Shell variables and environment variables</span></a></li><li><a href="#path" data-l="path"><span class="n">2</span><span class="t">PATH: how bash finds commands</span></a></li><li><a href="#startup" data-l="startup"><span class="n">3</span><span class="t">Startup files, aliases and functions</span></a></li><li><a href="#history" data-l="history"><span class="n">4</span><span class="t">History and the prompt</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">The environment from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="vars" data-l="vars" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Shell variables and environment variables</h2>
+<p>A <b>shell variable</b> is a name with a text value, kept inside one running bash. Write it with no spaces around the equals sign and read it with a dollar sign. An <b>environment variable</b> is a variable that is <b>exported</b>: bash copies it into every program it starts. Children get a copy, so they can never change the parent's value.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>NAME=value</code></td><td>Set a shell variable (no spaces around =)</td><td><code>city=Pune</code></td></tr><tr><td><code>echo "$NAME"</code></td><td>Read it (quote it to keep spaces)</td><td><code>echo "I live in $city"</code></td></tr><tr><td><code>export NAME</code></td><td>Make it an environment variable</td><td><code>export city</code></td></tr><tr><td><code>export NAME=value</code></td><td>Set and export in one step</td><td><code>export EDITOR=vim</code></td></tr><tr><td><code>NAME=value CMD</code></td><td>Set a variable only for one command</td><td><code>LANG=C sort names.txt</code></td></tr><tr><td><code>unset NAME</code></td><td>Remove a variable</td><td><code>unset city</code></td></tr><tr><td><code>env, printenv NAME</code></td><td>Show the environment, or one variable</td><td><code>printenv HOME</code></td></tr><tr><td><code>declare -p NAME</code></td><td>Show how a variable is defined (-x exported, -r read only)</td><td><code>declare -p PATH</code></td></tr><tr><td><code>readonly NAME=value</code></td><td>A variable that cannot be changed</td><td><code>readonly MAX=10</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Who can see a variable</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">city=Pune</span>
+<span class="lx-cmd">echo "parent: $city"</span>
+<span class="lx-o">parent: Pune</span>
+<span class="lx-cmd">bash -c 'echo "child before export: [$city]"'</span>
+<span class="lx-o">child before export: []</span>
+<span class="lx-cmd">export city</span>
+<span class="lx-cmd">bash -c 'echo "child after export: [$city]"'</span>
+<span class="lx-o">child after export: [Pune]</span>
+<span class="lx-cmd">bash -c 'city=Delhi'; echo "parent still: $city"</span>
+<span class="lx-o">parent still: Pune</span>
+<span class="lx-cmd">GREETING=hello bash -c 'echo "one command sees: $GREETING"'</span>
+<span class="lx-o">one command sees: hello</span>
+<span class="lx-cmd">echo "afterwards: [$GREETING]"</span>
+<span class="lx-o">afterwards: []</span>
+<span class="lx-cmd">env | sort</span>
+<span class="lx-o">HOME=/home/learner
+LANG=C.UTF-8
+LOGNAME=learner
+OLDPWD=/home/learner
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PWD=/home/learner
+SHELL=/bin/bash
+SHLVL=1
+TERM=dumb
+TZ=UTC
+USER=learner
+_=/usr/bin/env
+city=Pune</span></pre><div class="lx-note">bash -c starts a child shell. It sees city only after export, and its own change to city is lost when it exits. The last command lists the whole environment this page was built with, which was kept small on purpose.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Variable</th><th>Holds</th></tr></thead><tbody><tr><td><code>HOME</code></td><td>your home folder, where cd alone takes you</td></tr><tr><td><code>USER</code>, <code>LOGNAME</code></td><td>your user name</td></tr><tr><td><code>PATH</code></td><td>folders searched for commands, separated by colons</td></tr><tr><td><code>PWD</code>, <code>OLDPWD</code></td><td>the current folder and the previous one (cd - uses it)</td></tr><tr><td><code>SHELL</code></td><td>your login shell</td></tr><tr><td><code>LANG</code></td><td>language and character set, for example en_IN.UTF-8</td></tr><tr><td><code>EDITOR</code></td><td>the editor programs such as git and crontab open</td></tr><tr><td><code>PS1</code></td><td>the look of the prompt</td></tr><tr><td><code>HISTSIZE</code></td><td>how many commands history keeps in memory</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>city = Pune with spaces is not an assignment. bash runs a command called city with the arguments = and Pune, and prints city: command not found.</div></div>
+<div class="vt-talk" hidden>Variables let the shell remember a value by name. You set one with a name, an equals sign and a value, with no spaces, and you read it back with a dollar sign in front of the name. Such a variable lives only inside the current shell. To pass it on to programs you start, you export it, which turns it into an environment variable. Every process has its own environment, and a child receives a copy of its parent’s exported variables when it starts. Because it is a copy, a child can never change a variable in its parent, which surprises many beginners who run a script to set something and find it gone afterwards. You can also put a variable in front of a single command, like LANG equals C sort, to change it just for that one run. Some variables are set for you at login: HOME, USER, PATH, SHELL and LANG are the most important.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="path" data-l="path" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>PATH: how bash finds commands</h2>
+<p>When you type a command name with no slash in it, bash looks for it in this order: an <b>alias</b>, a <b>function</b>, a <b>builtin</b> command, and then each folder listed in <code>PATH</code>, from left to right. The first executable file with that name wins. A name with a slash, such as <code>./run.sh</code>, is used as a path and PATH is not searched.</p>
+<div class="viz" data-viz="pk" data-pk="lx-path"></div>
+<div class="lx-run"><div class="lx-rh"><span>Adding your own folder of tools</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">echo "$PATH"</span>
+<span class="lx-o">/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</span>
+<span class="lx-cmd">mkdir -p ~/bin</span>
+<span class="lx-cmd">printf '#!/bin/bash\necho "hello from my tool"\n' &gt; ~/bin/tool</span>
+<span class="lx-cmd">chmod +x ~/bin/tool</span>
+<span class="lx-cmd">tool</span>
+<span class="lx-o">bash: tool: command not found</span>
+<span class="lx-cmd">PATH="$HOME/bin:$PATH"</span>
+<span class="lx-cmd">tool</span>
+<span class="lx-o">hello from my tool</span>
+<span class="lx-cmd">type tool cd ls</span>
+<span class="lx-o">tool is hashed (/home/learner/bin/tool)
+cd is a shell builtin
+ls is /usr/bin/ls</span>
+<span class="lx-cmd">command -v tool</span>
+<span class="lx-o">/home/learner/bin/tool</span></pre><div class="lx-note">The first tool fails with status 127 because ~/bin is not in PATH yet. Putting the new folder first means your tools win over system ones with the same name. Write PATH="$PATH:$HOME/bin" to put it last instead.</div></div>
+<div class="walk"><div class="walk-h"><span>Make a PATH change permanent</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Open ~/.bashrc in an editor (or ~/.profile for every login).</li><li>Add the line export PATH="$HOME/bin:$PATH" at the end.</li><li>Run source ~/.bashrc, or open a new terminal, to load it.</li><li>Check with echo "$PATH" and type yourcommand.</li></ol></div>
+<div class="note note-warn"><b>Common mistake</b><div>Never put . (the current folder) in PATH, and never write PATH=~/bin without $PATH. The first lets a file called ls in a shared folder run instead of the real ls. The second leaves you with no commands at all until you open a new terminal.</div></div>
+<div class="vt-talk" hidden>PATH is a list of folders separated by colons. When you type a name like ls, bash first checks whether it is an alias, a function or a builtin, such as cd or echo. If not, it looks in the first folder of PATH, then the second, and so on, and runs the first executable file it finds. If none has it, you get command not found and exit status one hundred and twenty seven. That is why your own scripts need either a path, like dot slash run dot s h, or a folder that is listed in PATH. A common habit is a bin folder in your home, added to the front of PATH in your startup file. bash also remembers where it found each command, in a table you can see with the hash command, so it does not search every time.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="startup" data-l="startup" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Startup files, aliases and functions</h2>
+<p>bash reads a few files when it starts, so your settings come back in every new terminal. Which files depend on the kind of shell. A <b>login shell</b> is the first shell after you log in, for example over ssh. An <b>interactive non-login shell</b> is a new terminal window or tab on a desktop.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>File</th><th>Read by</th><th>Put here</th></tr></thead><tbody><tr><td><code>/etc/profile</code></td><td>login shells, for every user</td><td>system wide settings (the administrator edits it)</td></tr><tr><td><code>~/.bash_profile</code>, <code>~/.bash_login</code>, <code>~/.profile</code></td><td>login shells, only the first of them that exists</td><td>environment variables such as PATH and EDITOR</td></tr><tr><td><code>~/.bashrc</code></td><td>interactive non-login shells</td><td>aliases, functions, prompt, history settings</td></tr><tr><td><code>~/.bash_logout</code></td><td>login shells when they exit</td><td>cleanup</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>On Ubuntu and Debian, ~/.profile itself runs ~/.bashrc, so putting your settings in ~/.bashrc covers both kinds of shell. Scripts run non-interactively and read none of these files.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>alias NAME='TEXT'</code></td><td>A short name for a longer command</td><td><code>alias ll='ls -alF'</code></td></tr><tr><td><code>alias</code></td><td>List all aliases</td><td><code>alias</code></td></tr><tr><td><code>unalias NAME</code></td><td>Remove one</td><td><code>unalias ll</code></td></tr><tr><td><code>\ls or command ls</code></td><td>Run the real command, skipping an alias</td><td><code>command ls</code></td></tr><tr><td><code>NAME() { ... }</code></td><td>A function: like an alias but takes arguments</td><td><code>mkcd() { mkdir -p "$1" &amp;&amp; cd "$1"; }</code></td></tr><tr><td><code>source FILE</code></td><td>Run a file in the current shell (same as . FILE)</td><td><code>source ~/.bashrc</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Aliases and functions</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">shopt -s expand_aliases</span>
+<span class="lx-cmd">alias ll='ls -alF'</span>
+<span class="lx-cmd">alias gs='git status'</span>
+<span class="lx-cmd">alias</span>
+<span class="lx-o">alias gs='git status'
+alias ll='ls -alF'</span>
+<span class="lx-cmd">type ll</span>
+<span class="lx-o">ll is aliased to `ls -alF'</span>
+<span class="lx-cmd">mkcd() { mkdir -p "$1" &amp;&amp; cd "$1"; }</span>
+<span class="lx-cmd">mkcd projects/demo</span>
+<span class="lx-cmd">pwd</span>
+<span class="lx-o">/home/learner/projects/demo</span>
+<span class="lx-cmd">type mkcd | head -1</span>
+<span class="lx-o">mkcd is a function</span></pre><div class="lx-note">Scripts do not expand aliases unless they run shopt -s expand_aliases, interactive shells have it on already. A function runs inside the current shell, so its cd changes this shell’s folder. A script could not do that, because it runs as a child.</div></div>
+<div class="vt-talk" hidden>Every time bash starts, it reads startup files, so your aliases and settings come back. A login shell, the first one after you log in, reads slash etc slash profile and then the first of dot bash profile, dot bash login and dot profile that exists in your home. A new terminal window is usually an interactive non login shell, which reads dot bash r c. On Ubuntu, dot profile runs dot bash r c too, so dot bash r c is the place for most personal settings. After editing it, run source dot bash r c to load the changes into the shell you are using. An alias gives a short name to a longer command, such as l l for ls dash a l capital F. When you need arguments in the middle, write a small function instead. Functions run inside your current shell, so a function can even change folder, something a separate script can never do for you.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="history" data-l="history" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>History and the prompt</h2>
+<p>bash keeps a list of the commands you typed, saves it to <code>~/.bash_history</code> when the shell exits, and lets you search and reuse it. The prompt is drawn from the variable <code>PS1</code>.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>history</code></td><td>List past commands with numbers</td><td><code>history | tail -20</code></td></tr><tr><td><code>!!</code></td><td>Run the last command again</td><td><code>sudo !!</code></td></tr><tr><td><code>!N</code></td><td>Run command number N</td><td><code>!42</code></td></tr><tr><td><code>!string</code></td><td>Run the last command that started with string</td><td><code>!ssh</code></td></tr><tr><td><code>!$</code></td><td>The last word of the previous command</td><td><code>mkdir reports &amp;&amp; cd !$</code></td></tr><tr><td><code>Ctrl+R</code></td><td>Search history as you type, press again for older matches</td><td><code>Ctrl+R then type ssh</code></td></tr><tr><td><code>history -c</code></td><td>Clear the list in memory</td><td><code>history -c</code></td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>PS1 code</th><th>Shows</th></tr></thead><tbody><tr><td><code>\u</code></td><td>user name</td></tr><tr><td><code>\h</code></td><td>host name up to the first dot</td></tr><tr><td><code>\w</code></td><td>current folder, with ~ for home</td></tr><tr><td><code>\W</code></td><td>only the last part of the folder</td></tr><tr><td><code>\$</code></td><td># for root, $ for everyone else</td></tr><tr><td><code>\t</code></td><td>time as HH:MM:SS</td></tr><tr><td><code>\n</code></td><td>a new line</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Reusing history</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">history | tail -3</span>
+<span class="lx-o">  501  cd /var/log
+  502  ls -l syslog
+  503  tail -n 2 syslog</span>
+<span class="lx-cmd">!!</span>
+<span class="lx-o">tail -n 2 syslog
+tail: cannot open 'syslog' for reading: Permission denied</span>
+<span class="lx-cmd">sudo !!</span>
+<span class="lx-o">sudo tail -n 2 syslog
+Nov 23 09:00:00 brainy systemd[1]: Started Daily apt download activities.
+Nov 23 09:00:02 brainy CRON[812]: (root) CMD (run-parts /etc/cron.hourly)</span>
+<span class="lx-cmd">PS1='[\t] \u:\W\$ '</span>
+<span class="lx-o">[09:45:12] learner:log$</span></pre><div class="lx-note">bash prints the expanded command before running it, so you always see what !! turned into. The new prompt shows the time, the user and the last part of the folder.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Shape your shell&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Create a shell variable &lt;code&gt;city&lt;/code&gt; with the value &lt;code&gt;Pune&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;city=Pune&quot;, &quot;check&quot;: [{&quot;env&quot;: [&quot;city&quot;, &quot;Pune&quot;]}]}, {&quot;t&quot;: &quot;Export &lt;code&gt;city&lt;/code&gt; so child programs can see it.&quot;, &quot;hint&quot;: &quot;export city&quot;, &quot;check&quot;: [{&quot;exported&quot;: &quot;city&quot;}]}, {&quot;t&quot;: &quot;Prove it: start a child shell that prints &lt;code&gt;$city&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;bash -c &#x27;echo $city&#x27;&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;bash\\s+-c&quot;}, {&quot;out&quot;: &quot;^Pune$&quot;}]}, {&quot;t&quot;: &quot;Make a folder &lt;code&gt;~/bin&lt;/code&gt; and add it to the front of PATH.&quot;, &quot;hint&quot;: &quot;mkdir -p ~/bin &amp;&amp; export PATH=\&quot;$HOME/bin:$PATH\&quot;&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;bin&quot;, &quot;type&quot;: &quot;d&quot;}, {&quot;envre&quot;: [&quot;PATH&quot;, &quot;^/home/learner/bin:&quot;]}]}, {&quot;t&quot;: &quot;Create the alias &lt;code&gt;ll&lt;/code&gt; for &lt;code&gt;ls -alF&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;alias ll=&#x27;ls -alF&#x27;&quot;, &quot;check&quot;: [{&quot;alias&quot;: [&quot;ll&quot;, &quot;ls -alF&quot;]}]}, {&quot;t&quot;: &quot;Ask bash what &lt;code&gt;cd&lt;/code&gt; is.&quot;, &quot;hint&quot;: &quot;type cd&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^type\\s+cd&quot;}, {&quot;out&quot;: &quot;builtin&quot;}]}, {&quot;t&quot;: &quot;Show your last three commands from history.&quot;, &quot;hint&quot;: &quot;history | tail -n 3&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;history&quot;}, {&quot;out&quot;: &quot;type cd&quot;}]}]}"></div>
+<div class="vt-talk" hidden>bash remembers what you type. The history command lists it with numbers, and a few short forms save a lot of typing. Two exclamation marks repeat the last command, which is handy as sudo bang bang when you forgot sudo. Bang and a number repeats that line from history, and bang dollar is the last word of the previous command. The most useful trick of all is control R: start typing any part of an old command and bash finds it, and pressing control R again goes further back. The history is saved to dot bash history when the shell exits, and HISTSIZE sets how many lines are kept. Finally, the prompt itself is just a variable, PS1. Special codes such as backslash u for the user, backslash w for the folder and backslash t for the time let you design it, and many people add the git branch or colours.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>The environment from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Variables store values by name. export passes them to programs you start. PATH lists the folders where commands live, and ~/.bashrc keeps your settings for every new terminal.</p></div><div class="ld-p" data-ld="college" hidden><p>The environment is an array of NAME=value strings handed to a program by execve() and read with getenv(). Child processes get a copy, which is why scripts cannot change the caller and why source exists. Command lookup order is alias, function, builtin, then PATH, and the result is cached in a hash table that hash -r clears.</p></div><div class="ld-p" data-ld="masters" hidden><p>Environment variables are a security boundary: sudo resets most of them (env_reset in sudoers) and setuid programs ignore LD_PRELOAD and LD_LIBRARY_PATH, which would otherwise let a user inject code. Services under systemd do not read shell startup files at all and get their environment from Environment= lines. The twelve factor app method stores configuration in environment variables so the same container image runs in testing and production.</p></div><div class="ld-p" data-ld="research" hidden><p>Shells keep evolving: zsh and fish add richer completion and history search, and tools such as direnv load project specific variables when you enter a folder. Shellshock (CVE-2014-6271) showed the danger of parsing environment values: bash ran code hidden after function definitions in variables, which web servers passed in from HTTP headers. Research on secret management (Vault, SOPS) moves passwords out of plain environment variables, which leak through /proc/PID/environ, crash reports and child processes.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the missing tool after reboot</div><p>A developer installs a tool into ~/.local/bin and it works, but after logging in again the shell says command not found. <code>echo "$PATH"</code> shows the folder is missing. The developer had typed <code>export PATH=...</code> only in the terminal. Adding the same line to ~/.bashrc and running <code>source ~/.bashrc</code> makes it permanent, and <code>type tool</code> now prints the full path.</p></div>
+<div class="vt-talk" hidden>Under the hood, the environment is a plain list of name equals value strings. When bash starts a program, it passes that list to the kernel along with the program and its arguments, and the program reads it with the getenv function. That is the whole mechanism, and it explains the rules: children get a copy, and nothing flows back. Because variables can change how programs behave, they also matter for security. sudo throws most of them away, and programs that run with extra privileges ignore variables that would let a user load their own code. In twenty fourteen a bug called Shellshock let attackers run commands on web servers simply by sending a crafted header that became an environment variable for bash. Today, cloud apps store their configuration in environment variables, while real secrets move into dedicated tools, because the environment of a process can leak in more places than people expect.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./processes.html" data-topic="processes"><small>Previous topic</small><b>Processes and signals</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "environment", "topic": "environment", "subject": "linux", "title": "The shell environment: variables, PATH and startup files", "codes": {}, "quiz": [{"lv": "e", "q": "Which line correctly sets a variable?", "o": ["city = Pune", "city=Pune", "$city=Pune", "set city Pune"], "a": 1, "hint": "No spaces.", "why": "Spaces would make bash run a command called city."}, {"lv": "e", "q": "What does export do to a variable?", "o": ["Deletes it", "Copies it into the environment of programs started later", "Saves it to disk", "Makes it read only"], "a": 1, "hint": "Children see it.", "why": "Exported variables are passed to child processes."}, {"lv": "e", "q": "Which variable lists the folders searched for commands?", "o": ["HOME", "PATH", "SHELL", "PWD"], "a": 1, "hint": "Search path.", "why": "PATH holds colon separated folders."}, {"lv": "e", "q": "Which key combination searches your command history as you type?", "o": ["Ctrl+H", "Ctrl+R", "Ctrl+S", "Ctrl+F"], "a": 1, "hint": "R for reverse.", "why": "Ctrl+R starts reverse incremental search."}, {"lv": "m", "q": "A script runs cd /tmp. Why is your terminal still in the old folder afterwards?", "o": ["cd is broken in scripts", "The script ran in a child process with its own current folder", "Scripts cannot use cd", "/tmp is read only"], "a": 1, "hint": "Child copy.", "why": "Use source script.sh to run it in the current shell."}, {"lv": "m", "q": "After PATH=~/bin (without $PATH) ls fails. Why?", "o": ["ls was deleted", "PATH now holds only ~/bin, so /usr/bin is not searched", "ls needs sudo", "The alias is wrong"], "a": 1, "hint": "Replaced, not added.", "why": "Always keep the old value: PATH=\"$HOME/bin:$PATH\"."}, {"lv": "m", "q": "You edited ~/.bashrc. How do you load the change into the current shell?", "o": ["restart the computer", "source ~/.bashrc", "bash ~/.bashrc", "export ~/.bashrc"], "a": 1, "hint": "Run it here.", "why": "source reads the file in the current shell."}, {"lv": "m", "q": "What does sudo !! do?", "o": ["Deletes history", "Runs the previous command again with sudo", "Runs sudo twice", "Shows sudo help"], "a": 1, "hint": "Bang bang.", "why": "!! expands to the last command."}, {"lv": "m", "q": "What does LANG=C sort names.txt do?", "o": ["Sets LANG for the rest of the session", "Runs sort with LANG=C for this one command only", "Fails", "Sorts in reverse"], "a": 1, "hint": "Prefix assignment.", "why": "A NAME=value before a command applies only to it."}, {"lv": "h", "q": "Which file does an interactive non-login bash read?", "o": ["~/.profile", "~/.bashrc", "/etc/profile", "~/.bash_logout"], "a": 1, "hint": "New terminal window.", "why": "bash(1) INVOCATION: interactive non-login shells read ~/.bashrc."}, {"lv": "h", "q": "In what order does bash look for a command name?", "o": ["PATH, builtin, alias", "alias, function, builtin, PATH", "function, PATH, alias", "builtin, PATH, function"], "a": 1, "hint": "Aliases expand first.", "why": "Aliases, then functions, builtins, then PATH."}, {"lv": "h", "q": "Why must cd be a builtin command?", "o": ["It is faster", "A separate program could only change its own folder, not the shell’s", "For security", "Because it has no options"], "a": 1, "hint": "Process boundaries.", "why": "Each process has its own current folder."}, {"lv": "x", "q": "Why does sudo reset most environment variables by default?", "o": ["To save memory", "So a user cannot change how root programs behave, for example with LD_PRELOAD", "Because root has no environment", "To speed up logins"], "a": 1, "hint": "Privilege boundary.", "why": "env_reset in sudoers removes variables that could inject code."}], "calc": [{"lv": "e", "q": "PATH=/home/learner/bin:/usr/local/bin:/usr/bin:/bin. How many folders are searched for a missing command?", "ans": "4", "hint": "Count the parts between colons.", "steps": ["Split at each colon.", "Four folder names.", "<span class=\"eq\">4<\/span>"]}, {"lv": "e", "q": "tool exists in /usr/bin and in /home/learner/bin. With the PATH above, which position (1 to 4) wins?", "ans": "1", "hint": "Left to right.", "steps": ["bash stops at the first match.", "/home/learner/bin is position 1.", "<span class=\"eq\">1<\/span>"]}, {"lv": "m", "q": "HISTSIZE=1000 and you have typed 1250 commands in this shell. How many are listed by history?", "ans": "1000", "hint": "Keeps the newest.", "steps": ["Only HISTSIZE lines stay in memory.", "The oldest 250 are dropped.", "<span class=\"eq\">1000<\/span>"]}, {"lv": "m", "q": "A parent exports 3 variables and keeps 5 unexported. How many of those 8 does a child shell see?", "ans": "3", "hint": "Only exported.", "steps": ["Exported: 3.", "Unexported stay in the parent.", "<span class=\"eq\">3<\/span>"]}, {"lv": "m", "q": "history shows command 40 to 49. You run !45 then history again. What number does the new entry get?", "ans": "50", "hint": "Next number.", "steps": ["The last entry was 49.", "The expanded !45 is saved as a new line.", "<span class=\"eq\">50<\/span>"]}, {"lv": "h", "q": "A command is not found and PATH has 6 folders, each check taking 0.2 ms. How many ms does bash spend searching?", "ans": "1.2", "hint": "Every folder is tried.", "steps": ["A miss checks all 6 folders.", "6 × 0.2 ms.", "<span class=\"eq\">1.2 ms<\/span>"]}], "assign": [], "must": [["Variables", "NAME=value with no spaces, read with \"$NAME\". export passes it to children, as a copy. NAME=value CMD sets it for one command."], ["PATH", "Colon separated folders, searched left to right after aliases, functions and builtins. Add with PATH=\"$HOME/bin:$PATH\", never without $PATH."], ["Startup", "~/.bashrc for aliases, functions and prompt. Login shells read ~/.profile. source ~/.bashrc applies edits now."], ["Alias and function", "alias ll='ls -alF' for short names. A function takes arguments and runs in the current shell."], ["History", "history, !! and sudo !!, !N, !$, Ctrl+R to search. PS1 sets the prompt with codes for user, host, folder and time."]], "summary": "<p>Variables live in one shell until exported, and children only ever get copies. PATH decides which program a name runs. ~/.bashrc brings your aliases, functions and prompt back in every terminal.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

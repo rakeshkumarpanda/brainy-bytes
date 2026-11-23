@@ -10633,6 +10633,21 @@ function lxPowerModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "environment", title: "The shell environment: variables, PATH and startup files", emoji: "4.2", page: "content/linux/environment.html",
+        summary: "Variables and export, PATH lookup, .bashrc and .profile, aliases, functions, history and the prompt.",
+        keywords: ["environment variable", "export", "PATH", ".bashrc", ".profile", "alias", "source", "history", "PS1", "env", "printenv", "login shell", "Ctrl+R"],
+        minutes: 45, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "vars", title: "Shell variables and environment variables", emoji: "", group: "Lesson", keywords: ["variable", "shell variable", "environment variable", "export", "env", "printenv", "unset", "declare", "readonly", "HOME", "USER", "LANG", "EDITOR", "environ"] },
+        { id: "path", title: "PATH: how bash finds commands", emoji: "", group: "Lesson", keywords: ["PATH", "command lookup", "command not found", "exit 127", "~/bin", "which", "type", "command -v", "hash", "builtin", "precedence"] },
+        { id: "startup", title: "Startup files, aliases and functions", emoji: "", group: "Lesson", keywords: [".bashrc", ".profile", ".bash_profile", "/etc/profile", "login shell", "non-login shell", "source", "alias", "unalias", "function", "startup files"] },
+        { id: "history", title: "History and the prompt", emoji: "", group: "Lesson", keywords: ["history", "!!", "!$", "!N", "Ctrl+R", "reverse search", ".bash_history", "HISTSIZE", "PS1", "prompt", "sudo !!"] },
+        { id: "levels", title: "The environment from school to research", emoji: "", group: "Lesson", keywords: ["execve", "getenv", "environ", "hash -r", "LD_PRELOAD", "env_reset", "sudo environment", "systemd Environment", "twelve factor", "Shellshock", "CVE-2014-6271", "direnv", "secrets"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

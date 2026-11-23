@@ -145,8 +145,9 @@ def execute(script, root=False, keep=False, cwd='~'):
     body.append("trap - DEBUG")
     body.append("printf '\\036end\\n'")
     body[1] = f"__starts=({' '.join(map(str, starts))}) __idx=({' '.join(idx)}) __n=0"
-    body[2] = ("trap '{ [[ $__n -lt ${#__starts[@]} && $LINENO -eq ${__starts[$__n]} ]] && "
-               "{ printf \"\\036%s\\n\" \"${__idx[$__n]}\"; __n=$((__n + 1)); }; } 2>/dev/null' DEBUG")
+    # -ge (not -eq) so a line that runs no simple command, such as a function definition, still gets its marker
+    body[2] = ("trap '{ while [[ $__n -lt ${#__starts[@]} && $LINENO -ge ${__starts[$__n]} ]]; do "
+               "printf \"\\036%s\\n\" \"${__idx[$__n]}\"; __n=$((__n + 1)); done; } 2>/dev/null' DEBUG")
     with tempfile.NamedTemporaryFile('w', suffix='.sh', delete=False, dir='/tmp') as f:
         f.write('\n'.join(body) + '\n')
         path = f.name
