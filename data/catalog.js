@@ -10552,6 +10552,38 @@ function sqlModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "sql-design", title: "Designing databases", emoji: "5", step: 5, level: "Intermediate", blurb: "Normalize tables and design a schema from real requirements.", topics: [
+      { id: "sql-normalization", title: "Normalization: storing each fact once", emoji: "5.1", page: "content/sql/sql-normalization.html",
+        summary: "Anomalies, functional dependencies, normal forms and denormalization.",
+        keywords: ["normalization", "1NF", "2NF", "3NF", "BCNF", "functional dependency", "denormalization"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "anomaly", title: "Why repeated data hurts", emoji: "", group: "Lesson", keywords: ["normalization", "update anomaly", "insert anomaly", "delete anomaly", "redundancy", "Codd"] },
+        { id: "fd", title: "Functional dependencies: what decides what", emoji: "", group: "Lesson", keywords: ["functional dependency", "determinant", "candidate key", "partial dependency", "transitive dependency"] },
+        { id: "forms", title: "1NF, 2NF, 3NF and BCNF", emoji: "", group: "Lesson", keywords: ["1NF", "2NF", "3NF", "BCNF", "normal forms", "atomic values", "lossless decomposition"] },
+        { id: "denorm", title: "Higher forms and denormalization", emoji: "", group: "Lesson", keywords: ["4NF", "5NF", "multivalued dependency", "denormalization", "star schema", "OLTP", "OLAP"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["Armstrong axioms", "lossless join", "dependency preservation", "closure", "dependency discovery"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-design", title: "Database design in practice", emoji: "5.2", page: "content/sql/sql-design.html",
+        summary: "From requirements to a schema, ER diagrams, relationship mapping and a full library design.",
+        keywords: ["database design", "ER diagram", "junction table", "crow foot", "lookup table", "schema"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "process", title: "From a story to tables", emoji: "", group: "Lesson", keywords: ["requirements", "entity", "attribute", "relationship", "nouns and verbs", "schema design"] },
+        { id: "er", title: "ER diagrams and the three kinds of relationship", emoji: "", group: "Lesson", keywords: ["ER diagram", "crow foot notation", "Chen", "one to one", "one to many", "many to many", "junction table", "optional relationship"] },
+        { id: "conventions", title: "Habits that keep a schema healthy", emoji: "", group: "Lesson", keywords: ["naming convention", "snake_case", "lookup table", "enum", "created_at", "audit columns", "surrogate key"] },
+        { id: "case", title: "A worked design: the library", emoji: "", group: "Lesson", keywords: ["library schema", "worked design", "overdue query", "availability", "requirements to constraints"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["conceptual model", "logical model", "physical model", "subtype", "inheritance mapping", "schema evolution"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

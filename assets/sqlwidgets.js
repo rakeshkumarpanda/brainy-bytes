@@ -518,4 +518,76 @@
       ];
     }
   }));
+
+  /* ---------- 5.1 normalization, one form at a time ---------- */
+  SQW('sqnorm', (SQL, cfg) => ({
+    title: 'Normalize a messy sheet, step by step',
+    sub: 'A teacher kept enrolments in one spreadsheet. Pick how far to normalize and watch SQLite split the sheet into tables, one rule at a time.',
+    inputs: [{ k: 'nf', label: 'Go as far as', type: 'seg', val: cfg.nf || '3NF', opts: [['1NF', '1NF'], ['2NF', '2NF'], ['3NF', '3NF']] }],
+    frames: v => {
+      const seed = `CREATE TABLE sheet (student_id INTEGER, student_name TEXT, phones TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);
+INSERT INTO sheet VALUES (1,'Asha','98111, 98222','C1','Databases','Rao','R12','A'), (1,'Asha','98111, 98222','C2','Networks','Iyer','R7','B'),
+ (2,'Ravi','97333','C1','Databases','Rao','R12','B'), (3,'Meera','96444','C3','Security','Rao','R12','A');
+CREATE TABLE phones AS SELECT DISTINCT student_id, trim(substr(phones, 1, instr(phones || ',', ',') - 1)) AS phone FROM sheet
+ UNION SELECT DISTINCT student_id, trim(substr(phones, instr(phones, ',') + 1)) FROM sheet WHERE instr(phones, ',') > 0;
+CREATE TABLE flat1 AS SELECT student_id, student_name, course, title, teacher, room, grade FROM sheet;
+CREATE TABLE students AS SELECT DISTINCT student_id, student_name FROM sheet;
+CREATE TABLE courses2 AS SELECT DISTINCT course, title, teacher, room FROM sheet;
+CREATE TABLE enrolments AS SELECT student_id, course, grade FROM sheet;
+CREATE TABLE courses AS SELECT DISTINCT course, title, teacher FROM sheet;
+CREATE TABLE teachers AS SELECT DISTINCT teacher, room FROM sheet;`;
+      const d = scratch(SQL, '', seed);
+      const T = (name, label, extra) => { const r = q(d, `SELECT * FROM ${name} ORDER BY 1, 2`); return Object.assign({ t: 'tab', label: label || name, cols: r.cols, rows: r.rows }, extra || {}); };
+      const sheet = q(d, 'SELECT * FROM sheet');
+      const out = [{ msg: 'The original sheet. Asha’s name and phones appear twice, and the room of teacher Rao appears three times. Every repeat is a chance for the copies to disagree.', mood: 'think',
+        layers: [{ t: 'tab', label: 'sheet', cols: sheet.cols, rows: sheet.rows, ccls: { 2: 'piv' } }] }];
+      out.push({ msg: '<b>1NF</b>: one value per cell. The phones cell holds a list, so phones move to their own table, one phone per row. The key of what is left is (student_id, course).', mood: 'work',
+        layers: [T('flat1', 'enrolment rows, key (student_id, course)', { ccls: { 1: 'look', 3: 'look', 4: 'look', 5: 'look' } }), T('phones', 'phones, key (student_id, phone)')] });
+      if (v.nf === '1NF') { out.push({ msg: 'Stopped at 1NF. Every cell is atomic, but names and course details still repeat in each enrolment row.', mood: 'look', layers: [T('flat1', 'enrolment rows'), T('phones')] }); return out; }
+      out.push({ msg: '<b>2NF</b>: no column may depend on only part of the key. student_name depends on student_id alone, and title, teacher and room depend on course alone. Each goes to a table keyed by what it depends on.', mood: 'work',
+        layers: [T('students', 'students, key student_id'), T('courses2', 'courses, key course', { ccls: { 3: 'look' } }), T('enrolments', 'enrolments, key (student_id, course)')] });
+      if (v.nf === '2NF') { out.push({ msg: 'Stopped at 2NF. One repeat is left: room depends on teacher, not on the course, so Rao’s room R12 is still written twice.', mood: 'look', layers: [T('courses2', 'courses', { ccls: { 3: 'no' } })] }); return out; }
+      out.push({ msg: '<b>3NF</b>: no column may depend on another non key column. course decides teacher, and teacher decides room. That chain is a transitive dependency, so room moves to a teachers table.', mood: 'work',
+        layers: [T('courses', 'courses, key course'), T('teachers', 'teachers, key teacher', { ccls: { 1: 'yes' } })] });
+      const back = q(d, 'SELECT s.student_name, c.title, t.room, e.grade FROM enrolments e JOIN students s USING (student_id) JOIN courses c USING (course) JOIN teachers t USING (teacher) ORDER BY 1, 2');
+      out.push({ msg: 'Every fact is now stored once. A JOIN rebuilds the original view whenever you need it, with no data lost.', mood: 'happy', fx: 'burst',
+        layers: [{ t: 'sql', text: 'SELECT s.student_name, c.title, t.room, e.grade\nFROM enrolments e\nJOIN students s USING (student_id)\nJOIN courses  c USING (course)\nJOIN teachers t USING (teacher);' }, { t: 'tab', label: 'rebuilt by a join', cols: back.cols, rows: back.rows }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 5.2 where the foreign key goes ---------- */
+  SQW('sqer', (SQL, cfg) => ({
+    title: 'Turn a relationship into tables',
+    sub: 'Pick how two things relate. Pip decides where the foreign key goes, writes the tables, and runs a join on sample rows.',
+    inputs: [{ k: 'r', label: 'Relationship', type: 'seg', val: cfg.r || 'many', opts: [['one', 'one to one'], ['many', 'one to many'], ['m2m', 'many to many']] }],
+    frames: v => {
+      const S = {
+        one: { a: 'person', b: 'passport', say: 'Each person has at most one passport, and each passport belongs to one person.',
+          rule: 'Put the foreign key on either side and make it UNIQUE, so no two passports point at the same person.',
+          ddl: 'CREATE TABLE person (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE passport (\n  no TEXT PRIMARY KEY,\n  person_id INTEGER UNIQUE REFERENCES person(id)\n);',
+          data: "INSERT INTO person VALUES (1, 'Asha'), (2, 'Ravi'); INSERT INTO passport VALUES ('P100', 1), ('P200', 2);",
+          q: 'SELECT p.name, x.no FROM person p JOIN passport x ON x.person_id = p.id', tabs: ['person', 'passport'] },
+        many: { a: 'author', b: 'book', say: 'One author writes many books, each book has one author.',
+          rule: 'The foreign key goes on the many side: each book row stores its author_id.',
+          ddl: 'CREATE TABLE author (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE book (\n  id INTEGER PRIMARY KEY,\n  title TEXT,\n  author_id INTEGER REFERENCES author(id)\n);',
+          data: "INSERT INTO author VALUES (1, 'Ruskin Bond'), (2, 'Sudha Murty'); INSERT INTO book VALUES (1, 'The Blue Umbrella', 1), (2, 'Rusty', 1), (3, 'Wise and Otherwise', 2);",
+          q: 'SELECT a.name, b.title FROM author a JOIN book b ON b.author_id = a.id', tabs: ['author', 'book'] },
+        m2m: { a: 'student', b: 'club', say: 'A student joins many clubs, and a club has many students.',
+          rule: 'Neither side can hold a single foreign key, so a junction table stores one row per pair, with two foreign keys and a composite primary key.',
+          ddl: 'CREATE TABLE student (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE club (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE membership (\n  student_id INTEGER REFERENCES student(id),\n  club_id INTEGER REFERENCES club(id),\n  PRIMARY KEY (student_id, club_id)\n);',
+          data: "INSERT INTO student VALUES (1, 'Asha'), (2, 'Ravi'); INSERT INTO club VALUES (1, 'Chess'), (2, 'Music'); INSERT INTO membership VALUES (1, 1), (1, 2), (2, 2);",
+          q: 'SELECT s.name AS student, c.name AS club FROM membership m JOIN student s ON s.id = m.student_id JOIN club c ON c.id = m.club_id', tabs: ['student', 'club', 'membership'] }
+      }[v.r];
+      const d = scratch(SQL, '', S.ddl + '\n' + S.data);
+      const tabs = S.tabs.map(t => { const r = q(d, `SELECT * FROM ${t}`); const fk = r.cols.map((c, i) => /_id$/.test(c) ? i : -1).filter(i => i >= 0); return { t: 'tab', label: t, cols: r.cols, rows: r.rows, ccls: Object.fromEntries(fk.map(i => [i, 'piv'])) }; });
+      const res = q(d, S.q);
+      return [
+        { msg: `Two things: <b>${S.a}</b> and <b>${S.b}</b>. ${S.say}`, mood: 'think', layers: [{ t: 'flow', items: [S.a, v.r === 'm2m' ? 'many to many' : v.r === 'one' ? 'one to one' : 'one to many', S.b], on: 1 }] },
+        { msg: S.rule, mood: 'look', layers: [{ t: 'sql', text: S.ddl }] },
+        { msg: 'The tables with a few rows. The highlighted columns are the foreign keys.', mood: 'work', layers: tabs },
+        { msg: `A join follows the keys and answers the question. ${res.rows.length} rows.`, mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text: S.q.replace(/ (FROM|JOIN)/g, '\n$1') + ';' }, { t: 'tab', label: 'Result', cols: res.cols, rows: res.rows }] }
+      ];
+    }
+  }));
 })();
