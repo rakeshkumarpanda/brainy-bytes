@@ -35,17 +35,17 @@
 <div class="walk"><div class="walk-h"><span>How the shell starts a command</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>You type sleep 5 and press Enter.</li><li>bash calls fork(), which makes a copy of itself. The copy is the child, with a new PID.</li><li>The child calls execve() to replace itself with the program /usr/bin/sleep. The PID stays the same.</li><li>The parent bash waits. When the child exits, bash collects its exit status into $? and shows the prompt.</li></ol></div>
 <div class="tw"><table class="cvt "><thead><tr><th>State letter</th><th>Meaning</th></tr></thead><tbody><tr><td><code>R</code></td><td>running, or ready to run on a CPU</td></tr><tr><td><code>S</code></td><td>sleeping, waiting for something (input, a timer, the network)</td></tr><tr><td><code>D</code></td><td>uninterruptible sleep, usually waiting for a disk</td></tr><tr><td><code>T</code></td><td>stopped, for example by Ctrl+Z</td></tr><tr><td><code>Z</code></td><td>zombie: finished, but the parent has not collected its exit status yet</td></tr></tbody></table></div>
 <div class="lx-run"><div class="lx-rh"><span>Looking at your own process</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">echo "this shell is PID $$"</span>
-<span class="lx-o">this shell is PID 17261</span>
+<span class="lx-o">this shell is PID 20753</span>
 <span class="lx-cmd">grep -E '^(Name|State|PPid|Threads)' /proc/$$/status</span>
 <span class="lx-o">Name:	bash
 State:	S (sleeping)
-PPid:	17260
+PPid:	20752
 Threads:	1</span>
 <span class="lx-cmd">sleep 30 &amp;</span>
 <span class="lx-cmd">ps -o pid,ppid,stat,comm -p $$,$!</span>
 <span class="lx-o">  PID  PPID STAT COMMAND
-17261 17260 S    bash
-17263 17261 S    sleep</span>
+20753 20752 S    bash
+20755 20753 S    sleep</span>
 <span class="lx-cmd">kill $!</span></pre><div class="lx-note">$$ is the PID of the current shell and $! the PID of the last background job. Every running process has a folder /proc/PID full of live information from the kernel. The numbers change on every run.</div></div>
 <div class="note note-tip"><b>Remember</b><div>The first process, PID 1, is started by the kernel at boot. On most current distributions it is systemd. It adopts orphans: when a parent dies first, its children get PID 1 as their new parent.</div></div>
 <div class="vt-talk" hidden>A program is just a file sitting on the disk. When you run it, the kernel creates a process: a running copy with its own memory, its own open files and a unique number called the process ID. Processes form a family tree. The shell you type in is a process, and every command you start from it becomes its child. Under the hood, bash first makes a copy of itself with the fork system call, and the copy then replaces itself with the new program using exec. At any moment a process is in a state: running, sleeping while it waits for something, stopped, or a zombie, which has finished but whose parent has not yet read its exit status. Linux shows all of this live in the folder slash proc, where every process has a sub folder named after its number.</div>
@@ -77,14 +77,14 @@ MiB Mem :   7859.4 total,   5120.6 free,   1210.3 used,   1528.5 buff/cache</spa
 <span class="lx-cmd">kill -l 9</span>
 <span class="lx-o">KILL</span>
 <span class="lx-cmd">sleep 30 &amp; echo "started $!"</span>
-<span class="lx-o">started 17287</span>
+<span class="lx-o">started 20779</span>
 <span class="lx-cmd">kill $!</span>
 <span class="lx-cmd">wait $!; echo "exit status $?"</span>
 <span class="lx-o">exit status 143</span>
 <span class="lx-cmd">sleep 30 &amp;</span>
 <span class="lx-cmd">kill -9 $!</span>
 <span class="lx-cmd">wait $!; echo "exit status $?"</span>
-<span class="lx-o">bash: 17288 Killed                  sleep 30
+<span class="lx-o">bash: 20780 Killed                  sleep 30
 exit status 137</span>
 <span class="lx-cmd">kill -l 137</span>
 <span class="lx-o">KILL</span></pre><div class="lx-note">A process killed by signal N ends with exit status 128 + N: 143 for SIGTERM (15) and 137 for SIGKILL (9). kill -l turns such a status back into a name.</div></div>

@@ -88,11 +88,11 @@
 <span class="lx-o">chown: changing ownership of 'report.txt': Operation not permitted</span>
 <span class="lx-cmd">chgrp sudo report.txt</span>
 <span class="lx-cmd">ls -l report.txt</span>
-<span class="lx-o">-rw-r--r-- 1 learner sudo 0 Nov 23 17:54 report.txt</span></pre><div class="lx-note">A normal user may not give a file away, so chown fails. chgrp works because learner is a member of the group sudo and owns the file.</div></div>
+<span class="lx-o">-rw-r--r-- 1 learner sudo 0 Nov 23 18:01 report.txt</span></pre><div class="lx-note">A normal user may not give a file away, so chown fails. chgrp works because learner is a member of the group sudo and owns the file.</div></div>
 <div class="lx-run"><div class="lx-rh"><span>As root</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">touch /home/learner/report.txt</span>
 <span class="lx-cmd lx-root">chown root:root /home/learner/report.txt</span>
 <span class="lx-cmd lx-root">ls -l /home/learner/report.txt</span>
-<span class="lx-o">-rw-r--r-- 1 root root 0 Nov 23 17:54 /home/learner/report.txt</span>
+<span class="lx-o">-rw-r--r-- 1 root root 0 Nov 23 18:01 /home/learner/report.txt</span>
 <span class="lx-cmd lx-root">stat -c '%a %A %U:%G %n' /home/learner/report.txt</span>
 <span class="lx-o">644 -rw-r--r-- root:root /home/learner/report.txt</span></pre><div class="lx-note">The prompt ends in # because this box runs as root. stat -c prints chosen fields: %a the mode in numbers, %A as letters, %U and %G the owner and group names.</div></div>
 <div class="tw"><table class="cvt "><thead><tr><th>Mode</th><th>Letters</th><th>Typical use</th></tr></thead><tbody><tr><td>644</td><td>rw-r--r--</td><td>Ordinary files, web pages, configuration that is not secret</td></tr><tr><td>600</td><td>rw-------</td><td>Secrets: SSH private keys, files with passwords</td></tr><tr><td>755</td><td>rwxr-xr-x</td><td>Programs and scripts, ordinary folders</td></tr><tr><td>700</td><td>rwx------</td><td>Private folders such as ~/.ssh</td></tr><tr><td>750</td><td>rwxr-x---</td><td>Folders shared with one team</td></tr><tr><td>777</td><td>rwxrwxrwx</td><td>Almost never right: anyone may change or replace it</td></tr></tbody></table></div>
@@ -109,18 +109,18 @@
 <span class="lx-cmd">touch b.txt</span>
 <span class="lx-cmd">mkdir d2</span>
 <span class="lx-cmd">ls -ld a.txt d1 b.txt d2</span>
-<span class="lx-o">-rw-r--r-- 1 learner learner    0 Nov 23 17:54 a.txt
--rw------- 1 learner learner    0 Nov 23 17:54 b.txt
-drwxr-xr-x 2 learner learner 4096 Nov 23 17:54 d1
-drwx------ 2 learner learner 4096 Nov 23 17:54 d2</span></pre><div class="lx-note">The umask change lasts only for this shell. Put umask 077 in ~/.bashrc to keep it.</div></div>
+<span class="lx-o">-rw-r--r-- 1 learner learner    0 Nov 23 18:01 a.txt
+-rw------- 1 learner learner    0 Nov 23 18:01 b.txt
+drwxr-xr-x 2 learner learner 4096 Nov 23 18:01 d1
+drwx------ 2 learner learner 4096 Nov 23 18:01 d2</span></pre><div class="lx-note">The umask change lasts only for this shell. Put umask 077 in ~/.bashrc to keep it.</div></div>
 <div class="lx-run"><div class="lx-rh"><span>The special bits you meet every day</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls -ld /tmp /usr/bin/passwd</span>
-<span class="lx-o">drwxrwxrwt 12 root root  4096 Nov 23 17:54 /tmp
+<span class="lx-o">drwxrwxrwt 12 root root  4096 Nov 23 18:01 /tmp
 -rwsr-xr-x  1 root root 64152 May 30  2024 /usr/bin/passwd</span>
 <span class="lx-cmd">mkdir team</span>
 <span class="lx-cmd">chmod 2775 team</span>
 <span class="lx-cmd">chmod +t team</span>
 <span class="lx-cmd">ls -ld team</span>
-<span class="lx-o">drwxrwsr-t 2 learner learner 4096 Nov 23 17:54 team</span>
+<span class="lx-o">drwxrwsr-t 2 learner learner 4096 Nov 23 18:01 team</span>
 <span class="lx-cmd">stat -c '%a %n' team /tmp</span>
 <span class="lx-o">3775 team
 1777 /tmp</span></pre><div class="lx-note">In ls -l the special bits replace the x position: s for setuid or setgid, t for sticky. A capital S or T means the special bit is set but the x under it is not.</div></div>
