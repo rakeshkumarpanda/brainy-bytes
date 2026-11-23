@@ -78,6 +78,13 @@ const LXSH = (() => {
     return new RegExp('^' + r + '$');
   }
   const hasGlob = s => /[*?[]/.test(s);
+  /* the escapes of $'...' quoting, as listed under QUOTING in bash(1) */
+  const ansiC = s => s.replace(/\\(x[0-9a-fA-F]{1,2}|[0-7]{1,3}|u[0-9a-fA-F]{1,4}|.)/g, (m, c) => {
+    if (c[0] === 'x' && c.length > 1) return String.fromCharCode(parseInt(c.slice(1), 16));
+    if (c[0] === 'u' && c.length > 1) return String.fromCharCode(parseInt(c.slice(1), 16));
+    if (/^[0-7]+$/.test(c)) return String.fromCharCode(parseInt(c, 8));
+    return { n: '\n', t: '\t', r: '\r', a: '\x07', b: '\b', e: '\x1b', E: '\x1b', f: '\f', v: '\v', '\\': '\\', "'": "'", '"': '"', '?': '?' }[c] ?? m;
+  });
   function modeStr(n) {
     const t = n.type === 'd' ? 'd' : n.type === 'l' ? 'l' : n.type === 'c' ? 'c' : '-';
     const m = n.mode, b = (v, ch) => v ? ch : '-';
@@ -175,12 +182,16 @@ const LXSH = (() => {
         if (c === '(' && w && w.parts.every(p => !p.q) && /^[A-Za-z_]\w*(\[[^\]]*\])?\+?=$/.test(w.parts.map(p => p.t).join(''))) {
           const k = this.matchParen(src, i); push('(' + src.slice(i + 1, k) + ')', 0); w.parts[w.parts.length - 1].arr = src.slice(i + 1, k); i = k + 1; continue;
         }
+        if (c === '$' && src[i + 1] === "'") { let j = i + 2, s = ''; while (j < src.length && src[j] !== "'") { if (src[j] === '\\' && j + 1 < src.length) { s += src[j] + src[j + 1]; j += 2; continue; } s += src[j++]; } if (j >= src.length) throw new Error('unexpected end of line, a quote was not closed'); push(ansiC(s), 1); i = j + 1; continue; }
+        if (c === '`') { const j = src.indexOf('`', i + 1); if (j < 0) throw new Error('unexpected end of line, a ` was not closed'); push('$(' + src.slice(i + 1, j) + ')', 0); i = j + 1; continue; }
+        if ((c === '<' || c === '>') && src[i + 1] === '(') { const k = this.matchParen(src, i + 1); if (c === '>') throw new Error('>( ) is not available in the practice shell, only <( )'); if (!w) w = { parts: [] }; w.parts.push({ t: src.slice(i + 2, k), q: 0, ps: true }); i = k + 1; continue; }
         if (c === "'") { const j = src.indexOf("'", i + 1); if (j < 0) throw new Error('unexpected end of line, a quote was not closed'); push(src.slice(i + 1, j), 1); i = j + 1; continue; }
         if (c === '"') {
           let j = i + 1, s = '';
           while (j < src.length && src[j] !== '"') {
             if (src[j] === '\\' && '"\\$`'.includes(src[j + 1])) { s += src[j] + src[j + 1]; j += 2; continue; }
             if (src[j] === '$' && src[j + 1] === '(') { const k = this.matchParen(src, j + 1); s += src.slice(j, k + 1); j = k + 1; continue; }
+            if (src[j] === '`') { const k = src.indexOf('`', j + 1); if (k < 0) throw new Error('unexpected end of line, a ` was not closed'); s += '$(' + src.slice(j + 1, k) + ')'; j = k + 1; continue; }
             s += src[j++];
           }
           if (j >= src.length) throw new Error('unexpected end of line, a quote was not closed');
@@ -207,7 +218,7 @@ const LXSH = (() => {
         if ('|;&<>'.includes(c)) { end(); toks.push({ op: c }); i++; continue; }
         if (c === '(' || c === ')') { end(); toks.push({ op: c }); i++; continue; }
         let j = i, s = '';
-        while (j < src.length && !" \t\n'\"\\|;&<>".includes(src[j]) && !(src[j] === '$' && (src[j + 1] === '(' || src[j + 1] === '{')) && !(src[j] === '(' || src[j] === ')')) s += src[j++];
+        while (j < src.length && !" \t\n'\"\\|;&<>`".includes(src[j]) && !(src[j] === '$' && (src[j + 1] === '(' || src[j + 1] === '{')) && !(src[j] === '(' || src[j] === ')')) s += src[j++];
         push(s, 0); i = j;
       }
       end();
@@ -355,6 +366,8 @@ const LXSH = (() => {
     braceParam(body) {
       let m;
       const A = this.arrays || {};
+      if ((m = /^!(\w+)[*@]$/.exec(body))) return Object.keys(this.vars).concat(Object.keys(A)).filter((k, ix, all) => k.startsWith(m[1]) && all.indexOf(k) === ix).sort().join(' ');
+      if ((m = /^!(\w+)$/.exec(body))) { const t = this.param(m[1]); return t ? this.braceParam(t) : ''; }
       if ((m = /^#(\w+)\[[@*]\]$/.exec(body))) return String(this.arrVals(m[1]).length);
       if ((m = /^!(\w+)\[[@*]\]$/.exec(body))) return this.arrKeys(m[1]).join(' ');
       if ((m = /^(\w+)\[[@*]\]:(-?\d+)(?::(\d+))?$/.exec(body))) { const v = this.arrVals(m[1]); let st = +m[2]; if (st < 0) st = Math.max(0, v.length + st); return (m[3] !== undefined ? v.slice(st, st + +m[3]) : v.slice(st)).join(' '); }
@@ -384,7 +397,7 @@ const LXSH = (() => {
         if (!from) return v;
         return m[2] ? v.split(from).join(to) : v.replace(from, to);
       }
-      if ((m = /^(\w+):(-?\d+)(?::(\d+))?$/.exec(body))) { const v = this.param(m[1]); let s = +m[2]; if (s < 0) s = Math.max(0, v.length + s); return m[3] !== undefined ? v.substr(s, +m[3]) : v.slice(s); }
+      if ((m = /^(\w+):\s*\(?(-?\d+)\)?(?::(\d+))?$/.exec(body))) { const v = this.param(m[1]); let s = +m[2]; if (s < 0) s = Math.max(0, v.length + s); return m[3] !== undefined ? v.substr(s, +m[3]) : v.slice(s); }
       if ((m = /^(\w+)(\^\^|,,)$/.exec(body))) { const v = this.param(m[1]); return m[2] === '^^' ? v.toUpperCase() : v.toLowerCase(); }
       return this.param(body);
     }
@@ -432,6 +445,7 @@ const LXSH = (() => {
         if ((m = /^\$\{(\w+)\[@\]\}$/.exec(t))) return this.arrVals(m[1]);
         if ((m = /^\$\{!(\w+)\[@\]\}$/.exec(t))) return this.arrKeys(m[1]);
       }
+      if (w.parts.some(p => p.ps)) return [w.parts.map(p => { if (!p.ps) return p.q === 1 ? p.t : this.expandStr(p.t); const fd = this.psN = (this.psN || 64) - 1; const body = this.capture(p.t); this.psN = fd; if (!this.node('/dev/fd')) this.mk('/dev/fd', 'd', 0o755, 'root'); this.mk('/dev/fd/' + fd, 'f', 0o444, this.user, body); return '/dev/fd/' + fd; }).join('')];
       let anyQ = false, text = '', globbable = '', splitParts = [];
       w.parts.forEach(p => {
         if (p.q === 1) { anyQ = true; text += p.t; globbable += p.t.replace(/[*?[]/g, '\\$&'); splitParts.push([p.t, false]); return; }
@@ -447,13 +461,25 @@ const LXSH = (() => {
         const out = [];
         bs.forEach(b => {
           const v = this.expandStr(b);
-          const pieces = /\$/.test(b) ? v.split(/\s+/).filter(Boolean) : [v];
+          const pieces = /\$/.test(b) ? this.ifsSplit(v) : [v];
           pieces.forEach(pc => { if (hasGlob(pc)) { const g = this.glob(pc); if (g.length) out.push(...g); else out.push(pc); } else out.push(pc); });
         });
         return out;
       }
       if (hasGlob(globbable.replace(/\\[*?[]/g, ''))) { const g = this.glob(globbable); if (g.length) return g; }
       return [text];
+    }
+    /* word splitting with $IFS: white space runs count as one break, every other IFS character is a break of its own */
+    ifsSplit(v) {
+      const ifs = this.vars.IFS ?? ' \t\n';
+      if (ifs === '') return v === '' ? [] : [v];
+      const esc = x => x.replace(/[\\\]^-]/g, '\\$&'), ws = [...ifs].filter(c => ' \t\n'.includes(c)).join(''), nw = [...ifs].filter(c => !' \t\n'.includes(c)).join('');
+      if (ws) v = v.replace(new RegExp('^[' + esc(ws) + ']+|[' + esc(ws) + ']+$', 'g'), '');
+      if (v === '') return [];
+      const re = nw ? new RegExp((ws ? '[' + esc(ws) + ']*' : '') + '[' + esc(nw) + ']' + (ws ? '[' + esc(ws) + ']*|[' + esc(ws) + ']+' : '')) : new RegExp('[' + esc(ws) + ']+');
+      const f = v.split(re);
+      if (nw && f.length > 1 && f[f.length - 1] === '') f.pop();
+      return f;
     }
     glob(pat) {
       const absP = pat.startsWith('/'), parts = pat.split('/').filter(Boolean);
@@ -665,7 +691,7 @@ const LXSH = (() => {
         if (this.arrays && Array.isArray(this.arrays[name]) && name !== 'PIPESTATUS') { assigns.push({ name, idx: '0', val, app }); continue; }
         assigns.push([name, app ? (this.vars[name] || '') + val : val]);
       }
-      let args = words.flatMap(w => this.expandWord(w));
+      this.psN = 64; let args = words.flatMap(w => this.expandWord(w));
       const nm = x => Array.isArray(x) ? x[0] : x.name;
       const ro = assigns.find(x => this.ro && this.ro.has(nm(x)));
       if (ro) { this.eout(`bash: ${nm(ro)}: readonly variable\n`); return 1; }

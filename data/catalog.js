@@ -10669,6 +10669,21 @@ function lxScriptModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "expansions", title: "Quoting and expansions", emoji: "1.2", page: "content/linux/expansions.html",
+        summary: "Quoting, the order of expansions, ${...} operators, $( ), $(( )), <( ) and IFS.",
+        keywords: ["quoting", "expansion", "parameter expansion", "word splitting", "IFS", "command substitution", "arithmetic expansion", "process substitution", "brace expansion", "globbing"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "quotes", title: "Four ways to quote", emoji: "", group: "Lesson", keywords: ["quoting", "single quotes", "double quotes", "backslash", "$'...'", "ANSI-C quoting", "escape", "spaces in file names", "quote a variable"] },
+        { id: "order", title: "The order of expansions", emoji: "", group: "Lesson", keywords: ["expansion order", "brace expansion", "tilde expansion", "parameter expansion", "command substitution", "arithmetic expansion", "word splitting", "pathname expansion", "globbing", "quote removal", "{1..$n}"] },
+        { id: "params", title: "Parameter expansion: editing a value without sed", emoji: "", group: "Lesson", keywords: ["parameter expansion", "${#var}", "${var:-default}", "${var:=}", "${var:?}", "${var:+}", "${var#}", "${var##}", "${var%}", "${var%%}", "${var/old/new}", "substring", "${var^^}", "basename", "dirname", "file extension"] },
+        { id: "subst", title: "Command, arithmetic and process substitution, and IFS", emoji: "", group: "Lesson", keywords: ["command substitution", "$(...)", "backticks", "arithmetic expansion", "$((...))", "integer arithmetic", "process substitution", "<(...)", "IFS", "field separator", "read with IFS", "word splitting"] },
+        { id: "levels", title: "Expansions from school to research", emoji: "", group: "Lesson", keywords: ["POSIX shell expansion", "IFS white space", "empty field", "subshell", "set -f", "nullglob", "Smoosh", "ShellCheck SC2086", "rm with spaces"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

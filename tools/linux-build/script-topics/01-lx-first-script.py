@@ -42,12 +42,12 @@ K.lesson('args', 'Arguments: $1, $2, $# and "$@"', f'''
 <p>Words typed after the script name are its <b>arguments</b>. Inside the script they are the <b>positional parameters</b> $1, $2 and so on. From the tenth on you need braces: ${{10}}.</p>
 {table(['Parameter', 'Holds'], [
     ['<code>$0</code>', 'the name the script was started with'],
-    ['<code>$1</code> ... <code>$9</code>, <code>${{10}}</code>', 'the arguments, one each'],
+    ['<code>$1</code> ... <code>$9</code>, <code>${10}</code>', 'the arguments, one each'],
     ['<code>$#</code>', 'how many arguments there are'],
     ['<code>"$@"</code>', 'all arguments, each kept as its own word (almost always what you want)'],
     ['<code>"$*"</code>', 'all arguments joined into one word with spaces'],
     ['<code>shift</code>', 'drops $1 and moves the others down by one'],
-    ['<code>${{1:-default}}</code>', '$1, or the default when it is empty or missing']])}
+    ['<code>${1:-default}</code>', '$1, or the default when it is empty or missing']])}
 {play('lx-args')}
 {run('Arguments in action', """cat > args.sh <<'EOF'
 #!/bin/bash
@@ -104,7 +104,7 @@ cd nowhere || echo "could not enter nowhere\"""", note='ls notes.txt prints the 
 K.lesson('io', 'Talking to the user: echo, printf, read and here documents', f'''
 {cmdtable([
     ('echo "text"', 'Print a line (-n no newline, -e turns escape codes into characters)', 'echo "Done in $SECONDS s"'),
-    ('printf FORMAT ARGS', 'Formatted output, the portable choice', "printf '%-8s %5.1f\\\\n' Asha 91.5"),
+    ('printf FORMAT ARGS', 'Formatted output, the portable choice', "printf '%-8s %5.1f\\n' Asha 91.5"),
     ('echo "msg" >&2', 'Write an error or progress message to stderr', 'echo "error: no such file" >&2'),
     ('read -r VAR', 'Read one line from the keyboard (or stdin) into VAR', 'read -r answer'),
     ('read -r -p "Name: " VAR', 'Show a prompt first', 'read -r -p "Continue? [y/N] " ok'),
