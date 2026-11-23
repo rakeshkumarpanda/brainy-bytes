@@ -10,7 +10,7 @@ FONTS = ('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500
          '&family=Roboto+Mono:wght@500;700&display=swap')
 # Material Symbols, only the icons the site uses. Google Fonts needs the names in A to Z order.
 ICONS = sorted(set('''account_tree arrow_back arrow_forward auto_stories bug_report casino check_circle chevron_right close code
-computer dark_mode dns emoji_events expand_more fullscreen fullscreen_exit history home light_mode lightbulb list menu
+computer dark_mode database dns emoji_events expand_more fullscreen fullscreen_exit history home light_mode lightbulb list menu
 menu_open open_in_new play_arrow psychology quiz school search shield task_alt timer travel_explore'''.split()))
 SYMBOLS = ('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0'
            '&icon_names=' + ','.join(ICONS) + '&display=block')

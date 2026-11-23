@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Changing data: INSERT, UPDATE, DELETE and UPSERT · SQL and Databases</title>
+<meta name="description" content="INSERT with VALUES and SELECT, UPDATE with WHERE and FROM, DELETE, the missing WHERE trap, UPSERT with ON CONFLICT, MERGE and ON DUPLICATE KEY, INSERT OR REPLACE, RETURNING, ON DELETE CASCADE and SET NULL.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 4: Building and changing data</span><span>›</span><span>Changing data</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 2 of 3 · Intermediate</div>
+    <h1>Changing data: INSERT, UPDATE, DELETE and UPSERT</h1>
+    <p class="lead">Add, change and remove rows safely, combine insert and update in one UPSERT, get changed rows back with RETURNING, and decide what happens to child rows.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">2 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">9 runnable queries</span><span class="cv-chip">5 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-modify" data-topic="cheatsheet" data-h="sql-modify">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#insert" data-l="insert"><span class="n">1</span><span class="t">INSERT: adding rows</span></a></li><li><a href="#update" data-l="update"><span class="n">2</span><span class="t">UPDATE and DELETE: changing and removing rows</span></a></li><li><a href="#upsert" data-l="upsert"><span class="n">3</span><span class="t">UPSERT and RETURNING</span></a></li><li><a href="#fkact" data-l="fkact"><span class="n">4</span><span class="t">Foreign key actions: what happens to the children</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="insert" data-l="insert" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>INSERT: adding rows</h2>
+<p>Tables start empty and grow one INSERT at a time. You name the columns you are filling, then give the values in the same order. Columns you leave out get their DEFAULT, or NULL.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>One or more rows</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>INSERT INTO t (a, b) VALUES (1, 'x'), (2, 'y');</code></div><div class="fx-n">Always list the columns. The statement keeps working even if someone later adds a column.</div></div><div class="fx"><div class="fx-h"><span>Copy from a query</span></div><div class="fx-b"><code>INSERT INTO t (a, b) SELECT ... ;</code></div><div class="fx-n">Every row the SELECT returns becomes a new row.</div></div></div>
+<div class="sq-run" data-q="ins"></div>
+<div class="sq-run" data-q="inssel"></div>
+<div class="note note-warn"><b>Common mistake</b><div>Writing INSERT INTO t VALUES (...) without a column list depends on the exact column order. It breaks quietly the day a column is added. List the columns.</div></div>
+<div class="sq-lab" data-lab="l-ins"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="update" data-l="update" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>UPDATE and DELETE: changing and removing rows</h2>
+<p><code>UPDATE</code> changes values in rows that already exist. <code>DELETE</code> removes rows. Both use WHERE to pick the rows, and both change <b>every</b> row when WHERE is missing.</p>
+<div class="viz" data-viz="pk" data-pk="sqdml"></div>
+<div class="sq-run" data-q="upd"></div>
+<div class="sq-run" data-q="del"></div>
+<div class="sq-run" data-q="updfrom"></div>
+<div class="walk"><div class="walk-h"><span>The safe way to change data</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Write the WHERE as a SELECT first: <code>SELECT * FROM products WHERE category = 'Kitchen';</code></li><li>Check the rows. Are these exactly the rows you mean.</li><li>Change SELECT * into UPDATE ... SET or DELETE, keeping the same WHERE.</li><li>On a real server, do it inside a transaction (chapter 7.3), so a mistake can be rolled back.</li></ol></div>
+<div class="sq-lab" data-lab="l-upd"></div>
+<div class="sq-lab" data-lab="l-del"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="upsert" data-l="upsert" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>UPSERT and RETURNING</h2>
+<p>A common job: "add this row, but if it already exists, update it". That is an <b>UPSERT</b> (update or insert). It needs a UNIQUE or PRIMARY KEY column so the engine can detect the clash.</p>
+<div class="sq-run" data-q="upsert"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>How to write an upsert</th></tr></thead><tbody><tr><td>SQLite (3.24+) and PostgreSQL (9.5+)</td><td>INSERT ... ON CONFLICT (key) DO UPDATE SET ... or DO NOTHING</td></tr><tr><td>MySQL</td><td>INSERT ... ON DUPLICATE KEY UPDATE ...</td></tr><tr><td>SQL Server, Oracle, PostgreSQL 15+</td><td>MERGE INTO target USING source ON ... WHEN MATCHED ... WHEN NOT MATCHED ...</td></tr><tr><td>SQLite shortcuts</td><td>INSERT OR IGNORE skips a clashing row, INSERT OR REPLACE deletes the old row and inserts the new one</td></tr></tbody></table></div>
+<p><code>RETURNING</code> hands back the rows a statement just changed, so the app gets new ids or new values without a second query. SQLite has it since 3.35, PostgreSQL for much longer. SQL Server uses OUTPUT instead.</p>
+<div class="sq-run" data-q="returning"></div>
+<div class="note note-warn"><b>Common mistake</b><div>INSERT OR REPLACE is not the same as an upsert. It deletes the old row, so columns you did not supply go back to their defaults, and ON DELETE actions on child rows can fire.</div></div>
+<div class="sq-lab" data-lab="l-upsert"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="fkact" data-l="fkact" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Foreign key actions: what happens to the children</h2>
+<p>When a parent row is deleted or its key changes, the foreign key decides what happens to the child rows. You choose with <code>ON DELETE</code> and <code>ON UPDATE</code>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Action</th><th>When the parent is deleted</th><th>Good for</th></tr></thead><tbody><tr><td>NO ACTION (default) or RESTRICT</td><td>the delete is refused while children exist</td><td>orders that must never lose their customer</td></tr><tr><td>CASCADE</td><td>the children are deleted too</td><td>order lines that mean nothing without their order</td></tr><tr><td>SET NULL</td><td>the child column becomes NULL</td><td>an employee whose department is closed</td></tr><tr><td>SET DEFAULT</td><td>the child column takes its default</td><td>moving items to a general bucket</td></tr></tbody></table></div>
+<div class="sq-run" data-q="cascade"></div>
+<div class="sq-run" data-q="setnull"></div>
+<div class="scene"><div class="scene-h">Real world scenario: closing an account</div><p>When a user deletes their account in a photo app, the company must remove their photos, comments and likes too. Writing ON DELETE CASCADE on each child table makes the database do it in one step, and no orphan photo is left behind pointing at a user who no longer exists.</p></div>
+<div class="note note-tip"><b>Remember</b><div>In SQLite, foreign keys and their actions only work when PRAGMA foreign_keys = ON. Every SQL block on this site turns it on for you.</div></div>
+<div class="sq-lab" data-lab="l-cascade"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>INSERT adds rows, UPDATE changes them, DELETE removes them. WHERE says which rows, and forgetting it touches all of them.</p></div><div class="ld-p" data-ld="college" hidden><p>These statements are DML, data manipulation language. Each statement is atomic: if one row breaks a constraint, the whole statement is undone, not just that row.</p></div><div class="ld-p" data-ld="masters" hidden><p>UPSERT and MERGE need a unique index to detect conflicts safely under concurrency. Foreign key actions are declarative triggers, and statement level RETURNING removes a round trip between app and database.</p></div><div class="ld-p" data-ld="research" hidden><p>Inside the engine, an UPDATE is often a delete plus an insert. PostgreSQL keeps old row versions for MVCC (chapter 7.3), which VACUUM later cleans up, while InnoDB keeps undo logs. Bulk loading tools such as PostgreSQL COPY and SQLite’s .import skip much per statement work.</p></div></div>
+<details class="deep"><summary>Going deeper: Soft delete</summary><div class="deep-b"><p>Many apps never really DELETE. They add a column such as <code>deleted_at</code> and set it instead, then filter <code>WHERE deleted_at IS NULL</code> everywhere. This allows undo and audits, at the cost of every query remembering the filter. Views (chapter 4.3) can hide that filter.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-create.html" data-topic="sql-create"><small>Previous topic</small><b>Building tables</b></a><a class="next" href="./sql-views.html" data-topic="sql-views"><small>Next topic</small><b>Views and CTEs</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-modify", "topic": "sql-modify", "subject": "sql", "title": "Changing data: INSERT, UPDATE, DELETE and UPSERT", "codes": {}, "quiz": [{"lv": "e", "q": "Which statement adds rows?", "o": ["ADD", "INSERT", "UPDATE", "APPEND"], "a": 1, "hint": "Insert.", "why": "INSERT INTO adds rows."}, {"lv": "e", "q": "UPDATE products SET price = 0 with no WHERE changes", "o": ["No rows", "One row", "Every row", "Only NULL rows"], "a": 2, "hint": "No filter.", "why": "Without WHERE every row is changed."}, {"lv": "e", "q": "A column left out of INSERT with no DEFAULT gets", "o": ["0", "An empty string", "NULL", "An error always"], "a": 2, "hint": "Unknown.", "why": "It becomes NULL, unless NOT NULL refuses it."}, {"lv": "e", "q": "Which removes rows but keeps the table?", "o": ["DROP TABLE", "DELETE", "ALTER TABLE", "REMOVE"], "a": 1, "hint": "Rows only.", "why": "DELETE removes rows, DROP removes the table."}, {"lv": "m", "q": "In SET price = price + 20, the price on the right is", "o": ["The new value", "The old value", "Always 0", "An error"], "a": 1, "hint": "Before the change.", "why": "Expressions read the old row."}, {"lv": "m", "q": "In ON CONFLICT DO UPDATE, excluded.qty means", "o": ["The old value", "The value you tried to insert", "A deleted row", "NULL"], "a": 1, "hint": "The new attempt.", "why": "excluded holds the row that clashed."}, {"lv": "m", "q": "MySQL’s upsert is written", "o": ["ON CONFLICT", "ON DUPLICATE KEY UPDATE", "MERGE ONLY", "UPSERT INTO"], "a": 1, "hint": "Duplicate key.", "why": "MySQL uses ON DUPLICATE KEY UPDATE."}, {"lv": "m", "q": "ON DELETE CASCADE on a child column means deleting the parent", "o": ["Is refused", "Deletes the children too", "Sets children to NULL", "Does nothing"], "a": 1, "hint": "Cascade.", "why": "The children are deleted as well."}, {"lv": "m", "q": "What does RETURNING give back?", "o": ["The old table", "The rows the statement changed", "The query plan", "Nothing"], "a": 1, "hint": "Changed rows.", "why": "It returns the affected rows."}, {"lv": "h", "q": "INSERT OR REPLACE on a clashing key", "o": ["Updates only the given columns", "Deletes the old row and inserts the new one", "Skips the row", "Fails"], "a": 1, "hint": "Replace.", "why": "The old row is deleted, so unlisted columns lose their values."}, {"lv": "x", "q": "One row in a multi row INSERT breaks a CHECK. What is stored?", "o": ["The rows before it", "All rows except it", "No rows from that statement", "All rows"], "a": 2, "hint": "Atomic.", "why": "The whole statement is undone."}], "calc": [{"lv": "e", "q": "Two customers are inserted without ids into a table whose largest id is 8. What id does the second one get?", "ans": "10", "hint": "Next numbers.", "steps": ["The first new row gets 8 + 1 = 9.", "The second gets 9 + 1.", "<span class=\"eq\">10<\/span>"]}, {"lv": "e", "q": "After raising both Kitchen prices by 20 (250 and 399), what is their total?", "ans": "689", "hint": "Add 20 to each.", "steps": ["250 + 20 = 270.", "399 + 20 = 419.", "<span class=\"eq\">270 + 419 = 689<\/span>"]}, {"lv": "e", "q": "How many rows does INSERT INTO restock SELECT ... FROM products WHERE stock = 0 add?", "ans": "2", "hint": "Out of stock products.", "steps": ["Lunch box has stock 0.", "Desk lamp has stock 0.", "<span class=\"eq\">2 rows<\/span>"]}, {"lv": "m", "q": "How many orders remain after deleting the cancelled ones?", "ans": "9", "hint": "One is cancelled.", "steps": ["There are 10 orders.", "Only order 105 is cancelled.", "<span class=\"eq\">10 − 1 = 9<\/span>"]}, {"lv": "m", "q": "Notebook holds 150. An upsert inserts Notebook 20 with DO UPDATE SET qty = qty + excluded.qty. What is the new qty?", "ans": "170", "hint": "Old plus attempted.", "steps": ["qty is the old value, 150.", "excluded.qty is the attempted value, 20.", "<span class=\"eq\">150 + 20 = 170<\/span>"]}, {"lv": "m", "q": "After every Electronics price drops by 100 (1499, 699, 1250), what is their total?", "ans": "3148", "hint": "Subtract 300 in all.", "steps": ["Before: 1499 + 699 + 1250 = 3448.", "Three products, each 100 less.", "<span class=\"eq\">3448 − 300 = 3148<\/span>"]}, {"lv": "h", "q": "Album 1 has 2 photos and album 2 has 1, with ON DELETE CASCADE. After deleting album 1, how many photos remain?", "ans": "1", "hint": "The children go with the parent.", "steps": ["Album 1 is deleted.", "CASCADE deletes its 2 photos.", "<span class=\"eq\">3 − 2 = 1<\/span>"]}, {"lv": "h", "q": "Notebook (stock 150) appears in order lines with qty 5, 10 and 3. After the UPDATE ... FROM that subtracts sold quantities, what is its stock?", "ans": "132", "hint": "Subtract the total sold.", "steps": ["Sold: 5 + 10 + 3 = 18.", "Stock before: 150.", "<span class=\"eq\">150 − 18 = 132<\/span>"]}], "assign": [], "must": [["INSERT", "List the columns, then the values in the same order. Several rows or a SELECT can supply them."], ["UPDATE and DELETE", "WHERE picks the rows. No WHERE means every row. Test the WHERE with a SELECT first."], ["UPSERT", "ON CONFLICT DO UPDATE or DO NOTHING in SQLite and PostgreSQL, ON DUPLICATE KEY UPDATE in MySQL, MERGE elsewhere. excluded is the attempted row."], ["RETURNING", "Gives back the changed rows, such as new ids, without a second query."], ["Foreign key actions", "NO ACTION refuses, CASCADE deletes children, SET NULL clears the link. Delete children before parents otherwise."]], "summary": "<p>INSERT adds, UPDATE changes, DELETE removes, WHERE picks the rows, UPSERT handles clashes, and foreign key actions look after the children.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"ins": {"src": "INSERT INTO customers (name, city, email, joined)\nVALUES ('Tara', 'Mumbai', 'tara@mail.in', '2025-07-10'),\n       ('Dev', NULL, NULL, '2025-07-11');\nSELECT id, name, city FROM customers WHERE id > 7;", "db": "shop", "setup": "", "title": "Two new customers in one statement", "notes": {"1": "id is left out, so SQLite gives the next numbers, 9 and 10.", "3": "NULL for what we do not know yet."}, "out": [{"sql": "INSERT INTO customers (name, city, email, joined)\nVALUES ('Tara', 'Mumbai', 'tara@mail.in', '2025-07-10'),\n       ('Dev', NULL, NULL, '2025-07-11');", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT id, name, city FROM customers WHERE id > 7;", "cols": ["id", "name", "city"], "rows": [[8, "Vikram", "Chennai"], [9, "Tara", "Mumbai"], [10, "Dev", null]]}]}, "inssel": {"src": "CREATE TABLE restock (product_id INTEGER, name TEXT);\nINSERT INTO restock (product_id, name)\nSELECT id, name FROM products WHERE stock = 0;\nSELECT * FROM restock;", "db": "shop", "setup": "", "title": "INSERT ... SELECT copies query results into a table", "notes": {"3": "Every out of stock product becomes a row of the restock list."}, "out": [{"sql": "CREATE TABLE restock (product_id INTEGER, name TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO restock (product_id, name)\nSELECT id, name FROM products WHERE stock = 0;", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT * FROM restock;", "cols": ["product_id", "name"], "rows": [[4, "Lunch box"], [9, "Desk lamp"]]}]}, "upd": {"src": "UPDATE products\nSET price = price + 20, stock = stock + 10\nWHERE category = 'Kitchen';\nSELECT name, price, stock FROM products WHERE category = 'Kitchen';", "db": "shop", "setup": "", "title": "Change two columns in the picked rows", "notes": {"2": "The right side uses the old values. Several columns are separated by commas.", "3": "Only the two Kitchen products change."}, "out": [{"sql": "UPDATE products\nSET price = price + 20, stock = stock + 10\nWHERE category = 'Kitchen';", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT name, price, stock FROM products WHERE category = 'Kitchen';", "cols": ["name", "price", "stock"], "rows": [["Water bottle", 270, 35], ["Lunch box", 419, 10]]}]}, "del": {"src": "DELETE FROM order_items WHERE order_id = 105;\nDELETE FROM orders WHERE status = 'cancelled';\nSELECT count(*) AS orders_left FROM orders;", "db": "shop", "setup": "", "title": "Delete children first, then the parent", "notes": {"1": "Order 105 has an order line. With foreign keys on, the order cannot go while its lines still point at it.", "2": "Now the cancelled order can be deleted."}, "out": [{"sql": "DELETE FROM order_items WHERE order_id = 105;", "cols": [], "rows": [], "changes": 1}, {"sql": "DELETE FROM orders WHERE status = 'cancelled';", "cols": [], "rows": [], "changes": 1}, {"sql": "SELECT count(*) AS orders_left FROM orders;", "cols": ["orders_left"], "rows": [[9]]}]}, "updfrom": {"src": "UPDATE products\nSET stock = stock - s.sold\nFROM (SELECT product_id, SUM(qty) AS sold\n      FROM order_items GROUP BY product_id) AS s\nWHERE s.product_id = products.id;\nSELECT name, stock FROM products ORDER BY id LIMIT 4;", "db": "shop", "setup": "", "title": "UPDATE ... FROM: change rows using another table", "notes": {"3": "A derived table with the quantity sold of each product.", "5": "Join it to products. SQLite has supported UPDATE FROM since 3.33, PostgreSQL has it too, SQL Server writes it slightly differently."}, "out": [{"sql": "UPDATE products\nSET stock = stock - s.sold\nFROM (SELECT product_id, SUM(qty) AS sold\n      FROM order_items GROUP BY product_id) AS s\nWHERE s.product_id = products.id;", "cols": [], "rows": [], "changes": 8}, {"sql": "SELECT name, stock FROM products ORDER BY id LIMIT 4;", "cols": ["name", "stock"], "rows": [["Pencil box", 37], ["Notebook", 132], ["Water bottle", 22], ["Lunch box", 0]]}]}, "upsert": {"src": "CREATE TABLE stock_count (product TEXT PRIMARY KEY, qty INTEGER NOT NULL);\nINSERT INTO stock_count VALUES ('Notebook', 150);\nINSERT INTO stock_count (product, qty) VALUES ('Notebook', 20), ('Ruler', 30)\nON CONFLICT (product) DO UPDATE SET qty = qty + excluded.qty;\nSELECT * FROM stock_count;", "db": "", "setup": "", "title": "Add new rows, top up existing ones", "notes": {"3": "Notebook clashes with the primary key. Ruler is new.", "4": "excluded.qty is the value we tried to insert. Notebook becomes 150 + 20, Ruler is inserted."}, "out": [{"sql": "CREATE TABLE stock_count (product TEXT PRIMARY KEY, qty INTEGER NOT NULL);", "cols": [], "rows": []}, {"sql": "INSERT INTO stock_count VALUES ('Notebook', 150);", "cols": [], "rows": [], "changes": 1}, {"sql": "INSERT INTO stock_count (product, qty) VALUES ('Notebook', 20), ('Ruler', 30)\nON CONFLICT (product) DO UPDATE SET qty = qty + excluded.qty;", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT * FROM stock_count;", "cols": ["product", "qty"], "rows": [["Notebook", 170], ["Ruler", 30]]}]}, "returning": {"src": "INSERT INTO orders (customer_id, order_date, status)\nVALUES (4, '2025-07-12', 'pending')\nRETURNING id, status;\nUPDATE products SET stock = stock - 1 WHERE id = 8\nRETURNING name, stock;", "db": "shop", "setup": "", "title": "Get the new values straight back", "notes": {"3": "The id SQLite just gave the order comes back at once.", "5": "The football stock after the change."}, "out": [{"sql": "INSERT INTO orders (customer_id, order_date, status)\nVALUES (4, '2025-07-12', 'pending')\nRETURNING id, status;", "cols": ["id", "status"], "rows": [[111, "pending"]], "changes": 1}, {"sql": "UPDATE products SET stock = stock - 1 WHERE id = 8\nRETURNING name, stock;", "cols": ["name", "stock"], "rows": [["Football", 7]], "changes": 1}]}, "cascade": {"src": "CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT);\nCREATE TABLE photos (\n  id INTEGER PRIMARY KEY,\n  album_id INTEGER REFERENCES albums(id) ON DELETE CASCADE,\n  file TEXT);\nINSERT INTO albums VALUES (1, 'Goa trip'), (2, 'Diwali');\nINSERT INTO photos VALUES (1, 1, 'beach.jpg'), (2, 1, 'fort.jpg'), (3, 2, 'lamps.jpg');\nDELETE FROM albums WHERE id = 1;\nSELECT * FROM photos;", "db": "", "setup": "", "title": "CASCADE: delete an album, its photos go too", "notes": {"4": "The action is written on the child column.", "8": "Deleting album 1 also deletes its two photos."}, "out": [{"sql": "CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT);", "cols": [], "rows": []}, {"sql": "CREATE TABLE photos (\n  id INTEGER PRIMARY KEY,\n  album_id INTEGER REFERENCES albums(id) ON DELETE CASCADE,\n  file TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO albums VALUES (1, 'Goa trip'), (2, 'Diwali');", "cols": [], "rows": [], "changes": 2}, {"sql": "INSERT INTO photos VALUES (1, 1, 'beach.jpg'), (2, 1, 'fort.jpg'), (3, 2, 'lamps.jpg');", "cols": [], "rows": [], "changes": 3}, {"sql": "DELETE FROM albums WHERE id = 1;", "cols": [], "rows": [], "changes": 3}, {"sql": "SELECT * FROM photos;", "cols": ["id", "album_id", "file"], "rows": [[3, 2, "lamps.jpg"]]}]}, "setnull": {"src": "CREATE TABLE teams (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE players (name TEXT, team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL);\nINSERT INTO teams VALUES (1, 'Red'), (2, 'Blue');\nINSERT INTO players VALUES ('Anu', 1), ('Bilal', 2);\nDELETE FROM teams WHERE id = 1;\nSELECT * FROM players;", "db": "", "setup": "", "title": "SET NULL: the child stays, its link is cleared", "notes": {"5": "Anu keeps her row, but team_id becomes NULL."}, "out": [{"sql": "CREATE TABLE teams (id INTEGER PRIMARY KEY, name TEXT);", "cols": [], "rows": []}, {"sql": "CREATE TABLE players (name TEXT, team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL);", "cols": [], "rows": []}, {"sql": "INSERT INTO teams VALUES (1, 'Red'), (2, 'Blue');", "cols": [], "rows": [], "changes": 2}, {"sql": "INSERT INTO players VALUES ('Anu', 1), ('Bilal', 2);", "cols": [], "rows": [], "changes": 2}, {"sql": "DELETE FROM teams WHERE id = 1;", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT * FROM players;", "cols": ["name", "team_id"], "rows": [["Anu", null], ["Bilal", 2]]}]}}, "labs": [{"id": "l-ins", "lv": "e", "title": "A new product", "task": "Add a product named <code>Sketch pens<\/code> in category <code>Stationery<\/code> with price 80 and stock 25. Then show <code>name<\/code>, <code>price<\/code> and <code>stock<\/code> of every Stationery product.", "db": "shop", "hint": "INSERT INTO products (name, category, price, stock) VALUES (...), then a SELECT.", "why": "The new row joins the three existing Stationery products.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "price", "stock"], "rows": [["Pencil box", 120, 40], ["Notebook", 60, 150], ["Geometry set", 95, 70], ["Sketch pens", 80, 25]]}, "solution": "INSERT INTO products (name, category, price, stock) VALUES ('Sketch pens', 'Stationery', 80, 25);\nSELECT name, price, stock FROM products WHERE category = 'Stationery';"}, {"id": "l-upd", "lv": "m", "title": "A sale on electronics", "task": "Lower the price of every Electronics product by 100, then show <code>name<\/code> and <code>price<\/code> of the Electronics products.", "db": "shop", "hint": "UPDATE ... SET price = price - 100 WHERE category = 'Electronics'.", "why": "Each Electronics price drops by 100, the rest are untouched.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "price"], "rows": [["Headphones", 1399], ["Phone charger", 599], ["Desk lamp", 1150]]}, "solution": "UPDATE products SET price = price - 100 WHERE category = 'Electronics';\nSELECT name, price FROM products WHERE category = 'Electronics';"}, {"id": "l-del", "lv": "m", "title": "Clear old pending orders", "task": "Delete the order lines and then the orders whose status is <code>pending<\/code>. Show <code>id<\/code> and <code>status<\/code> of the orders that remain.", "db": "shop", "hint": "Order lines point at orders, so delete the lines first, with IN and a subquery.", "why": "Deleting the children first keeps every foreign key satisfied.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["id", "status"], "rows": [[101, "delivered"], [102, "delivered"], [103, "shipped"], [104, "delivered"], [105, "cancelled"], [106, "delivered"], [108, "shipped"], [109, "delivered"]]}, "solution": "DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE status = 'pending');\nDELETE FROM orders WHERE status = 'pending';\nSELECT id, status FROM orders;"}, {"id": "l-upsert", "lv": "h", "title": "Count the visits", "task": "The table <code>visits (page TEXT PRIMARY KEY, n INTEGER)<\/code> holds <code>('home', 5)<\/code>. In one statement, record one visit to <code>home<\/code> and one to <code>cart<\/code>, adding 1 to existing pages. Then show every row ordered by page.", "db": "", "hint": "ON CONFLICT (page) DO UPDATE SET n = n + excluded.n", "why": "home becomes 6, cart is new with 1.", "ordered": true, "setup": "CREATE TABLE visits (page TEXT PRIMARY KEY, n INTEGER); INSERT INTO visits VALUES ('home', 5);", "starter": "", "want": {"cols": ["page", "n"], "rows": [["cart", 1], ["home", 6]]}, "solution": "INSERT INTO visits (page, n) VALUES ('home', 1), ('cart', 1)\nON CONFLICT (page) DO UPDATE SET n = n + excluded.n;\nSELECT * FROM visits ORDER BY page;"}, {"id": "l-cascade", "lv": "h", "title": "Delete a playlist and its songs", "task": "Tables <code>playlists<\/code> and <code>songs<\/code> already exist, with <code>songs.list_id<\/code> declared <code>ON DELETE CASCADE<\/code>. Delete the playlist called <code>Old<\/code>, then show the <code>title<\/code> of every song left.", "db": "", "hint": "Only one statement changes data: DELETE FROM playlists WHERE name = 'Old'.", "why": "CASCADE removes the two songs of the Old playlist for you.", "ordered": false, "setup": "CREATE TABLE playlists (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE songs (title TEXT, list_id INTEGER REFERENCES playlists(id) ON DELETE CASCADE);\nINSERT INTO playlists VALUES (1, 'Old'), (2, 'New');\nINSERT INTO songs VALUES ('Yesterday', 1), ('Imagine', 1), ('Shape of You', 2), ('Believer', 2);", "starter": "", "want": {"cols": ["title"], "rows": [["Shape of You"], ["Believer"]]}, "solution": "DELETE FROM playlists WHERE name = 'Old';\nSELECT title FROM songs;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

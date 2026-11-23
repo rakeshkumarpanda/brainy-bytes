@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL standards and dialects · SQL and Databases</title>
+<meta name="description" content="ISO/IEC 9075 and its versions, quoting, LIMIT, TOP and FETCH FIRST, string concatenation, booleans, dates, identity columns, upserts, LIKE and case, choosing between SQLite, PostgreSQL, MySQL, SQL Server, Oracle and DuckDB, portable SQL habits, SQLGlot.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 8: Professional SQL</span><span>›</span><span>Standards and dialects</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 8 · Topic 4 of 4 · Advanced</div>
+    <h1>SQL standards and dialects</h1>
+    <p class="lead">See how the ISO SQL standard grew, how SQLite, PostgreSQL, MySQL, SQL Server and Oracle differ in everyday tasks, how to choose an engine, and how to write SQL that travels.</p>
+    <div class="cv-chips"><span class="cv-chip">About 30 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">6 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-dialects" data-topic="cheatsheet" data-h="sql-dialects">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#standard" data-l="standard"><span class="n">1</span><span class="t">One language, one standard, many dialects</span></a></li><li><a href="#diffs" data-l="diffs"><span class="n">2</span><span class="t">Everyday differences between engines</span></a></li><li><a href="#choose" data-l="choose"><span class="n">3</span><span class="t">Choosing an engine</span></a></li><li><a href="#portable" data-l="portable"><span class="n">4</span><span class="t">Writing SQL that travels</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="standard" data-l="standard" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>One language, one standard, many dialects</h2>
+<p>SQL is an international standard, ISO/IEC 9075. Every engine follows its core, then adds its own extras and spellings. Those local versions are called <b>dialects</b>. The SELECT, JOIN, GROUP BY and window functions you learned work almost everywhere.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Version</th><th>Notable additions</th></tr></thead><tbody><tr><td>SQL-86 and SQL-89</td><td>the first standard: SELECT, INSERT, UPDATE, DELETE, basic constraints</td></tr><tr><td>SQL-92</td><td>explicit JOIN syntax, CASE, CAST, more data types, schema changes</td></tr><tr><td>SQL:1999</td><td>recursive CTEs (WITH RECURSIVE), triggers, roles, boolean type</td></tr><tr><td>SQL:2003</td><td>window functions, MERGE, sequences and identity columns</td></tr><tr><td>SQL:2008 and SQL:2011</td><td>FETCH FIRST, TRUNCATE, temporal (system versioned) tables</td></tr><tr><td>SQL:2016</td><td>JSON functions, row pattern recognition (MATCH_RECOGNIZE)</td></tr><tr><td>SQL:2023</td><td>property graph queries (SQL/PGQ), a JSON data type</td></tr></tbody></table></div>
+<div class="sq-run" data-q="portable"></div>
+<div class="note note-tip"><b>Remember</b><div>Each engine documents how closely it follows the standard. PostgreSQL publishes a feature by feature list, and SQLite lists its quirks on one page. When in doubt, read the engine’s own documentation.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="diffs" data-l="diffs" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Everyday differences between engines</h2>
+<p>The same small task is often spelled differently. These are the differences you will meet first.</p>
+<div class="viz" data-viz="pk" data-pk="sqdialect"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Task</th><th>SQLite</th><th>PostgreSQL</th><th>MySQL</th><th>SQL Server</th><th>Oracle</th></tr></thead><tbody><tr><td>Quote a name</td><td>"order"</td><td>"order"</td><td>`order`</td><td>[order]</td><td>"ORDER"</td></tr><tr><td>First 3 rows</td><td>LIMIT 3</td><td>LIMIT 3</td><td>LIMIT 3</td><td>TOP 3</td><td>FETCH FIRST 3 ROWS ONLY</td></tr><tr><td>Join text</td><td>a || b</td><td>a || b</td><td>CONCAT(a, b)</td><td>a + b</td><td>a || b</td></tr><tr><td>True or false</td><td>1 and 0</td><td>true and false</td><td>TRUE (= 1)</td><td>bit 1 and 0</td><td>BOOLEAN in 23ai, else 1 and 0</td></tr><tr><td>Today</td><td>date('now')</td><td>CURRENT_DATE</td><td>CURDATE()</td><td>CAST(GETDATE() AS date)</td><td>TRUNC(SYSDATE)</td></tr><tr><td>Auto id</td><td>INTEGER PRIMARY KEY</td><td>GENERATED AS IDENTITY</td><td>AUTO_INCREMENT</td><td>IDENTITY(1,1)</td><td>GENERATED AS IDENTITY</td></tr><tr><td>Upsert</td><td>ON CONFLICT</td><td>ON CONFLICT, MERGE</td><td>ON DUPLICATE KEY UPDATE</td><td>MERGE</td><td>MERGE</td></tr><tr><td>LIKE and case</td><td>ignores case for ASCII</td><td>case sensitive, ILIKE ignores</td><td>depends on collation, often ignores</td><td>depends on collation</td><td>case sensitive</td></tr></tbody></table></div>
+<div class="sq-run" data-q="quote"></div>
+<div class="sq-run" data-q="likecase"></div>
+<div class="note note-warn"><b>Common mistake</b><div>Moving a database between engines usually breaks on dates, booleans, auto ids and string concatenation, not on SELECT or JOIN. Test those first.</div></div>
+<div class="sq-lab" data-lab="l-coalesce"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="choose" data-l="choose" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Choosing an engine</h2>
+<p>There is no best database, only a best fit. These are the engines you are most likely to meet.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>Strengths</th><th>Typical home</th></tr></thead><tbody><tr><td>SQLite</td><td>a single file, no server, zero setup, extremely widely deployed</td><td>phones, browsers, desktop apps, small sites, tests</td></tr><tr><td>PostgreSQL</td><td>rich features, strict standards, extensions (PostGIS, pgvector), open source</td><td>web apps, analytics, geospatial</td></tr><tr><td>MySQL and MariaDB</td><td>simple to run, fast reads, huge hosting support</td><td>web apps, content management systems</td></tr><tr><td>SQL Server</td><td>deep Windows and .NET integration, strong tools</td><td>enterprise apps, reporting</td></tr><tr><td>Oracle</td><td>very large enterprise workloads, many advanced features</td><td>banks, telecom, large enterprises</td></tr><tr><td>DuckDB</td><td>in process analytics on files such as CSV and Parquet</td><td>data science notebooks, local analytics</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Questions that decide</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Is there one user on one device, or many users over a network. One device points to SQLite.</li><li>How much data, and is it mostly small transactions or big reports. Reports point to a column store.</li><li>Which features are needed: JSON, full text search, geospatial, vectors.</li><li>What does the team already know, and what can it run and back up reliably.</li></ol></div>
+<div class="sq-run" data-q="version"></div>
+<div class="scene"><div class="scene-h">Real world scenario: one app, three databases</div><p>A food delivery startup keeps orders and payments in PostgreSQL, caches menus in Redis, and copies everything nightly into BigQuery for reports. Each phone app also keeps a small SQLite database for offline use. Using the right engine for each job is normal in real systems.</p></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="portable" data-l="portable" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Writing SQL that travels</h2>
+<p>If your SQL may run on more than one engine, a few habits save a lot of rewriting.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Prefer</th><th>Instead of</th></tr></thead><tbody><tr><td>COALESCE(x, d)</td><td>IFNULL, ISNULL, NVL</td></tr><tr><td>CASE WHEN ... END</td><td>IIF, IF(), DECODE</td></tr><tr><td>CAST(x AS INTEGER)</td><td>implicit conversions and engine specific functions</td></tr><tr><td>explicit JOIN ... ON</td><td>commas in FROM with join conditions in WHERE</td></tr><tr><td>ISO dates as text: '2025-07-15'</td><td>local formats such as 15/07/25</td></tr><tr><td>every non aggregated column in GROUP BY</td><td>relying on MySQL or SQLite letting you skip them</td></tr><tr><td>names without spaces or keywords</td><td>quoted names that each engine quotes differently</td></tr></tbody></table></div>
+<div class="sq-run" data-q="groupby"></div>
+<div class="sq-run" data-q="cast"></div>
+<div class="sq-lab" data-lab="l-case"></div>
+<div class="sq-lab" data-lab="l-strict"></div>
+<div class="sq-lab" data-lab="l-cast"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>SQL is one language with local accents. The core you learned works everywhere, and small things such as dates and quoting differ.</p></div><div class="ld-p" data-ld="college" hidden><p>Know the standard versions and the common differences, prefer standard functions, and test on the engine you deploy to.</p></div><div class="ld-p" data-ld="masters" hidden><p>Dialect gaps are handled by ORMs, query builders and transpilers such as SQLGlot, which parse one dialect and print another. Conformance is measured feature by feature against ISO/IEC 9075 parts, such as Foundation (part 2) and SQL/JSON.</p></div><div class="ld-p" data-ld="research" hidden><p>Research looks at automatically translating and verifying SQL across engines, at formal semantics of SQL (proving two queries always return the same rows), and at natural language to SQL with large language models, measured on benchmarks such as Spider and BIRD.</p></div></div>
+<details class="deep"><summary>Going deeper: Why SQL has lasted</summary><div class="deep-b"><p>SQL started as SEQUEL at IBM in 1974 (Chamberlin and Boyce), built on Codd’s relational model. Many languages tried to replace it, yet it remains the common language of data, because it describes what to find and leaves the how to the engine, so each new engine can be faster without changing your queries.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-scale.html" data-topic="sql-scale"><small>Previous topic</small><b>Scaling databases</b></a><a class="next" href="./sql-exam.html" data-topic="sql-exam"><small>Next topic</small><b>Exam revision</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-dialects", "topic": "sql-dialects", "subject": "sql", "title": "SQL standards and dialects", "codes": {}, "quiz": [{"lv": "e", "q": "The SQL standard is published by", "o": ["Google", "ISO and IEC", "Microsoft only", "Oracle only"], "a": 1, "hint": "International.", "why": "ISO/IEC 9075."}, {"lv": "e", "q": "A dialect is", "o": ["A bug", "An engine’s own version of SQL", "A table", "A backup format"], "a": 1, "hint": "Local version.", "why": "Standard core plus local extras."}, {"lv": "e", "q": "SQL Server writes the first 3 rows as", "o": ["LIMIT 3", "TOP 3", "FIRST 3", "ROWNUM 3"], "a": 1, "hint": "Top.", "why": "SELECT TOP 3 ..."}, {"lv": "e", "q": "Which function works in every big engine?", "o": ["IFNULL", "NVL", "COALESCE", "ISNULL"], "a": 2, "hint": "Standard.", "why": "COALESCE is standard SQL."}, {"lv": "m", "q": "MySQL quotes a column name with", "o": ["Double quotes by default", "Backticks", "Square brackets", "Braces"], "a": 1, "hint": "Backtick.", "why": "Unless ANSI_QUOTES mode is on."}, {"lv": "m", "q": "Window functions entered the standard in", "o": ["SQL-92", "SQL:1999", "SQL:2003", "SQL:2016"], "a": 2, "hint": "2003.", "why": "SQL:2003."}, {"lv": "m", "q": "In SQLite, 'Pen' LIKE 'pen' is", "o": ["False", "True", "An error", "NULL"], "a": 1, "hint": "Case insensitive for ASCII.", "why": "LIKE ignores ASCII case by default."}, {"lv": "m", "q": "PostgreSQL’s case insensitive LIKE is", "o": ["ILIKE", "NLIKE", "LIKE CASE", "SIMILAR"], "a": 0, "hint": "I for insensitive.", "why": "ILIKE."}, {"lv": "m", "q": "SELECT 10 / 4 in MySQL gives", "o": ["2", "2.5000", "An error", "3"], "a": 1, "hint": "Decimal division.", "why": "MySQL / always returns a decimal."}, {"lv": "h", "q": "SELECT category, name, MAX(price) ... GROUP BY category is refused by", "o": ["SQLite", "PostgreSQL", "Neither", "Both"], "a": 1, "hint": "Strict grouping.", "why": "PostgreSQL requires name to be grouped or aggregated."}, {"lv": "x", "q": "Which standard added property graph queries to SQL?", "o": ["SQL:2011", "SQL:2016", "SQL:2023", "SQL-92"], "a": 2, "hint": "Newest.", "why": "SQL:2023 part 16, SQL/PGQ."}], "calc": [{"lv": "e", "q": "How many years passed between SQL-86 and SQL:2023?", "ans": "37", "hint": "Subtract.", "steps": ["The first standard was 1986.", "The latest here is 2023.", "<span class=\"eq\">2023 − 1986 = 37 years<\/span>"]}, {"lv": "e", "q": "What does SQLite return for 10 / 4?", "ans": "2", "hint": "Integer division.", "steps": ["Both numbers are integers.", "The fraction is dropped.", "<span class=\"eq\">10 / 4 = 2<\/span>"]}, {"lv": "m", "q": "And for 10 / 4.0?", "ans": "2.5", "hint": "One real operand.", "steps": ["4.0 is a real number.", "So the division keeps the fraction.", "<span class=\"eq\">2.5<\/span>"]}, {"lv": "m", "q": "What does SQLite return for '10' + 5?", "ans": "15", "hint": "Text becomes a number.", "steps": ["SQLite converts '10' to 10.", "Then adds.", "<span class=\"eq\">10 + 5 = 15<\/span>"]}, {"lv": "m", "q": "How many products does WHERE name LIKE 'pen%' find in SQLite?", "ans": "1", "hint": "Case is ignored.", "steps": ["Pencil box starts with Pen.", "LIKE ignores ASCII case in SQLite.", "<span class=\"eq\">1 product<\/span>"]}, {"lv": "m", "q": "In PostgreSQL, the same LIKE 'pen%' would find how many?", "ans": "0", "hint": "Case sensitive.", "steps": ["PostgreSQL LIKE is case sensitive.", "No name starts with a small p.", "<span class=\"eq\">0, use ILIKE to get 1<\/span>"]}, {"lv": "h", "q": "In the portable query, how many customers are labelled regular (2 or more orders)?", "ans": "4", "hint": "Count customers with 2+ orders.", "steps": ["Asha has 3 orders, Ravi 2, Meera 2, Sara 2.", "Nisha has 1.", "<span class=\"eq\">4 customers<\/span>"]}, {"lv": "h", "q": "In the raw table, what is SUM(CAST(amount AS INTEGER)) for '10', '25', '5'?", "ans": "40", "hint": "Add.", "steps": ["CAST turns each text into a number.", "10 + 25 + 5.", "<span class=\"eq\">40<\/span>"]}], "assign": [], "must": [["Standard", "ISO/IEC 9075. Key versions: SQL-92 joins and CASE, 1999 recursion and triggers, 2003 window functions, 2016 JSON, 2023 graphs."], ["Differences", "Quoting, LIMIT or TOP, text joining, booleans, dates, auto ids, upserts and LIKE case differ between engines."], ["Choosing", "SQLite for one device, PostgreSQL or MySQL for web apps, SQL Server and Oracle in enterprises, column stores for analytics."], ["Portable habits", "COALESCE, CASE, CAST, explicit JOIN, ISO dates, full GROUP BY lists, plain names."], ["Test where you deploy", "Run your SQL on the engine you will use. Dates, division and conversions differ most."]], "summary": "<p>One standard, many accents: learn the core, know the common differences, and test on the engine you deploy.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"portable": {"src": "SELECT c.name,\n       COALESCE(c.city, 'unknown') AS city,\n       CASE WHEN COUNT(o.id) >= 2 THEN 'regular' ELSE 'new' END AS kind,\n       CAST(COUNT(o.id) AS REAL) / 2 AS half\nFROM customers c LEFT JOIN orders o ON o.customer_id = c.id\nGROUP BY c.id, c.name, c.city\nORDER BY c.name;", "db": "shop", "setup": "", "title": "A query that runs unchanged in all five big engines", "notes": {"2": "COALESCE, CASE and CAST are standard.", "6": "Listing every selected column in GROUP BY keeps strict engines happy."}, "out": [{"sql": "SELECT c.name,\n       COALESCE(c.city, 'unknown') AS city,\n       CASE WHEN COUNT(o.id) >= 2 THEN 'regular' ELSE 'new' END AS kind,\n       CAST(COUNT(o.id) AS REAL) / 2 AS half\nFROM customers c LEFT JOIN orders o ON o.customer_id = c.id\nGROUP BY c.id, c.name, c.city\nORDER BY c.name;", "cols": ["name", "city", "kind", "half"], "rows": [["Arjun", "unknown", "new", 0], ["Asha", "Pune", "regular", 1.5], ["Kabir", "Pune", "new", 0], ["Meera", "Chennai", "regular", 1], ["Nisha", "Delhi", "new", 0.5], ["Ravi", "Delhi", "regular", 1], ["Sara", "Bhubaneswar", "regular", 1], ["Vikram", "Chennai", "new", 0]]}]}, "quote": {"src": "CREATE TABLE \"order\" (\"group\" TEXT, \"select\" INTEGER);\nINSERT INTO \"order\" VALUES ('a', 1);\nSELECT \"group\", \"select\" FROM \"order\";", "db": "", "setup": "", "title": "Reserved words as names need quoting", "notes": {"1": "order, group and select are keywords. Double quotes are the standard way to use them as names, but it is simpler to avoid them."}, "out": [{"sql": "CREATE TABLE \"order\" (\"group\" TEXT, \"select\" INTEGER);", "cols": [], "rows": []}, {"sql": "INSERT INTO \"order\" VALUES ('a', 1);", "cols": [], "rows": [], "changes": 1}, {"sql": "SELECT \"group\", \"select\" FROM \"order\";", "cols": ["group", "select"], "rows": [["a", 1]]}]}, "likecase": {"src": "SELECT name FROM products WHERE name LIKE 'pen%';\nSELECT 'Pen' = 'pen' AS equal_text;", "db": "shop", "setup": "", "title": "A SQLite quirk: LIKE ignores case, = does not", "notes": {"1": "Finds Pencil box, even though the pattern starts with a small p.", "2": "0: plain comparison is case sensitive."}, "out": [{"sql": "SELECT name FROM products WHERE name LIKE 'pen%';", "cols": ["name"], "rows": [["Pencil box"]]}, {"sql": "SELECT 'Pen' = 'pen' AS equal_text;", "cols": ["equal_text"], "rows": [[0]]}]}, "version": {"src": "SELECT sqlite_version() AS engine_version;", "db": "", "setup": "", "title": "Which engine is this page running", "notes": {"1": "Every query on this site runs on SQLite compiled to WebAssembly, inside your browser."}, "out": [{"sql": "SELECT sqlite_version() AS engine_version;", "cols": ["engine_version"], "rows": [["3.54.1"]]}]}, "groupby": {"src": "SELECT category, name, MAX(price)\nFROM products GROUP BY category;", "db": "shop", "setup": "", "title": "A query SQLite accepts but strict engines refuse", "notes": {"1": "name is neither grouped nor aggregated. SQLite returns the name from the row holding the MAX, PostgreSQL and SQL Server report an error."}, "out": [{"sql": "SELECT category, name, MAX(price)\nFROM products GROUP BY category;", "cols": ["category", "name", "MAX(price)"], "rows": [["Electronics", "Headphones", 1499], ["Kitchen", "Lunch box", 399], ["Sports", "Football", 850], ["Stationery", "Pencil box", 120]]}]}, "cast": {"src": "SELECT '10' + 5 AS sqlite_adds, CAST('10' AS INTEGER) + 5 AS portable,\n       10 / 4 AS integer_division, 10 / 4.0 AS real_division;", "db": "", "setup": "", "title": "Conversions and division behave differently", "notes": {"1": "SQLite quietly turns text into a number. Write CAST so the intent is clear everywhere.", "2": "Integer division gives 2 in SQLite, PostgreSQL and SQL Server, but 2.5000 in MySQL."}, "out": [{"sql": "SELECT '10' + 5 AS sqlite_adds, CAST('10' AS INTEGER) + 5 AS portable,\n       10 / 4 AS integer_division, 10 / 4.0 AS real_division;", "cols": ["sqlite_adds", "portable", "integer_division", "real_division"], "rows": [[15, 15, 2, 2.5]]}]}}, "labs": [{"id": "l-coalesce", "lv": "e", "title": "The portable way to fill NULLs", "task": "Show every customer <code>name<\/code> and <code>email<\/code>, using the standard COALESCE to show <code>no email<\/code> when it is missing.", "db": "shop", "hint": "COALESCE(email, 'no email') AS email", "why": "COALESCE works in every engine, while IFNULL, ISNULL and NVL are each local spellings.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "email"], "rows": [["Asha", "asha@mail.in"], ["Ravi", "ravi@mail.in"], ["Meera", "meera@mail.in"], ["Kabir", "no email"], ["Sara", "sara@mail.in"], ["Arjun", "arjun@mail.in"], ["Nisha", "nisha@mail.in"], ["Vikram", "no email"]]}, "solution": "SELECT name, COALESCE(email, 'no email') AS email FROM customers;"}, {"id": "l-case", "lv": "m", "title": "CASE instead of IIF", "task": "Show every product <code>name<\/code> and <code>level<\/code>: <code>high<\/code> when price is at least 1000, otherwise <code>normal<\/code>, using standard CASE.", "db": "shop", "hint": "CASE WHEN price >= 1000 THEN 'high' ELSE 'normal' END", "why": "CASE is standard SQL and works in every engine.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "level"], "rows": [["Pencil box", "normal"], ["Notebook", "normal"], ["Water bottle", "normal"], ["Lunch box", "normal"], ["Headphones", "high"], ["Phone charger", "normal"], ["Cricket ball", "normal"], ["Football", "normal"], ["Desk lamp", "high"], ["Geometry set", "normal"]]}, "solution": "SELECT name, CASE WHEN price >= 1000 THEN 'high' ELSE 'normal' END AS level FROM products;"}, {"id": "l-strict", "lv": "h", "title": "A GROUP BY strict engines accept", "task": "Show each <code>category<\/code> and the <code>name<\/code> of its most expensive product, written so that PostgreSQL would accept it (no ungrouped columns).", "db": "shop", "hint": "Find MAX(price) per category in a derived table, then join back to products.", "why": "Every selected column is either grouped inside the subquery or comes from a real row through the join.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["category", "name"], "rows": [["Stationery", "Pencil box"], ["Kitchen", "Lunch box"], ["Electronics", "Headphones"], ["Sports", "Football"]]}, "solution": "SELECT p.category, p.name FROM products p JOIN (SELECT category, MAX(price) AS mx FROM products GROUP BY category) m ON m.category = p.category AND m.mx = p.price;"}, {"id": "l-cast", "lv": "m", "title": "Sum numbers stored as text", "task": "A table <code>raw (amount TEXT)<\/code> holds <code>'10'<\/code>, <code>'25'<\/code> and <code>'5'<\/code>. Return <code>total<\/code>, their sum, using CAST.", "db": "", "hint": "SUM(CAST(amount AS INTEGER))", "why": "CAST makes the conversion explicit, so every engine gives 40.", "ordered": false, "setup": "CREATE TABLE raw (amount TEXT); INSERT INTO raw VALUES ('10'), ('25'), ('5');", "starter": "", "want": {"cols": ["total"], "rows": [[40]]}, "solution": "SELECT SUM(CAST(amount AS INTEGER)) AS total FROM raw;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

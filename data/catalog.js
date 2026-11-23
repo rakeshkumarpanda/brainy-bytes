@@ -85,6 +85,9 @@ window.CATALOG = {
         { id: 'dsa', title: 'Data Structures and Algorithms', icon: 'account_tree', color: '#1565c0',
           blurb: 'Arrays to graphs, recursion to dynamic programming, with every program in Java, JavaScript, Python and TypeScript.',
           subjects: ['dsa'] },
+        { id: 'databases', title: 'Databases and SQL', icon: 'database', color: '#00796b',
+          blurb: 'Store, query and design data with SQL, from your first SELECT to window functions, indexes, query plans and transactions.',
+          subjects: ['sql'] },
         { id: 'ai', title: 'AI and Machine Learning', icon: 'psychology', color: '#6a1b9a',
           blurb: 'The maths, machine learning, deep learning, computer vision, language processing, AI and MLOps, plus working with Claude.',
           subjects: ['ml-maths', 'machine-learning', 'neural-networks', 'deep-learning', 'computer-vision', 'nlp', 'ai', 'mlops', 'master-claude'] },
@@ -351,6 +354,17 @@ window.CATALOG = {
       intro: 'Follow the path one step at a time. You start with what Selenium is and how the W3C WebDriver protocol carries each command from your code to the browser, set up Selenium Manager and write a first script, then learn sessions, navigation, locators, element actions, waits, windows, frames, alerts, the Actions API, test frameworks, page objects, good practice and troubleshooting, and finish with Selenium Grid 4, WebDriver BiDi, a revision step and interview questions. Every example is written in Java, Python and JavaScript with a note for each line, and was run for real in Chrome to record its output. A pretend browser lets you type Selenium lines and watch each request, and the animations show what happens inside.',
       tags: ['WebDriver', 'W3C protocol', 'Locators', 'Waits', 'Page Object', 'Grid 4'],
       modules: seModules().concat(langSheetModule('selenium'), iqModule('selenium'))
+    },
+    {
+      id: 'sql',
+      title: 'SQL and Databases',
+      emoji: '🗄️',
+      color: '#00796b',
+      layout: 'path',
+      blurb: 'A step by step path from what a database is to SELECT, joins, grouping, design and normal forms, then window functions, recursive queries, indexes, query plans, transactions, security, scaling and dialects, with every query running in your browser.',
+      intro: 'Follow the path one step at a time. You start with what data and databases are and run your first query, then learn to filter, sort, shape and group results, join many tables, build and change tables with constraints, and design a database with normal forms. The advanced steps cover window functions, recursive queries, indexes and B-trees, query plans, transactions and isolation levels, triggers, security, SQL at scale and the differences between engines, and the last step revises everything for exams and interviews. Every query on these pages runs on the real SQLite inside your browser, every animation is worked out by that same engine from what you type, and every chapter has hands on labs that check your answer, plus a playground with three sample databases.',
+      tags: ['SELECT', 'Joins', 'GROUP BY', 'Design', 'Window functions', 'Indexes', 'Transactions'],
+      modules: sqlModules().concat(sheetModule('sql'))
     },
     {
       id: 'git',
@@ -1425,6 +1439,7 @@ function sheetModule(sid) {
     'api-manual-testing': ['content/api-testing/cheatsheet.html', 'The key idea of all 38 parts, every rule, table, tip and common mistake of the Manual API Testing course on one page, from HTTP methods, status codes and headers to auth, test design, pagination, rate limits, contracts, the OWASP API Top 10 and AI APIs. Search it, filter it, print it or download the PDF.', ['HTTP methods', 'status codes', 'headers', 'JSON', 'REST', 'Postman', 'JWT', 'OAuth', 'idempotency', 'pagination', 'rate limit', 'OWASP API Top 10', 'contract testing']],
     'api-automation': ['content/api-automation/cheatsheet.html', 'The key idea of every lesson, short code examples, tables, tips and common mistakes of all nine API automation tracks on one page, grouped by language: Rest Assured, Playwright and HttpClient in Java, requests and Playwright in Python, Postman, Playwright and fetch in JavaScript, and Playwright in TypeScript. Search it, filter it, print it or download the PDF.', ['Rest Assured', 'given when then', 'pytest', 'requests', 'Playwright request', 'Postman tests', 'Newman', 'fetch', 'JSON Schema', 'Zod', 'auth token', 'mocking'], 'eight'],
     'cyber-security': ['content/cyber-security/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from all six sections on one page: Foundations (CIA, risk, the maths, systems and networks), Cryptography (ciphers, AES, hashing, number theory, RSA, Diffie-Hellman, elliptic curves, PKI, post quantum), Network and Systems, Application Security, Security Operations and Advanced (attacks on ML, federated learning, differential privacy). Search it, filter it, print it or download the PDF.', ['CIA triad', 'risk', 'ALE', 'defence in depth', 'XOR', 'modular arithmetic', 'AES', 'SHA-256', 'birthday bound', 'RSA', 'Euler totient', 'Diffie-Hellman', 'elliptic curve', 'TLS', 'subnetting', 'CVSS', 'SQL injection', 'federated averaging', 'differential privacy'], 'fourteen'],
+    'sql': ['content/sql/cheatsheet.html', 'Every syntax card, key idea, table, memory aid and common mistake from the SQL and Databases chapters on one page, from SELECT, WHERE and NULL to GROUP BY, joins, subqueries, CREATE, UPSERT, views, normal forms, window functions, recursive CTEs, indexes, query plans, transactions, triggers, security, scaling and dialects. Search it, filter it, print it or download the PDF.', ['SELECT', 'WHERE', 'NULL', 'GROUP BY', 'HAVING', 'JOIN', 'subquery', 'UPSERT', 'CTE', 'normal forms', 'window functions', 'WITH RECURSIVE', 'index', 'EXPLAIN', 'ACID', 'isolation levels', 'SQL injection'], 'four'],
     'nlp': ['content/nlp/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. NLU runs from tokens and Zipf to entropy, perplexity, smoothing, HMMs, Viterbi and parsing. NLP runs from gradient descent and backpropagation to word2vec, negative sampling, GloVe, RNNs, LSTM, attention and decoding. Search it, filter it, print it or download the PDF.', ['Zipf law', 'entropy', 'perplexity', 'Laplace', 'Kneser-Ney', 'HMM', 'Viterbi', 'word2vec', 'GloVe', 'LSTM', 'attention', 'beam search']]
   }[sid];
   return {
@@ -10336,3 +10351,415 @@ function cyAdvModules() {
   ];
 }
 /* ===== end of cy-advanced-build ===== */
+
+/* ===== sql-build: SQL and Databases chapters. Generated by tools/sql-build/build.py, edit the topic files instead. ===== */
+function sqlModules() {
+  return [
+    { id: "sql-start", title: "Start here", emoji: "1", step: 1, level: "Beginner", blurb: "What a database is, tables and keys, what SQL is, and your first queries, filters and sorting.", topics: [
+      { id: "sql-intro", title: "Databases and SQL: where data lives", emoji: "1.1", page: "content/sql/sql-intro.html",
+        summary: "Data, databases and the DBMS, the relational model, tables, keys and NULL, what SQL is, engines and how a query runs.",
+        keywords: ["database", "DBMS", "relational model", "table", "primary key", "SQL", "SELECT", "SQLite", "PostgreSQL"],
+        minutes: 35, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "data", title: "Data is everywhere, and it needs a home", emoji: "", group: "Lesson", keywords: ["data", "database", "DBMS", "spreadsheet vs database", "table", "row", "column"] },
+        { id: "relational", title: "Tables, rows, columns and keys", emoji: "", group: "Lesson", keywords: ["relational model", "Codd", "1970", "relation", "tuple", "attribute", "primary key", "NULL"] },
+        { id: "sql-lang", title: "What SQL is and your first query", emoji: "", group: "Lesson", keywords: ["SQL", "SEQUEL", "Chamberlin", "Boyce", "declarative", "SELECT", "FROM", "DDL", "DML", "DCL", "TCL", "SQL:2023"] },
+        { id: "engines", title: "Database engines and the journey of a query", emoji: "", group: "Lesson", keywords: ["SQLite", "PostgreSQL", "MySQL", "SQL Server", "Oracle", "dialect", "parser", "planner", "optimizer", "executor", "WebAssembly", "sql.js"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["relational algebra", "selection", "projection", "multiset", "declarative", "optimizer"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-select", title: "SELECT in depth: columns, sums, aliases and paging", emoji: "1.2", page: "content/sql/sql-select.html",
+        summary: "Calculated columns, aliases, text and quoting, DISTINCT, LIMIT and OFFSET paging.",
+        keywords: ["SELECT", "alias", "AS", "DISTINCT", "LIMIT", "OFFSET", "concatenation", "integer division"],
+        minutes: 35, counts: {"lessons": 4, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "columns", title: "Choosing columns and doing sums", emoji: "", group: "Lesson", keywords: ["SELECT list", "expression", "calculated column", "arithmetic", "integer division", "concatenation", "||"] },
+        { id: "alias", title: "Aliases, text and quoting", emoji: "", group: "Lesson", keywords: ["alias", "AS", "string literal", "single quotes", "double quotes", "identifier", "comment", "SELECT without FROM"] },
+        { id: "distinct", title: "DISTINCT, LIMIT and OFFSET", emoji: "", group: "Lesson", keywords: ["DISTINCT", "LIMIT", "OFFSET", "pagination", "FETCH FIRST", "TOP", "duplicates"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["projection", "multiset", "keyset pagination", "SELECT *"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-where", title: "Filtering and sorting: WHERE and ORDER BY", emoji: "1.3", page: "content/sql/sql-where.html",
+        summary: "WHERE and comparisons, AND OR NOT with brackets, LIKE patterns, IS NULL and ORDER BY.",
+        keywords: ["WHERE", "AND", "OR", "BETWEEN", "IN", "LIKE", "IS NULL", "ORDER BY", "NULLS LAST"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "where", title: "WHERE keeps only the rows you want", emoji: "", group: "Lesson", keywords: ["WHERE", "filter", "comparison", "BETWEEN", "IN", "not equal", "condition"] },
+        { id: "logic", title: "AND, OR, NOT and brackets", emoji: "", group: "Lesson", keywords: ["AND", "OR", "NOT", "precedence", "brackets", "truth table", "operator precedence"] },
+        { id: "patterns", title: "LIKE, GLOB and IS NULL", emoji: "", group: "Lesson", keywords: ["LIKE", "wildcard", "%", "_", "GLOB", "ILIKE", "case sensitive", "IS NULL", "IS NOT NULL"] },
+        { id: "order", title: "ORDER BY: sorting the result", emoji: "", group: "Lesson", keywords: ["ORDER BY", "ASC", "DESC", "NULLS FIRST", "NULLS LAST", "collation", "NOCASE", "multiple sort keys"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["logical order", "selection", "sargable", "selectivity", "histogram", "index"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-shape", title: "Shaping results", emoji: "2", step: 2, level: "Beginner", blurb: "Functions and CASE, the truth about NULL, and squeezing many rows into answers with GROUP BY.", topics: [
+      { id: "sql-functions", title: "Functions, CASE and dates", emoji: "2.1", page: "content/sql/sql-functions.html",
+        summary: "Text and number functions, CASE, COALESCE and NULLIF, CAST and types, dates and times.",
+        keywords: ["functions", "CASE", "COALESCE", "NULLIF", "CAST", "typeof", "date", "strftime", "substr"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "text", title: "Text functions", emoji: "", group: "Lesson", keywords: ["function", "upper", "lower", "length", "substr", "trim", "replace", "instr", "text functions"] },
+        { id: "numbers", title: "Numbers and CASE", emoji: "", group: "Lesson", keywords: ["round", "abs", "ceil", "floor", "CASE", "WHEN", "THEN", "ELSE", "IIF", "searched case", "simple case"] },
+        { id: "nulls", title: "COALESCE, NULLIF, CAST and typeof", emoji: "", group: "Lesson", keywords: ["COALESCE", "NULLIF", "IFNULL", "CAST", "typeof", "storage class", "divide by zero"] },
+        { id: "dates", title: "Dates and times", emoji: "", group: "Lesson", keywords: ["date", "datetime", "strftime", "julianday", "unixepoch", "ISO 8601", "modifiers", "date arithmetic"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["scalar function", "aggregate function", "expression index", "UTC", "time zone", "deterministic"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-null", title: "NULL and three valued logic", emoji: "2.2", page: "content/sql/sql-null.html",
+        summary: "NULL as unknown, three valued logic, vanishing rows, NOT IN and aggregate traps.",
+        keywords: ["NULL", "three valued logic", "IS NULL", "NOT IN", "COUNT(*)", "unknown"],
+        minutes: 35, counts: {"lessons": 4, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "unknown", title: "NULL means unknown", emoji: "", group: "Lesson", keywords: ["NULL", "unknown", "missing value", "empty string", "NULL arithmetic"] },
+        { id: "three", title: "Three valued logic: TRUE, FALSE and UNKNOWN", emoji: "", group: "Lesson", keywords: ["three valued logic", "UNKNOWN", "truth table", "AND", "OR", "NOT", "WHERE drops unknown"] },
+        { id: "traps", title: "NULL traps: NOT IN, aggregates and DISTINCT", emoji: "", group: "Lesson", keywords: ["NOT IN", "NULL in subquery", "COUNT(*)", "COUNT(column)", "AVG ignores NULL", "IS NOT DISTINCT FROM", "UNIQUE and NULL"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["CHECK and NULL", "certain answers", "Codd", "Date and Darwen", "three valued logic"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-aggregate", title: "Aggregates, GROUP BY and HAVING", emoji: "2.3", page: "content/sql/sql-aggregate.html",
+        summary: "Aggregate functions, GROUP BY, HAVING versus WHERE, and the logical order of a query.",
+        keywords: ["aggregate", "COUNT", "SUM", "AVG", "GROUP BY", "HAVING", "order of execution"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "agg", title: "Squeezing many rows into one answer", emoji: "", group: "Lesson", keywords: ["aggregate", "COUNT", "SUM", "AVG", "MIN", "MAX", "COUNT DISTINCT", "group_concat", "string_agg"] },
+        { id: "groupby", title: "GROUP BY: one answer per group", emoji: "", group: "Lesson", keywords: ["GROUP BY", "group", "bare column", "grouping columns", "one row per group"] },
+        { id: "having", title: "HAVING filters groups, WHERE filters rows", emoji: "", group: "Lesson", keywords: ["HAVING", "WHERE vs HAVING", "filter groups", "FILTER clause", "conditional aggregation"] },
+        { id: "order", title: "The order SQL really runs in", emoji: "", group: "Lesson", keywords: ["logical query processing", "order of execution", "FROM", "WHERE", "GROUP BY", "HAVING", "SELECT", "ORDER BY", "LIMIT"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["ROLLUP", "CUBE", "GROUPING SETS", "hash aggregation", "HyperLogLog", "column store"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-many", title: "Many tables", emoji: "3", step: 3, level: "Intermediate", blurb: "Keys and relationships, every kind of join, subqueries and set operations.", topics: [
+      { id: "sql-keys", title: "Keys and relationships between tables", emoji: "3.1", page: "content/sql/sql-keys.html",
+        summary: "Why tables are split, primary and foreign keys, delete actions, and one to many and many to many relationships.",
+        keywords: ["primary key", "foreign key", "surrogate key", "composite key", "one to many", "many to many", "ER diagram", "CASCADE"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "why", title: "Why one table is not enough", emoji: "", group: "Lesson", keywords: ["redundancy", "update anomaly", "insert anomaly", "delete anomaly", "separate tables", "link with keys"] },
+        { id: "keys", title: "Primary keys, natural and surrogate", emoji: "", group: "Lesson", keywords: ["primary key", "candidate key", "natural key", "surrogate key", "composite key", "alternate key", "rowid", "IDENTITY", "AUTO_INCREMENT"] },
+        { id: "fk", title: "Foreign keys keep links honest", emoji: "", group: "Lesson", keywords: ["foreign key", "parent", "child", "referential integrity", "ON DELETE", "CASCADE", "SET NULL", "RESTRICT", "PRAGMA foreign_keys"] },
+        { id: "rel", title: "One to one, one to many, many to many", emoji: "", group: "Lesson", keywords: ["one to many", "many to many", "one to one", "junction table", "bridge table", "ER diagram", "crow’s foot", "Chen 1976", "cardinality"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["referential integrity", "deferred constraint", "index foreign keys", "UUID", "sharding"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-joins", title: "Joins: putting tables back together", emoji: "3.2", page: "content/sql/sql-joins.html",
+        summary: "Inner and outer joins, anti joins, self and cross joins, ON versus WHERE, and how engines run joins.",
+        keywords: ["JOIN", "INNER JOIN", "LEFT JOIN", "FULL OUTER JOIN", "self join", "CROSS JOIN", "anti join", "hash join"],
+        minutes: 50, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "inner", title: "INNER JOIN: rows that match", emoji: "", group: "Lesson", keywords: ["JOIN", "INNER JOIN", "ON", "table alias", "ambiguous column", "matching rows"] },
+        { id: "outer", title: "LEFT, RIGHT and FULL joins: keeping the unmatched", emoji: "", group: "Lesson", keywords: ["LEFT JOIN", "RIGHT JOIN", "FULL OUTER JOIN", "outer join", "anti join", "COUNT with LEFT JOIN", "NULL padding"] },
+        { id: "more", title: "Three tables, self joins and CROSS JOIN", emoji: "", group: "Lesson", keywords: ["multiple joins", "self join", "manager hierarchy", "CROSS JOIN", "Cartesian product", "accidental cross join"] },
+        { id: "onwhere", title: "ON versus WHERE, USING and NATURAL", emoji: "", group: "Lesson", keywords: ["ON vs WHERE", "outer join filter", "USING", "NATURAL JOIN", "comma join", "implicit join"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["nested loop join", "hash join", "merge join", "join order", "genetic optimizer", "semi join", "anti join"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-subqueries", title: "Subqueries: questions inside questions", emoji: "3.3", page: "content/sql/sql-subqueries.html",
+        summary: "Scalar, list and table subqueries, EXISTS and correlated subqueries, and derived tables.",
+        keywords: ["subquery", "scalar subquery", "IN", "EXISTS", "NOT EXISTS", "correlated subquery", "derived table"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "scalar", title: "A query inside a query", emoji: "", group: "Lesson", keywords: ["subquery", "nested query", "scalar subquery", "inner query", "outer query", "above average"] },
+        { id: "in", title: "IN and NOT IN with a list from a query", emoji: "", group: "Lesson", keywords: ["IN subquery", "NOT IN subquery", "ANY", "ALL", "membership", "list subquery"] },
+        { id: "exists", title: "EXISTS and correlated subqueries", emoji: "", group: "Lesson", keywords: ["EXISTS", "NOT EXISTS", "correlated subquery", "SELECT 1", "semi join", "per row subquery", "greatest per group"] },
+        { id: "derived", title: "Subqueries in FROM: derived tables", emoji: "", group: "Lesson", keywords: ["derived table", "subquery in FROM", "inline view", "aggregate then filter", "nested aggregate"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["unnesting", "decorrelation", "semi join", "anti join", "Neumann and Kemper"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-setops", title: "Set operations: UNION, INTERSECT and EXCEPT", emoji: "3.4", page: "content/sql/sql-setops.html",
+        summary: "UNION, UNION ALL, INTERSECT and EXCEPT, their rules, and comparing tables.",
+        keywords: ["UNION", "UNION ALL", "INTERSECT", "EXCEPT", "MINUS", "set operations"],
+        minutes: 30, counts: {"lessons": 4, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "union", title: "UNION and UNION ALL: stacking results", emoji: "", group: "Lesson", keywords: ["UNION", "UNION ALL", "set operation", "compound select", "stack results", "duplicates"] },
+        { id: "intersect", title: "INTERSECT and EXCEPT", emoji: "", group: "Lesson", keywords: ["INTERSECT", "EXCEPT", "MINUS", "Venn diagram", "set difference", "intersection"] },
+        { id: "rules", title: "Set operations versus joins and NULLs", emoji: "", group: "Lesson", keywords: ["NULL in set operations", "compare tables", "data migration check", "EXCEPT vs NOT EXISTS"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["union compatible", "multiset", "bag semantics", "INTERSECT ALL", "EXCEPT ALL", "partition view"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-make", title: "Building and changing data", emoji: "4", step: 4, level: "Intermediate", blurb: "Create your own tables with types and rules, change rows safely, and name steps with views and CTEs.", topics: [
+      { id: "sql-create", title: "Building tables: CREATE, types and constraints", emoji: "4.1", page: "content/sql/sql-create.html",
+        summary: "CREATE TABLE, types, constraints, SQLite affinity and STRICT, ALTER and DROP.",
+        keywords: ["CREATE TABLE", "data types", "constraints", "CHECK", "STRICT", "ALTER TABLE", "DROP TABLE"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "create", title: "CREATE TABLE: drawing the empty form", emoji: "", group: "Lesson", keywords: ["CREATE TABLE", "data types", "IF NOT EXISTS", "INTEGER PRIMARY KEY", "VARCHAR", "DECIMAL", "money type"] },
+        { id: "constraints", title: "Constraints: rules every row must obey", emoji: "", group: "Lesson", keywords: ["constraint", "NOT NULL", "UNIQUE", "CHECK", "DEFAULT", "data integrity", "CHECK and NULL"] },
+        { id: "affinity", title: "How SQLite treats types, and STRICT tables", emoji: "", group: "Lesson", keywords: ["type affinity", "STRICT", "typeof", "storage class", "NUMERIC affinity", "dynamic typing"] },
+        { id: "alter", title: "ALTER TABLE and DROP TABLE", emoji: "", group: "Lesson", keywords: ["ALTER TABLE", "ADD COLUMN", "RENAME COLUMN", "DROP COLUMN", "DROP TABLE", "migration", "information_schema", "sqlite_schema"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["schema", "DDL", "domain constraint", "entity integrity", "online schema change", "flexible typing"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-modify", title: "Changing data: INSERT, UPDATE, DELETE and UPSERT", emoji: "4.2", page: "content/sql/sql-modify.html",
+        summary: "INSERT, UPDATE, DELETE, UPSERT, RETURNING and foreign key actions.",
+        keywords: ["INSERT", "UPDATE", "DELETE", "UPSERT", "RETURNING", "ON DELETE CASCADE"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "insert", title: "INSERT: adding rows", emoji: "", group: "Lesson", keywords: ["INSERT", "VALUES", "INSERT SELECT", "multi row insert", "column list", "add rows"] },
+        { id: "update", title: "UPDATE and DELETE: changing and removing rows", emoji: "", group: "Lesson", keywords: ["UPDATE", "DELETE", "SET", "UPDATE FROM", "missing WHERE", "change rows", "remove rows"] },
+        { id: "upsert", title: "UPSERT and RETURNING", emoji: "", group: "Lesson", keywords: ["UPSERT", "ON CONFLICT", "excluded", "MERGE", "ON DUPLICATE KEY UPDATE", "INSERT OR REPLACE", "INSERT OR IGNORE", "RETURNING"] },
+        { id: "fkact", title: "Foreign key actions: what happens to the children", emoji: "", group: "Lesson", keywords: ["ON DELETE CASCADE", "SET NULL", "RESTRICT", "NO ACTION", "referential action", "orphan rows"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["DML", "atomic statement", "MVCC", "bulk load", "COPY", "soft delete"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-views", title: "Views and CTEs: naming your queries", emoji: "4.3", page: "content/sql/sql-views.html",
+        summary: "Views, CTEs, temporary tables and materialized views.",
+        keywords: ["view", "CTE", "WITH", "temporary table", "materialized view"],
+        minutes: 35, counts: {"lessons": 4, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "views", title: "Views: a saved query with a name", emoji: "", group: "Lesson", keywords: ["view", "CREATE VIEW", "DROP VIEW", "saved query", "virtual table", "read only view", "updatable view"] },
+        { id: "cte", title: "WITH: common table expressions", emoji: "", group: "Lesson", keywords: ["CTE", "WITH", "common table expression", "named step", "readability", "nested subquery"] },
+        { id: "compare", title: "CTE, subquery, view or temporary table", emoji: "", group: "Lesson", keywords: ["temporary table", "TEMP TABLE", "materialized view", "REFRESH", "CTE vs view", "MATERIALIZED hint"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["logical data independence", "view inlining", "incremental view maintenance", "GRANT on view", "materialize"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-design", title: "Designing databases", emoji: "5", step: 5, level: "Intermediate", blurb: "Normalize tables and design a schema from real requirements.", topics: [
+      { id: "sql-normalization", title: "Normalization: storing each fact once", emoji: "5.1", page: "content/sql/sql-normalization.html",
+        summary: "Anomalies, functional dependencies, normal forms and denormalization.",
+        keywords: ["normalization", "1NF", "2NF", "3NF", "BCNF", "functional dependency", "denormalization"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "anomaly", title: "Why repeated data hurts", emoji: "", group: "Lesson", keywords: ["normalization", "update anomaly", "insert anomaly", "delete anomaly", "redundancy", "Codd"] },
+        { id: "fd", title: "Functional dependencies: what decides what", emoji: "", group: "Lesson", keywords: ["functional dependency", "determinant", "candidate key", "partial dependency", "transitive dependency"] },
+        { id: "forms", title: "1NF, 2NF, 3NF and BCNF", emoji: "", group: "Lesson", keywords: ["1NF", "2NF", "3NF", "BCNF", "normal forms", "atomic values", "lossless decomposition"] },
+        { id: "denorm", title: "Higher forms and denormalization", emoji: "", group: "Lesson", keywords: ["4NF", "5NF", "multivalued dependency", "denormalization", "star schema", "OLTP", "OLAP"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["Armstrong axioms", "lossless join", "dependency preservation", "closure", "dependency discovery"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-design", title: "Database design in practice", emoji: "5.2", page: "content/sql/sql-design.html",
+        summary: "From requirements to a schema, ER diagrams, relationship mapping and a full library design.",
+        keywords: ["database design", "ER diagram", "junction table", "crow foot", "lookup table", "schema"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "process", title: "From a story to tables", emoji: "", group: "Lesson", keywords: ["requirements", "entity", "attribute", "relationship", "nouns and verbs", "schema design"] },
+        { id: "er", title: "ER diagrams and the three kinds of relationship", emoji: "", group: "Lesson", keywords: ["ER diagram", "crow foot notation", "Chen", "one to one", "one to many", "many to many", "junction table", "optional relationship"] },
+        { id: "conventions", title: "Habits that keep a schema healthy", emoji: "", group: "Lesson", keywords: ["naming convention", "snake_case", "lookup table", "enum", "created_at", "audit columns", "surrogate key"] },
+        { id: "case", title: "A worked design: the library", emoji: "", group: "Lesson", keywords: ["library schema", "worked design", "overdue query", "availability", "requirements to constraints"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["conceptual model", "logical model", "physical model", "subtype", "inheritance mapping", "schema evolution"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-advanced", title: "Advanced queries", emoji: "6", step: 6, level: "Advanced", blurb: "Window functions, recursive queries and the patterns that solve real reporting problems.", topics: [
+      { id: "sql-window", title: "Window functions: ranks, running totals and more", emoji: "6.1", page: "content/sql/sql-window.html",
+        summary: "OVER, ranking, running totals, LAG and LEAD, frames.",
+        keywords: ["window functions", "OVER", "PARTITION BY", "ROW_NUMBER", "RANK", "LAG", "running total"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "over", title: "OVER: an answer for every row", emoji: "", group: "Lesson", keywords: ["window function", "OVER", "PARTITION BY", "analytic function", "group answer per row"] },
+        { id: "rank", title: "Ranking: ROW_NUMBER, RANK and DENSE_RANK", emoji: "", group: "Lesson", keywords: ["ROW_NUMBER", "RANK", "DENSE_RANK", "NTILE", "PERCENT_RANK", "CUME_DIST", "ties", "ranking"] },
+        { id: "offset", title: "Running totals, LAG and LEAD", emoji: "", group: "Lesson", keywords: ["running total", "cumulative sum", "LAG", "LEAD", "FIRST_VALUE", "LAST_VALUE", "NTH_VALUE", "previous row"] },
+        { id: "frames", title: "Frames, named windows and the WHERE trap", emoji: "", group: "Lesson", keywords: ["window frame", "ROWS BETWEEN", "RANGE", "GROUPS", "moving average", "WINDOW clause", "window in WHERE", "QUALIFY"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["SQL:2003", "segment tree", "QUALIFY", "window evaluation", "OLAP functions"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-recursive", title: "Recursive queries: trees, graphs and series", emoji: "6.2", page: "content/sql/sql-recursive.html",
+        summary: "WITH RECURSIVE for series, hierarchies and graphs.",
+        keywords: ["WITH RECURSIVE", "recursive CTE", "hierarchy", "org chart", "graph", "cycle"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "basics", title: "A query that calls itself", emoji: "", group: "Lesson", keywords: ["WITH RECURSIVE", "recursive CTE", "anchor member", "recursive member", "stop condition", "MAXRECURSION"] },
+        { id: "series", title: "Generating series and calendars", emoji: "", group: "Lesson", keywords: ["generate series", "calendar table", "date series", "missing dates", "zero rows", "generate_series"] },
+        { id: "tree", title: "Walking hierarchies", emoji: "", group: "Lesson", keywords: ["hierarchy", "tree", "org chart", "self reference", "path", "depth", "bill of materials", "parent child"] },
+        { id: "graph", title: "Graphs, cycles and UNION", emoji: "", group: "Lesson", keywords: ["graph", "cycle", "cycle detection", "UNION vs UNION ALL", "path", "shortest path", "CYCLE clause"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["fixed point", "semi naive evaluation", "Datalog", "GQL", "SQL/PGQ", "nested sets", "closure table", "materialized path"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-patterns", title: "Query patterns: top N, streaks, pivots and JSON", emoji: "6.3", page: "content/sql/sql-patterns.html",
+        summary: "Top N per group, gaps and islands, pivots, duplicates, percent of total and JSON.",
+        keywords: ["top N per group", "gaps and islands", "pivot", "duplicates", "JSON", "percent of total"],
+        minutes: 45, counts: {"lessons": 6, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "topn", title: "Top N per group", emoji: "", group: "Lesson", keywords: ["top N per group", "greatest per group", "ROW_NUMBER filter", "latest row per group", "DISTINCT ON"] },
+        { id: "islands", title: "Gaps and islands: finding streaks", emoji: "", group: "Lesson", keywords: ["gaps and islands", "streak", "consecutive days", "row number difference", "LEAD gap", "missing numbers"] },
+        { id: "pivot", title: "Pivoting rows into columns", emoji: "", group: "Lesson", keywords: ["pivot", "conditional aggregation", "CASE WHEN", "FILTER", "crosstab", "PIVOT", "report card"] },
+        { id: "dupes", title: "Duplicates and percent of total", emoji: "", group: "Lesson", keywords: ["duplicates", "dedupe", "remove duplicates", "rowid", "percent of total", "ratio to total", "HAVING COUNT > 1"] },
+        { id: "json", title: "JSON inside a database", emoji: "", group: "Lesson", keywords: ["JSON", "json_extract", "->>", "json_each", "json_group_array", "json_object", "jsonb", "semi structured data"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["SQL patterns", "SQL/JSON", "unpivot", "semi structured", "pattern recognition"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-perf", title: "Performance and transactions", emoji: "7", step: 7, level: "Advanced", blurb: "How indexes and query plans make queries fast, and how transactions keep data correct when many people work at once.", topics: [
+      { id: "sql-indexes", title: "Indexes: making queries fast", emoji: "7.1", page: "content/sql/sql-indexes.html",
+        summary: "Full scans, B-tree indexes, index shapes, when they are skipped and what they cost.",
+        keywords: ["index", "B-tree", "composite index", "covering index", "EXPLAIN QUERY PLAN", "performance"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "why", title: "Why queries slow down, and what an index is", emoji: "", group: "Lesson", keywords: ["index", "full table scan", "CREATE INDEX", "binary search", "log n", "EXPLAIN QUERY PLAN", "slow query"] },
+        { id: "btree", title: "Inside an index: the B-tree", emoji: "", group: "Lesson", keywords: ["B-tree", "B+tree", "root page", "leaf page", "fanout", "balanced tree", "range scan", "Bayer McCreight"] },
+        { id: "kinds", title: "Unique, composite, covering, partial and expression indexes", emoji: "", group: "Lesson", keywords: ["unique index", "composite index", "leftmost prefix", "covering index", "partial index", "expression index", "functional index"] },
+        { id: "costs", title: "When indexes do not help, and what they cost", emoji: "", group: "Lesson", keywords: ["index not used", "sargable", "leading wildcard", "write amplification", "ANALYZE", "index maintenance", "selectivity"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["clustered index", "WITHOUT ROWID", "hash index", "GIN", "GiST", "BRIN", "LSM tree", "learned index"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-plans", title: "Query plans and tuning", emoji: "7.2", page: "content/sql/sql-plans.html",
+        summary: "Reading query plans, join algorithms, statistics and rewriting slow queries.",
+        keywords: ["query plan", "EXPLAIN", "optimizer", "hash join", "ANALYZE", "sargable", "N+1"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "explain", title: "Asking the optimizer: EXPLAIN QUERY PLAN", emoji: "", group: "Lesson", keywords: ["query optimizer", "query planner", "EXPLAIN QUERY PLAN", "EXPLAIN ANALYZE", "SCAN", "SEARCH", "TEMP B-TREE"] },
+        { id: "joins", title: "How joins are executed", emoji: "", group: "Lesson", keywords: ["nested loop join", "hash join", "merge join", "join order", "automatic index", "join algorithm"] },
+        { id: "stats", title: "Statistics and the cost based optimizer", emoji: "", group: "Lesson", keywords: ["cost based optimizer", "statistics", "ANALYZE", "sqlite_stat1", "cardinality estimate", "System R", "Selinger"] },
+        { id: "tuning", title: "Writing queries the optimizer can help", emoji: "", group: "Lesson", keywords: ["sargable", "query tuning", "keyset pagination", "OFFSET", "N+1 problem", "SELECT star", "rewrite"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["join ordering", "dynamic programming", "Cascades", "cardinality estimation", "learned optimizer", "adaptive query processing"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-transactions", title: "Transactions and concurrency", emoji: "7.3", page: "content/sql/sql-transactions.html",
+        summary: "ACID transactions, savepoints, isolation levels, locks, MVCC and deadlocks.",
+        keywords: ["transaction", "ACID", "COMMIT", "ROLLBACK", "isolation level", "MVCC", "deadlock"],
+        minutes: 45, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "acid", title: "All or nothing: transactions and ACID", emoji: "", group: "Lesson", keywords: ["transaction", "BEGIN", "COMMIT", "ROLLBACK", "ACID", "atomicity", "durability", "autocommit"] },
+        { id: "failure", title: "Errors, savepoints and failed transfers", emoji: "", group: "Lesson", keywords: ["SAVEPOINT", "ROLLBACK TO", "error handling", "failed transaction", "nested transaction"] },
+        { id: "isolation", title: "Isolation levels and anomalies", emoji: "", group: "Lesson", keywords: ["isolation level", "dirty read", "non repeatable read", "phantom read", "lost update", "write skew", "READ COMMITTED", "SERIALIZABLE"] },
+        { id: "locks", title: "Locks, MVCC, deadlocks and the journal", emoji: "", group: "Lesson", keywords: ["lock", "row lock", "MVCC", "deadlock", "write ahead log", "WAL", "BEGIN IMMEDIATE", "SELECT FOR UPDATE", "race condition"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["serializability", "two phase locking", "snapshot isolation", "SSI", "two phase commit", "Spanner", "Jim Gray"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-pro", title: "Professional SQL", emoji: "8", step: 8, level: "Advanced", blurb: "Logic inside the database, security, scaling to many machines, and the differences between engines.", topics: [
+      { id: "sql-programmable", title: "Triggers, generated columns and procedures", emoji: "8.1", page: "content/sql/sql-programmable.html",
+        summary: "Triggers, generated columns and stored procedures.",
+        keywords: ["trigger", "generated column", "stored procedure", "audit log", "INSTEAD OF", "PL/pgSQL"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "triggers", title: "Triggers: code that runs on every change", emoji: "", group: "Lesson", keywords: ["trigger", "CREATE TRIGGER", "BEFORE", "AFTER", "NEW", "OLD", "RAISE", "audit log"] },
+        { id: "uses", title: "Keeping data in step, and writable views", emoji: "", group: "Lesson", keywords: ["derived data", "stored total", "INSTEAD OF trigger", "writable view", "trigger risks", "side effects"] },
+        { id: "generated", title: "Generated columns", emoji: "", group: "Lesson", keywords: ["generated column", "computed column", "VIRTUAL", "STORED", "GENERATED ALWAYS AS"] },
+        { id: "procs", title: "Stored procedures and functions", emoji: "", group: "Lesson", keywords: ["stored procedure", "user defined function", "PL/pgSQL", "T-SQL", "PL/SQL", "CALL", "EXEC", "business logic"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["row level trigger", "statement level trigger", "active database", "change data capture", "Debezium", "temporal table"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-security", title: "Database security", emoji: "8.2", page: "content/sql/sql-security.html",
+        summary: "SQL injection, parameterized queries, least privilege, row level security and protecting personal data.",
+        keywords: ["SQL injection", "parameterized query", "GRANT", "least privilege", "row level security", "password hashing"],
+        minutes: 40, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "injection", title: "SQL injection: when input becomes code", emoji: "", group: "Lesson", keywords: ["SQL injection", "injection attack", "string concatenation", "login bypass", "OWASP", "UNION injection"] },
+        { id: "params", title: "The fix: parameterized queries", emoji: "", group: "Lesson", keywords: ["parameterized query", "prepared statement", "bind parameter", "placeholder", "allow list", "ORM"] },
+        { id: "access", title: "Users, roles and GRANT", emoji: "", group: "Lesson", keywords: ["least privilege", "GRANT", "REVOKE", "role", "user account", "permissions", "security view"] },
+        { id: "rls", title: "Row level security and personal data", emoji: "", group: "Lesson", keywords: ["row level security", "CREATE POLICY", "data masking", "password hashing", "Argon2", "bcrypt", "encryption at rest", "TLS", "backup", "PII"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["defence in depth", "second order injection", "differential privacy", "encrypted database", "taint tracking"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-scale", title: "Databases at scale", emoji: "8.3", page: "content/sql/sql-scale.html",
+        summary: "Partitioning, replication, sharding, CAP, OLTP versus OLAP and column stores.",
+        keywords: ["scaling", "partitioning", "replication", "sharding", "CAP theorem", "OLAP", "column store"],
+        minutes: 40, counts: {"lessons": 6, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "grow", title: "When one server is not enough", emoji: "", group: "Lesson", keywords: ["scalability", "scale up", "scale out", "vertical scaling", "horizontal scaling", "caching", "read replica"] },
+        { id: "partition", title: "Partitioning a big table", emoji: "", group: "Lesson", keywords: ["partitioning", "partition pruning", "range partition", "list partition", "hash partition", "PARTITION BY"] },
+        { id: "replicate", title: "Replication: copies of the whole database", emoji: "", group: "Lesson", keywords: ["replication", "primary", "replica", "read replica", "replication lag", "synchronous replication", "failover", "read your writes"] },
+        { id: "shard", title: "Sharding and the CAP theorem", emoji: "", group: "Lesson", keywords: ["sharding", "shard key", "hot spot", "hash sharding", "CAP theorem", "consistency", "availability", "network partition"] },
+        { id: "olap", title: "OLTP, OLAP and column stores", emoji: "", group: "Lesson", keywords: ["OLTP", "OLAP", "column store", "row store", "data warehouse", "star schema", "fact table", "dimension table", "ETL"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["Raft", "Paxos", "eventual consistency", "distributed SQL", "Aurora", "lakehouse", "NoSQL", "NewSQL"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sql-dialects", title: "SQL standards and dialects", emoji: "8.4", page: "content/sql/sql-dialects.html",
+        summary: "The SQL standard, dialect differences, choosing an engine and portable SQL.",
+        keywords: ["SQL standard", "dialect", "PostgreSQL", "MySQL", "SQL Server", "Oracle", "portable SQL"],
+        minutes: 30, counts: {"lessons": 5, "problems": 8, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "standard", title: "One language, one standard, many dialects", emoji: "", group: "Lesson", keywords: ["SQL standard", "ISO 9075", "dialect", "SQL-92", "SQL:1999", "SQL:2003", "SQL:2016", "SQL:2023", "portable SQL"] },
+        { id: "diffs", title: "Everyday differences between engines", emoji: "", group: "Lesson", keywords: ["dialect differences", "identifier quoting", "LIMIT vs TOP", "string concatenation", "boolean", "ILIKE", "collation"] },
+        { id: "choose", title: "Choosing an engine", emoji: "", group: "Lesson", keywords: ["SQLite", "PostgreSQL", "MySQL", "MariaDB", "SQL Server", "Oracle", "DuckDB", "choose a database"] },
+        { id: "portable", title: "Writing SQL that travels", emoji: "", group: "Lesson", keywords: ["portable SQL", "CAST", "COALESCE", "CASE", "GROUP BY strict", "integer division", "ISO date"] },
+        { id: "levels", title: "From intuition to research", emoji: "", group: "Lesson", keywords: ["SQLGlot", "transpiler", "ISO conformance", "SQL semantics", "text to SQL", "SEQUEL", "Chamberlin Boyce"] },
+        { id: 'formulas', title: 'Syntax', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "sql-revision", title: "Exam and interview revision", emoji: "9", step: 9, level: "All levels", blurb: "Revise the whole course with school questions, classic interview queries, a design answer and a mock paper.", topics: [
+      { id: "sql-exam", title: "Exam and interview revision", emoji: "9.1", page: "content/sql/sql-exam.html",
+        summary: "A chapter map, school questions, interview queries, a design answer and a mock paper.",
+        keywords: ["SQL exam", "SQL interview", "second highest salary", "mock test", "revision", "model answers"],
+        minutes: 60, counts: {"lessons": 6, "problems": 8, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "map", title: "The whole course on one page", emoji: "", group: "Lesson", keywords: ["revision map", "syllabus", "exam topics", "logical order", "course summary"] },
+        { id: "school", title: "School and first year questions", emoji: "", group: "Lesson", keywords: ["school SQL questions", "CBSE", "board exam", "WHERE vs HAVING", "DELETE vs DROP", "DDL vs DML", "short answers"] },
+        { id: "interview", title: "Classic interview queries", emoji: "", group: "Lesson", keywords: ["SQL interview questions", "second highest salary", "Nth highest", "self join", "anti join", "top per group", "interview traps"] },
+        { id: "design", title: "A design question, answered", emoji: "", group: "Lesson", keywords: ["schema design question", "model answer", "partial unique index", "3NF proof", "university exam"] },
+        { id: "mock", title: "Mock paper: hands on tasks", emoji: "", group: "Lesson", keywords: ["mock test", "practice paper", "hands on SQL", "timed tasks", "exam practice"] },
+        { id: "levels", title: "Where to go next", emoji: "", group: "Lesson", keywords: ["next steps", "practice", "Chinook", "Northwind", "CMU database course", "SIGMOD", "VLDB"] },
+        { id: 'quiz', title: 'Mock quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of sql-build ===== */

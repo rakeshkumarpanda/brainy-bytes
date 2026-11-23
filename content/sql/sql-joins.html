@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joins: putting tables back together · SQL and Databases</title>
+<meta name="description" content="INNER JOIN, LEFT, RIGHT and FULL OUTER JOIN, NULL padding, COUNT with outer joins, anti joins, joining four tables, self joins on a manager hierarchy, CROSS JOIN, ON versus WHERE, USING and NATURAL, join algorithms.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 3: Many tables</span><span>›</span><span>Joins</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 2 of 4 · Intermediate</div>
+    <h1>Joins: putting tables back together</h1>
+    <p class="lead">Pair rows from two or more tables with INNER, LEFT, RIGHT, FULL and CROSS joins, join a table to itself, find rows with no partner, and avoid the ON versus WHERE trap.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">2 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">7 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-joins" data-topic="cheatsheet" data-h="sql-joins">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#inner" data-l="inner"><span class="n">1</span><span class="t">INNER JOIN: rows that match</span></a></li><li><a href="#outer" data-l="outer"><span class="n">2</span><span class="t">LEFT, RIGHT and FULL joins: keeping the unmatched</span></a></li><li><a href="#more" data-l="more"><span class="n">3</span><span class="t">Three tables, self joins and CROSS JOIN</span></a></li><li><a href="#onwhere" data-l="onwhere"><span class="n">4</span><span class="t">ON versus WHERE, USING and NATURAL</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="inner" data-l="inner" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>INNER JOIN: rows that match</h2>
+<p>An order row says customer_id 3. To print "Meera ordered on 11 June" we must put the order row and the customer row side by side. A <b>join</b> does that: it pairs rows from two tables whenever a condition, written after <code>ON</code>, is true.</p>
+<div class="viz" data-viz="pk" data-pk="sqjoin"></div>
+<div class="sq-run" data-q="inner"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Inner join</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>SELECT ... FROM a JOIN b ON b.a_id = a.id;</code></div><div class="fx-n">JOIN alone means INNER JOIN. Only pairs that satisfy ON are kept.</div></div><div class="fx"><div class="fx-h"><span>Qualify columns</span></div><div class="fx-b"><code>o.id</code>, <code>c.id</code></div><div class="fx-n">When both tables have a column called id, write the table or alias in front, or the engine reports an ambiguous column.</div></div></div>
+<div class="note note-warn"><b>Common mistake</b><div>An inner join loses rows that have no partner. Kabir, Arjun and Vikram never ordered, so they do not appear in the result above.</div></div>
+<div class="sq-lab" data-lab="l-inner"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="outer" data-l="outer" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>LEFT, RIGHT and FULL joins: keeping the unmatched</h2>
+<p>"List <b>every</b> customer with their number of orders, even zero" needs the customers who have no orders. A <code>LEFT JOIN</code> keeps every row of the left table. Where no partner exists, the right side columns are filled with NULL.</p>
+<div class="sq-run" data-q="left"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Join</th><th>Keeps</th><th>Unmatched side gets</th></tr></thead><tbody><tr><td>INNER</td><td>only matching pairs</td><td>nothing, rows dropped</td></tr><tr><td>LEFT (OUTER)</td><td>every left row</td><td>NULLs in the right columns</td></tr><tr><td>RIGHT (OUTER)</td><td>every right row</td><td>NULLs in the left columns</td></tr><tr><td>FULL (OUTER)</td><td>every row from both sides</td><td>NULLs on whichever side is missing</td></tr><tr><td>CROSS</td><td>every possible pair, no ON</td><td>not applicable</td></tr></tbody></table></div>
+<div class="sq-run" data-q="anti"></div>
+<div class="note note-exam"><b>In the exam</b><div>SQLite supports RIGHT JOIN and FULL OUTER JOIN since version 3.39.0 (July 2022). MySQL still has no FULL OUTER JOIN: people write a LEFT JOIN UNION a RIGHT JOIN instead.</div></div>
+<div class="sq-lab" data-lab="l-noorder"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="more" data-l="more" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Three tables, self joins and CROSS JOIN</h2>
+<p>Real questions often cross three or four tables. Each JOIN adds one more table and one more ON condition. "Which customer bought which product" needs customers, orders, order_items and products.</p>
+<div class="sq-run" data-q="three"></div>
+<p>A <b>self join</b> joins a table to itself. In the company database each employee has a <code>manager_id</code> that points at another employee. Two aliases of the same table let us show each person next to their manager.</p>
+<div class="sq-run" data-q="self"></div>
+<div class="sq-run" data-q="cross"></div>
+<div class="note note-warn"><b>Common mistake</b><div>A join with a missing or wrong ON condition can turn into an accidental cross join: 10 000 rows times 10 000 rows is 100 million rows. If a result is suddenly huge, check the ON clauses first.</div></div>
+<div class="sq-lab" data-lab="l-self"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="onwhere" data-l="onwhere" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>ON versus WHERE, USING and NATURAL</h2>
+<p>For an inner join it makes no difference whether a filter sits in ON or WHERE. For an outer join it changes everything. A condition in <b>ON</b> decides which rows match. A condition in <b>WHERE</b> runs after the join and can throw away the NULL padded rows you wanted to keep.</p>
+<div class="sq-run" data-q="onwhere"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Shortcut</th><th>Means</th><th>Advice</th></tr></thead><tbody><tr><td><code>JOIN t USING (id)</code></td><td>ON a.id = t.id, and the id column appears once</td><td>fine when both columns share a name</td></tr><tr><td><code>NATURAL JOIN t</code></td><td>join on every column with the same name</td><td>avoid: adding a column later can silently change the join</td></tr><tr><td><code>FROM a, b WHERE a.x = b.x</code></td><td>old comma style inner join</td><td>works, but explicit JOIN ... ON is clearer</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-onwhere"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A join is matching cards from two piles. Inner keeps pairs, left keeps every card from the left pile.</p></div><div class="ld-p" data-ld="college" hidden><p>Logically a join is a cross product followed by a filter on the ON condition. Outer joins then add back unmatched rows padded with NULL.</p></div><div class="ld-p" data-ld="masters" hidden><p>Engines run joins with three main algorithms: nested loop (for each left row look up the right side, fast with an index), hash join (build a hash table of the smaller side, best for big equality joins) and merge join (walk two sorted inputs together). SQLite uses nested loops, often with an automatic temporary index.</p></div><div class="ld-p" data-ld="research" hidden><p>Choosing the order of many joins is hard: the number of possible orders grows faster than exponentially. Optimizers use dynamic programming for a handful of tables and heuristics or genetic search beyond that (PostgreSQL switches to its genetic optimizer at 12 tables by default).</p></div></div>
+<details class="deep"><summary>Going deeper: Semi join and anti join</summary><div class="deep-b"><p>A semi join keeps left rows that have at least one match, without repeating them: that is what EXISTS and IN do. An anti join keeps left rows with no match: NOT EXISTS or LEFT JOIN ... WHERE right.key IS NULL. Optimizers often turn subqueries into these joins.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-keys.html" data-topic="sql-keys"><small>Previous topic</small><b>Keys and relations</b></a><a class="next" href="./sql-subqueries.html" data-topic="sql-subqueries"><small>Next topic</small><b>Subqueries</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-joins", "topic": "sql-joins", "subject": "sql", "title": "Joins: putting tables back together", "codes": {}, "quiz": [{"lv": "e", "q": "JOIN with no other word means", "o": ["LEFT JOIN", "INNER JOIN", "CROSS JOIN", "FULL JOIN"], "a": 1, "hint": "Default.", "why": "JOIN is INNER JOIN."}, {"lv": "e", "q": "Which join keeps every row of the left table?", "o": ["INNER", "LEFT", "RIGHT", "CROSS"], "a": 1, "hint": "Left.", "why": "LEFT JOIN keeps all left rows."}, {"lv": "e", "q": "Unmatched rows in an outer join get", "o": ["0", "NULL", "Empty text", "They are removed"], "a": 1, "hint": "Padding.", "why": "Missing side columns are NULL."}, {"lv": "e", "q": "A table joined to itself is a", "o": ["Cross join", "Self join", "Natural join", "Union"], "a": 1, "hint": "Itself.", "why": "Self join with two aliases."}, {"lv": "m", "q": "CROSS JOIN of 4 rows and 5 rows gives", "o": ["9 rows", "20 rows", "5 rows", "4 rows"], "a": 1, "hint": "Every pair.", "why": "4 × 5 = 20."}, {"lv": "m", "q": "To list customers with zero orders counted as 0, use", "o": ["INNER JOIN and COUNT(*)", "LEFT JOIN and COUNT(o.id)", "LEFT JOIN and COUNT(*)", "CROSS JOIN"], "a": 1, "hint": "Count the right side.", "why": "COUNT(o.id) ignores the NULL padding."}, {"lv": "m", "q": "Which finds customers with no orders?", "o": ["INNER JOIN ... WHERE o.id IS NULL", "LEFT JOIN ... WHERE o.id IS NULL", "RIGHT JOIN ... WHERE c.id IS NULL", "CROSS JOIN ... WHERE o.id = 0"], "a": 1, "hint": "Anti join.", "why": "NULL after a LEFT JOIN means no partner."}, {"lv": "m", "q": "Why write o.id instead of id?", "o": ["Speed", "Both tables have id, so it is ambiguous", "Style only", "It is required in WHERE only"], "a": 1, "hint": "Which id?", "why": "The alias says which table."}, {"lv": "h", "q": "A LEFT JOIN with WHERE right.col = … on the right table usually behaves like", "o": ["A FULL JOIN", "An INNER JOIN", "A CROSS JOIN", "A RIGHT JOIN"], "a": 1, "hint": "Padding removed.", "why": "The WHERE test drops NULL padded rows."}, {"lv": "h", "q": "Why avoid NATURAL JOIN?", "o": ["It is slow", "It joins on every same named column, which can change when tables change", "It is not supported", "It returns NULLs"], "a": 1, "hint": "Hidden columns.", "why": "A new same named column silently changes the join."}, {"lv": "x", "q": "Which join algorithm builds a lookup table from the smaller input?", "o": ["Nested loop", "Hash join", "Merge join", "Cross join"], "a": 1, "hint": "Hash table.", "why": "Hash join builds on the smaller side and probes with the other."}], "calc": [{"lv": "e", "q": "How many rows does orders INNER JOIN customers return?", "ans": "10", "hint": "Every order has a customer.", "steps": ["Each of the 10 orders has a valid customer_id.", "Each order matches exactly one customer.", "<span class=\"eq\">10 rows<\/span>"]}, {"lv": "m", "q": "How many rows does customers LEFT JOIN orders return?", "ans": "13", "hint": "Matched pairs plus unmatched customers.", "steps": ["10 matched pairs (one per order).", "3 customers with no orders add one padded row each.", "<span class=\"eq\">10 + 3 = 13<\/span>"]}, {"lv": "e", "q": "A CROSS JOIN of customers and products returns how many rows?", "ans": "80", "hint": "Rows times rows.", "steps": ["8 customers.", "10 products.", "<span class=\"eq\">8 × 10 = 80<\/span>"]}, {"lv": "m", "q": "How many order lines did Asha buy in total? (rows of order_items in her orders)", "ans": "5", "hint": "Three joins.", "steps": ["Asha’s orders: 101, 103, 110.", "Lines: 101 has 2, 103 has 2, 110 has 1.", "<span class=\"eq\">2 + 2 + 1 = 5<\/span>"]}, {"lv": "m", "q": "How many employees in the company database report directly to Priya (id 1)?", "ans": "4", "hint": "manager_id = 1.", "steps": ["Rahul, Lata, Mohan and Zoya have manager_id 1.", "Count them.", "<span class=\"eq\">4<\/span>"]}, {"lv": "h", "q": "In the ON versus WHERE example, how many rows does the WHERE version return?", "ans": "5", "hint": "Only customers with a delivered order.", "steps": ["Delivered orders belong to customers 1, 2, 3, 7 and 5.", "Others are removed by WHERE.", "<span class=\"eq\">5 rows<\/span>"]}, {"lv": "h", "q": "And the ON version?", "ans": "8", "hint": "Every customer stays.", "steps": ["A LEFT JOIN keeps every customer.", "The status test only affects matching.", "<span class=\"eq\">8 rows<\/span>"]}, {"lv": "h", "q": "How many total items (sum of qty) were bought in the Stationery category?", "ans": "25", "hint": "Join lines to products.", "steps": ["Stationery products are 1, 2 and 10.", "Their quantities: 2, 5, 10, 4, 1, 3.", "<span class=\"eq\">2 + 5 + 10 + 4 + 1 + 3 = 25<\/span>"]}], "assign": [], "must": [["Inner join", "JOIN ... ON pairs rows where the condition is true. Unmatched rows are dropped."], ["Outer joins", "LEFT keeps all left rows, RIGHT all right rows, FULL both. Missing side becomes NULL. Count with COUNT(right.col)."], ["Anti join", "LEFT JOIN ... WHERE right.key IS NULL finds rows with no partner."], ["Self and cross", "A self join uses two aliases of one table. CROSS JOIN makes every pair. A missing ON can cause a huge accidental cross join."], ["ON vs WHERE", "In outer joins, filters on the optional side belong in ON. In WHERE they remove the NULL rows."], ["Algorithms", "Nested loop, hash join, merge join. SQLite uses nested loops with indexes."]], "summary": "<p>Joins pair rows by a condition, outer joins keep the unmatched with NULLs, self joins read hierarchies, and filters on the optional side belong in ON.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"inner": {"src": "SELECT o.id AS order_id, o.order_date, c.name, c.city\nFROM orders AS o\nINNER JOIN customers AS c ON c.id = o.customer_id\nORDER BY o.id;", "db": "shop", "setup": "", "title": "Every order with its customer", "notes": {"2": "o is a short alias for orders.", "3": "Pair each order with the customer whose id equals the order’s customer_id. INNER keeps only matching pairs."}, "out": [{"sql": "SELECT o.id AS order_id, o.order_date, c.name, c.city\nFROM orders AS o\nINNER JOIN customers AS c ON c.id = o.customer_id\nORDER BY o.id;", "cols": ["order_id", "order_date", "name", "city"], "rows": [[101, "2025-06-01", "Asha", "Pune"], [102, "2025-06-03", "Ravi", "Delhi"], [103, "2025-06-10", "Asha", "Pune"], [104, "2025-06-11", "Meera", "Chennai"], [105, "2025-06-15", "Sara", "Bhubaneswar"], [106, "2025-06-18", "Nisha", "Delhi"], [107, "2025-06-21", "Ravi", "Delhi"], [108, "2025-06-25", "Meera", "Chennai"], [109, "2025-07-02", "Sara", "Bhubaneswar"], [110, "2025-07-05", "Asha", "Pune"]]}]}, "left": {"src": "SELECT c.name, COUNT(o.id) AS orders\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nGROUP BY c.id\nORDER BY orders DESC, c.name;", "db": "shop", "setup": "", "title": "Every customer, even with zero orders", "notes": {"1": "COUNT(o.id) counts only real orders. For a customer with none, o.id is NULL, so the count is 0. COUNT(*) would wrongly give 1.", "3": "LEFT keeps every customer."}, "out": [{"sql": "SELECT c.name, COUNT(o.id) AS orders\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nGROUP BY c.id\nORDER BY orders DESC, c.name;", "cols": ["name", "orders"], "rows": [["Asha", 3], ["Meera", 2], ["Ravi", 2], ["Sara", 2], ["Nisha", 1], ["Arjun", 0], ["Kabir", 0], ["Vikram", 0]]}]}, "anti": {"src": "SELECT c.name\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.id IS NULL;", "db": "shop", "setup": "", "title": "The anti join: customers who never ordered", "notes": {"4": "After a LEFT JOIN, a NULL order id means no partner was found."}, "out": [{"sql": "SELECT c.name\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.id IS NULL;", "cols": ["name"], "rows": [["Kabir"], ["Arjun"], ["Vikram"]]}]}, "three": {"src": "SELECT c.name AS customer, p.name AS product, oi.qty\nFROM customers AS c\nJOIN orders      AS o  ON o.customer_id = c.id\nJOIN order_items AS oi ON oi.order_id   = o.id\nJOIN products    AS p  ON p.id          = oi.product_id\nWHERE c.name = 'Asha'\nORDER BY o.id, p.name;", "db": "shop", "setup": "", "title": "Four tables in one query", "notes": {"3": "Customer to order.", "4": "Order to its lines.", "5": "Line to product."}, "out": [{"sql": "SELECT c.name AS customer, p.name AS product, oi.qty\nFROM customers AS c\nJOIN orders      AS o  ON o.customer_id = c.id\nJOIN order_items AS oi ON oi.order_id   = o.id\nJOIN products    AS p  ON p.id          = oi.product_id\nWHERE c.name = 'Asha'\nORDER BY o.id, p.name;", "cols": ["customer", "product", "qty"], "rows": [["Asha", "Notebook", 5], ["Asha", "Pencil box", 2], ["Asha", "Cricket ball", 3], ["Asha", "Water bottle", 1], ["Asha", "Football", 1]]}]}, "self": {"src": "SELECT e.name AS employee, m.name AS manager\nFROM employees AS e\nLEFT JOIN employees AS m ON m.id = e.manager_id\nORDER BY e.id;", "db": "company", "setup": "", "title": "Who reports to whom", "notes": {"3": "m is a second copy of employees, used for the manager. LEFT keeps Priya, who has no manager."}, "out": [{"sql": "SELECT e.name AS employee, m.name AS manager\nFROM employees AS e\nLEFT JOIN employees AS m ON m.id = e.manager_id\nORDER BY e.id;", "cols": ["employee", "manager"], "rows": [["Priya", null], ["Rahul", "Priya"], ["Sneha", "Rahul"], ["Imran", "Rahul"], ["Lata", "Priya"], ["Joseph", "Lata"], ["Kiran", "Lata"], ["Mohan", "Priya"], ["Tara", "Mohan"], ["Zoya", "Priya"]]}]}, "cross": {"src": "SELECT s.size, c.colour\nFROM (SELECT 'S' AS size UNION ALL SELECT 'M' UNION ALL SELECT 'L') AS s\nCROSS JOIN (SELECT 'red' AS colour UNION ALL SELECT 'blue') AS c;", "db": "", "setup": "", "title": "CROSS JOIN makes every pair", "notes": {"3": "3 sizes × 2 colours = 6 rows, every combination of T shirt."}, "out": [{"sql": "SELECT s.size, c.colour\nFROM (SELECT 'S' AS size UNION ALL SELECT 'M' UNION ALL SELECT 'L') AS s\nCROSS JOIN (SELECT 'red' AS colour UNION ALL SELECT 'blue') AS c;", "cols": ["size", "colour"], "rows": [["S", "red"], ["S", "blue"], ["M", "red"], ["M", "blue"], ["L", "red"], ["L", "blue"]]}]}, "onwhere": {"src": "-- Filter in ON: every customer stays, only delivered orders are counted\nSELECT c.name, COUNT(o.id) AS delivered\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id AND o.status = 'delivered'\nGROUP BY c.id ORDER BY c.id;\n\n-- Filter in WHERE: customers without a delivered order vanish\nSELECT c.name, COUNT(o.id) AS delivered\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.status = 'delivered'\nGROUP BY c.id ORDER BY c.id;", "db": "shop", "setup": "", "title": "Same words, different place, different answer", "notes": {"4": "The status test is part of matching. Unmatched customers still appear with 0.", "11": "NULL status is not delivered, so the padded rows are removed and the LEFT JOIN acts like an INNER JOIN."}, "out": [{"sql": "-- Filter in ON: every customer stays, only delivered orders are counted\nSELECT c.name, COUNT(o.id) AS delivered\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id AND o.status = 'delivered'\nGROUP BY c.id ORDER BY c.id;", "cols": ["name", "delivered"], "rows": [["Asha", 1], ["Ravi", 1], ["Meera", 1], ["Kabir", 0], ["Sara", 1], ["Arjun", 0], ["Nisha", 1], ["Vikram", 0]]}, {"sql": "-- Filter in WHERE: customers without a delivered order vanish\nSELECT c.name, COUNT(o.id) AS delivered\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.id\nWHERE o.status = 'delivered'\nGROUP BY c.id ORDER BY c.id;", "cols": ["name", "delivered"], "rows": [["Asha", 1], ["Ravi", 1], ["Meera", 1], ["Sara", 1], ["Nisha", 1]]}]}}, "labs": [{"id": "l-inner", "lv": "e", "title": "Who bought what", "task": "Show each <code>order_id<\/code> from order_items with the product <code>name<\/code>, for every line of every order.", "db": "shop", "hint": "Join order_items to products on product_id.", "why": "Each line points at one product, so the join adds the product name.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["order_id", "name"], "rows": [[101, "Pencil box"], [101, "Notebook"], [102, "Headphones"], [103, "Water bottle"], [103, "Cricket ball"], [104, "Notebook"], [104, "Phone charger"], [105, "Football"], [106, "Pencil box"], [106, "Geometry set"], [107, "Headphones"], [107, "Phone charger"], [108, "Cricket ball"], [109, "Notebook"], [109, "Water bottle"], [110, "Football"]]}, "solution": "SELECT oi.order_id, p.name FROM order_items AS oi JOIN products AS p ON p.id = oi.product_id;"}, {"id": "l-noorder", "lv": "m", "title": "Products nobody ordered", "task": "Show the <code>name<\/code> of every product that appears in no order line.", "db": "shop", "hint": "LEFT JOIN products to order_items, then keep rows where the order_items side is NULL.", "why": "This anti join pattern finds rows with no partner. NOT EXISTS works too.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Lunch box"], ["Desk lamp"]]}, "solution": "SELECT p.name FROM products AS p LEFT JOIN order_items AS oi ON oi.product_id = p.id WHERE oi.order_id IS NULL;"}, {"id": "l-self", "lv": "m", "title": "Managers and their teams", "task": "From the company database, show each manager’s <code>name<\/code> as <code>manager<\/code> and the number of people reporting to them as <code>team<\/code>.", "db": "company", "hint": "Self join employees e to employees m on m.id = e.manager_id, then group by the manager.", "why": "Each employee row joins to its manager, and grouping by manager counts the reports.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["manager", "team"], "rows": [["Priya", 4], ["Rahul", 2], ["Lata", 2], ["Mohan", 1]]}, "solution": "SELECT m.name AS manager, COUNT(*) AS team FROM employees AS e JOIN employees AS m ON m.id = e.manager_id GROUP BY m.id;"}, {"id": "l-onwhere", "lv": "h", "title": "Customers and their pending orders", "task": "Show every customer’s <code>name<\/code> and the number of their orders with status pending as <code>pending<\/code>, including customers with 0.", "db": "shop", "hint": "Put the status test in ON, not in WHERE.", "why": "A filter in ON keeps unmatched customers. In WHERE it would drop them.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "pending"], "rows": [["Asha", 1], ["Ravi", 1], ["Meera", 0], ["Kabir", 0], ["Sara", 0], ["Arjun", 0], ["Nisha", 0], ["Vikram", 0]]}, "solution": "SELECT c.name, COUNT(o.id) AS pending FROM customers AS c LEFT JOIN orders AS o ON o.customer_id = c.id AND o.status = 'pending' GROUP BY c.id;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

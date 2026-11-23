@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Databases at scale · SQL and Databases</title>
+<meta name="description" content="Scale up and scale out, caching, partitioning with pruning, replication modes and lag, failover, sharding and shard keys, the CAP theorem, OLTP and OLAP, column stores, star schemas, NoSQL and distributed SQL.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 8: Professional SQL</span><span>›</span><span>Scaling databases</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 8 · Topic 3 of 4 · Advanced</div>
+    <h1>Databases at scale</h1>
+    <p class="lead">Learn what happens when one server is not enough: partitioning big tables, replicating to read replicas, sharding across servers, the CAP theorem, and the difference between OLTP apps and OLAP warehouses.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">4 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-scale" data-topic="cheatsheet" data-h="sql-scale">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#grow" data-l="grow"><span class="n">1</span><span class="t">When one server is not enough</span></a></li><li><a href="#partition" data-l="partition"><span class="n">2</span><span class="t">Partitioning a big table</span></a></li><li><a href="#replicate" data-l="replicate"><span class="n">3</span><span class="t">Replication: copies of the whole database</span></a></li><li><a href="#shard" data-l="shard"><span class="n">4</span><span class="t">Sharding and the CAP theorem</span></a></li><li><a href="#olap" data-l="olap"><span class="n">5</span><span class="t">OLTP, OLAP and column stores</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="grow" data-l="grow" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>When one server is not enough</h2>
+<p>A database on one machine can serve a surprising amount: SQLite runs countless phone apps, and one well tuned PostgreSQL server can handle thousands of queries a second. When it is not enough, there are two directions.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Direction</th><th>What it means</th><th>Limits</th></tr></thead><tbody><tr><td>Scale up (vertical)</td><td>a bigger machine: more CPU, memory, faster disks</td><td>one machine has a ceiling, and it is a single point of failure</td></tr><tr><td>Scale out (horizontal)</td><td>more machines sharing the work</td><td>harder: data must be copied or split, and kept consistent</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>The usual order of fixes</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Fix the queries and indexes first (chapters 7.1 and 7.2). It is the cheapest win.</li><li>Add caching for repeated reads, for example Redis in front of the database.</li><li>Add read replicas for read heavy traffic.</li><li>Partition very large tables inside one server.</li><li>Shard across servers only when one primary cannot take the writes.</li></ol></div>
+<div class="note note-tip"><b>Remember</b><div>Most apps never need sharding. Each step above adds moving parts, so take the next step only when measurements say the current one is not enough.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="partition" data-l="partition" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Partitioning a big table</h2>
+<p><b>Partitioning</b> splits one big table into smaller pieces on the same server, by a rule such as the year. Queries that name the year read only the matching piece, which is called <b>partition pruning</b>. Old pieces can be dropped in a moment instead of deleting millions of rows.</p>
+<pre class="sq-code">-- PostgreSQL declarative partitioning (version 10+)
+CREATE TABLE sales (id bigint, sold_on date, amount int) PARTITION BY RANGE (sold_on);
+CREATE TABLE sales_2024 PARTITION OF sales FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
+CREATE TABLE sales_2025 PARTITION OF sales FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');</pre>
+<div class="sq-run" data-q="part"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Partition type</th><th>Rule</th><th>Example</th></tr></thead><tbody><tr><td>Range</td><td>a range of values per piece</td><td>one piece per month or year</td></tr><tr><td>List</td><td>a list of values per piece</td><td>one piece per country</td></tr><tr><td>Hash</td><td>hash of the key mod N</td><td>spread customers evenly over 8 pieces</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-part"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="replicate" data-l="replicate" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Replication: copies of the whole database</h2>
+<p><b>Replication</b> keeps copies of the database on other servers. The <b>primary</b> takes all writes and streams its change log to <b>replicas</b>, which serve reads and can take over if the primary fails.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Mode</th><th>How a write is confirmed</th><th>Trade off</th></tr></thead><tbody><tr><td>Asynchronous</td><td>as soon as the primary has it</td><td>fast, but a crash can lose the last few changes, and replicas lag behind</td></tr><tr><td>Synchronous</td><td>only when at least one replica also has it</td><td>no loss on failover, but every write waits for the network</td></tr><tr><td>Semi synchronous (MySQL)</td><td>when a replica has received it</td><td>a middle ground</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: the vanishing comment</div><p>You post a comment on a social site and the page reloads without it. The write went to the primary, but the reload read from a replica a second behind. That gap is <b>replication lag</b>. Apps fix it by reading your own recent writes from the primary for a short time, called read your writes consistency.</p></div>
+<div class="walk"><div class="walk-h"><span>Failover</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The primary stops answering.</li><li>Monitoring notices after a few missed heartbeats.</li><li>The most up to date replica is promoted to primary.</li><li>Apps reconnect to the new primary. With asynchronous replication, the newest changes may be lost.</li></ol></div>
+<div class="sq-run" data-q="lag"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="shard" data-l="shard" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Sharding and the CAP theorem</h2>
+<p><b>Sharding</b> splits the rows of a table across several servers, each holding a <b>shard</b>. It spreads writes, which replication cannot do. The choice of <b>shard key</b> decides almost everything.</p>
+<div class="viz" data-viz="pk" data-pk="sqshard"></div>
+<div class="sq-run" data-q="shardkey"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Good shard key</th><th>Bad shard key</th></tr></thead><tbody><tr><td>spreads data and traffic evenly (customer id)</td><td>creates hot spots (today’s date sends all new writes to one server)</td></tr><tr><td>most queries include it</td><td>most queries must ask every shard</td></tr><tr><td>keeps related rows together</td><td>splits rows that are always read together</td></tr></tbody></table></div>
+<p>The <b>CAP theorem</b> (Brewer 2000, proved by Gilbert and Lynch 2002) says that when the network between servers breaks (a <b>partition</b>), a distributed database must choose: stay <b>consistent</b> and refuse some requests, or stay <b>available</b> and risk returning old data.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Choice during a network split</th><th>Behaviour</th><th>Examples</th></tr></thead><tbody><tr><td>Consistency (CP)</td><td>some requests fail until the split heals</td><td>Spanner, CockroachDB, etcd</td></tr><tr><td>Availability (AP)</td><td>every server answers, copies may disagree for a while</td><td>Cassandra and DynamoDB in default modes</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-shard"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="olap" data-l="olap" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>OLTP, OLAP and column stores</h2>
+<p>Not all databases do the same job. <b>OLTP</b> (online transaction processing) runs the app: many small reads and writes. <b>OLAP</b> (online analytical processing) answers big questions over history: few huge queries.</p>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>OLTP</th><th>OLAP</th></tr></thead><tbody><tr><td>Typical query</td><td>fetch order 105, insert one row</td><td>total sales by region by month for 5 years</td></tr><tr><td>Rows touched</td><td>a few</td><td>millions or billions</td></tr><tr><td>Design</td><td>normalized (3NF)</td><td>star schema, denormalized dimensions</td></tr><tr><td>Storage</td><td>row store</td><td>column store</td></tr><tr><td>Examples</td><td>PostgreSQL, MySQL, SQL Server, SQLite</td><td>Snowflake, BigQuery, Redshift, ClickHouse, DuckDB</td></tr></tbody></table></div>
+<p>A <b>column store</b> keeps each column together on disk. A query that sums one column reads only that column, and similar values compress very well (C-Store, Stonebraker and others, 2005).</p>
+<div class="sq-run" data-q="star"></div>
+<div class="note note-tip"><b>Remember</b><div>Many companies copy data from OLTP databases into a warehouse every night or continuously (ETL or ELT), so heavy reports never slow down the app.</div></div>
+<div class="sq-lab" data-lab="l-star"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>When one server is too small, copy the data to more servers for reading, or split it so each server holds a part.</p></div><div class="ld-p" data-ld="college" hidden><p>Partitioning splits a table on one server, replication copies the whole database, sharding splits rows across servers. OLTP and OLAP need different designs.</p></div><div class="ld-p" data-ld="masters" hidden><p>Consensus protocols (Paxos, Raft) keep replicas in agreement. Consistency models range from linearizable to eventual. Distributed SQL engines combine sharding, replication and transactions: Spanner, CockroachDB, YugabyteDB, TiDB.</p></div><div class="ld-p" data-ld="research" hidden><p>Research explores disaggregated storage (Amazon Aurora, 2017, ships only the log to a shared storage layer), serverless databases that scale to zero, and lakehouse formats such as Apache Iceberg and Delta Lake that bring tables and transactions to files in object storage.</p></div></div>
+<details class="deep"><summary>Going deeper: NoSQL and NewSQL</summary><div class="deep-b"><p>Around 2009 many systems dropped SQL and joins to scale out more easily: key value stores, document stores (MongoDB), wide column stores (Cassandra) and graph databases (Neo4j). Later, NewSQL and distributed SQL systems showed that SQL and transactions can also scale out, and many NoSQL systems added SQL like query languages. Choose by data shape and access pattern, not by fashion.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-security.html" data-topic="sql-security"><small>Previous topic</small><b>Security</b></a><a class="next" href="./sql-dialects.html" data-topic="sql-dialects"><small>Next topic</small><b>Standards and dialects</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-scale", "topic": "sql-scale", "subject": "sql", "title": "Databases at scale", "codes": {}, "quiz": [{"lv": "e", "q": "Buying a bigger server is", "o": ["Scaling out", "Scaling up", "Sharding", "Replication"], "a": 1, "hint": "Vertical.", "why": "Scale up means a bigger machine."}, {"lv": "e", "q": "A read replica", "o": ["Takes all writes", "Serves reads from a copy", "Deletes old data", "Is an index"], "a": 1, "hint": "Copy.", "why": "It copies the primary and answers reads."}, {"lv": "e", "q": "Partitioning splits a table", "o": ["Across the internet", "Into pieces on the same server", "Into views", "Into columns only"], "a": 1, "hint": "Same server.", "why": "Sharding splits across servers."}, {"lv": "e", "q": "OLTP systems mostly run", "o": ["Huge reports", "Many small reads and writes", "Backups", "Machine learning"], "a": 1, "hint": "Transactions.", "why": "They run the live app."}, {"lv": "m", "q": "Partition pruning means", "o": ["Deleting partitions", "Reading only the partitions a query needs", "Compressing data", "Sorting"], "a": 1, "hint": "Skip pieces.", "why": "Matching pieces only."}, {"lv": "m", "q": "Replication lag causes", "o": ["Lost tables", "Replicas showing slightly old data", "Syntax errors", "Deadlocks"], "a": 1, "hint": "Behind.", "why": "Replicas may be a moment behind."}, {"lv": "m", "q": "A shard key of today’s date tends to create", "o": ["Even load", "A hot spot", "Fewer servers", "Smaller indexes"], "a": 1, "hint": "All new writes together.", "why": "Every new write hits one shard."}, {"lv": "m", "q": "A column store is fastest for", "o": ["Fetching one whole row", "Summing one column over many rows", "Single row inserts", "Locks"], "a": 1, "hint": "Columns together.", "why": "It reads only the needed columns."}, {"lv": "m", "q": "In a star schema, the big central table is the", "o": ["Dimension table", "Fact table", "Lookup table", "View"], "a": 1, "hint": "Facts.", "why": "Numbers live in the fact table."}, {"lv": "h", "q": "CAP says that during a network partition a system must choose between", "o": ["Speed and size", "Consistency and availability", "SQL and NoSQL", "Rows and columns"], "a": 1, "hint": "C or A.", "why": "It cannot guarantee both while the split lasts."}, {"lv": "x", "q": "Which protocol is used by etcd and CockroachDB to keep replicas in agreement?", "o": ["TCP", "Raft", "HTTP", "SMTP"], "a": 1, "hint": "Consensus.", "why": "Raft."}], "calc": [{"lv": "e", "q": "What is the total amount in the 2025 partition?", "ans": "1600", "hint": "Add three sales.", "steps": ["Sales of 300, 900 and 400.", "Add them.", "<span class=\"eq\">300 + 900 + 400 = 1600<\/span>"]}, {"lv": "e", "q": "A query for 2025 reads only the 2025 piece. Of 5 rows in total, how many does it skip?", "ans": "2", "hint": "The 2024 rows.", "steps": ["sales_2024 has 2 rows.", "Pruning skips that whole piece.", "<span class=\"eq\">2 rows skipped<\/span>"]}, {"lv": "m", "q": "The primary’s last change was at 10:00:05 and replica2’s at 09:59:35. How many seconds is replica2 behind?", "ans": "29", "hint": "Subtract the times.", "steps": ["From 09:59:35 to 10:00:00 is 25 seconds.", "Then 5 more seconds.", "<span class=\"eq\">25 + 5 = 29 seconds<\/span>"]}, {"lv": "m", "q": "With 8 customers hashed by id mod 3, how many land on server 0?", "ans": "2", "hint": "Ids divisible by 3.", "steps": ["Ids 1 to 8.", "Divisible by 3: 3 and 6.", "<span class=\"eq\">2 customers<\/span>"]}, {"lv": "m", "q": "A table of 100 million rows is hash partitioned into 16 pieces. About how many rows per piece?", "ans": "6250000", "hint": "Divide.", "steps": ["Hash spreads rows evenly.", "100,000,000 ÷ 16.", "<span class=\"eq\">6,250,000 rows<\/span>"]}, {"lv": "m", "q": "One primary and 3 read replicas each handle 2,000 reads per second. What is the total read capacity?", "ans": "8000", "hint": "Add all servers that serve reads.", "steps": ["The primary also serves reads here.", "4 servers × 2,000.", "<span class=\"eq\">8,000 reads per second<\/span>"]}, {"lv": "h", "q": "A column store reads 1 of 20 equal size columns for a SUM. What fraction of the data does it read compared with a row store?", "ans": "0.05", "hint": "One twentieth.", "steps": ["A row store reads whole rows, all 20 columns.", "The column store reads 1 column.", "<span class=\"eq\">1 ÷ 20 = 0.05<\/span>"]}, {"lv": "h", "q": "In the star schema, what are total Electronics sales (cancelled orders left out)?", "ans": "5095", "hint": "Electronics lines.", "steps": ["Headphones 1499 twice (orders 102, 107).", "Phone chargers: 2 in order 104, 1 in order 107, at 699.", "<span class=\"eq\">2 × 1499 + 3 × 699 = 5095<\/span>"]}], "assign": [], "must": [["Order of fixes", "Tune queries and indexes, cache, add read replicas, partition, and shard last."], ["Partitioning", "Range, list or hash pieces of one table on one server. Pruning reads only the pieces needed."], ["Replication", "Primary takes writes, replicas copy the log and serve reads. Async is fast but lags, sync waits but loses nothing."], ["Sharding and CAP", "Rows spread across servers by a shard key. During a network split, choose consistency or availability."], ["OLTP and OLAP", "Small transactions in normalized row stores, big analytics in star schemas and column stores."]], "summary": "<p>Tune first, then cache, replicate for reads, partition big tables and shard for writes, and use column stores for analytics.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"part": {"src": "CREATE TABLE sales_2024 (id INTEGER, sold_on TEXT CHECK (sold_on LIKE '2024-%'), amount INTEGER);\nCREATE TABLE sales_2025 (id INTEGER, sold_on TEXT CHECK (sold_on LIKE '2025-%'), amount INTEGER);\nINSERT INTO sales_2024 VALUES (1, '2024-11-02', 500), (2, '2024-12-15', 700);\nINSERT INTO sales_2025 VALUES (3, '2025-01-09', 300), (4, '2025-03-21', 900), (5, '2025-06-30', 400);\nCREATE VIEW sales AS SELECT * FROM sales_2024 UNION ALL SELECT * FROM sales_2025;\nSELECT strftime('%Y', sold_on) AS year, SUM(amount) AS total FROM sales GROUP BY year;", "db": "", "setup": "", "title": "The same idea in SQLite: one table per year behind a UNION ALL view", "notes": {"1": "CHECK rules say which rows belong in each piece.", "5": "Queries use the view as if it were one table."}, "out": [{"sql": "CREATE TABLE sales_2024 (id INTEGER, sold_on TEXT CHECK (sold_on LIKE '2024-%'), amount INTEGER);", "cols": [], "rows": []}, {"sql": "CREATE TABLE sales_2025 (id INTEGER, sold_on TEXT CHECK (sold_on LIKE '2025-%'), amount INTEGER);", "cols": [], "rows": []}, {"sql": "INSERT INTO sales_2024 VALUES (1, '2024-11-02', 500), (2, '2024-12-15', 700);", "cols": [], "rows": [], "changes": 2}, {"sql": "INSERT INTO sales_2025 VALUES (3, '2025-01-09', 300), (4, '2025-03-21', 900), (5, '2025-06-30', 400);", "cols": [], "rows": [], "changes": 3}, {"sql": "CREATE VIEW sales AS SELECT * FROM sales_2024 UNION ALL SELECT * FROM sales_2025;", "cols": [], "rows": []}, {"sql": "SELECT strftime('%Y', sold_on) AS year, SUM(amount) AS total FROM sales GROUP BY year;", "cols": ["year", "total"], "rows": [["2024", 1200], ["2025", 1600]]}]}, "lag": {"src": "CREATE TABLE heartbeat (server TEXT, last_change TEXT);\nINSERT INTO heartbeat VALUES ('primary', '2025-07-15 10:00:05'), ('replica1', '2025-07-15 10:00:04'), ('replica2', '2025-07-15 09:59:35');\nSELECT server, CAST((julianday((SELECT last_change FROM heartbeat WHERE server = 'primary')) - julianday(last_change)) * 86400 AS INTEGER) AS lag_seconds\nFROM heartbeat;", "db": "", "setup": "", "title": "Measuring replication lag", "notes": {"3": "How many seconds each copy is behind the primary. replica2 is 30 seconds behind."}, "out": [{"sql": "CREATE TABLE heartbeat (server TEXT, last_change TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO heartbeat VALUES ('primary', '2025-07-15 10:00:05'), ('replica1', '2025-07-15 10:00:04'), ('replica2', '2025-07-15 09:59:35');", "cols": [], "rows": [], "changes": 3}, {"sql": "SELECT server, CAST((julianday((SELECT last_change FROM heartbeat WHERE server = 'primary')) - julianday(last_change)) * 86400 AS INTEGER) AS lag_seconds\nFROM heartbeat;", "cols": ["server", "lag_seconds"], "rows": [["primary", 0], ["replica1", 0], ["replica2", 29]]}]}, "shardkey": {"src": "SELECT id, name, id % 3 AS shard FROM customers ORDER BY shard, id;", "db": "shop", "setup": "", "title": "Hash sharding customers over 3 servers", "notes": {"1": "Each customer and all of their orders would live on server id mod 3."}, "out": [{"sql": "SELECT id, name, id % 3 AS shard FROM customers ORDER BY shard, id;", "cols": ["id", "name", "shard"], "rows": [[3, "Meera", 0], [6, "Arjun", 0], [1, "Asha", 1], [4, "Kabir", 1], [7, "Nisha", 1], [2, "Ravi", 2], [5, "Sara", 2], [8, "Vikram", 2]]}]}, "star": {"src": "CREATE TABLE dim_product (product_key INTEGER PRIMARY KEY, name TEXT, category TEXT);\nCREATE TABLE dim_date (date_key TEXT PRIMARY KEY, month TEXT);\nCREATE TABLE fact_sales (date_key TEXT, product_key INTEGER, qty INTEGER, amount INTEGER);\nINSERT INTO dim_product SELECT id, name, category FROM products;\nINSERT INTO dim_date SELECT DISTINCT order_date, substr(order_date, 1, 7) FROM orders;\nINSERT INTO fact_sales SELECT o.order_date, oi.product_id, oi.qty, oi.qty * p.price\n  FROM orders o JOIN order_items oi ON oi.order_id = o.id JOIN products p ON p.id = oi.product_id WHERE o.status <> 'cancelled';\nSELECT d.month, p.category, SUM(f.amount) AS sales\nFROM fact_sales f JOIN dim_date d USING (date_key) JOIN dim_product p USING (product_key)\nGROUP BY d.month, p.category ORDER BY d.month, sales DESC;", "db": "shop", "setup": "", "title": "A tiny star schema built from the shop", "notes": {"3": "The fact table holds the numbers, one row per sale line.", "9": "Reports join the facts to a few dimensions and group."}, "out": [{"sql": "CREATE TABLE dim_product (product_key INTEGER PRIMARY KEY, name TEXT, category TEXT);", "cols": [], "rows": []}, {"sql": "CREATE TABLE dim_date (date_key TEXT PRIMARY KEY, month TEXT);", "cols": [], "rows": []}, {"sql": "CREATE TABLE fact_sales (date_key TEXT, product_key INTEGER, qty INTEGER, amount INTEGER);", "cols": [], "rows": []}, {"sql": "INSERT INTO dim_product SELECT id, name, category FROM products;", "cols": [], "rows": [], "changes": 10}, {"sql": "INSERT INTO dim_date SELECT DISTINCT order_date, substr(order_date, 1, 7) FROM orders;", "cols": [], "rows": [], "changes": 10}, {"sql": "INSERT INTO fact_sales SELECT o.order_date, oi.product_id, oi.qty, oi.qty * p.price\n  FROM orders o JOIN order_items oi ON oi.order_id = o.id JOIN products p ON p.id = oi.product_id WHERE o.status <> 'cancelled';", "cols": [], "rows": [], "changes": 15}, {"sql": "SELECT d.month, p.category, SUM(f.amount) AS sales\nFROM fact_sales f JOIN dim_date d USING (date_key) JOIN dim_product p USING (product_key)\nGROUP BY d.month, p.category ORDER BY d.month, sales DESC;", "cols": ["month", "category", "sales"], "rows": [["2025-06", "Electronics", 5095], ["2025-06", "Stationery", 1640], ["2025-06", "Sports", 900], ["2025-06", "Kitchen", 250], ["2025-07", "Sports", 850], ["2025-07", "Kitchen", 500], ["2025-07", "Stationery", 180]]}]}}, "labs": [{"id": "l-part", "lv": "m", "title": "Sales in 2025", "task": "The pieces <code>sales_2024<\/code> and <code>sales_2025<\/code> and the view <code>sales<\/code> exist. Return one value <code>total<\/code>: the sum of amounts sold in 2025, reading only the 2025 piece.", "db": "", "hint": "Read sales_2025 directly, which is what partition pruning does for you in PostgreSQL.", "why": "300 + 900 + 400 = 1600.", "ordered": false, "setup": "CREATE TABLE sales_2024 (id INTEGER, sold_on TEXT CHECK (sold_on LIKE '2024-%'), amount INTEGER);\nCREATE TABLE sales_2025 (id INTEGER, sold_on TEXT CHECK (sold_on LIKE '2025-%'), amount INTEGER);\nINSERT INTO sales_2024 VALUES (1, '2024-11-02', 500), (2, '2024-12-15', 700);\nINSERT INTO sales_2025 VALUES (3, '2025-01-09', 300), (4, '2025-03-21', 900), (5, '2025-06-30', 400);\nCREATE VIEW sales AS SELECT * FROM sales_2024 UNION ALL SELECT * FROM sales_2025;", "starter": "", "want": {"cols": ["total"], "rows": [[1600]]}, "solution": "SELECT SUM(amount) AS total FROM sales_2025;"}, {"id": "l-shard", "lv": "e", "title": "Which server holds each customer", "task": "Show each customer’s <code>name<\/code> and <code>server<\/code>, their id mod 4, for 4 servers, ordered by id.", "db": "shop", "hint": "id % 4", "why": "Ids 4 and 8 go to server 0, ids 1 and 5 to server 1, and so on.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["name", "server"], "rows": [["Asha", 1], ["Ravi", 2], ["Meera", 3], ["Kabir", 0], ["Sara", 1], ["Arjun", 2], ["Nisha", 3], ["Vikram", 0]]}, "solution": "SELECT name, id % 4 AS server FROM customers ORDER BY id;"}, {"id": "l-star", "lv": "h", "title": "Sales by category", "task": "Using the shop data, show each product <code>category<\/code> and <code>sales<\/code>, the total of qty × price over order lines of orders that were not cancelled, highest first.", "db": "shop", "hint": "Join orders, order_items and products, filter cancelled, GROUP BY category.", "why": "This is the shape of almost every analytics query: join, filter, group, sum.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["category", "sales"], "rows": [["Electronics", 5095], ["Stationery", 1820], ["Sports", 1750], ["Kitchen", 750]]}, "solution": "SELECT p.category, SUM(oi.qty * p.price) AS sales FROM orders o JOIN order_items oi ON oi.order_id = o.id JOIN products p ON p.id = oi.product_id WHERE o.status <> 'cancelled' GROUP BY p.category ORDER BY sales DESC;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

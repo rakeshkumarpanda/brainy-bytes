@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functions, CASE and dates · SQL and Databases</title>
+<meta name="description" content="Text functions, number functions, searched and simple CASE, IIF, COALESCE, NULLIF, CAST and typeof, SQLite storage classes, and date and time functions with modifiers across engines.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 2: Shaping results</span><span>›</span><span>Functions and CASE</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 1 of 3 · Beginner</div>
+    <h1>Functions, CASE and dates</h1>
+    <p class="lead">Clean text, round numbers, label rows with CASE, give missing values a fallback, check types and work with dates the way an online shop does.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">3 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">5 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-functions" data-topic="cheatsheet" data-h="sql-functions">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#text" data-l="text"><span class="n">1</span><span class="t">Text functions</span></a></li><li><a href="#numbers" data-l="numbers"><span class="n">2</span><span class="t">Numbers and CASE</span></a></li><li><a href="#nulls" data-l="nulls"><span class="n">3</span><span class="t">COALESCE, NULLIF, CAST and typeof</span></a></li><li><a href="#dates" data-l="dates"><span class="n">4</span><span class="t">Dates and times</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="text" data-l="text" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Text functions</h2>
+<p>A function takes values in and gives one value back, like a juicer: fruit in, juice out. SQL has dozens of them. Text functions clean and reshape words, which matters because real data is messy: extra spaces, mixed capitals, codes hidden inside longer strings.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Function</th><th>What it gives</th><th>Example</th><th>Result</th></tr></thead><tbody><tr><td><code>upper(x)</code>, <code>lower(x)</code></td><td>capitals or small letters</td><td><code>upper('pune')</code></td><td>PUNE</td></tr><tr><td><code>length(x)</code></td><td>number of characters</td><td><code>length('Notebook')</code></td><td>8</td></tr><tr><td><code>substr(x, start, n)</code></td><td>n characters from position start (first is 1)</td><td><code>substr('Bhubaneswar', 1, 4)</code></td><td>Bhub</td></tr><tr><td><code>trim(x)</code></td><td>removes spaces at both ends</td><td><code>trim('  hi  ')</code></td><td>hi</td></tr><tr><td><code>replace(x, a, b)</code></td><td>swaps every a for b</td><td><code>replace('a-b-c', '-', '/')</code></td><td>a/b/c</td></tr><tr><td><code>instr(x, y)</code></td><td>position of y inside x, 0 if absent</td><td><code>instr('asha@mail.in', '@')</code></td><td>5</td></tr></tbody></table></div>
+<div class="sq-run" data-q="txt"></div>
+<div class="note note-tip"><b>Remember</b><div>Function names differ between engines. SQLite and PostgreSQL use substr and length. SQL Server uses SUBSTRING and LEN. MySQL has both SUBSTR and SUBSTRING. The idea is the same everywhere.</div></div>
+<div class="sq-lab" data-lab="l-initial"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="numbers" data-l="numbers" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Numbers and CASE</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Function</th><th>What it gives</th><th>Example</th><th>Result</th></tr></thead><tbody><tr><td><code>round(x, d)</code></td><td>x rounded to d decimal places</td><td><code>round(1499 * 0.9, 1)</code></td><td>1349.1</td></tr><tr><td><code>abs(x)</code></td><td>distance from zero</td><td><code>abs(-7)</code></td><td>7</td></tr><tr><td><code>max(a, b)</code>, <code>min(a, b)</code></td><td>with two or more arguments, the biggest or smallest of them</td><td><code>max(3, 9, 4)</code></td><td>9</td></tr><tr><td><code>ceil(x)</code>, <code>floor(x)</code></td><td>round up or down to a whole number (SQLite math functions)</td><td><code>ceil(2.1)</code></td><td>3.0</td></tr><tr><td><code>x % y</code></td><td>remainder</td><td><code>17 % 5</code></td><td>2</td></tr></tbody></table></div>
+<p><code>CASE</code> is how SQL says "if this, then that, otherwise something else". It checks each <code>WHEN</code> from top to bottom and returns the <code>THEN</code> of the first true one. If none is true it returns the <code>ELSE</code> value, or NULL when there is no ELSE.</p>
+<div class="viz" data-viz="pk" data-pk="sqcase"></div>
+<div class="sq-run" data-q="case"></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Searched CASE</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>CASE WHEN cond THEN a WHEN cond2 THEN b ELSE c END</code></div><div class="fx-n">The first true WHEN wins. A NULL test counts as not true.</div></div><div class="fx"><div class="fx-h"><span>Simple CASE</span></div><div class="fx-b"><code>CASE status WHEN 'pending' THEN 1 WHEN 'shipped' THEN 2 ELSE 3 END</code></div><div class="fx-n">Compares one value with each WHEN using =.</div></div><div class="fx"><div class="fx-h"><span>IIF</span></div><div class="fx-b"><code>iif(cond, a, b)</code></div><div class="fx-n">A short CASE with one test. In SQLite since 3.32.0 and in SQL Server.</div></div></div>
+<div class="sq-lab" data-lab="l-case"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="nulls" data-l="nulls" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>COALESCE, NULLIF, CAST and typeof</h2>
+<p>Missing values are common. <code>COALESCE</code> returns the first argument that is not NULL, which is perfect for a fallback: "show the email, or if there is none, show the word unknown". <code>NULLIF(a, b)</code> does the opposite job: it returns NULL when a equals b, which is a classic trick to avoid dividing by zero.</p>
+<div class="sq-run" data-q="coal"></div>
+<div class="sq-run" data-q="cast"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Storage class in SQLite</th><th>Holds</th><th>Example</th></tr></thead><tbody><tr><td>NULL</td><td>a missing value</td><td><code>NULL</code></td></tr><tr><td>INTEGER</td><td>a whole number, stored in 0 to 8 bytes</td><td><code>42</code></td></tr><tr><td>REAL</td><td>an 8 byte floating point number</td><td><code>4.2</code></td></tr><tr><td>TEXT</td><td>a string</td><td><code>'Pune'</code></td></tr><tr><td>BLOB</td><td>raw bytes, stored exactly as given</td><td><code>x'CAFE'</code></td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>SQLite is flexible about types: a column declared INTEGER can still hold text unless the table is STRICT. PostgreSQL, MySQL and SQL Server are strict and will reject or convert the value. Chapter 4.1 covers this in depth.</div></div>
+<div class="sq-lab" data-lab="l-coal"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="dates" data-l="dates" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Dates and times</h2>
+<p>SQLite has no special date type. It stores dates as <b>TEXT</b> in the ISO 8601 form <code>YYYY-MM-DD HH:MM:SS</code>, as a REAL Julian day number, or as an INTEGER count of seconds since 1970 (Unix time). Its date functions understand all three. Text in ISO form has a big bonus: sorting the text sorts the dates correctly.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Function</th><th>Gives</th><th>Example</th><th>Result</th></tr></thead><tbody><tr><td><code>date(x, modifiers)</code></td><td>YYYY-MM-DD</td><td><code>date('2025-06-01', '+7 days')</code></td><td>2025-06-08</td></tr><tr><td><code>datetime(x)</code></td><td>YYYY-MM-DD HH:MM:SS</td><td><code>datetime('2025-06-01 10:00', '+90 minutes')</code></td><td>2025-06-01 11:30:00</td></tr><tr><td><code>strftime(format, x)</code></td><td>any format</td><td><code>strftime('%m', '2025-06-01')</code></td><td>06</td></tr><tr><td><code>julianday(x)</code></td><td>days as a real number</td><td><code>julianday('2025-06-10') - julianday('2025-06-01')</code></td><td>9.0</td></tr><tr><td><code>unixepoch(x)</code></td><td>seconds since 1970-01-01</td><td><code>unixepoch('1970-01-02')</code></td><td>86400</td></tr></tbody></table></div>
+<div class="sq-run" data-q="dates"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Task</th><th>SQLite</th><th>PostgreSQL</th><th>MySQL</th><th>SQL Server</th></tr></thead><tbody><tr><td>Today</td><td><code>date('now')</code></td><td><code>CURRENT_DATE</code></td><td><code>CURDATE()</code></td><td><code>CAST(GETDATE() AS date)</code></td></tr><tr><td>Add 7 days</td><td><code>date(d, '+7 days')</code></td><td><code>d + INTERVAL '7 days'</code></td><td><code>DATE_ADD(d, INTERVAL 7 DAY)</code></td><td><code>DATEADD(day, 7, d)</code></td></tr><tr><td>Year of a date</td><td><code>strftime('%Y', d)</code></td><td><code>EXTRACT(YEAR FROM d)</code></td><td><code>YEAR(d)</code></td><td><code>YEAR(d)</code></td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: the delivery promise</div><p>An app promises delivery within 5 days. Each night a report runs <code>WHERE status &lt;&gt; 'delivered' AND date(order_date, '+5 days') &lt; date('now')</code> to list late orders, so the support team can call those customers before they complain.</p></div>
+<div class="sq-lab" data-lab="l-june"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Functions are little machines: put a value in, get a changed value out. CASE is a decision box.</p></div><div class="ld-p" data-ld="college" hidden><p>Scalar functions work on one row at a time and return one value. Aggregate functions such as COUNT and SUM, in the next chapters, work on many rows and return one value.</p></div><div class="ld-p" data-ld="masters" hidden><p>Functions on a column inside WHERE can stop an index from being used. Many engines let you index an expression, for example <code>CREATE INDEX ON customers(lower(email))</code>, so the same expression in WHERE can use it.</p></div><div class="ld-p" data-ld="research" hidden><p>Time zones and calendars are hard: daylight saving changes, leap seconds and historical calendar reforms. Systems store times in UTC and convert only for display. PostgreSQL offers timestamp with time zone, which stores an absolute instant and shows it in the session time zone.</p></div></div>
+<details class="deep"><summary>Going deeper: Deterministic functions</summary><div class="deep-b"><p>A function is deterministic when the same input always gives the same output, such as upper(). random() and date('now') are not. Engines only allow deterministic functions in places such as expression indexes and generated columns, because the stored value must stay correct.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-where.html" data-topic="sql-where"><small>Previous topic</small><b>WHERE and ORDER BY</b></a><a class="next" href="./sql-null.html" data-topic="sql-null"><small>Next topic</small><b>NULL explained</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-functions", "topic": "sql-functions", "subject": "sql", "title": "Functions, CASE and dates", "codes": {}, "quiz": [{"lv": "e", "q": "What does upper('pune') return?", "o": ["pune", "Pune", "PUNE", "NULL"], "a": 2, "hint": "Capitals.", "why": "upper turns letters into capitals."}, {"lv": "e", "q": "COALESCE(NULL, NULL, 5, 7) returns", "o": ["NULL", "5", "7", "12"], "a": 1, "hint": "First not NULL.", "why": "It returns the first argument that is not NULL."}, {"lv": "e", "q": "What does length('SQL') return?", "o": ["2", "3", "4", "NULL"], "a": 1, "hint": "Count letters.", "why": "Three characters."}, {"lv": "e", "q": "Which keyword ends a CASE expression?", "o": ["STOP", "END", "DONE", "ELSE"], "a": 1, "hint": "End.", "why": "CASE ... END."}, {"lv": "m", "q": "A CASE has no ELSE and no WHEN is true. It returns", "o": ["0", "An error", "NULL", "The first THEN"], "a": 2, "hint": "Missing ELSE.", "why": "Without ELSE the result is NULL."}, {"lv": "m", "q": "NULLIF(10, 10) returns", "o": ["10", "0", "NULL", "20"], "a": 2, "hint": "Equal means NULL.", "why": "NULLIF returns NULL when both arguments are equal."}, {"lv": "m", "q": "substr('Bhubaneswar', 1, 4) returns", "o": ["Bhub", "hube", "Bhu", "swar"], "a": 0, "hint": "Start at 1.", "why": "Positions start at 1."}, {"lv": "m", "q": "Why do ISO dates (YYYY-MM-DD) sort correctly as text?", "o": ["SQLite converts them", "The biggest unit comes first", "Dates are numbers", "They do not"], "a": 1, "hint": "Year, month, day.", "why": "Comparing left to right compares year, then month, then day."}, {"lv": "h", "q": "typeof('42') in SQLite is", "o": ["integer", "text", "real", "numeric"], "a": 1, "hint": "Quotes.", "why": "A quoted value is text."}, {"lv": "h", "q": "Which avoids a division by zero in a ratio a / b?", "o": ["a / COALESCE(b, 0)", "a / NULLIF(b, 0)", "a / abs(b)", "a / (b + 0)"], "a": 1, "hint": "Zero becomes NULL.", "why": "Dividing by NULL gives NULL instead of a failure."}, {"lv": "x", "q": "Why should times be stored in UTC?", "o": ["UTC is shorter", "It avoids time zone and daylight saving confusion", "SQL requires it", "Indexes need it"], "a": 1, "hint": "One clock.", "why": "A single absolute clock makes comparisons correct, local time is only for display."}], "calc": [{"lv": "e", "q": "What does length('Geometry set') return? Spaces count.", "ans": "12", "hint": "Count every character.", "steps": ["Geometry has 8 letters.", "A space is 1, set is 3.", "<span class=\"eq\">8 + 1 + 3 = 12<\/span>"]}, {"lv": "e", "q": "What does round(1499 * 0.9, 1) return?", "ans": "1349.1", "hint": "Work out, then round.", "steps": ["1499 × 0.9 = 1349.1.", "Rounding to 1 decimal keeps 1349.1.", "<span class=\"eq\">1349.1<\/span>"]}, {"lv": "m", "q": "What does instr('asha@mail.in', '@') return?", "ans": "5", "hint": "Position of the @.", "steps": ["a is 1, s is 2, h is 3, a is 4.", "The @ is next.", "<span class=\"eq\">5<\/span>"]}, {"lv": "m", "q": "How many days lie between 2025-06-01 and 2025-07-05? Use julianday.", "ans": "34", "hint": "June has 30 days.", "steps": ["From 1 June to 1 July is 30 days.", "Then 4 more days to 5 July.", "<span class=\"eq\">30 + 4 = 34 days<\/span>"]}, {"lv": "m", "q": "What does date('2025-06-28', '+5 days') return? Type it as YYYYMMDD with no dashes.", "ans": "20250703", "hint": "June has 30 days.", "steps": ["28 June + 2 days = 30 June.", "3 more days = 3 July.", "<span class=\"eq\">2025-07-03, typed 20250703<\/span>"]}, {"lv": "m", "q": "How many products get the badge Hurry, few left (stock above 0 and below 20)?", "ans": "2", "hint": "Zero goes to Sold out first.", "steps": ["Stocks: 40, 150, 25, 0, 12, 30, 60, 8, 0, 70.", "Above 0 and below 20: 12 and 8.", "<span class=\"eq\">2 products<\/span>"]}, {"lv": "h", "q": "How many marks rows give result pass (score 50 or more)? NULL scores are not passes.", "ans": "13", "hint": "NULL is not 50 or more.", "steps": ["There are 15 marks rows.", "One is NULL, and scores below 50: 47.", "<span class=\"eq\">13 passes<\/span>"]}, {"lv": "h", "q": "What is unixepoch('1970-01-01 01:00:00')?", "ans": "3600", "hint": "Seconds since midnight 1 January 1970.", "steps": ["One hour after the start of Unix time.", "1 hour = 60 × 60 seconds.", "<span class=\"eq\">3600<\/span>"]}], "assign": [], "must": [["Text", "upper, lower, length, substr (positions start at 1), trim, replace, instr and || for joining."], ["CASE", "CASE WHEN ... THEN ... ELSE ... END. The first true WHEN wins, no ELSE gives NULL."], ["NULL helpers", "COALESCE returns the first non NULL value. NULLIF(a, b) gives NULL when a = b, handy for safe division."], ["Types", "SQLite storage classes: NULL, INTEGER, REAL, TEXT, BLOB. typeof shows them, CAST converts."], ["Dates", "SQLite stores dates as ISO text, Julian day or Unix time. date, datetime, strftime, julianday, unixepoch and modifiers such as +7 days."]], "summary": "<p>Functions reshape one value at a time, CASE chooses a label, COALESCE fills gaps, and date functions turn ISO text into deadlines and day counts.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"txt": {"src": "SELECT name,\n       upper(name) AS shout,\n       length(name) AS letters,\n       substr(email, instr(email, '@') + 1) AS domain\nFROM customers\nWHERE email IS NOT NULL;", "db": "shop", "setup": "", "title": "Cleaning and cutting text", "notes": {"4": "instr finds the @, substr takes everything after it. With no length given, substr runs to the end."}, "out": [{"sql": "SELECT name,\n       upper(name) AS shout,\n       length(name) AS letters,\n       substr(email, instr(email, '@') + 1) AS domain\nFROM customers\nWHERE email IS NOT NULL;", "cols": ["name", "shout", "letters", "domain"], "rows": [["Asha", "ASHA", 4, "mail.in"], ["Ravi", "RAVI", 4, "mail.in"], ["Meera", "MEERA", 5, "mail.in"], ["Sara", "SARA", 4, "mail.in"], ["Arjun", "ARJUN", 5, "mail.in"], ["Nisha", "NISHA", 5, "mail.in"]]}]}, "case": {"src": "SELECT name, stock,\n  CASE\n    WHEN stock = 0 THEN 'Sold out'\n    WHEN stock < 20 THEN 'Hurry, few left'\n    ELSE 'In stock'\n  END AS badge\nFROM products\nORDER BY stock;", "db": "shop", "setup": "", "title": "Shop badges with CASE", "notes": {"3": "Checked first. A stock of 0 stops here.", "4": "Only reached when stock is not 0.", "5": "Used when no WHEN is true."}, "out": [{"sql": "SELECT name, stock,\n  CASE\n    WHEN stock = 0 THEN 'Sold out'\n    WHEN stock < 20 THEN 'Hurry, few left'\n    ELSE 'In stock'\n  END AS badge\nFROM products\nORDER BY stock;", "cols": ["name", "stock", "badge"], "rows": [["Lunch box", 0, "Sold out"], ["Desk lamp", 0, "Sold out"], ["Football", 8, "Hurry, few left"], ["Headphones", 12, "Hurry, few left"], ["Water bottle", 25, "In stock"], ["Phone charger", 30, "In stock"], ["Pencil box", 40, "In stock"], ["Cricket ball", 60, "In stock"], ["Geometry set", 70, "In stock"], ["Notebook", 150, "In stock"]]}]}, "coal": {"src": "SELECT name,\n       COALESCE(email, 'no email') AS contact,\n       COALESCE(city, 'unknown city') AS place\nFROM customers;", "db": "shop", "setup": "", "title": "Fallback values with COALESCE", "notes": {"2": "If email is NULL, the text no email is used instead."}, "out": [{"sql": "SELECT name,\n       COALESCE(email, 'no email') AS contact,\n       COALESCE(city, 'unknown city') AS place\nFROM customers;", "cols": ["name", "contact", "place"], "rows": [["Asha", "asha@mail.in", "Pune"], ["Ravi", "ravi@mail.in", "Delhi"], ["Meera", "meera@mail.in", "Chennai"], ["Kabir", "no email", "Pune"], ["Sara", "sara@mail.in", "Bhubaneswar"], ["Arjun", "arjun@mail.in", "unknown city"], ["Nisha", "nisha@mail.in", "Delhi"], ["Vikram", "no email", "Chennai"]]}]}, "cast": {"src": "SELECT typeof(42), typeof(4.2), typeof('42'), typeof(NULL),\n       CAST('42' AS INTEGER) + 1 AS from_text,\n       100 / NULLIF(0, 0) AS safe_divide;", "db": "", "setup": "", "title": "Types, CAST and a safe division", "notes": {"1": "typeof shows the storage class SQLite chose for a value.", "3": "NULLIF(0, 0) is NULL, and dividing by NULL gives NULL instead of a failure."}, "out": [{"sql": "SELECT typeof(42), typeof(4.2), typeof('42'), typeof(NULL),\n       CAST('42' AS INTEGER) + 1 AS from_text,\n       100 / NULLIF(0, 0) AS safe_divide;", "cols": ["typeof(42)", "typeof(4.2)", "typeof('42')", "typeof(NULL)", "from_text", "safe_divide"], "rows": [["integer", "real", "text", "null", 43, null]]}]}, "dates": {"src": "SELECT id, order_date,\n       strftime('%Y-%m', order_date) AS month,\n       date(order_date, '+5 days') AS deliver_by,\n       julianday('2025-07-10') - julianday(order_date) AS days_ago\nFROM orders\nORDER BY order_date;", "db": "shop", "setup": "", "title": "Months, deadlines and day counts", "notes": {"3": "%Y is the 4 digit year, %m the 2 digit month.", "4": "A modifier such as '+5 days' moves the date.", "5": "Subtracting Julian day numbers gives the gap in days."}, "out": [{"sql": "SELECT id, order_date,\n       strftime('%Y-%m', order_date) AS month,\n       date(order_date, '+5 days') AS deliver_by,\n       julianday('2025-07-10') - julianday(order_date) AS days_ago\nFROM orders\nORDER BY order_date;", "cols": ["id", "order_date", "month", "deliver_by", "days_ago"], "rows": [[101, "2025-06-01", "2025-06", "2025-06-06", 39], [102, "2025-06-03", "2025-06", "2025-06-08", 37], [103, "2025-06-10", "2025-06", "2025-06-15", 30], [104, "2025-06-11", "2025-06", "2025-06-16", 29], [105, "2025-06-15", "2025-06", "2025-06-20", 25], [106, "2025-06-18", "2025-06", "2025-06-23", 22], [107, "2025-06-21", "2025-06", "2025-06-26", 19], [108, "2025-06-25", "2025-06", "2025-06-30", 15], [109, "2025-07-02", "2025-07", "2025-07-07", 8], [110, "2025-07-05", "2025-07", "2025-07-10", 5]]}]}}, "labs": [{"id": "l-initial", "lv": "e", "title": "Initials", "task": "Show each customer <code>name<\/code> and a column <code>initial<\/code> holding the first letter of the name.", "db": "shop", "hint": "substr(name, 1, 1) takes one character from position 1.", "why": "Positions in SQL strings start at 1, not 0.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "initial"], "rows": [["Asha", "A"], ["Ravi", "R"], ["Meera", "M"], ["Kabir", "K"], ["Sara", "S"], ["Arjun", "A"], ["Nisha", "N"], ["Vikram", "V"]]}, "solution": "SELECT name, substr(name, 1, 1) AS initial FROM customers;"}, {"id": "l-case", "lv": "m", "title": "Pass or fail", "task": "From the school database, show <code>student_id<\/code>, <code>course_id<\/code>, <code>score<\/code> and a column <code>result<\/code> that says <code>pass<\/code> when score is 50 or more and <code>fail<\/code> otherwise. Only include rows where score is not NULL.", "db": "school", "hint": "CASE WHEN score &gt;= 50 THEN ... ELSE ... END AS result.", "why": "CASE turns a number into a label, one row at a time.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["student_id", "course_id", "score", "result"], "rows": [[1, 1, 92, "pass"], [1, 2, 78, "pass"], [1, 3, 85, "pass"], [2, 1, 64, "pass"], [2, 3, 71, "pass"], [3, 1, 88, "pass"], [3, 2, 95, "pass"], [3, 4, 81, "pass"], [4, 2, 55, "pass"], [5, 1, 99, "pass"], [5, 3, 90, "pass"], [5, 4, 87, "pass"], [6, 2, 47, "fail"], [7, 3, 76, "pass"]]}, "solution": "SELECT student_id, course_id, score, CASE WHEN score >= 50 THEN 'pass' ELSE 'fail' END AS result FROM marks WHERE score IS NOT NULL;"}, {"id": "l-coal", "lv": "e", "title": "Fill the gaps", "task": "Show every customer <code>name<\/code> and their <code>city<\/code>, but show the text <code>Online<\/code> when the city is missing. Call the second column <code>city<\/code>.", "db": "shop", "hint": "COALESCE(city, 'Online').", "why": "COALESCE returns the first value that is not NULL.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "city"], "rows": [["Asha", "Pune"], ["Ravi", "Delhi"], ["Meera", "Chennai"], ["Kabir", "Pune"], ["Sara", "Bhubaneswar"], ["Arjun", "Online"], ["Nisha", "Delhi"], ["Vikram", "Chennai"]]}, "solution": "SELECT name, COALESCE(city, 'Online') AS city FROM customers;"}, {"id": "l-june", "lv": "m", "title": "Orders in June 2025", "task": "Show the <code>id<\/code> and <code>order_date<\/code> of every order placed in June 2025.", "db": "shop", "hint": "strftime('%Y-%m', order_date) gives text such as 2025-06. A BETWEEN on the dates works too.", "why": "Either strftime or order_date BETWEEN '2025-06-01' AND '2025-06-30' works, because ISO dates compare correctly as text.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["id", "order_date"], "rows": [[101, "2025-06-01"], [102, "2025-06-03"], [103, "2025-06-10"], [104, "2025-06-11"], [105, "2025-06-15"], [106, "2025-06-18"], [107, "2025-06-21"], [108, "2025-06-25"]]}, "solution": "SELECT id, order_date FROM orders WHERE strftime('%Y-%m', order_date) = '2025-06';"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

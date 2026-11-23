@@ -1,0 +1,902 @@
+/* ===== Playful step animations for the SQL chapters (tools/sql-build/build.py) =====
+   Each widget is a PK.widget (assets/playkit.js) on the shared VIZ player, so Play, Step, Reset, speed and
+   voice teaching work like every other animation. The difference: the pictures are worked out by the real SQLite
+   (sql.js, through window.SQ), so whatever the reader types is answered by the same engine as the SQL blocks.
+
+   SQW(name, (SQL, cfg) => options)   registers PK.defs[name]. cfg comes from the data-cfg of the placeholder.
+   Extra layer:  {t: 'tab', label, cols, rows, ccls: {col: cls}, rcls: {row: cls}, cls: {'r,c': cls}, tag: {row: text}, keys}
+   Extra layer:  {t: 'flow', items: [text...], on: index, done: index}   a row of stages
+   Extra layer:  {t: 'sql', text}                                       the statement being explained
+*/
+(() => {
+  if (typeof PK === 'undefined' || typeof SQ === 'undefined') return;
+  const esc = SQ.esc;
+  const D = PK.draw;
+
+  D.tab = L => {
+    const ccls = L.ccls || {}, rcls = L.rcls || {}, cls = L.cls || {}, tag = L.tag || {};
+    const head = `<tr>${L.cols.map((c, ci) => `<th class="${ccls[ci] || ''}">${esc(c)}</th>`).join('')}${L.tag ? '<th class="sqw-tg"></th>' : ''}</tr>`;
+    const body = L.rows.map((r, ri) => `<tr class="${rcls[ri] || ''}"${L.keys ? ` data-fk="${esc((L.id || 't') + ':' + L.keys[ri])}"` : ''}>${r.map((v, ci) => `<td class="${[ccls[ci], cls[ri + ',' + ci], v === null ? 'nul' : ''].filter(Boolean).join(' ')}">${v === null ? 'NULL' : esc(v)}</td>`).join('')}${L.tag ? `<td class="sqw-tg">${tag[ri] !== undefined ? esc(tag[ri]) : ''}</td>` : ''}</tr>`).join('');
+    const none = L.rows.length ? '' : `<tr><td colspan="${L.cols.length || 1}" class="sq-none">no rows yet</td></tr>`;
+    return `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-gw"><table class="pk-grid sqw-t">${head}${body}${none}</table></div>`;
+  };
+  D.flow = L => `<div class="sqw-flow">${L.items.map((t, i) => `${i ? '<i>›</i>' : ''}<span class="${i === L.on ? 'on' : i <= (L.done === undefined ? -1 : L.done) ? 'done' : ''}">${esc(t)}</span>`).join('')}</div>`;
+  D.sql = L => `<pre class="sqw-sql">${SQ.hl(L.text)}</pre>`;
+
+  const DBS = {};
+  function db(SQL, name) {            /* one read only copy of each sample database for the animations */
+    if (!DBS[name]) DBS[name] = SQ.openSync(SQL, name);
+    return DBS[name];
+  }
+  /* one statement only (prepare ignores anything after the first), so typed input cannot change the shared copy */
+  function q(d, sql) {
+    if (/^\s*(insert|update|delete|drop|create|alter|replace|pragma|attach|vacuum)\b/i.test(sql)) throw new Error('only queries can run in this animation');
+    const st = d.prepare(sql);
+    const cols = st.getColumnNames(), rows = [];
+    try { while (st.step()) rows.push(st.get()); } finally { st.free(); }
+    return { cols, rows };
+  }
+  function tryq(d, sql) {
+    try { return q(d, sql); } catch (e) { return { error: String(e.message || e) }; }
+  }
+  const tableOpts = names => names.map(n => [n, n]);
+  window.SQW = function SQW(name, make) {
+    PK.defs[name] = el => {
+      el.innerHTML = '<div class="sq-cnt">Loading SQLite for this animation...</div>';
+      SQ.ready().then(SQL => {
+        let cfg = {};
+        try { cfg = el.dataset.cfg ? JSON.parse(el.dataset.cfg) : {}; } catch (e) { cfg = {}; }
+        PK.widget(el, make(SQL, cfg));
+      }).catch(e => { el.textContent = 'This animation needs SQLite, which could not load: ' + e.message; });
+    };
+  };
+  const SQWX = { db, q, tryq };
+  window.SQWX = SQWX;
+
+  /* ---------- 1.1 a table, piece by piece ---------- */
+  SQW('sqanatomy', (SQL, cfg) => ({
+    title: 'Meet a table, one piece at a time',
+    sub: 'Pick a table from the Bytes Bazaar shop. Pip points at each part and names it.',
+    inputs: [{ k: 't', label: 'Table', type: 'seg', val: cfg.t || 'customers', opts: tableOpts(['customers', 'products', 'orders']) }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const { cols, rows } = q(d, `SELECT * FROM ${v.t}`);
+      const T = (extra, msg, mood, say) => ({ msg, mood, say, layers: [Object.assign({ t: 'tab', label: `The <b>${v.t}</b> table`, cols, rows }, extra)] });
+      let nr = -1, nc = -1;
+      rows.forEach((r, ri) => r.forEach((x, ci) => { if (x === null && nr < 0) { nr = ri; nc = ci; } }));
+      const out = [
+        { msg: `Here is a whole table. It has a name, <b>${v.t}</b>, and it looks like a page in a school register.`, mood: 'idle', layers: [{ t: 'tab', label: `The <b>${v.t}</b> table`, cols, rows }] },
+        T({ ccls: Object.fromEntries(cols.map((_, i) => [i, 'look'])), rcls: Object.fromEntries(rows.map((_, i) => [i, 'hd'])) }, `The top line holds the <b>column names</b>: ${cols.join(', ')}. Every column keeps one kind of fact.`, 'look'),
+        T({ ccls: { 1: 'look' } }, `One column, <b>${cols[1]}</b>, runs top to bottom. Every value in it is the same kind of thing.`, 'look'),
+        T({ rcls: { 2: 'cur' } }, `One <b>row</b> runs left to right. It is one record: everything we know about one ${v.t === 'customers' ? 'customer' : v.t === 'products' ? 'product' : 'order'}.`, 'look'),
+        T({ cls: { '2,1': 'yes' } }, `Where a row meets a column you get one <b>cell</b>, holding one value: <b>${rows[2][1]}</b>.`, 'happy', undefined),
+        T({ ccls: { 0: 'piv' } }, `The <b>${cols[0]}</b> column is the <b>primary key</b>. No two rows share an ${cols[0]}, so it names each row exactly.`, 'wow')
+      ];
+      if (nr >= 0) out.push(T({ cls: { [nr + ',' + nc]: 'no' } }, `This cell shows <b>NULL</b>. NULL means the value is missing or unknown. It is not zero and not an empty word.`, 'think'));
+      out.push(T({}, `Count them: <b>${rows.length} rows</b> and <b>${cols.length} columns</b>. A real shop has millions of rows, but the shape stays the same.`, 'happy'));
+      out[out.length - 1].fx = 'burst';
+      return out;
+    }
+  }));
+
+  /* ---------- 1.4 the journey of one query ---------- */
+  SQW('sqtrip', (SQL, cfg) => ({
+    title: 'The journey of one query',
+    sub: 'Type any query on the shop database. Watch it pass through the parser, the planner and the executor of the real SQLite.',
+    inputs: [{ k: 'sql', label: 'Your query', type: 'text', val: cfg.sql || "SELECT name, price FROM products WHERE price < 200", w: 460 }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const STG = ['You', 'Parser', 'Planner', 'Executor', 'Result'];
+      const F = (on, msg, mood, more, fx) => ({ msg, mood, fx, layers: [{ t: 'sql', text: v.sql }, { t: 'flow', items: STG, on, done: on - 1 }].concat(more || []) });
+      const out = [F(0, 'You write what you want, not how to get it. SQL is a <b>declarative</b> language.', 'idle')];
+      const plan = tryq(d, 'EXPLAIN QUERY PLAN ' + v.sql);
+      if (plan.error) {
+        out.push(F(1, `The <b>parser</b> reads your words like a teacher checking grammar, and stops here: <b>${esc(plan.error)}</b>. Fix it and press Show me again.`, 'sad', [], 'shake'));
+        return out;
+      }
+      out.push(F(1, 'The <b>parser</b> checks the grammar and the names. Every table and column you used exists, so it turns your text into a tree the engine understands.', 'look'));
+      out.push(F(2, 'The <b>planner</b> (also called the optimizer) chooses how to find the rows. Here is its real plan:', 'think',
+        [{ t: 'note', html: '<b>EXPLAIN QUERY PLAN</b><br>' + (plan.rows.map(r => esc(r[3])).join('<br>') || 'a constant, no table to read') }]));
+      const res = tryq(d, v.sql);
+      if (res.error) { out.push(F(3, `The <b>executor</b> started but stopped: <b>${esc(res.error)}</b>`, 'sad', [], 'shake')); return out; }
+      out.push(F(3, `The <b>executor</b> follows the plan step by step, reading rows and keeping the ones that fit.`, 'work'));
+      out.push(F(4, `Done. <b>${res.rows.length}</b> ${res.rows.length === 1 ? 'row comes' : 'rows come'} back to you as a new little table.`, 'happy',
+        [{ t: 'tab', label: 'Result', cols: res.cols, rows: res.rows.slice(0, 12) }], 'burst'));
+      return out;
+    }
+  }));
+
+  /* ---------- 1.2 SELECT picks columns ---------- */
+  SQW('sqselect', (SQL, cfg) => ({
+    title: 'SELECT picks the columns you ask for',
+    sub: 'Type a list of columns, or *. Pip lights up each column you named, then copies them into the result.',
+    inputs: [{ k: 't', label: 'Table', type: 'seg', val: cfg.t || 'products', opts: tableOpts(['products', 'customers']) },
+      { k: 'c', label: 'Columns', type: 'text', val: cfg.c || 'name, price', w: 240 }],
+    check: v => {
+      const r = tryq(db(SQL, 'shop'), `SELECT ${v.c} FROM ${v.t} LIMIT 0`);
+      return r.error ? `SQLite says: ${esc(r.error)}. Use column names from the table, separated by commas.` : '';
+    },
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const all = q(d, `SELECT * FROM ${v.t}`), res = q(d, `SELECT ${v.c} FROM ${v.t}`);
+      const low = all.cols.map(c => c.toLowerCase());
+      const out = [{ msg: `The query is <b>SELECT ${esc(v.c)} FROM ${v.t}</b>. First SQLite finds the table named after FROM.`, mood: 'look', layers: [{ t: 'sql', text: `SELECT ${v.c}\nFROM ${v.t};` }, { t: 'tab', label: v.t, cols: all.cols, rows: all.rows }] }];
+      const picked = [];
+      res.cols.forEach((c, k) => {
+        const i = low.indexOf(c.toLowerCase());
+        if (i >= 0) picked.push(i);
+        out.push({ msg: i >= 0 ? `Column ${k + 1} of the result is <b>${esc(c)}</b>. Found it in the table.` : `<b>${esc(c)}</b> is not a stored column. SQLite works it out for every row: a calculated column.`, mood: i >= 0 ? 'happy' : 'wow',
+          layers: [{ t: 'sql', text: `SELECT ${v.c}\nFROM ${v.t};` }, { t: 'tab', label: v.t, cols: all.cols, rows: all.rows, ccls: Object.fromEntries(all.cols.map((_, j) => [j, j === i ? 'look' : picked.includes(j) ? 'yes' : ''])) }] });
+      });
+      out.push({ msg: `The result keeps every row but only the columns you asked for, in your order. ${res.cols.length} ${res.cols.length === 1 ? 'column' : 'columns'}, ${res.rows.length} rows.`, mood: 'happy', fx: 'burst',
+        layers: [{ t: 'sql', text: `SELECT ${v.c}\nFROM ${v.t};` }, { t: 'tab', label: 'Result', cols: res.cols, rows: res.rows }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 1.3 WHERE checks every row ---------- */
+  SQW('sqwhere', (SQL, cfg) => ({
+    title: 'WHERE checks every row, one by one',
+    sub: 'Type a condition. Pip tests each row: green rows pass, red rows are thrown out, and a NULL answer counts as not passing.',
+    inputs: [{ k: 't', label: 'Table', type: 'seg', val: cfg.t || 'products', opts: tableOpts(['products', 'customers']) },
+      { k: 'w', label: 'WHERE', type: 'text', val: cfg.w || 'price < 300', w: 280 }],
+    random: () => ({ w: ['price < 300', "category = 'Sports'", 'stock = 0', "price BETWEEN 100 AND 700", "name LIKE '%box%'"][Math.floor(Math.random() * 5)] }),
+    check: v => {
+      const r = tryq(db(SQL, 'shop'), `SELECT 1 FROM ${v.t} WHERE ${v.w} LIMIT 0`);
+      return r.error ? `SQLite says: ${esc(r.error)}. Try something like price &lt; 300 or city = 'Pune'.` : '';
+    },
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const all = q(d, `SELECT * FROM ${v.t}`);
+      const test = q(d, `SELECT (${v.w}) FROM ${v.t}`).rows.map(r => r[0]);
+      const text = `SELECT *\nFROM ${v.t}\nWHERE ${v.w};`;
+      const rc = {}, tag = {};
+      const out = [{ msg: `Every row will be tested with <b>${esc(v.w)}</b>. Only rows where it is true stay.`, mood: 'think', layers: [{ t: 'sql', text }, { t: 'tab', label: v.t, cols: all.cols, rows: all.rows, tag: {} }] }];
+      all.rows.forEach((r, i) => {
+        const t = test[i];
+        const word = t === null ? 'NULL, so it is thrown out' : t ? 'true, keep it' : 'false, throw it out';
+        out.push({ msg: `Row ${i + 1} (${esc(r[1])}): the test gives <b>${word}</b>.`, mood: 'look', layers: [{ t: 'sql', text }, { t: 'tab', label: v.t, cols: all.cols, rows: all.rows, rcls: Object.assign({}, rc, { [i]: 'look' }), tag: Object.assign({}, tag) }] });
+        rc[i] = t ? 'yes' : 'no';
+        tag[i] = t === null ? 'NULL' : t ? 'keep' : 'drop';
+        out.push({ msg: t ? `<b>${esc(r[1])}</b> passes.` : t === null ? `<b>${esc(r[1])}</b> has a missing value, the test is unknown, so the row does not pass.` : `<b>${esc(r[1])}</b> does not pass.`, mood: t ? 'happy' : 'sad',
+          layers: [{ t: 'sql', text }, { t: 'tab', label: v.t, cols: all.cols, rows: all.rows, rcls: Object.assign({}, rc), tag: Object.assign({}, tag) }] });
+      });
+      const keep = all.rows.filter((_, i) => test[i]);
+      out.push({ msg: keep.length ? `Finished. ${keep.length} of ${all.rows.length} rows passed the test.` : 'Finished. No row passed, so the result is empty. That is a normal answer, not an error.', mood: keep.length ? 'wow' : 'sad', fx: keep.length ? 'burst' : 'shake',
+        layers: [{ t: 'sql', text }, { t: 'tab', label: 'Result', cols: all.cols, rows: keep }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 1.3 ORDER BY sorts the rows ---------- */
+  SQW('sqorder', (SQL, cfg) => ({
+    title: 'ORDER BY lines the rows up',
+    sub: 'Pick a column and a direction. Rows slide into their new places. Ties keep no promised order unless you add a second column.',
+    inputs: [{ k: 'c', label: 'Sort by', type: 'seg', val: cfg.c || 'price', opts: [['price', 'price'], ['name', 'name'], ['category', 'category'], ['stock', 'stock']] },
+      { k: 'dir', label: 'Direction', type: 'seg', val: cfg.dir || 'ASC', opts: [['ASC', 'ASC (small first)'], ['DESC', 'DESC (big first)']] }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const a = q(d, 'SELECT id, name, category, price, stock FROM products ORDER BY id');
+      const b = q(d, `SELECT id, name, category, price, stock FROM products ORDER BY ${v.c} ${v.dir}, id`);
+      const ci = a.cols.indexOf(v.c);
+      const text = `SELECT id, name, category, price, stock\nFROM products\nORDER BY ${v.c} ${v.dir};`;
+      return [
+        { msg: 'Without ORDER BY, SQL promises no order at all. Here the rows happen to come out by id.', mood: 'idle', layers: [{ t: 'sql', text }, { t: 'tab', label: 'Before', cols: a.cols, rows: a.rows, keys: a.rows.map(r => r[0]), id: 'o' }] },
+        { msg: `SQLite compares the <b>${v.c}</b> values.`, mood: 'look', layers: [{ t: 'sql', text }, { t: 'tab', label: 'Before', cols: a.cols, rows: a.rows, keys: a.rows.map(r => r[0]), id: 'o', ccls: { [ci]: 'look' } }] },
+        { msg: `Sorted ${v.dir === 'ASC' ? 'from smallest to biggest' : 'from biggest to smallest'}${v.c === 'name' || v.c === 'category' ? ' (for words that means A to Z order' + (v.dir === 'DESC' ? ', backwards' : '') + ')' : ''}.`, mood: 'happy', fx: 'burst',
+          layers: [{ t: 'sql', text }, { t: 'tab', label: 'After', cols: b.cols, rows: b.rows, keys: b.rows.map(r => r[0]), id: 'o', ccls: { [ci]: 'yes' } }] }
+      ];
+    }
+  }));
+
+  /* ---------- 1.3 LIKE patterns ---------- */
+  SQW('sqlike', (SQL, cfg) => ({
+    title: 'LIKE matches patterns',
+    sub: '% stands for any run of characters (even none). _ stands for exactly one character. Try your own pattern.',
+    inputs: [{ k: 'p', label: 'Pattern', type: 'text', val: cfg.p || '%box%', w: 160 }],
+    random: () => ({ p: ['%box%', 'P%', '%l', '_o%', '%e_', '____ %'][Math.floor(Math.random() * 6)] }),
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const pat = v.p.replace(/'/g, "''");
+      const r = q(d, `SELECT name, name LIKE '${pat}' FROM products ORDER BY id`);
+      const names = r.rows.map(x => x[0]);
+      const cls = {};
+      const text = `SELECT name\nFROM products\nWHERE name LIKE '${v.p}';`;
+      const out = [{ msg: `The pattern is <b>${esc(v.p)}</b>. LIKE ignores upper and lower case for plain English letters.`, mood: 'think', layers: [{ t: 'sql', text }, { t: 'row', label: 'Product names', cells: names, idx: false }] }];
+      r.rows.forEach((x, i) => {
+        out.push({ msg: `<b>${esc(x[0])}</b> ${x[1] ? 'fits the pattern' : 'does not fit'}.`, mood: x[1] ? 'happy' : 'sad', layers: [{ t: 'sql', text }, { t: 'row', label: 'Product names', cells: names, idx: false, cls: Object.assign({}, cls, { [i]: 'look' }) }] });
+        cls[i] = x[1] ? 'yes' : 'no';
+      });
+      const n = r.rows.filter(x => x[1]).length;
+      out.push({ msg: `${n} ${n === 1 ? 'name matches' : 'names match'} <b>${esc(v.p)}</b>.`, mood: n ? 'wow' : 'sad', fx: n ? 'burst' : 'shake', layers: [{ t: 'sql', text }, { t: 'row', label: 'Product names', cells: names, idx: false, cls }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 2.1 CASE gives each row a label ---------- */
+  SQW('sqcase', (SQL, cfg) => ({
+    title: 'CASE labels every row',
+    sub: 'Set two price limits. CASE checks the WHEN tests from top to bottom and stops at the first one that is true.',
+    inputs: [{ k: 'lo', label: 'Cheap below', type: 'num', val: cfg.lo || 200, w: 90 }, { k: 'hi', label: 'Premium from', type: 'num', val: cfg.hi || 1000, w: 90 }],
+    check: v => v.lo >= v.hi ? 'The cheap limit must be smaller than the premium limit.' : '',
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const text = `SELECT name, price,\n  CASE\n    WHEN price < ${v.lo} THEN 'cheap'\n    WHEN price >= ${v.hi} THEN 'premium'\n    ELSE 'regular'\n  END AS band\nFROM products;`;
+      const r = q(d, `SELECT name, price, CASE WHEN price < ${+v.lo} THEN 'cheap' WHEN price >= ${+v.hi} THEN 'premium' ELSE 'regular' END FROM products ORDER BY id`);
+      const rows = r.rows.map(x => [x[0], x[1], '']);
+      const out = [{ msg: 'CASE is SQL’s if, else if, else. Each row gets one label.', mood: 'think', layers: [{ t: 'sql', text }, { t: 'tab', cols: ['name', 'price', 'band'], rows }] }];
+      const cls = {};
+      r.rows.forEach((x, i) => {
+        rows[i] = [x[0], x[1], x[2]];
+        const why = x[2] === 'cheap' ? `${x[1]} &lt; ${v.lo}, the first WHEN is true` : x[2] === 'premium' ? `${x[1]} is not below ${v.lo}, but ${x[1]} &gt;= ${v.hi}` : `neither WHEN is true, so ELSE`;
+        cls[i + ',2'] = x[2] === 'cheap' ? 'yes' : x[2] === 'premium' ? 'piv' : 'cur';
+        out.push({ msg: `<b>${esc(x[0])}</b>: ${why}. Label <b>${x[2]}</b>.`, mood: 'look', layers: [{ t: 'sql', text }, { t: 'tab', cols: ['name', 'price', 'band'], rows: rows.map(z => z.slice()), cls: Object.assign({}, cls), rcls: { [i]: 'look' } }] });
+      });
+      const n = k => r.rows.filter(x => x[2] === k).length;
+      out.push({ msg: `Every row has a label: ${n('cheap')} cheap, ${n('regular')} regular, ${n('premium')} premium.`, mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'tab', cols: ['name', 'price', 'band'], rows, cls }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 2.2 three valued logic ---------- */
+  SQW('sqnull', (SQL, cfg) => ({
+    title: 'TRUE, FALSE and the third value: NULL',
+    sub: 'Pick A and B. SQLite works out every operator, and Pip finds your pair in the truth tables.',
+    inputs: [{ k: 'a', label: 'A', type: 'seg', val: cfg.a || 'NULL', opts: [['TRUE', 'TRUE'], ['FALSE', 'FALSE'], ['NULL', 'NULL']] },
+      { k: 'b', label: 'B', type: 'seg', val: cfg.b || 'FALSE', opts: [['TRUE', 'TRUE'], ['FALSE', 'FALSE'], ['NULL', 'NULL']] }],
+    frames: v => {
+      const d = db(SQL, '');
+      const V = ['TRUE', 'FALSE', 'NULL'];
+      const word = x => x === null ? 'NULL' : x ? 'TRUE' : 'FALSE';
+      const tableFor = op => V.map(a => V.map(b => word(q(d, `SELECT ${a} ${op} ${b}`).rows[0][0])));
+      const ai = V.indexOf(v.a), bi = V.indexOf(v.b);
+      const and = tableFor('AND'), or = tableFor('OR'), eqt = V.map(a => V.map(b => word(q(d, `SELECT ${a} = ${b}`).rows[0][0])));
+      const not = word(q(d, `SELECT NOT ${v.a}`).rows[0][0]);
+      const mark = t => ({ t: 'grid', label: t.label, rows: t.rows, rlab: V, clab: V, cls: { [ai + ',' + bi]: t.rows[ai][bi] === 'NULL' ? 'no' : t.rows[ai][bi] === 'TRUE' ? 'yes' : 'cur' } });
+      return [
+        { msg: 'SQL logic has three values. NULL means <b>unknown</b>: maybe true, maybe false, we cannot tell.', mood: 'think', layers: [{ t: 'grid', label: 'A AND B', rows: and, rlab: V, clab: V }] },
+        { msg: `<b>${v.a} AND ${v.b}</b> is <b>${and[ai][bi]}</b>. AND is FALSE as soon as one side is FALSE, because then the unknown side cannot help.`, mood: 'look', layers: [mark({ label: 'A AND B (rows are A, columns are B)', rows: and })] },
+        { msg: `<b>${v.a} OR ${v.b}</b> is <b>${or[ai][bi]}</b>. OR is TRUE as soon as one side is TRUE.`, mood: 'look', layers: [mark({ label: 'A OR B', rows: or })] },
+        { msg: `<b>NOT ${v.a}</b> is <b>${not}</b>. The opposite of unknown is still unknown.`, mood: 'think', layers: [{ t: 'grid', label: 'NOT A', rows: [V.map(a => word(q(d, `SELECT NOT ${a}`).rows[0][0]))], clab: V, cls: { ['0,' + ai]: not === 'NULL' ? 'no' : 'yes' } }] },
+        { msg: `<b>${v.a} = ${v.b}</b> is <b>${eqt[ai][bi]}</b>. Anything compared with NULL, even NULL itself, gives NULL. That is why we write IS NULL.`, mood: eqt[ai][bi] === 'NULL' ? 'wow' : 'happy', fx: 'burst', layers: [mark({ label: 'A = B', rows: eqt })] }
+      ];
+    }
+  }));
+
+  /* ---------- 2.3 GROUP BY puts rows into buckets ---------- */
+  SQW('sqgroup', (SQL, cfg) => ({
+    title: 'GROUP BY drops rows into buckets',
+    sub: 'Choose how to group products and what to work out. Each row falls into the bucket of its value, then one answer comes out per bucket. HAVING can then remove buckets.',
+    inputs: [{ k: 'g', label: 'Group by', type: 'seg', val: cfg.g || 'category', opts: [['category', 'category'], ['stock = 0', 'out of stock?']] },
+      { k: 'f', label: 'Work out', type: 'seg', val: cfg.f || 'COUNT(*)', opts: [['COUNT(*)', 'COUNT(*)'], ['SUM(stock)', 'SUM(stock)'], ['AVG(price)', 'AVG(price)'], ['MAX(price)', 'MAX(price)']] },
+      { k: 'h', label: 'HAVING (optional)', type: 'text', val: cfg.h || '', w: 170 }],
+    check: v => v.h && tryq(db(SQL, 'shop'), `SELECT 1 FROM products GROUP BY ${v.g} HAVING ${v.h}`).error ? `SQLite says: ${esc(tryq(db(SQL, 'shop'), `SELECT 1 FROM products GROUP BY ${v.g} HAVING ${v.h}`).error)}` : '',
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const rows = q(d, `SELECT name, ${v.g} FROM products ORDER BY id`).rows;
+      const keys = q(d, `SELECT DISTINCT ${v.g} FROM products ORDER BY 1`).rows.map(r => r[0]);
+      const lab = keys.map(k => String(k === null ? 'NULL' : v.g === 'stock = 0' ? (k ? 'yes, stock = 0' : 'no') : k));
+      const res = q(d, `SELECT ${v.g} AS grp, ${v.f} AS answer${v.h ? `, (${v.h}) AS keep` : ''} FROM products GROUP BY ${v.g} ORDER BY 1`).rows;
+      const text = `SELECT ${v.g}, ${v.f}\nFROM products\nGROUP BY ${v.g}${v.h ? `\nHAVING ${v.h}` : ''};`;
+      const bk = keys.map(() => []);
+      const out = [{ msg: `One empty bucket for each different value of <b>${esc(v.g)}</b>: ${keys.length} buckets.`, mood: 'think', layers: [{ t: 'sql', text }, { t: 'buckets', buckets: bk.map(x => x.slice()), blab: lab }] }];
+      rows.forEach((r, i) => {
+        const b = keys.findIndex(k => k === r[1]);
+        bk[b].push(r[0]);
+        out.push({ msg: `<b>${esc(r[0])}</b> goes into the <b>${esc(lab[b])}</b> bucket.`, mood: 'work', layers: [{ t: 'sql', text }, { t: 'buckets', buckets: bk.map(x => x.slice()), blab: lab, cls: { [b + ',' + (bk[b].length - 1)]: 'yes' } }] });
+      });
+      const ans = keys.map(k => { const row = res.find(r => r[0] === k); const a = row[1]; return typeof a === 'number' && !Number.isInteger(a) ? a.toFixed(2) : a; });
+      out.push({ msg: `Now <b>${esc(v.f)}</b> runs once per bucket. One bucket becomes one result row.`, mood: 'wow', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'buckets', buckets: bk, blab: lab.map((l, i) => `${l}: ${ans[i]}`) }] });
+      if (v.h) {
+        const bcls = {};
+        keys.forEach((k, i) => { bcls[i] = res.find(r => r[0] === k)[2] ? 'yes' : 'no'; });
+        out.push({ msg: `HAVING <b>${esc(v.h)}</b> tests each bucket, not each row. Red buckets are removed.`, mood: 'look', layers: [{ t: 'sql', text }, { t: 'buckets', buckets: bk, blab: lab.map((l, i) => `${l}: ${ans[i]}`), bcls }] });
+      }
+      const fin = res.filter(r => !v.h || r[2]).map(r => [r[0] === null ? null : v.g === 'stock = 0' ? r[0] : r[0], typeof r[1] === 'number' && !Number.isInteger(r[1]) ? +r[1].toFixed(2) : r[1]]);
+      out.push({ msg: `The result: ${fin.length} ${fin.length === 1 ? 'row' : 'rows'}, one per bucket that survived.`, mood: 'happy', layers: [{ t: 'sql', text }, { t: 'tab', label: 'Result', cols: [v.g, v.f], rows: fin }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 2.3 the logical order of a query ---------- */
+  SQW('sqpipe', (SQL, cfg) => ({
+    title: 'The order SQL really works in',
+    sub: 'You write SELECT first, but the engine starts at FROM. Change the parts and watch the table shrink and change at each stage.',
+    inputs: [{ k: 'w', label: 'WHERE', type: 'text', val: cfg.w || "status <> 'cancelled'", w: 200 },
+      { k: 'g', label: 'GROUP BY', type: 'seg', val: cfg.g || 'customer_id', opts: [['customer_id', 'customer_id'], ['status', 'status']] },
+      { k: 'h', label: 'HAVING', type: 'text', val: cfg.h || 'COUNT(*) >= 2', w: 150 },
+      { k: 'n', label: 'LIMIT', type: 'num', val: cfg.n || 2, w: 70 }],
+    check: v => { const e = tryq(db(SQL, 'shop'), `SELECT ${v.g}, COUNT(*) FROM orders WHERE ${v.w || '1'} GROUP BY ${v.g} HAVING ${v.h || '1'} LIMIT ${+v.n || 1}`).error; return e ? `SQLite says: ${esc(e)}` : ''; },
+    frames: v => {
+      const d = db(SQL, 'shop'), W = v.w || '1', H = v.h || '1', N = Math.max(0, +v.n || 0);
+      const ST = ['FROM', 'WHERE', 'GROUP BY', 'HAVING', 'SELECT', 'ORDER BY', 'LIMIT'];
+      const text = `SELECT ${v.g}, COUNT(*) AS orders\nFROM orders\nWHERE ${W}\nGROUP BY ${v.g}\nHAVING ${H}\nORDER BY orders DESC, ${v.g}\nLIMIT ${N};`;
+      const F = (i, msg, t, mood, fx) => ({ msg, mood, fx, layers: [{ t: 'sql', text }, { t: 'flow', items: ST, on: i, done: i - 1 }, t] });
+      const all = q(d, 'SELECT * FROM orders'), wh = q(d, `SELECT * FROM orders WHERE ${W}`);
+      const gr = q(d, `SELECT ${v.g}, group_concat(id, ' ') AS order_ids FROM orders WHERE ${W} GROUP BY ${v.g}`);
+      const hv = q(d, `SELECT ${v.g}, group_concat(id, ' ') AS order_ids FROM orders WHERE ${W} GROUP BY ${v.g} HAVING ${H}`);
+      const se = q(d, `SELECT ${v.g}, COUNT(*) AS orders FROM orders WHERE ${W} GROUP BY ${v.g} HAVING ${H}`);
+      const ob = q(d, `SELECT ${v.g}, COUNT(*) AS orders FROM orders WHERE ${W} GROUP BY ${v.g} HAVING ${H} ORDER BY orders DESC, ${v.g}`);
+      const li = q(d, `SELECT ${v.g}, COUNT(*) AS orders FROM orders WHERE ${W} GROUP BY ${v.g} HAVING ${H} ORDER BY orders DESC, ${v.g} LIMIT ${N}`);
+      return [
+        F(0, `1. <b>FROM</b> picks the table: all ${all.rows.length} orders.`, { t: 'tab', cols: all.cols, rows: all.rows }, 'look'),
+        F(1, `2. <b>WHERE</b> keeps rows where ${esc(W)} is true: ${wh.rows.length} left.`, { t: 'tab', cols: wh.cols, rows: wh.rows }, 'look'),
+        F(2, `3. <b>GROUP BY</b> ${v.g} folds the rows into ${gr.rows.length} groups.`, { t: 'tab', cols: gr.cols, rows: gr.rows }, 'work'),
+        F(3, `4. <b>HAVING</b> keeps groups where ${esc(H)}: ${hv.rows.length} left.`, { t: 'tab', cols: hv.cols, rows: hv.rows }, 'look'),
+        F(4, '5. <b>SELECT</b> finally works out the columns, including COUNT(*) and the alias orders.', { t: 'tab', cols: se.cols, rows: se.rows }, 'wow'),
+        F(5, '6. <b>ORDER BY</b> sorts. It runs after SELECT, so it may use the alias orders.', { t: 'tab', cols: ob.cols, rows: ob.rows }, 'look'),
+        F(6, `7. <b>LIMIT</b> ${N} keeps the first ${N}. Done.`, { t: 'tab', cols: li.cols, rows: li.rows }, 'happy', 'burst')
+      ];
+    }
+  }));
+
+  /* ---------- 3.1 a foreign key points at a parent row ---------- */
+  SQW('sqlink', (SQL, cfg) => ({
+    title: 'Follow the foreign key',
+    sub: 'Pick an order. Its customer_id points at exactly one row of customers, the way a roll number points at one student.',
+    inputs: [{ k: 'o', label: 'Order id', type: 'seg', val: String(cfg.o || 103), opts: ['101', '103', '105', '107', '110'].map(x => [x, x]) }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const o = q(d, 'SELECT id, customer_id, order_date, status FROM orders ORDER BY id'), c = q(d, 'SELECT id, name, city FROM customers ORDER BY id');
+      const oi = o.rows.findIndex(r => String(r[0]) === v.o), cid = o.rows[oi][1], ci = c.rows.findIndex(r => r[0] === cid);
+      const two = (ol, cl) => [{ t: 'tab', label: 'orders (child)', cols: o.cols, rows: o.rows, ...ol }, { t: 'tab', label: 'customers (parent)', cols: c.cols, rows: c.rows, ...cl }];
+      const kids = o.rows.map((r, i) => r[1] === cid ? i : -1).filter(i => i >= 0);
+      return [
+        { msg: `Order <b>${v.o}</b> does not store the customer’s name. It stores only <b>customer_id = ${cid}</b>.`, mood: 'look', layers: two({ rcls: { [oi]: 'look' }, cls: { [oi + ',1']: 'piv' } }, {}) },
+        { msg: `Follow the number to customers.id = ${cid}. That row is <b>${esc(c.rows[ci][1])}</b> from ${esc(c.rows[ci][2] || 'an unknown city')}.`, mood: 'happy', fx: 'burst', layers: two({ rcls: { [oi]: 'look' }, cls: { [oi + ',1']: 'piv' } }, { rcls: { [ci]: 'yes' }, cls: { [ci + ',0']: 'piv' } }) },
+        { msg: `The link works backwards too: ${esc(c.rows[ci][1])} has <b>${kids.length}</b> ${kids.length === 1 ? 'order' : 'orders'}. One customer, many orders: a <b>one to many</b> relationship.`, mood: 'wow', layers: two({ rcls: Object.fromEntries(kids.map(i => [i, 'yes'])) }, { rcls: { [ci]: 'yes' } }) },
+        { msg: 'The name lives in one place only. If the customer changes their name, one row changes, and every order shows the new name. That is why we link instead of copying.', mood: 'happy', layers: two({}, { rcls: { [ci]: 'cur' } }) }
+      ];
+    }
+  }));
+
+  /* ---------- 3.2 joins pair rows ---------- */
+  SQW('sqjoin', (SQL, cfg) => ({
+    title: 'How a JOIN pairs rows',
+    sub: 'Pick a join type. Pip takes each customer, looks for matching orders, and builds the result row by row. Unmatched rows show NULLs.',
+    inputs: [{ k: 'j', label: 'Join', type: 'seg', val: cfg.j || 'INNER', opts: [['INNER', 'INNER'], ['LEFT', 'LEFT'], ['RIGHT', 'RIGHT'], ['FULL', 'FULL']] }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const L = q(d, 'SELECT id, name FROM customers WHERE id IN (1, 4, 5, 7) ORDER BY id').rows;
+      const R = q(d, "SELECT id, customer_id FROM orders WHERE id IN (101, 103, 105, 106, 107) ORDER BY id").rows.concat([[120, 9]]);
+      const text = `SELECT c.name, o.id AS order_id\nFROM customers AS c\n${v.j} JOIN orders AS o ON o.customer_id = c.id;`;
+      const res = [], rused = new Set();
+      const lay = (lc, rc, msg, mood, fx) => ({ msg, mood, fx, layers: [{ t: 'sql', text }, { t: 'note', html: 'Small sample: 4 customers and 6 orders (order 120 points at customer 9, who does not exist, to show RIGHT and FULL joins).' },
+        { t: 'tab', label: 'customers c', cols: ['id', 'name'], rows: L, rcls: lc }, { t: 'tab', label: 'orders o', cols: ['id', 'customer_id'], rows: R, rcls: rc }, { t: 'tab', label: 'Result', cols: ['name', 'order_id'], rows: res.slice() }] });
+      const out = [lay({}, {}, `A <b>${v.j} JOIN</b> compares every customer with every order using the ON test: o.customer_id = c.id.`, 'think')];
+      L.forEach((l, i) => {
+        const m = R.map((r, k) => r[1] === l[0] ? k : -1).filter(k => k >= 0);
+        m.forEach(k => { res.push([l[1], R[k][0]]); rused.add(k); });
+        if (m.length) out.push(lay({ [i]: 'yes' }, Object.fromEntries(m.map(k => [k, 'yes'])), `<b>${esc(l[1])}</b> (id ${l[0]}) matches ${m.length} ${m.length === 1 ? 'order' : 'orders'}: ${m.map(k => R[k][0]).join(', ')}. Each match makes one result row.`, 'happy'));
+        else {
+          if (v.j === 'LEFT' || v.j === 'FULL') res.push([l[1], null]);
+          out.push(lay({ [i]: 'no' }, {}, `<b>${esc(l[1])}</b> has no order. ${v.j === 'LEFT' || v.j === 'FULL' ? 'A ' + v.j + ' JOIN keeps every left row, so we add it with NULL for the order.' : 'An ' + v.j + ' JOIN drops a left row with no match.'}`, v.j === 'LEFT' || v.j === 'FULL' ? 'wow' : 'sad'));
+        }
+      });
+      const lone = R.map((r, k) => rused.has(k) ? -1 : k).filter(k => k >= 0);
+      if (lone.length) {
+        if (v.j === 'RIGHT' || v.j === 'FULL') lone.forEach(k => res.push([null, R[k][0]]));
+        out.push(lay({}, Object.fromEntries(lone.map(k => [k, 'no'])), `Orders with no matching customer: ${lone.map(k => R[k][0]).join(', ')}. ${v.j === 'RIGHT' || v.j === 'FULL' ? 'A ' + v.j + ' JOIN keeps them, with NULL for the name.' : 'This join leaves them out.'}`, v.j === 'RIGHT' || v.j === 'FULL' ? 'wow' : 'sad'));
+      }
+      out.push(lay({}, {}, `Done: ${res.length} result rows for ${v.j} JOIN.`, 'happy', 'burst'));
+      return out;
+    }
+  }));
+
+  /* ---------- 3.3 a correlated subquery runs once per outer row ---------- */
+  SQW('sqexists', (SQL, cfg) => ({
+    title: 'EXISTS asks a question for every row',
+    sub: 'For each customer the inner query runs again with that customer’s id. EXISTS is true as soon as one row comes back.',
+    inputs: [{ k: 'neg', label: 'Test', type: 'seg', val: cfg.neg || 'EXISTS', opts: [['EXISTS', 'EXISTS'], ['NOT EXISTS', 'NOT EXISTS']] }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const C = q(d, 'SELECT id, name FROM customers ORDER BY id').rows;
+      const text = `SELECT c.name\nFROM customers AS c\nWHERE ${v.neg} (\n  SELECT 1 FROM orders AS o\n  WHERE o.customer_id = c.id\n);`;
+      const rc = {}, keep = [];
+      const out = [{ msg: 'The inner query mentions <b>c.id</b> from the outer query. That makes it a <b>correlated</b> subquery: it depends on the current outer row.', mood: 'think', layers: [{ t: 'sql', text }, { t: 'tab', label: 'customers', cols: ['id', 'name'], rows: C }] }];
+      C.forEach((c, i) => {
+        const n = q(d, `SELECT count(*) FROM orders WHERE customer_id = ${c[0]}`).rows[0][0];
+        const pass = v.neg === 'EXISTS' ? n > 0 : n === 0;
+        rc[i] = pass ? 'yes' : 'no';
+        if (pass) keep.push([c[1]]);
+        out.push({ msg: `For <b>${esc(c[1])}</b> the inner query looks for orders with customer_id = ${c[0]} and finds ${n ? 'at least one' : 'none'}. ${v.neg} is <b>${pass ? 'true' : 'false'}</b>.`, mood: pass ? 'happy' : 'sad',
+          layers: [{ t: 'sql', text: text.replace(/c\.id/, String(c[0])) }, { t: 'tab', label: 'customers', cols: ['id', 'name'], rows: C, rcls: Object.assign({}, rc) }] });
+      });
+      out.push({ msg: `${keep.length} customers pass. EXISTS stops at the first match, so it never needs to count all the orders.`, mood: 'wow', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'tab', label: 'Result', cols: ['name'], rows: keep }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 3.4 set operations ---------- */
+  SQW('sqset', (SQL, cfg) => ({
+    title: 'UNION, INTERSECT and EXCEPT',
+    sub: 'Two lists of cities: where customers live, and where we have a warehouse. Pick an operator and see which cities survive.',
+    inputs: [{ k: 'op', label: 'Operator', type: 'seg', val: cfg.op || 'UNION', opts: [['UNION', 'UNION'], ['UNION ALL', 'UNION ALL'], ['INTERSECT', 'INTERSECT'], ['EXCEPT', 'EXCEPT']] }],
+    frames: v => {
+      const d = db(SQL, 'shop');
+      const A = q(d, 'SELECT city FROM customers WHERE city IS NOT NULL ORDER BY id').rows.map(r => r[0]);
+      const B = q(d, 'SELECT city FROM warehouses ORDER BY rowid').rows.map(r => r[0]);
+      const res = q(d, `SELECT city FROM customers WHERE city IS NOT NULL ${v.op} SELECT city FROM warehouses`).rows.map(r => r[0]);
+      const sa = new Set(res), inB = new Set(B), inA = new Set(A);
+      const text = `SELECT city FROM customers WHERE city IS NOT NULL\n${v.op}\nSELECT city FROM warehouses;`;
+      const why = { 'UNION': 'every city from either list, each only once', 'UNION ALL': 'everything from both lists, repeats kept', 'INTERSECT': 'only cities in both lists', 'EXCEPT': 'cities in the first list that are not in the second' }[v.op];
+      return [
+        { msg: 'Two queries with the same number of columns can be stacked with a set operator.', mood: 'think', layers: [{ t: 'sql', text }, { t: 'row', label: 'Customer cities (first query)', cells: A, idx: false }, { t: 'row', label: 'Warehouse cities (second query)', cells: B, idx: false }] },
+        { msg: `${v.op} keeps ${why}.`, mood: 'look', layers: [{ t: 'sql', text }, { t: 'row', label: 'Customer cities', cells: A, idx: false, cls: Object.fromEntries(A.map((c, i) => [i, sa.has(c) ? 'yes' : 'no'])) }, { t: 'row', label: 'Warehouse cities', cells: B, idx: false, cls: Object.fromEntries(B.map((c, i) => [i, sa.has(c) ? 'yes' : 'no'])) }] },
+        { msg: `Result: ${res.length} ${res.length === 1 ? 'row' : 'rows'}${v.op === 'UNION ALL' ? ', repeats and all' : v.op === 'UNION' ? ', duplicates removed' : ''}.`, mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'row', label: 'Result', cells: res, idx: false, cls: Object.fromEntries(res.map((c, i) => [i, inA.has(c) && inB.has(c) ? 'piv' : 'yes'])) }] }
+      ];
+    }
+  }));
+
+  /* a fresh writable copy for widgets that change data, thrown away after each run */
+  function scratch(SQL, name, extra) { return SQ.openSync(SQL, name, extra); }
+  function err(d, sql) { try { d.exec(sql); return ''; } catch (e) { return String(e.message || e); } }
+
+  /* ---------- 4.1 constraints guard the door ---------- */
+  SQW('sqcheck', (SQL, cfg) => ({
+    title: 'Constraints check every new row',
+    sub: 'The members table has rules. Type a new member and watch each rule test the row before SQLite lets it in. Try a missing name, a repeated email or an age under 18.',
+    inputs: [{ k: 'name', label: 'name', type: 'text', val: cfg.name !== undefined ? cfg.name : 'Kiran', w: 110 },
+      { k: 'email', label: 'email', type: 'text', val: cfg.email || 'kiran@mail.in', w: 150 },
+      { k: 'age', label: 'age', type: 'text', val: cfg.age || '21', w: 70 }],
+    frames: v => {
+      const DDL = `CREATE TABLE members (\n  id    INTEGER PRIMARY KEY,\n  name  TEXT NOT NULL,\n  email TEXT UNIQUE,\n  age   INTEGER CHECK (age >= 18)\n) STRICT;`;
+      const seed = "INSERT INTO members (name, email, age) VALUES ('Asha', 'asha@mail.in', 30), ('Ravi', 'ravi@mail.in', 24);";
+      const d = scratch(SQL, '', DDL + seed);
+      const lit = x => x.trim() === '' ? 'NULL' : /^-?\d+$/.test(x.trim()) ? x.trim() : `'${x.replace(/'/g, "''")}'`;
+      const ins = `INSERT INTO members (name, email, age)\nVALUES (${lit(v.name)}, ${lit(v.email)}, ${lit(v.age)});`;
+      const before = q(d, 'SELECT * FROM members');
+      const nm = v.name.trim(), em = v.email.trim(), ag = v.age.trim();
+      const dup = em && before.rows.some(r => r[2] === em);
+      const isInt = ag === '' || /^-?\d+$/.test(ag);
+      const tests = [
+        ['STRICT type check', isInt, isInt ? 'age is a whole number (or empty), so it fits INTEGER.' : `"${esc(ag)}" is not a whole number, and a STRICT table refuses it.`],
+        ['name NOT NULL', nm !== '', nm ? `name is "${esc(nm)}", so it is not NULL.` : 'name is empty, which we send as NULL. NOT NULL says no.'],
+        ['email UNIQUE', !dup, dup ? `${esc(em)} already belongs to another member.` : 'No other member has this email.'],
+        ['CHECK (age >= 18)', !isInt || ag === '' || +ag >= 18, ag === '' ? 'age is NULL. A CHECK that is unknown counts as passed.' : isInt ? `${ag} >= 18 is ${+ag >= 18 ? 'true' : 'false'}.` : 'skipped, the type check already failed.']
+      ];
+      const e = err(d, ins);
+      const after = q(d, 'SELECT * FROM members');
+      const out = [{ msg: 'These rules live in the table definition, so every program that writes to the table must obey them.', mood: 'think', layers: [{ t: 'sql', text: DDL }, { t: 'tab', label: 'members now', cols: before.cols, rows: before.rows }] },
+        { msg: 'Your new row asks to come in.', mood: 'look', layers: [{ t: 'sql', text: ins }, { t: 'tab', label: 'members now', cols: before.cols, rows: before.rows }] }];
+      tests.forEach((t, i) => out.push({ msg: `<b>${t[0]}</b>: ${t[2]}`, mood: t[1] ? 'happy' : 'sad', layers: [{ t: 'sql', text: ins }, { t: 'flow', items: tests.map(x => x[0]), on: i, done: i - 1 }] }));
+      out.push(e ? { msg: `SQLite refuses the row and says: <b>${esc(e)}</b>. The table is unchanged.`, mood: 'sad', layers: [{ t: 'sql', text: ins }, { t: 'tab', label: 'members', cols: after.cols, rows: after.rows }] }
+        : { msg: 'Every rule passed, so the row is stored. SQLite also gave it the next id by itself.', mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text: ins }, { t: 'tab', label: 'members', cols: after.cols, rows: after.rows, rcls: { [after.rows.length - 1]: 'yes' } }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 4.2 UPDATE and DELETE touch the rows WHERE picks ---------- */
+  SQW('sqdml', (SQL, cfg) => ({
+    title: 'WHERE decides which rows change',
+    sub: 'Pick a change and a WHERE test. Pip marks the rows the test picks, then runs the statement on a throwaway copy of products. Clear the WHERE box to see why people fear a missing WHERE.',
+    inputs: [{ k: 'a', label: 'Change', type: 'seg', val: cfg.a || 'UPDATE', opts: [['UPDATE', 'UPDATE price + 10%'], ['DELETE', 'DELETE']] },
+      { k: 'w', label: 'WHERE', type: 'text', val: cfg.w !== undefined ? cfg.w : "category = 'Kitchen'", w: 200 }],
+    check: v => { const e = tryq(db(SQL, 'shop'), `SELECT 1 FROM products${v.w.trim() ? ' WHERE ' + v.w : ''}`).error; return e ? `SQLite says: ${esc(e)}` : ''; },
+    frames: v => {
+      const W = v.w.trim();
+      const d = scratch(SQL, 'shop', 'DELETE FROM order_items;');
+      const stmt = v.a === 'UPDATE' ? `UPDATE products\nSET price = price * 11 / 10${W ? '\nWHERE ' + W : ''};` : `DELETE FROM products${W ? '\nWHERE ' + W : ''};`;
+      const cols = 'id, name, category, price';
+      const before = q(d, `SELECT ${cols} FROM products ORDER BY id`);
+      const hit = new Set(q(d, `SELECT id FROM products${W ? ' WHERE ' + W : ''}`).rows.map(r => r[0]));
+      const rc = Object.fromEntries(before.rows.map((r, i) => [i, hit.has(r[0]) ? 'look' : '']));
+      const e = err(d, stmt.replace(/\n/g, ' '));
+      const n = d.getRowsModified();
+      const after = q(d, `SELECT ${cols} FROM products ORDER BY id`);
+      const out = [
+        { msg: 'The table before the change.', mood: 'think', layers: [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products', cols: before.cols, rows: before.rows }] },
+        { msg: W ? `First the engine finds the rows where <b>${esc(W)}</b> is true: ${hit.size} of ${before.rows.length}.` : `There is no WHERE, so <b>every row</b> is picked: all ${before.rows.length}.`, mood: W ? 'look' : 'wow', layers: [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products', cols: before.cols, rows: before.rows, rcls: rc }] }];
+      if (e) out.push({ msg: `SQLite says: ${esc(e)}`, mood: 'sad', layers: [{ t: 'sql', text: stmt }] });
+      else if (v.a === 'UPDATE') out.push({ msg: `${n} ${n === 1 ? 'row was' : 'rows were'} changed. Prices went up by 10 percent, using integer division, only in the marked rows.`, mood: n === before.rows.length && !W ? 'sad' : 'happy', fx: 'burst', layers: [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products after', cols: after.cols, rows: after.rows, rcls: rc, ccls: { 3: 'piv' } }] });
+      else out.push({ msg: `${n} ${n === 1 ? 'row is' : 'rows are'} gone. ${!W ? 'The table is empty. Without a backup or an open transaction there is no undo.' : 'The other rows are untouched.'}`, mood: W ? 'happy' : 'sad', fx: W ? 'burst' : undefined, layers: [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products after', cols: after.cols, rows: after.rows }] });
+      out.push({ msg: 'Habit worth keeping: run the same WHERE in a SELECT first, check the rows, and only then change them.', mood: 'happy', layers: [{ t: 'sql', text: `SELECT * FROM products${W ? '\nWHERE ' + W : ''};` }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 4.3 a CTE builds a query in named steps ---------- */
+  SQW('sqcte', (SQL, cfg) => ({
+    title: 'A CTE is a query in named steps',
+    sub: 'Each WITH step is a small named result that the next step can read. Change the spending limit and watch every step recompute.',
+    inputs: [{ k: 'n', label: 'Big spender means total at least', type: 'num', val: cfg.n || 2000, w: 90 }],
+    frames: v => {
+      const d = db(SQL, 'shop'), N = Math.max(0, +v.n || 0);
+      const s1 = 'SELECT o.customer_id, SUM(oi.qty * p.price) AS total\n  FROM orders o\n  JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p ON p.id = oi.product_id\n  WHERE o.status <> \'cancelled\'\n  GROUP BY o.customer_id';
+      const s2 = `SELECT customer_id, total FROM spend WHERE total >= ${N}`;
+      const s3 = 'SELECT c.name, b.total FROM big b JOIN customers c ON c.id = b.customer_id ORDER BY b.total DESC';
+      const full = `WITH spend AS (\n  ${s1}\n),\nbig AS (\n  ${s2}\n)\n${s3};`;
+      const r1 = q(d, `WITH spend AS (${s1}) SELECT * FROM spend ORDER BY customer_id`);
+      const r2 = q(d, `WITH spend AS (${s1}), big AS (${s2}) SELECT * FROM big ORDER BY customer_id`);
+      const r3 = q(d, `WITH spend AS (${s1}), big AS (${s2}) ${s3}`);
+      const ST = ['spend', 'big', 'final SELECT'];
+      return [
+        { msg: 'The whole statement. Read it top to bottom like a recipe: each step has a name.', mood: 'think', layers: [{ t: 'sql', text: full }, { t: 'flow', items: ST, on: -1 }] },
+        { msg: `Step <b>spend</b>: total money per customer, cancelled orders left out. ${r1.rows.length} customers.`, mood: 'work', layers: [{ t: 'flow', items: ST, on: 0 }, { t: 'sql', text: 'spend AS (\n  ' + s1 + '\n)' }, { t: 'tab', label: 'spend', cols: r1.cols, rows: r1.rows }] },
+        { msg: `Step <b>big</b> reads spend as if it were a table and keeps totals of at least ${N}: ${r2.rows.length} left.`, mood: 'look', layers: [{ t: 'flow', items: ST, on: 1, done: 0 }, { t: 'sql', text: 'big AS (\n  ' + s2 + '\n)' }, { t: 'tab', label: 'spend', cols: r1.cols, rows: r1.rows, rcls: Object.fromEntries(r1.rows.map((r, i) => [i, r[1] >= N ? 'yes' : 'no'])) }] },
+        { msg: 'The final SELECT joins big to customers to show names. The named steps vanish when the statement ends.', mood: 'happy', fx: 'burst', layers: [{ t: 'flow', items: ST, on: 2, done: 1 }, { t: 'sql', text: s3 + ';' }, { t: 'tab', label: 'Result', cols: r3.cols, rows: r3.rows }] }
+      ];
+    }
+  }));
+
+  /* ---------- 5.1 normalization, one form at a time ---------- */
+  SQW('sqnorm', (SQL, cfg) => ({
+    title: 'Normalize a messy sheet, step by step',
+    sub: 'A teacher kept enrolments in one spreadsheet. Pick how far to normalize and watch SQLite split the sheet into tables, one rule at a time.',
+    inputs: [{ k: 'nf', label: 'Go as far as', type: 'seg', val: cfg.nf || '3NF', opts: [['1NF', '1NF'], ['2NF', '2NF'], ['3NF', '3NF']] }],
+    frames: v => {
+      const seed = `CREATE TABLE sheet (student_id INTEGER, student_name TEXT, phones TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);
+INSERT INTO sheet VALUES (1,'Asha','98111, 98222','C1','Databases','Rao','R12','A'), (1,'Asha','98111, 98222','C2','Networks','Iyer','R7','B'),
+ (2,'Ravi','97333','C1','Databases','Rao','R12','B'), (3,'Meera','96444','C3','Security','Rao','R12','A');
+CREATE TABLE phones AS SELECT DISTINCT student_id, trim(substr(phones, 1, instr(phones || ',', ',') - 1)) AS phone FROM sheet
+ UNION SELECT DISTINCT student_id, trim(substr(phones, instr(phones, ',') + 1)) FROM sheet WHERE instr(phones, ',') > 0;
+CREATE TABLE flat1 AS SELECT student_id, student_name, course, title, teacher, room, grade FROM sheet;
+CREATE TABLE students AS SELECT DISTINCT student_id, student_name FROM sheet;
+CREATE TABLE courses2 AS SELECT DISTINCT course, title, teacher, room FROM sheet;
+CREATE TABLE enrolments AS SELECT student_id, course, grade FROM sheet;
+CREATE TABLE courses AS SELECT DISTINCT course, title, teacher FROM sheet;
+CREATE TABLE teachers AS SELECT DISTINCT teacher, room FROM sheet;`;
+      const d = scratch(SQL, '', seed);
+      const T = (name, label, extra) => { const r = q(d, `SELECT * FROM ${name} ORDER BY 1, 2`); return Object.assign({ t: 'tab', label: label || name, cols: r.cols, rows: r.rows }, extra || {}); };
+      const sheet = q(d, 'SELECT * FROM sheet');
+      const out = [{ msg: 'The original sheet. Asha’s name and phones appear twice, and the room of teacher Rao appears three times. Every repeat is a chance for the copies to disagree.', mood: 'think',
+        layers: [{ t: 'tab', label: 'sheet', cols: sheet.cols, rows: sheet.rows, ccls: { 2: 'piv' } }] }];
+      out.push({ msg: '<b>1NF</b>: one value per cell. The phones cell holds a list, so phones move to their own table, one phone per row. The key of what is left is (student_id, course).', mood: 'work',
+        layers: [T('flat1', 'enrolment rows, key (student_id, course)', { ccls: { 1: 'look', 3: 'look', 4: 'look', 5: 'look' } }), T('phones', 'phones, key (student_id, phone)')] });
+      if (v.nf === '1NF') { out.push({ msg: 'Stopped at 1NF. Every cell is atomic, but names and course details still repeat in each enrolment row.', mood: 'look', layers: [T('flat1', 'enrolment rows'), T('phones')] }); return out; }
+      out.push({ msg: '<b>2NF</b>: no column may depend on only part of the key. student_name depends on student_id alone, and title, teacher and room depend on course alone. Each goes to a table keyed by what it depends on.', mood: 'work',
+        layers: [T('students', 'students, key student_id'), T('courses2', 'courses, key course', { ccls: { 3: 'look' } }), T('enrolments', 'enrolments, key (student_id, course)')] });
+      if (v.nf === '2NF') { out.push({ msg: 'Stopped at 2NF. One repeat is left: room depends on teacher, not on the course, so Rao’s room R12 is still written twice.', mood: 'look', layers: [T('courses2', 'courses', { ccls: { 3: 'no' } })] }); return out; }
+      out.push({ msg: '<b>3NF</b>: no column may depend on another non key column. course decides teacher, and teacher decides room. That chain is a transitive dependency, so room moves to a teachers table.', mood: 'work',
+        layers: [T('courses', 'courses, key course'), T('teachers', 'teachers, key teacher', { ccls: { 1: 'yes' } })] });
+      const back = q(d, 'SELECT s.student_name, c.title, t.room, e.grade FROM enrolments e JOIN students s USING (student_id) JOIN courses c USING (course) JOIN teachers t USING (teacher) ORDER BY 1, 2');
+      out.push({ msg: 'Every fact is now stored once. A JOIN rebuilds the original view whenever you need it, with no data lost.', mood: 'happy', fx: 'burst',
+        layers: [{ t: 'sql', text: 'SELECT s.student_name, c.title, t.room, e.grade\nFROM enrolments e\nJOIN students s USING (student_id)\nJOIN courses  c USING (course)\nJOIN teachers t USING (teacher);' }, { t: 'tab', label: 'rebuilt by a join', cols: back.cols, rows: back.rows }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 5.2 where the foreign key goes ---------- */
+  SQW('sqer', (SQL, cfg) => ({
+    title: 'Turn a relationship into tables',
+    sub: 'Pick how two things relate. Pip decides where the foreign key goes, writes the tables, and runs a join on sample rows.',
+    inputs: [{ k: 'r', label: 'Relationship', type: 'seg', val: cfg.r || 'many', opts: [['one', 'one to one'], ['many', 'one to many'], ['m2m', 'many to many']] }],
+    frames: v => {
+      const S = {
+        one: { a: 'person', b: 'passport', say: 'Each person has at most one passport, and each passport belongs to one person.',
+          rule: 'Put the foreign key on either side and make it UNIQUE, so no two passports point at the same person.',
+          ddl: 'CREATE TABLE person (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE passport (\n  no TEXT PRIMARY KEY,\n  person_id INTEGER UNIQUE REFERENCES person(id)\n);',
+          data: "INSERT INTO person VALUES (1, 'Asha'), (2, 'Ravi'); INSERT INTO passport VALUES ('P100', 1), ('P200', 2);",
+          q: 'SELECT p.name, x.no FROM person p JOIN passport x ON x.person_id = p.id', tabs: ['person', 'passport'] },
+        many: { a: 'author', b: 'book', say: 'One author writes many books, each book has one author.',
+          rule: 'The foreign key goes on the many side: each book row stores its author_id.',
+          ddl: 'CREATE TABLE author (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE book (\n  id INTEGER PRIMARY KEY,\n  title TEXT,\n  author_id INTEGER REFERENCES author(id)\n);',
+          data: "INSERT INTO author VALUES (1, 'Ruskin Bond'), (2, 'Sudha Murty'); INSERT INTO book VALUES (1, 'The Blue Umbrella', 1), (2, 'Rusty', 1), (3, 'Wise and Otherwise', 2);",
+          q: 'SELECT a.name, b.title FROM author a JOIN book b ON b.author_id = a.id', tabs: ['author', 'book'] },
+        m2m: { a: 'student', b: 'club', say: 'A student joins many clubs, and a club has many students.',
+          rule: 'Neither side can hold a single foreign key, so a junction table stores one row per pair, with two foreign keys and a composite primary key.',
+          ddl: 'CREATE TABLE student (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE club (id INTEGER PRIMARY KEY, name TEXT);\nCREATE TABLE membership (\n  student_id INTEGER REFERENCES student(id),\n  club_id INTEGER REFERENCES club(id),\n  PRIMARY KEY (student_id, club_id)\n);',
+          data: "INSERT INTO student VALUES (1, 'Asha'), (2, 'Ravi'); INSERT INTO club VALUES (1, 'Chess'), (2, 'Music'); INSERT INTO membership VALUES (1, 1), (1, 2), (2, 2);",
+          q: 'SELECT s.name AS student, c.name AS club FROM membership m JOIN student s ON s.id = m.student_id JOIN club c ON c.id = m.club_id', tabs: ['student', 'club', 'membership'] }
+      }[v.r];
+      const d = scratch(SQL, '', S.ddl + '\n' + S.data);
+      const tabs = S.tabs.map(t => { const r = q(d, `SELECT * FROM ${t}`); const fk = r.cols.map((c, i) => /_id$/.test(c) ? i : -1).filter(i => i >= 0); return { t: 'tab', label: t, cols: r.cols, rows: r.rows, ccls: Object.fromEntries(fk.map(i => [i, 'piv'])) }; });
+      const res = q(d, S.q);
+      return [
+        { msg: `Two things: <b>${S.a}</b> and <b>${S.b}</b>. ${S.say}`, mood: 'think', layers: [{ t: 'flow', items: [S.a, v.r === 'm2m' ? 'many to many' : v.r === 'one' ? 'one to one' : 'one to many', S.b], on: 1 }] },
+        { msg: S.rule, mood: 'look', layers: [{ t: 'sql', text: S.ddl }] },
+        { msg: 'The tables with a few rows. The highlighted columns are the foreign keys.', mood: 'work', layers: tabs },
+        { msg: `A join follows the keys and answers the question. ${res.rows.length} rows.`, mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text: S.q.replace(/ (FROM|JOIN)/g, '\n$1') + ';' }, { t: 'tab', label: 'Result', cols: res.cols, rows: res.rows }] }
+      ];
+    }
+  }));
+
+  /* ---------- 6.1 a window function looks at a frame of rows ---------- */
+  SQW('sqwin', (SQL, cfg) => ({
+    title: 'Window functions keep every row',
+    sub: 'Pick a function and a partition. For each employee Pip highlights the rows the function can see, its window, and SQLite fills in the answer. No rows are folded away.',
+    inputs: [{ k: 'f', label: 'Function', type: 'seg', val: cfg.f || 'RANK', opts: [['ROW_NUMBER', 'ROW_NUMBER'], ['RANK', 'RANK'], ['DENSE_RANK', 'DENSE_RANK'], ['SUM', 'running SUM'], ['AVG', 'AVG of group'], ['LAG', 'LAG']] },
+      { k: 'p', label: 'PARTITION BY', type: 'seg', val: cfg.p || 'dept', opts: [['dept', 'department'], ['none', 'nothing']] }],
+    frames: v => {
+      const d = db(SQL, 'company');
+      const part = v.p === 'dept' ? 'PARTITION BY dept_id ' : '';
+      const ord = 'ORDER BY salary DESC';
+      const call = { ROW_NUMBER: `ROW_NUMBER() OVER (${part}${ord})`, RANK: `RANK() OVER (${part}${ord})`, DENSE_RANK: `DENSE_RANK() OVER (${part}${ord})`,
+        SUM: `SUM(salary) OVER (${part}${ord})`, AVG: `AVG(salary) OVER (${part.trim()})`, LAG: `LAG(salary) OVER (${part}${ord})` }[v.f];
+      const r = q(d, `SELECT name, dept_id, salary, ${call} AS answer FROM employees WHERE dept_id IS NOT NULL ORDER BY ${v.p === 'dept' ? 'dept_id, ' : ''}salary DESC, id`);
+      const rows = r.rows.map(x => [x[0], x[1], x[2], null]);
+      const text = `SELECT name, dept_id, salary,\n       ${call} AS answer\nFROM employees;`;
+      const grp = i => v.p === 'dept' ? r.rows[i][1] : 0;
+      const frameOf = i => {
+        const g = grp(i), idx = r.rows.map((x, k) => k).filter(k => grp(k) === g);
+        if (v.f === 'AVG') return idx;
+        if (v.f === 'LAG') return idx.filter(k => k === i - 1);
+        if (v.f === 'ROW_NUMBER') return idx.filter(k => k <= i);
+        return idx.filter(k => r.rows[k][2] >= r.rows[i][2]);      /* peers included: RANGE frame and rank ties */
+      };
+      const fmt = a => typeof a === 'number' && !Number.isInteger(a) ? Math.round(a) : a;
+      const out = [{ msg: v.p === 'dept' ? 'PARTITION BY dept_id splits the rows into one group per department, and ORDER BY sorts inside each group. The rows stay separate.' : 'With no PARTITION BY the whole table is one window.', mood: 'think',
+        layers: [{ t: 'sql', text }, { t: 'tab', label: 'employees (Zoya has no department and is left out here)', cols: ['name', 'dept_id', 'salary', 'answer'], rows: rows.map(x => x.slice()), rcls: Object.fromEntries(r.rows.map((x, i) => [i, v.p === 'dept' ? ['', 'cur', 'look', 'yes'][x[1] % 4] : ''])) }] }];
+      r.rows.forEach((x, i) => {
+        const fr = frameOf(i);
+        rows[i][3] = fmt(x[3]);
+        const why = { ROW_NUMBER: 'counts the rows so far, ties get different numbers', RANK: 'is 1 plus the number of rows with a higher salary, so ties share a rank and leave a gap', DENSE_RANK: 'counts distinct higher salaries plus 1, so ties share a rank with no gap',
+          SUM: 'adds every salary from the top of the group down to this row, including rows tied with it', AVG: 'averages the whole group, because there is no ORDER BY', LAG: 'takes the salary of the row just above in the group, or NULL for the first row' }[v.f];
+        out.push({ msg: `<b>${esc(x[0])}</b>: ${v.f} ${why}. Answer: <b>${x[3] === null ? 'NULL' : fmt(x[3])}</b>.`, mood: 'work',
+          layers: [{ t: 'sql', text }, { t: 'tab', label: 'employees', cols: ['name', 'dept_id', 'salary', 'answer'], rows: rows.map(y => y.slice()), rcls: Object.assign(Object.fromEntries(fr.map(k => [k, 'look'])), { [i]: 'yes' }), ccls: { 3: 'piv' } }] });
+      });
+      out.push({ msg: `Every row kept its own line and gained an answer. GROUP BY would have folded them into ${v.p === 'dept' ? 3 : 1} ${v.p === 'dept' ? 'rows' : 'row'}.`, mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text }, { t: 'tab', label: 'Result', cols: ['name', 'dept_id', 'salary', 'answer'], rows }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 6.2 a recursive CTE grows round by round ---------- */
+  SQW('sqrec', (SQL, cfg) => ({
+    title: 'WITH RECURSIVE, one round at a time',
+    sub: 'The anchor makes the first rows. Each round runs the recursive part on the rows found in the round before, until a round finds nothing.',
+    inputs: [{ k: 'm', label: 'Example', type: 'seg', val: cfg.m || 'org', opts: [['count', 'count to N'], ['org', 'who reports to Priya']] },
+      { k: 'n', label: 'N (for counting)', type: 'num', val: cfg.n || 5, min: 1, max: 12, w: 70 }],
+    frames: v => {
+      const N = Math.max(1, Math.min(12, +v.n || 5));
+      const C = v.m === 'count'
+        ? { d: '', text: `WITH RECURSIVE n(x, round) AS (\n  SELECT 1, 0                 -- anchor\n  UNION ALL\n  SELECT x + 1, round + 1 FROM n\n  WHERE x < ${N}              -- stop rule\n)\nSELECT x FROM n;`,
+            sql: `WITH RECURSIVE n(x, round) AS (SELECT 1, 0 UNION ALL SELECT x + 1, round + 1 FROM n WHERE x < ${N}) SELECT x, round FROM n`, cols: ['x'] }
+        : { d: 'company', text: 'WITH RECURSIVE team(id, name, level) AS (\n  SELECT id, name, 0 FROM employees WHERE id = 1      -- anchor: Priya\n  UNION ALL\n  SELECT e.id, e.name, t.level + 1\n  FROM employees e JOIN team t ON e.manager_id = t.id  -- next level down\n)\nSELECT name, level FROM team;',
+            sql: 'WITH RECURSIVE team(id, name, level) AS (SELECT id, name, 0 FROM employees WHERE id = 1 UNION ALL SELECT e.id, e.name, t.level + 1 FROM employees e JOIN team t ON e.manager_id = t.id) SELECT name, level FROM team ORDER BY level, id', cols: ['name', 'level'] };
+      const d = C.d ? db(SQL, C.d) : scratch(SQL, '');
+      const all = q(d, C.sql).rows;
+      const rounds = Math.max(...all.map(r => r[1] === undefined ? 0 : r[1])) + 1;
+      const out = [{ msg: 'A recursive CTE has two parts joined by UNION ALL: the <b>anchor</b>, run once, and the <b>recursive part</b>, which reads the CTE’s own name.', mood: 'think', layers: [{ t: 'sql', text: C.text }] }];
+      const sofar = [];
+      for (let k = 0; k < rounds; k++) {
+        const fresh = all.filter(r => r[1] === k);
+        const start = sofar.length;
+        fresh.forEach(r => sofar.push(v.m === 'count' ? [r[0]] : [r[0], r[1]]));
+        out.push({ msg: k === 0 ? `Round 0, the anchor: ${fresh.length} ${fresh.length === 1 ? 'row' : 'rows'}.` : `Round ${k}: the recursive part reads only the ${all.filter(r => r[1] === k - 1).length} new rows of round ${k - 1} and finds ${fresh.length} more.`, mood: k ? 'work' : 'look',
+          layers: [{ t: 'sql', text: C.text }, { t: 'tab', label: `rows after round ${k}`, cols: C.cols, rows: sofar.slice(), rcls: Object.fromEntries(fresh.map((r, i) => [start + i, 'yes'])) }] });
+      }
+      out.push({ msg: `Round ${rounds}: the recursive part finds no new rows${v.m === 'count' ? `, because the stop rule x < ${N} fails` : ', because nobody reports to the last people found'}. The recursion ends with ${all.length} rows.`, mood: 'happy', fx: 'burst',
+        layers: [{ t: 'sql', text: C.text }, { t: 'tab', label: 'Result', cols: C.cols, rows: sofar }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 6.3 gaps and islands ---------- */
+  SQW('sqisland', (SQL, cfg) => ({
+    title: 'Gaps and islands: find the streaks',
+    sub: 'Type the days on which a student logged in. Subtract the row number from each day: days in the same streak give the same answer, so GROUP BY finds each streak.',
+    inputs: [{ k: 'days', label: 'Login days', type: 'text', val: cfg.days || '1, 2, 3, 6, 7, 9, 10, 11, 12', w: 230 }],
+    check: v => (v.days.match(/\d+/g) || []).length ? '' : 'Type some whole numbers, separated by commas.',
+    frames: v => {
+      const days = [...new Set((v.days.match(/\d+/g) || []).map(Number))].filter(x => x <= 999).sort((a, b) => a - b).slice(0, 16);
+      const d = scratch(SQL, '', `CREATE TABLE logins (day INTEGER); INSERT INTO logins VALUES ${days.map(x => `(${x})`).join(', ')};`);
+      const r = q(d, 'SELECT day, ROW_NUMBER() OVER (ORDER BY day) AS rn, day - ROW_NUMBER() OVER (ORDER BY day) AS grp FROM logins ORDER BY day').rows;
+      const isl = q(d, 'SELECT MIN(day) AS first_day, MAX(day) AS last_day, COUNT(*) AS streak FROM (SELECT day, day - ROW_NUMBER() OVER (ORDER BY day) AS grp FROM logins) GROUP BY grp ORDER BY first_day');
+      const g = [...new Set(r.map(x => x[2]))];
+      const col = x => ['yes', 'look', 'cur', 'piv'][g.indexOf(x) % 4];
+      const text = 'SELECT MIN(day), MAX(day), COUNT(*) AS streak\nFROM (SELECT day,\n        day - ROW_NUMBER() OVER (ORDER BY day) AS grp\n      FROM logins)\nGROUP BY grp;';
+      return [
+        { msg: `${days.length} login days. A streak is a run of days with no gap.`, mood: 'think', layers: [{ t: 'sql', text }, { t: 'row', label: 'days', cells: days, idx: false }] },
+        { msg: 'ROW_NUMBER numbers the days 1, 2, 3 in order.', mood: 'work', layers: [{ t: 'sql', text }, { t: 'tab', label: 'step 1', cols: ['day', 'rn'], rows: r.map(x => [x[0], x[1]]) }] },
+        { msg: 'Inside a streak, day and rn both go up by 1, so day minus rn stays the same. After a gap, day jumps but rn does not, so the difference changes.', mood: 'wow',
+          layers: [{ t: 'sql', text }, { t: 'tab', label: 'step 2', cols: ['day', 'rn', 'day − rn'], rows: r, rcls: Object.fromEntries(r.map((x, i) => [i, col(x[2])])) }] },
+        { msg: `GROUP BY the difference: ${isl.rows.length} ${isl.rows.length === 1 ? 'island' : 'islands'}. The longest streak is ${Math.max(...isl.rows.map(x => x[2]))} days.`, mood: 'happy', fx: 'burst',
+          layers: [{ t: 'sql', text }, { t: 'tab', label: 'islands', cols: isl.cols, rows: isl.rows, rcls: Object.fromEntries(isl.rows.map((x, i) => [i, ['yes', 'look', 'cur', 'piv'][i % 4]])) }] }
+      ];
+    }
+  }));
+
+  function plan(d, sql) {             /* EXPLAIN QUERY PLAN as indented text lines */
+    const r = q(d, 'EXPLAIN QUERY PLAN ' + sql).rows, depth = { 0: -1 };
+    return r.map(x => { depth[x[0]] = (depth[x[1]] === undefined ? -1 : depth[x[1]]) + 1; return '  '.repeat(depth[x[0]]) + x[3]; });
+  }
+
+  /* ---------- 7.1 an index turns a scan into a search ---------- */
+  SQW('sqindex', (SQL, cfg) => ({
+    title: 'Full scan versus index search',
+    sub: 'Find the product with a given price. Without an index SQLite reads every row. With an index on price it jumps through a sorted structure, halving the search each step.',
+    inputs: [{ k: 'p', label: 'Find price', type: 'seg', val: String(cfg.p || 850), opts: ['60', '250', '850', '1499', '999'].map(x => [x, x]) }],
+    frames: v => {
+      const P = +v.p;
+      const d = scratch(SQL, 'shop');
+      const rows = q(d, 'SELECT id, name, price FROM products ORDER BY id').rows;
+      const sql = `SELECT name FROM products WHERE price = ${P}`;
+      const p1 = plan(d, sql);
+      d.exec('CREATE INDEX idx_price ON products(price)');
+      const p2 = plan(d, sql);
+      const sorted = q(d, 'SELECT price FROM products ORDER BY price').rows.map(r => r[0]);
+      const out = [{ msg: `No index yet. SQLite’s plan says <b>${esc(p1.join(' '))}</b>: read the whole table.`, mood: 'think', layers: [{ t: 'sql', text: sql + ';' }, { t: 'tab', label: 'products, stored in id order', cols: ['id', 'name', 'price'], rows }] }];
+      let found = -1;
+      rows.forEach((r, i) => {
+        if (found >= 0) return;
+        if (r[2] === P) found = i;
+        if (i % 3 === 2 || r[2] === P || i === rows.length - 1)
+          out.push({ msg: `Scan: ${i + 1} ${i ? 'rows' : 'row'} read so far${r[2] === P ? `, and row ${i + 1} matches. But a scan cannot stop, another row might match too.` : '.'}`, mood: r[2] === P ? 'happy' : 'work',
+            layers: [{ t: 'sql', text: sql + ';' }, { t: 'tab', label: 'full scan', cols: ['id', 'name', 'price'], rows, rcls: Object.assign(Object.fromEntries(rows.slice(0, i + 1).map((x, k) => [k, x[2] === P ? 'yes' : 'look'])), {}) }] });
+      });
+      out.push({ msg: `The scan reads all ${rows.length} rows whatever happens. With a million rows, it reads a million.`, mood: 'sad', layers: [{ t: 'sql', text: sql + ';' }, { t: 'note', html: `Rows read: <b>${rows.length}</b>` }] });
+      out.push({ msg: 'Now <b>CREATE INDEX idx_price ON products(price)</b>. The index keeps every price in sorted order, each with a pointer to its row.', mood: 'wow', layers: [{ t: 'sql', text: 'CREATE INDEX idx_price ON products(price);' }, { t: 'row', label: 'index on price (sorted)', cells: sorted, idx: true }] });
+      let lo = 0, hi = sorted.length - 1, steps = 0, hit = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1; steps++;
+        const c = sorted[mid];
+        const cls = {}; for (let k = 0; k < sorted.length; k++) cls[k] = k < lo || k > hi ? 'ghost' : '';
+        cls[mid] = c === P ? 'yes' : 'look';
+        out.push({ msg: `Step ${steps}: look at the middle, ${c}. ${c === P ? 'Found it.' : c < P ? `${P} is bigger, so throw away the left half.` : `${P} is smaller, so throw away the right half.`}`, mood: c === P ? 'happy' : 'work',
+          layers: [{ t: 'sql', text: sql + ';' }, { t: 'row', label: 'index on price', cells: sorted, idx: true, cls, ptr: { [lo]: 'lo', [hi]: 'hi' } }] });
+        if (c === P) { hit = mid; break; }
+        if (c < P) lo = mid + 1; else hi = mid - 1;
+      }
+      if (hit < 0) out.push({ msg: `After ${steps} steps the range is empty: no product costs ${P}. The index proved it without reading the table.`, mood: 'look', layers: [{ t: 'row', label: 'index on price', cells: sorted, idx: true }] });
+      out.push({ msg: `SQLite’s new plan: <b>${esc(p2.join(' '))}</b>. About log₂(n) steps: 20 steps for a million rows. Real indexes are B-trees with hundreds of keys per page, so even fewer page reads.`, mood: 'happy', fx: 'burst',
+        layers: [{ t: 'sql', text: 'EXPLAIN QUERY PLAN\n' + sql + ';' }, { t: 'note', html: `Before: ${esc(p1.join(' '))}<br>After: ${esc(p2.join(' '))}` }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 7.2 read a query plan ---------- */
+  SQW('sqplan', (SQL, cfg) => ({
+    title: 'What will SQLite do with your query',
+    sub: 'Pick a query, or type your own on the shop tables, and switch indexes on or off. EXPLAIN QUERY PLAN shows the real plan SQLite chose.',
+    inputs: [{ k: 'sql', label: 'Query', type: 'text', val: cfg.sql || "SELECT c.name, o.id FROM customers c JOIN orders o ON o.customer_id = c.id WHERE o.status = 'pending'", w: 520 },
+      { k: 'ix', label: 'Indexes', type: 'seg', val: cfg.ix || 'none', opts: [['none', 'none'], ['some', 'on orders(status) and orders(customer_id)']] }],
+    check: v => { const e = tryq(db(SQL, 'shop'), 'EXPLAIN QUERY PLAN ' + v.sql).error; return e ? `SQLite says: ${esc(e)}` : ''; },
+    frames: v => {
+      const d = scratch(SQL, 'shop', v.ix === 'some' ? 'CREATE INDEX idx_o_status ON orders(status); CREATE INDEX idx_o_cust ON orders(customer_id);' : '');
+      const lines = plan(d, v.sql);
+      const say = l => /SCAN/.test(l) && /COVERING/.test(l) ? 'reads a whole index instead of the table, which is smaller' : /SCAN/.test(l) ? 'reads every row of the table, fine when small, slow when big'
+        : /SEARCH/.test(l) && /COVERING/.test(l) ? 'finds rows through an index that holds every needed column, so it never touches the table' : /SEARCH/.test(l) && /PRIMARY KEY|INTEGER PRIMARY KEY/.test(l) ? 'jumps straight to rows by their primary key'
+        : /SEARCH/.test(l) ? 'uses an index to jump to matching rows only' : /TEMP B-TREE/.test(l) ? 'builds a temporary sorted structure, for ORDER BY, GROUP BY or DISTINCT that no index already provides'
+        : /AUTOMATIC/.test(l) ? 'builds a throwaway index just for this query, a hint that a real index would help' : /SUBQUERY|CO-ROUTINE|MATERIALIZE|COMPOUND/.test(l) ? 'runs an inner query as its own step' : 'is a step of the plan';
+      const out = [{ msg: 'EXPLAIN QUERY PLAN asks the planner what it would do, without running the query.', mood: 'think', layers: [{ t: 'sql', text: 'EXPLAIN QUERY PLAN\n' + v.sql + ';' }, { t: 'note', html: v.ix === 'some' ? 'Indexes on orders(status) and orders(customer_id) exist.' : 'Only the primary keys and UNIQUE columns have indexes.' }] }];
+      lines.forEach((l, i) => out.push({ msg: `<b>${esc(l.trim())}</b>: this ${say(l)}.`, mood: /SCAN/.test(l) && !/COVERING/.test(l) ? 'look' : 'happy',
+        layers: [{ t: 'sql', text: lines.map((x, k) => (k === i ? '>> ' : '   ') + x).join('\n') }] }));
+      out.push({ msg: `${lines.filter(l => /SCAN/.test(l) && !/COVERING/.test(l)).length} full ${lines.filter(l => /SCAN/.test(l) && !/COVERING/.test(l)).length === 1 ? 'scan' : 'scans'} in this plan. ${v.ix === 'none' ? 'Switch the indexes on and compare.' : 'Switch the indexes off and compare.'}`, mood: 'wow', fx: 'burst', layers: [{ t: 'sql', text: lines.join('\n') }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 7.3 transactions on a timeline ---------- */
+  SQW('sqtx', (SQL, cfg) => ({
+    title: 'Two people, one bank account',
+    sub: 'Pick a story. Each step runs on a real SQLite copy, one statement at a time in the order shown, to act out what two sessions do.',
+    inputs: [{ k: 's', label: 'Story', type: 'seg', val: cfg.s || 'lost', opts: [['commit', 'transfer that commits'], ['rollback', 'transfer that fails'], ['lost', 'lost update'], ['fixed', 'lost update fixed']] }],
+    frames: v => {
+      const d = scratch(SQL, '', "CREATE TABLE accounts (name TEXT PRIMARY KEY, balance INTEGER NOT NULL CHECK (balance >= 0)); INSERT INTO accounts VALUES ('Asha', 500), ('Ravi', 200);");
+      const show = () => q(d, 'SELECT name, balance FROM accounts ORDER BY name');
+      const F = (who, sqlText, msg, mood, extra) => { const t = show(); return { msg, mood, layers: [{ t: 'flow', items: ['Session A', 'Session B'], on: who === 'A' ? 0 : who === 'B' ? 1 : -1 }, { t: 'sql', text: sqlText }, { t: 'tab', label: 'accounts (committed view)', cols: t.cols, rows: t.rows, ...(extra || {}) }] }; };
+      const run = s => { try { d.exec(s); return ''; } catch (e) { return String(e.message || e); } };
+      const out = [F('', '-- start', 'Asha has 500, Ravi has 200. Money must never appear or vanish.', 'think')];
+      if (v.s === 'commit' || v.s === 'rollback') {
+        const amt = v.s === 'commit' ? 300 : 700;
+        run('BEGIN');
+        out.push(F('A', 'BEGIN;', 'BEGIN starts a transaction: the next statements succeed together or not at all.', 'look'));
+        const e1 = run(`UPDATE accounts SET balance = balance + ${amt} WHERE name = 'Ravi'`);
+        out.push(F('A', `UPDATE accounts SET balance = balance + ${amt}\nWHERE name = 'Ravi';`, `Ravi gets ${amt}. This change is not yet permanent.`, 'work', { rcls: { 1: 'look' } }));
+        const e2 = run(`UPDATE accounts SET balance = balance - ${amt} WHERE name = 'Asha'`);
+        if (!e2) { run('COMMIT'); out.push(F('A', `UPDATE accounts SET balance = balance - ${amt}\nWHERE name = 'Asha';\nCOMMIT;`, 'Asha pays 300 and COMMIT makes both changes permanent at once. Total still 700.', 'happy', { rcls: { 0: 'yes', 1: 'yes' } })); out[out.length - 1].fx = 'burst'; }
+        else {
+          out.push(F('A', `UPDATE accounts SET balance = balance - ${amt}\nWHERE name = 'Asha';`, `SQLite refuses: <b>${esc(e2)}</b>. Asha cannot go below 0. But Ravi already got the money.`, 'sad', { rcls: { 1: 'no' } }));
+          run('ROLLBACK');
+          const t = show(); out.push({ msg: 'ROLLBACK undoes everything since BEGIN. Ravi is back to 200, nobody lost or gained money.', mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text: 'ROLLBACK;' }, { t: 'tab', label: 'accounts', cols: t.cols, rows: t.rows, rcls: { 0: 'yes', 1: 'yes' } }] });
+        }
+        if (e1) out.push(F('', '', esc(e1), 'sad'));
+        return out;
+      }
+      /* lost update: both read, both write a value computed from their own read */
+      if (v.s === 'lost') {
+        const a = q(d, "SELECT balance FROM accounts WHERE name = 'Asha'").rows[0][0];
+        out.push(F('A', "SELECT balance FROM accounts WHERE name = 'Asha';", `Session A (a shop refund of 100) reads Asha’s balance: ${a}.`, 'look', { rcls: { 0: 'look' } }));
+        const b = q(d, "SELECT balance FROM accounts WHERE name = 'Asha'").rows[0][0];
+        out.push(F('B', "SELECT balance FROM accounts WHERE name = 'Asha';", `Session B (salary of 1000) also reads ${b}, before A writes.`, 'look', { rcls: { 0: 'look' } }));
+        run(`UPDATE accounts SET balance = ${a + 100} WHERE name = 'Asha'`);
+        out.push(F('A', `UPDATE accounts SET balance = ${a + 100}\nWHERE name = 'Asha';  -- ${a} + 100`, `A writes ${a} + 100 = ${a + 100}.`, 'work', { rcls: { 0: 'yes' } }));
+        run(`UPDATE accounts SET balance = ${b + 1000} WHERE name = 'Asha'`);
+        out.push(F('B', `UPDATE accounts SET balance = ${b + 1000}\nWHERE name = 'Asha';  -- ${b} + 1000`, `B writes ${b} + 1000 = ${b + 1000}, overwriting A’s change. The refund of 100 is lost. Asha should have ${a + 1100}.`, 'sad', { rcls: { 0: 'no' } }));
+        return out;
+      }
+      run("UPDATE accounts SET balance = balance + 100 WHERE name = 'Asha'");
+      out.push(F('A', "UPDATE accounts\nSET balance = balance + 100\nWHERE name = 'Asha';", 'Fix 1: let the database do the arithmetic. A adds 100 to whatever the balance is at that moment. The row is locked until A commits.', 'work', { rcls: { 0: 'yes' } }));
+      run("UPDATE accounts SET balance = balance + 1000 WHERE name = 'Asha'");
+      out.push(F('B', "UPDATE accounts\nSET balance = balance + 1000\nWHERE name = 'Asha';", 'B waits for A’s lock, then adds 1000 to the new value. Asha has 1600, nothing lost.', 'happy', { rcls: { 0: 'yes' } }));
+      out[out.length - 1].fx = 'burst';
+      out.push(F('', "-- Fix 2, when the program must read first:\nBEGIN;\nSELECT balance FROM accounts WHERE name = 'Asha' FOR UPDATE;  -- PostgreSQL, MySQL\nUPDATE accounts SET balance = ... WHERE name = 'Asha';\nCOMMIT;", 'Fix 2: lock the row while reading with SELECT ... FOR UPDATE (PostgreSQL, MySQL), or run at SERIALIZABLE isolation so the engine refuses the second writer. SQLite locks the whole database for writing, which also prevents this.', 'look'));
+      return out;
+    }
+  }));
+
+  /* ---------- 8.1 a trigger fires on every change ---------- */
+  SQW('sqtrig', (SQL, cfg) => ({
+    title: 'Triggers fire by themselves',
+    sub: 'Two triggers watch products: one writes every price change to an audit log, one refuses negative stock. Pick a change and watch them fire.',
+    inputs: [{ k: 'a', label: 'Change', type: 'seg', val: cfg.a || 'price', opts: [['price', 'raise Football price'], ['stock', 'set stock to −5'], ['name', 'rename Notebook']] }],
+    frames: v => {
+      const T1 = "CREATE TRIGGER log_price AFTER UPDATE OF price ON products\nWHEN NEW.price <> OLD.price\nBEGIN\n  INSERT INTO price_log (product_id, old_price, new_price)\n  VALUES (OLD.id, OLD.price, NEW.price);\nEND;";
+      const T2 = "CREATE TRIGGER no_negative BEFORE UPDATE OF stock ON products\nWHEN NEW.stock < 0\nBEGIN\n  SELECT RAISE(ABORT, 'stock cannot be negative');\nEND;";
+      const d = scratch(SQL, 'shop', 'CREATE TABLE price_log (product_id INTEGER, old_price INTEGER, new_price INTEGER);\n' + T1 + '\n' + T2);
+      const stmt = { price: "UPDATE products SET price = 900 WHERE name = 'Football';", stock: "UPDATE products SET stock = -5 WHERE name = 'Lunch box';", name: "UPDATE products SET name = 'Long notebook' WHERE name = 'Notebook';" }[v.a];
+      const prod = () => q(d, 'SELECT id, name, price, stock FROM products WHERE id IN (2, 4, 8) ORDER BY id');
+      const log = () => q(d, 'SELECT * FROM price_log');
+      const L = (extra) => { const p = prod(), l = log(); return [{ t: 'sql', text: stmt }, { t: 'tab', label: 'products (3 of 10)', cols: p.cols, rows: p.rows, ...(extra || {}) }, { t: 'tab', label: 'price_log', cols: l.cols, rows: l.rows }]; };
+      const out = [{ msg: 'Two triggers are attached to products. They are stored in the database and run on every matching change, from any app.', mood: 'think', layers: [{ t: 'sql', text: T1 + '\n\n' + T2 }] },
+        { msg: 'Before the change.', mood: 'look', layers: L() }];
+      const e = err(d, stmt);
+      if (v.a === 'price') out.push({ msg: 'The UPDATE changes the price, then <b>log_price</b> fires AFTER it, with OLD.price = 850 and NEW.price = 900, and writes a log row. Nobody had to remember to log it.', mood: 'happy', fx: 'burst', layers: L({ rcls: { 2: 'yes' } }) });
+      else if (v.a === 'stock') out.push({ msg: `<b>no_negative</b> fires BEFORE the change, sees NEW.stock = −5 and raises an error: <b>${esc(e)}</b>. The row is untouched.`, mood: 'sad', layers: L({ rcls: { 1: 'no' } }) });
+      else out.push({ msg: 'Only the name changed. Both triggers listen to specific columns (UPDATE OF price, UPDATE OF stock), so neither fires and the log stays empty.', mood: 'look', layers: L({ rcls: { 0: 'yes' } }) });
+      return out;
+    }
+  }));
+
+  /* ---------- 8.2 SQL injection, and the fix ---------- */
+  SQW('sqinject', (SQL, cfg) => ({
+    title: 'How SQL injection works, and how parameters stop it',
+    sub: 'A login form looks up a user by name and PIN. Type into the boxes. Try a normal name, then the classic attack text in the name box. Everything runs on a throwaway table in your browser.',
+    inputs: [{ k: 'u', label: 'Name box', type: 'text', val: cfg.u !== undefined ? cfg.u : "x' OR '1'='1' --", w: 200 }, { k: 'p', label: 'PIN box', type: 'text', val: cfg.p || '0000', w: 80 }],
+    frames: v => {
+      const d = scratch(SQL, '', "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, pin TEXT, role TEXT); INSERT INTO users (name, pin, role) VALUES ('asha', '4821', 'admin'), ('ravi', '1937', 'staff'), ('meera', '5560', 'staff');");
+      const glued = `SELECT name, role FROM users WHERE name = '${v.u}' AND pin = '${v.p}'`;
+      let bad, badErr = '';
+      try { bad = q(d, glued); } catch (e) { badErr = String(e.message || e); }
+      const st = d.prepare('SELECT name, role FROM users WHERE name = ? AND pin = ?'); st.bind([v.u, v.p]);
+      const safe = { cols: st.getColumnNames(), rows: [] }; while (st.step()) safe.rows.push(st.get()); st.free();
+      const out = [
+        { msg: 'The unsafe way: the program glues the typed text straight into the SQL string.', mood: 'think', layers: [{ t: 'sql', text: "sql = \"SELECT name, role FROM users\n       WHERE name = '\" + nameBox + \"'\n       AND pin = '\" + pinBox + \"'\"" }] },
+        { msg: 'This is the SQL the database actually receives. Look at where the quotes now fall.', mood: 'look', layers: [{ t: 'sql', text: glued.replace(' WHERE', '\nWHERE').replace(' AND', '\nAND') + ';' }] },
+        badErr ? { msg: `The glued text broke the SQL: <b>${esc(badErr)}</b>. An attacker learns from error messages like this.`, mood: 'sad', layers: [{ t: 'sql', text: glued + ';' }] }
+          : { msg: bad.rows.length > 1 ? `<b>${bad.rows.length} users logged in at once</b>, including the admin, without knowing any PIN. The typed quote closed the string, OR '1'='1' is always true, and -- turned the PIN check into a comment.` : bad.rows.length ? 'One user matched. With correct details that is the expected result.' : 'No user matched.', mood: bad.rows.length > 1 ? 'sad' : 'look', layers: [{ t: 'tab', label: 'rows returned by the glued SQL', cols: bad.cols, rows: bad.rows, rcls: Object.fromEntries(bad.rows.map((r, i) => [i, bad.rows.length > 1 ? 'no' : 'yes'])) }] },
+        { msg: 'The safe way: a parameterized query. The SQL text is fixed, and the typed values are sent separately. The database never reads them as SQL.', mood: 'work', layers: [{ t: 'sql', text: 'SELECT name, role FROM users\nWHERE name = ? AND pin = ?;\n-- values sent separately: [nameBox, pinBox]' }] },
+        { msg: safe.rows.length ? `${safe.rows.length} user matched, because the name and PIN really match.` : `0 rows. The whole text <b>${esc(v.u)}</b> was compared as a name, and no user has that name. The attack is just harmless text.`, mood: 'happy', fx: 'burst', layers: [{ t: 'tab', label: 'rows returned with parameters', cols: safe.cols, rows: safe.rows }] }
+      ];
+      return out;
+    }
+  }));
+
+  /* ---------- 8.3 sharding spreads rows across machines ---------- */
+  SQW('sqshard', (SQL, cfg) => ({
+    title: 'Partitioning and sharding: where does each row live',
+    sub: 'Pick a sharding key and the number of servers. Pip sends each order to its server, then shows which servers a query must visit.',
+    inputs: [{ k: 'key', label: 'Shard by', type: 'seg', val: cfg.key || 'hash', opts: [['hash', 'customer_id mod N'], ['range', 'order month']] },
+      { k: 'n', label: 'Servers N', type: 'seg', val: String(cfg.n || 3), opts: [['2', '2'], ['3', '3'], ['4', '4']] }],
+    frames: v => {
+      const N = +v.n, d = db(SQL, 'shop');
+      const rows = q(d, `SELECT id, customer_id, order_date, ${v.key === 'hash' ? `customer_id % ${N}` : `(CAST(substr(order_date, 6, 2) AS INTEGER) - 6) % ${N}`} AS shard FROM orders ORDER BY id`).rows;
+      const bk = Array.from({ length: N }, () => []);
+      const lab = Array.from({ length: N }, (x, i) => v.key === 'hash' ? `server ${i}: customer_id mod ${N} = ${i}` : `server ${i}: ${['June', 'July', 'August', 'September'][i]}`);
+      const out = [{ msg: v.key === 'hash' ? `Hash sharding: each order goes to server (customer_id mod ${N}). All orders of one customer land together.` : 'Range sharding: each month goes to its own server, like one notebook per month.', mood: 'think', layers: [{ t: 'buckets', buckets: bk.map(b => b.slice()), blab: lab }] }];
+      rows.forEach(r => { bk[r[3]].push(String(r[0])); });
+      out.push({ msg: `All 10 orders placed. Sizes: ${bk.map(b => b.length).join(', ')}. ${v.key === 'range' ? 'Range sharding piles new data onto the newest server, a hot spot.' : 'Hash sharding spreads customers fairly evenly.'}`, mood: 'work', layers: [{ t: 'buckets', buckets: bk, blab: lab }] });
+      const s1 = v.key === 'hash' ? 1 % N : 0;
+      out.push({ msg: v.key === 'hash' ? `Query <b>WHERE customer_id = 1</b>: only server ${s1} holds that customer, so one server answers.` : "Query <b>WHERE order_date LIKE '2025-06%'</b>: only the June server is needed.", mood: 'happy',
+        layers: [{ t: 'buckets', buckets: bk, blab: lab, bcls: Object.fromEntries(bk.map((b, i) => [i, i === s1 ? 'yes' : ''])) }] });
+      out.push({ msg: v.key === 'hash' ? "Query <b>WHERE order_date LIKE '2025-06%'</b>: June orders are on every server, so all of them must answer and the results are merged." : 'Query <b>WHERE customer_id = 1</b>: a customer’s orders are spread over months, so every server must answer.', mood: 'look', fx: 'burst',
+        layers: [{ t: 'buckets', buckets: bk, blab: lab, bcls: Object.fromEntries(bk.map((b, i) => [i, 'look'])) }] });
+      return out;
+    }
+  }));
+
+  /* ---------- 8.4 one task, five dialects ---------- */
+  SQW('sqdialect', (SQL, cfg) => ({
+    title: 'One task, five dialects',
+    sub: 'Pick a task. Pip shows how each engine writes it, then runs the SQLite version for real.',
+    inputs: [{ k: 't', label: 'Task', type: 'seg', val: cfg.t || 'top', opts: [['top', 'first 3 rows'], ['concat', 'join text'], ['now', 'today’s date'], ['auto', 'auto id column'], ['ifnull', 'replace NULL']] }],
+    frames: v => {
+      const T = {
+        top: { sqlite: 'SELECT name FROM products ORDER BY price DESC LIMIT 3;', rows: [['SQLite', 'LIMIT 3'], ['PostgreSQL', 'LIMIT 3, or FETCH FIRST 3 ROWS ONLY'], ['MySQL', 'LIMIT 3'], ['SQL Server', 'SELECT TOP 3 ..., or OFFSET 0 ROWS FETCH NEXT 3 ROWS ONLY'], ['Oracle', 'FETCH FIRST 3 ROWS ONLY (12c+), ROWNUM before that']] },
+        concat: { sqlite: "SELECT name || ' (' || city || ')' AS label FROM customers LIMIT 3;", rows: [['SQLite', "name || ' ' || city, or concat()"], ['PostgreSQL', "name || ' ' || city, or concat()"], ['MySQL', "CONCAT(name, ' ', city), || means OR by default"], ['SQL Server', "name + ' ' + city, or CONCAT()"], ['Oracle', "name || ' ' || city"]] },
+        now: { sqlite: "SELECT date('2025-07-15') AS fixed_day, typeof(date('now')) AS today_type;", rows: [['SQLite', "date('now'), datetime('now')"], ['PostgreSQL', 'CURRENT_DATE, now()'], ['MySQL', 'CURDATE(), NOW()'], ['SQL Server', 'CAST(GETDATE() AS date), SYSDATETIME()'], ['Oracle', 'SYSDATE, CURRENT_DATE']] },
+        auto: { sqlite: "CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT); INSERT INTO t (v) VALUES ('a'), ('b'); SELECT * FROM t;", rows: [['SQLite', 'id INTEGER PRIMARY KEY'], ['PostgreSQL', 'id integer GENERATED ALWAYS AS IDENTITY, or serial'], ['MySQL', 'id INT AUTO_INCREMENT PRIMARY KEY'], ['SQL Server', 'id INT IDENTITY(1,1) PRIMARY KEY'], ['Oracle', 'id NUMBER GENERATED AS IDENTITY (12c+)']] },
+        ifnull: { sqlite: "SELECT name, COALESCE(city, 'unknown') AS city FROM customers WHERE city IS NULL;", rows: [['SQLite', 'COALESCE(x, d), IFNULL(x, d)'], ['PostgreSQL', 'COALESCE(x, d)'], ['MySQL', 'COALESCE(x, d), IFNULL(x, d)'], ['SQL Server', 'COALESCE(x, d), ISNULL(x, d)'], ['Oracle', 'COALESCE(x, d), NVL(x, d)']] }
+      }[v.t];
+      const d = scratch(SQL, 'shop');
+      const parts = T.sqlite.split(';').map(x => x.trim()).filter(Boolean);
+      parts.slice(0, -1).forEach(p => d.exec(p));
+      const r = q(d, parts[parts.length - 1]);
+      return [
+        { msg: 'The SQL standard defines the core, but each engine has its own spelling for many everyday tasks.', mood: 'think', layers: [{ t: 'tab', label: 'how each engine writes it', cols: ['engine', 'syntax'], rows: T.rows, rcls: { 0: 'yes' } }] },
+        { msg: 'The SQLite version, run for real.', mood: 'happy', fx: 'burst', layers: [{ t: 'sql', text: T.sqlite.replace(/; /g, ';\n') }, { t: 'tab', label: 'Result', cols: r.cols, rows: r.rows }] },
+        { msg: 'COALESCE, CASE, CAST, JOIN syntax, GROUP BY and window functions are standard and work almost everywhere. Prefer them when you can.', mood: 'look', layers: [{ t: 'note', html: 'Portable choices: COALESCE over IFNULL or NVL, FETCH FIRST or LIMIT, CAST(x AS type), CASE WHEN.' }] }
+      ];
+    }
+  }));
+})();

@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Database security · SQL and Databases</title>
+<meta name="description" content="SQL injection and login bypass, parameterized queries in Python, JavaScript and Java, allow lists, least privilege, users, roles, GRANT and REVOKE, security views, row level security, masking, password hashing, encryption, backups, differential privacy.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 8: Professional SQL</span><span>›</span><span>Security</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 8 · Topic 2 of 4 · Advanced</div>
+    <h1>Database security</h1>
+    <p class="lead">See how SQL injection works and stop it with parameterized queries, give accounts only the rights they need, and protect personal data with views, row level security, hashing and encryption.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">5 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-security" data-topic="cheatsheet" data-h="sql-security">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#injection" data-l="injection"><span class="n">1</span><span class="t">SQL injection: when input becomes code</span></a></li><li><a href="#params" data-l="params"><span class="n">2</span><span class="t">The fix: parameterized queries</span></a></li><li><a href="#access" data-l="access"><span class="n">3</span><span class="t">Users, roles and GRANT</span></a></li><li><a href="#rls" data-l="rls"><span class="n">4</span><span class="t">Row level security and personal data</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="injection" data-l="injection" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>SQL injection: when input becomes code</h2>
+<p>SQL injection has been one of the most common and damaging web security flaws for over twenty years. It happens when a program builds SQL by gluing user input into the text, so specially crafted input changes what the SQL means.</p>
+<div class="viz" data-viz="pk" data-pk="sqinject"></div>
+<div class="sq-run" data-q="glued"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Typed into the name box</th><th>Effect when glued into SQL</th></tr></thead><tbody><tr><td>x' OR '1'='1' --</td><td>every row matches, the login check is skipped</td></tr><tr><td>x' followed by a second statement such as DROP TABLE users</td><td>a second statement, on engines and drivers that allow several statements per call</td></tr><tr><td>x' UNION SELECT pin, role FROM users --</td><td>other data is pulled into the page</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>This page shows attacks only so you can recognise and prevent them, on a throwaway table in your own browser. Testing systems you do not own or have no permission to test is illegal in most countries.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="params" data-l="params" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>The fix: parameterized queries</h2>
+<p>The reliable fix is a <b>parameterized query</b> (also called a prepared statement with bound parameters). The SQL text has placeholders, and the values travel separately. The database parses the SQL first, so a value can never become code.</p>
+<div class="sq-run" data-q="param"></div>
+<pre class="sq-code"># Python (sqlite3)
+cur.execute("SELECT name, role FROM users WHERE name = ? AND pin = ?", (name, pin))
+
+// JavaScript (node-postgres)
+await client.query("SELECT name, role FROM users WHERE name = $1 AND pin = $2", [name, pin]);
+
+// Java (JDBC)
+PreparedStatement ps = conn.prepareStatement("SELECT name, role FROM users WHERE name = ? AND pin = ?");
+ps.setString(1, name); ps.setString(2, pin);</pre>
+<div class="tw"><table class="cvt "><thead><tr><th>Defence</th><th>Notes</th></tr></thead><tbody><tr><td>Parameterized queries</td><td>the main defence, use them for every value</td></tr><tr><td>ORMs and query builders</td><td>parameterize for you, but raw SQL inside them still needs care</td></tr><tr><td>Allow lists for names</td><td>table and column names cannot be parameters, so pick them from a fixed list in code</td></tr><tr><td>Least privilege</td><td>the app account cannot DROP tables, so a mistake does less damage</td></tr><tr><td>Escaping by hand</td><td>a last resort, easy to get wrong</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Sorting by a column the user picks, safely</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The user picks "price" from a menu.</li><li>The code checks it against a fixed list: name, price, stock.</li><li>Only then is the column name written into the SQL text.</li><li>Values, such as a search word, still go in as parameters.</li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="access" data-l="access" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Users, roles and GRANT</h2>
+<p>Server databases have accounts. Each account gets only the rights it needs, the <b>principle of least privilege</b>. SQLite has no accounts: whoever can open the file can read it, so it relies on the operating system’s file permissions.</p>
+<pre class="sq-code">-- PostgreSQL
+CREATE ROLE reporting;
+GRANT SELECT ON orders, customers TO reporting;
+CREATE USER analyst WITH PASSWORD '...' IN ROLE reporting;
+REVOKE SELECT ON customers FROM reporting;
+
+-- MySQL
+CREATE USER 'shop_app'@'%' IDENTIFIED BY '...';
+GRANT SELECT, INSERT, UPDATE ON shop.* TO 'shop_app'@'%';</pre>
+<div class="tw"><table class="cvt "><thead><tr><th>Account</th><th>Needs</th><th>Should not have</th></tr></thead><tbody><tr><td>Web app</td><td>SELECT, INSERT, UPDATE on its tables</td><td>DROP, ALTER, access to other databases</td></tr><tr><td>Reporting</td><td>SELECT on a few tables or views</td><td>any write</td></tr><tr><td>Migrations tool</td><td>CREATE, ALTER, DROP</td><td>to be used by the running app</td></tr><tr><td>Administrator</td><td>everything</td><td>to be used for daily work</td></tr></tbody></table></div>
+<div class="sq-run" data-q="viewsec"></div>
+<div class="sq-lab" data-lab="l-public"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="rls" data-l="rls" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Row level security and personal data</h2>
+<p>Sometimes users may see the same table but only their own rows: each customer sees only their orders. <b>Row level security</b> makes the database add that filter automatically.</p>
+<pre class="sq-code">-- PostgreSQL (9.5+)
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY own_orders ON orders
+  USING (customer_id = current_setting('app.customer_id')::int);</pre>
+<div class="sq-run" data-q="rlsview"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Protect</th><th>How</th></tr></thead><tbody><tr><td>Passwords</td><td>never store them. Store a slow salted hash (Argon2id or bcrypt) computed in the app</td></tr><tr><td>Personal data on screens</td><td>mask it: a***@mail.in, last 4 digits of a card</td></tr><tr><td>Data on disk</td><td>encryption at rest: TDE in SQL Server and Oracle, disk encryption, SQLCipher for SQLite</td></tr><tr><td>Data on the network</td><td>TLS between app and database</td></tr><tr><td>Mistakes and attacks</td><td>backups you have tested restoring, and audit logs of who changed what</td></tr></tbody></table></div>
+<div class="sq-run" data-q="mask"></div>
+<div class="sq-lab" data-lab="l-mask"></div>
+<div class="sq-lab" data-lab="l-rls"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Never glue typed text into SQL. Give every account only the rights it needs. Protect personal data.</p></div><div class="ld-p" data-ld="college" hidden><p>Parameterized queries everywhere, allow lists for identifiers, roles with GRANT and REVOKE, views and row level security, hashing for passwords, TLS and backups.</p></div><div class="ld-p" data-ld="masters" hidden><p>Defence in depth: assume one layer fails. Second order injection stores harmful text that is later glued into SQL by another part of the system. Audit logging, separation of duties and key management complete the picture.</p></div><div class="ld-p" data-ld="research" hidden><p>Research covers differential privacy (adding calibrated noise so aggregate queries reveal little about any one person), encrypted query processing such as CryptDB (2011), and automatic detection of injection with static analysis and taint tracking.</p></div></div>
+<details class="deep"><summary>Going deeper: Differential privacy in one paragraph</summary><div class="deep-b"><p>A query is differentially private when its answer barely changes whether or not any single person is in the data. Systems add random noise sized to the query, for example to a COUNT. The US Census Bureau used differential privacy for its 2020 census results.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-programmable.html" data-topic="sql-programmable"><small>Previous topic</small><b>Triggers and procedures</b></a><a class="next" href="./sql-scale.html" data-topic="sql-scale"><small>Next topic</small><b>Scaling databases</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-security", "topic": "sql-security", "subject": "sql", "title": "Database security", "codes": {}, "quiz": [{"lv": "e", "q": "SQL injection happens when", "o": ["A query is slow", "User input is glued into SQL text", "An index is missing", "A table is empty"], "a": 1, "hint": "Input becomes code.", "why": "Typed text changes the SQL."}, {"lv": "e", "q": "The main defence against SQL injection is", "o": ["Longer passwords", "Parameterized queries", "More indexes", "Views"], "a": 1, "hint": "Placeholders.", "why": "Values are sent separately from the SQL."}, {"lv": "e", "q": "Least privilege means", "o": ["Everyone is admin", "Each account gets only what it needs", "No passwords", "Read only databases"], "a": 1, "hint": "Minimum rights.", "why": "Limit the damage of mistakes and attacks."}, {"lv": "e", "q": "Passwords should be stored as", "o": ["Plain text", "A slow salted hash", "An encrypted column anyone can decrypt", "A view"], "a": 1, "hint": "Hash.", "why": "Argon2id or bcrypt."}, {"lv": "m", "q": "In x' OR '1'='1' --, what does -- do?", "o": ["Subtracts", "Starts a comment, hiding the rest", "Ends the database", "Nothing"], "a": 1, "hint": "Comment.", "why": "The PIN check is commented out."}, {"lv": "m", "q": "Which can NOT be a bound parameter?", "o": ["A name value", "A number value", "A table name", "A date value"], "a": 2, "hint": "Identifiers.", "why": "Use an allow list for table and column names."}, {"lv": "m", "q": "GRANT SELECT ON orders TO reporting", "o": ["Deletes orders", "Lets reporting read orders", "Creates a table", "Revokes access"], "a": 1, "hint": "Give a right.", "why": "reporting may now SELECT from orders."}, {"lv": "m", "q": "Row level security", "o": ["Hides columns", "Filters rows per user automatically", "Encrypts rows", "Sorts rows"], "a": 1, "hint": "Per user rows.", "why": "A policy adds a WHERE for each user."}, {"lv": "m", "q": "How does SQLite control who can read a database?", "o": ["GRANT", "Roles", "Operating system file permissions", "Passwords in SQL"], "a": 2, "hint": "A file.", "why": "Anyone who can open the file can read it."}, {"lv": "h", "q": "Second order injection is", "o": ["Injection twice in a row", "Stored text later glued into SQL elsewhere", "Injection in ORDER BY only", "A typo"], "a": 1, "hint": "Delayed.", "why": "The harmful text is stored first and used later."}, {"lv": "x", "q": "Adding calibrated noise to aggregate answers to protect individuals is", "o": ["Hashing", "Differential privacy", "Sharding", "Masking"], "a": 1, "hint": "Noise.", "why": "Differential privacy."}], "calc": [{"lv": "e", "q": "How many users does the glued attack query return from the 3 user table?", "ans": "3", "hint": "The OR is always true.", "steps": ["'1'='1' is true for every row.", "So every row matches.", "<span class=\"eq\">3 users<\/span>"]}, {"lv": "e", "q": "And with a parameterized query using the same text as the name?", "ans": "0", "hint": "Nobody has that name.", "steps": ["The whole text is one value.", "No user is called that.", "<span class=\"eq\">0 users<\/span>"]}, {"lv": "m", "q": "A 4 digit PIN has how many possible values?", "ans": "10000", "hint": "10 choices per digit.", "steps": ["Each digit is 0 to 9.", "Four digits.", "<span class=\"eq\">10⁴ = 10,000<\/span>"]}, {"lv": "m", "q": "If a login allows 5 tries per hour, how many hours to try every 4 digit PIN?", "ans": "2000", "hint": "Values ÷ tries per hour.", "steps": ["10,000 PINs.", "5 tries per hour.", "<span class=\"eq\">10,000 ÷ 5 = 2,000 hours<\/span>"]}, {"lv": "m", "q": "What does the masking expression give for asha@mail.in? Count its characters.", "ans": "12", "hint": "It gives a***@mail.in.", "steps": ["First letter a, then ***.", "Then @mail.in, 8 characters.", "<span class=\"eq\">1 + 3 + 8 = 12<\/span>"]}, {"lv": "m", "q": "With session customer_id = 1, how many rows does my_orders show?", "ans": "3", "hint": "Asha’s orders.", "steps": ["Asha placed orders 101, 103 and 110.", "The view keeps only those.", "<span class=\"eq\">3 rows<\/span>"]}, {"lv": "h", "q": "A bcrypt hash with cost 12 does 2¹² rounds of work. How many rounds is that?", "ans": "4096", "hint": "Powers of two.", "steps": ["Cost 12 means 2 to the power 12.", "2¹⁰ = 1024, times 4.", "<span class=\"eq\">2¹² = 4,096<\/span>"]}, {"lv": "h", "q": "Raising the bcrypt cost from 12 to 13 multiplies the work by what factor?", "ans": "2", "hint": "One more power of two.", "steps": ["2¹³ ÷ 2¹².", "Each step doubles the work.", "<span class=\"eq\">2<\/span>"]}], "assign": [], "must": [["Injection", "Gluing user text into SQL lets input become code. It bypasses logins and leaks data."], ["Parameters", "Use placeholders (?, $1, :name) for every value. Pick table and column names from an allow list."], ["Least privilege", "Accounts and roles get only the rights they need. GRANT gives, REVOKE takes away."], ["Rows and columns", "Views hide columns, row level security hides rows. SQLite relies on file permissions."], ["Personal data", "Hash passwords with Argon2id or bcrypt, mask on screen, encrypt at rest and in transit, test your backups."]], "summary": "<p>Parameters stop injection, least privilege limits damage, views and policies hide what users should not see, and personal data is hashed, masked and encrypted.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"glued": {"src": "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, pin TEXT, role TEXT); INSERT INTO users (name, pin, role) VALUES ('asha', '4821', 'admin'), ('ravi', '1937', 'staff'), ('meera', '5560', 'staff');\nSELECT name, role FROM users WHERE name = 'x' OR '1'='1' --' AND pin = '0000';", "db": "", "setup": "", "title": "What the database receives after gluing the attack text", "notes": {"2": "The typed quote closed the string. OR '1'='1' is always true, and -- turns the PIN check into a comment. Every user comes back."}, "out": [{"sql": "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, pin TEXT, role TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO users (name, pin, role) VALUES ('asha', '4821', 'admin'), ('ravi', '1937', 'staff'), ('meera', '5560', 'staff');", "cols": [], "rows": [], "changes": 3}, {"sql": "SELECT name, role FROM users WHERE name = 'x' OR '1'='1' --' AND pin = '0000';", "cols": ["name", "role"], "rows": [["asha", "admin"], ["ravi", "staff"], ["meera", "staff"]]}]}, "param": {"src": "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, pin TEXT, role TEXT); INSERT INTO users (name, pin, role) VALUES ('asha', '4821', 'admin'), ('ravi', '1937', 'staff'), ('meera', '5560', 'staff');\nSELECT name, role FROM users WHERE name = 'x'' OR ''1''=''1'' --' AND pin = '0000';", "db": "", "setup": "", "title": "What a bound parameter amounts to: the whole input is one plain value", "notes": {"2": "Every quote in the input is treated as part of the name. No user is called that, so 0 rows."}, "out": [{"sql": "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, pin TEXT, role TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO users (name, pin, role) VALUES ('asha', '4821', 'admin'), ('ravi', '1937', 'staff'), ('meera', '5560', 'staff');", "cols": [], "rows": [], "changes": 3}, {"sql": "SELECT name, role FROM users WHERE name = 'x'' OR ''1''=''1'' --' AND pin = '0000';", "cols": ["name", "role"], "rows": []}]}, "viewsec": {"src": "CREATE VIEW customers_public AS\nSELECT id, name, city FROM customers;\nSELECT * FROM customers_public LIMIT 4;", "db": "shop", "setup": "", "title": "A view that leaves out personal columns", "notes": {"2": "No email, no join date. In a server engine you GRANT SELECT on this view and not on the table."}, "out": [{"sql": "CREATE VIEW customers_public AS\nSELECT id, name, city FROM customers;", "cols": [], "rows": []}, {"sql": "SELECT * FROM customers_public LIMIT 4;", "cols": ["id", "name", "city"], "rows": [[1, "Asha", "Pune"], [2, "Ravi", "Delhi"], [3, "Meera", "Chennai"], [4, "Kabir", "Pune"]]}]}, "rlsview": {"src": "CREATE TABLE session (customer_id INTEGER);\nINSERT INTO session VALUES (1);\nCREATE VIEW my_orders AS\nSELECT id, order_date, status FROM orders\nWHERE customer_id = (SELECT customer_id FROM session);\nSELECT * FROM my_orders;", "db": "shop", "setup": "", "title": "The same idea with a view in SQLite", "notes": {"2": "The app records who is logged in.", "5": "The view filters every query by that customer."}, "out": [{"sql": "CREATE TABLE session (customer_id INTEGER);", "cols": [], "rows": []}, {"sql": "INSERT INTO session VALUES (1);", "cols": [], "rows": [], "changes": 1}, {"sql": "CREATE VIEW my_orders AS\nSELECT id, order_date, status FROM orders\nWHERE customer_id = (SELECT customer_id FROM session);", "cols": [], "rows": []}, {"sql": "SELECT * FROM my_orders;", "cols": ["id", "order_date", "status"], "rows": [[101, "2025-06-01", "delivered"], [103, "2025-06-10", "shipped"], [110, "2025-07-05", "pending"]]}]}, "mask": {"src": "SELECT name,\n       substr(email, 1, 1) || '***' || substr(email, instr(email, '@')) AS masked\nFROM customers WHERE email IS NOT NULL LIMIT 4;", "db": "shop", "setup": "", "title": "Masking emails for display", "notes": {"2": "First letter, three stars, then everything from the @."}, "out": [{"sql": "SELECT name,\n       substr(email, 1, 1) || '***' || substr(email, instr(email, '@')) AS masked\nFROM customers WHERE email IS NOT NULL LIMIT 4;", "cols": ["name", "masked"], "rows": [["Asha", "a***@mail.in"], ["Ravi", "r***@mail.in"], ["Meera", "m***@mail.in"], ["Sara", "s***@mail.in"]]}]}}, "labs": [{"id": "l-public", "lv": "e", "title": "A safe view for the support team", "task": "Create a view <code>orders_public<\/code> with only <code>id<\/code>, <code>order_date<\/code> and <code>status<\/code> of orders. Then select the rows of the view whose status is pending.", "db": "shop", "hint": "CREATE VIEW orders_public AS SELECT id, order_date, status FROM orders", "why": "The view hides customer_id, so the support team cannot link orders to people.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["id", "order_date", "status"], "rows": [[107, "2025-06-21", "pending"], [110, "2025-07-05", "pending"]]}, "solution": "CREATE VIEW orders_public AS SELECT id, order_date, status FROM orders;\nSELECT * FROM orders_public WHERE status = 'pending';"}, {"id": "l-mask", "lv": "m", "title": "Mask the emails", "task": "Show each customer <code>name<\/code> and <code>masked<\/code>, the email with only its first letter kept, then <code>***<\/code>, then the part from <code>@<\/code>. Leave out customers without an email.", "db": "shop", "hint": "substr(email, 1, 1) || '***' || substr(email, instr(email, '@'))", "why": "instr finds the @, and substr from there keeps the domain.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "masked"], "rows": [["Asha", "a***@mail.in"], ["Ravi", "r***@mail.in"], ["Meera", "m***@mail.in"], ["Sara", "s***@mail.in"], ["Arjun", "a***@mail.in"], ["Nisha", "n***@mail.in"]]}, "solution": "SELECT name, substr(email, 1, 1) || '***' || substr(email, instr(email, '@')) AS masked FROM customers WHERE email IS NOT NULL;"}, {"id": "l-rls", "lv": "h", "title": "Only my orders", "task": "A table <code>session (customer_id)<\/code> holds 2. Create a view <code>my_orders<\/code> that shows <code>id<\/code> and <code>status<\/code> of the logged in customer’s orders, then select from it.", "db": "shop", "hint": "WHERE customer_id = (SELECT customer_id FROM session)", "why": "Customer 2 is Ravi, with orders 102 and 107.", "ordered": false, "setup": "CREATE TABLE session (customer_id INTEGER); INSERT INTO session VALUES (2);", "starter": "", "want": {"cols": ["id", "status"], "rows": [[102, "delivered"], [107, "pending"]]}, "solution": "CREATE VIEW my_orders AS SELECT id, status FROM orders WHERE customer_id = (SELECT customer_id FROM session);\nSELECT * FROM my_orders;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

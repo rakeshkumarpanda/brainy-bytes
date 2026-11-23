@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Normalization: storing each fact once · SQL and Databases</title>
+<meta name="description" content="Update, insert and delete anomalies, functional dependencies, keys, 1NF, 2NF, 3NF, BCNF, 4NF and 5NF, lossless decomposition, denormalization, star schema, Armstrong axioms.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 5: Designing databases</span><span>›</span><span>Normalization</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 5 · Topic 1 of 2 · Intermediate</div>
+    <h1>Normalization: storing each fact once</h1>
+    <p class="lead">Find the anomalies in a messy table, read functional dependencies, split tables through 1NF, 2NF, 3NF and BCNF, and know when to denormalize on purpose.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">6 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-normalization" data-topic="cheatsheet" data-h="sql-normalization">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#anomaly" data-l="anomaly"><span class="n">1</span><span class="t">Why repeated data hurts</span></a></li><li><a href="#fd" data-l="fd"><span class="n">2</span><span class="t">Functional dependencies: what decides what</span></a></li><li><a href="#forms" data-l="forms"><span class="n">3</span><span class="t">1NF, 2NF, 3NF and BCNF</span></a></li><li><a href="#denorm" data-l="denorm"><span class="n">4</span><span class="t">Higher forms and denormalization</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="anomaly" data-l="anomaly" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Why repeated data hurts</h2>
+<p>Chapter 3.1 showed the problem: when one fact is written in many rows, the copies can drift apart. <b>Normalization</b> is the step by step method for splitting tables so that each fact is stored exactly once. It was set out by E. F. Codd between 1970 and 1974.</p>
+<div class="sq-run" data-q="sheet"></div>
+<div class="sq-run" data-q="drift"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Anomaly</th><th>In the sheet</th></tr></thead><tbody><tr><td>Update</td><td>Rao moves room, and every row with Rao must change, or the data contradicts itself</td></tr><tr><td>Insert</td><td>A new course with no students yet cannot be recorded, because every row needs a student</td></tr><tr><td>Delete</td><td>If Meera drops Security, the only row saying Security exists disappears too</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Normalization is about the meaning of the data, not about saving disk space. The space saving is a side effect.</div></div>
+<div class="sq-lab" data-lab="l-drift"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="fd" data-l="fd" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Functional dependencies: what decides what</h2>
+<p>A <b>functional dependency</b> X → Y means: once you know X, there is only one possible Y. Knowing a roll number tells you the student’s name, so <code>student_id → student_name</code>. Knowing a teacher tells you their room, so <code>teacher → room</code>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Dependency in the sheet</th><th>Read it as</th></tr></thead><tbody><tr><td>student_id → student_name</td><td>a roll number decides the name</td></tr><tr><td>course → title, teacher</td><td>a course code decides its title and teacher</td></tr><tr><td>teacher → room</td><td>a teacher decides the room</td></tr><tr><td>(student_id, course) → grade</td><td>a student and a course together decide the grade</td></tr></tbody></table></div>
+<p>The <b>key</b> of the sheet is <code>(student_id, course)</code>, because together they decide every other column. The trouble comes from columns that depend on only <b>part</b> of the key, or on a column that is <b>not</b> a key.</p>
+<div class="sq-run" data-q="fdcheck"></div>
+<div class="walk"><div class="walk-h"><span>How to spot a dependency</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Ask the business, not only the data: can one teacher ever have two rooms.</li><li>Check the data: GROUP BY the left side and count distinct values of the right side.</li><li>A count above 1 means the dependency does not hold, or the data is already broken.</li><li><span class="eq">X → Y holds when COUNT(DISTINCT Y) = 1 for every X</span></li></ol></div>
+<div class="sq-lab" data-lab="l-fd"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="forms" data-l="forms" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>1NF, 2NF, 3NF and BCNF</h2>
+<p>Each <b>normal form</b> removes one kind of bad dependency. Each one includes the rules of the forms before it.</p>
+<div class="viz" data-viz="pk" data-pk="sqnorm"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Form</th><th>Rule</th><th>Fix in the sheet</th></tr></thead><tbody><tr><td>1NF</td><td>every cell holds one value, no lists or repeating groups</td><td>phones "98111, 98222" become one row per phone</td></tr><tr><td>2NF</td><td>no column depends on only part of the key</td><td>student_name moves to students, course details to courses</td></tr><tr><td>3NF</td><td>no column depends on another non key column</td><td>room moves to teachers, because teacher → room</td></tr><tr><td>BCNF</td><td>every determinant is a candidate key</td><td>stricter 3NF, rarely different in practice</td></tr></tbody></table></div>
+<div class="sq-run" data-q="split"></div>
+<div class="sq-run" data-q="rejoin"></div>
+<div class="note note-tip"><b>Remember</b><div>A memory line used by students: every non key column must depend on the key (1NF), the whole key (2NF), and nothing but the key (3NF).</div></div>
+<div class="sq-lab" data-lab="l-split"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="denorm" data-l="denorm" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Higher forms and denormalization</h2>
+<p>Most business databases stop at 3NF or BCNF. Two higher forms exist for rarer cases.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Form</th><th>Problem it removes</th><th>Example</th></tr></thead><tbody><tr><td>4NF (Fagin 1977)</td><td>two independent lists stored in one table</td><td>a teacher’s subjects and languages in one table make every combination appear</td></tr><tr><td>5NF (Fagin 1979)</td><td>a table that can only be rebuilt from three or more pieces</td><td>supplier, part and project rules that hold only in combination</td></tr></tbody></table></div>
+<p><b>Denormalization</b> means deliberately storing a copy of data to make reading faster, accepting the work of keeping the copies in step. It is a decision you make after normalizing, not instead of it.</p>
+<div class="sq-run" data-q="denorm"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Normalize when</th><th>Denormalize when</th></tr></thead><tbody><tr><td>data is written and changed often (OLTP apps)</td><td>data is mostly read, such as reports (OLAP)</td></tr><tr><td>correctness matters most</td><td>a measured query is too slow even with good indexes</td></tr><tr><td>you are not sure yet</td><td>you can keep copies in step with triggers or batch jobs</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: the star schema of a sales warehouse</div><p>A supermarket’s reporting database keeps one big fact table of sales and small dimension tables for date, store and product. The product table repeats the category and brand names in every row, which breaks 3NF on purpose. Reports become simple joins of one fact table to a few dimensions, and nobody updates these rows during the day, so the copies cannot drift.</p></div>
+<div class="sq-lab" data-lab="l-count"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Store each fact once. If you would have to fix the same thing in two places, split the table.</p></div><div class="ld-p" data-ld="college" hidden><p>Find the key and the functional dependencies, then remove partial dependencies (2NF) and transitive dependencies (3NF). Check that a join rebuilds the original rows.</p></div><div class="ld-p" data-ld="masters" hidden><p>A decomposition is lossless when the common columns form a key of at least one part. Armstrong’s axioms (reflexivity, augmentation, transitivity) derive every dependency that follows from a given set. 3NF can always be reached while keeping all dependencies checkable, BCNF sometimes cannot.</p></div><div class="ld-p" data-ld="research" hidden><p>Research looks at discovering dependencies automatically from data (algorithms such as TANE), at normal forms for nested and JSON data, and at schema design for distributed systems, where joins across machines are expensive and some redundancy is often the right trade.</p></div></div>
+<details class="deep"><summary>Going deeper: Armstrong’s axioms</summary><div class="deep-b"><p>From a set of dependencies you can derive others: reflexivity (if Y is part of X, then X → Y), augmentation (if X → Y, then XZ → YZ) and transitivity (if X → Y and Y → Z, then X → Z). From course → teacher and teacher → room, transitivity gives course → room, the chain that 3NF removes.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-views.html" data-topic="sql-views"><small>Previous topic</small><b>Views and CTEs</b></a><a class="next" href="./sql-design.html" data-topic="sql-design"><small>Next topic</small><b>Design in practice</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-normalization", "topic": "sql-normalization", "subject": "sql", "title": "Normalization: storing each fact once", "codes": {}, "quiz": [{"lv": "e", "q": "Normalization mainly aims to", "o": ["Make queries longer", "Store each fact once", "Remove all NULLs", "Add indexes"], "a": 1, "hint": "Once.", "why": "It removes harmful repetition."}, {"lv": "e", "q": "1NF requires", "o": ["One table only", "One value per cell", "No NULLs", "A surrogate key"], "a": 1, "hint": "Atomic.", "why": "No lists or repeating groups in a cell."}, {"lv": "e", "q": "Changing a fact in one row but not its copies is", "o": ["An insert anomaly", "An update anomaly", "A delete anomaly", "A join"], "a": 1, "hint": "Update.", "why": "The copies now disagree."}, {"lv": "e", "q": "student_id → student_name means", "o": ["The name decides the id", "The id decides the name", "They are equal", "Both are keys"], "a": 1, "hint": "Left decides right.", "why": "Knowing the id gives exactly one name."}, {"lv": "m", "q": "2NF removes dependencies on", "o": ["The whole key", "Part of a composite key", "NULL", "Foreign keys"], "a": 1, "hint": "Partial.", "why": "A partial dependency breaks 2NF."}, {"lv": "m", "q": "course → teacher → room breaks", "o": ["1NF", "2NF", "3NF only", "Nothing"], "a": 2, "hint": "Transitive.", "why": "A non key column deciding another non key column breaks 3NF."}, {"lv": "m", "q": "A decomposition is lossless when", "o": ["It has fewer rows", "A join rebuilds exactly the original rows", "It uses views", "It has no keys"], "a": 1, "hint": "Nothing lost.", "why": "No missing and no extra rows after the join."}, {"lv": "m", "q": "Denormalization is chosen to", "o": ["Fix anomalies", "Make reading faster", "Save disk", "Remove keys"], "a": 1, "hint": "Reads.", "why": "Copies trade write effort for faster reads."}, {"lv": "m", "q": "Who introduced 2NF and 3NF?", "o": ["Chen", "Codd", "Fagin", "Gray"], "a": 1, "hint": "1971.", "why": "Codd, in 1971."}, {"lv": "h", "q": "BCNF requires every determinant to be", "o": ["A foreign key", "A candidate key", "NULL", "Indexed"], "a": 1, "hint": "Determinant.", "why": "Anything that decides another column must be a candidate key."}, {"lv": "x", "q": "From A → B and B → C, which axiom gives A → C?", "o": ["Reflexivity", "Augmentation", "Transitivity", "Union"], "a": 2, "hint": "Chain.", "why": "Transitivity."}], "calc": [{"lv": "e", "q": "In the sheet, how many times is Rao’s room stored before normalizing?", "ans": "3", "hint": "Count Rao rows.", "steps": ["Rao teaches C1 and C3.", "C1 has 2 enrolments and C3 has 1.", "<span class=\"eq\">3 copies<\/span>"]}, {"lv": "e", "q": "And after moving rooms to a teachers table?", "ans": "1", "hint": "One row per teacher.", "steps": ["teachers has one row per teacher.", "Rao has one row there.", "<span class=\"eq\">1 copy<\/span>"]}, {"lv": "m", "q": "How many rows does the students table get from the sheet?", "ans": "3", "hint": "Distinct students.", "steps": ["The sheet has 4 rows.", "Asha appears twice.", "<span class=\"eq\">4 − 1 = 3<\/span>"]}, {"lv": "m", "q": "The sheet has 4 rows of 7 columns. How many cells do the four 3NF tables hold in total?", "ans": "31", "hint": "Rows × columns for each table.", "steps": ["students 3 × 2 = 6, courses 3 × 3 = 9.", "teachers 2 × 2 = 4, enrolments 4 × 3 = 12.", "<span class=\"eq\">6 + 9 + 4 + 12 = 31, compared with 28<\/span>"]}, {"lv": "m", "q": "A composite key (student_id, course) has 3 students and 3 courses. At most how many enrolment rows can exist?", "ans": "9", "hint": "Every pair once.", "steps": ["Each pair is unique.", "Pairs = students × courses.", "<span class=\"eq\">3 × 3 = 9<\/span>"]}, {"lv": "m", "q": "A teacher teaches 3 subjects and speaks 2 languages, stored in one table (teacher, subject, language). How many rows must it hold to avoid false gaps?", "ans": "6", "hint": "Every combination, the 4NF problem.", "steps": ["The two lists are independent.", "Each subject is paired with each language.", "<span class=\"eq\">3 × 2 = 6 rows, against 3 + 2 = 5 in two separate tables<\/span>"]}, {"lv": "h", "q": "What is the stored item_count of order 104?", "ans": "12", "hint": "Sum of its quantities.", "steps": ["Order 104 has lines with qty 2 and 10.", "item_count is their sum.", "<span class=\"eq\">2 + 10 = 12<\/span>"]}, {"lv": "h", "q": "After the 3NF split, how many rows does the rebuilding join return?", "ans": "4", "hint": "Lossless.", "steps": ["Each enrolment matches one student, one course and one teacher.", "There are 4 enrolments.", "<span class=\"eq\">4 rows, the same as the sheet<\/span>"]}], "assign": [], "must": [["Anomalies", "Repeated facts cause update, insert and delete anomalies. Normalization stores each fact once."], ["Dependencies", "X → Y means X decides Y. The key decides every column."], ["1NF, 2NF, 3NF", "One value per cell, no dependency on part of the key, no dependency on a non key column."], ["Lossless", "A good split can be joined back into exactly the original rows."], ["Denormalize on purpose", "Store copies only for measured read speed, and keep them in step."]], "summary": "<p>Each fact lives in one place: 1NF for atomic cells, 2NF for the whole key, 3NF for nothing but the key, and denormalize only on purpose.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"sheet": {"src": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);\nINSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');\nSELECT * FROM sheet;", "db": "", "setup": "", "title": "The teacher’s enrolment sheet", "notes": {"3": "Asha’s name is stored in two rows.", "5": "Rao’s room R12 is stored in three rows."}, "out": [{"sql": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');", "cols": [], "rows": [], "changes": 4}, {"sql": "SELECT * FROM sheet;", "cols": ["student_id", "student_name", "course", "title", "teacher", "room", "grade"], "rows": [[1, "Asha", "C1", "Databases", "Rao", "R12", "A"], [1, "Asha", "C2", "Networks", "Iyer", "R7", "B"], [2, "Ravi", "C1", "Databases", "Rao", "R12", "B"], [3, "Meera", "C3", "Security", "Rao", "R12", "A"]]}]}, "drift": {"src": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);\nINSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');\nUPDATE sheet SET room = 'R15' WHERE course = 'C1' AND student_id = 1;\nSELECT DISTINCT teacher, room FROM sheet WHERE teacher = 'Rao';", "db": "", "setup": "", "title": "An update anomaly in action", "notes": {"7": "Someone fixes Rao’s room in only one row.", "8": "Now the sheet claims Rao sits in two rooms at once."}, "out": [{"sql": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');", "cols": [], "rows": [], "changes": 4}, {"sql": "UPDATE sheet SET room = 'R15' WHERE course = 'C1' AND student_id = 1;", "cols": [], "rows": [], "changes": 1}, {"sql": "SELECT DISTINCT teacher, room FROM sheet WHERE teacher = 'Rao';", "cols": ["teacher", "room"], "rows": [["Rao", "R15"], ["Rao", "R12"]]}]}, "fdcheck": {"src": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);\nINSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');\nSELECT teacher, COUNT(DISTINCT room) AS rooms\nFROM sheet GROUP BY teacher;", "db": "", "setup": "", "title": "Testing teacher → room on the data", "notes": {"7": "If any teacher had 2 or more rooms, the dependency would not hold in this data."}, "out": [{"sql": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');", "cols": [], "rows": [], "changes": 4}, {"sql": "SELECT teacher, COUNT(DISTINCT room) AS rooms\nFROM sheet GROUP BY teacher;", "cols": ["teacher", "rooms"], "rows": [["Iyer", 1], ["Rao", 1]]}]}, "split": {"src": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);\nINSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');\nCREATE TABLE students AS SELECT DISTINCT student_id, student_name FROM sheet;\nCREATE TABLE courses AS SELECT DISTINCT course, title, teacher FROM sheet;\nCREATE TABLE teachers AS SELECT DISTINCT teacher, room FROM sheet;\nCREATE TABLE enrolments AS SELECT student_id, course, grade FROM sheet;\nSELECT * FROM teachers;", "db": "", "setup": "", "title": "Splitting the sheet into 3NF tables", "notes": {"7": "One row per student.", "9": "Rao’s room is now stored once.", "10": "What remains depends on the whole key."}, "out": [{"sql": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');", "cols": [], "rows": [], "changes": 4}, {"sql": "CREATE TABLE students AS SELECT DISTINCT student_id, student_name FROM sheet;", "cols": [], "rows": []}, {"sql": "CREATE TABLE courses AS SELECT DISTINCT course, title, teacher FROM sheet;", "cols": [], "rows": []}, {"sql": "CREATE TABLE teachers AS SELECT DISTINCT teacher, room FROM sheet;", "cols": [], "rows": []}, {"sql": "CREATE TABLE enrolments AS SELECT student_id, course, grade FROM sheet;", "cols": [], "rows": []}, {"sql": "SELECT * FROM teachers;", "cols": ["teacher", "room"], "rows": [["Rao", "R12"], ["Iyer", "R7"]]}]}, "rejoin": {"src": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);\nINSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');\nCREATE TABLE students AS SELECT DISTINCT student_id, student_name FROM sheet;\nCREATE TABLE courses AS SELECT DISTINCT course, title, teacher FROM sheet;\nCREATE TABLE teachers AS SELECT DISTINCT teacher, room FROM sheet;\nCREATE TABLE enrolments AS SELECT student_id, course, grade FROM sheet;\nSELECT COUNT(*) AS rows_back FROM enrolments\nJOIN students USING (student_id) JOIN courses USING (course) JOIN teachers USING (teacher);", "db": "", "setup": "", "title": "Lossless: the join gives back every row", "notes": {"11": "The original sheet had 4 rows, and the join rebuilds all 4."}, "out": [{"sql": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');", "cols": [], "rows": [], "changes": 4}, {"sql": "CREATE TABLE students AS SELECT DISTINCT student_id, student_name FROM sheet;", "cols": [], "rows": []}, {"sql": "CREATE TABLE courses AS SELECT DISTINCT course, title, teacher FROM sheet;", "cols": [], "rows": []}, {"sql": "CREATE TABLE teachers AS SELECT DISTINCT teacher, room FROM sheet;", "cols": [], "rows": []}, {"sql": "CREATE TABLE enrolments AS SELECT student_id, course, grade FROM sheet;", "cols": [], "rows": []}, {"sql": "SELECT COUNT(*) AS rows_back FROM enrolments\nJOIN students USING (student_id) JOIN courses USING (course) JOIN teachers USING (teacher);", "cols": ["rows_back"], "rows": [[4]]}]}, "denorm": {"src": "ALTER TABLE orders ADD COLUMN item_count INTEGER DEFAULT 0;\nUPDATE orders SET item_count = (SELECT SUM(qty) FROM order_items WHERE order_id = orders.id);\nSELECT id, status, item_count FROM orders LIMIT 4;", "db": "shop", "setup": "", "title": "A stored total: faster to read, more to maintain", "notes": {"1": "A copy of information that already lives in order_items.", "2": "Every later change to order_items must also update this column, often with a trigger."}, "out": [{"sql": "ALTER TABLE orders ADD COLUMN item_count INTEGER DEFAULT 0;", "cols": [], "rows": []}, {"sql": "UPDATE orders SET item_count = (SELECT SUM(qty) FROM order_items WHERE order_id = orders.id);", "cols": [], "rows": [], "changes": 10}, {"sql": "SELECT id, status, item_count FROM orders LIMIT 4;", "cols": ["id", "status", "item_count"], "rows": [[101, "delivered", 7], [102, "delivered", 1], [103, "shipped", 4], [104, "delivered", 12]]}]}}, "labs": [{"id": "l-drift", "lv": "e", "title": "Find the contradiction", "task": "The <code>sheet<\/code> table has been edited badly. Show each <code>teacher<\/code> that appears with more than one room.", "db": "", "hint": "GROUP BY teacher, then HAVING COUNT(DISTINCT room) > 1.", "why": "A teacher with two different rooms is exactly the drift that normalization prevents.", "ordered": false, "setup": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);\nINSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');\nUPDATE sheet SET room = 'R15' WHERE course = 'C1' AND student_id = 1;", "starter": "", "want": {"cols": ["teacher"], "rows": [["Rao"]]}, "solution": "SELECT teacher FROM sheet GROUP BY teacher HAVING COUNT(DISTINCT room) > 1;"}, {"id": "l-fd", "lv": "m", "title": "Does course decide title", "task": "Show each <code>course<\/code> with the number of distinct titles it has, as <code>titles<\/code>.", "db": "", "hint": "GROUP BY course and count distinct title.", "why": "Every course has exactly one title, so course → title holds here.", "ordered": false, "setup": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);\nINSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');", "starter": "", "want": {"cols": ["course", "titles"], "rows": [["C1", 1], ["C2", 1], ["C3", 1]]}, "solution": "SELECT course, COUNT(DISTINCT title) AS titles FROM sheet GROUP BY course;"}, {"id": "l-split", "lv": "m", "title": "Pull out the students", "task": "From <code>sheet<\/code>, create a table <code>students<\/code> with one row per <code>student_id<\/code> and <code>student_name<\/code>. Then show every row of it.", "db": "", "hint": "CREATE TABLE students AS SELECT DISTINCT ...", "why": "DISTINCT keeps one row for Asha even though she appears twice in the sheet.", "ordered": false, "setup": "CREATE TABLE sheet (student_id INTEGER, student_name TEXT, course TEXT, title TEXT, teacher TEXT, room TEXT, grade TEXT);\nINSERT INTO sheet VALUES\n (1, 'Asha', 'C1', 'Databases', 'Rao', 'R12', 'A'),\n (1, 'Asha', 'C2', 'Networks', 'Iyer', 'R7', 'B'),\n (2, 'Ravi', 'C1', 'Databases', 'Rao', 'R12', 'B'),\n (3, 'Meera', 'C3', 'Security', 'Rao', 'R12', 'A');", "starter": "", "want": {"cols": ["student_id", "student_name"], "rows": [[1, "Asha"], [2, "Ravi"], [3, "Meera"]]}, "solution": "CREATE TABLE students AS SELECT DISTINCT student_id, student_name FROM sheet;\nSELECT * FROM students;"}, {"id": "l-count", "lv": "h", "title": "Store the item count", "task": "Add a column <code>item_count INTEGER<\/code> to <code>orders<\/code>, fill it with the total <code>qty<\/code> of each order’s lines, and show <code>id<\/code> and <code>item_count<\/code> of orders with more than 5 items.", "db": "shop", "hint": "ALTER TABLE, then UPDATE with a correlated subquery, then SELECT.", "why": "Orders 101 (7 items) and 104 (12 items) have more than 5.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["id", "item_count"], "rows": [[101, 7], [104, 12]]}, "solution": "ALTER TABLE orders ADD COLUMN item_count INTEGER;\nUPDATE orders SET item_count = (SELECT SUM(qty) FROM order_items WHERE order_id = orders.id);\nSELECT id, item_count FROM orders WHERE item_count > 5;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keys and relationships between tables · SQL and Databases</title>
+<meta name="description" content="Anomalies of one big table, candidate, primary, natural, surrogate and composite keys, foreign keys and ON DELETE actions, PRAGMA foreign_keys, relationship shapes, junction tables, ER diagrams and crow’s foot notation.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 3: Many tables</span><span>›</span><span>Keys and relations</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 1 of 4 · Intermediate</div>
+    <h1>Keys and relationships between tables</h1>
+    <p class="lead">See why one big table goes wrong, choose good primary keys, let foreign keys guard every link, and recognise one to one, one to many and many to many in an ER diagram.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">4 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-keys" data-topic="cheatsheet" data-h="sql-keys">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#why" data-l="why"><span class="n">1</span><span class="t">Why one table is not enough</span></a></li><li><a href="#keys" data-l="keys"><span class="n">2</span><span class="t">Primary keys, natural and surrogate</span></a></li><li><a href="#fk" data-l="fk"><span class="n">3</span><span class="t">Foreign keys keep links honest</span></a></li><li><a href="#rel" data-l="rel"><span class="n">4</span><span class="t">One to one, one to many, many to many</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="why" data-l="why" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Why one table is not enough</h2>
+<p>Imagine writing every order in one big table: order id, date, customer name, customer city, customer email, product name, product price. Asha orders three times, so her email is typed three times. If she changes her email, someone must find and fix all three rows. Miss one and the database now holds two different emails for the same person.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Problem</th><th>What goes wrong in one big table</th></tr></thead><tbody><tr><td>Repeated data</td><td>Asha’s city and email are stored again in every order she makes</td></tr><tr><td>Update problem</td><td>Change the email in one row but not the others, and the data disagrees with itself</td></tr><tr><td>Insert problem</td><td>A new customer who has not ordered yet has nowhere to live</td></tr><tr><td>Delete problem</td><td>Delete a customer’s only order and you lose the customer too</td></tr></tbody></table></div>
+<p>The fix is to give each kind of thing its own table, customers, products and orders, and link them with <b>keys</b>. Each fact is stored once. This idea is called <b>normalization</b>, and chapter 5.1 covers it formally.</p>
+<div class="viz" data-viz="pk" data-pk="sqlink"></div>
+<div class="note note-tip"><b>Remember</b><div>A relational database is a set of small, focused tables plus the keys that connect them. Joins put the pieces back together when you ask a question.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="keys" data-l="keys" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Primary keys, natural and surrogate</h2>
+<p>A <b>primary key</b> is the column, or set of columns, that picks out exactly one row. It must be <b>unique</b> and <b>never NULL</b>. A table has at most one primary key.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Kind of key</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td>Candidate key</td><td>any column set that could be the primary key</td><td>customers.id, also customers.email if every customer had one</td></tr><tr><td>Primary key</td><td>the candidate chosen to identify rows</td><td>customers.id</td></tr><tr><td>Natural key</td><td>a real world value</td><td>Aadhaar number, ISBN, vehicle number plate</td></tr><tr><td>Surrogate key</td><td>a made up number with no outside meaning</td><td>id 1, 2, 3 assigned by the database</td></tr><tr><td>Composite key</td><td>two or more columns together</td><td>order_items (order_id, product_id)</td></tr><tr><td>Alternate key</td><td>a candidate key not chosen, usually given a UNIQUE rule</td><td>customers.email UNIQUE</td></tr></tbody></table></div>
+<div class="sq-run" data-q="pk"></div>
+<div class="note note-exam"><b>In the exam</b><div>In SQLite, a column declared exactly INTEGER PRIMARY KEY becomes the rowid, the table’s hidden row number. Insert NULL into it and SQLite picks the next number for you. In PostgreSQL use GENERATED ALWAYS AS IDENTITY, in MySQL AUTO_INCREMENT, in SQL Server IDENTITY(1,1).</div></div>
+<div class="scene"><div class="scene-h">Real world scenario: why banks do not key on your name</div><p>A bank has thousands of customers called Rahul Sharma. Even phone numbers change and get reused. So the bank gives each customer a customer id that never changes, a surrogate key, and stores the PAN or phone number as ordinary columns with UNIQUE rules where needed.</p></div>
+<div class="sq-lab" data-lab="l-pk"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="fk" data-l="fk" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Foreign keys keep links honest</h2>
+<p>A <b>foreign key</b> is a column whose value must match a primary key in another table, the <b>parent</b>. <code>orders.customer_id</code> must be an existing <code>customers.id</code>. The database checks this on every insert, update and delete, so you can never have an order for a customer who does not exist.</p>
+<div class="sq-run" data-q="fkfail"></div>
+<div class="sq-run" data-q="fkdel"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>ON DELETE action</th><th>When the parent row is deleted</th></tr></thead><tbody><tr><td>NO ACTION (default)</td><td>the delete fails if children exist (checked at the end of the statement)</td></tr><tr><td>RESTRICT</td><td>the delete fails at once if children exist</td></tr><tr><td>CASCADE</td><td>the children are deleted too</td></tr><tr><td>SET NULL</td><td>the children’s foreign key becomes NULL</td></tr><tr><td>SET DEFAULT</td><td>the children’s foreign key gets its default value</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>SQLite has foreign keys switched off by default for backwards compatibility. Each connection must run PRAGMA foreign_keys = ON. Every SQL block and the playground on these pages do that for you. PostgreSQL, SQL Server and MySQL (InnoDB) always enforce them.</div></div>
+<div class="sq-lab" data-lab="l-fk"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="rel" data-l="rel" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>One to one, one to many, many to many</h2>
+<p>Tables relate in three shapes. Spotting the shape tells you where the foreign key goes.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Shape</th><th>Real life</th><th>How to build it</th></tr></thead><tbody><tr><td>One to many</td><td>one customer, many orders</td><td>foreign key on the many side: orders.customer_id</td></tr><tr><td>Many to many</td><td>an order has many products, a product is in many orders</td><td>a junction table with two foreign keys: order_items(order_id, product_id)</td></tr><tr><td>One to one</td><td>one person, one passport</td><td>foreign key that is also UNIQUE, or share the same primary key</td></tr></tbody></table></div>
+<div class="sq-run" data-q="m2m"></div>
+<h3>Reading an ER diagram</h3>
+<p>An <b>entity relationship (ER) diagram</b> draws tables as boxes and relationships as lines. Peter Chen introduced the ER model in 1976. Most tools today draw <b>crow’s foot</b> notation: a three pronged foot means "many", a bar means "one", a circle means "zero allowed".</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Line end</th><th>Means</th></tr></thead><tbody><tr><td>|| (two bars)</td><td>exactly one</td></tr><tr><td>o| (circle, bar)</td><td>zero or one</td></tr><tr><td>|< (bar, crow’s foot)</td><td>one or many</td></tr><tr><td>o< (circle, crow’s foot)</td><td>zero or many</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>The shop as an ER diagram</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>customers (|| to o&lt;) orders: a customer has zero or many orders, each order belongs to exactly one customer.</li><li>orders (|| to |&lt;) order_items: an order has one or many lines.</li><li>products (|| to o&lt;) order_items: a product appears in zero or many lines.</li><li><span class="eq">orders and products are many to many, through order_items</span></li></ol></div>
+<div class="sq-lab" data-lab="l-m2m"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Each table is one kind of thing. Keys are the name tags and the arrows that point from one table to another.</p></div><div class="ld-p" data-ld="college" hidden><p>Referential integrity means every foreign key value matches a parent key or is NULL. Actions such as CASCADE decide what happens to children when a parent changes.</p></div><div class="ld-p" data-ld="masters" hidden><p>Foreign keys can be deferred: DEFERRABLE INITIALLY DEFERRED checks them at COMMIT instead of after each statement, which lets you insert two rows that point at each other inside one transaction. Child key columns should be indexed, or every parent delete scans the whole child table.</p></div><div class="ld-p" data-ld="research" hidden><p>Distributed and sharded databases often drop foreign key enforcement across machines because checking a parent on another server is slow. They move the check into application code or background jobs, trading safety for speed.</p></div></div>
+<details class="deep"><summary>Going deeper: UUIDs as keys</summary><div class="deep-b"><p>Some systems use UUIDs (128 bit random identifiers) instead of 1, 2, 3, so that many servers can create ids without talking to each other. The cost is bigger keys and indexes. Time ordered UUIDs (version 7, RFC 9562, 2024) keep new ids near each other in the index.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-aggregate.html" data-topic="sql-aggregate"><small>Previous topic</small><b>GROUP BY and HAVING</b></a><a class="next" href="./sql-joins.html" data-topic="sql-joins"><small>Next topic</small><b>Joins</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-keys", "topic": "sql-keys", "subject": "sql", "title": "Keys and relationships between tables", "codes": {}, "quiz": [{"lv": "e", "q": "A primary key must be", "o": ["Unique and not NULL", "A number", "The first column", "Text"], "a": 0, "hint": "Names one row.", "why": "Uniqueness and no NULLs."}, {"lv": "e", "q": "orders.customer_id is a", "o": ["Primary key", "Foreign key", "Index", "View"], "a": 1, "hint": "Points elsewhere.", "why": "It references customers.id."}, {"lv": "e", "q": "Which relationship needs a junction table?", "o": ["One to one", "One to many", "Many to many", "None"], "a": 2, "hint": "Pairs.", "why": "Many to many is split into two one to many links."}, {"lv": "e", "q": "A surrogate key is", "o": ["A real world code", "A made up id with no outside meaning", "A foreign key", "A NULL key"], "a": 1, "hint": "Invented.", "why": "For example an auto increment id."}, {"lv": "m", "q": "In one to many, where does the foreign key go?", "o": ["The one side", "The many side", "Both", "A new table"], "a": 1, "hint": "Each order names its customer.", "why": "The many side stores the parent id."}, {"lv": "m", "q": "ON DELETE CASCADE means", "o": ["Deleting a parent fails", "Deleting a parent deletes its children", "Children get NULL", "Nothing"], "a": 1, "hint": "Waterfall.", "why": "Child rows are removed with the parent."}, {"lv": "m", "q": "SQLite enforces foreign keys", "o": ["Always", "Only after PRAGMA foreign_keys = ON", "Never", "Only for INTEGER keys"], "a": 1, "hint": "Off by default.", "why": "It is a per connection setting."}, {"lv": "m", "q": "order_items has primary key (order_id, product_id). This is a", "o": ["Surrogate key", "Composite key", "Foreign key only", "Candidate key that is NULL"], "a": 1, "hint": "Two columns.", "why": "A key made of two columns."}, {"lv": "h", "q": "Which anomaly: a new customer cannot be stored until they order?", "o": ["Update", "Insert", "Delete", "None"], "a": 1, "hint": "Nowhere to live.", "why": "Insert anomaly."}, {"lv": "h", "q": "A crow’s foot at the end of a line means", "o": ["One", "Many", "Zero", "Optional"], "a": 1, "hint": "Three prongs.", "why": "It marks the many side."}, {"lv": "x", "q": "Why index a foreign key column?", "o": ["It is required", "Parent deletes and joins would scan the child table", "To make it unique", "To allow NULL"], "a": 1, "hint": "Lookups by parent id.", "why": "Checking children of a parent needs a fast lookup."}], "calc": [{"lv": "e", "q": "How many orders has Asha (customer 1) placed?", "ans": "3", "hint": "Count rows with customer_id 1.", "steps": ["Look at orders.customer_id.", "Orders 101, 103 and 110 have customer_id 1.", "<span class=\"eq\">3 orders<\/span>"]}, {"lv": "e", "q": "How many lines (rows) does order 104 have in order_items?", "ans": "2", "hint": "Rows with order_id 104.", "steps": ["Order 104 bought product 6 and product 2.", "Each product is one line.", "<span class=\"eq\">2 lines<\/span>"]}, {"lv": "m", "q": "In how many different orders does the Notebook (product 2) appear?", "ans": "3", "hint": "Junction rows for product 2.", "steps": ["Find product_id 2 in order_items.", "Orders 101, 104 and 109.", "<span class=\"eq\">3 orders<\/span>"]}, {"lv": "m", "q": "How many customers have never placed an order?", "ans": "3", "hint": "Customers missing from orders.customer_id.", "steps": ["Customers who ordered: 1, 2, 3, 5, 7.", "All customers: 1 to 8.", "<span class=\"eq\">4, 6 and 8 never ordered: 3<\/span>"]}, {"lv": "m", "q": "How many products have never been ordered?", "ans": "2", "hint": "Products missing from order_items.", "steps": ["Products in order_items: 1, 2, 3, 5, 6, 7, 8, 10.", "Missing: 4 (Lunch box) and 9 (Desk lamp).", "<span class=\"eq\">2 products<\/span>"]}, {"lv": "h", "q": "A one big table design repeats the customer city on every order row. With 10 orders, how many city values are stored? (Count the NULL as stored.)", "ans": "10", "hint": "One per order row.", "steps": ["Each order row carries its customer’s city.", "There are 10 orders.", "<span class=\"eq\">10 values instead of 8 in a customers table<\/span>"]}, {"lv": "h", "q": "How many customers does a many to many junction need to link 3 students to 4 clubs if every student joins every club? Answer the number of junction rows.", "ans": "12", "hint": "Every pair.", "steps": ["Each pair is one row.", "3 students × 4 clubs.", "<span class=\"eq\">12 rows<\/span>"]}, {"lv": "h", "q": "If Asha (id 1) were deleted with ON DELETE CASCADE on orders, how many orders would also go?", "ans": "3", "hint": "Her children.", "steps": ["CASCADE deletes every child row.", "Asha has 3 orders.", "<span class=\"eq\">3 orders (and their order_items would need their own rule)<\/span>"]}], "assign": [], "must": [["Why many tables", "One big table repeats data and causes update, insert and delete anomalies. Store each fact once and link with keys."], ["Primary key", "Unique, never NULL, one per table. Surrogate (made up id) or natural (real world). Composite keys use several columns."], ["Foreign key", "Must match a parent key or be NULL. Actions: NO ACTION, RESTRICT, CASCADE, SET NULL, SET DEFAULT. SQLite needs PRAGMA foreign_keys = ON."], ["Relationship shapes", "One to many: FK on the many side. Many to many: junction table. One to one: FK plus UNIQUE."], ["ER diagrams", "Boxes for tables, lines for relationships. Crow’s foot means many, bar means one, circle means zero allowed."]], "summary": "<p>Each fact lives in one table, a primary key names each row, a foreign key points at a parent, and junction tables carry many to many links.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"pk": {"src": "SELECT order_id, product_id, qty\nFROM order_items\nWHERE order_id = 101;", "db": "shop", "setup": "", "title": "A composite primary key", "notes": {"1": "Neither order_id nor product_id is unique alone. The pair is: one line per product in each order."}, "out": [{"sql": "SELECT order_id, product_id, qty\nFROM order_items\nWHERE order_id = 101;", "cols": ["order_id", "product_id", "qty"], "rows": [[101, 1, 2], [101, 2, 5]]}]}, "fkfail": {"src": "-- Customer 99 does not exist\nINSERT INTO orders (id, customer_id, order_date, status)\nVALUES (200, 99, '2025-07-10', 'pending');", "db": "shop", "setup": "", "title": "The database refuses an orphan", "notes": {"3": "customer_id 99 has no parent row, so the FOREIGN KEY rule stops the insert."}, "out": [{"sql": "-- Customer 99 does not exist\nINSERT INTO orders (id, customer_id, order_date, status)\nVALUES (200, 99, '2025-07-10', 'pending');", "cols": [], "rows": [], "error": "FOREIGN KEY constraint failed"}]}, "fkdel": {"src": "-- Asha (id 1) still has orders\nDELETE FROM customers WHERE id = 1;", "db": "shop", "setup": "", "title": "You cannot delete a parent with children", "notes": {"2": "The default action is NO ACTION: the delete fails while orders still point at Asha."}, "out": [{"sql": "-- Asha (id 1) still has orders\nDELETE FROM customers WHERE id = 1;", "cols": [], "rows": [], "error": "FOREIGN KEY constraint failed"}]}, "m2m": {"src": "SELECT order_id, product_id, qty\nFROM order_items\nWHERE product_id = 2;", "db": "shop", "setup": "", "title": "Many to many through a junction table", "notes": {"3": "Notebook (product 2) appears in several orders, and each of those orders has other products too."}, "out": [{"sql": "SELECT order_id, product_id, qty\nFROM order_items\nWHERE product_id = 2;", "cols": ["order_id", "product_id", "qty"], "rows": [[101, 2, 5], [104, 2, 10], [109, 2, 3]]}]}}, "labs": [{"id": "l-pk", "lv": "e", "title": "One line of an order", "task": "Show the <code>qty<\/code> for the line of order 104 that is for product 2.", "db": "shop", "hint": "Both key columns are needed to pick one row.", "why": "The composite key (order_id, product_id) identifies exactly one line.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["qty"], "rows": [[10]]}, "solution": "SELECT qty FROM order_items WHERE order_id = 104 AND product_id = 2;"}, {"id": "l-fk", "lv": "m", "title": "Orders that point at real customers", "task": "Count the orders whose <code>customer_id<\/code> matches a customer living in Delhi. Return one column named <code>n<\/code>.", "db": "shop", "hint": "Find Delhi customer ids first, then count orders with those ids.", "why": "The foreign key customer_id is what lets us connect an order to a city.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["n"], "rows": [[3]]}, "solution": "SELECT COUNT(*) AS n FROM orders WHERE customer_id IN (SELECT id FROM customers WHERE city = 'Delhi');"}, {"id": "l-m2m", "lv": "m", "title": "Which orders bought a notebook", "task": "Show the <code>order_id<\/code> of every order that contains product 2 (Notebook), smallest id first.", "db": "shop", "hint": "The junction table holds the pairs.", "why": "Each row of order_items is one product in one order.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["order_id"], "rows": [[101], [104], [109]]}, "solution": "SELECT order_id FROM order_items WHERE product_id = 2 ORDER BY order_id;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>
