@@ -496,6 +496,73 @@
     }
   }));
 
+  /* scripting 1.1 arguments: how a command line becomes $0, $1, $2 ... and what "$@" and "$*" give */
+  def('lx-args', el => W(el, {
+    title: 'From command line to $1, $2, $3',
+    sub: 'Type how you would run a script, with any quotes you like. Pip splits it into words exactly as bash does and fills the special variables the script sees.',
+    inputs: [{ k: 'line', label: 'Command line', type: 'text', val: './greet.sh Asha "New Delhi" 42', w: 380 }],
+    random: () => ({ line: ['./greet.sh Asha "New Delhi" 42', "./backup.sh -v /home/asha 'My Files'", './sum.sh 10 20 30 40', './copy.sh "a b" c\\ d e', './empty.sh "" two'][Math.floor(Math.random() * 5)] }),
+    frames: v => {
+      const w = world(), line = String(v.line).trim();
+      let words; try { words = w.lex(line).filter(t => t.w).map(t => t.w); } catch (e) { return [{ msg: 'bash could not read that line: ' + esc(e.message), mood: 'sad', fx: 'shake', layers: [] }]; }
+      if (!words.length) return [{ msg: 'Type a command line, for example ./greet.sh Asha "New Delhi".', mood: 'think', layers: [] }];
+      const vals = words.map(x => w.expandWord(x).join(' '));
+      const box = (lab, val, cls) => [lab, val === '' ? '(empty)' : val, cls];
+      const fr = [{ msg: `bash first splits <code>${esc(line)}</code> into words at spaces that are not inside quotes or escaped with a backslash. The quotes themselves are removed.`, mood: 'think', layers: [{ t: 'flow', label: 'Words', items: vals.map((x, i) => [x === '' ? '(empty)' : x, 'word ' + i, '']), plain: true }] }];
+      const items = [];
+      vals.forEach((x, i) => { items.push(box('$' + i, x, i === 0 ? 'look' : 'cur')); fr.push({ msg: i === 0 ? `Word 0 is the command itself. Inside the script it is <code>$0</code>: <b>${esc(x)}</b>.` : `Word ${i} becomes <code>$${i > 9 ? '{' + i + '}' : i}</code>: <b>${esc(x || '(an empty string)')}</b>${/\s/.test(x) ? '. The quotes kept the space inside one argument.' : '.'}`, mood: 'look', layers: [{ t: 'flow', label: 'What the script sees', items: items.slice(), plain: true }] }); });
+      const args = vals.slice(1);
+      fr.push({ msg: `<code>$#</code> is the number of arguments, not counting $0: <b>${args.length}</b>.`, mood: 'happy', layers: [{ t: 'flow', label: 'What the script sees', items: items.concat([['$#', String(args.length), 'yes']]), plain: true }] });
+      fr.push({ msg: '<code>"$@"</code> (with the quotes) gives every argument back as its own word, exactly as typed. Use it to pass arguments on to another command.', mood: 'look', layers: [{ t: 'flow', label: '"$@" gives ' + args.length + ' word' + (args.length === 1 ? '' : 's'), items: args.map(x => [x === '' ? '(empty)' : x, '', 'yes']), plain: true }] });
+      fr.push({ msg: '<code>"$*"</code> glues all arguments into one word with spaces between them.', mood: 'look', layers: [{ t: 'flow', label: '"$*" gives 1 word', items: [[args.join(' ') || '(empty)', '', 'look']], plain: true }] });
+      const loose = args.join(' ').split(/\s+/).filter(Boolean);
+      fr.push({ msg: `Without quotes, <code>$@</code> and <code>$*</code> are split again at every space, giving ${loose.length} word${loose.length === 1 ? '' : 's'}${loose.length !== args.length ? ', which breaks arguments that contain spaces or are empty' : ''}. That is why scripts almost always write "$@".`, mood: loose.length !== args.length ? 'wow' : 'happy', fx: loose.length !== args.length ? 'shake' : 'burst', layers: [{ t: 'flow', label: 'Unquoted $@ gives ' + loose.length + ' word' + (loose.length === 1 ? '' : 's'), items: loose.map(x => [x, '', loose.length !== args.length ? 'no' : 'yes']), plain: true }] });
+      return fr;
+    }
+  }));
+
+  /* scripting 1.2 the order of expansions on one command line */
+  def('lx-expand', el => W(el, {
+    title: 'The expansions, in order',
+    sub: 'Type a command line. Pip applies the shell expansions one stage at a time, in the order the bash manual gives, and then runs the result in the practice shell.',
+    inputs: [{ k: 'line', label: 'Command line', type: 'text', val: 'echo {a,b}.txt ~ $USER "$HOME" $(whoami) $((6*7)) *.csv', w: 440 }],
+    random: () => ({ line: ['echo file{1..3}.log', 'echo "$USER has $(ls logs | wc -l) logs"', "echo '$HOME' \"$HOME\" $HOME", 'echo *.txt', 'name="a   b"; echo $name "$name"', 'echo ~/notes.txt $((2**10))', 'echo {x,y}{1,2}'][Math.floor(Math.random() * 7)] }),
+    frames: v => {
+      const w = world(), all = String(v.line).trim();
+      const cut = all.lastIndexOf(';'), pre = cut >= 0 ? all.slice(0, cut) : '', line = cut >= 0 ? all.slice(cut + 1).trim() : all;
+      if (pre) w.run(pre);
+      let toks; try { toks = w.lex(line); } catch (e) { return [{ msg: 'bash could not read that line: ' + esc(e.message), mood: 'sad', fx: 'shake', layers: [] }]; }
+      if (toks.some(t => t.op)) {
+        const r = w.run(line);
+        return [{ msg: 'This animation follows one simple command. Your line has pipes or redirections, so here is just its result.', mood: 'think', layers: [{ t: 'term', label: 'Result', lines: [['c', line]].concat(r.out.replace(/\n$/, '').split('\n').filter(Boolean).map(x => ['o', x])) }] }];
+      }
+      /* a word is a list of parts {t, q}. show() draws it with its quotes still on */
+      let words = toks.filter(t => t.w).map(t => t.w.parts.map(p => ({ t: p.t, q: p.q })));
+      if (!words.length) return [{ msg: 'Type a command line, for example echo {a,b}.txt $HOME.', mood: 'think', layers: [] }];
+      const show = ws => ws.map(ps => ps.map(p => p.q === 1 ? `'${p.t}'` : p.q === 2 ? `"${p.t}"` : p.t).join(''));
+      const L = (label, ws, cls) => [{ t: 'flow', label, items: show(ws).map((x, i) => [x || '(empty)', '', cls && cls[i] || '']), plain: true }];
+      const fr = [{ msg: `bash has split <code>${esc(line)}</code> into words. Now it expands them, stage by stage. Quotes are still in place and decide what each stage may touch.`, mood: 'think', layers: L('Words as typed', words) }];
+      const stage = (n, name, fn, why) => {
+        const before = JSON.stringify(words);
+        const cls = [], next = [];
+        words.forEach(ps => { const r = fn(ps); r.forEach(x => { next.push(x); cls.push(r.length === 1 && JSON.stringify(x) === JSON.stringify(ps) ? '' : 'yes'); }); });
+        words = next;
+        const changed = JSON.stringify(words) !== before;
+        fr.push({ msg: `<b>${n}. ${name}.</b> ${why} ${changed ? '' : '<i>Nothing to do on this line.</i>'}`, mood: changed ? 'wow' : 'look', layers: L(`After stage ${n}`, words, cls) });
+      };
+      const unq = ps => ps.every(p => !p.q);
+      stage(1, 'Brace expansion', ps => unq(ps) && ps.length === 1 && /\{[^{}]*(,|\.\.)[^{}]*\}/.test(ps[0].t) ? w.braces(ps[0].t).map(t => [{ t, q: 0 }]) : [ps], '{a,b} and {1..5} make several words. It is pure text work and happens first, before any variable is read.');
+      stage(2, 'Tilde expansion', ps => ps[0].q === 0 && (ps[0].t === '~' || ps[0].t.startsWith('~/')) ? [[{ t: '/home/learner' + ps[0].t.slice(1), q: 0 }].concat(ps.slice(1))] : [ps], 'A ~ at the start of an unquoted word becomes your home folder.');
+      stage(3, 'Parameter, arithmetic and command substitution', ps => [ps.map(p => p.q === 1 || !/\$/.test(p.t) ? p : { t: w.expandStr(p.t), q: p.q, sub: !p.q })], '$NAME, $((maths)) and $(command) are replaced by their values, from left to right. Single quotes protect their text completely, double quotes still allow this stage.');
+      stage(4, 'Word splitting', ps => { if (!ps.some(p => p.sub)) return [ps]; const parts = ps.map(p => p.t).join('').split(/\s+/).filter(Boolean); return parts.map(t => [{ t, q: 0 }]); }, 'Results of stage 3 that were <b>not</b> in double quotes are split at spaces, tabs and newlines into separate words. An empty unquoted result disappears.');
+      stage(5, 'Pathname expansion (globbing)', ps => { if (!unq(ps)) return [ps]; const t = ps.map(p => p.t).join(''); if (!/[*?[]/.test(t)) return [ps]; const g = w.glob(t); return g.length ? g.map(x => [{ t: x, q: 0 }]) : [ps]; }, 'Unquoted words with * ? or [ ] are replaced by matching file names, sorted. If nothing matches, the word stays as it is.');
+      stage(6, 'Quote removal', ps => [[{ t: ps.map(p => p.t).join(''), q: 0 }]], 'Finally the quote characters themselves are removed. What is left are the exact arguments the command receives.');
+      const r = w.run(line);
+      fr.push({ msg: `The command now runs with ${words.length - 1} argument${words.length === 2 ? '' : 's'}.`, mood: 'happy', fx: 'burst', layers: L('Final arguments', words, words.map(() => 'cur')).concat([{ t: 'term', label: 'What the terminal shows', lines: [['c', line]].concat(r.out.replace(/\n$/, '').split('\n').filter(x => x !== '').map(x => ['o', x])) }]) });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
