@@ -439,7 +439,7 @@ const LXSH = (() => {
       parts.forEach((part, idx) => {
         const next = [];
         paths.forEach(base => {
-          const dir = this.node(base === '' ? this.cwd : base);
+          const dir = this.node(base === '' ? this.cwd : this.abs(base));
           if (!hasGlob(part.replace(/\\[*?[]/g, ''))) { const name = part.replace(/\\(.)/g, '$1'); const p = base === '' ? name : base.replace(/\/$/, '') + '/' + name; if (this.node(this.abs(p), false)) next.push(p); return; }
           if (!dir || dir.type !== 'd') return;
           const re = globRe(part);
@@ -962,13 +962,16 @@ const LXSH = (() => {
     return new RegExp(s, flags);
   }
   C.grep = function (a, input, nm) {
-    const [f, rest] = opts(a, 'eAB');
+    const pats = [], a2 = [];
+    for (let i = 0; i < a.length; i++) { if (a[i] === '-e') pats.push(a[++i] ?? ''); else if (/^-e./.test(a[i])) pats.push(a[i].slice(2)); else a2.push(a[i]); }
+    const [f, rest] = opts(a2, 'ABCm');
     if (nm === 'egrep') f.E = true;
-    let pat = f.e;
-    if (pat === undefined) { if (!rest.length) { this.eout('Usage: grep [OPTION]... PATTERNS [FILE]...\n'); return 2; } pat = rest.shift(); }
+    if (!pats.length) { if (!rest.length) { this.eout('Usage: grep [OPTION]... PATTERNS [FILE]...\n'); return 2; } pats.push(rest.shift()); }
+    const after = +(f.A ?? f.C ?? 0), before = +(f.B ?? f.C ?? 0), maxm = f.m !== undefined ? +f.m : Infinity;
     let re;
     try {
-      re = f.F ? new RegExp(pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), f.i ? 'i' : '') : toRe(pat, f.E || f.P, f.i ? 'i' : '');
+      const one = pat => f.F ? pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : toRe(pat, f.E || f.P, '').source;
+      re = new RegExp(pats.map(x => '(?:' + one(x) + ')').join('|'), f.i ? 'i' : '');
       if (f.w) re = new RegExp('(?<![A-Za-z0-9_])(?:' + re.source + ')(?![A-Za-z0-9_])', re.flags);
       if (f.x) re = new RegExp('^(?:' + re.source + ')$', re.flags);
     } catch (e) { this.eout(`grep: invalid regular expression\n`); return 2; }
@@ -986,17 +989,25 @@ const LXSH = (() => {
     const multi = xs.length > 1 || f.r || f.R;
     let any = false;
     xs.forEach(x => {
-      let cnt = 0;
-      const L = lines(x.data);
-      L.forEach((l, i) => {
-        const m = re.test(l) !== !!f.v;
-        if (!m) return;
+      let cnt = 0, lastShown = -1, afterLeft = 0;
+      const L = lines(x.data), ctx = (after || before) && !f.o && !f.c && !f.l && !f.q;
+      const show = (i, sep) => { const pre = (multi && !f.h ? x.name + sep : '') + (f.n ? (i + 1) + sep : ''); this.out(pre + L[i] + '\n'); lastShown = i; };
+      for (let i = 0; i < L.length; i++) {
+        const l = L[i];
+        const m = cnt < maxm && re.test(l) !== !!f.v;
+        if (!m) { if (ctx && afterLeft > 0) { show(i, '-'); afterLeft--; } continue; }
         any = true; cnt++;
-        if (f.c || f.l || f.q) return;
+        if (f.c || f.l || f.q) continue;
+        if (ctx) {
+          const from = Math.max(0, i - before, lastShown + 1);
+          if (lastShown >= 0 && from > lastShown + 1) this.out('--\n');
+          for (let k = from; k < i; k++) show(k, '-');
+          show(i, ':'); afterLeft = after; continue;
+        }
         const pre = (multi && !f.h ? x.name + ':' : '') + (f.n ? (i + 1) + ':' : '');
         if (f.o && !f.v) { const g = new RegExp(re.source, re.flags + 'g'); (l.match(g) || []).forEach(mm => this.out(pre + mm + '\n')); }
         else this.out(pre + l + '\n');
-      });
+      }
       if (f.c) this.out((multi ? x.name + ':' : '') + cnt + '\n');
       if (f.l && cnt) this.out(x.name + '\n');
     });
@@ -1062,13 +1073,27 @@ const LXSH = (() => {
   };
   /* sed: s///flags, p, d, q, a, i, = with a line number, $ or /regex/ address, and -n, -i, -E, -e */
   C.sed = function (a, input) {
-    const [f, rest] = opts(a, 'e');
-    const scripts = [];
-    if (f.e !== undefined) scripts.push(f.e); else if (rest.length) scripts.push(rest.shift()); else { this.eout('Usage: sed [OPTION]... {script} [input-file]...\n'); return 1; }
+    const f = {}, rest = [], scripts = [];
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      if (x === '--') { rest.push(...a.slice(i + 1)); break; }
+      if (/^--in-place(=.*)?$/.test(x)) { f.i = true; f.suffix = x.split('=')[1] || ''; continue; }
+      if (/^-[A-Za-z]/.test(x)) {
+        for (let j = 1; j < x.length; j++) {
+          const ch = x[j];
+          if (ch === 'e') { scripts.push(x.slice(j + 1) || a[++i] || ''); break; }
+          if (ch === 'i') { f.i = true; f.suffix = x.slice(j + 1); break; }
+          f[ch] = true;
+        }
+        continue;
+      }
+      rest.push(x);
+    }
+    if (!scripts.length) { if (rest.length) scripts.push(rest.shift()); else { this.eout('Usage: sed [OPTION]... {script} [input-file]...\n'); return 1; } }
     const cmds = [];
     scripts.join(';').split(/;(?![^/]*\/[gip0-9]*$)/).forEach(raw => {
       const s = raw.trim(); if (!s) return;
-      const m = /^(\d+|\$|\/(?:[^/\\]|\\.)*\/)?(?:,(\d+|\$|\/(?:[^/\\]|\\.)*\/))?\s*(!?)\s*([spdqai=])(.*)$/.exec(s);
+      const m = /^(\d+|\$|\/(?:[^/\\]|\\.)*\/)?(?:,(\d+|\$|\/(?:[^/\\]|\\.)*\/))?\s*(!?)\s*([spdqaic=y])(.*)$/.exec(s);
       if (!m) throw new Error(`-e expression #1: unknown command: \`${s[0]}'`);
       const addr = x => x === undefined ? null : x === '$' ? { last: true } : /^\d+$/.test(x) ? { n: +x } : { re: toRe(x.slice(1, -1), f.E || f.r) };
       const c = { a1: addr(m[1]), a2: addr(m[2]), neg: !!m[3], op: m[4], arg: m[5] };
@@ -1080,6 +1105,7 @@ const LXSH = (() => {
         c.rep = parts[1].replace(/\\(\d)/g, '$$$1').replace(/&/g, '$$&').replace(/\\n/g, '\n');
         c.print = flags.includes('p'); c.nth = (/\d+/.exec(flags) || [])[0];
       }
+      if (c.op === 'y') { const dl = c.arg[0], [, from, to] = c.arg.split(dl); if ((from || '').length !== (to || '').length) throw new Error('-e expression #1: strings for `y\' command are different lengths'); c.map = {}; [...from].forEach((ch, k) => { c.map[ch] = to[k]; }); }
       cmds.push(c);
     });
     const files = rest.length ? rest : ['-'];
@@ -1100,8 +1126,10 @@ const LXSH = (() => {
           else on = hit(c.a1);
           if (c.neg) on = !on;
           if (!on) return;
-          if (c.op === 's') { let n = 0; const nl = c.nth ? line.replace(new RegExp(c.re.source, c.re.flags + (c.re.flags.includes('g') ? '' : 'g')), (...mm) => (++n === +c.nth ? mm[0].replace(new RegExp(c.re.source, c.re.flags.replace('g', '')), c.rep) : mm[0])) : line.replace(c.re, c.rep); if (nl !== line || c.re.test(line)) { line = nl; if (c.print) after.push(line); } }
-          else if (c.op === 'p') after.push(line);
+          if (c.op === 's') { let n = 0; const nl = c.nth ? line.replace(new RegExp(c.re.source, c.re.flags + (c.re.flags.includes('g') ? '' : 'g')), (...mm) => (++n === +c.nth ? mm[0].replace(new RegExp(c.re.source, c.re.flags.replace('g', '')), c.rep) : mm[0])) : line.replace(c.re, c.rep); if (nl !== line || c.re.test(line)) { line = nl; if (c.print) before.push(line); } }
+          else if (c.op === 'p') before.push(line);
+          else if (c.op === 'y') line = [...line].map(ch => c.map[ch] ?? ch).join('');
+          else if (c.op === 'c') { if (!c.a2 || !ranges2[ci]) before.push(c.arg.replace(/^\\?\s*/, '')); del = true; }
           else if (c.op === 'd') del = true;
           else if (c.op === 'q') { quit = true; }
           else if (c.op === '=') before.push(String(i + 1));
@@ -1112,7 +1140,7 @@ const LXSH = (() => {
         if (!del && !f.n) out.push(line);
         out.push(...after.filter((x, k) => !(f.n === undefined && false)));
       }
-      if (f.i && fname !== '-') { const n = this.node(this.abs(fname)); n.data = join(out); n.mtime = this.now(); } else this.out(join(out));
+      if (f.i && fname !== '-') { const p0 = this.abs(fname), n = this.node(p0); if (f.suffix) { const b = this.mk(p0 + f.suffix, 'f', n.mode, this.user, n.data); b.mtime = n.mtime; } n.data = join(out); n.mtime = this.now(); } else this.out(join(out));
     });
   };
   /* awk: enough of the language for one line programs, see the awk lesson */
@@ -1776,6 +1804,6 @@ const LXSH = (() => {
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => mountAll()); else mountAll();
   }
-  return { World, mount, mountAll, check, SEED, HOME, USER };
+  return { World, mount, mountAll, check, SEED, HOME, USER, toRe };
 })();
 if (typeof module !== 'undefined') module.exports = LXSH;

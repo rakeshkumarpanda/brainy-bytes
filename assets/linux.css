@@ -109,3 +109,7 @@
 .pk-fd b{font:800 18px var(--font-mono); text-align:center} .pk-fd span{font-weight:700; color:var(--ink2)} .pk-fd i{font-style:normal; color:var(--ink2)}
 .pk-fd em{font-style:normal; font:700 14px var(--font-mono); overflow-wrap:anywhere}
 .pk-fd.look{border-color:var(--accent); background:var(--accent-soft)}
+/* lines with matches of lx-regex */
+.pk-match{background:var(--lx-bg); color:var(--lx-ink); border-radius:16px; padding:10px 14px; font:500 13px/1.6 var(--font-mono); overflow-x:auto}
+.pk-match>div{white-space:pre; padding:0 4px; border-radius:6px} .pk-match>div.no{opacity:.45} .pk-match>div.yes{background:rgba(126,226,168,.08)}
+.pk-match mark{background:#ffd28a; color:#1b1f24; border-radius:3px; padding:0 1px}

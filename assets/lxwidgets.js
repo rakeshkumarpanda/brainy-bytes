@@ -55,6 +55,11 @@
   /* the three standard streams of a command: {t: 'fds', label, cmd, rows: [[fd, name, dest, cls]]} */
   D.fds = L => `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-fds"><div class="pk-fdcmd">${esc(L.cmd)}</div><div>${L.rows.map(([n, name, dest, c]) => `<div class="pk-fd ${c || ''}"><b>${n}</b><span>${name}</span><i>${n === 0 ? '←' : '→'}</i><em>${esc(dest)}</em></div>`).join('')}</div></div>`;
 
+  /* lines with the matched parts marked: {t: 'match', label, rows: [[text, [[from, to]...], cls]]} */
+  D.match = L => `${L.label ? `<div class="pk-lab">${L.label}</div>` : ''}<div class="pk-match">${L.rows.map(([t, rg, c]) => {
+    let h = '', at = 0; (rg || []).forEach(([a, b]) => { h += esc(t.slice(at, a)) + `<mark>${esc(t.slice(a, b)) || '&#8203;'}</mark>`; at = b; });
+    return `<div class="${c || ''}">${h + esc(t.slice(at))}</div>`; }).join('')}</div>`;
+
   /* ---------- 1.1 Meet Unix and Linux ---------- */
   const HISTORY = [
     [1969, 'Ken Thompson and Dennis Ritchie start Unix at Bell Labs, on a spare PDP-7 computer.'],
@@ -221,6 +226,110 @@
       });
       const got = names.filter((_, i) => hits[i] === 'yes');
       fr.push({ msg: got.length ? `The shell replaces <code>${esc(pat)}</code> with: <code>${esc(got.sort().join(' '))}</code> before the command even starts.` : `Nothing matches, so bash leaves the pattern as it is: the command receives the text <code>${esc(pat)}</code>.`, mood: got.length ? 'wow' : 'think', fx: got.length ? 'rain' : undefined, layers: [{ t: 'row', label: 'Files in the folder', cells: names, idx: false, cls: Object.fromEntries(Object.entries(hits).map(([k, c]) => [k, c === 'yes' ? 'win' : 'done'])) }] });
+      return fr;
+    }
+  }));
+
+  /* power 2.1 regular expressions: read a pattern piece by piece, then test it on every line */
+  const reParts = (p, ere) => {
+    const out = []; let i = 0;
+    const sp = c => ere ? p[i] === c : p[i] === '\\' && p[i + 1] === c;
+    const quant = () => {
+      if (p[i] === '*') { i++; return 'repeated 0 or more times'; }
+      if (sp('+')) { i += ere ? 1 : 2; return 'repeated 1 or more times'; }
+      if (sp('?')) { i += ere ? 1 : 2; return 'optional (0 or 1 time)'; }
+      if (sp('{')) { const j = p.indexOf(ere ? '}' : '\\}', i); if (j > 0) { const body = p.slice(i + (ere ? 1 : 2), j); i = j + (ere ? 1 : 2); const [a, b] = body.split(','); return b === undefined ? `exactly ${a} times` : b === '' ? `at least ${a} times` : `between ${a} and ${b} times`; } }
+      return '';
+    };
+    while (i < p.length) {
+      const st = i; let what = '';
+      if (p[i] === '^' && i === 0) { i++; what = 'the start of the line'; }
+      else if (p[i] === '$' && i === p.length - 1) { i++; what = 'the end of the line'; }
+      else if (p[i] === '.') { i++; what = 'any one character'; }
+      else if (p[i] === '[') { let j = i + 1; if (p[j] === '^') j++; if (p[j] === ']') j++; while (j < p.length && p[j] !== ']') { if (p.startsWith('[:', j)) j = p.indexOf(':]', j) + 2; else j++; } const body = p.slice(i + 1, j); i = j + 1; what = body.startsWith('^') ? `one character that is NOT in ${esc(body.slice(1))}` : `one character from ${esc(body)}`; }
+      else if (sp('(')) { i += ere ? 1 : 2; out.push([p.slice(st, i), 'start a group']); continue; }
+      else if (sp(')')) { i += ere ? 1 : 2; const q = quant(); out.push([p.slice(st, i), 'end the group' + (q ? ', the whole group ' + q : '')]); continue; }
+      else if (sp('|')) { i += ere ? 1 : 2; out.push([p.slice(st, i), 'OR: the part before or the part after']); continue; }
+      else if (p[i] === '\\') { const c = p[i + 1]; i += 2; what = { w: 'one word character (letter, digit or _)', s: 'one space or tab', b: 'a word boundary', '<': 'the start of a word', '>': 'the end of a word', d: 'a digit (only in grep -P)' }[c] || `the character ${esc(c)} itself`; }
+      else { let j = i; while (j < p.length && /[A-Za-z0-9 ,:_=@%#'"-]/.test(p[j]) && !(j > i && /[*+?{]/.test(p[j + 1] || '') )) j++; if (j === i) j = i + 1; const lit = p.slice(i, j); i = j; what = lit.length > 1 ? `the text "${esc(lit)}"` : `the character "${esc(lit)}"`; }
+      const q = quant();
+      out.push([p.slice(st, i), what + (q ? ', ' + q : '')]);
+    }
+    return out;
+  };
+  def('lx-regex', el => W(el, {
+    title: 'Read and test a regular expression',
+    sub: 'Type a pattern and pick basic (grep) or extended (grep -E) syntax. Pip explains each piece, then tries it on every line and marks what matched.',
+    inputs: [{ k: 'pat', label: 'Pattern', type: 'text', val: 'ERROR|WARN', w: 220 }, { k: 'mode', label: 'Syntax', type: 'seg', val: 'E', opts: [['B', 'grep (basic)'], ['E', 'grep -E (extended)']] },
+             { k: 'file', label: 'Lines from', type: 'seg', val: 'logs/app.log', opts: [['logs/app.log', 'logs/app.log'], ['marks.csv', 'marks.csv'], ['poem.txt', 'poem.txt'], ['fruits.txt', 'fruits.txt']] }],
+    random: () => (['^2026.*ERROR', '[0-9]{2}s$', 'user [a-z]+', '^(Asha|Ravi),', ',[89][0-9]$', 'an+a', '^[A-Z][a-z]+ [a-z]+$', 'o[a-z]*e'].map(x => ({ pat: x, mode: 'E' })).concat([{ pat: 'a\\{2\\}', mode: 'B' }, { pat: 'ERROR\\|WARN', mode: 'B' }]))[Math.floor(Math.random() * 10)],
+    frames: v => {
+      const pat = String(v.pat), ere = v.mode === 'E', w = world(), nd = w.node(w.abs(v.file));
+      const lines = (nd && nd.data || '').replace(/\n$/, '').split('\n');
+      let re; try { re = LXSH.toRe(pat, ere, 'g'); } catch (e) { return [{ msg: 'That pattern is not valid: ' + esc(e.message), mood: 'sad', fx: 'shake', layers: [] }]; }
+      const parts = reParts(pat, ere);
+      const fr = [{ msg: `Pattern <code>${esc(pat)}</code> in ${ere ? 'extended' : 'basic'} syntax. ${ere ? 'In extended syntax + ? | ( ) { } are special by themselves.' : 'In basic syntax + ? | ( ) { } are plain characters, and become special only with a backslash in front.'}`, mood: 'think', layers: [{ t: 'flow', label: 'The pieces', items: parts.map(([t]) => [t, '', '']) }] }];
+      parts.forEach(([t, m], k) => fr.push({ msg: `<code>${esc(t)}</code> means ${m}.`, mood: 'look', layers: [{ t: 'flow', label: 'The pieces', items: parts.map(([x], j) => [x, '', j === k ? 'look' : j < k ? 'done' : '']) }] }));
+      const rows = [], hits = [];
+      lines.forEach((l, i) => {
+        re.lastIndex = 0; const rg = []; let m;
+        while ((m = re.exec(l))) { rg.push([m.index, m.index + m[0].length]); if (!m[0].length) re.lastIndex++; }
+        rows.push([l, rg, rg.length ? 'yes' : 'no']); if (rg.length) hits.push(i);
+      });
+      const shown = []; rows.forEach((r, i) => { shown.push(r); if (i < 3 || i === rows.length - 1) fr.push({ msg: r[1].length ? `Line ${i + 1} matches. The marked part is what the pattern found.` : `Line ${i + 1} has no match, so grep skips it.`, mood: r[1].length ? 'happy' : 'look', layers: [{ t: 'match', label: v.file, rows: shown.concat(rows.slice(i + 1).map(x => [x[0], [], ''])) }] }); });
+      fr.push({ msg: hits.length ? `${hits.length} of ${lines.length} lines match. grep ${ere ? '-E ' : ''}would print exactly those lines, and grep -o only the marked parts.` : 'No line matches, so grep prints nothing and exits with status 1.', mood: hits.length ? 'wow' : 'sad', fx: hits.length ? 'burst' : undefined, layers: [{ t: 'match', label: v.file, rows }, { t: 'term', label: 'What the terminal shows', lines: [['c', `grep ${ere ? '-E ' : ''}'${pat}' ${v.file}`]].concat(hits.map(i => ['o', lines[i]])) }] });
+      return fr;
+    }
+  }));
+
+  /* power 2.2 sed: the cycle of read line, run the script, print the pattern space */
+  def('lx-sed', el => W(el, {
+    title: 'Watch the sed cycle',
+    sub: 'Type a sed script with s, d and p commands, optional addresses (2, $, /regex/, 2,4) and -n. Pip runs the cycle for every line: read it into the pattern space, apply each command, print.',
+    inputs: [{ k: 'script', label: 'Script', type: 'text', val: '/INFO/d; s/ERROR/ALERT/', w: 300 }, { k: 'n', label: 'Option', type: 'seg', val: '', opts: [['', 'none'], ['-n', '-n (no auto print)']] },
+             { k: 'file', label: 'File', type: 'seg', val: 'logs/app.log', opts: [['logs/app.log', 'logs/app.log'], ['notes.txt', 'notes.txt'], ['poem.txt', 'poem.txt'], ['marks.csv', 'marks.csv']] }],
+    random: () => ([['1d', '', 'marks.csv'], ['s/a/A/g', '', 'notes.txt'], ['2,3p', '-n', 'poem.txt'], ['/ERROR/p', '-n', 'logs/app.log'], ['$d', '', 'poem.txt'], ['s/,/ | /g', '', 'marks.csv'], ['/maths/!d', '', 'marks.csv']].map(([script, n, file]) => ({ script, n, file })))[Math.floor(Math.random() * 7)],
+    frames: v => {
+      const w = world(), nd = w.node(w.abs(v.file)), L = (nd && nd.data || '').replace(/\n$/, '').split('\n'), quiet = v.n === '-n';
+      const cmds = [];
+      for (const raw of String(v.script).split(';').map(x => x.trim()).filter(Boolean)) {
+        const m = /^(\d+|\$|\/(?:[^/\\]|\\.)*\/)?(?:,(\d+|\$|\/(?:[^/\\]|\\.)*\/))?\s*(!?)\s*([sdp])(.*)$/.exec(raw);
+        if (!m) return [{ msg: `I only know s, d and p here, with optional addresses. <code>${esc(raw)}</code> is not one of them.`, mood: 'sad', fx: 'shake', layers: [] }];
+        const ad = x => x === undefined ? null : x === '$' ? { last: 1 } : /^\d+$/.test(x) ? { n: +x } : { re: LXSH.toRe(x.slice(1, -1), false, '') };
+        const c = { raw, a1: ad(m[1]), a2: ad(m[2]), neg: !!m[3], op: m[4], on: false };
+        if (c.op === 's') { const d = m[5][0], parts = m[5].slice(1).split(d); if (parts.length < 2) return [{ msg: 'An s command needs the form s/old/new/ with three slashes.', mood: 'sad', fx: 'shake', layers: [] }]; c.re = LXSH.toRe(parts[0], false, parts[2] && parts[2].includes('g') ? 'g' : ''); c.rep = parts[1].replace(/\\(\d)/g, '$$$1').replace(/&/g, '$$&'); c.p = (parts[2] || '').includes('p'); }
+        cmds.push(c);
+      }
+      const out = [], fr = [];
+      const lay = (ps, cur, k) => [{ t: 'flow', label: 'The script, one command after another', items: cmds.map((c, j) => [c.raw, '', j === k ? 'look' : '']) },
+        { t: 'term', label: 'Input, the current line is marked', lines: L.map((x, i) => [i === cur ? 'h' : 'o', x]) },
+        { t: 'flow', label: 'Pattern space', items: [[ps === null ? '(deleted)' : ps || ' ', '', ps === null ? 'no' : 'cur']] },
+        { t: 'term', label: 'Output so far', lines: out.map(x => ['o', x]) }];
+      fr.push({ msg: `sed reads one line at a time into the <b>pattern space</b>, runs the whole script on it, then ${quiet ? 'prints nothing unless a p command says so, because of -n' : 'prints the pattern space'} and goes on with the next line.`, mood: 'think', layers: lay('', -1, -1) });
+      const showMax = L.length <= 5 ? 99 : 3;
+      L.forEach((line, i) => {
+        let ps = line;
+        const verbose = i < showMax || i === L.length - 1;
+        if (verbose) fr.push({ msg: `Line ${i + 1} goes into the pattern space.`, mood: 'look', layers: lay(ps, i, -1) });
+        for (let k = 0; k < cmds.length && ps !== null; k++) {
+          const c = cmds[k];
+          const hit = a => a === null ? true : a.last ? i === L.length - 1 : a.n !== undefined ? i + 1 === a.n : a.re.test(ps);
+          let on;
+          if (c.a2) { if (c.on) { on = true; if (hit(c.a2)) c.on = false; } else if (hit(c.a1)) { on = true; c.on = !(c.a2.n !== undefined && c.a2.n <= i + 1); } else on = false; }
+          else on = hit(c.a1);
+          if (c.neg) on = !on;
+          if (!on) { if (verbose) fr.push({ msg: `<code>${esc(c.raw)}</code>: the address does not select line ${i + 1}, so the command is skipped.`, mood: 'look', layers: lay(ps, i, k) }); continue; }
+          if (c.op === 'd') { ps = null; if (verbose) fr.push({ msg: `<code>${esc(c.raw)}</code>: delete. The line is dropped and sed starts the next cycle at once.`, mood: 'look', fx: 'shake', layers: lay(ps, i, k) }); break; }
+          if (c.op === 'p') { out.push(ps); if (verbose) fr.push({ msg: `<code>${esc(c.raw)}</code>: print the pattern space now.`, mood: 'happy', layers: lay(ps, i, k) }); continue; }
+          const was = ps; c.re.lastIndex = 0; ps = ps.replace(c.re, c.rep);
+          if (c.p && was !== ps) out.push(ps);
+          if (verbose) fr.push({ msg: was === ps ? `<code>${esc(c.raw)}</code>: no match on this line, nothing changes.` : `<code>${esc(c.raw)}</code>: substitute${c.re.global ? ' every match' : ' the first match'}.`, mood: was === ps ? 'look' : 'happy', layers: lay(ps, i, k) });
+        }
+        if (ps !== null && !quiet) out.push(ps);
+        if (verbose) fr.push({ msg: ps === null ? 'Nothing is printed for this line.' : quiet ? 'End of the script. With -n there is no automatic print.' : 'End of the script: the pattern space is printed.', mood: 'look', layers: lay(ps, i, -1) });
+        else if (i === showMax) fr.push({ msg: `The same cycle runs for the remaining lines up to line ${L.length - 1}.`, mood: 'think', layers: lay(ps, i, -1) });
+      });
+      fr.push({ msg: `Done. sed ${quiet ? '-n ' : ''}'${esc(v.script)}' prints ${out.length} line${out.length === 1 ? '' : 's'}. The file itself is not changed unless you add -i.`, mood: 'wow', fx: 'burst', layers: [{ t: 'term', label: 'What the terminal shows', lines: [['c', `sed ${quiet ? '-n ' : ''}'${v.script}' ${v.file}`]].concat(out.map(x => ['o', x])) }] });
       return fr;
     }
   }));

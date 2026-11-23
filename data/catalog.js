@@ -10539,6 +10539,37 @@ function lxPowerModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-power-2", title: "Searching and editing text", emoji: "2", step: 2, part: "power", level: "Intermediate", blurb: "Find lines with grep and regular expressions, change text with sed, and turn columns into reports with awk.", topics: [
+      { id: "grep-regex", title: "grep and regular expressions", emoji: "2.1", page: "content/linux/grep-regex.html",
+        summary: "grep options, basic and extended regular expressions, anchors, sets, repeats and groups.",
+        keywords: ["grep", "regex", "regular expression", "grep -E", "grep -r", "grep -v", "anchors", "character class", "search text", "log search"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "grep", title: "Finding lines: grep", emoji: "", group: "Lesson", keywords: ["grep", "grep -i", "grep -v", "grep -c", "grep -n", "grep -r", "grep -l", "grep -o", "grep -A", "grep -q", "g/re/p"] },
+        { id: "basic", title: "Regular expressions: the basic building blocks", emoji: "", group: "Lesson", keywords: ["regular expression", "regex", ".", "*", "^", "$", "[a-z]", "[^0-9]", "character class", "[[:digit:]]", "escape", "Kleene"] },
+        { id: "extended", title: "Extended regular expressions: grep -E", emoji: "", group: "Lesson", keywords: ["grep -E", "extended regex", "+", "?", "{n,m}", "alternation", "|", "group", "word boundary", "greedy", "grep -P"] },
+        { id: "levels", title: "grep and regex from school to research", emoji: "", group: "Lesson", keywords: ["BRE", "ERE", "finite automaton", "DFA", "NFA", "Boyer Moore", "backtracking", "ReDoS", "RE2", "ripgrep", "back reference"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sed", title: "sed: the stream editor", emoji: "2.2", page: "content/linux/sed.html",
+        summary: "The sed cycle, s/old/new/g, addresses and ranges, d and p, -n, -E and -i.",
+        keywords: ["sed", "stream editor", "find and replace", "s///g", "sed -i", "sed -n", "addresses", "regex replace", "delete lines"],
+        minutes: 45, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "idea", title: "A stream editor: how sed works", emoji: "", group: "Lesson", keywords: ["sed", "stream editor", "pattern space", "sed cycle", "McMahon", "non interactive"] },
+        { id: "subst", title: "Find and replace: the s command", emoji: "", group: "Lesson", keywords: ["s command", "substitute", "s///g", "global", "&", "capture group", "\\1", "delimiter", "sed -E", "find and replace"] },
+        { id: "address", title: "Choosing lines: addresses, d, p and friends", emoji: "", group: "Lesson", keywords: ["address", "range", "/regex/", "$", "negation !", "d delete", "p print", "sed -n", "q quit", "insert", "append", "change", "y command"] },
+        { id: "inplace", title: "Editing files in place: sed -i", emoji: "", group: "Lesson", keywords: ["sed -i", "in place", "sed -i.bak", "backup", "macOS sed", "BSD sed", "multiple -e", "config edit"] },
+        { id: "levels", title: "sed from school to research", emoji: "", group: "Lesson", keywords: ["hold space", "N", "h H g G x", "branch", "Turing complete", "inode", "structural regular expressions", "FlashFill"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

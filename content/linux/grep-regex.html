@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>grep and regular expressions · Unix and Linux</title>
+<meta name="description" content="grep and its main options (-i -v -c -n -w -o -r -l -A -B -C -e -q), basic regular expressions (. * ^ $ sets and classes), extended syntax with grep -E (+ ? {} | ()), greedy matching, grep -P, regex versus shell globs, and how grep matches with automata.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=power">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=power" target="_top">Unix and Linux</a><span>›</span><span>Shell Power Tools</span><span>›</span><span>Step 2: Searching and editing text</span><span>›</span><span>grep and regex</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 1 of 2 · Intermediate</div>
+    <h1>grep and regular expressions</h1>
+    <p class="lead">Find exactly the lines you need in files and pipelines with grep, and learn to read and write regular expressions, from a single dot to extended patterns with groups and counts.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#grep-regex" data-topic="cheatsheet" data-h="grep-regex">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#grep" data-l="grep"><span class="n">1</span><span class="t">Finding lines: grep</span></a></li><li><a href="#basic" data-l="basic"><span class="n">2</span><span class="t">Regular expressions: the basic building blocks</span></a></li><li><a href="#extended" data-l="extended"><span class="n">3</span><span class="t">Extended regular expressions: grep -E</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">grep and regex from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="grep" data-l="grep" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>Finding lines: grep</h2>
+<p><code>grep PATTERN FILE</code> prints every line of FILE that contains PATTERN. With no file it reads stdin, so it fits at the end of any pipeline. The name comes from the old ed editor command <code>g/re/p</code>: globally search for a regular expression and print.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>grep word FILE</code></td><td>Lines that contain word (case sensitive)</td><td><code>grep ERROR app.log</code></td></tr><tr><td><code>grep -i word</code></td><td>Ignore upper and lower case</td><td><code>grep -i error app.log</code></td></tr><tr><td><code>grep -v word</code></td><td>Lines that do NOT contain word</td><td><code>grep -v INFO app.log</code></td></tr><tr><td><code>grep -n word</code></td><td>Show line numbers</td><td><code>grep -n milk notes.txt</code></td></tr><tr><td><code>grep -c word</code></td><td>Only count the matching lines</td><td><code>grep -c ERROR app.log</code></td></tr><tr><td><code>grep -w word</code></td><td>Match whole words only</td><td><code>grep -w in poem.txt</code></td></tr><tr><td><code>grep -o pattern</code></td><td>Print only the matched part</td><td><code>grep -o '[0-9]*%' app.log</code></td></tr><tr><td><code>grep -r word DIR</code></td><td>Search every file below DIR</td><td><code>grep -r TODO src</code></td></tr><tr><td><code>grep -l word FILES</code></td><td>Only list the names of files that match</td><td><code>grep -l ERROR logs/*</code></td></tr><tr><td><code>grep -A2 -B1 word</code></td><td>Also show 2 lines After and 1 line Before each match (-C for both)</td><td><code>grep -A2 ERROR app.log</code></td></tr><tr><td><code>grep -e a -e b</code></td><td>Several patterns, a line matching any of them is printed</td><td><code>grep -e apple -e kiwi fruits.txt</code></td></tr><tr><td><code>grep -q word</code></td><td>Print nothing, only set the exit status (0 found, 1 not found)</td><td><code>grep -q root /etc/passwd</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>grep on the server log</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">grep ERROR logs/app.log</span>
+<span class="lx-o">2026-11-23 09:02:40 ERROR payment failed for order 1042
+2026-11-23 09:04:18 ERROR database timeout after 30s</span>
+<span class="lx-cmd">grep -c INFO logs/app.log</span>
+<span class="lx-o">4</span>
+<span class="lx-cmd">grep -v INFO logs/app.log</span>
+<span class="lx-o">2026-11-23 09:01:12 WARN disk 81% full
+2026-11-23 09:02:40 ERROR payment failed for order 1042
+2026-11-23 09:04:18 ERROR database timeout after 30s</span>
+<span class="lx-cmd">grep -n -i 'logged in' logs/app.log</span>
+<span class="lx-o">2:2026-11-23 09:00:05 INFO user asha logged in
+5:2026-11-23 09:03:02 INFO user ravi logged in</span>
+<span class="lx-cmd">grep -A1 WARN logs/app.log</span>
+<span class="lx-o">2026-11-23 09:01:12 WARN disk 81% full
+2026-11-23 09:02:40 ERROR payment failed for order 1042</span>
+<span class="lx-cmd">grep -r ERROR logs</span>
+<span class="lx-o">logs/app.log:2026-11-23 09:02:40 ERROR payment failed for order 1042
+logs/app.log:2026-11-23 09:04:18 ERROR database timeout after 30s</span>
+<span class="lx-cmd">ls -l | grep '^d'</span>
+<span class="lx-o">drwxr-xr-x 2 learner learner 4096 Nov 23 09:30 logs
+drwxr-xr-x 2 learner learner 4096 Nov 23 09:30 photos
+drwxr-xr-x 2 learner learner 4096 Nov 23 09:30 projects
+drwxr-xr-x 2 learner learner 4096 Nov 23 09:30 scripts</span></pre><div class="lx-note">With -r, grep puts the file name in front of each line. ls -l | grep ^d keeps only folders, because their lines start with d.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Put the pattern in single quotes. Then the shell leaves * ? $ and spaces alone and grep receives exactly what you typed.</div></div>
+<div class="vt-talk" hidden>grep is the command engineers type more than almost any other. It reads lines and prints the ones that match a pattern. The name is a fossil from the earliest Unix editor, called ed, where the command g slash r e slash p meant search globally for a regular expression and print. Ken Thompson turned that editor command into a separate program in 1973, and it has been on every Unix system since. The basic use is simple: grep ERROR followed by a log file shows only the error lines. Options make it sharper. Dash i ignores case, dash v shows lines that do not match, dash c counts, dash n numbers the lines and dash r searches a whole folder tree. Dash A and dash B show a few lines after or before each match, which is perfect for seeing what happened just before an error.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="basic" data-l="basic" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Regular expressions: the basic building blocks</h2>
+<p>A <b>regular expression</b> (regex) is a pattern that describes text. Most characters match themselves, and a few have special meanings.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>.</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">any one character</div><div class="fx-n">h.t matches hat, hot and h9t.</div></div><div class="fx"><div class="fx-h"><span>*</span></div><div class="fx-b">the item before, 0 or more times</div><div class="fx-n">lo*l matches ll, lol and loooool.</div></div><div class="fx fx-key"><div class="fx-h"><span>^ and $</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">start and end of the line</div><div class="fx-n">^ERROR matches lines that begin with ERROR. ^$ matches empty lines.</div></div><div class="fx"><div class="fx-h"><span>[abc] [a-z] [^0-9]</span></div><div class="fx-b">one character from a set</div><div class="fx-n">[aeiou] any vowel. [^0-9] any character that is not a digit.</div></div><div class="fx"><div class="fx-h"><span>[[:digit:]] [[:alpha:]] [[:space:]]</span></div><div class="fx-b">named classes</div><div class="fx-n">Work the same in every language setting.</div></div><div class="fx"><div class="fx-h"><span>backslash</span></div><div class="fx-b">make a special character plain</div><div class="fx-n">A backslash before a dot makes it a real dot, so the pattern 1 backslash dot 5 matches 1.5 but not 125.</div></div></div>
+<div class="viz" data-viz="pk" data-pk="lx-regex"></div>
+<div class="lx-run"><div class="lx-rh"><span>Anchors, dots and sets</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">grep '^Asha' marks.csv</span>
+<span class="lx-o">Asha,maths,91
+Asha,science,88</span>
+<span class="lx-cmd">grep 'a$' fruits.txt</span>
+<span class="lx-o">banana</span>
+<span class="lx-cmd">grep 'gr.nd' notes.txt</span>
+<span class="lx-o">Call grandma</span>
+<span class="lx-cmd">grep '^[A-Z]' marks.csv | head -n 2</span>
+<span class="lx-o">Asha,maths,91
+Ravi,science,78</span>
+<span class="lx-cmd">grep '[0-9][0-9]%' logs/app.log</span>
+<span class="lx-o">2026-11-23 09:01:12 WARN disk 81% full</span>
+<span class="lx-cmd">grep -c '^$' poem.txt</span>
+<span class="lx-o">0</span>
+<span class="lx-cmd">grep -o '[[:digit:]]*s$' logs/app.log</span>
+<span class="lx-o">30s</span></pre><div class="lx-note">^$ counts empty lines (there are none in poem.txt). The last command prints only the "30s" at the end of the timeout line.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>A regex star is not the shell star. In a file pattern *.txt means "anything". In a regex * means "repeat the item before it", so .* is the regex for "anything".</div></div>
+<div class="vt-talk" hidden>Regular expressions are a tiny language for describing text, and they are worth learning once, because grep, sed, awk, vim, Python, JavaScript and almost every editor understand them. The idea comes from mathematics. In the nineteen fifties Stephen Kleene described patterns with a star meaning repeat, and in 1968 Ken Thompson published a way to search text with them on a computer. The basics are few. A dot means any one character. A star means repeat the thing before me zero or more times. A hat at the start ties the match to the beginning of the line, and a dollar at the end ties it to the end. Square brackets list a set of allowed characters, such as zero to nine for any digit. One warning: the regex star is not the same as the shell star you met with file names. In a regex, dot star is how you say anything at all.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="extended" data-l="extended" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Extended regular expressions: grep -E</h2>
+<p>With <code>grep -E</code> (extended syntax) a few more symbols become special, which makes patterns shorter and easier to read. In plain grep the same features exist, but need a backslash in front: <code>\+ \? \| \( \) \{ \}</code>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Extended (grep -E)</th><th>Basic (grep)</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td><code>+</code></td><td><code>\+</code></td><td>the item before, 1 or more times</td><td><code>[0-9]+</code> one or more digits</td></tr><tr><td><code>?</code></td><td><code>\?</code></td><td>the item before is optional</td><td><code>colou?r</code> matches color and colour</td></tr><tr><td><code>{3}</code> <code>{2,4}</code></td><td><code>\{3\}</code></td><td>exact number or range of repeats</td><td><code>[0-9]{4}</code> four digits, a year</td></tr><tr><td><code>a|b</code></td><td><code>a\|b</code></td><td>a or b</td><td><code>ERROR|WARN</code></td></tr><tr><td><code>( )</code></td><td><code>\( \)</code></td><td>group items together</td><td><code>(ab)+</code> matches ab, abab</td></tr><tr><td><code>\b</code>, <code>\&lt;</code>, <code>\&gt;</code></td><td>same</td><td>word boundary, start or end of a word</td><td><code>\bcat\b</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Extended patterns at work</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">grep -E 'ERROR|WARN' logs/app.log</span>
+<span class="lx-o">2026-11-23 09:01:12 WARN disk 81% full
+2026-11-23 09:02:40 ERROR payment failed for order 1042
+2026-11-23 09:04:18 ERROR database timeout after 30s</span>
+<span class="lx-cmd">grep -E '^(Asha|Ravi),' marks.csv</span>
+<span class="lx-o">Asha,maths,91
+Ravi,science,78
+Ravi,maths,72
+Asha,science,88</span>
+<span class="lx-cmd">grep -E ',[89][0-9]$' marks.csv</span>
+<span class="lx-o">Asha,maths,91
+Meera,maths,85
+Asha,science,88</span>
+<span class="lx-cmd">grep -Eo '[0-9]{2}:[0-9]{2}:[0-9]{2}' logs/app.log | head -n 3</span>
+<span class="lx-o">09:00:01
+09:00:05
+09:01:12</span>
+<span class="lx-cmd">grep -Eo 'order [0-9]+' logs/app.log</span>
+<span class="lx-o">order 1042</span>
+<span class="lx-cmd">grep 'ERROR\|WARN' logs/app.log | wc -l</span>
+<span class="lx-o">3</span></pre><div class="lx-note">The last line uses basic syntax, where the | needs a backslash. ,[89][0-9]$ finds marks from 80 to 99 at the end of each line.</div></div>
+<details class="deep"><summary>Going deeper: Greedy matching and grep -P</summary><div class="deep-b"><p>Repetition is <b>greedy</b>: <code>a.*b</code> on "a1b2b" matches the whole "a1b2b", not just "a1b". GNU grep also offers <code>grep -P</code> for Perl compatible expressions with extras such as <code>\d</code> for a digit, lazy repeats like <code>.*?</code> and look ahead. It is very common in scripts written by Python and JavaScript programmers, but it is not part of POSIX and may be missing on other systems.</p></div></details>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Hunt through the log&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Show every ERROR line of &lt;code&gt;logs/app.log&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;grep ERROR logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;grep&quot;}, {&quot;out&quot;: &quot;^2026-11-23 09:02:40 ERROR payment failed for order 1042\\n2026-11-23 09:04:18 ERROR database timeout after 30s$&quot;}]}, {&quot;t&quot;: &quot;Count the INFO lines with one option.&quot;, &quot;hint&quot;: &quot;grep -c INFO logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;grep\\s+-c&quot;}, {&quot;out&quot;: &quot;^4$&quot;}]}, {&quot;t&quot;: &quot;Show all lines that are NOT INFO.&quot;, &quot;hint&quot;: &quot;grep -v INFO logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;grep\\s+-v&quot;}, {&quot;out&quot;: &quot;WARN&quot;}]}, {&quot;t&quot;: &quot;Find lines with ERROR or WARN in one extended pattern.&quot;, &quot;hint&quot;: &quot;grep -E &#x27;ERROR|WARN&#x27; logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;grep\\s+(-E|-iE|-Ei)&quot;}, {&quot;out&quot;: &quot;WARN&quot;}, {&quot;out&quot;: &quot;database timeout&quot;}]}, {&quot;t&quot;: &quot;Show the WARN line plus the one line after it.&quot;, &quot;hint&quot;: &quot;grep -A1 WARN logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-A\\s*1|-C\\s*1&quot;}, {&quot;out&quot;: &quot;payment failed&quot;}]}, {&quot;t&quot;: &quot;Print only the order number part (like &lt;code&gt;order 1042&lt;/code&gt;) with grep -o.&quot;, &quot;hint&quot;: &quot;grep -Eo &#x27;order [0-9]+&#x27; logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-[A-Za-z]*o&quot;}, {&quot;out&quot;: &quot;^order 1042$&quot;}]}, {&quot;t&quot;: &quot;List the names of students whose mark is 80 or more, from &lt;code&gt;marks.csv&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;grep -E &#x27;,[89][0-9]$&#x27; marks.csv | cut -d, -f1&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;grep&quot;}, {&quot;out&quot;: &quot;^Asha\\nMeera\\nAsha$&quot;}]}, {&quot;t&quot;: &quot;Search the whole &lt;code&gt;logs&lt;/code&gt; folder for the word timeout.&quot;, &quot;hint&quot;: &quot;grep -r timeout logs&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;grep\\s+-[a-zA-Z]*r&quot;}, {&quot;out&quot;: &quot;logs/app.log:&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Extended regular expressions add a handful of symbols that make patterns much shorter. Plus means one or more, question mark means optional, curly braces give an exact number of repeats, a vertical bar means or, and round brackets group things together. With grep dash E these symbols work directly. In plain grep they exist too, but you must put a backslash in front of each one, which quickly becomes hard to read. So most people simply use grep dash E. With these tools you can describe a date, a time, an order number or an email address in one pattern. For example, four digits, a dash, two digits, a dash, two digits matches a date like the ones in our log file. When you see a long pattern, do not panic. Read it piece by piece from left to right, exactly as the animation in this lesson does.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>grep and regex from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>grep finds lines that contain a pattern. A dot means any character, a star means repeat, ^ is the start of the line and $ the end. grep -E adds + ? | and braces for counts.</p></div><div class="ld-p" data-ld="college" hidden><p>POSIX defines basic (BRE) and extended (ERE) regular expressions. grep selects lines matching any of its patterns, with options for inversion, counting, context and recursion. Matching uses leftmost longest semantics for ERE in POSIX, while Perl style engines use leftmost first with backtracking.</p></div><div class="ld-p" data-ld="masters" hidden><p>Regular expressions without back references describe regular languages and can be matched by finite automata in time linear in the input. Thompson built an NFA in 1968. GNU grep compiles patterns to a DFA, skips quickly to candidate lines with a Boyer and Moore style search for fixed strings, and avoids splitting input into lines until a match is found. Back references (<code>\1</code>) are not regular and force a slower backtracking matcher.</p></div><div class="ld-p" data-ld="research" hidden><p>Backtracking engines can take exponential time on patterns like (a+)+$, which caused real outages, for example the Stack Overflow outage of July 2016 and a Cloudflare outage in July 2019 (ReDoS, regular expression denial of service). Research and modern engines such as RE2 and Rust regex guarantee linear time, and tools such as ripgrep combine them with SIMD string search and parallel directory walking.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the 2019 regex outage</div><p>On 2 July 2019 a single new firewall rule containing the regex fragment <code>.*(?:.*=.*)</code> made CPUs on Cloudflare servers worldwide hit 100 percent, and sites behind it returned errors for about 27 minutes. The pattern caused heavy backtracking. Cloudflare later moved its rules to engines that guarantee linear time. Simple patterns and engines like GNU grep or RE2 avoid this class of bug.</p></div>
+<div class="vt-talk" hidden>Inside, a regular expression is turned into a small machine called a finite automaton, which reads the text one character at a time and never has to go back. Ken Thompson described how to build such a machine in 1968, and GNU grep still uses this approach, together with clever tricks to jump quickly over text that cannot match. That is why grep can search gigabytes in seconds. Some regex engines in programming languages work differently. They try one possibility, and if it fails, go back and try another. For most patterns that is fine, but certain patterns make them try an enormous number of possibilities. In July 2019, one such pattern in a firewall rule pushed Cloudflare servers around the world to full processor load for about twenty seven minutes. Modern engines such as RE2 and the Rust regex library are designed so this cannot happen.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./pipes-filters.html" data-topic="pipes-filters"><small>Previous topic</small><b>Pipes and filters</b></a><a class="next" href="./sed.html" data-topic="sed"><small>Next topic</small><b>sed</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "grep-regex", "topic": "grep-regex", "subject": "linux", "title": "grep and regular expressions", "codes": {}, "quiz": [{"lv": "e", "q": "What does grep ERROR app.log print?", "o": ["The number of errors", "Every line of app.log containing ERROR", "The first error only", "The file name"], "a": 1, "hint": "Lines that match.", "why": "grep prints each matching line."}, {"lv": "e", "q": "Which option makes grep ignore upper and lower case?", "o": ["-v", "-i", "-c", "-n"], "a": 1, "hint": "Ignore case.", "why": "-i ignores case."}, {"lv": "e", "q": "Which option shows the lines that do NOT match?", "o": ["-v", "-x", "-o", "-l"], "a": 0, "hint": "Invert.", "why": "-v inverts the match."}, {"lv": "e", "q": "In a regex, what does ^ at the start mean?", "o": ["Any character", "The start of the line", "Repeat", "Not"], "a": 1, "hint": "Anchor.", "why": "^ anchors the match to the start of the line."}, {"lv": "m", "q": "Which regex matches any single character?", "o": ["*", ".", "?", "$"], "a": 1, "hint": "Dot.", "why": "A dot matches exactly one character."}, {"lv": "m", "q": "Which pattern finds empty lines?", "o": ["^$", "$^", ".*", "[ ]"], "a": 0, "hint": "Start right next to end.", "why": "^$ means nothing between the start and the end."}, {"lv": "m", "q": "What does [^0-9] match?", "o": ["A digit", "Any one character that is not a digit", "The start of a number", "Nothing"], "a": 1, "hint": "A caret inside brackets.", "why": "Inside [ ], a leading ^ negates the set."}, {"lv": "m", "q": "Which command finds lines containing ERROR or WARN?", "o": ["grep 'ERROR|WARN'", "grep -E 'ERROR|WARN'", "grep -v ERROR WARN", "grep ERROR,WARN"], "a": 1, "hint": "Extended syntax.", "why": "In ERE the bar means or. Basic grep needs a backslash before the bar."}, {"lv": "m", "q": "How do you count how many lines contain \"timeout\"?", "o": ["grep -n timeout", "grep -c timeout", "grep -l timeout", "grep -o timeout"], "a": 1, "hint": "Count.", "why": "-c prints the number of matching lines."}, {"lv": "h", "q": "Which regex matches colour and color?", "o": ["colou*r", "colou?r", "colo.r", "col(ou)r"], "a": 1, "hint": "Optional u.", "why": "? makes the u optional (ERE)."}, {"lv": "h", "q": "grep -E '[0-9]{4}-[0-9]{2}' matches which?", "o": ["2026-11", "26-11", "2026/11", "202-611"], "a": 0, "hint": "Four digits, dash, two digits.", "why": "{4} repeats the digit class exactly four times."}, {"lv": "h", "q": "What is the regex for \"anything at all\" (any text)?", "o": ["*", ".*", "?", "[*]"], "a": 1, "hint": "Any character, repeated.", "why": ". any character, * repeated zero or more times."}, {"lv": "x", "q": "Why can some regex engines hang on patterns like (a+)+$, while GNU grep does not?", "o": ["GNU grep is newer", "Backtracking engines may try exponentially many paths, automaton based matchers are linear", "Because of -E", "Because of UTF-8"], "a": 1, "hint": "Automata versus backtracking.", "why": "DFA style matching reads each character once."}], "calc": [{"lv": "e", "q": "logs/app.log has 7 lines and 4 contain INFO. How many lines does grep -v INFO print?", "ans": "3", "hint": "The rest.", "steps": ["Total: 7.", "Matching INFO: 4.", "<span class=\"eq\">7 − 4 = 3<\/span>"]}, {"lv": "e", "q": "How many lines of fruits.txt (mango, apple, banana, apple, cherry, mango, apple, kiwi) does grep apple print?", "ans": "3", "hint": "Count the apples.", "steps": ["apple appears on lines 2, 4 and 7.", "Each match is one line.", "<span class=\"eq\">3 lines<\/span>"]}, {"lv": "m", "q": "How many different strings does [0-9]{3} match?", "ans": "1000", "hint": "Ten choices, three times.", "steps": ["Each position: 10 digits.", "Three positions.", "<span class=\"eq\">10³ = 1000 strings<\/span>"]}, {"lv": "m", "q": "How many different strings does [ab][cd]? match?", "ans": "6", "hint": "The second part is optional.", "steps": ["Without the optional part: 2 (a, b).", "With it: 2 × 2 = 4.", "<span class=\"eq\">2 + 4 = 6 strings<\/span>"]}, {"lv": "m", "q": "grep -A2 ERROR on a log where 2 errors are 10 lines apart. How many lines are printed in total (no separator lines counted)?", "ans": "6", "hint": "Each match plus two after.", "steps": ["Per match: 1 + 2 = 3 lines.", "The groups do not overlap.", "<span class=\"eq\">2 × 3 = 6 lines<\/span>"]}, {"lv": "h", "q": "A backtracking engine tries 2ⁿ paths for a bad pattern on n characters. With 1 million paths per second, about how many seconds for n = 30 (2³⁰ ≈ 1.07 billion)?", "ans": "1074", "hint": "Paths divided by speed.", "steps": ["Paths: 2³⁰ ≈ 1,073,741,824.", "Speed: 1,000,000 per second.", "<span class=\"eq\">≈ 1074 seconds, almost 18 minutes<\/span>"]}], "assign": [], "must": [["grep", "grep PATTERN FILE prints matching lines. -i case, -v invert, -c count, -n numbers, -w words, -o only the match."], ["Searching wider", "-r searches folders, -l lists file names, -A -B -C add context, -q only sets the exit status."], ["Basic regex", ". any char, * repeat, ^ start, $ end, [abc] set, [^abc] not in set, a backslash makes a special character plain. Quote patterns."], ["Extended regex", "grep -E: + one or more, ? optional, {n,m} counts, | or, ( ) groups. Basic grep needs backslashes."], ["Regex is not glob", "The shell * means anything, the regex * means repeat. .* is \"anything\" in a regex."]], "summary": "<p>grep prints matching lines, with -i -v -c -n -r -o and context options. Regex: . * ^ $ [ ], and with -E also + ? {} | ( ). Quote patterns and read them piece by piece.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

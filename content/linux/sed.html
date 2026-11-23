@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sed: the stream editor · Unix and Linux</title>
+<meta name="description" content="The sed cycle and pattern space, the s command with g, N, I and p flags, &amp; and capture groups with -E, other delimiters, addresses, ranges and negation, d p q i a c y and =, -n, -i and -i.bak, the macOS difference, the hold space, and where sed came from.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=power">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=power" target="_top">Unix and Linux</a><span>›</span><span>Shell Power Tools</span><span>›</span><span>Step 2: Searching and editing text</span><span>›</span><span>sed</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 2 of 2 · Intermediate</div>
+    <h1>sed: the stream editor</h1>
+    <p class="lead">Change text without opening an editor: find and replace with regular expressions, delete or print chosen lines, and safely edit files in place, line by line, as the text streams past.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sed" data-topic="cheatsheet" data-h="sed">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#idea" data-l="idea"><span class="n">1</span><span class="t">A stream editor: how sed works</span></a></li><li><a href="#subst" data-l="subst"><span class="n">2</span><span class="t">Find and replace: the s command</span></a></li><li><a href="#address" data-l="address"><span class="n">3</span><span class="t">Choosing lines: addresses, d, p and friends</span></a></li><li><a href="#inplace" data-l="inplace"><span class="n">4</span><span class="t">Editing files in place: sed -i</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">sed from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="idea" data-l="idea" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>A stream editor: how sed works</h2>
+<p><code>sed</code> (stream editor) changes text as it flows past, without opening an editor. It reads its input one line at a time into a working area called the <b>pattern space</b>, runs your script on that line, prints the result and moves on. By default it prints to stdout and leaves the file untouched.</p>
+<div class="walk"><div class="walk-h"><span>One sed cycle, repeated for every line</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Read the next line into the pattern space (without its newline).</li><li>Run each command of the script in order, if its address selects this line.</li><li>At the end of the script print the pattern space, unless -n was given.</li><li>Empty the pattern space and start again with the next line.</li></ol></div>
+<div class="viz" data-viz="pk" data-pk="lx-sed"></div>
+<div class="lx-run"><div class="lx-rh"><span>Three small scripts</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">sed 's/apple/APPLE/' fruits.txt</span>
+<span class="lx-o">mango
+APPLE
+banana
+APPLE
+cherry
+mango
+APPLE
+kiwi</span>
+<span class="lx-cmd">sed '1d' marks.csv</span>
+<span class="lx-o">Asha,maths,91
+Ravi,science,78
+Meera,maths,85
+John,english,67
+Ravi,maths,72
+Asha,science,88</span>
+<span class="lx-cmd">sed -n '2,3p' poem.txt</span>
+<span class="lx-o">How I wonder what you are
+Up above the world so high</span></pre><div class="lx-note">The first changes the first apple on each line. The second deletes line 1, the header. The third prints only lines 2 and 3, because -n switches off the automatic printing.</div></div>
+<div class="vt-talk" hidden>sed is short for stream editor. Lee McMahon wrote it at Bell Labs in the early nineteen seventies, so that the editing commands people typed by hand in the ed editor could be applied automatically to text flowing through a pipe. The idea is a loop. sed reads one line into a working area called the pattern space, runs your little script on it, prints the result, and moves on to the next line. It never needs the whole file in memory, so it handles huge files easily. By default it prints to the screen and leaves the original file alone, which makes it safe to experiment. Watch the animation in this lesson closely, because once you understand the cycle, every sed command becomes easy to predict.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="subst" data-l="subst" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Find and replace: the s command</h2>
+<p>The command you will use most is <b>s</b> for substitute: <code>s/OLD/NEW/FLAGS</code>. OLD is a regular expression, NEW is the replacement text.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>s/cat/dog/</code></td><td>Replace the first cat on each line</td><td><code>sed 's/cat/dog/' pets.txt</code></td></tr><tr><td><code>s/cat/dog/g</code></td><td>Replace every cat on each line (global)</td><td><code>sed 's/a/A/g' notes.txt</code></td></tr><tr><td><code>s/cat/dog/2</code></td><td>Replace only the second match on each line</td><td><code>sed 's/a/X/2' fruits.txt</code></td></tr><tr><td><code>s/cat/dog/I</code></td><td>Ignore case (GNU)</td><td><code>sed 's/error/ERR/I' app.log</code></td></tr><tr><td><code>s/milk/oat &amp;/</code></td><td>&amp; in NEW stands for the whole match</td><td><code>sed 's/[0-9]*%/(&amp;)/' app.log</code></td></tr><tr><td><code>s|/usr|/opt|</code></td><td>Any character can be the delimiter, handy for paths</td><td><code>sed 's|/home|/srv|' file</code></td></tr><tr><td><code>s/^/# /</code></td><td>Insert text at the start of every line</td><td><code>sed 's/^/# /' config</code></td></tr><tr><td><code>s/ *$//</code></td><td>Remove spaces at the end of lines</td><td><code>sed 's/ *$//' file</code></td></tr><tr><td><code>-E 's/(a)(b)/\2\1/'</code></td><td>With -E, ( ) capture groups, <code>\1</code> and <code>\2</code> put them back</td><td><code>sed -E 's/(.*),(.*)/\2 \1/' f</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Substitutions for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">sed 's/a/A/' notes.txt</span>
+<span class="lx-o">Buy milk
+CAll grandma
+Finish the Linux lesson</span>
+<span class="lx-cmd">sed 's/a/A/g' notes.txt</span>
+<span class="lx-o">Buy milk
+CAll grAndmA
+Finish the Linux lesson</span>
+<span class="lx-cmd">sed 's/milk/oat &amp;/' notes.txt</span>
+<span class="lx-o">Buy oat milk
+Call grandma
+Finish the Linux lesson</span>
+<span class="lx-cmd">sed 's/^/&gt; /' poem.txt</span>
+<span class="lx-o">&gt; Twinkle twinkle little star
+&gt; How I wonder what you are
+&gt; Up above the world so high
+&gt; Like a diamond in the sky</span>
+<span class="lx-cmd">sed 's|/home/|/srv/|' /etc/passwd | tail -n 1</span>
+<span class="lx-o">learner:x:1000:1000::/srv/learner:/bin/bash</span>
+<span class="lx-cmd">sed -E 's/([0-9]{4})-([0-9]{2})-([0-9]{2})/\3.\2.\1/' logs/app.log | head -n 2</span>
+<span class="lx-o">23.11.2026 09:00:01 INFO server started on port 8080
+23.11.2026 09:00:05 INFO user asha logged in</span></pre><div class="lx-note">Without g only the first match on each line changes. The last command reorders the date into day.month.year using three capture groups.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Put sed scripts in single quotes, so the shell does not touch $, * or backslashes. If the replacement itself contains the delimiter, choose another one: s|a/b|c/d| is easier to read than escaping every slash with a backslash.</div></div>
+<div class="vt-talk" hidden>The s command, for substitute, is the heart of sed. You write s, slash, what to find, slash, what to put instead, slash. That replaces the first match on each line. Add g at the end, for global, and every match on the line is replaced. The part you search for is a regular expression, so everything from the grep chapter works here. Two tricks make s very powerful. An ampersand in the replacement means the whole text that matched, so you can wrap or extend it instead of retyping it. And with dash capital E, round brackets capture parts of the match, which you can put back in any order with backslash one, backslash two and so on. That is how people reformat dates or swap columns in thousands of lines in one go. If your text contains slashes, such as file paths, use a different delimiter, like a vertical bar.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="address" data-l="address" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Choosing lines: addresses, d, p and friends</h2>
+<p>Any command can have an <b>address</b> in front of it, which chooses the lines it works on. Without an address the command runs on every line.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Address</th><th>Selects</th><th>Example</th></tr></thead><tbody><tr><td><code>3</code></td><td>line 3</td><td><code>sed '3d'</code></td></tr><tr><td><code>$</code></td><td>the last line</td><td><code>sed -n '$p'</code></td></tr><tr><td><code>/regex/</code></td><td>lines matching the regex</td><td><code>sed '/^#/d'</code> drops comment lines</td></tr><tr><td><code>2,5</code></td><td>lines 2 to 5</td><td><code>sed -n '2,5p'</code></td></tr><tr><td><code>/start/,/end/</code></td><td>from a line matching start to the next line matching end</td><td><code>sed '/BEGIN/,/END/d'</code></td></tr><tr><td><code>addr!</code></td><td>every line NOT selected</td><td><code>sed '/maths/!d'</code> keeps maths lines</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>d</code></td><td>Delete the line (nothing printed, next cycle starts)</td><td><code>sed '/^$/d' file</code></td></tr><tr><td><code>p</code></td><td>Print the line now (use with -n)</td><td><code>sed -n '/ERROR/p' app.log</code></td></tr><tr><td><code>q</code></td><td>Quit after this line</td><td><code>sed '10q' big.log</code></td></tr><tr><td><code>i\ text</code></td><td>Insert a line before</td><td><code>sed '1i\ name,score' data</code></td></tr><tr><td><code>a\ text</code></td><td>Append a line after</td><td><code>sed '$a\ END' file</code></td></tr><tr><td><code>c\ text</code></td><td>Change (replace) the whole line</td><td><code>sed '3c\ new line' file</code></td></tr><tr><td><code>y/abc/xyz/</code></td><td>Translate characters, like tr</td><td><code>sed 'y/abc/ABC/' file</code></td></tr><tr><td><code>=</code></td><td>Print the line number</td><td><code>sed -n '$=' file counts lines</code></td></tr><tr><td><code>cmd1; cmd2</code></td><td>Several commands, or -e cmd1 -e cmd2</td><td><code>sed '/INFO/d; s/ERROR/ALERT/'</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Addresses at work</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">sed -n '/ERROR/p' logs/app.log</span>
+<span class="lx-o">2026-11-23 09:02:40 ERROR payment failed for order 1042
+2026-11-23 09:04:18 ERROR database timeout after 30s</span>
+<span class="lx-cmd">sed '/INFO/d' logs/app.log</span>
+<span class="lx-o">2026-11-23 09:01:12 WARN disk 81% full
+2026-11-23 09:02:40 ERROR payment failed for order 1042
+2026-11-23 09:04:18 ERROR database timeout after 30s</span>
+<span class="lx-cmd">sed -n '$p' poem.txt</span>
+<span class="lx-o">Like a diamond in the sky</span>
+<span class="lx-cmd">sed '/maths/!d' marks.csv</span>
+<span class="lx-o">Asha,maths,91
+Meera,maths,85
+Ravi,maths,72</span>
+<span class="lx-cmd">sed '/WARN/,/ravi/d' logs/app.log</span>
+<span class="lx-o">2026-11-23 09:00:01 INFO server started on port 8080
+2026-11-23 09:00:05 INFO user asha logged in
+2026-11-23 09:04:18 ERROR database timeout after 30s
+2026-11-23 09:05:00 INFO backup finished</span>
+<span class="lx-cmd">sed '1i\Shopping list:' notes.txt</span>
+<span class="lx-o">Shopping list:
+Buy milk
+Call grandma
+Finish the Linux lesson</span>
+<span class="lx-cmd">sed -n '$=' fruits.txt</span>
+<span class="lx-o">8</span>
+<span class="lx-cmd">sed '2q' poem.txt</span>
+<span class="lx-o">Twinkle twinkle little star
+How I wonder what you are</span></pre><div class="lx-note">/WARN/,/ravi/d deletes a block from the WARN line down to the line with ravi. sed -n '$=' prints the number of the last line, which is the line count.</div></div>
+<div class="vt-talk" hidden>Every sed command can be aimed at certain lines with an address. A number picks that line, and a dollar sign picks the last one. A regular expression between slashes picks every line that matches. Two addresses with a comma make a range, for example from the line containing BEGIN to the line containing END, which is perfect for removing a whole block from a configuration file. An exclamation mark after the address flips it, so the command runs on all the other lines. The commands themselves are short letters. d deletes the line, p prints it, q stops sed early, and i, a and c insert, append or change whole lines. A very common pair is dash n with p. Dash n turns off the automatic printing, and p prints only the lines you chose, which makes sed work like grep, but with ranges and line numbers as well.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="inplace" data-l="inplace" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Editing files in place: sed -i</h2>
+<p>sed normally writes to stdout. <code>sed -i</code> writes the result back into the file instead. GNU sed does this by writing a temporary file and renaming it over the original, so the old content is gone unless you ask for a backup.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>sed -i 's/a/b/' FILE</code></td><td>Change FILE in place (GNU sed)</td><td><code>sed -i 's/8080/9090/' app.conf</code></td></tr><tr><td><code>sed -i.bak 's/a/b/' FILE</code></td><td>Change FILE and keep the original as FILE.bak</td><td><code>sed -i.bak 's/old/new/' site.conf</code></td></tr><tr><td><code>sed -i '' 's/a/b/' FILE</code></td><td>The same on macOS and BSD, where -i needs a suffix argument (empty here)</td><td><code>sed -i '' 's/x/y/' f</code></td></tr><tr><td><code>sed -i '/^#/d' FILE</code></td><td>Delete all comment lines from FILE</td><td><code>sed -i '/^#/d' list.txt</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Change a file and keep a backup</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cp notes.txt todo.txt</span>
+<span class="lx-cmd">sed -i.bak 's/grandma/the doctor/' todo.txt</span>
+<span class="lx-cmd">cat todo.txt</span>
+<span class="lx-o">Buy milk
+Call the doctor
+Finish the Linux lesson</span>
+<span class="lx-cmd">cat todo.txt.bak</span>
+<span class="lx-o">Buy milk
+Call grandma
+Finish the Linux lesson</span>
+<span class="lx-cmd">sed -i -e 's/Buy/Get/' -e '$a\Walk the dog' todo.txt</span>
+<span class="lx-cmd">cat todo.txt</span>
+<span class="lx-o">Get milk
+Call the doctor
+Finish the Linux lesson
+Walk the dog</span></pre><div class="lx-note">The .bak file holds the version from before the change. Two -e scripts run one after the other on each line.</div></div>
+<div class="walk"><div class="walk-h"><span>A safe routine for editing real configuration files</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Run the sed command without -i first and read the output.</li><li>Check that only the intended lines changed, for example with diff: <code>sed 's/a/b/' f | diff f -</code>.</li><li>Run it again with -i.bak, so a copy of the original remains.</li><li>Test the service, then delete the .bak file when you are happy.</li></ol></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Edit text with sed&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Print &lt;code&gt;notes.txt&lt;/code&gt; with every lower case a changed to A.&quot;, &quot;hint&quot;: &quot;sed &#x27;s/a/A/g&#x27; notes.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;sed&quot;}, {&quot;out&quot;: &quot;CAll grAndmA&quot;}]}, {&quot;t&quot;: &quot;Print &lt;code&gt;marks.csv&lt;/code&gt; without its first line, using sed.&quot;, &quot;hint&quot;: &quot;sed &#x27;1d&#x27; marks.csv&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;sed&quot;}, {&quot;out&quot;: &quot;^Asha,maths,91&quot;}]}, {&quot;t&quot;: &quot;Print only line 3 of &lt;code&gt;poem.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;sed -n &#x27;3p&#x27; poem.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;sed\\s+-n&quot;}, {&quot;out&quot;: &quot;^Up above the world so high$&quot;}]}, {&quot;t&quot;: &quot;Show &lt;code&gt;logs/app.log&lt;/code&gt; without its INFO lines.&quot;, &quot;hint&quot;: &quot;sed &#x27;/INFO/d&#x27; logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;sed&quot;}, {&quot;out&quot;: &quot;^2026-11-23 09:01:12 WARN&quot;}]}, {&quot;t&quot;: &quot;Print the log with every date rewritten from 2026-11-23 to 23.11.2026 (use -E and groups).&quot;, &quot;hint&quot;: &quot;sed -E &#x27;s/([0-9]{4})-([0-9]{2})-([0-9]{2})/\\3.\\2.\\1/&#x27; logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;sed\\s+-E&quot;}, {&quot;out&quot;: &quot;^23\\.11\\.2026 09:00:01&quot;}]}, {&quot;t&quot;: &quot;Change milk to bread inside &lt;code&gt;notes.txt&lt;/code&gt; itself, keeping a backup &lt;code&gt;notes.txt.bak&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;sed -i.bak &#x27;s/milk/bread/&#x27; notes.txt&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;notes.txt&quot;, &quot;Buy bread&quot;]}, {&quot;has&quot;: [&quot;notes.txt.bak&quot;, &quot;Buy milk&quot;]}]}, {&quot;t&quot;: &quot;Put &lt;code&gt;# &lt;/code&gt; in front of every line of &lt;code&gt;poem.txt&lt;/code&gt;, in place.&quot;, &quot;hint&quot;: &quot;sed -i &#x27;s/^/# /&#x27; poem.txt&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;poem.txt&quot;, &quot;# Twinkle&quot;]}, {&quot;has&quot;: [&quot;poem.txt&quot;, &quot;# Like a diamond&quot;]}]}]}"></div>
+<div class="vt-talk" hidden>When you are sure the output is right, dash i makes sed write the change back into the file itself. GNU sed does this safely by writing a new file and renaming it over the old one, but the old content is then gone. So it is good practice to write dash i dot bak, which keeps a copy of the original next to it. Watch out for one difference between systems. On macOS and BSD, dash i must be followed by a suffix, so people write dash i and an empty pair of quotes there. A script written on Linux can therefore fail on a Mac. Professionals use a simple routine: run the command without dash i, compare the result, then run it again with a backup, and test the service before removing the backup. That habit has saved many production servers.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>sed from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>sed changes text line by line. s/old/new/ replaces the first match, s/old/new/g every match, d deletes lines, -n with p prints chosen lines, and -i saves the change into the file.</p></div><div class="ld-p" data-ld="college" hidden><p>sed applies a script to each input line in the pattern space. Commands take zero, one or two addresses (line numbers, $, regular expressions, ranges, negation). The s command supports flags g, p, N and I, &amp; and back references, and -E selects extended regular expressions.</p></div><div class="ld-p" data-ld="masters" hidden><p>Besides the pattern space sed has a <b>hold space</b>, a second buffer. h and H copy or append the pattern space to it, g and G copy it back, x swaps them, and N appends the next input line. With branches (b, t, labels) sed is Turing complete: people have written a calculator and even games in it. GNU sed -i writes to a temporary file in the same folder and renames it, so the file gets a new inode and hard links to the old one keep the old content.</p></div><div class="ld-p" data-ld="research" hidden><p>sed belongs to the family of line based editors that started with QED and ed in the 1960s and 1970s. Structural regular expressions (Rob Pike, 1987, used in the sam editor) generalised the idea from lines to arbitrary text structure. Research on program synthesis, such as FlashFill in Excel (Gulwani, 2011), learns such text transformations from a few examples instead of a hand written script.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the domain move</div><p>A company moves its website from http to https and from old.example.com to example.com. An engineer previews the change on 300 HTML files with <code>grep -rl old.example.com site/ | xargs sed -n 's|http://old.example.com|https://example.com|gp'</code>, checks the result, then runs the same with <code>sed -i.bak</code>. Five minutes of work instead of opening 300 files by hand.</p></div>
+<div class="vt-talk" hidden>Most people only ever use the substitute and delete commands of sed, but there is more inside. Besides the pattern space, sed has a second buffer called the hold space, where it can keep text while it reads further lines. With commands that copy between the two buffers and simple jumps, sed can carry out any computation at all. Hobbyists have written a calculator and even small games in it, just to prove the point. A practical detail matters for system administrators: sed dash i writes a fresh file and renames it, so the edited file is technically a new file. sed comes from a long line of editors that started with QED and ed in the nineteen sixties and seventies. Today researchers go a step further with programs that learn a text transformation from just a few examples, like the Flash Fill feature in Excel, created by Sumit Gulwani at Microsoft Research.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./grep-regex.html" data-topic="grep-regex"><small>Previous topic</small><b>grep and regex</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sed", "topic": "sed", "subject": "linux", "title": "sed: the stream editor", "codes": {}, "quiz": [{"lv": "e", "q": "What does sed 's/cat/dog/' do on each line?", "o": ["Deletes cat", "Replaces the first cat with dog", "Replaces every cat", "Counts cats"], "a": 1, "hint": "Substitute once.", "why": "Without g only the first match on each line is replaced."}, {"lv": "e", "q": "Which flag replaces every match on a line?", "o": ["p", "g", "i", "n"], "a": 1, "hint": "Global.", "why": "g makes the substitution global within the line."}, {"lv": "e", "q": "Does sed change the file by default?", "o": ["Yes, always", "No, it prints the result to stdout", "Only for .txt files", "Only as root"], "a": 1, "hint": "Stream editor.", "why": "Only -i writes back into the file."}, {"lv": "e", "q": "Which command deletes line 1?", "o": ["sed '1d'", "sed 'd1'", "sed '1p'", "sed -n 1"], "a": 0, "hint": "Address then command.", "why": "The address 1 selects line 1, d deletes it."}, {"lv": "m", "q": "Which prints only lines that contain ERROR?", "o": ["sed '/ERROR/p'", "sed -n '/ERROR/p'", "sed '/ERROR/d'", "sed 's/ERROR//'"], "a": 1, "hint": "Turn off auto print.", "why": "Without -n every line would print and the matches twice."}, {"lv": "m", "q": "In sed 's/[0-9]*%/(&)/', what does & stand for?", "o": ["A literal ampersand", "The whole text that matched", "The line number", "A newline"], "a": 1, "hint": "The match.", "why": "& in the replacement is the matched text."}, {"lv": "m", "q": "You must replace /usr/local with /opt. Which is easiest to read?", "o": ["Put a backslash before every slash of the paths", "sed 's|/usr/local|/opt|'", "sed 'y/usr/opt/'", "sed '/usr/d'"], "a": 1, "hint": "Change the delimiter.", "why": "Any character can follow s as the delimiter, so the slashes in the paths need no escaping."}, {"lv": "m", "q": "What does sed '/maths/!d' marks.csv print?", "o": ["Lines without maths", "Only the lines containing maths", "Nothing", "Line numbers"], "a": 1, "hint": "! inverts the address.", "why": "d runs on every line that does not match, so only maths lines remain."}, {"lv": "m", "q": "What does sed -i.bak 's/a/b/' f do?", "o": ["Prints the change", "Changes f and saves the original as f.bak", "Creates f.bak only", "Fails"], "a": 1, "hint": "In place with backup.", "why": "-i with a suffix keeps a backup copy."}, {"lv": "h", "q": "Which command prints the number of lines in a file?", "o": ["sed -n '$='", "sed '$d'", "sed -n '1p'", "sed '='"], "a": 0, "hint": "Line number of the last line.", "why": "= prints the line number, $ selects the last line."}, {"lv": "h", "q": "With sed -E, which brackets capture part of a match so the replacement can reuse it?", "o": ["( )", "[ ]", "{ }", "< >"], "a": 0, "hint": "Groups.", "why": "Round brackets capture a group, and a backslash with its number puts it back."}, {"lv": "h", "q": "A script written for GNU sed uses sed -i 's/a/b/' f. What happens on macOS?", "o": ["It works the same", "macOS sed takes the script as the backup suffix and fails or misbehaves, it needs sed -i ''", "It deletes f", "It asks for a password"], "a": 1, "hint": "BSD sed -i needs an argument.", "why": "On BSD and macOS the suffix argument of -i is required."}, {"lv": "x", "q": "What is the sed hold space?", "o": ["A swap file", "A second buffer that keeps text between cycles, used with h, H, g, G and x", "The output file", "The regex cache"], "a": 1, "hint": "Second buffer.", "why": "The hold space lets sed work across lines."}], "calc": [{"lv": "e", "q": "A file has 50 lines. How many lines does sed '1d' print?", "ans": "49", "hint": "One line fewer.", "steps": ["Lines: 50.", "Deleted: 1.", "<span class=\"eq\">50 − 1 = 49<\/span>"]}, {"lv": "e", "q": "How many lines does sed -n '10,24p' print from a 100 line file?", "ans": "15", "hint": "Count both ends.", "steps": ["From line 10 to line 24.", "Count = 24 − 10 + 1.", "<span class=\"eq\">15 lines<\/span>"]}, {"lv": "m", "q": "The line 'banana' goes through sed 's/a/X/g'. How many X characters are in the result?", "ans": "3", "hint": "Count the a letters.", "steps": ["banana has the letters b a n a n a.", "Every a becomes X with g.", "<span class=\"eq\">3 X characters: bXnXnX<\/span>"]}, {"lv": "m", "q": "Same line, but sed 's/a/X/2'. Which position (1 to 6) holds the X?", "ans": "4", "hint": "Only the second a.", "steps": ["The a letters are at positions 2, 4 and 6.", "Flag 2 replaces only the second one.", "<span class=\"eq\">Position 4: banXna<\/span>"]}, {"lv": "m", "q": "A config has 120 lines, 35 of them comments starting with #, and 10 empty lines. How many lines does sed -e '/^#/d' -e '/^$/d' print?", "ans": "75", "hint": "Remove both kinds.", "steps": ["Comment lines: 35.", "Empty lines: 10.", "<span class=\"eq\">120 − 35 − 10 = 75 lines<\/span>"]}, {"lv": "h", "q": "sed -i.bak runs on 300 files of 40 KB each. How many megabytes of backups appear (1 MB = 1000 KB)?", "ans": "12", "hint": "One backup per file.", "steps": ["Backups: 300 files.", "Each 40 KB: 300 × 40 = 12,000 KB.", "<span class=\"eq\">12,000 KB = 12 MB<\/span>"]}], "assign": [], "must": [["Cycle", "sed reads a line into the pattern space, runs the script, prints it (unless -n), and repeats. The file is not changed without -i."], ["Substitute", "s/old/new/ first match, /g all, /2 the second, /I ignore case. & is the match. With -E, ( ) capture groups that a backslash and a number put back."], ["Addresses", "3, $, /regex/, 2,5 and /a/,/b/ ranges, ! to invert. sed -n '/x/p' works like grep."], ["Commands", "d delete, p print, q quit, i a c insert, append, change, y translate, = line number. Give several with -e or separate them with a semicolon."], ["In place", "sed -i edits the file, sed -i.bak keeps a backup. macOS needs sed -i ''. Preview without -i first."]], "summary": "<p>sed runs a script on each line. s/old/new/g replaces, addresses choose lines, d deletes, -n with p prints chosen lines, and -i.bak edits the file with a backup.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>
