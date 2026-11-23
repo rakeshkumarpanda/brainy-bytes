@@ -1646,5 +1646,5 @@ T = t.finish({
     'parts': PARTS, 'info': INFO, 'real': REAL, 'say': SAY, 'quiz': QUIZ, 'calc': CALC, 'talk': TALK,
     'viz': VIZ_JS, 'css': '',
     'prev': ('dynamic-programming', 'dynamic-programming', '🧠 Dynamic programming 1'),
-    'next': None,
+    'next': ('advanced-strings', 'advanced-strings', '🧵 Advanced strings'),
 })
