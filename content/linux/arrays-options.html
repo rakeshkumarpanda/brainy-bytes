@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arrays and command-line options · Unix and Linux</title>
+<meta name="description" content="Indexed arrays with indexes, length, appends, unset, slices, negative indexes and gaps, &quot;${a[@]}&quot; versus &quot;${a[*]}&quot;, associative arrays with declare -A and word counting, filling arrays from globs, mapfile and read -a, per-element expansion, passing arrays to functions, sorting, getopts with OPTARG, OPTIND, the leading colon and usage messages, and long options with while and case.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=scripting">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=scripting" target="_top">Unix and Linux</a><span>›</span><span>Shell Scripting</span><span>›</span><span>Step 3: Functions and data</span><span>›</span><span>Arrays and options</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 2 of 2 · Intermediate</div>
+    <h1>Arrays and command-line options</h1>
+    <p class="lead">Keep lists safely in arrays, look values up by name with associative arrays, fill and join arrays, and give your scripts real options with getopts.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#arrays-options" data-topic="cheatsheet" data-h="arrays-options">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#indexed" data-l="indexed"><span class="n">1</span><span class="t">Indexed arrays: many values under one name</span></a></li><li><a href="#assoc" data-l="assoc"><span class="n">2</span><span class="t">Associative arrays: values looked up by name</span></a></li><li><a href="#fill" data-l="fill"><span class="n">3</span><span class="t">Filling, joining and passing arrays</span></a></li><li><a href="#options" data-l="options"><span class="n">4</span><span class="t">Command-line options with getopts</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Arrays and options from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="indexed" data-l="indexed" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Indexed arrays: many values under one name</h2>
+<p>An <b>array</b> holds a list of values under one name. Each value has an <b>index</b>, starting at 0. Arrays keep values with spaces intact, which plain strings cannot do.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>a=(x "y z" w)</code></td><td>Create an array with three elements</td><td><code>colours=(red "dark green" blue)</code></td></tr><tr><td><code>${a[i]}</code></td><td>One element (index from 0, negative counts from the end)</td><td><code>echo "${colours[-1]}"</code></td></tr><tr><td><code>"${a[@]}"</code></td><td>All elements, each as its own word</td><td><code>for c in "${colours[@]}"; do ...</code></td></tr><tr><td><code>${#a[@]}</code></td><td>Number of elements</td><td><code>echo ${#colours[@]}</code></td></tr><tr><td><code>${!a[@]}</code></td><td>The indexes that exist</td><td><code>echo ${!colours[@]}</code></td></tr><tr><td><code>a+=(v)</code></td><td>Append one or more elements</td><td><code>colours+=(pink)</code></td></tr><tr><td><code>a[i]=v</code></td><td>Set one element</td><td><code>colours[0]=crimson</code></td></tr><tr><td><code>unset "a[i]"</code></td><td>Remove one element (the others keep their index)</td><td><code>unset "colours[1]"</code></td></tr><tr><td><code>"${a[@]:s:n}"</code></td><td>A slice: n elements from index s</td><td><code>echo "${colours[@]:1:2}"</code></td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-array"></div>
+<div class="lx-run"><div class="lx-rh"><span>Indexed arrays, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">colours=(red "dark green" blue)</span>
+<span class="lx-cmd">echo "count: ${#colours[@]}, first: ${colours[0]}, last: ${colours[-1]}"</span>
+<span class="lx-o">count: 3, first: red, last: blue</span>
+<span class="lx-cmd">for c in "${colours[@]}"; do echo "[$c]"; done</span>
+<span class="lx-o">[red]
+[dark green]
+[blue]</span>
+<span class="lx-cmd">for c in ${colours[@]}; do echo "&lt;$c&gt;"; done</span>
+<span class="lx-o">&lt;red&gt;
+&lt;dark&gt;
+&lt;green&gt;
+&lt;blue&gt;</span>
+<span class="lx-cmd">colours+=(pink)</span>
+<span class="lx-cmd">colours[9]=black</span>
+<span class="lx-cmd">echo "indexes: ${!colours[@]}"</span>
+<span class="lx-o">indexes: 0 1 2 3 9</span>
+<span class="lx-cmd">unset "colours[1]"</span>
+<span class="lx-cmd">echo "after unset: ${#colours[@]} elements, indexes ${!colours[@]}"</span>
+<span class="lx-o">after unset: 4 elements, indexes 0 2 3 9</span>
+<span class="lx-cmd">echo "slice: ${colours[@]:1:2}"</span>
+<span class="lx-o">slice: blue pink</span>
+<span class="lx-cmd">packed=("${colours[@]}")</span>
+<span class="lx-cmd">echo "packed indexes: ${!packed[@]}"</span>
+<span class="lx-o">packed indexes: 0 1 2 3</span>
+<span class="lx-cmd">declare -p packed</span>
+<span class="lx-o">declare -a packed=([0]="red" [1]="blue" [2]="pink" [3]="black")</span></pre><div class="lx-note">Quoted "${colours[@]}" kept dark green as one item, the unquoted form split it. Index 9 was allowed even though 4 to 8 do not exist. After unset the other indexes stayed where they were. Copying into a new array packed the values into 0, 1, 2 and 3. declare -p prints an array in a form you could paste back into bash.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>${#a[@]} counts elements, it is not the highest index plus one. Loop over "${a[@]}" for values or over "${!a[@]}" for indexes, never from 0 to the length minus 1, because arrays can have gaps.</div></div>
+<div class="vt-talk" hidden>An array stores a list of values under a single name. You create one with an equals sign and round brackets around the values, and quotes keep a value with spaces as one element. Each element has a number called its index, and the first index is zero. To read one element, write dollar, a brace, the name, the index in square brackets, and a closing brace. A negative index counts from the end, so minus one is the last element. Dollar brace name, square brackets with an at sign, all inside double quotes, gives every element as a separate word, which is the safe way to loop. A hash in front gives the number of elements, and an exclamation mark gives the indexes. Plus equals appends, and unset removes one element. Bash arrays can have gaps: removing an element does not move the others, and you may set index nine on a four element array. The animation draws the boxes so you can watch this happen.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="assoc" data-l="assoc" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Associative arrays: values looked up by name</h2>
+<p>An <b>associative array</b> uses text keys instead of numbers, like a dictionary. It must be declared with <code>declare -A</code> first. bash does not keep the keys in any particular order.</p>
+<div class="lx-run"><div class="lx-rh"><span>A phone book and a word counter</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">declare -A phone=([asha]=98450 [ravi]=99001)</span>
+<span class="lx-cmd">phone[meera]=97300</span>
+<span class="lx-cmd">echo "Ravi: ${phone[ravi]}"</span>
+<span class="lx-o">Ravi: 99001</span>
+<span class="lx-cmd">echo "${#phone[@]} entries"</span>
+<span class="lx-o">3 entries</span>
+<span class="lx-cmd">for name in "${!phone[@]}"; do echo "$name -&gt; ${phone[$name]}"; done | sort</span>
+<span class="lx-o">asha -&gt; 98450
+meera -&gt; 97300
+ravi -&gt; 99001</span>
+<span class="lx-cmd">[[ -v phone[john] ]] || echo "no number for john"</span>
+<span class="lx-o">no number for john</span>
+<span class="lx-cmd">unset "phone[asha]"</span>
+<span class="lx-cmd">echo "keys now: $(printf '%s\n' "${!phone[@]}" | sort | tr '\n' ' ')"</span>
+<span class="lx-o">keys now: meera ravi </span>
+<span class="lx-cmd">declare -A count=()</span>
+<span class="lx-cmd">while read -r fruit; do (( count[$fruit]++ )); done &lt; fruits.txt</span>
+<span class="lx-cmd">for f in "${!count[@]}"; do echo "${count[$f]} $f"; done | sort -rn</span>
+<span class="lx-o">3 apple
+2 mango
+1 kiwi
+1 cherry
+1 banana</span></pre><div class="lx-note">Keys can be any text. The loop over keys was piped into sort because bash returns keys in its own order. [[ -v ]] tests whether a key exists. (( count[$fruit]++ )) counts every word, starting from nothing, which is the classic way to tally items in bash.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Without declare -A, phone[asha]=1 creates an indexed array, and the text asha is read as arithmetic, which gives index 0. Every key then overwrites the same element.</div></div>
+<div class="vt-talk" hidden>An associative array works like a dictionary or a phone book. Instead of numbers, the keys are words, so you can look up a value by name. You must create it with declare dash capital A before using it. Then you set a value with the name, the key in square brackets and an equals sign, and read it back with dollar and braces. Exclamation mark with the at sign lists the keys, and a hash counts them. Keys come back in no particular order, so pipe the output to sort when order matters. To check if a key exists, use double brackets with dash v. A classic use is counting. Read words one by one and add one to the count for that word, and at the end you have a tally of every word, which you can sort to find the most common. If you forget declare dash capital A, bash quietly makes a normal indexed array and all your keys land in the same box.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="fill" data-l="fill" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Filling, joining and passing arrays</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>files=(*.log)</code></td><td>Fill from a glob (add shopt -s nullglob for none)</td><td><code>logs=(/var/log/*.log)</code></td></tr><tr><td><code>mapfile -t lines &lt; file</code></td><td>One element per line (-t removes the newline). readarray is the same</td><td><code>mapfile -t hosts &lt; hosts.txt</code></td></tr><tr><td><code>read -ra parts &lt;&lt;&lt; "$s"</code></td><td>Split one line into words</td><td><code>IFS=, read -ra f &lt;&lt;&lt; "$row"</code></td></tr><tr><td><code>"${a[*]}"</code></td><td>All elements joined with the first character of IFS</td><td><code>(IFS=,; echo "${a[*]}")</code></td></tr><tr><td><code>"${a[@]/old/new}"</code></td><td>Change every element, also # % ^^ and ,,</td><td><code>echo "${files[@]%.log}"</code></td></tr><tr><td><code>fn "${a[@]}"</code></td><td>Pass an array to a function as its arguments</td><td><code>sum "${nums[@]}"</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Arrays from files, commands and functions</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">mapfile -t lines &lt; poem.txt</span>
+<span class="lx-cmd">echo "${#lines[@]} lines, line 2 is: ${lines[1]}"</span>
+<span class="lx-o">4 lines, line 2 is: How I wonder what you are</span>
+<span class="lx-cmd">row="Asha,maths,91"</span>
+<span class="lx-cmd">IFS=, read -ra field &lt;&lt;&lt; "$row"</span>
+<span class="lx-cmd">echo "name=${field[0]} score=${field[2]}"</span>
+<span class="lx-o">name=Asha score=91</span>
+<span class="lx-cmd">txt=(*.txt)</span>
+<span class="lx-cmd">echo "${#txt[@]} text files: ${txt[*]}"</span>
+<span class="lx-o">3 text files: fruits.txt notes.txt poem.txt</span>
+<span class="lx-cmd">echo "without extension: ${txt[@]%.txt}"</span>
+<span class="lx-o">without extension: fruits notes poem</span>
+<span class="lx-cmd">nums=(4 8 15 16 23 42)</span>
+<span class="lx-cmd">joined=$(IFS=+; echo "${nums[*]}")</span>
+<span class="lx-cmd">echo "$joined = $(( $joined ))"</span>
+<span class="lx-o">4+8+15+16+23+42 = 108</span>
+<span class="lx-cmd">sum() { local t=0 n; for n in "$@"; do (( t += n )); done; echo "$t"; }</span>
+<span class="lx-cmd">echo "sum: $(sum "${nums[@]}")"</span>
+<span class="lx-o">sum: 108</span>
+<span class="lx-cmd">mapfile -t sorted &lt; &lt;(printf '%s\n' "${nums[@]}" | sort -rn)</span>
+<span class="lx-cmd">echo "largest first: ${sorted[*]}"</span>
+<span class="lx-o">largest first: 42 23 16 15 8 4</span>
+<span class="lx-cmd">words=($(echo "one two  three"))</span>
+<span class="lx-cmd">echo "${#words[@]} words"</span>
+<span class="lx-o">3 words</span></pre><div class="lx-note">mapfile read the poem into one element per line. read -ra split the CSV row at commas. With IFS set to a plus sign inside the $( ) subshell, "${nums[*]}" became 4+8+15+16+23+42, and $(( )) added it up. The script’s own IFS was not touched. A function receives an array as its normal arguments. Sorting goes through printf, sort and mapfile.</div></div>
+<div class="vt-talk" hidden>There are several ways to fill an array. A wildcard pattern in round brackets gives the matching file names. Mapfile dash t reads a whole file, one line per element, and is the fastest and safest way to load lines. Read dash r a splits a single line into words, and with IFS set to a comma it splits a CSV row into fields. To join an array into one string, use the star form in double quotes. It puts the first character of IFS between the elements, so with IFS set to a plus sign you get a sum you can hand to arithmetic. Most parameter expansion tricks work on every element at once, for example percent dot t x t removes the extension from every file name. Bash cannot pass an array to a function as a single thing, so you pass its elements as the arguments and the function reads them with dollar at sign. To sort an array, print it one per line, sort it, and read it back with mapfile.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="options" data-l="options" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Command-line options with getopts</h2>
+<p>Real tools accept options such as <code>-v</code> or <code>-n 5</code>. The builtin <code>getopts</code> reads them one at a time, following the POSIX rules: options come first, can be grouped as <code>-vn5</code>, and <code>--</code> ends them.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>The getopts loop</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>usage() { echo "usage: ${0##*/} [-v] [-n COUNT] FILE..." &gt;&amp;2; exit 2; }
+verbose=0 count=10
+while getopts ":vn:" opt; do     # n: means -n takes a value
+  case $opt in
+    v)  verbose=1 ;;
+    n)  count=$OPTARG ;;
+    :)  echo "-$OPTARG needs a value" &gt;&amp;2; usage ;;
+    \?) echo "unknown option -$OPTARG" &gt;&amp;2; usage ;;
+  esac
+done
+shift $(( OPTIND - 1 ))          # now "$@" holds only the files</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Part</th><th>Meaning</th></tr></thead><tbody><tr><td><code>":vn:"</code></td><td>the option letters. A colon after a letter means it takes a value. A leading colon means you print the errors yourself</td></tr><tr><td><code>$opt</code></td><td>the letter found, : when a value is missing, ? for an unknown option</td></tr><tr><td><code>$OPTARG</code></td><td>the value of an option, or the bad letter in the : and ? cases</td></tr><tr><td><code>$OPTIND</code></td><td>the index of the next argument to read, so shift $(( OPTIND - 1 )) drops the options</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>getopts in a real script</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; head2.sh &lt;&lt;'EOF'
+#!/bin/bash
+usage() { echo "usage: ${0##*/} [-v] [-n COUNT] FILE..." &gt;&amp;2; exit 2; }
+verbose=0 count=3
+while getopts ":vn:" opt; do
+  case $opt in
+    v)  verbose=1 ;;
+    n)  [[ $OPTARG =~ ^[0-9]+$ ]] || { echo "-n needs a number" &gt;&amp;2; usage; }
+        count=$OPTARG ;;
+    :)  echo "-$OPTARG needs a value" &gt;&amp;2; usage ;;
+    \?) echo "unknown option -$OPTARG" &gt;&amp;2; usage ;;
+  esac
+done
+shift $(( OPTIND - 1 ))
+(( $# )) || usage
+for f in "$@"; do
+  (( verbose )) &amp;&amp; echo "== $f (first $count lines) =="
+  head -n "$count" -- "$f"
+done
+EOF</span>
+<span class="lx-cmd">bash head2.sh -v -n 2 fruits.txt poem.txt</span>
+<span class="lx-o">== fruits.txt (first 2 lines) ==
+mango
+apple
+== poem.txt (first 2 lines) ==
+Twinkle twinkle little star
+How I wonder what you are</span>
+<span class="lx-cmd">bash head2.sh -vn1 notes.txt</span>
+<span class="lx-o">== notes.txt (first 1 lines) ==
+Buy milk</span>
+<span class="lx-cmd">bash head2.sh -n; echo "status $?"</span>
+<span class="lx-o">-n needs a value
+usage: head2.sh [-v] [-n COUNT] FILE...
+status 2</span>
+<span class="lx-cmd">bash head2.sh -x notes.txt; echo "status $?"</span>
+<span class="lx-o">unknown option -x
+usage: head2.sh [-v] [-n COUNT] FILE...
+status 2</span>
+<span class="lx-cmd">bash head2.sh -n two notes.txt; echo "status $?"</span>
+<span class="lx-o">-n needs a number
+usage: head2.sh [-v] [-n COUNT] FILE...
+status 2</span>
+<span class="lx-cmd">bash head2.sh -- -v 2&gt;&amp;1 | head -1</span>
+<span class="lx-o">head: cannot open '-v' for reading: No such file or directory</span></pre><div class="lx-note">-v and -n 2 were read in order, then shift left only the two files. Grouped -vn1 worked as well. A missing value, an unknown letter and a non-number each gave a clear message and status 2. After --, getopts stopped, so -v was treated as a file name.</div></div>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>Long options with a while and case loop</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>while (( $# )); do
+  case $1 in
+    -v|--verbose)   verbose=1 ;;
+    -n|--count)     count=$2; shift ;;
+    --count=*)      count=${1#*=} ;;
+    --)             shift; break ;;
+    -*)             echo "unknown option $1" &gt;&amp;2; exit 2 ;;
+    *)              break ;;
+  esac
+  shift
+done</pre><div class="lx-note">getopts reads only one-letter options. For --long options, scripts loop over the arguments with case and shift, as here. The external getopt program from util-linux can also parse long options.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Arrays and options&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Create an array &lt;code&gt;pets&lt;/code&gt; with the values cat, dog and \&quot;guinea pig\&quot;.&quot;, &quot;hint&quot;: &quot;pets=(cat dog \&quot;guinea pig\&quot;)&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;pets=\\(&quot;}]}, {&quot;t&quot;: &quot;Print the number of elements in pets.&quot;, &quot;hint&quot;: &quot;echo ${#pets[@]}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\$\\{#pets\\[@\\]\\}&quot;}, {&quot;out&quot;: &quot;^3$&quot;}]}, {&quot;t&quot;: &quot;Print the last element of pets with a negative index.&quot;, &quot;hint&quot;: &quot;echo \&quot;${pets[-1]}\&quot;&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-1&quot;}, {&quot;out&quot;: &quot;^guinea pig$&quot;}]}, {&quot;t&quot;: &quot;Append fish to pets, then print all indexes.&quot;, &quot;hint&quot;: &quot;pets+=(fish); echo ${!pets[@]}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\+=\\(&quot;}, {&quot;out&quot;: &quot;^0 1 2 3$&quot;}]}, {&quot;t&quot;: &quot;Read the lines of fruits.txt into the array f with mapfile, then print how many there are.&quot;, &quot;hint&quot;: &quot;mapfile -t f &lt; fruits.txt; echo ${#f[@]}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;mapfile|readarray&quot;}, {&quot;out&quot;: &quot;^8$&quot;}]}, {&quot;t&quot;: &quot;Make an associative array &lt;code&gt;cap&lt;/code&gt; with India mapped to Delhi, then print cap[India].&quot;, &quot;hint&quot;: &quot;declare -A cap=([India]=Delhi); echo ${cap[India]}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;declare\\s+-A&quot;}, {&quot;out&quot;: &quot;^Delhi$&quot;}]}, {&quot;t&quot;: &quot;Set the arguments with set -- -v -n 7 file, then run a getopts loop for \&quot;vn:\&quot; that prints n=7 for the -n option.&quot;, &quot;hint&quot;: &quot;set -- -v -n 7 file; while getopts \&quot;vn:\&quot; o; do [ \&quot;$o\&quot; = n ] &amp;&amp; echo \&quot;n=$OPTARG\&quot;; done&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;getopts&quot;}, {&quot;out&quot;: &quot;^n=7$&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Professional tools take options, such as dash v for verbose or dash n five for a count. Bash has a builtin called getopts that reads them one at a time inside a while loop. You give it a string of option letters, and a colon after a letter means that option needs a value. Each time round the loop, getopts puts the letter it found in your variable, and the value, if there is one, in OPTARG. A colon at the very start of the string tells getopts to stay quiet, so your script can print its own friendly error messages: the variable then holds a colon when a value is missing, and a question mark for an unknown option. After the loop, shift by OPTIND minus one removes all the options, and dollar at sign holds just the file names. Getopts only knows single letters, so for double dash long options, scripts loop over the arguments themselves with a case statement and shift.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Arrays and options from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>An array is a numbered list of values under one name, starting at 0. An associative array uses words as keys. getopts reads options such as -v and -n 5 so a script behaves like a real tool.</p></div><div class="ld-p" data-ld="college" hidden><p>bash arrays are one-dimensional and sparse: indexes need not be consecutive, and ${#a[@]} counts only the elements that exist. Arrays cannot be exported to child processes, and a function receives an array only as its arguments. "${a[@]}" expands to one word per element, exactly like "$@".</p></div><div class="ld-p" data-ld="masters" hidden><p>Associative arrays need bash 4.0 or later (macOS still ships bash 3.2, so scripts there use other tools or a newer bash). local -n gives a function a reference to the caller’s array. mapfile -d "" with find -print0 reads any file name safely, and -C with -c runs a callback every few lines. getopts follows POSIX: options before operands, -- ends them, and OPTIND must be reset to 1 before parsing a second list.</p></div><div class="ld-p" data-ld="research" hidden><p>Arrays in bash came from the Korn shell, and POSIX sh still has no arrays, so portable scripts use "$@" with set -- as their only list. Command-line conventions themselves are standardised in the POSIX Utility Syntax Guidelines (XBD chapter 12), and the GNU Coding Standards add long options. Research tools that generate argument parsers and shell completions from one description, such as docopt and argbash, aim to keep usage text, parsing and documentation in sync.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the log summary tool</div><p>An operations team needed a tool to summarise error counts per service. <code>logsum.sh -s 2026-11-20 -t 10 /var/log/app/*.log</code> parses <code>-s</code> for the start date and <code>-t</code> for the top N with getopts, reads every log with mapfile, counts errors per service in an associative array, and prints the top entries through sort. A usage function and status 2 for bad options make it safe to call from cron and CI jobs.</p></div>
+<div class="vt-talk" hidden>Here is the deeper view. Bash arrays have one dimension and can have gaps, so the count of elements is not the same as the highest index. Arrays cannot travel to child processes through the environment, and a function only sees an array if you pass its elements as arguments or give it a name reference with local dash n. Associative arrays arrived in bash four, so the very old bash three point two on macOS does not have them. For truly safe file name handling, mapfile can split on the zero byte that find dash print zero writes. Getopts follows the POSIX rules: options come before other arguments, and a double dash ends them. Interestingly, POSIX sh has no arrays at all, so portable scripts use dollar at sign together with set double dash as their only list. Researchers and tool builders have created generators such as docopt and argbash, which build the option parser, the help text and shell completion from a single description.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./functions.html" data-topic="functions"><small>Previous topic</small><b>Functions</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "arrays-options", "topic": "arrays-options", "subject": "linux", "title": "Arrays and command-line options", "codes": {}, "quiz": [{"lv": "e", "q": "Which index does the first element of a bash array have?", "o": ["1", "0", "-1", "a"], "a": 1, "hint": "Count from zero.", "why": "Arrays start at index 0."}, {"lv": "e", "q": "a=(x y z). What is ${#a[@]}?", "o": ["2", "3", "z", "0"], "a": 1, "hint": "Count the elements.", "why": "Three elements."}, {"lv": "e", "q": "How do you append the value w to the array a?", "o": ["a=w", "a+=(w)", "a[w]", "push a w"], "a": 1, "hint": "Plus equals with brackets.", "why": "a+=(w) appends."}, {"lv": "e", "q": "Which must come before using text keys in an array?", "o": ["declare -a", "declare -A", "local", "export"], "a": 1, "hint": "Capital A.", "why": "declare -A makes an associative array."}, {"lv": "m", "q": "a=(one \"two three\"). How many words does \"${a[@]}\" give?", "o": ["3", "2", "1", "4"], "a": 1, "hint": "Quoted at sign.", "why": "Each element stays one word."}, {"lv": "m", "q": "a=(p q r s), then unset \"a[1]\". What is ${!a[@]}?", "o": ["0 1 2", "0 2 3", "1 2 3", "0 1 2 3"], "a": 1, "hint": "Gaps stay.", "why": "The other indexes do not move."}, {"lv": "m", "q": "Which reads every line of hosts.txt into the array h?", "o": ["h=$(cat hosts.txt)", "mapfile -t h < hosts.txt", "read h < hosts.txt", "h=(hosts.txt)"], "a": 1, "hint": "mapfile.", "why": "mapfile -t gives one element per line."}, {"lv": "m", "q": "In getopts \":ab:c\", which option takes a value?", "o": ["a", "b", "c", "none"], "a": 1, "hint": "Colon after the letter.", "why": "b: means -b needs a value."}, {"lv": "m", "q": "After the getopts loop, why run shift $(( OPTIND - 1 ))?", "o": ["To reset getopts", "To remove the options so \"$@\" holds only the remaining arguments", "To count options", "It is not needed"], "a": 1, "hint": "Drop what was read.", "why": "OPTIND points past the last option."}, {"lv": "h", "q": "With a leading colon in the option string, what is $opt when -n is given without its value?", "o": ["n", "?", ":", "empty"], "a": 2, "hint": "Silent mode.", "why": "A colon means a missing value, and OPTARG holds n."}, {"lv": "h", "q": "a=(1 2 3) and IFS=, in a subshell. What does echo \"${a[*]}\" print?", "o": ["1 2 3", "1,2,3", "123", "1, 2, 3"], "a": 1, "hint": "Star joins with IFS.", "why": "The first character of IFS joins the elements."}, {"lv": "h", "q": "Without declare -A, what does m[asha]=1 m[ravi]=2 do?", "o": ["Makes two keys", "Treats both keys as arithmetic 0, so m[0] ends up as 2", "Gives an error", "Exports m"], "a": 1, "hint": "Index arithmetic.", "why": "In an indexed array the subscript is arithmetic, and an unset name is 0."}, {"lv": "x", "q": "Which bash version first had associative arrays?", "o": ["2.0", "3.2", "4.0", "5.1"], "a": 2, "hint": "Not on old macOS bash.", "why": "They arrived in bash 4.0."}], "calc": [{"lv": "e", "q": "a=(10 20 30 40). What is ${a[2]}?", "ans": "30", "hint": "Count from 0.", "steps": ["Index 0 is 10, index 1 is 20.", "Index 2 is the third value.", "<span class=\"eq\">30<\/span>"]}, {"lv": "e", "q": "a=(10 20 30 40). What is ${a[-1]} + ${a[0]}?", "ans": "50", "hint": "Last plus first.", "steps": ["${a[-1]} is 40.", "${a[0]} is 10.", "<span class=\"eq\">40 + 10 = 50<\/span>"]}, {"lv": "m", "q": "a=(a b c d e f). How many elements does \"${a[@]:2:3}\" give, and which is first?", "ans": "3", "hint": "Start at index 2.", "steps": ["Index 2 is c.", "Take 3: c, d, e.", "<span class=\"eq\">3 elements, starting with c<\/span>"]}, {"lv": "m", "q": "a=(x y z), then a[7]=w. What is ${#a[@]}?", "ans": "4", "hint": "Only existing elements count.", "steps": ["Indexes 0, 1, 2 and 7 exist.", "3 to 6 do not exist.", "<span class=\"eq\">4 elements<\/span>"]}, {"lv": "m", "q": "nums=(4 8 15 16 23 42). With IFS=+, what does $(( ${nums[*]} )) give?", "ans": "108", "hint": "Add them up.", "steps": ["4 + 8 + 15 = 27.", "27 + 16 + 23 = 66.", "<span class=\"eq\">66 + 42 = 108<\/span>"]}, {"lv": "h", "q": "The script gets -v -n 5 a.txt b.txt. After the getopts loop for \"vn:\", what is OPTIND?", "ans": "4", "hint": "Index of the next argument.", "steps": ["-v is argument 1, -n is 2, 5 is 3.", "a.txt is argument 4.", "<span class=\"eq\">OPTIND = 4, so shift 3<\/span>"]}], "assign": [], "must": [["Indexed arrays", "a=(x \"y z\"), ${a[i]} from 0, ${a[-1]} last, \"${a[@]}\" all as words, ${#a[@]} count, ${!a[@]} indexes, a+=(v), unset \"a[i]\"."], ["Associative arrays", "declare -A m first. m[key]=v, ${m[key]}, \"${!m[@]}\" keys in no order, [[ -v m[key] ]] to test."], ["Filling and joining", "files=(*.txt), mapfile -t lines < file, read -ra parts <<< \"$s\". \"${a[*]}\" joins with the first character of IFS."], ["getopts", "while getopts \":vn:\" opt with case, $OPTARG for values, : and ? for errors, then shift $(( OPTIND - 1 ))."], ["Usage", "A usage function that prints to stderr and exits with 2. Long options need a while and case loop."]], "summary": "<p>Arrays hold lists with spaces intact: \"${a[@]}\" gives every element, ${#a[@]} counts them and indexes can have gaps. declare -A gives text keys. mapfile and read -a fill arrays, and getopts with case and shift turns a script into a tool with real options.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

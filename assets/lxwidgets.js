@@ -729,6 +729,49 @@
     }
   }));
 
+  /* scripting 3.2 an array as numbered boxes, changed one command at a time */
+  def('lx-array', el => W(el, {
+    title: 'An array, box by box',
+    sub: 'Create an array, then type commands separated by semicolons. Pip runs each one in the practice shell and redraws the boxes with their indexes, so gaps, appends and slices are easy to see.',
+    inputs: [{ k: 'def', label: 'Create', type: 'text', val: 'fruits=(apple "star fruit" mango)', w: 300 }, { k: 'ops', label: 'Then run', type: 'text', val: 'fruits+=(kiwi); unset "fruits[1]"; fruits[6]=fig; echo ${#fruits[@]}; echo ${!fruits[@]}', w: 420 }],
+    random: () => [{ def: 'fruits=(apple "star fruit" mango)', ops: 'fruits+=(kiwi); unset "fruits[1]"; fruits[6]=fig; echo ${#fruits[@]}; echo ${!fruits[@]}' }, { def: 'n=(5 3 8 1)', ops: 'n[0]=50; echo ${n[-1]}; echo "${n[@]:1:2}"; n=("${n[@]}" 9)' }, { def: 'declare -A age=([asha]=31 [ravi]=28)', ops: 'age[meera]=35; echo ${age[ravi]}; unset "age[asha]"; echo ${#age[@]}' }, { def: 'files=(*.txt)', ops: 'echo ${#files[@]}; files+=(new.log); echo "${files[@]%.*}"' }][Math.floor(Math.random() * 4)],
+    frames: v => {
+      const w = world(), def = String(v.def).trim();
+      const m = /^(?:declare\s+-([aA])\s+)?([A-Za-z_]\w*)=\(/.exec(def);
+      if (!m) return [{ msg: 'Start with name=(values), for example fruits=(apple mango), or declare -A name=([key]=value).', mood: 'think', layers: [] }];
+      const name = m[2], assoc = m[1] === 'A';
+      const r0 = w.run(def);
+      if (r0.code) return [{ msg: 'bash could not create the array: ' + esc(r0.out), mood: 'sad', fx: 'shake', layers: [] }];
+      const cells = (hi) => {
+        const keys = w.arrKeys(name).map(String);
+        return { t: 'flow', label: `${name}: ${keys.length} element${keys.length === 1 ? '' : 's'}${assoc ? ' (associative)' : ''}`, items: keys.length ? keys.map(k => [w.arrGet(name, assoc ? k : k) || '(empty)', '[' + k + ']', hi && hi.includes(k) ? 'yes' : 'cur']) : [['(no elements)', '', 'ghost']], plain: true };
+      };
+      const fr = [{ msg: assoc ? `<code>declare -A</code> made an <b>associative array</b>: its indexes are text keys. bash does not keep the keys in the order you typed them.` : `bash made an <b>indexed array</b>. Every value sits in a box with a number, starting at <b>0</b>.${/\*/.test(def) ? ' The glob filled it with the matching file names.' : ''}`, mood: 'think', layers: [cells()] }];
+      const term = [];
+      const ops = String(v.ops).split(/;\s*/).map(x => x.trim()).filter(Boolean).slice(0, 10);
+      ops.forEach(op => {
+        const before = w.arrKeys(name).map(k => k + '=' + w.arrGet(name, String(k)));
+        const r = w.run(op); const o = r.out.replace(/\n$/, '');
+        const after = w.arrKeys(name).map(String);
+        const changed = after.filter(k => !before.includes(k + '=' + w.arrGet(name, k)));
+        if (o) o.split('\n').forEach(x => term.push(['o', x]));
+        term.push(['c', op]);
+        const say = /^unset/.test(op) ? (assoc ? 'unset removed that key and its value.' : 'unset removed that element. The other indexes do not move, so the array now has a gap.')
+          : /\+=\(/.test(op) ? 'An append with += adds after the highest index.'
+          : /=\("\$\{/.test(op) ? 'Copying with ("${name[@]}") packs the values into indexes 0, 1, 2 ... again, so gaps disappear.'
+          : /\[\d+\]=/.test(op) && !assoc ? 'Setting an index far past the end is allowed. The indexes in between simply do not exist.'
+          : /\$\{#/.test(op) ? '${#name[@]} counts the elements that exist, not the highest index plus one.'
+          : /\$\{!/.test(op) ? '${!name[@]} lists the indexes (or keys) that exist.'
+          : /:\d+(:\d+)?\}/.test(op) ? '${name[@]:start:count} takes a slice of the values.'
+          : /\[-\d+\]/.test(op) ? 'A negative index counts from the end, -1 is the last element.'
+          : /=/.test(op) ? 'The assignment stored a value in one box.' : 'This reads the array without changing it.';
+        fr.push({ msg: `<code>${esc(op)}</code>${o ? ` prints <b>${esc(o)}</b>` : ''}. ${say}${r.code ? ' bash reported an error.' : ''}`, mood: changed.length ? 'wow' : 'look', layers: [cells(changed), { t: 'term', label: 'Output', lines: term.filter(x => x[0] === 'o').length ? term.filter(x => x[0] === 'o') : [['o', '(nothing printed yet)']] }] });
+      });
+      fr.push({ msg: 'Always loop over the values with "${name[@]}" in double quotes, so a value with a space stays one item.', mood: 'happy', fx: 'burst', layers: [cells()] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

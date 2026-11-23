@@ -10732,6 +10732,21 @@ function lxScriptModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "arrays-options", title: "Arrays and command-line options", emoji: "3.2", page: "content/linux/arrays-options.html",
+        summary: "Indexed and associative arrays, mapfile and read -a, and getopts.",
+        keywords: ["array", "associative array", "declare -A", "mapfile", "readarray", "read -a", "getopts", "OPTARG", "OPTIND", "options", "usage"],
+        minutes: 55, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "indexed", title: "Indexed arrays: many values under one name", emoji: "", group: "Lesson", keywords: ["array", "indexed array", "array index", "\"${a[@]}\"", "${#a[@]}", "${!a[@]}", "append to array", "unset element", "array slice", "negative index", "sparse array", "declare -p"] },
+        { id: "assoc", title: "Associative arrays: values looked up by name", emoji: "", group: "Lesson", keywords: ["associative array", "declare -A", "dictionary", "hash map", "keys", "${!a[@]}", "-v key exists", "word count", "count items", "key order"] },
+        { id: "fill", title: "Filling, joining and passing arrays", emoji: "", group: "Lesson", keywords: ["mapfile", "readarray", "read -a", "array from file", "array from glob", "join array", "\"${a[*]}\"", "IFS join", "sort an array", "pass array to function", "split string into array"] },
+        { id: "options", title: "Command-line options with getopts", emoji: "", group: "Lesson", keywords: ["getopts", "command-line options", "OPTARG", "OPTIND", "shift", "option string", "leading colon", "usage function", "long options", "--", "getopt"] },
+        { id: "levels", title: "Arrays and options from school to research", emoji: "", group: "Lesson", keywords: ["sparse arrays", "bash 4 associative arrays", "macOS bash 3.2", "local -n", "mapfile -d", "POSIX utility syntax", "OPTIND reset", "docopt", "argbash", "Korn shell arrays"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

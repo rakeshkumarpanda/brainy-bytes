@@ -123,7 +123,7 @@ const LXSH = (() => {
       (lab.dirs || []).forEach(p => this.mkdirs(this.abs(p)));
       Object.entries(lab.files || {}).forEach(([p, c]) => { const a = this.abs(p); this.mkdirs(dirName(a)); this.mk(a, 'f', /\.sh$/.test(a) && lab.exec ? 0o755 : 0o644, USER, c); });
       this.user = USER; this.cwd = lab.cwd ? this.abs(lab.cwd) : HOME; this.oldpwd = this.cwd;
-      this.vars = { HOME, USER, LOGNAME: USER, SHELL: '/bin/bash', PATH: '/usr/local/bin:/usr/bin:/bin', PWD: this.cwd, LANG: 'C.UTF-8', HOSTNAME: HOST, EDITOR: 'nano', PS1: '\\u@\\h:\\w\\$ ', HISTSIZE: '1000', HISTFILESIZE: '2000', HISTFILE: HOME + '/.bash_history', OLDPWD: '' };
+      this.vars = { HOME, USER, LOGNAME: USER, SHELL: '/bin/bash', PATH: '/usr/local/bin:/usr/bin:/bin', PWD: this.cwd, LANG: 'C.UTF-8', HOSTNAME: HOST, EDITOR: 'nano', PS1: '\\u@\\h:\\w\\$ ', HISTSIZE: '1000', HISTFILESIZE: '2000', HISTFILE: HOME + '/.bash_history', OLDPWD: '', OPTIND: '1' };
       this.exported = new Set(['HOME', 'USER', 'LOGNAME', 'SHELL', 'PATH', 'PWD', 'LANG', 'EDITOR']);
       this.aliases = { ll: 'ls -l', la: 'ls -A' };
       this.hist = []; this.last = 0; this.umask = 0o022; this.args = []; this.clock = T0 + 60000; this.jobs = [];
@@ -359,7 +359,8 @@ const LXSH = (() => {
     param(name, soft) {
       if (name === '?') return String(this.last);
       if (name === '#') return String(this.args.length);
-      if (name === '@' || name === '*') return this.args.join(' ');
+      if (name === '@') return this.args.join(' ');
+      if (name === '*') return this.args.join(this.ifsJoin());
       if (name === '$') return '2001';
       if (name === '!') return this.lastBg ? String(this.lastBg) : '';
       if (name === '0') return this.script || 'bash';
@@ -378,7 +379,13 @@ const LXSH = (() => {
       if ((m = /^#(\w+)\[[@*]\]$/.exec(body))) return String(this.arrVals(m[1]).length);
       if ((m = /^!(\w+)\[[@*]\]$/.exec(body))) return this.arrKeys(m[1]).join(' ');
       if ((m = /^(\w+)\[[@*]\]:(-?\d+)(?::(\d+))?$/.exec(body))) { const v = this.arrVals(m[1]); let st = +m[2]; if (st < 0) st = Math.max(0, v.length + st); return (m[3] !== undefined ? v.slice(st, st + +m[3]) : v.slice(st)).join(' '); }
-      if ((m = /^(\w+)\[([@*])\]$/.exec(body))) return this.arrVals(m[1]).join(' ');
+      if ((m = /^(\w+)\[([@*])\]$/.exec(body))) return this.arrVals(m[1]).join(m[2] === '*' ? this.ifsJoin() : ' ');
+      if ((m = /^(\w+\[[@*]\]|[@*])(\/\/?|##?|%%?|\^\^?|,,?)(.*)$/.exec(body))) {
+        const all = m[1].length === 1 ? this.args : this.arrVals(m[1].slice(0, -3)), star = m[1].endsWith('*') || m[1] === '*';
+        const keep = this.vars.__el; let out;
+        try { out = all.map(x => { this.vars.__el = x; return this.braceParam('__el' + m[2] + m[3]); }); } finally { if (keep === undefined) delete this.vars.__el; else this.vars.__el = keep; }
+        return out.join(star ? this.ifsJoin() : ' ');
+      }
       if ((m = /^#(\w+)\[(.+)\]$/.exec(body))) return String(this.arrGet(m[1], m[2]).length);
       if ((m = /^(\w+)\[(.+)\]$/.exec(body))) return this.arrGet(m[1], m[2]);
       if ((m = /^@:(\d+)(?::(\d+))?$/.exec(body))) { const all = [this.script || 'bash'].concat(this.args); return (m[2] !== undefined ? all.slice(+m[1], +m[1] + +m[2]) : all.slice(+m[1])).join(' '); }
@@ -409,6 +416,8 @@ const LXSH = (() => {
       if ((m = /^(\w+)(\^\^|,,)$/.exec(body))) { const v = this.param(m[1]); return m[2] === '^^' ? v.toUpperCase() : v.toLowerCase(); }
       return this.param(body);
     }
+    /* "$*" and "${a[*]}" put the first character of IFS between the items, a space when IFS is unset */
+    ifsJoin() { const f = this.vars.IFS; return f === undefined ? ' ' : f.slice(0, 1); }
     /* $VAR, ${...}, $(...), $((...)) inside one piece of text */
     expandStr(s) {
       let out = '', i = 0;
@@ -459,6 +468,11 @@ const LXSH = (() => {
         const t = w.parts[0].t; let m;
         if (t === '$@' || t === '${@}') return this.args.slice();
         if ((m = /^\$\{(\w+)\[@\]\}$/.exec(t))) return this.arrVals(m[1]);
+        if ((m = /^\$\{(\w+\[@\]|@)(\/\/?|##?|%%?|\^\^?|,,?)([^}]*)\}$/.exec(t))) {
+          const all = m[1] === '@' ? this.args : this.arrVals(m[1].slice(0, -3)), keep = this.vars.__el;
+          try { return all.map(x => { this.vars.__el = x; return this.braceParam('__el' + m[2] + m[3]); }); } finally { if (keep === undefined) delete this.vars.__el; else this.vars.__el = keep; }
+        }
+        if ((m = /^\$\{(\w+)\[@\]:(-?\d+)(?::(\d+))?\}$/.exec(t))) { const v = this.arrVals(m[1]); let st = +m[2]; if (st < 0) st = Math.max(0, v.length + st); return m[3] !== undefined ? v.slice(st, st + +m[3]) : v.slice(st); }
         if ((m = /^\$\{!(\w+)\[@\]\}$/.exec(t))) return this.arrKeys(m[1]);
       }
       if (w.parts.some(p => p.ps)) return [w.parts.map(p => { if (!p.ps) return p.q === 1 ? p.t : this.expandStr(p.t); const fd = this.psN = (this.psN || 64) - 1; const body = this.capture(p.t); this.psN = fd; if (!this.node('/dev/fd')) this.mk('/dev/fd', 'd', 0o755, 'root'); this.mk('/dev/fd/' + fd, 'f', 0o444, this.user, body); return '/dev/fd/' + fd; }).join('')];
@@ -3072,7 +3086,7 @@ const LXSH = (() => {
     const silent = spec0.startsWith(':'), spec = silent ? spec0.slice(1) : spec0;
     let ind = +(this.vars.OPTIND || 1); if (ind !== this.optLastInd) this.optPos = 1;
     const arg = args[ind - 1];
-    if (arg === undefined || arg === '--' || !/^-./.test(arg)) { if (arg === '--') this.vars.OPTIND = String(ind + 1); this.vars[name] = '?'; delete this.vars.OPTARG; this.optLastInd = undefined; return 1; }
+    if (arg === undefined || arg === '--' || !/^-./.test(arg)) { this.vars.OPTIND = String(arg === '--' ? ind + 1 : ind); this.vars[name] = '?'; delete this.vars.OPTARG; this.optLastInd = undefined; return 1; }
     const ch = arg[this.optPos], at = spec.indexOf(ch);
     const step = () => { this.optPos++; if (this.optPos >= arg.length) { ind++; this.optPos = 1; } this.vars.OPTIND = String(ind); this.optLastInd = ind; };
     if (at < 0 || ch === ':') { step(); if (silent) { this.vars[name] = '?'; this.vars.OPTARG = ch; } else { this.eout(`${this.script || 'bash'}: illegal option -- ${ch}\n`); this.vars[name] = '?'; delete this.vars.OPTARG; } return 0; }
