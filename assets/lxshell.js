@@ -56,8 +56,8 @@ const LXSH = (() => {
     ]
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
-  const SBIN = 'mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'alias blkid findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const SBIN = 'pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
+  const CMDS = 'alias blkid fallocate findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -169,7 +169,7 @@ const LXSH = (() => {
       return ((n.mode >> sh) & bit) !== 0;
     }
     inGroup(g) { if (g === this.user) return true; const row = (this.node('/etc/group').data || '').split('\n').find(l => l.startsWith(g + ':')); return !!row && row.split(':')[3].split(',').includes(this.user); }
-    size(n) { if (n.type === 'f' && n.data && n.data.charCodeAt(0) === 0 && this.unpack && this.unpack(n.data)) return this.unpack(n.data).size; return n.type === 'd' ? 4096 : n.type === 'l' ? n.target.length : n.type === 'c' ? 0 : enc(n.data); }
+    size(n) { if (n.big) return n.big; if (n.type === 'f' && n.data && n.data.charCodeAt(0) === 0 && this.unpack && this.unpack(n.data)) return this.unpack(n.data).size; return n.type === 'd' ? 4096 : n.type === 'l' ? n.target.length : n.type === 'c' ? 0 : enc(n.data); }
     tilde(p) { return p === HOME ? '~' : p.startsWith(HOME + '/') ? '~' + p.slice(HOME.length) : p; }
     prompt() { return { user: this.user, host: HOST, dir: this.tilde(this.cwd), sign: this.user === 'root' ? '#' : '$' }; }
 
@@ -1982,8 +1982,9 @@ const LXSH = (() => {
   C.uptime = function () { this.out(' 10:15:02 up 3 days,  2:41,  1 user,  load average: 0.42, 0.35, 0.30\n'); };
   C.free = function (a) {
     const [f] = opts(a);
-    this.out(f.h ? '               total        used        free      shared  buff/cache   available\nMem:           7.7Gi       2.1Gi       3.0Gi       120Mi       2.6Gi       5.3Gi\nSwap:          2.0Gi          0B       2.0Gi\n'
-      : '               total        used        free      shared  buff/cache   available\nMem:         8048304     2201124     3142212      122880     2704968     5563880\nSwap:        2097148           0     2097148\n');
+    const swk = this.disks().swaps.reduce((t, x) => t + x.size / 1024 - 4, 0), gi = k => k ? (Math.round(k / 1048576 * 10) / 10).toFixed(1) + 'Gi' : '0B';
+    this.out(f.h ? '               total        used        free      shared  buff/cache   available\nMem:           7.7Gi       2.1Gi       3.0Gi       120Mi       2.6Gi       5.3Gi\nSwap:   ' + gi(swk).padStart(12) + '          0B ' + gi(swk).padStart(11) + '\n'
+      : '               total        used        free      shared  buff/cache   available\nMem:         8048304     2201124     3142212      122880     2704968     5563880\nSwap:   ' + String(swk).padStart(12) + '           0 ' + String(swk).padStart(11) + '\n');
   };
   C.df = function (a) {
     const [f, rest] = opts(a);
@@ -2011,8 +2012,10 @@ const LXSH = (() => {
         { name: 'sda', mm: '8:0', rm: 0, size: 40 * GiB, model: 'ATA QEMU HARDDISK (scsi)', label: 'gpt', parts: [{ name: 'sda1', mm: '8:1', size: 40 * GiB - 2 * MiB, start: MiB, pname: '', fs: root }] },
         { name: 'sdb', mm: '8:16', rm: 1, size: 62529536 * 512, model: 'SanDisk Cruzer Blade (scsi)', label: 'msdos', parts: [{ name: 'sdb1', mm: '8:17', size: 62529536 * 512 - MiB, start: MiB, pname: '', fs: usb }] },
         { name: 'sdc', mm: '8:32', rm: 0, size: 20 * GiB, model: 'ATA QEMU HARDDISK (scsi)', label: null, parts: [] }],
-      mounts: [{ dev: 'sda1', dir: '/', opts: 'rw,relatime,errors=remount-ro' }]
+      mounts: [{ dev: 'sda1', dir: '/', opts: 'rw,relatime,errors=remount-ro' }],
+      swaps: [{ name: '/swap.img', type: 'file', size: 2 * GiB, prio: -2 }], lvm: { pvs: {}, vgs: {}, lvs: [] }
     };
+    if (!this.node('/swap.img')) { const sw = this.mk('/swap.img', 'f', 0o600, 'root', ''); sw.big = 2 * GiB; sw.swap = 'a3f6c1d2-5b7e-4c89-9d0a-1e2f3b4c5d6e'; }
     const put = (tree, path, data) => { let n = tree; const bits = path.split('/'); bits.slice(0, -1).forEach(b => { n.kids[b] = n.kids[b] || { type: 'd', name: b, mode: 0o755, owner: 'root', group: 'root', mtime: T0 - 864e5 * 9, kids: {} }; n = n.kids[b]; }); n.kids[bits[bits.length - 1]] = { type: 'f', name: bits[bits.length - 1], mode: 0o755, owner: 'root', group: 'root', mtime: T0 - 864e5 * 9, data }; };
     put(usbRoot, 'notes.txt', 'Things to back up: photos, the thesis, the music folder\n');
     put(usbRoot, 'photos/trip-01.jpg', 'JPEGDATA'); put(usbRoot, 'photos/trip-02.jpg', 'JPEGDATA');
@@ -2022,9 +2025,10 @@ const LXSH = (() => {
   World.prototype.partOf = function (dev) {
     const st = this.disks(); let d = String(dev || '');
     let m;
-    if ((m = /^UUID=(.+)$/.exec(d))) { for (const x of st.devs) for (const p of x.parts) if (p.fs && p.fs.uuid === m[1].replace(/"/g, '')) return p; return null; }
-    if ((m = /^LABEL=(.+)$/.exec(d))) { for (const x of st.devs) for (const p of x.parts) if (p.fs && p.fs.label === m[1].replace(/"/g, '')) return p; return null; }
+    if ((m = /^UUID=(.+)$/.exec(d))) { for (const x of st.devs.concat([{ parts: st.lvm.lvs }])) for (const p of x.parts) if (p.fs && p.fs.uuid === m[1].replace(/"/g, '')) return p; return null; }
+    if ((m = /^LABEL=(.+)$/.exec(d))) { for (const x of st.devs.concat([{ parts: st.lvm.lvs }])) for (const p of x.parts) if (p.fs && p.fs.label === m[1].replace(/"/g, '')) return p; return null; }
     d = d.replace(/^\/dev\//, '');
+    for (const lv of st.lvm.lvs) if (d === lv.vg + '/' + lv.lv || d === 'mapper/' + lv.vg + '-' + lv.lv || d === lv.name) return lv;
     for (const x of st.devs) { if (x.name === d) return x; for (const p of x.parts) if (p.name === d) return p; }
     return null;
   };
@@ -2036,21 +2040,202 @@ const LXSH = (() => {
   };
   const humanBin = b => { const u = ['B', 'K', 'M', 'G', 'T']; let x = b, i = 0; while (x >= 1024 && i < 4) { x /= 1024; i++; } return (Math.round(x * 10) / 10).toString().replace(/\.0$/, '') + u[i]; };
   const newUuid = (w, seed) => { let h = 2166136261; for (const ch of seed + w.clock) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; const hex = n => { let s2 = ''; for (let i = 0; i < n; i++) { h = Math.imul(h ^ i, 16777619) >>> 0; s2 += (h % 16).toString(16); } return s2; }; return `${hex(8)}-${hex(4)}-4${hex(3)}-a${hex(3)}-${hex(12)}`; };
+
+  /* ---------- LVM: physical volumes, volume groups and logical volumes (4 MiB extents) ---------- */
+  const lvmSize = b => { const u = b >= GiB ? ['g', GiB] : ['m', MiB], v = b / u[1], r = Math.round(v * 100) / 100; return (r > v + 1e-9 ? '<' : '') + r.toFixed(2) + u[0]; };
+  const lvmParse = (x, unit) => { const m = /^\+?([\d.]+)([kmgtKMGT]?)$/.exec(x || ''); if (!m) return NaN; return +m[1] * ({ k: 1024, m: MiB, g: GiB, t: GiB * 1024 }[(m[2] || unit || 'm').toLowerCase()]); };
+  World.prototype.lvmTable = function (head, rows, right) {
+    const all = [head].concat(rows), w = head.map((_, i) => Math.max(...all.map(r => String(r[i]).length)));
+    return all.map((r, k) => '  ' + r.map((x, i) => k && right.includes(i) ? String(x).padStart(w[i]) : String(x).padEnd(w[i])).join(' ')).join('\n') + '\n';
+  };
+  World.prototype.vgFree = function (vg) { const st = this.disks(), V = st.lvm.vgs[vg]; return V.pvs.reduce((t, p) => t + st.lvm.pvs[p].pe, 0) - st.lvm.lvs.filter(l => l.vg === vg).reduce((t, l) => t + l.le, 0); };
+  const lvmRoot = (w, name) => { if (w.user !== 'root') { w.eout('  WARNING: Running as a non-root user. Functionality may be unavailable.\n  /run/lock/lvm/P_global:aux: open failed: Permission denied\n'); return false; } return true; };
+  C.pvcreate = function (a) {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(), devs = a.filter(x => !x.startsWith('-')), yes = a.includes('-y') || a.includes('-ff');
+    if (!devs.length) { this.eout('  No devices specified.\n'); return 3; }
+    for (const d of devs) {
+      const x = this.partOf(d), n = d.replace(/^\/dev\//, '');
+      if (!x || x.lv) { this.eout(`  No device found for ${d}.\n`); return 5; }
+      if (st.lvm.pvs[n]) { this.eout(`  Can't initialize physical volume "${d}" of volume group "${st.lvm.pvs[n].vg}" without -ff\n`); return 5; }
+      if (x.parts && x.label) { this.eout(`  Cannot use ${d}: device is partitioned\n`); return 5; }
+      if (st.mounts.some(m => m.dev === x.name)) { this.eout(`  Can't open ${d} exclusively.  Mounted filesystem?\n`); return 5; }
+      if (x.fs && !yes) { this.eout(`WARNING: ${x.fs.type} signature detected on ${d} at offset ${{ ext4: 1080, xfs: 0, vfat: 82, swap: 4086 }[x.fs.type] || 0}. Wipe it? [y/n]: [n]\n  Aborted wiping of ${x.fs.type}.\n  1 existing signature left on the device.\n`); return 5; }
+      if (x.fs) { this.out(`WARNING: ${x.fs.type} signature detected on ${d} at offset ${{ ext4: 1080, xfs: 0, vfat: 82, swap: 4086 }[x.fs.type] || 0}. Wipe it? [y/n]: [y]\n  Wiping ${x.fs.type} signature on ${d}.\n`); x.fs = null; }
+      const pu = newUuid(this, 'pv' + n).replace(/-/g, '').replace(/[0-9a-f]/g, (c, i) => 'aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789'[(parseInt(c, 16) * 7 + i) % 36]); st.lvm.pvs[n] = { uuid: [pu.slice(0, 6), pu.slice(6, 10), pu.slice(10, 14), pu.slice(14, 18), pu.slice(18, 22), pu.slice(22, 26), pu.slice(26, 32)].join('-'), dev: '/dev/' + n, vg: '', pe: Math.floor((x.size - MiB) / (4 * MiB)), size: x.size };
+      this.out(`  Physical volume "${d}" successfully created.\n`);
+    }
+    return 0;
+  };
+  C.pvremove = function (a) {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks();
+    for (const d of a.filter(x => !x.startsWith('-'))) { const n = d.replace(/^\/dev\//, ''), P = st.lvm.pvs[n]; if (!P) { this.eout(`  No PV found on device ${d}.\n`); return 5; } if (P.vg) { this.eout(`  PV ${d} is used by VG ${P.vg} so please use vgreduce first.\n  (If you are certain you need pvremove, then confirm by using --force twice.)\n`); return 5; } delete st.lvm.pvs[n]; this.out(`  Labels on physical volume "${d}" successfully wiped.\n`); }
+    return 0;
+  };
+  C.vgcreate = function (a) {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(), [vg, ...devs] = a.filter(x => !x.startsWith('-'));
+    if (!vg || !devs.length) { this.eout('  Please provide volume group name and physical volumes\n'); return 3; }
+    if (st.lvm.vgs[vg]) { this.eout(`  A volume group called ${vg} already exists.\n`); return 5; }
+    for (const d of devs) { const n = d.replace(/^\/dev\//, ''); if (!st.lvm.pvs[n]) { const r = C.pvcreate.call(this, [d]); if (r) return r; } if (st.lvm.pvs[n].vg) { this.eout(`  Physical volume '${d}' is already in volume group '${st.lvm.pvs[n].vg}'\n  Unable to add physical volume '${d}' to volume group '${st.lvm.pvs[n].vg}'\n`); return 5; } }
+    st.lvm.vgs[vg] = { pvs: devs.map(d => d.replace(/^\/dev\//, '')) };
+    st.lvm.vgs[vg].pvs.forEach(n => { st.lvm.pvs[n].vg = vg; });
+    this.out(`  Volume group "${vg}" successfully created\n`);
+    return 0;
+  };
+  C.vgextend = function (a) {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(), [vg, ...devs] = a.filter(x => !x.startsWith('-'));
+    if (!st.lvm.vgs[vg]) { this.eout(`  Volume group "${vg}" not found\n  Cannot process volume group ${vg}\n`); return 5; }
+    for (const d of devs) { const n = d.replace(/^\/dev\//, ''); if (!st.lvm.pvs[n]) { const r = C.pvcreate.call(this, [d]); if (r) return r; } st.lvm.pvs[n].vg = vg; st.lvm.vgs[vg].pvs.push(n); }
+    this.out(`  Volume group "${vg}" successfully extended\n`);
+    return 0;
+  };
+  C.vgremove = function (a) {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(), vg = a.filter(x => !x.startsWith('-'))[0];
+    if (!st.lvm.vgs[vg]) { this.eout(`  Volume group "${vg}" not found\n  Cannot process volume group ${vg}\n`); return 5; }
+    if (st.lvm.lvs.some(l => l.vg === vg)) { this.eout(`  Volume group "${vg}" still contains ${st.lvm.lvs.filter(l => l.vg === vg).length} logical volume(s). Remove them first with lvremove.\n`); return 5; }
+    st.lvm.vgs[vg].pvs.forEach(n => { st.lvm.pvs[n].vg = ''; }); delete st.lvm.vgs[vg];
+    this.out(`  Volume group "${vg}" successfully removed\n`);
+    return 0;
+  };
+  C.lvcreate = function (a) {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(); let name = '', L = '', l = '', vg = '';
+    for (let i = 0; i < a.length; i++) { if (a[i] === '-n' || a[i] === '--name') name = a[++i]; else if (a[i] === '-L' || a[i] === '--size') L = a[++i]; else if (a[i] === '-l' || a[i] === '--extents') l = a[++i]; else if (a[i] === '-y') ; else if (!a[i].startsWith('-')) vg = a[i]; }
+    if (!st.lvm.vgs[vg]) { this.eout(`  Volume group "${vg}" not found\n  Cannot process volume group ${vg}\n`); return 5; }
+    if (!name) name = 'lvol' + st.lvm.lvs.filter(x => x.vg === vg).length;
+    if (st.lvm.lvs.some(x => x.vg === vg && x.lv === name)) { this.eout(`  Logical Volume "${name}" already exists in volume group "${vg}"\n`); return 5; }
+    const free = this.vgFree(vg); let le;
+    if (L) le = Math.ceil(lvmParse(L, 'm') / (4 * MiB)); else if (/^(\d+)%FREE$/.test(l)) le = Math.floor(free * +RegExp.$1 / 100); else if (/^(\d+)%VG$/.test(l)) le = Math.floor(st.lvm.vgs[vg].pvs.reduce((t, p) => t + st.lvm.pvs[p].pe, 0) * +RegExp.$1 / 100); else le = +l;
+    if (!le || isNaN(le)) { this.eout('  Please specify either size or extents but not both.\n'); return 3; }
+    if (le > free) { this.eout(`  Volume group "${vg}" has insufficient free space (${free} extents): ${le} required.\n`); return 5; }
+    const lv = { lv: name, vg, name: 'mapper/' + vg + '-' + name, le, size: le * 4 * MiB, mm: '253:' + st.lvm.lvs.length, pvs: st.lvm.vgs[vg].pvs.slice(), fs: null, isLv: true };
+    st.lvm.lvs.push(lv);
+    this.mk(`/dev/${vg}`, 'd', 0o755, 'root', ''); this.mk(`/dev/${vg}/${name}`, 'b', 0o660, 'root', '').group = 'disk';
+    this.out(`  Logical volume "${name}" created.\n`);
+    return 0;
+  };
+  C.lvextend = C.lvresize = C.lvreduce = function (a) {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(); let L = '', l = '', target = '', fsToo = false;
+    for (let i = 0; i < a.length; i++) { if (a[i] === '-L' || a[i] === '--size') L = a[++i]; else if (a[i] === '-l' || a[i] === '--extents') l = a[++i]; else if (a[i] === '-r' || a[i] === '--resizefs') fsToo = true; else if (!a[i].startsWith('-')) target = a[i]; }
+    const lv = this.partOf(target);
+    if (!lv || !lv.isLv) { this.eout(`  Failed to find logical volume "${String(target).replace(/^\/dev\//, '')}"\n`); return 5; }
+    const free = this.vgFree(lv.vg), plus = /^\+/.test(L || l); let le;
+    if (L) le = (plus ? lv.le : 0) + Math.ceil(lvmParse(L, 'm') / (4 * MiB)); else if (/^\+?(\d+)%FREE$/.test(l)) le = lv.le + Math.floor(free * +RegExp.$1 / 100); else le = (plus ? lv.le : 0) + +String(l).replace('+', '');
+    const what = `${lv.vg}/${lv.lv}`, sz = e => `${lvmSize(e * 4 * MiB).replace(/^</, '').replace(/g$/, ' GiB').replace(/m$/, ' MiB')} (${e} extents)`;
+    if (le < lv.le) { this.eout(`  The practice shell does not shrink volumes. Shrinking needs the file system made smaller first, and xfs cannot shrink at all.\n`); return 5; }
+    if (le === lv.le) { this.eout(`  New size (${le} extents) matches existing size (${le} extents).\n`); return 5; }
+    if (le - lv.le > free) { this.eout(`  Insufficient free space: ${le - lv.le} extents needed, but only ${free} available\n`); return 5; }
+    const old = lv.le; lv.le = le; lv.size = le * 4 * MiB;
+    this.out(`  Size of logical volume ${what} changed from ${sz(old)} to ${sz(le)}.\n  Logical volume ${what} successfully resized.\n`);
+    if (fsToo && lv.fs && lv.fs.type === 'ext4') {
+      const m = st.mounts.find(x => x.dev === lv.name), dev = '/dev/' + lv.name, nb = Math.floor(lv.size / 4096), desc = n => Math.ceil(Math.ceil(n / 32768) * 64 / 4096);
+      this.out(`resize2fs 1.47.0 (5-Feb-2023)\n${m ? `Filesystem at ${dev} is mounted on ${m.dir}; on-line resizing required\n` : ''}old_desc_blocks = ${desc(Math.floor(old * 4 * MiB / 4096))}, new_desc_blocks = ${desc(nb)}\nThe filesystem on ${dev} is now ${nb} (4k) blocks long.\n\n`);
+      const k = nb * 4; lv.fs.blocks = Math.round(k * 0.976); lv.fs.avail = Math.round(k * 0.925); lv.fs.inodes = Math.floor(nb / 4 / 8192) * 8192 || 8192;
+    } else if (fsToo && lv.fs && lv.fs.type === 'xfs') { const k = lv.size / 1024; lv.fs.blocks = Math.round(k * 0.995); lv.fs.avail = Math.round(k * 0.9875); }
+    return 0;
+  };
+  C.lvremove = function (a) {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(), lv = this.partOf(a.filter(x => !x.startsWith('-'))[0]);
+    if (!lv || !lv.isLv) { this.eout('  Failed to find logical volume\n'); return 5; }
+    if (st.mounts.some(m => m.dev === lv.name)) { this.eout(`  Logical volume ${lv.vg}/${lv.lv} contains a filesystem in use.\n`); return 5; }
+    st.lvm.lvs.splice(st.lvm.lvs.indexOf(lv), 1); this.out(`  Logical volume "${lv.lv}" successfully removed.\n`);
+    return 0;
+  };
+  C.pvs = function () {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(), rows = Object.keys(st.lvm.pvs).map(n => { const P = st.lvm.pvs[n], used = st.lvm.lvs.filter(l => l.pvs.includes(n) && l.vg === P.vg).reduce((t, l) => t + Math.min(l.le, P.pe), 0); return [P.dev, P.vg, 'lvm2', P.vg ? 'a--' : '---', P.vg ? lvmSize(P.pe * 4 * MiB) : lvmSize(P.size), P.vg ? lvmSize((P.pe - used) * 4 * MiB).replace(/^0\.00[gm]$/, '0 ') : lvmSize(P.size)]; });
+    if (rows.length) this.out(this.lvmTable(['PV', 'VG', 'Fmt', 'Attr', 'PSize', 'PFree'], rows, [4, 5]));
+    return 0;
+  };
+  C.vgs = function () {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(), rows = Object.keys(st.lvm.vgs).map(vg => { const V = st.lvm.vgs[vg], tot = V.pvs.reduce((t, p) => t + st.lvm.pvs[p].pe, 0), fr = this.vgFree(vg); return [vg, V.pvs.length, st.lvm.lvs.filter(l => l.vg === vg).length, 0, 'wz--n-', lvmSize(tot * 4 * MiB), fr ? lvmSize(fr * 4 * MiB) : '0 ']; });
+    if (rows.length) this.out(this.lvmTable(['VG', '#PV', '#LV', '#SN', 'Attr', 'VSize', 'VFree'], rows, [1, 2, 3, 5, 6]));
+    else this.out('  No volume groups found\n');
+    return 0;
+  };
+  C.lvs = function () {
+    if (!lvmRoot(this)) return 5;
+    const st = this.disks(), rows = st.lvm.lvs.map(l => [l.lv, l.vg, st.mounts.some(m => m.dev === l.name) || st.swaps.some(x => x.dev === l) ? '-wi-ao----' : '-wi-a-----', lvmSize(l.size)]);
+    if (rows.length) this.out(this.lvmTable(['LV', 'VG', 'Attr', 'LSize'], rows, [3]).replace(/^(  LV[^\n]*LSize *)/, '$1 Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert'));
+    return 0;
+  };
+
+  /* ---------- swap: fallocate, mkswap, swapon, swapoff ---------- */
+  C.fallocate = function (a) {
+    let len = '', t = '';
+    for (let i = 0; i < a.length; i++) { if (a[i] === '-l' || a[i] === '--length') len = a[++i]; else if (!a[i].startsWith('-')) t = a[i]; }
+    const m = /^([\d.]+)([KMGT]?)/i.exec(len || ''); const b = m ? +m[1] * ({ '': 1, k: 1024, m: MiB, g: GiB, t: GiB * 1024 }[m[2].toLowerCase()]) : NaN;
+    if (!t || isNaN(b)) { this.eout('fallocate: no length argument specified\n'); return 1; }
+    const p = this.abs(t), parent = this.node(dirName(p));
+    if (!parent) { this.eout(`fallocate: cannot open ${t}: No such file or directory\n`); return 1; }
+    let n = this.node(p);
+    if (!n) { if (!this.can(parent, 'w')) { this.eout(`fallocate: cannot open ${t}: Permission denied\n`); return 1; } n = this.mk(p, 'f', 0o666 & ~this.umask, this.user, ''); n.mtime = this.now(); }
+    n.big = Math.max(this.size(n), b);
+    return 0;
+  };
+  C.mkswap = function (a) {
+    const t = a.filter(x => !x.startsWith('-'))[0];
+    if (!t) { this.eout('mkswap: no device specified\n'); return 1; }
+    const x = this.partOf(t), n = x ? null : this.node(this.abs(t));
+    if (!x && !n) { this.eout(`mkswap: cannot open ${t}: No such file or directory\n`); return 1; }
+    if (this.user !== 'root') { this.eout(`mkswap: cannot open ${t}: Permission denied\n`); return 1; }
+    const size = x ? x.size : this.size(n), uuid = newUuid(this, 'swap' + t);
+    if (n && (n.mode & 0o077)) this.eout(`mkswap: ${t}: insecure permissions ${(n.mode & 0o777).toString(8).padStart(4, '0')}, fix with: chmod 0600 ${t}\n`);
+    if (x && st0(this).swaps.some(s => s.dev === x)) { this.eout(`mkswap: ${t}: contains a swap area that is in use\n`); return 1; }
+    this.out(`Setting up swapspace version 1, size = ${humanMiB(size - 4096)} (${size - 4096} bytes)\nno label, UUID=${uuid}\n`);
+    if (x) x.fs = { type: 'swap', uuid, label: '', blocks: 0, used: 0, avail: 0, inodes: 0, iused: 0 }; else n.swap = uuid;
+    return 0;
+  };
+  const st0 = w => w.disks();
+  const humanMiB = b => { const m = b / MiB; return (Number.isInteger(m) ? m : m.toFixed(0)) + ' MiB'; };
+  C.swapon = function (a) {
+    const st = this.disks(), args = a.filter(x => !x.startsWith('-'));
+    const show = () => { if (!st.swaps.length) return 0; this.out(['NAME TYPE SIZE USED PRIO'].concat(st.swaps.map(x => `${x.name} ${x.type} ${humanBin(x.size - 4096).replace(/(\.\d)?([KMGT])$/, (m0, d, u) => (d || '') + u)} 0B ${x.prio}`)).map(l => l.split(' ')).reduce((acc, r, i, A) => { const w = A[0].map((_, k) => Math.max(...A.map(q => q[k].length))); acc.push(r.map((c, k) => k === 0 || k === 1 ? c.padEnd(w[k]) : c.padStart(w[k])).join(' ')); return acc; }, []).join('\n') + '\n'); return 0; };
+    if (!args.length && !a.includes('-a')) return show();
+    if (this.user !== 'root') { this.eout(`swapon: ${args[0] || '/etc/fstab'}: Permission denied\n`); return 1; }
+    const one = t => {
+      if (st.swaps.some(x => x.name === t || (x.dev && this.partOf(t) === x.dev))) { this.eout(`swapon: ${t}: swapon failed: Device or resource busy\n`); return 255; }
+      const x = this.partOf(t), n = x ? null : this.node(this.abs(t));
+      if (!x && !n) { this.eout(`swapon: cannot open ${t}: No such file or directory\n`); return 255; }
+      if (x ? !(x.fs && x.fs.type === 'swap') : !n.swap) { this.eout(`swapon: ${t}: read swap header failed\n`); return 255; }
+      if (n && (n.mode & 0o077)) this.eout(`swapon: ${t}: insecure permissions ${(n.mode & 0o777).toString(8).padStart(4, '0')}, 0600 suggested.\n`);
+      st.swaps.push(x ? { name: '/dev/' + (x.isLv ? 'dm-' + x.mm.split(':')[1] : x.name), type: 'partition', size: x.size, prio: -2 - st.swaps.length, dev: x } : { name: this.abs(t), type: 'file', size: this.size(n), prio: -2 - st.swaps.length });
+      return 0;
+    };
+    if (a.includes('-a')) { const tab = (this.node('/etc/fstab').data || '').split('\n').map(l => l.trim().split(/\s+/)).filter(f => f[2] === 'swap' && !f[0].startsWith('#')); for (const f of tab) { const p = this.partOf(f[0]); const nm = p ? '/dev/' + p.name : f[0]; if (!st.swaps.some(x => x.name === nm || x.dev === p)) { const r = one(f[0]); if (r) return r; } } return 0; }
+    for (const t of args) { const r = one(t); if (r) return r; }
+    return 0;
+  };
+  C.swapoff = function (a) {
+    const st = this.disks(), args = a.filter(x => !x.startsWith('-'));
+    if (this.user !== 'root') { this.eout(`swapoff: ${args[0] || ''}: Operation not permitted\n`); return 1; }
+    if (a.includes('-a')) { st.swaps.length = 0; return 0; }
+    for (const t of args) { const p = this.partOf(t), i = st.swaps.findIndex(x => x.name === this.abs(t) || (p && x.dev === p)); if (i < 0) { this.eout(`swapoff: ${t}: swapoff failed: Invalid argument\n`); return 255; } st.swaps.splice(i, 1); }
+    return 0;
+  };
   C.lsblk = function (a) {
     const st = this.disks(), full = a.includes('-f') || a.includes('--fs'), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
-    const mnt = p => (st.mounts.find(m => m.dev === p.name) || {}).dir || '';
+    const mnt = p => (st.mounts.find(m => m.dev === p.name) || {}).dir || (st.swaps.some(x => x.dev === p) ? '[SWAP]' : '');
     const devs = st.devs.filter(d => !names.length || names.includes(d.name));
     const rows = [];
-    devs.forEach(d => { rows.push([d.name, d, 'disk']); d.parts.forEach((p, i) => rows.push([(i === d.parts.length - 1 ? '└─' : '├─') + p.name, p, 'part'])); });
+    const lvsOn = (x, pre) => st.lvm.lvs.filter(lv => lv.pvs.includes(x.name)).forEach((lv, i, A) => rows.push([pre + (i === A.length - 1 ? '└─' : '├─') + lv.vg + '-' + lv.lv, lv, 'lvm']));
+    devs.forEach(d => { rows.push([d.name, d, 'disk']); lvsOn(d, ''); d.parts.forEach((p, i) => { rows.push([(i === d.parts.length - 1 ? '└─' : '├─') + p.name, p, 'part']); lvsOn(p, i === d.parts.length - 1 ? '  ' : '│ '); }); });
     if (!rows.length) { this.eout(`lsblk: ${names[0]}: not a block device\n`); return 32; }
     const w = Math.max(4, ...rows.map(r => r[0].length));
     if (full) {
-      const fsr = rows.map(([n, x]) => { const fs = x.fs; const m = mnt(x); const avail = fs && m ? humanBin(fs.avail * 1024) : ''; const pct = fs && m ? Math.ceil(fs.used * 100 / (fs.used + fs.avail)) + '%' : ''; return [n, fs ? fs.type : '', fs ? (fs.type === 'ext4' ? '1.0' : fs.type === 'vfat' ? 'FAT32' : fs.type === 'xfs' ? '' : '') : '', fs ? fs.label : '', fs ? fs.uuid : '', avail, pct, m]; });
+      const fsr = rows.map(([n, x]) => { const P = st.lvm.pvs[x.name]; const fs = P ? { type: 'LVM2_member', label: '', uuid: P.uuid, ver: 'LVM2 001' } : x.fs; const m = mnt(x); const mm = m && m !== '[SWAP]'; const avail = fs && mm ? humanBin(fs.avail * 1024) : ''; const pct = fs && mm ? Math.ceil(fs.used * 100 / (fs.used + fs.avail)) + '%' : ''; return [n, fs ? fs.type : '', fs ? (fs.ver ? fs.ver : fs.type === 'swap' ? '1' : fs.type === 'ext4' ? '1.0' : fs.type === 'vfat' ? 'FAT32' : fs.type === 'xfs' ? '' : '') : '', fs ? fs.label : '', fs ? fs.uuid : '', avail, pct, m]; });
       const head = ['NAME', 'FSTYPE', 'FSVER', 'LABEL', 'UUID', 'FSAVAIL', 'FSUSE%', 'MOUNTPOINTS'], all = [head].concat(fsr), ww = head.map((_, i) => Math.max(...all.map(r => r[i].length)));
       this.out(all.map(r => r.map((x, i) => i === 7 ? x : i === 5 || i === 6 ? x.padStart(ww[i]) : x.padEnd(ww[i])).join(' ').replace(/\s+$/, '')).join('\n') + '\n');
       return 0;
     }
-    this.out(`${'NAME'.padEnd(w)} MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS\n` + rows.map(([n, x, t]) => `${n.padEnd(w)} ${x.mm.padStart(5)}  ${(x.rm !== undefined ? x.rm : st.devs.find(d => d.parts.includes(x)).rm)} ${humanBin(x.size).padStart(5)}  0 ${t} ${mnt(x)}`.replace(/\s+$/, '')).join('\n') + '\n');
+    this.out(`${'NAME'.padEnd(w)} MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS\n` + rows.map(([n, x, t]) => `${n.padEnd(w)} ${x.mm.padStart(5)}  ${(x.rm !== undefined ? x.rm : t === 'lvm' ? 0 : st.devs.find(d => d.parts.includes(x)).rm)} ${humanBin(x.size).padStart(5)}  0 ${t.padEnd(4)} ${mnt(x)}`.replace(/\s+$/, '')).join('\n') + '\n');
     return 0;
   };
   C.blkid = function (a) {
@@ -2093,6 +2278,8 @@ const LXSH = (() => {
     }
     return 0;
   };
+  const sbList = n => { const L = [32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, 4096000, 7962624, 11239424, 20480000, 23887872].filter(b => b < n), out = []; for (let i = 0; i < L.length; i += 9) out.push(L.slice(i, i + 9).join(', ')); return out.join(', \n\t'); };
+  const jBlocks = n => n < 32768 ? 1024 : n < 262144 ? 4096 : n < 524288 ? 8192 : n < 4194304 ? 16384 : n < 8388608 ? 32768 : n < 16777216 ? 65536 : n < 33554432 ? 131072 : 262144;
   C['mkfs.ext4'] = C['mkfs.xfs'] = C['mkfs.vfat'] = C.mkfs = function (a, input) {
     let type = { 'mkfs.ext4': 'ext4', 'mkfs.xfs': 'xfs', 'mkfs.vfat': 'vfat' }[this.cmdNameReal] || 'ext4', label = '', force = false; const rest = [];
     for (let i = 0; i < a.length; i++) { if (a[i] === '-t') type = a[++i]; else if (a[i] === '-L' || a[i] === '-n') label = a[++i]; else if (a[i] === '-F' || a[i] === '-f') force = true; else if (!a[i].startsWith('-')) rest.push(a[i]); }
@@ -2107,7 +2294,7 @@ const LXSH = (() => {
     const real20 = blocks4k === 5242368;
     if (type === 'ext4') {
       const inodes = real20 ? 1310720 : Math.floor(blocks4k / 4 / 8192) * 8192 || 8192;
-      this.out(`${p.fs ? '' : 'mke2fs 1.47.0 (5-Feb-2023)\n'}Creating filesystem with ${blocks4k} 4k blocks and ${inodes} inodes\nFilesystem UUID: ${uuid}\nSuperblock backups stored on blocks: \n\t32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208, \n\t4096000\n\nAllocating group tables: done                            \nWriting inode tables: done                            \nCreating journal (32768 blocks): done\nWriting superblocks and filesystem accounting information: done\n\n`);
+      this.out(`${p.fs ? '' : 'mke2fs 1.47.0 (5-Feb-2023)\n'}Creating filesystem with ${blocks4k} 4k blocks and ${inodes} inodes\nFilesystem UUID: ${uuid}\nSuperblock backups stored on blocks: \n\t${sbList(blocks4k)}\n\nAllocating group tables: done                            \nWriting inode tables: done                            \nCreating journal (${jBlocks(blocks4k)} blocks): done\nWriting superblocks and filesystem accounting information: done\n\n`);
       p.fs = { type: 'ext4', uuid, label, blocks: real20 ? 20464208 : Math.round(k * 0.976), used: 24, avail: real20 ? 19399328 : Math.round(k * 0.925), inodes, iused: 11 };
       p.fs.tree = { type: 'd', name: '/', mode: 0o755, owner: 'root', group: 'root', mtime: this.now(), kids: { 'lost+found': { type: 'd', name: 'lost+found', mode: 0o700, owner: 'root', group: 'root', mtime: this.clock, kids: {} } } };
     } else if (type === 'xfs') {
