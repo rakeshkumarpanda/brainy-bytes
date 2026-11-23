@@ -135,7 +135,8 @@ def execute(script, root=False, keep=False, cwd='~'):
     # Each top level command is announced by a marker line (\036 and its number) printed from a DEBUG trap, which
     # bash runs before a command without changing $? or PIPESTATUS. The trap fires only when the line number is the
     # start of the next expected command, so loops, functions and pipelines inside a command add nothing.
-    body = ['exec 2>&1 9>&1', None, None, "HISTIGNORE='__m *'", f'cd {cwd}']
+    body = ['exec 2>&1 9>&1; export LVM_SUPPRESS_FD_WARNINGS=1',  # fd 9 is ours, so lvm need not warn about it
+            None, None, "HISTIGNORE='__m *'", f'cd {cwd}']
     starts, idx = [], []
     for k, (kind, c) in enumerate(parts):
         if kind == '$':

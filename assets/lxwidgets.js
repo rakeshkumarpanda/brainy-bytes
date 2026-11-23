@@ -1130,6 +1130,57 @@
     }
   }));
 
+  /* admin 3.2 LVM: disks become physical volumes, join a volume group, and logical volumes take extents from the pool */
+  def('lx-lvm', el => W(el, {
+    title: 'Build and grow storage with LVM',
+    sub: 'Choose how big the web volume starts and how much it grows. Pip runs the LVM commands in the practice shell and draws each disk as a row of 1 GiB blocks, so you can see where every logical volume lives.',
+    inputs: [{ k: 'size', label: 'Start size (GiB)', type: 'num', val: 12, min: 1, max: 19 },
+             { k: 'grow', label: 'Grow by (GiB)', type: 'num', val: 10, min: 1, max: 15 },
+             { k: 'add', label: 'Second disk', type: 'seg', val: 'yes', opts: [['yes', 'add /dev/sdd when needed'], ['no', 'only /dev/sdc']] }],
+    random: () => ({ size: 4 + Math.floor(Math.random() * 14), grow: 2 + Math.floor(Math.random() * 12), add: Math.random() < 0.7 ? 'yes' : 'no' }),
+    check: v => +v.size + +v.grow > 29 ? 'The two disks hold about 29 GiB together. Choose a smaller start size or growth.' : '',
+    frames: v => {
+      const w = world(), size = Math.round(+v.size), grow = Math.round(+v.grow), fr = [];
+      const sh = cmd => { const r = w.run(cmd); return { t: 'term', label: 'Practice shell', lines: [['c', cmd]].concat(r.out.replace(/\n+$/, '').split('\n').filter(x => x).map(x => [r.code ? 'e' : 'o', x])), code: r.code }; };
+      /* one cell per GiB: 19 usable on sdc (5119 extents of 4 MiB), 9 on sdd (2559 extents) */
+      const rowOf = (pv, n, label) => {
+        const st = w.disks(), cells = Array(n).fill(''), cls = {}, tag = {};
+        if (!st.lvm.pvs[pv]) { for (let i = 0; i < n; i++) cls[i] = 'ghost'; return { t: 'row', label, cells, cls }; }
+        let at = 0;
+        st.lvm.lvs.forEach(l => l.segs.filter(g => g.pv === pv).forEach(g => { const k = Math.round(g.n / 256); for (let i = 0; i < k && at < n; i++, at++) { cells[at] = l.lv; cls[at] = l.newCells && i >= k - l.newCells[pv] ? 'cur' : 'yes'; } }));
+        tag[0] = pv; return { t: 'row', label, cells, cls };
+      };
+      const rows = (lab) => [rowOf('sdc', 19, '/dev/sdc ' + lab), rowOf('sdd', 9, '/dev/sdd')];
+      fr.push({ msg: 'Two empty disks: /dev/sdc with 20 GB and /dev/sdd with 10 GB. Without LVM, a file system lives inside one partition and can never be bigger than that one disk.', mood: 'think', layers: rows('(not used yet)') });
+      const t1 = sh('sudo pvcreate /dev/sdc');
+      fr.push({ msg: '<code>pvcreate</code> writes an LVM label to /dev/sdc and makes it a <b>physical volume</b> (PV). LVM cuts it into extents of 4 MiB, 5119 of them here. Each block in the picture stands for 256 extents, 1 GiB.', mood: 'look', layers: [t1].concat(rows('as a physical volume')) });
+      const t2 = sh('sudo vgcreate vgdata /dev/sdc');
+      fr.push({ msg: '<code>vgcreate</code> puts the PV into a <b>volume group</b> called vgdata, a pool of free extents. The pool can later take more disks.', mood: 'look', layers: [t2, sh('sudo vgs')].concat(rows('in vgdata')) });
+      const t3 = sh(`sudo lvcreate -n web -L ${size}G vgdata`);
+      const lv = () => w.disks().lvm.lvs.find(l => l.lv === 'web');
+      if (t3.code) { fr.push({ msg: 'The pool is too small for that.', mood: 'sad', fx: 'shake', layers: [t3] }); return fr; }
+      fr.push({ msg: `<code>lvcreate</code> takes ${size * 256} extents from the pool and makes the <b>logical volume</b> web, ${size} GiB, at /dev/vgdata/web. It behaves like a partition: you make a file system on it and mount it.`, mood: 'happy', fx: 'pop', layers: [t3].concat(rows('in vgdata')) });
+      w.run('sudo mkfs.ext4 -q /dev/vgdata/web'); w.run('sudo mkdir -p /srv/web'); w.run('sudo mount /dev/vgdata/web /srv/web');
+      fr.push({ msg: 'After <code>mkfs.ext4</code> and <code>mount</code>, the web site lives on /srv/web. Months later the disk is nearly full and has to grow.', mood: 'look', layers: [sh('df -h /srv/web')] });
+      const free1 = w.vgFree('vgdata'), need = grow * 256;
+      if (need > free1) {
+        const t4 = sh(`sudo lvextend -r -L +${grow}G /dev/vgdata/web`);
+        fr.push({ msg: `Growing by ${grow} GiB needs ${need} extents, but only ${free1} are free in vgdata. The pool is too small.`, mood: 'sad', fx: 'shake', layers: [t4].concat(rows('in vgdata')) });
+        if (v.add !== 'yes') { fr.push({ msg: 'With a single disk the only way out is a bigger disk. With LVM you could add another disk to the pool: try again with the second disk.', mood: 'think', layers: rows('in vgdata') }); return fr; }
+        const t5 = sh('sudo vgextend vgdata /dev/sdd');
+        fr.push({ msg: '<code>vgextend</code> makes /dev/sdd a physical volume and adds it to vgdata. The pool now spans two disks, while the server keeps running.', mood: 'wow', layers: [t5, sh('sudo vgs')].concat(rows('in vgdata')) });
+      }
+      const before = {}; lv().segs.forEach(g => { before[g.pv] = (before[g.pv] || 0) + g.n; });
+      const t6 = sh(`sudo lvextend -r -L +${grow}G /dev/vgdata/web`);
+      const after = {}; lv().segs.forEach(g => { after[g.pv] = (after[g.pv] || 0) + g.n; });
+      lv().newCells = { sdc: Math.round(((after.sdc || 0) - (before.sdc || 0)) / 256), sdd: Math.round(((after.sdd || 0) - (before.sdd || 0)) / 256) };
+      fr.push({ msg: `<code>lvextend -r</code> adds ${need} extents${after.sdd ? ', some of them on /dev/sdd,' : ''} and then grows the ext4 file system with resize2fs, all while /srv/web stays mounted and in use. The new blocks are highlighted.`, mood: 'happy', fx: 'burst', layers: [t6].concat(rows('in vgdata')) });
+      delete lv().newCells;
+      fr.push({ msg: 'df shows the bigger file system. pvs shows how each disk is used. Remember that LVM spread over two disks without RAID means losing either disk loses the volume, so keep backups.', mood: 'think', layers: [sh('df -h /srv/web'), sh('sudo pvs')] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

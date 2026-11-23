@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LVM, RAID, swap and backups · Unix and Linux</title>
+<meta name="description" content="LVM physical volumes, volume groups, logical volumes and extents, pvcreate, vgcreate, lvcreate, lvextend -r, vgextend, pvmove and snapshots, RAID levels 0, 1, 5, 6 and 10 with mdadm and /proc/mdstat, replacing a failed disk, swap files with fallocate, mkswap and swapon, swappiness, the 3-2-1 backup rule, tar full and incremental archives, rsync mirrors and --link-dest snapshots, restic and borg.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=admin">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 3: Storage</span><span>›</span><span>LVM, RAID and backups</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 2 of 2 · Advanced</div>
+    <h1>LVM, RAID, swap and backups</h1>
+    <p class="lead">Make storage flexible with LVM volumes that grow while mounted, survive a broken disk with RAID, give the kernel swap space, and keep data safe with tar and rsync backups that you have actually restored.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">7 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#lvm-raid-backup" data-topic="cheatsheet" data-h="lvm-raid-backup">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#lvm" data-l="lvm"><span class="n">1</span><span class="t">LVM: storage pools made of disks</span></a></li><li><a href="#lvmgrow" data-l="lvmgrow"><span class="n">2</span><span class="t">Growing, moving and snapshotting volumes</span></a></li><li><a href="#raid" data-l="raid"><span class="n">3</span><span class="t">RAID: surviving a broken disk</span></a></li><li><a href="#swap" data-l="swap"><span class="n">4</span><span class="t">Swap: room for memory pages on disk</span></a></li><li><a href="#backup" data-l="backup"><span class="n">5</span><span class="t">Backups with tar and rsync</span></a></li><li><a href="#practice" data-l="practice"><span class="n">6</span><span class="t">Practice: grow storage with LVM and add swap</span></a></li><li><a href="#levels" data-l="levels"><span class="n">7</span><span class="t">Storage safety from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="lvm" data-l="lvm" hidden><div class="cv-lno">Lesson 1 of 7</div><h2>LVM: storage pools made of disks</h2>
+<p>A partition is fixed in size and stuck on one disk. The <b>Logical Volume Manager</b> (LVM) adds a layer in between, so volumes can grow, span several disks and move between them while they are in use.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Layer</th><th>What it is</th><th>Made with</th><th>Listed with</th></tr></thead><tbody><tr><td>Physical volume (PV)</td><td>a disk or partition with an LVM label, cut into extents of 4 MiB</td><td><code>pvcreate /dev/sdc</code></td><td><code>pvs</code>, <code>pvdisplay</code></td></tr><tr><td>Volume group (VG)</td><td>a pool of extents from one or more PVs</td><td><code>vgcreate vgdata /dev/sdc</code></td><td><code>vgs</code>, <code>vgdisplay</code></td></tr><tr><td>Logical volume (LV)</td><td>a block device cut from the pool, used like a partition</td><td><code>lvcreate -n web -L 10G vgdata</code></td><td><code>lvs</code>, <code>lvdisplay</code></td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-lvm"></div>
+<div class="lx-run"><div class="lx-rh"><span>Physical volumes and a volume group on two loop devices</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">truncate -s 1G d1.img d2.img</span>
+<span class="lx-cmd lx-root">a=$(losetup -f --show d1.img)</span>
+<span class="lx-cmd lx-root">b=$(losetup -f --show d2.img)</span>
+<span class="lx-cmd lx-root">pvcreate "$a" "$b"</span>
+<span class="lx-o">  Physical volume "/dev/loop0" successfully created.
+  Physical volume "/dev/loop1" successfully created.</span>
+<span class="lx-cmd lx-root">vgcreate vgdata "$a" "$b"</span>
+<span class="lx-o">  Volume group "vgdata" successfully created</span>
+<span class="lx-cmd lx-root">pvs</span>
+<span class="lx-o">  PV         VG     Fmt  Attr PSize    PFree   
+  /dev/loop0 vgdata lvm2 a--  1020.00m 1020.00m
+  /dev/loop1 vgdata lvm2 a--  1020.00m 1020.00m</span>
+<span class="lx-cmd lx-root">vgs</span>
+<span class="lx-o">  VG     #PV #LV #SN Attr   VSize VFree
+  vgdata   2   0   0 wz--n- 1.99g 1.99g</span>
+<span class="lx-cmd lx-root">vgdisplay vgdata | grep -E 'VG Size|PE Size|Total PE|Free  PE'</span>
+<span class="lx-o">  VG Size               1.99 GiB
+  PE Size               4.00 MiB
+  Total PE              510
+  Free  PE / Size       510 / 1.99 GiB</span>
+<span class="lx-cmd lx-root">vgremove -q vgdata</span>
+<span class="lx-o">  Volume group "vgdata" successfully removed</span>
+<span class="lx-cmd lx-root">pvremove -q "$a" "$b"</span>
+<span class="lx-o">  Labels on physical volume "/dev/loop0" successfully wiped.
+  Labels on physical volume "/dev/loop1" successfully wiped.</span>
+<span class="lx-cmd lx-root">losetup -d "$a" "$b"</span></pre><div class="lx-note">Each 1 GiB PV gives 1020 MiB, because LVM keeps 1 MiB for its own metadata and counts only whole 4 MiB extents. The pool holds 510 extents. The Attr column a-- means the PV is allocatable. Creating logical volumes needs the device-mapper driver of the kernel, which this build container lacks, so the next box comes from the practice shell.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Cut a logical volume from the pool, format it and mount it</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">sudo lvcreate -n web -L 12G vgdata</span>
+<span class="lx-o">  Logical volume "web" created.</span>
+<span class="lx-cmd">sudo lvs</span>
+<span class="lx-o">  LV  VG     Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  web vgdata -wi-a----- 12.00g</span>
+<span class="lx-cmd">sudo mkfs.ext4 -q -L web /dev/vgdata/web</span>
+<span class="lx-cmd">sudo mkdir /srv/web</span>
+<span class="lx-cmd">sudo mount /dev/vgdata/web /srv/web</span>
+<span class="lx-cmd">df -h /srv/web</span>
+<span class="lx-o">Filesystem             Size Used Avail Use% Mounted on
+/dev/mapper/vgdata-web  12G  24K   12G   1% /srv/web</span>
+<span class="lx-cmd">lsblk /dev/sdc</span>
+<span class="lx-o">NAME         MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sdc           8:32  0   20G  0 disk
+└─vgdata-web 253:0  0   12G  0 lvm  /srv/web</span></pre><div class="lx-note">The same volume has three names: /dev/vgdata/web and /dev/mapper/vgdata-web are links to the device-mapper device /dev/dm-0, which has the major number 253. In the Attr column, w means writable, i means inherited allocation, a means active, and an o appears once the volume is open, for example mounted.</div></div>
+<div class="vt-talk" hidden>With plain partitions, every file system is stuck inside one fixed piece of one disk. L V M, the logical volume manager, adds a flexible layer. First you turn disks or partitions into physical volumes with p v create. L V M cuts each one into small extents of four mebibytes. Then you collect physical volumes into a volume group, a pool of extents, with v g create. Finally you cut logical volumes out of the pool with l v create, giving a name and a size. A logical volume behaves like a partition: you make a file system on it and mount it. The commands p v s, v g s and l v s list each layer. Try the animation to see a volume take blocks from a disk, and grow onto a second disk when the first one is full.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="lvmgrow" data-l="lvmgrow" hidden><div class="cv-lno">Lesson 2 of 7</div><h2>Growing, moving and snapshotting volumes</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>lvextend -r -L +5G LV</code></td><td>Grow by 5 GiB and grow the file system too (-r)</td><td><code>sudo lvextend -r -L +5G /dev/vgdata/web</code></td></tr><tr><td><code>lvextend -r -l +100%FREE LV</code></td><td>Grow into all free space of the pool</td><td><code>sudo lvextend -r -l +100%FREE /dev/vgdata/web</code></td></tr><tr><td><code>vgextend VG PV</code></td><td>Add a new disk to the pool</td><td><code>sudo vgextend vgdata /dev/sdd</code></td></tr><tr><td><code>pvmove PV</code></td><td>Move all extents off a disk, online</td><td><code>sudo pvmove /dev/sdc</code></td></tr><tr><td><code>vgreduce VG PV</code></td><td>Take an empty disk out of the pool</td><td><code>sudo vgreduce vgdata /dev/sdc</code></td></tr><tr><td><code>lvcreate -s -L 2G -n NAME LV</code></td><td>A snapshot: a frozen view of a volume</td><td><code>sudo lvcreate -s -L 2G -n web-snap vgdata/web</code></td></tr><tr><td><code>lvremove VG/LV</code></td><td>Delete a volume (unmount it first)</td><td><code>sudo lvremove vgdata/web-snap</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>The pool is full, so add a disk and grow the mounted volume</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">sudo lvextend -r -L +10G /dev/vgdata/web</span>
+<span class="lx-o">  Insufficient free space: 2560 extents needed, but only 2047 available</span>
+<span class="lx-cmd">sudo vgextend vgdata /dev/sdd</span>
+<span class="lx-o">  Physical volume "/dev/sdd" successfully created.
+  Volume group "vgdata" successfully extended</span>
+<span class="lx-cmd">sudo lvextend -r -L +10G /dev/vgdata/web</span>
+<span class="lx-o">  Size of logical volume vgdata/web changed from 12.00 GiB (3072 extents) to 22.00 GiB (5632 extents).
+  Logical volume vgdata/web successfully resized.
+resize2fs 1.47.0 (5-Feb-2023)
+Filesystem at /dev/mapper/vgdata-web is mounted on /srv/web; on-line resizing required
+old_desc_blocks = 2, new_desc_blocks = 3
+The filesystem on /dev/mapper/vgdata-web is now 5767168 (4k) blocks long.</span>
+<span class="lx-cmd">sudo pvs</span>
+<span class="lx-o">  PV       VG     Fmt  Attr PSize   PFree
+  /dev/sdc vgdata lvm2 a--  &lt;20.00g    0
+  /dev/sdd vgdata lvm2 a--  &lt;10.00g 7.99g</span></pre><div class="lx-note">This comes from the practice shell, whose messages follow lvm2 2.03 and e2fsprogs 1.47 on Ubuntu 24.04. vgextend runs pvcreate for a disk that is not a PV yet. The -r option calls resize2fs (through fsadm) after the volume has grown, and ext4 grows while mounted. Without -r you must run resize2fs, or xfs_growfs for xfs, yourself.</div></div>
+<div class="walk"><div class="walk-h"><span>Replace an old disk without downtime</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Add the new disk to the pool: <code>sudo vgextend vgdata /dev/sde</code>.</li><li>Move every extent off the old disk while the volumes stay mounted: <code>sudo pvmove /dev/sdc</code>.</li><li>Take the empty disk out of the pool: <code>sudo vgreduce vgdata /dev/sdc</code>.</li><li>Remove its LVM label with <code>sudo pvremove /dev/sdc</code>, then take it out of the machine.</li></ol></div>
+<div class="note note-tip"><b>Remember</b><div>A snapshot made with lvcreate -s freezes a volume at one moment, so a backup can copy a consistent state while the original keeps changing. Only changed blocks use space in the snapshot, and a classic snapshot becomes invalid when that space (-L) fills up, so remove it after the backup. Thin pools (lvmthin) allow cheaper snapshots and overcommitted volumes.</div></div>
+<div class="vt-talk" hidden>The big win of L V M is growing storage without downtime. When a volume is almost full and the pool still has free extents, one command does it all: l v extend dash r dash capital L plus five G grows the volume by five gibibytes, and dash r grows the file system on it too, while it stays mounted. When the pool itself is full, add a new disk with v g extend, and grow again. To replace an old disk, add the new one, move all data off the old one with p v move while everything keeps running, then remove the empty disk from the group. Snapshots freeze a volume at one moment, which lets a backup copy a consistent state. Remember one danger: a volume spread over two disks without RAID is lost if either disk dies.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="raid" data-l="raid" hidden><div class="cv-lno">Lesson 3 of 7</div><h2>RAID: surviving a broken disk</h2>
+<p><b>RAID</b> (redundant array of independent disks) combines several disks so the data survives when one fails, or so it is faster. On Linux, <code>mdadm</code> builds software RAID arrays such as /dev/md0, and the kernel reports their state in <code>/proc/mdstat</code>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Level</th><th>How it works</th><th>Usable space with n disks of size s</th><th>Disks that may fail</th></tr></thead><tbody><tr><td>RAID 0</td><td>stripes data across the disks for speed</td><td>n × s</td><td>none: one failure loses everything</td></tr><tr><td>RAID 1</td><td>mirrors: every disk holds the same data</td><td>s</td><td>all but one</td></tr><tr><td>RAID 5</td><td>stripes with one parity block per stripe (at least 3 disks)</td><td>(n − 1) × s</td><td>one</td></tr><tr><td>RAID 6</td><td>stripes with two parity blocks (at least 4 disks)</td><td>(n − 2) × s</td><td>two</td></tr><tr><td>RAID 10</td><td>stripes over mirrored pairs (at least 4 disks)</td><td>n × s ÷ 2</td><td>one in each pair</td></tr></tbody></table></div>
+<span class="eq">RAID 5 usable = (n − 1) × s,   RAID 6 usable = (n − 2) × s</span>
+<div class="lx-run"><div class="lx-rh"><span>Build a mirror and read its state (typical output, the build container has no md driver)</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">sudo mdadm --create /dev/md0 --level=1 --raid-devices=2 /dev/sdc1 /dev/sdd1</span>
+<span class="lx-o">mdadm: Note: this array has metadata at the start and
+    may not be suitable as a boot device.  If you plan to
+    store '/boot' on this device please ensure that
+    your boot-loader understands md/v1.x metadata, or use
+    --metadata=0.90
+Continue creating array? y
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.</span>
+<span class="lx-cmd">cat /proc/mdstat</span>
+<span class="lx-o">Personalities : [raid1]
+md0 : active raid1 sdd1[1] sdc1[0]
+      10476544 blocks super 1.2 [2/2] [UU]
+      [=====&gt;...............]  resync = 28.5% (2987776/10476544) finish=1.2min speed=103027K/sec
+
+unused devices: &lt;none&gt;</span></pre><div class="lx-note">The mdadm messages up to the question were printed by mdadm 4.3 in the build container before it stopped for lack of the md kernel module. [2/2] [UU] means two of two disks are up. A degraded mirror shows [2/1] [U_], and a failed member is marked (F). The first resync copies one disk onto the other in the background, and the array can be used meanwhile.</div></div>
+<div class="walk"><div class="walk-h"><span>Replace a failed disk in /dev/md0</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Find the failed member in <code>cat /proc/mdstat</code> or <code>sudo mdadm --detail /dev/md0</code>.</li><li>Mark it failed if the kernel has not, and remove it: <code>sudo mdadm /dev/md0 --fail /dev/sdd1 --remove /dev/sdd1</code>.</li><li>Fit the new disk and copy the partition table from the good disk, for example <code>sudo sfdisk -d /dev/sdc | sudo sfdisk /dev/sdd</code>.</li><li>Add the new partition: <code>sudo mdadm /dev/md0 --add /dev/sdd1</code>, and watch the rebuild in /proc/mdstat.</li><li>Save the array in the config with <code>sudo mdadm --detail --scan | sudo tee -a /etc/mdadm/mdadm.conf</code> and run <code>sudo update-initramfs -u</code> once, after creating an array.</li></ol></div>
+<div class="note note-warn"><b>Common mistake</b><div>RAID is not a backup. A mirror copies a deleted file, a ransomware encryption or a broken update to every disk at once. RAID keeps a server running when a disk dies, and backups bring back data that is gone.</div></div>
+<div class="vt-talk" hidden>Disks fail, and RAID keeps the data alive when one of them does. RAID zero only stripes data over disks for speed, so one broken disk loses everything. RAID one mirrors, every disk holds the same data, so you keep the space of one disk and can lose all but one. RAID five spreads one parity block over each stripe and survives one failed disk, and RAID six keeps two parity blocks and survives two. RAID ten mirrors pairs and stripes across them, fast and safe but using half the space. On Linux, m d a d m builds software arrays, and slash proc slash m d stat shows their state: U for a working disk, an underscore for a missing one. When a disk fails, remove it, add the new one, and the array rebuilds. But RAID is never a backup, because a deleted file is deleted on every disk.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="swap" data-l="swap" hidden><div class="cv-lno">Lesson 4 of 7</div><h2>Swap: room for memory pages on disk</h2>
+<p>When RAM runs short, the kernel can move memory pages that have not been used for a while to <b>swap</b> space on disk, and bring them back when they are needed. Swap can be a partition or a file. It is far slower than RAM, so it is a safety net, not extra memory. Hibernation also writes RAM into swap.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>swapon --show</code></td><td>Active swap areas</td><td><code>swapon --show</code></td></tr><tr><td><code>fallocate -l 2G /swapfile</code></td><td>Make a 2 GiB file</td><td><code>sudo fallocate -l 2G /swapfile</code></td></tr><tr><td><code>chmod 600 /swapfile</code></td><td>Only root may read swap, it holds memory contents</td><td><code>sudo chmod 600 /swapfile</code></td></tr><tr><td><code>mkswap FILE or DEV</code></td><td>Write a swap signature</td><td><code>sudo mkswap /swapfile</code></td></tr><tr><td><code>swapon FILE, swapoff FILE</code></td><td>Start and stop using it</td><td><code>sudo swapon /swapfile</code></td></tr><tr><td><code>/swapfile none swap sw 0 0</code></td><td>The /etc/fstab line that turns it on at boot</td><td><code>echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab</code></td></tr><tr><td><code>sysctl vm.swappiness=10</code></td><td>How eagerly the kernel swaps (0 to 200, default 60)</td><td><code>cat /proc/sys/vm/swappiness</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Add a swap file, use it, remove it</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">fallocate -l 256M swapfile</span>
+<span class="lx-cmd lx-root">chmod 600 swapfile</span>
+<span class="lx-cmd lx-root">mkswap swapfile</span>
+<span class="lx-o">Setting up swapspace version 1, size = 256 MiB (268431360 bytes)
+no label, UUID=64912d69-466b-452a-bf59-e33f4627e681</span>
+<span class="lx-cmd lx-root">swapon swapfile</span>
+<span class="lx-cmd lx-root">swapon --show</span>
+<span class="lx-o">NAME                         TYPE SIZE USED PRIO
+/tmp/tmp.hbOooGveJe/swapfile file 256M   0B   -2</span>
+<span class="lx-cmd lx-root">free -h | grep -E 'total|Swap'</span>
+<span class="lx-o">               total        used        free      shared  buff/cache   available
+Swap:          255Mi          0B       255Mi</span>
+<span class="lx-cmd lx-root">swapoff swapfile</span>
+<span class="lx-cmd lx-root">cat /proc/sys/vm/swappiness</span>
+<span class="lx-o">60</span></pre><div class="lx-note">mkswap keeps the first 4 KiB page for its header, so 256 MiB of file gives 268431360 bytes of swap. The priority -2 was chosen by the kernel, because the swap area had none set. swapoff moves any swapped pages back into RAM before it lets go. A swappiness of 60 is the kernel default.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Without chmod 600, mkswap warns about insecure permissions, because any user could read memory contents of other programs from the file. A file with holes (made by truncate) can be rejected by swapon, so use fallocate or dd.</div></div>
+<div class="vt-talk" hidden>Swap is disk space the kernel uses when memory runs short. Pages of memory that have not been used for a while move out to swap, which frees RAM for programs that need it now. Swap is far slower than RAM, so a machine that swaps all the time is too small for its work, but a bit of swap keeps it from crashing when memory is tight. You can use a partition or a simple file. For a file, create it with f allocate, make it readable only by root with chmod six hundred, write the swap signature with m k swap, and switch it on with swap on. Swap on dash dash show lists the active areas, and free shows how much is used. Add a line to f s tab to keep it after a reboot. The setting swappiness, sixty by default, controls how eagerly the kernel swaps.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="backup" data-l="backup" hidden><div class="cv-lno">Lesson 5 of 7</div><h2>Backups with tar and rsync</h2>
+<p>A backup is a copy you can restore after a mistake, a broken disk, ransomware or a fire. The <b>3-2-1 rule</b>: keep 3 copies of the data, on 2 different kinds of storage, with 1 copy in another place. A backup you have never restored is only a hope, so test restores.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Kind</th><th>What it copies</th><th>Restore needs</th></tr></thead><tbody><tr><td>Full</td><td>everything, every time</td><td>the one full backup</td></tr><tr><td>Incremental</td><td>what changed since the last backup of any kind</td><td>the full backup and every incremental after it, in order</td></tr><tr><td>Differential</td><td>what changed since the last full backup</td><td>the full backup and the newest differential</td></tr><tr><td>Snapshot (rsync --link-dest)</td><td>a complete folder tree each day, unchanged files are hard links</td><td>just copy the folder of that day back</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>A full and an incremental tar backup</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">mkdir -p site/img</span>
+<span class="lx-cmd">echo '&lt;h1&gt;Home&lt;/h1&gt;' &gt; site/index.html</span>
+<span class="lx-cmd">echo 'body{}' &gt; site/style.css</span>
+<span class="lx-cmd">echo PNG &gt; site/img/logo.png</span>
+<span class="lx-cmd">tar --sort=name -czf full.tar.gz --listed-incremental=site.snar site</span>
+<span class="lx-cmd">tar -tzf full.tar.gz</span>
+<span class="lx-o">site/
+site/img/
+site/index.html
+site/style.css
+site/img/logo.png</span>
+<span class="lx-cmd">echo '&lt;p&gt;new&lt;/p&gt;' &gt; site/news.html</span>
+<span class="lx-cmd">tar --sort=name -czf incr1.tar.gz --listed-incremental=site.snar site</span>
+<span class="lx-cmd">tar -tzf incr1.tar.gz</span>
+<span class="lx-o">site/
+site/img/
+site/news.html</span>
+<span class="lx-cmd">mkdir restore</span>
+<span class="lx-cmd">tar -xzf full.tar.gz -C restore --listed-incremental=/dev/null</span>
+<span class="lx-cmd">tar -xzf incr1.tar.gz -C restore --listed-incremental=/dev/null</span>
+<span class="lx-cmd">ls restore/site</span>
+<span class="lx-o">img
+index.html
+news.html
+style.css</span></pre><div class="lx-note">The snapshot file site.snar remembers what was saved. The second run stores only news.html, plus the folder entries tar needs to restore deletions. A restore unpacks the full archive and then each incremental one in order. --listed-incremental=/dev/null while extracting tells tar to apply the incremental information.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>rsync: mirror a folder, then keep daily snapshots</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">mkdir -p site/img</span>
+<span class="lx-cmd">echo '&lt;h1&gt;Home&lt;/h1&gt;' &gt; site/index.html</span>
+<span class="lx-cmd">echo 'body{}' &gt; site/style.css</span>
+<span class="lx-cmd">echo PNG &gt; site/img/logo.png</span>
+<span class="lx-cmd">rsync -a site/ mirror/</span>
+<span class="lx-cmd">rm site/style.css</span>
+<span class="lx-cmd">rsync -a --delete --dry-run -v site/ mirror/ | grep -v bytes</span>
+<span class="lx-o">sending incremental file list
+deleting style.css
+
+total size is 18  speedup is 0.11 (DRY RUN)</span>
+<span class="lx-cmd">rsync -a --delete site/ mirror/</span>
+<span class="lx-cmd">ls mirror</span>
+<span class="lx-o">img
+index.html</span>
+<span class="lx-cmd">mkdir snaps</span>
+<span class="lx-cmd">rsync -a site/ snaps/day1/</span>
+<span class="lx-cmd">echo new &gt; site/img/banner.png</span>
+<span class="lx-cmd">rsync -a --link-dest=../day1 site/ snaps/day2/</span>
+<span class="lx-cmd">ls -i snaps/day1/index.html snaps/day2/index.html</span>
+<span class="lx-o">648090 snaps/day1/index.html
+648090 snaps/day2/index.html</span>
+<span class="lx-cmd">du -sh snaps/day1 snaps/day2</span>
+<span class="lx-o">16K	snaps/day1
+12K	snaps/day2</span></pre><div class="lx-note">-a keeps permissions, owners, times and links. The trailing slash on site/ means the contents of site. --delete removes files from the copy that are gone from the source, so try it with --dry-run first. With --link-dest, unchanged files in day2 are hard links to day1, so the inode numbers are equal and day2 needs almost no extra space, yet each day is a complete tree. rsync creates only the last folder of the target path, which is why snaps is made first.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>rsync -a SRC/ user@host:DEST/</code></td><td>Copy to another machine over ssh</td><td><code>rsync -a --delete /srv/web/ backup@nas:/backups/web/</code></td></tr><tr><td><code>restic -r REPO backup PATH</code></td><td>Encrypted, deduplicated snapshots to disk, sftp or S3</td><td><code>restic -r /mnt/usb/restic backup /home</code></td></tr><tr><td><code>borg create REPO::NAME PATH</code></td><td>Deduplicated, compressed, optionally encrypted archives</td><td><code>borg create /mnt/usb/borg::{now} /home</code></td></tr><tr><td><code>pg_dump, mysqldump</code></td><td>Consistent dumps of a running database, instead of copying its files</td><td><code>pg_dump shop &gt; shop.sql</code></td></tr></tbody></table></div>
+<div class="vt-talk" hidden>Backups protect you from deleted files, broken disks, ransomware and even fire. Follow the three two one rule: three copies of your data, on two kinds of storage, and one copy somewhere else. A full backup copies everything. An incremental backup copies only what changed since the last backup, which saves space but needs every piece in order to restore. Tar with dash dash listed incremental makes both kinds, using a small snapshot file to remember what it saved. Rsync copies only the differences between two folders, locally or over s s h, and dash dash delete makes the copy an exact mirror, so test it with dash dash dry run first. With dash dash link dest, each day becomes a complete folder, but unchanged files are hard links that use no extra space. Tools such as restic and borg add encryption and deduplication. Most important of all, practise restoring, because an untested backup may not work when you need it.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 6 of 7</div><h2>Practice: grow storage with LVM and add swap</h2>
+<p>The web server needs a volume that can grow, and more swap. The practice server has two empty disks, /dev/sdc (20 GB) and /dev/sdd (10 GB).</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;LVM and swap on the practice server&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Make /dev/sdc an LVM physical volume.&quot;, &quot;hint&quot;: &quot;sudo pvcreate /dev/sdc&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Physical volume \&quot;/dev/sdc\&quot; successfully created&quot;}]}, {&quot;t&quot;: &quot;Create the volume group vgdata from /dev/sdc.&quot;, &quot;hint&quot;: &quot;sudo vgcreate vgdata /dev/sdc&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Volume group \&quot;vgdata\&quot; successfully created&quot;}]}, {&quot;t&quot;: &quot;Create a 15 GiB logical volume named web in vgdata.&quot;, &quot;hint&quot;: &quot;sudo lvcreate -n web -L 15G vgdata&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Logical volume \&quot;web\&quot; created&quot;}]}, {&quot;t&quot;: &quot;Make an ext4 file system with the label web on it.&quot;, &quot;hint&quot;: &quot;sudo mkfs.ext4 -L web /dev/vgdata/web&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Creating filesystem with 3932160 4k blocks&quot;}]}, {&quot;t&quot;: &quot;Create /srv/web and mount the volume there.&quot;, &quot;hint&quot;: &quot;sudo mkdir /srv/web &amp;&amp; sudo mount /dev/vgdata/web /srv/web&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;/srv/web&quot;}, {&quot;code&quot;: 0}]}, {&quot;t&quot;: &quot;Add /dev/sdd to the volume group.&quot;, &quot;hint&quot;: &quot;sudo vgextend vgdata /dev/sdd&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;successfully extended&quot;}]}, {&quot;t&quot;: &quot;Grow web by 8 GiB together with its file system.&quot;, &quot;hint&quot;: &quot;sudo lvextend -r -L +8G /dev/vgdata/web&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;is now 6029312 \\(4k\\) blocks long&quot;}]}, {&quot;t&quot;: &quot;Show the size of /srv/web in readable units.&quot;, &quot;hint&quot;: &quot;df -h /srv/web&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;vgdata-web\\s+23G&quot;}]}, {&quot;t&quot;: &quot;Create a 1 GiB file /swapfile that only root can read and write.&quot;, &quot;hint&quot;: &quot;sudo fallocate -l 1G /swapfile &amp;&amp; sudo chmod 600 /swapfile&quot;, &quot;check&quot;: [{&quot;mode&quot;: [&quot;/swapfile&quot;, &quot;600&quot;]}]}, {&quot;t&quot;: &quot;Turn /swapfile into swap and switch it on.&quot;, &quot;hint&quot;: &quot;sudo mkswap /swapfile &amp;&amp; sudo swapon /swapfile&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;swapon&quot;}, {&quot;code&quot;: 0}]}, {&quot;t&quot;: &quot;Check the swap total with free in readable units.&quot;, &quot;hint&quot;: &quot;free -h&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Swap:\\s+3\\.0Gi&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now build flexible storage yourself. Turn the twenty gigabyte disk into a physical volume, make a volume group called v g data from it, and cut a fifteen gibibyte logical volume called web. Format it with ext4, create the folder slash s r v slash web, and mount it. Then the web site grows, so add the second disk to the group with v g extend, and grow the volume by eight gibibytes with l v extend dash r, which grows the file system too. Df shows the new size. Finally, add a one gibibyte swap file: create it with f allocate, protect it with chmod six hundred, write the swap signature and switch it on. Free shows three gibibytes of swap, the two the server already had plus your new file.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 7 of 7</div><h2>Storage safety from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Keep important files in more than one place, for example on a laptop and on a USB disk or a cloud drive, and check now and then that you can open the copies.</p></div><div class="ld-p" data-ld="college" hidden><p>Use LVM for volumes that will grow, RAID 1 or RAID 10 on servers that must survive a disk failure, a swap file sized to the workload, and automatic backups with rsync, restic or borg on a timer. Watch /proc/mdstat and SMART health, and test a restore every few months.</p></div><div class="ld-p" data-ld="masters" hidden><p>Snapshots (LVM, btrfs, ZFS) give consistent backups of running systems. ZFS and btrfs join volume management, RAID and checksums in one file system, so they detect silent corruption. Cloud setups use replicated block storage, object storage with versioning and object lock against ransomware, and off-site copies in another region. Recovery time objective (RTO) and recovery point objective (RPO) set how fast and how recent a restore must be.</p></div><div class="ld-p" data-ld="research" hidden><p>Research on large disk fleets studies failure rates, latent sector errors and silent data corruption, and erasure codes such as Reed-Solomon, used in big storage systems, keep data safe with far less extra space than mirroring. Deduplication research shapes tools like borg and restic, which split data into content-defined chunks so a small change only stores a small new piece.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the RAID that was mistaken for a backup</div><p>A small company kept its files on a RAID 1 server and saw no need for backups. Ransomware encrypted the shared folder, and the mirror copied every encrypted block to the second disk within seconds. Both disks were healthy and the data was gone. The new setup kept RAID 1 for uptime, added nightly restic snapshots to a disk that is only mounted during the backup, and a weekly copy to object storage with object lock, following the 3-2-1 rule. The first restore test found that the database needed pg_dump instead of a file copy.</p></div>
+<div class="vt-talk" hidden>Here is how storage safety grows with experience. At school, keep important files in two places and check that the copies open. Professionals use L V M so volumes can grow, RAID so a server survives a broken disk, and automatic backups on a timer, and they test restores regularly. Larger systems use snapshots for consistent backups, file systems like Z F S and B T R F S that check every block for silent corruption, and off-site copies with object lock that ransomware cannot delete. They plan how fast and how recent a restore must be. Researchers study how disks fail across huge fleets, and use erasure codes and deduplication to keep data safe with less space.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./disks-filesystems.html" data-topic="disks-filesystems"><small>Previous topic</small><b>Disks and file systems</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "lvm-raid-backup", "topic": "lvm-raid-backup", "subject": "linux", "title": "LVM, RAID, swap and backups", "codes": {}, "quiz": [{"lv": "e", "q": "Which LVM layer is a pool made of one or more disks?", "o": ["Physical volume", "Volume group", "Logical volume", "Extent"], "a": 1, "hint": "The group.", "why": "A volume group."}, {"lv": "e", "q": "Which command lists logical volumes?", "o": ["pvs", "vgs", "lvs", "lsblk -l"], "a": 2, "hint": "LV.", "why": "lvs."}, {"lv": "e", "q": "Which RAID level only mirrors the data?", "o": ["RAID 0", "RAID 1", "RAID 5", "RAID 6"], "a": 1, "hint": "Two copies.", "why": "RAID 1."}, {"lv": "e", "q": "Which command switches on a swap file?", "o": ["mount", "swapon", "mkswap", "free"], "a": 1, "hint": "Swap on.", "why": "swapon, after mkswap."}, {"lv": "m", "q": "What does lvextend -r add to a plain lvextend?", "o": ["It reboots", "It also resizes the file system on the volume", "It removes the old size", "It makes a snapshot"], "a": 1, "hint": "Resize fs.", "why": "It calls resize2fs or xfs_growfs."}, {"lv": "m", "q": "The volume group is full. How do you get more space for a volume?", "o": ["vgextend with a new disk, then lvextend", "mkfs again", "pvmove", "lvremove"], "a": 0, "hint": "Grow the pool.", "why": "Add a PV to the VG."}, {"lv": "m", "q": "Why must a swap file have mode 600?", "o": ["Speed", "It holds memory contents that other users must not read", "swapon requires 600", "To save space"], "a": 1, "hint": "Secrets in RAM.", "why": "mkswap warns about insecure permissions."}, {"lv": "m", "q": "What does rsync --delete do?", "o": ["Deletes the source", "Removes files from the copy that no longer exist in the source", "Deletes old backups", "Deletes temporary files"], "a": 1, "hint": "Exact mirror.", "why": "Try it with --dry-run first."}, {"lv": "m", "q": "What does /proc/mdstat show with [2/1] [U_]?", "o": ["A healthy mirror", "A mirror with one of two disks missing", "A RAID 0", "A rebuild finished"], "a": 1, "hint": "One up.", "why": "The array is degraded."}, {"lv": "h", "q": "Why is RAID 1 not a backup?", "o": ["It is too slow", "Deletions and encryption are copied to every disk at once", "It needs more disks", "It cannot be restored"], "a": 1, "hint": "Mirror copies mistakes.", "why": "Backups keep older versions."}, {"lv": "h", "q": "An incremental tar backup chain is full, incr1, incr2. What do you need to restore the latest state?", "o": ["incr2 only", "full and incr2", "full, incr1 and incr2 in order", "full only"], "a": 2, "hint": "Every link.", "why": "Incrementals build on each other."}, {"lv": "h", "q": "How does rsync --link-dest save space?", "o": ["It compresses files", "Unchanged files become hard links to the previous snapshot", "It skips folders", "It deletes old days"], "a": 1, "hint": "Same inode.", "why": "Each day still looks complete."}, {"lv": "h", "q": "Two 10 GB disks are in one volume group without RAID, holding one big volume. One disk dies. What happens?", "o": ["Nothing", "Half the files survive for sure", "The volume is lost and must be restored from backup", "LVM rebuilds it"], "a": 2, "hint": "No redundancy.", "why": "LVM alone has no copies."}, {"lv": "x", "q": "Why should a database be backed up with pg_dump instead of copying its data folder while it runs?", "o": ["pg_dump is faster", "A file copy of a running database can catch files in an inconsistent state", "The folder is hidden", "rsync cannot read it"], "a": 1, "hint": "Consistency.", "why": "Or copy a snapshot taken with the database in a safe state."}], "calc": [{"lv": "e", "q": "An LVM extent is 4 MiB. How many extents does a 12 GiB volume need?", "ans": "3072", "hint": "GiB to MiB, then divide.", "steps": ["12 GiB = 12288 MiB.", "12288 ÷ 4.", "<span class=\"eq\">3072 extents<\/span>"]}, {"lv": "e", "q": "RAID 1 with two 4 TB disks. How many TB can you use?", "ans": "4", "hint": "A mirror.", "steps": ["Both disks hold the same data.", "Usable is one disk.", "<span class=\"eq\">4 TB<\/span>"]}, {"lv": "m", "q": "RAID 5 with 4 disks of 8 TB. How many TB are usable?", "ans": "24", "hint": "One disk for parity.", "steps": ["(n − 1) × s.", "(4 − 1) × 8.", "<span class=\"eq\">24 TB<\/span>"]}, {"lv": "m", "q": "RAID 6 with 6 disks of 4 TB. How many TB are usable?", "ans": "16", "hint": "Two disks for parity.", "steps": ["(n − 2) × s.", "(6 − 2) × 4.", "<span class=\"eq\">16 TB<\/span>"]}, {"lv": "h", "q": "A 20 GiB disk loses 1 MiB to LVM metadata and keeps only whole 4 MiB extents. How many extents does it give?", "ans": "5119", "hint": "Subtract, divide, round down.", "steps": ["20 GiB = 20480 MiB.", "20480 − 1 = 20479 MiB.", "<span class=\"eq\">⌊20479 ÷ 4⌋ = 5119<\/span>"]}, {"lv": "h", "q": "mkswap keeps a 4096 byte header. How many bytes of swap does a 1 GiB (1073741824 byte) file give?", "ans": "1073737728", "hint": "Subtract the header.", "steps": ["1073741824 − 4096.", "The header holds the signature and UUID.", "<span class=\"eq\">1073737728 bytes<\/span>"]}, {"lv": "x", "q": "Daily rsync snapshots with --link-dest: 50 GB of data, 1 GB of files change each day. About how many GB do 30 days use?", "ans": "79", "hint": "One full copy plus changes.", "steps": ["The first day stores 50 GB.", "Each of the next 29 days stores about 1 GB of new files.", "<span class=\"eq\">50 + 29 × 1 = 79 GB<\/span>"]}], "assign": [], "must": [["LVM layers", "pvcreate makes PVs, vgcreate pools them into a VG, lvcreate cuts LVs. pvs, vgs, lvs list them. Extents are 4 MiB."], ["Growing", "lvextend -r -L +SIZE grows the volume and its file system online. vgextend adds a disk, pvmove empties one, snapshots freeze a moment."], ["RAID", "0 stripes, 1 mirrors, 5 survives one failure with (n − 1) × s, 6 survives two with (n − 2) × s, 10 mirrors pairs. mdadm and /proc/mdstat. RAID is not a backup."], ["Swap", "fallocate, chmod 600, mkswap, swapon, a line in /etc/fstab. swapon --show and free -h. vm.swappiness sets how eagerly the kernel swaps."], ["Backups", "3-2-1 rule. tar --listed-incremental for full and incremental archives, rsync -a --delete (with --dry-run first), --link-dest snapshots, restic or borg. Test restores."]], "summary": "<p>LVM pools disks into volume groups and cuts logical volumes that grow online with lvextend -r. RAID keeps data available when disks fail, but only backups bring back deleted or encrypted data. Swap files give the kernel room for idle memory pages. Backups follow the 3-2-1 rule with tar, rsync, restic or borg, and restores are tested.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

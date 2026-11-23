@@ -2011,7 +2011,8 @@ const LXSH = (() => {
       devs: [
         { name: 'sda', mm: '8:0', rm: 0, size: 40 * GiB, model: 'ATA QEMU HARDDISK (scsi)', label: 'gpt', parts: [{ name: 'sda1', mm: '8:1', size: 40 * GiB - 2 * MiB, start: MiB, pname: '', fs: root }] },
         { name: 'sdb', mm: '8:16', rm: 1, size: 62529536 * 512, model: 'SanDisk Cruzer Blade (scsi)', label: 'msdos', parts: [{ name: 'sdb1', mm: '8:17', size: 62529536 * 512 - MiB, start: MiB, pname: '', fs: usb }] },
-        { name: 'sdc', mm: '8:32', rm: 0, size: 20 * GiB, model: 'ATA QEMU HARDDISK (scsi)', label: null, parts: [] }],
+        { name: 'sdc', mm: '8:32', rm: 0, size: 20 * GiB, model: 'ATA QEMU HARDDISK (scsi)', label: null, parts: [] },
+        { name: 'sdd', mm: '8:48', rm: 0, size: 10 * GiB, model: 'ATA QEMU HARDDISK (scsi)', label: null, parts: [] }],
       mounts: [{ dev: 'sda1', dir: '/', opts: 'rw,relatime,errors=remount-ro' }],
       swaps: [{ name: '/swap.img', type: 'file', size: 2 * GiB, prio: -2 }], lvm: { pvs: {}, vgs: {}, lvs: [] }
     };
@@ -2048,6 +2049,8 @@ const LXSH = (() => {
     const all = [head].concat(rows), w = head.map((_, i) => Math.max(...all.map(r => String(r[i]).length)));
     return all.map((r, k) => '  ' + r.map((x, i) => k && right.includes(i) ? String(x).padStart(w[i]) : String(x).padEnd(w[i])).join(' ')).join('\n') + '\n';
   };
+  World.prototype.pvFree = function (n) { const st = this.disks(); return st.lvm.pvs[n].pe - st.lvm.lvs.reduce((t, l) => t + l.segs.filter(g => g.pv === n).reduce((u, g) => u + g.n, 0), 0); };
+  World.prototype.lvAlloc = function (lv, n) { const st = this.disks(); for (const pv of st.lvm.vgs[lv.vg].pvs) { if (!n) break; const k = Math.min(n, this.pvFree(pv)); if (k > 0) { const last = lv.segs[lv.segs.length - 1]; if (last && last.pv === pv) last.n += k; else lv.segs.push({ pv, n: k }); n -= k; } } lv.pvs = [...new Set(lv.segs.map(g => g.pv))]; };
   World.prototype.vgFree = function (vg) { const st = this.disks(), V = st.lvm.vgs[vg]; return V.pvs.reduce((t, p) => t + st.lvm.pvs[p].pe, 0) - st.lvm.lvs.filter(l => l.vg === vg).reduce((t, l) => t + l.le, 0); };
   const lvmRoot = (w, name) => { if (w.user !== 'root') { w.eout('  WARNING: Running as a non-root user. Functionality may be unavailable.\n  /run/lock/lvm/P_global:aux: open failed: Permission denied\n'); return false; } return true; };
   C.pvcreate = function (a) {
@@ -2112,8 +2115,8 @@ const LXSH = (() => {
     if (L) le = Math.ceil(lvmParse(L, 'm') / (4 * MiB)); else if (/^(\d+)%FREE$/.test(l)) le = Math.floor(free * +RegExp.$1 / 100); else if (/^(\d+)%VG$/.test(l)) le = Math.floor(st.lvm.vgs[vg].pvs.reduce((t, p) => t + st.lvm.pvs[p].pe, 0) * +RegExp.$1 / 100); else le = +l;
     if (!le || isNaN(le)) { this.eout('  Please specify either size or extents but not both.\n'); return 3; }
     if (le > free) { this.eout(`  Volume group "${vg}" has insufficient free space (${free} extents): ${le} required.\n`); return 5; }
-    const lv = { lv: name, vg, name: 'mapper/' + vg + '-' + name, le, size: le * 4 * MiB, mm: '253:' + st.lvm.lvs.length, pvs: st.lvm.vgs[vg].pvs.slice(), fs: null, isLv: true };
-    st.lvm.lvs.push(lv);
+    const lv = { lv: name, vg, name: 'mapper/' + vg + '-' + name, le, size: le * 4 * MiB, mm: '253:' + st.lvm.lvs.length, pvs: [], segs: [], fs: null, isLv: true };
+    this.lvAlloc(lv, le); st.lvm.lvs.push(lv);
     this.mk(`/dev/${vg}`, 'd', 0o755, 'root', ''); this.mk(`/dev/${vg}/${name}`, 'b', 0o660, 'root', '').group = 'disk';
     this.out(`  Logical volume "${name}" created.\n`);
     return 0;
@@ -2130,7 +2133,7 @@ const LXSH = (() => {
     if (le < lv.le) { this.eout(`  The practice shell does not shrink volumes. Shrinking needs the file system made smaller first, and xfs cannot shrink at all.\n`); return 5; }
     if (le === lv.le) { this.eout(`  New size (${le} extents) matches existing size (${le} extents).\n`); return 5; }
     if (le - lv.le > free) { this.eout(`  Insufficient free space: ${le - lv.le} extents needed, but only ${free} available\n`); return 5; }
-    const old = lv.le; lv.le = le; lv.size = le * 4 * MiB;
+    const old = lv.le; this.lvAlloc(lv, le - old); lv.le = le; lv.size = le * 4 * MiB;
     this.out(`  Size of logical volume ${what} changed from ${sz(old)} to ${sz(le)}.\n  Logical volume ${what} successfully resized.\n`);
     if (fsToo && lv.fs && lv.fs.type === 'ext4') {
       const m = st.mounts.find(x => x.dev === lv.name), dev = '/dev/' + lv.name, nb = Math.floor(lv.size / 4096), desc = n => Math.ceil(Math.ceil(n / 32768) * 64 / 4096);
@@ -2149,7 +2152,7 @@ const LXSH = (() => {
   };
   C.pvs = function () {
     if (!lvmRoot(this)) return 5;
-    const st = this.disks(), rows = Object.keys(st.lvm.pvs).map(n => { const P = st.lvm.pvs[n], used = st.lvm.lvs.filter(l => l.pvs.includes(n) && l.vg === P.vg).reduce((t, l) => t + Math.min(l.le, P.pe), 0); return [P.dev, P.vg, 'lvm2', P.vg ? 'a--' : '---', P.vg ? lvmSize(P.pe * 4 * MiB) : lvmSize(P.size), P.vg ? lvmSize((P.pe - used) * 4 * MiB).replace(/^0\.00[gm]$/, '0 ') : lvmSize(P.size)]; });
+    const st = this.disks(), rows = Object.keys(st.lvm.pvs).map(n => { const P = st.lvm.pvs[n], used = P.pe - this.pvFree(n); return [P.dev, P.vg, 'lvm2', P.vg ? 'a--' : '---', P.vg ? lvmSize(P.pe * 4 * MiB) : lvmSize(P.size), P.vg ? lvmSize((P.pe - used) * 4 * MiB).replace(/^0\.00[gm]$/, '0 ') : lvmSize(P.size)]; });
     if (rows.length) this.out(this.lvmTable(['PV', 'VG', 'Fmt', 'Attr', 'PSize', 'PFree'], rows, [4, 5]));
     return 0;
   };
@@ -2239,10 +2242,11 @@ const LXSH = (() => {
     return 0;
   };
   C.blkid = function (a) {
-    const st = this.disks(), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
+    const st = this.disks(), names = a.filter(x => !x.startsWith('-')).map(x => { const q = this.partOf(x); return q ? q.name : x.replace(/^\/dev\//, ''); });
     if (this.user !== 'root' && !names.length) { /* blkid as a user prints from its cache, which may be empty */ }
     let any = false;
-    st.devs.forEach(d => d.parts.forEach(p => { if ((!names.length || names.includes(p.name)) && p.fs) { any = true; this.out(`/dev/${p.name}: ${p.fs.label ? `LABEL="${p.fs.label}" ` : ''}UUID="${p.fs.uuid}" ${p.fs.type === 'vfat' ? 'BLOCK_SIZE="512" ' : 'BLOCK_SIZE="4096" '}TYPE="${p.fs.type}"${d.label === 'gpt' && p.pname ? ` PARTLABEL="${p.pname}"` : ''} PARTUUID="${d.label === 'gpt' ? (d.name === 'sda' ? '7c9e4b1d' : 'e3a95f20') + '-0' + p.name.slice(-1) + '2a-4f3e-8d6c-5b1a9e7f3c2' + p.name.slice(-1) : 'a1b2c3d4-0' + p.name.slice(-1)}"\n`); } }));
+    st.devs.concat([{ parts: st.lvm.lvs, label: null }]).forEach(d => d.parts.forEach(p => { if ((!names.length || names.includes(p.name)) && p.fs) { any = true; this.out(`/dev/${p.name}: ${p.fs.label ? `LABEL="${p.fs.label}" ` : ''}UUID="${p.fs.uuid}" ${p.fs.type === 'vfat' ? 'BLOCK_SIZE="512" ' : 'BLOCK_SIZE="4096" '}TYPE="${p.fs.type}"${d.label === 'gpt' && p.pname ? ` PARTLABEL="${p.pname}"` : ''}${d.label ? ` PARTUUID="${d.label === 'gpt' ? (d.name === 'sda' ? '7c9e4b1d' : 'e3a95f20') + '-0' + p.name.slice(-1) + '2a-4f3e-8d6c-5b1a9e7f3c2' + p.name.slice(-1) : 'a1b2c3d4-0' + p.name.slice(-1)}"` : ''}\n`); } }));
+    Object.keys(st.lvm.pvs).forEach(n => { if (!names.length || names.includes(n)) { any = true; this.out(`/dev/${n}: UUID="${st.lvm.pvs[n].uuid}" TYPE="LVM2_member"\n`); } });
     return any ? 0 : 2;
   };
   World.prototype.needRootDisk = function (cmd) { if (this.user === 'root') return false; this.eout(cmd === 'mount' || cmd === 'umount' ? '' : `${cmd}: Permission denied\n`); return true; };
@@ -2289,6 +2293,7 @@ const LXSH = (() => {
     if (p.parts) { this.eout(`${prog}: ${dev} is a whole disk. The practice shell formats partitions only, so create one with parted first.\n`); return 1; }
     if (this.disks().mounts.some(m => m.dev === p.name)) { this.eout(`${prog === 'mke2fs' ? 'mke2fs 1.47.0 (5-Feb-2023)\n' : ''}${dev} is mounted; will not make a filesystem here!\n`); return 1; }
     if (p.fs && !force && type === 'ext4') { this.out(`mke2fs 1.47.0 (5-Feb-2023)\n${dev} contains a ${p.fs.type} file system${p.fs.label ? ` labelled '${p.fs.label}'` : ''}\nProceed anyway? (y,N) `); if (!/^\s*y/i.test(input || '')) { this.out('\n'); return 1; } this.out('y\n'); }
+    if (a.includes('-q')) { const o = this.out; this.out = () => {}; try { return C.mkfs.call(this, a.filter(x => x !== '-q'), 'y'); } finally { this.out = o; } }
     const blocks4k = Math.floor(p.size / 4096), k = blocks4k * 4;
     const uuid = type === 'vfat' ? newUuid(this, dev).slice(0, 4).toUpperCase() + '-' + newUuid(this, dev + 'x').slice(0, 4).toUpperCase() : newUuid(this, dev);
     const real20 = blocks4k === 5242368;

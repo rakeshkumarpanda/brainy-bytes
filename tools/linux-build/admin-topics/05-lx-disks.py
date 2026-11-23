@@ -31,12 +31,14 @@ sda      8:0  0   40G  0 disk
 └─sda1   8:1  0   40G  0 part /
 sdb     8:16  1 29.8G  0 disk
 └─sdb1  8:17  1 29.8G  0 part
-sdc     8:32  0   20G  0 disk""", """NAME   FSTYPE FSVER LABEL    UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+sdc     8:32  0   20G  0 disk
+sdd     8:48  0   10G  0 disk""", """NAME   FSTYPE FSVER LABEL    UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
 sda
 └─sda1 ext4   1.0            b6e1c2a4-77aa-4e0f-9d3b-2f1c8a5e0d71   22.7G    39% /
 sdb
 └─sdb1 vfat   FAT32 USBSTICK 4A1B-2C3D
-sdc""", '/dev/sdb1: LABEL="USBSTICK" UUID="4A1B-2C3D" BLOCK_SIZE="512" TYPE="vfat" PARTUUID="a1b2c3d4-01"'], note='The practice server has a 40 GB system disk with one ext4 partition mounted on /, a USB stick (RM 1 means removable) with a FAT32 partition that is not mounted, and a new 20 GB disk with no partitions at all. You will set up that empty disk in the practice lab.')}
+sdc
+sdd""", '/dev/sdb1: LABEL="USBSTICK" UUID="4A1B-2C3D" BLOCK_SIZE="512" TYPE="vfat" PARTUUID="a1b2c3d4-01"'], note='The practice server has a 40 GB system disk with one ext4 partition mounted on /, a USB stick (RM 1 means removable) with a FAT32 partition that is not mounted, and two new disks of 20 GB and 10 GB with no partitions at all. You will set up sdc in the practice lab and use sdd for LVM in chapter 3.2.')}
 {run('A file used as a disk with a loop device', """cd "$(mktemp -d)"
 truncate -s 1G disk.img
 ls -lh disk.img

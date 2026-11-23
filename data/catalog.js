@@ -10873,6 +10873,23 @@ function lxAdminModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "lvm-raid-backup", title: "LVM, RAID, swap and backups", emoji: "3.2", page: "content/linux/lvm-raid-backup.html",
+        summary: "LVM volumes, software RAID, swap files, and backups with tar and rsync.",
+        keywords: ["LVM", "pvcreate", "vgcreate", "lvcreate", "lvextend", "RAID", "mdadm", "swap", "mkswap", "swapon", "backup", "tar", "rsync"],
+        minutes: 60, counts: {"lessons": 7, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "lvm", title: "LVM: storage pools made of disks", emoji: "", group: "Lesson", keywords: ["LVM", "logical volume manager", "physical volume", "PV", "volume group", "VG", "logical volume", "LV", "extent", "PE size", "pvcreate", "vgcreate", "lvcreate", "pvs", "vgs", "lvs", "/dev/mapper", "device-mapper"] },
+        { id: "lvmgrow", title: "Growing, moving and snapshotting volumes", emoji: "", group: "Lesson", keywords: ["lvextend", "lvextend -r", "100%FREE", "vgextend", "pvmove", "vgreduce", "pvremove", "LVM snapshot", "lvcreate -s", "thin pool", "lvmthin", "online resize", "grow logical volume"] },
+        { id: "raid", title: "RAID: surviving a broken disk", emoji: "", group: "Lesson", keywords: ["RAID", "RAID 0", "RAID 1", "RAID 5", "RAID 6", "RAID 10", "mirror", "parity", "striping", "mdadm", "/proc/mdstat", "degraded array", "rebuild", "resync", "mdadm.conf", "RAID is not a backup"] },
+        { id: "swap", title: "Swap: room for memory pages on disk", emoji: "", group: "Lesson", keywords: ["swap", "swap file", "swap partition", "mkswap", "swapon", "swapoff", "swapon --show", "fallocate", "swappiness", "vm.swappiness", "fstab swap line", "hibernation", "free -h swap"] },
+        { id: "backup", title: "Backups with tar and rsync", emoji: "", group: "Lesson", keywords: ["backup", "3-2-1 rule", "full backup", "incremental backup", "differential backup", "tar --listed-incremental", "snapshot file", "restore test", "rsync", "rsync -a", "rsync --delete", "rsync --dry-run", "rsync --link-dest", "hard link snapshots", "restic", "borg", "pg_dump"] },
+        { id: "practice", title: "Practice: grow storage with LVM and add swap", emoji: "", group: "Lesson", keywords: ["LVM lab", "lvextend practice", "swap file practice", "vgextend practice"] },
+        { id: "levels", title: "Storage safety from school to research", emoji: "", group: "Lesson", keywords: ["3-2-1 backups", "ZFS", "btrfs", "silent corruption", "object lock", "ransomware backup", "RTO", "RPO", "erasure coding", "Reed-Solomon", "deduplication", "restore testing"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
