@@ -92,8 +92,8 @@ window.CATALOG = {
           blurb: 'Cryptography, networks, application security and security operations, from the basics to expert level.',
           subjects: ['cyber-security'] },
         { id: 'systems', title: 'Systems and DevOps', icon: 'dns', color: '#e65100',
-          blurb: 'Version control and CI/CD pipelines with Git, and parallel programming on the GPU with CUDA.',
-          subjects: ['git', 'cuda'] }
+          blurb: 'Unix and Linux from your first command to the kernel, version control and CI/CD pipelines with Git, and parallel programming on the GPU with CUDA.',
+          subjects: ['linux', 'git', 'cuda'] }
       ]
     }
   ],
@@ -351,6 +351,29 @@ window.CATALOG = {
       intro: 'Follow the path one step at a time. You start with what Selenium is and how the W3C WebDriver protocol carries each command from your code to the browser, set up Selenium Manager and write a first script, then learn sessions, navigation, locators, element actions, waits, windows, frames, alerts, the Actions API, test frameworks, page objects, good practice and troubleshooting, and finish with Selenium Grid 4, WebDriver BiDi, a revision step and interview questions. Every example is written in Java, Python and JavaScript with a note for each line, and was run for real in Chrome to record its output. A pretend browser lets you type Selenium lines and watch each request, and the animations show what happens inside.',
       tags: ['WebDriver', 'W3C protocol', 'Locators', 'Waits', 'Page Object', 'Grid 4'],
       modules: seModules().concat(langSheetModule('selenium'), iqModule('selenium'))
+    },
+    {
+      id: 'linux',
+      title: 'Unix and Linux',
+      emoji: '🐧',
+      color: '#e65100',
+      layout: 'path',
+      blurb: 'Unix and Linux in five sections, from what a terminal is to the kernel: Foundations, Shell Power Tools, Shell Scripting, System Administration, and Internals and Advanced.',
+      intro: 'Pick a section at the top, then follow its steps in order. Every chapter starts from zero in plain everyday words, then climbs to expert level. Commands on the pages were run for real on Linux while the pages were built, so every output you see is true. Playful step animations with your own input show what happens inside, and a voice can read each step and tell the background story of each lesson. Every chapter has a practice terminal inside the page: a safe pretend Linux computer with its own files and missions that it checks as you type. Each chapter ends with worked problems, quizzes from easy to expert and a summary, and the subject ends with exam revision, a cheatsheet and interview questions.',
+      tags: ['Terminal', 'Files', 'Permissions', 'Pipes', 'grep sed awk', 'Bash scripting', 'systemd', 'Networking', 'Kernel', 'Containers'],
+      parts: [
+        { id: 'basics', title: 'Foundations', blurb: 'What Unix and Linux are, the terminal and the shell, getting help, the file tree, working with files, reading files, permissions and editors.',
+          intro: 'Foundations starts from nothing. You meet Unix and Linux, open a terminal, learn to ask the system for help, walk the file tree, make, copy, move and delete files, read them, control who may use them, and edit them with nano and vim.' },
+        { id: 'power', title: 'Shell Power Tools', blurb: 'Redirection and pipes, grep and regular expressions, cut, sort, uniq and friends, sed and awk, find and xargs, processes and signals, the environment, archives and compression.',
+          intro: 'Shell Power Tools teaches the small programs that become powerful when you join them: send output anywhere, search text with patterns, slice and count data, edit streams, find files, control running programs and pack files.' },
+        { id: 'scripting', title: 'Shell Scripting', blurb: 'Your first scripts, variables and quoting, expansions, conditions and loops, functions, arrays, error handling, debugging and scheduled jobs.',
+          intro: 'Shell Scripting turns the commands you know into programs that run by themselves, from a three line script to a careful tool that checks its input, handles errors and runs on a schedule.' },
+        { id: 'admin', title: 'System Administration', blurb: 'Users, groups and sudo, packages, the boot process and systemd, disks and filesystems, logs and monitoring, networking, SSH, firewalls and hardening.',
+          intro: 'System Administration is the job of keeping a Linux machine healthy: who may log in, what software is installed, which services run, where data lives, what the logs say, how the machine talks to the network and how it stays safe.' },
+        { id: 'advanced', title: 'Internals and Advanced', blurb: 'The kernel and system calls, how processes are born and die, inodes and file descriptors, virtual memory, namespaces and cgroups behind containers, performance and the exam revision.',
+          intro: 'Internals and Advanced opens the machine: what the kernel does for every command, how fork and exec make processes, what an inode is, how memory is shared and swapped, how containers are built from kernel features, and how to find why a system is slow.' }
+      ],
+      modules: lxBasicsModules().concat(lxPowerModules(), lxScriptModules(), lxAdminModules(), lxAdvModules(), sheetModule('linux'), iqModule('linux'))
     },
     {
       id: 'git',
@@ -1410,6 +1433,7 @@ function sheetModule(sid) {
     'computer-vision': ['content/computer-vision/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Computer Vision chapters on one page, from pixels and filters to detection, segmentation and CLIP. Search it, filter it, print it or download the PDF.', ['image size formula', 'convolution output size', 'Sobel', 'Harris', 'optical flow', 'IoU', 'NMS', 'focal loss', 'mAP', 'Dice', 'mIoU']],
     'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. Core AI runs from agents and BFS to A*, local search, CSPs, minimax and alpha beta, logic and resolution, planning, Bayesian networks, causality and reinforcement learning. Advanced AI runs from preferences and utility to expected utility, risk, discounting, games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['A*', 'admissible heuristic', 'alpha beta', 'arc consistency', 'resolution', 'unification', 'STRIPS', 'Bayes rule', 'd-separation', 'Bellman equation', 'Q learning', 'utility', 'expected utility', 'IESDS']],
     'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
+    'linux': ['content/linux/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from all five Unix and Linux sections on one page: the file tree and permissions, pipes and redirection, grep, sed and awk, find, processes and signals, Bash scripting, users and sudo, packages, systemd and journalctl, disks and mounts, networking and SSH, firewalls, system calls, inodes, memory, namespaces and cgroups. Search it, filter it, print it or download the PDF.', ['ls', 'cd', 'chmod', 'umask', 'grep', 'sed', 'awk', 'find', 'xargs', 'pipes', 'redirection', 'kill', 'bash script', 'cron', 'systemctl', 'journalctl', 'mount', 'ssh', 'ip', 'iptables', 'strace', 'inode', 'cgroups'], 'twelve'],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
     'machine-learning': ['content/machine-learning/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from all four sections on one page: Foundations (the learning loop, NumPy, pandas, the maths and data preparation), Supervised (regression, classification, trees, ensembles, metrics and tuning), Unsupervised (clustering, PCA, anomalies, recommenders) and Reinforcement (MDPs, Bellman, Q learning, policy gradients). Search it, filter it, print it or download the PDF.', ['mean squared error', 'gradient descent', 'normal equation', 'sigmoid', 'log loss', 'entropy', 'gini', 'precision recall', 'ROC AUC', 'bias variance', 'k means', 'PCA', 'Bellman equation', 'Q learning', 'policy gradient'], 'eighteen'],
     'deep-learning': ['content/deep-learning/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Deep Learning chapters on one page, from the perceptron and backpropagation to optimisers, normalisation, CNNs, RNNs and LSTMs, attention and transformers, autoencoders, VAEs, GANs, diffusion, Hopfield networks, Boltzmann machines and RBMs. Search it, filter it, print it or download the PDF.', ['perceptron', 'backpropagation', 'chain rule', 'Adam', 'dropout', 'batch normalisation', 'convolution output size', 'receptive field', 'LSTM gates', 'attention', 'positional encoding', 'VAE', 'ELBO', 'KL divergence', 'DDPM', 'classifier free guidance', 'Hopfield', 'RBM', 'contrastive divergence'], 'eight'],
@@ -1492,6 +1516,7 @@ function iqModule(sid) {
     'python': ['content/python/interview-questions.html', 'Python interview questions for developers, data and QA engineers: mutable and immutable types, is against ==, copying, list and dict internals, comprehensions, *args and **kwargs, closures and decorators, generators, the GIL and concurrency, exceptions, OOP, MRO and magic methods, testing, and Flask, Django, REST and FastAPI questions, with output questions run on CPython.', ['mutable vs immutable', 'is vs ==', 'shallow vs deep copy', 'list vs tuple', 'dict internals', 'mutable default argument', 'args kwargs', 'closure', 'decorator', 'generator', 'GIL', 'multiprocessing', 'asyncio', 'MRO', 'dunder methods', 'pytest fixtures', 'Flask vs Django', 'REST', 'FastAPI', 'JWT']],
     'nlp': ['content/nlp/interview-questions.html', 'NLP interview questions on tokenisation, stemming and lemmatisation, Zipf, entropy, cross entropy and KL, perplexity, n-gram models, add-k, Good-Turing, Kneser-Ney, backoff and interpolation, HMM tagging, Viterbi, parsing and evaluation, with scenario questions.', ['tokenisation', 'stemming vs lemmatisation', 'Zipf law', 'entropy', 'cross entropy', 'perplexity', 'n-gram', 'Laplace smoothing', 'Kneser-Ney', 'interpolation', 'OOV', 'HMM', 'Viterbi', 'POS tagging', 'CKY', 'BLEU']],
     'cuda': ['content/cuda/interview-questions.html', 'GPU and CUDA interview questions for ML engineers, HPC developers and systems roles: the execution model, thread indexing, warps and divergence, occupancy, the memory hierarchy, coalescing, bank conflicts, the roofline, tiling, reductions, atomics, streams, tensor cores, profiling and debugging scenarios.', ['CUDA thread hierarchy', 'warp', 'SIMT', 'occupancy', 'coalescing', 'shared memory', 'bank conflict', '__syncthreads', 'atomicAdd', 'roofline', 'streams', 'pinned memory', 'tensor cores', 'Nsight']],
+    'linux': ['content/linux/interview-questions.html', 'Unix and Linux interview questions for developers, DevOps, SRE and system administrator roles: the file tree, permissions and special bits, hard and soft links, pipes and redirection, grep, sed and awk one liners, processes, signals and zombies, Bash scripting traps, cron, users and sudo, systemd, disks, LVM and fstab, networking and SSH, firewalls, load average, memory and swap, inodes, system calls, namespaces and cgroups, with troubleshooting scenarios.', ['chmod 755', 'setuid', 'sticky bit', 'hard link vs soft link', 'inode', '2>&1', 'grep', 'awk', 'sed', 'zombie process', 'SIGTERM vs SIGKILL', 'nohup', 'cron', 'set -euo pipefail', 'sudo', 'systemctl', 'journalctl', 'fstab', 'LVM', 'ssh keys', 'load average', 'OOM killer', 'strace', 'namespaces', 'cgroups']],
     'git': ['content/git/interview-questions.html', 'Git and CI/CD interview questions for developers and QA engineers: the three areas, reset, revert and restore, merge versus rebase, conflicts, reflog recovery, remotes and force pushes, internals, GitHub Actions and GitLab CI/CD pipelines, caches, artifacts, secrets, flaky tests and pipeline design scenarios.', ['git reset vs revert', 'merge vs rebase', 'fast forward', 'cherry-pick', 'reflog', 'detached HEAD', 'force-with-lease', 'git bisect', 'git objects', 'GitHub Actions', 'needs', 'matrix', 'artifacts', 'GitLab rules', 'cache vs artifacts', 'secrets']],
     'cyber-security': ['content/cyber-security/interview-questions.html', 'Cybersecurity interview questions for SOC analyst, security engineer, application security, cloud and research roles: the CIA triad and risk, AES, hashing, RSA, Diffie-Hellman, TLS 1.3 and post quantum crypto, firewalls, MFA, Kerberos and zero trust, SQL injection, XSS and CSRF, SIEM, the base rate, incident response and forensics, cloud and GDPR, adversarial examples, federated learning and differential privacy, with scenario and design questions.', ['CIA triad', 'ALE', 'symmetric vs asymmetric', 'password hashing', 'ECB mode', 'RSA', 'Diffie-Hellman', 'TLS 1.3', 'post quantum', 'IDS vs IPS', 'MFA', 'Kerberos', 'zero trust', 'SQL injection', 'XSS vs CSRF', 'OWASP Top 10', 'base rate', 'incident response', 'order of volatility', 'shared responsibility', 'FGSM', 'federated averaging', 'Krum', 'differential privacy']],
     'computer-vision': ['content/computer-vision/interview-questions.html', 'Computer vision interview questions on images and filters, edges, Harris, SIFT and HOG, optical flow, CNN arithmetic, anchors, IoU, NMS, focal loss, precision, recall and mAP, segmentation metrics, U-Net, ViT, CLIP and SAM, with debugging scenarios and system design.', ['convolution output size', 'parameter count', 'receptive field', 'Harris', 'optical flow', 'IoU', 'NMS', 'anchor boxes', 'focal loss', 'mAP50-95', 'mIoU', 'Dice', 'U-Net', 'transposed convolution', 'ViT', 'CLIP', 'SAM', 'domain shift']],
@@ -10336,3 +10361,40 @@ function cyAdvModules() {
   ];
 }
 /* ===== end of cy-advanced-build ===== */
+
+/* placeholder until the first chapter of this section is built by tools/linux-build/build.py */
+function lxPowerModules() { return []; }
+
+/* placeholder until the first chapter of this section is built by tools/linux-build/build.py */
+function lxScriptModules() { return []; }
+
+/* placeholder until the first chapter of this section is built by tools/linux-build/build.py */
+function lxAdminModules() { return []; }
+
+/* placeholder until the first chapter of this section is built by tools/linux-build/build.py */
+function lxAdvModules() { return []; }
+
+/* ===== lx-basics-build: Unix and Linux chapters. Generated by tools/linux-build/build.py, edit the topic files instead. ===== */
+function lxBasicsModules() {
+  return [
+    { id: "lx-basics-1", title: "Meet Unix and Linux", emoji: "1", step: 1, part: "basics", level: "Beginner", blurb: "What an operating system is, where Unix and Linux came from, the terminal and the shell, and how to ask the system for help.", topics: [
+      { id: "what-is-linux", title: "Meet Unix and Linux", emoji: "1.1", page: "content/linux/what-is-linux.html",
+        summary: "Operating systems, the story of Unix and Linux, kernel and user space, distributions, where to practise, first commands and the Unix philosophy.",
+        keywords: ["what is linux", "unix", "operating system", "kernel", "distribution", "ubuntu", "posix", "gnu", "linus torvalds", "wsl", "unix philosophy"],
+        minutes: 35, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "os", title: "What an operating system does", emoji: "", group: "Lesson", keywords: ["operating system", "OS", "kernel", "CPU", "memory", "drivers", "Android"] },
+        { id: "story", title: "The story of Unix and Linux", emoji: "", group: "Lesson", keywords: ["history", "Bell Labs", "Ken Thompson", "Dennis Ritchie", "C language", "BSD", "POSIX", "GNU", "Richard Stallman", "Linus Torvalds", "GPL", "Single UNIX Specification"] },
+        { id: "layers", title: "Kernel, shell and tools: the layers of Linux", emoji: "", group: "Lesson", keywords: ["kernel", "user space", "kernel space", "system call", "glibc", "shell", "coreutils", "uname", "os-release", "kernel version"] },
+        { id: "distros", title: "Distributions: many flavours, one kernel", emoji: "", group: "Lesson", keywords: ["distribution", "distro", "Ubuntu", "Debian", "Fedora", "RHEL", "Arch", "Alpine", "LTS", "rolling release", "apt", "dnf", "pacman", "apk"] },
+        { id: "practice", title: "Where you can practise, and your first commands", emoji: "", group: "Lesson", keywords: ["WSL", "wsl --install", "macOS Terminal", "zsh", "virtual machine", "whoami", "pwd", "ls", "date", "echo", "case sensitive"] },
+        { id: "levels", title: "The Unix way of thinking, from school to research", emoji: "", group: "Lesson", keywords: ["Unix philosophy", "Doug McIlroy", "do one thing well", "pipes", "everything is a file", "text streams", "Rust for Linux", "eBPF", "PREEMPT_RT"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of lx-basics-build ===== */
