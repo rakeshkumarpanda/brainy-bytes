@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memory: virtual memory, page faults, swap and the OOM killer · Unix and Linux</title>
+<meta name="description" content="Virtual address spaces, pages and page tables, VSZ and RSS, demand paging with a real 1 GiB mapping, copy on write after fork, /proc/PID/maps and smaps_rollup, free and /proc/meminfo, swappiness and overcommit with sysctl, pressure stall information, the OOM killer, oom_score_adj, and a real OOM kill in a memory cgroup.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=advanced">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=advanced" target="_top">Unix and Linux</a><span>›</span><span>Internals and Advanced</span><span>›</span><span>Step 2: Files and memory inside</span><span>›</span><span>Memory</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 2 of 2 · Expert</div>
+    <h1>Memory: virtual memory, page faults, swap and the OOM killer</h1>
+    <p class="lead">Understand how Linux hands out memory: virtual address spaces and pages, page faults and copy on write, what free and meminfo really say, swap and swappiness, and how the OOM killer and cgroup limits decide who dies when memory runs out.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#memory" data-topic="cheatsheet" data-h="memory">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#virtual" data-l="virtual"><span class="n">1</span><span class="t">Virtual memory, pages and page faults</span></a></li><li><a href="#cow" data-l="cow"><span class="n">2</span><span class="t">Copy on write and shared memory</span></a></li><li><a href="#free" data-l="free"><span class="n">3</span><span class="t">Reading free, meminfo and swap</span></a></li><li><a href="#oom" data-l="oom"><span class="n">4</span><span class="t">The OOM killer and memory limits</span></a></li><li><a href="#practice" data-l="practice"><span class="n">5</span><span class="t">Practice: check memory on the practice server</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">Memory from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="virtual" data-l="virtual" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>Virtual memory, pages and page faults</h2>
+<p>Every process sees its own <b>virtual address space</b>, as if it had the whole memory to itself. The kernel and the CPU’s memory management unit (MMU) translate each virtual address to a real place in RAM, one <b>page</b> (4 KiB on x86-64) at a time, using the process’s <b>page table</b>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody><tr><td>page and frame</td><td>a 4 KiB piece of virtual memory, and the 4 KiB piece of RAM that holds it</td></tr><tr><td>VSZ (VmSize)</td><td>all virtual memory the process has mapped, used or not</td></tr><tr><td>RSS (VmRSS)</td><td>the part that is in RAM right now, shared pages included</td></tr><tr><td>minor page fault</td><td>the page gets a frame without disk I/O (a fresh zero page, or a page already in the cache)</td></tr><tr><td>major page fault</td><td>the page must be read from disk (swap or a file), which takes milliseconds</td></tr><tr><td>ASLR</td><td>address space layout randomisation: the kernel puts stack, heap and libraries at random addresses each run (kernel.randomize_va_space = 2)</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-vm"></div>
+<div class="lx-run"><div class="lx-rh"><span>Map 1 GiB, use 200 MiB, and count the page faults</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; lazy.py &lt;&lt;'EOF'
+import mmap, resource
+
+def show(label):
+    with open("/proc/self/status") as f:
+        v = {k: x.split()[0] for k, x in (l.split(":", 1) for l in f) if k in ("VmSize", "VmRSS")}
+    faults = resource.getrusage(resource.RUSAGE_SELF).ru_minflt
+    print(f"{label:&lt;17} VmSize {int(v['VmSize']) // 1024:&gt;5} MiB  VmRSS {int(v['VmRSS']) // 1024:&gt;4} MiB  faults {faults}")
+
+show("start")
+m = mmap.mmap(-1, 1024 * 2**20)
+show("1 GiB mapped")
+for i in range(0, 200 * 2**20, 4096):
+    m[i] = 1
+show("200 MiB touched")
+m.close()
+show("unmapped")
+EOF</span>
+<span class="lx-cmd">python3 lazy.py</span>
+<span class="lx-o">start             VmSize    34 MiB  VmRSS   10 MiB  faults 957
+1 GiB mapped      VmSize  1058 MiB  VmRSS   10 MiB  faults 961
+200 MiB touched   VmSize  1058 MiB  VmRSS  210 MiB  faults 52161
+unmapped          VmSize    34 MiB  VmRSS   10 MiB  faults 52161</span></pre><div class="lx-note">Mapping 1 GiB raises VmSize by 1024 MiB at once, but RSS stays the same, because no page has a frame yet. Writing one byte in every 4 KiB page of the first 200 MiB causes one minor page fault per page: 200 × 256 = 51200 more faults, and RSS grows by 200 MiB. Unmapping gives everything back. This demand paging is why VSZ alone says little about how much RAM a program really needs.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>The memory map of a process</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">grep -E 'grep|heap|stack|vdso|libc' /proc/self/maps | awk '{print $1, $2, $6}'</span>
+<span class="lx-o">5627ad08e000-5627ad092000 r--p /usr/bin/grep
+5627ad092000-5627ad0b5000 r-xp /usr/bin/grep
+5627ad0b5000-5627ad0ba000 r--p /usr/bin/grep
+5627ad0ba000-5627ad0bc000 r--p /usr/bin/grep
+5627ad0bc000-5627ad0bd000 rw-p /usr/bin/grep
+5627aeec3000-5627aef06000 rw-p [heap]
+7fd732400000-7fd732428000 r--p /usr/lib/x86_64-linux-gnu/libc.so.6
+7fd732428000-7fd7325b1000 r-xp /usr/lib/x86_64-linux-gnu/libc.so.6
+7fd7325b1000-7fd732600000 r--p /usr/lib/x86_64-linux-gnu/libc.so.6
+7fd732600000-7fd732604000 r--p /usr/lib/x86_64-linux-gnu/libc.so.6
+7fd732604000-7fd732606000 rw-p /usr/lib/x86_64-linux-gnu/libc.so.6
+7fd732840000-7fd732842000 r-xp [vdso]
+7ffe3cb69000-7ffe3cb8a000 rw-p [stack]</span></pre><div class="lx-note">Each line of /proc/PID/maps is one mapping: an address range, the permissions (r read, w write, x execute, p private copy on write), and what is behind it. The program file appears several times, once per part: code is r-xp, data rw-p. [heap] grows with brk and [stack] with function calls, and [vdso] is a small piece of kernel code mapped into every process so that calls such as clock_gettime need no system call. The addresses change on every run because of ASLR.</div></div>
+<div class="vt-talk" hidden>Every process lives in its own virtual address space, as if it owned all the memory. The kernel and the C P U translate virtual addresses into real memory, one four kilobyte page at a time. Memory is handed out lazily: when a program asks for a gigabyte, the kernel only notes the range. Real memory is attached the first time each page is touched, through a page fault. That is why the virtual size of a program, V S Z, is often much bigger than its resident size, R S S. The demo maps one gigabyte, touches two hundred megabytes, and you can count exactly one fault per page. The memory map in slash proc shows each mapping: the program, its libraries, the heap and the stack.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="cow" data-l="cow" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Copy on write and shared memory</h2>
+<div class="lx-run"><div class="lx-rh"><span>fork shares pages until someone writes</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; cow.py &lt;&lt;'EOF'
+import os, resource
+
+def faults():
+    return resource.getrusage(resource.RUSAGE_SELF).ru_minflt
+
+data = bytearray(100 * 2**20)
+pid = os.fork()
+if pid == 0:
+    before = faults()
+    total = sum(data[::4096])
+    after_read = faults()
+    for i in range(0, 40 * 2**20, 4096):
+        data[i] = 1
+    print(f"child: reading 100 MiB caused {after_read - before} faults")
+    print(f"child: writing 40 MiB caused {faults() - after_read} faults", flush=True)
+    os._exit(0)
+os.waitpid(pid, 0)
+EOF</span>
+<span class="lx-cmd">python3 cow.py</span>
+<span class="lx-o">child: reading 100 MiB caused 31 faults
+child: writing 40 MiB caused 10258 faults</span></pre><div class="lx-note">After fork the child shares all 100 MiB with its parent. Reading every page costs almost nothing (the few faults come from Python’s own work). Writing 40 MiB causes about 40 × 256 = 10240 faults, one per page, because each written page must first be copied into a frame of the child’s own. The other 60 MiB stay shared. (flush=True matters here: os._exit skips the normal clean-up that would empty Python’s output buffer.)</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Memory that is shared</th><th>Example</th></tr></thead><tbody><tr><td>code of programs and libraries</td><td>every bash process uses the same frames for /usr/bin/bash and libc</td></tr><tr><td>copy on write pages after fork</td><td>web server workers forked from one master</td></tr><tr><td>shared memory</td><td>shm_open, /dev/shm, PostgreSQL shared_buffers</td></tr><tr><td>the page cache</td><td>a file read by ten programs is in RAM only once</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>grep -E "^(Rss|Pss)" /proc/PID/smaps_rollup</code></td><td>RSS, and PSS, where each shared page is divided among the processes that share it</td><td><code>grep -E "^(Rss|Pss)" /proc/$$/smaps_rollup</code></td></tr><tr><td><code>ps -o pid,vsz,rss,comm</code></td><td>VSZ and RSS in KiB per process</td><td><code>ps -o pid,vsz,rss,comm -C nginx</code></td></tr><tr><td><code>ps aux --sort=-rss | head</code></td><td>The biggest users of RAM first</td><td><code>ps aux --sort=-rss | head -n 5</code></td></tr><tr><td><code>pmap -x PID</code></td><td>The mappings with their RSS, a friendlier view of maps</td><td><code>pmap -x $$ | tail -n 3</code></td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Adding up the RSS of every process counts shared pages many times, so the sum can be bigger than the RAM in the machine. Use PSS when you need a fair total per program, or look at the cgroup’s memory.current for a whole service.</div></div>
+<div class="vt-talk" hidden>When a process forks, the kernel does not copy its memory. Parent and child share the same pages, marked read only. Only when one of them writes to a page does the kernel copy that page, which is called copy on write. That keeps fork fast, even for big programs. In the demo, the child reads one hundred megabytes for free, and writing forty megabytes causes one fault per copied page. Programs also share their code and libraries, and files in the page cache are in memory only once. That is why adding up the R S S of all processes gives too much. P S S divides each shared page fairly between the processes that use it.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="free" data-l="free" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Reading free, meminfo and swap</h2>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>free -h on the practice server</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>               total        used        free      shared  buff/cache   available
+Mem:           7.7Gi       2.1Gi       3.0Gi       120Mi       2.6Gi       5.3Gi
+Swap:          2.0Gi          0B       2.0Gi</pre><div class="lx-note">This is what free -h prints in the practice shell. used is memory programs hold, buff/cache is the page cache and kernel buffers, and available estimates how much new programs can get without swapping, cache that can be dropped included. A server with little free but plenty available is healthy.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>/proc/meminfo line</th><th>Meaning</th></tr></thead><tbody><tr><td>MemTotal, MemFree</td><td>all usable RAM, and RAM that holds nothing at all</td></tr><tr><td>MemAvailable</td><td>the kernel’s estimate of memory available for new work (what free calls available)</td></tr><tr><td>Buffers, Cached</td><td>block device buffers and the page cache</td></tr><tr><td>Dirty, Writeback</td><td>cache pages waiting to be written, and pages being written now</td></tr><tr><td>AnonPages</td><td>memory with no file behind it: heaps and stacks</td></tr><tr><td>SwapTotal, SwapFree</td><td>swap space and how much of it is unused</td></tr><tr><td>Committed_AS, CommitLimit</td><td>memory promised to programs, and the limit used when overcommit is strict (mode 2)</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Setting</th><th>Default on Ubuntu 24.04</th><th>What it does</th></tr></thead><tbody><tr><td><code>vm.swappiness</code></td><td>60</td><td>0 to 200: how much the kernel prefers swapping anonymous pages over dropping cache. Lower it on databases, raise it with zram</td></tr><tr><td><code>vm.overcommit_memory</code></td><td>0</td><td>0 heuristic overcommit, 1 always allow, 2 never promise more than CommitLimit</td></tr><tr><td><code>vm.vfs_cache_pressure</code></td><td>100</td><td>how eagerly the kernel frees cached inodes and folder entries</td></tr><tr><td><code>vm.min_free_kbytes</code></td><td>set at boot from RAM size</td><td>memory the kernel keeps free for emergencies</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Is the machine short of memory</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Look at <code>available</code> in free -h, not at free. Under about 10 % of total means pressure.</li><li>Run <code>vmstat 1 5</code>. Non-zero <b>si</b> and <b>so</b> (swap in and out) in every line means the machine swaps all the time.</li><li>Read <code>/proc/pressure/memory</code>. The some avg10 value is the share of the last 10 seconds in which at least one task waited for memory.</li><li>Search the kernel log: <code>journalctl -k | grep -i "out of memory"</code>.</li><li>Find the biggest users with <code>ps aux --sort=-rss | head</code> or <code>systemd-cgtop -m</code> per service.</li></ol></div>
+<div class="vt-talk" hidden>Free shows the memory of the whole machine. Do not worry when free is small: Linux uses spare memory as page cache, shown as buff slash cache, and gives it back the moment programs need it. The column to watch is available. Slash proc slash meminfo has the details, such as how much memory is dirty and waiting to be written, and how much swap is used. Swappiness, sixty by default, sets how much the kernel prefers swapping out idle program memory over dropping file cache. To check for a real memory shortage, look at available, at the s i and s o columns of vmstat, which show swapping, at the memory pressure file, and at the kernel log for out of memory kills.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="oom" data-l="oom" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>The OOM killer and memory limits</h2>
+<div class="walk"><div class="walk-h"><span>What happens when memory runs out</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The kernel first reclaims: it drops clean page cache, writes dirty pages back, and swaps anonymous pages out if there is swap.</li><li>If that is not enough, the <b>OOM killer</b> (out of memory) gives every process a badness score, mainly from how much memory it uses, adjusted by <code>/proc/PID/oom_score_adj</code> from −1000 (never kill) to 1000 (kill first). <code>/proc/PID/oom_score</code> shows the result.</li><li>It sends SIGKILL to the process with the highest score. The shell shows “Killed” and status 137, and the kernel log has a line “Out of memory: Killed process PID (name)”.</li><li>With a cgroup memory limit, the same happens inside the group only: the service that hit its own limit is killed, and the rest of the machine is fine.</li></ol></div>
+<div class="lx-run"><div class="lx-rh"><span>A real OOM kill inside a 100 MiB memory cgroup</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">mkdir /sys/fs/cgroup/memory/demo</span>
+<span class="lx-cmd lx-root">echo 100M &gt; /sys/fs/cgroup/memory/demo/memory.limit_in_bytes</span>
+<span class="lx-cmd lx-root">cat /sys/fs/cgroup/memory/demo/memory.limit_in_bytes</span>
+<span class="lx-o">104857600</span>
+<span class="lx-cmd lx-root">bash -c 'echo $$ &gt; /sys/fs/cgroup/memory/demo/cgroup.procs
+exec python3 -c "
+a = bytearray(50 * 2**20); print(\"50 MiB ok\", flush=True)
+b = bytearray(200 * 2**20); print(\"250 MiB ok\")"'</span>
+<span class="lx-o">50 MiB ok
+bash: 13876 Killed                  bash -c 'echo $$ &gt; /sys/fs/cgroup/memory/demo/cgroup.procs
+exec python3 -c "
+a = bytearray(50 * 2**20); print(\"50 MiB ok\", flush=True)
+b = bytearray(200 * 2**20); print(\"250 MiB ok\")"'</span>
+<span class="lx-cmd lx-root">echo "status $?"</span>
+<span class="lx-o">status 137</span>
+<span class="lx-cmd lx-root">grep oom_kill /sys/fs/cgroup/memory/demo/memory.oom_control</span>
+<span class="lx-o">oom_kill_disable 0
+oom_kill 1</span>
+<span class="lx-cmd lx-root">rmdir /sys/fs/cgroup/memory/demo</span></pre><div class="lx-note">The bash moves itself into the cgroup and then becomes Python (exec). The first 50 MiB fit inside the 100 MiB limit. The next 200 MiB do not, so the kernel kills Python with SIGKILL, and the shell reports status 137. The cgroup counts the kill (oom_kill 1), while the rest of the machine never noticed. The build container uses the older cgroup v1 files. On Ubuntu 24.04, which uses cgroup v2, the limit is the file memory.max and the kill count is in memory.events.</div></div>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>Limits for a service on Ubuntu 24.04 (systemctl edit shop.service)</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>[Service]
+MemoryHigh=800M
+MemoryMax=1G
+MemorySwapMax=0
+OOMScoreAdjust=500</pre><div class="lx-note">MemoryHigh slows the service down and reclaims its memory hard when it goes above 800M. MemoryMax is the hard limit where the OOM killer acts inside the service. OOMScoreAdjust makes it the preferred victim if the whole machine runs out. systemctl status shows the memory in use and the peak, and systemd-cgtop shows all services.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Java, Node.js and databases manage their own heaps. Set their limits (for example -Xmx for Java, --max-old-space-size for Node.js, shared_buffers for PostgreSQL) below the cgroup limit, or the kernel will kill them before they get a chance to clean up.</div></div>
+<div class="vt-talk" hidden>When memory really runs out, the kernel first drops cache and swaps. If that is not enough, the out of memory killer picks a victim, usually the process that uses the most memory, and kills it with SIGKILL. The program just dies with status one hundred thirty seven, and the kernel log names it. Oom score adj lets you protect important processes or offer others as victims. The best protection is a memory limit per service, using cgroups. In the demo, a real cgroup with a one hundred megabyte limit kills a Python program that asks for two hundred fifty megabytes, and nothing else on the machine is touched. On Ubuntu you set such limits with MemoryMax in a systemd unit.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Practice: check memory on the practice server</h2>
+<p>Find out how the practice server uses its memory and change one memory setting.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Memory facts&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Show memory and swap in human units.&quot;, &quot;hint&quot;: &quot;free -h&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^Mem:\\s+\\S+Gi&quot;}]}, {&quot;t&quot;: &quot;Show the MemAvailable line of /proc/meminfo.&quot;, &quot;hint&quot;: &quot;grep MemAvailable /proc/meminfo&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^MemAvailable:\\s+\\d+ kB&quot;}]}, {&quot;t&quot;: &quot;Show the VmSize and VmRSS lines of your shell (PID in $$).&quot;, &quot;hint&quot;: &quot;grep -E &#x27;^(VmSize|VmRSS)&#x27; /proc/$$/status&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;VmRSS:\\s+\\d+ kB&quot;}]}, {&quot;t&quot;: &quot;Show pid, vsz, rss and comm of your processes.&quot;, &quot;hint&quot;: &quot;ps -o pid,vsz,rss,comm&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;ps\\s+-o\\s+\\S*rss&quot;}]}, {&quot;t&quot;: &quot;Show the current swappiness with sysctl.&quot;, &quot;hint&quot;: &quot;sysctl vm.swappiness&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^vm\\.swappiness = 60$&quot;}]}, {&quot;t&quot;: &quot;Show the overcommit mode.&quot;, &quot;hint&quot;: &quot;sysctl vm.overcommit_memory&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^vm\\.overcommit_memory = 0$&quot;}]}, {&quot;t&quot;: &quot;Try to set swappiness to 10 as yourself.&quot;, &quot;hint&quot;: &quot;sysctl -w vm.swappiness=10&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;permission denied&quot;}]}, {&quot;t&quot;: &quot;Set it to 10 with sudo.&quot;, &quot;hint&quot;: &quot;sudo sysctl -w vm.swappiness=10&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^vm\\.swappiness = 10$&quot;}]}, {&quot;t&quot;: &quot;Read the value straight from /proc/sys.&quot;, &quot;hint&quot;: &quot;cat /proc/sys/vm/swappiness&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^10$&quot;}]}, {&quot;t&quot;: &quot;Show the oom_score_adj of your shell.&quot;, &quot;hint&quot;: &quot;cat /proc/$$/oom_score_adj&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^0$&quot;}]}, {&quot;t&quot;: &quot;Find the OOM kill in the kernel log (reading it needs sudo).&quot;, &quot;hint&quot;: &quot;sudo journalctl -k | grep -i \&quot;out of memory\&quot;&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Killed process 2261&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now look at memory on the practice server. Show free in human units, and find MemAvailable in meminfo. Read the virtual size and the resident size of your shell in its status file, and list the V S Z and R S S of your processes with p s. Then look at swappiness and the overcommit mode with sysctl. Try to change swappiness as yourself, which is refused, then with sudo, and read the new value straight from slash proc slash sys. Finally check the O O M score adjustment of your shell and find the out of memory kill in the kernel log.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Memory from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>RAM is the computer’s fast working memory. Each program thinks it has its own memory, and the operating system quietly hands out real memory only for the parts it uses. When memory is full, the system can park unused parts on the disk (swap).</p></div><div class="ld-p" data-ld="college" hidden><p>Read free (watch available), meminfo, VSZ and RSS, maps and smaps_rollup, understand page faults and copy on write, set swappiness and overcommit with sysctl, recognise OOM kills (status 137, kernel log) and set MemoryMax for services.</p></div><div class="ld-p" data-ld="masters" hidden><p>Performance engineers use huge pages (2 MiB and 1 GiB, transparent huge pages) for databases and virtual machines, NUMA placement with numactl on servers with several CPU sockets, zram and zswap for compressed swap, systemd-oomd with PSI to act before the kernel OOM killer does, and tools such as perf, bpftrace and valgrind to find leaks and faults.</p></div><div class="ld-p" data-ld="research" hidden><p>Research looks at memory tiering with CXL attached memory and persistent memory, multi-generational LRU (MGLRU, in Linux 6.1) for better reclaim decisions, memory safety (Rust, hardware tagging such as ARM MTE), and attacks on memory hardware such as Rowhammer, which flips bits in neighbouring rows of DRAM.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the nightly report that killed the database</div><p>Every night at 02:00 the PostgreSQL server of a shop restarted. The kernel log showed “Out of memory: Killed process (postgres)”. A new reporting job ran on the same machine and loaded a whole table into memory, but the OOM killer chose postgres because it used the most RAM. The team put the job in its own systemd service with MemoryMax=2G, set OOMScoreAdjust=-900 on PostgreSQL, and the next night only the report hit its limit, while the database stayed up.</p></div>
+<div class="vt-talk" hidden>Here is how understanding memory grows. At school you learn that each program believes it has its own memory, and that the system hands out real memory only for the parts in use. Professionals read free, meminfo and the memory map, know what page faults and copy on write mean, and set limits for services so one program cannot take the whole machine down. Performance engineers use huge pages, place memory close to the right C P U, compress swap with zram, and react to memory pressure before the kernel has to kill. Researchers build new kinds of memory tiers, better reclaim algorithms, and defences against attacks on the memory chips themselves.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./files-inside.html" data-topic="files-inside"><small>Previous topic</small><b>Files inside</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "memory", "topic": "memory", "subject": "linux", "title": "Memory: virtual memory, page faults, swap and the OOM killer", "codes": {}, "quiz": [{"lv": "e", "q": "How big is a normal memory page on x86-64 Linux?", "o": ["512 bytes", "4 KiB", "1 MiB", "64 KiB"], "a": 1, "hint": "Four kilobytes.", "why": "Huge pages are 2 MiB or 1 GiB."}, {"lv": "e", "q": "Which column of free shows memory new programs can really get?", "o": ["free", "available", "shared", "total"], "a": 1, "hint": "Available.", "why": "It counts cache that can be dropped."}, {"lv": "e", "q": "What is swap?", "o": ["Extra CPU", "Disk space that holds memory pages the kernel moved out of RAM", "A backup", "A file system"], "a": 1, "hint": "Pages on disk.", "why": "Slow, but better than a crash."}, {"lv": "e", "q": "Which signal does the OOM killer send?", "o": ["SIGTERM", "SIGKILL", "SIGHUP", "SIGSTOP"], "a": 1, "hint": "No mercy.", "why": "Status 137."}, {"lv": "m", "q": "A program maps 1 GiB but uses 10 MiB. What does RSS show?", "o": ["1 GiB", "About 10 MiB plus its code", "0", "2 GiB"], "a": 1, "hint": "Resident pages only.", "why": "VSZ shows the 1 GiB."}, {"lv": "m", "q": "What is a page fault?", "o": ["A bug", "A trap when a page has no frame yet or is read only, handled by the kernel", "A disk error", "A full page table"], "a": 1, "hint": "Normal and frequent.", "why": "Minor or major."}, {"lv": "m", "q": "Why is free memory low on a healthy Linux server?", "o": ["A leak", "Spare RAM is used as page cache and given back when needed", "Swap is off", "The kernel reserves it"], "a": 1, "hint": "Cache.", "why": "Watch available."}, {"lv": "m", "q": "What does oom_score_adj -1000 do?", "o": ["Kills it first", "The OOM killer never chooses this process", "Limits it to 1000 KiB", "Nothing"], "a": 1, "hint": "Protection.", "why": "Range -1000 to 1000."}, {"lv": "m", "q": "Which sysctl sets how eagerly the kernel swaps?", "o": ["vm.dirty_ratio", "vm.swappiness", "kernel.pid_max", "vm.overcommit_memory"], "a": 1, "hint": "Swap.", "why": "Default 60."}, {"lv": "h", "q": "After fork, when are pages copied?", "o": ["At once", "Only when parent or child writes to them (copy on write)", "Never", "At exec"], "a": 1, "hint": "On write.", "why": "Reads share the frame."}, {"lv": "h", "q": "Why can the RSS of all processes add up to more than the RAM?", "o": ["A kernel bug", "Shared pages are counted in every process that uses them", "Swap is included", "RSS is in bits"], "a": 1, "hint": "Double counting.", "why": "Use PSS for fair totals."}, {"lv": "h", "q": "vmstat shows non-zero si and so in every line. What does that mean?", "o": ["The disk is fast", "The machine swaps in and out all the time and needs more RAM or less load", "Swap is off", "CPU is idle"], "a": 1, "hint": "Swap in, swap out.", "why": "Thrashing."}, {"lv": "h", "q": "Which systemd setting sets a hard memory limit for a service?", "o": ["LimitNOFILE=", "MemoryMax=", "CPUQuota=", "Nice="], "a": 1, "hint": "Max.", "why": "Uses the cgroup memory.max."}, {"lv": "x", "q": "What does vm.overcommit_memory = 2 change?", "o": ["Disables swap", "The kernel refuses allocations beyond CommitLimit instead of promising more than it has", "Doubles RAM", "Turns off the OOM killer for root"], "a": 1, "hint": "Strict accounting.", "why": "malloc can fail early."}], "calc": [{"lv": "e", "q": "How many 4 KiB pages are in 1 MiB?", "ans": "256", "hint": "Divide.", "steps": ["1 MiB = 1024 KiB.", "1024 ÷ 4.", "<span class=\"eq\">256 pages<\/span>"]}, {"lv": "e", "q": "A program touches 200 MiB, one page fault per 4 KiB page. How many faults?", "ans": "51200", "hint": "Pages in 200 MiB.", "steps": ["256 pages per MiB.", "200 × 256.", "<span class=\"eq\">51200 faults<\/span>"]}, {"lv": "m", "q": "MemTotal is 8 GiB and MemAvailable is 0.6 GiB. What percent is available?", "ans": "7.5", "hint": "Divide and times 100.", "steps": ["0.6 ÷ 8 = 0.075.", "× 100.", "<span class=\"eq\">7.5 %<\/span>"]}, {"lv": "m", "q": "A page table entry is 8 bytes and maps 4 KiB. How many KiB of entries are needed to map 1 GiB?", "ans": "2048", "hint": "Pages times 8 bytes.", "steps": ["1 GiB has 262144 pages.", "262144 × 8 = 2097152 bytes.", "<span class=\"eq\">2048 KiB<\/span>"]}, {"lv": "h", "q": "A minor fault takes 0.5 µs and a major fault 5 ms. How many times slower is a major fault?", "ans": "10000", "hint": "Same units first.", "steps": ["5 ms = 5000 µs.", "5000 ÷ 0.5.", "<span class=\"eq\">10000 times<\/span>"]}, {"lv": "h", "q": "Ten forked workers share 300 MiB of code. RSS counts it in each. How many MiB does the RSS total overstate?", "ans": "2700", "hint": "Counted 10 times, exists once.", "steps": ["10 × 300 = 3000 MiB counted.", "Really 300 MiB.", "<span class=\"eq\">3000 − 300 = 2700 MiB<\/span>"]}, {"lv": "x", "q": "With 2 MiB huge pages instead of 4 KiB pages, how many times fewer pages map the same memory?", "ans": "512", "hint": "Divide the page sizes.", "steps": ["2 MiB = 2048 KiB.", "2048 ÷ 4.", "<span class=\"eq\">512 times fewer<\/span>"]}], "assign": [], "must": [["Virtual memory", "Own address space per process, 4 KiB pages, page tables and the MMU. VSZ is mapped, RSS is in RAM. Minor and major page faults. /proc/PID/maps, ASLR."], ["Sharing", "fork shares pages copy on write, code and libraries are shared, the page cache holds a file once. PSS in smaps_rollup divides shared pages."], ["Reading memory", "free -h: watch available. /proc/meminfo, vmstat si and so, /proc/pressure/memory, ps aux --sort=-rss."], ["Settings", "sysctl vm.swappiness (60), vm.overcommit_memory (0), sysctl -w as root, files in /etc/sysctl.d."], ["OOM", "Reclaim, then the OOM killer sends SIGKILL (status 137, kernel log). oom_score_adj -1000 to 1000. Per service limits with MemoryMax= and MemoryHigh= (cgroup memory.max)."]], "summary": "<p>Each process has its own virtual address space, and pages get real frames only when they are touched, through page faults. fork shares pages until they are written. free’s available column, meminfo and vmstat tell whether memory is short. When reclaim and swap are not enough, the OOM killer sends SIGKILL, so give services their own limits with MemoryMax.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

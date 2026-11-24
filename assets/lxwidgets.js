@@ -1428,6 +1428,42 @@
     }
   }));
 
+  /* adv 2.2 virtual memory: pages, frames, page faults, copy on write, swap and the OOM killer */
+  def('lx-vm', el => W(el, {
+    title: 'Virtual pages and real memory',
+    sub: 'Pick what a program does. Pip shows its virtual pages on top and the physical page frames of RAM below, and what the kernel does at each step.',
+    inputs: [{ k: 'what', label: 'Program', type: 'seg', val: 'touch', opts: [['touch', 'allocate, then use'], ['cow', 'fork, then write'], ['swap', 'RAM gets tight'], ['oom', 'no RAM, no swap']] }],
+    random: () => ({ what: ['touch', 'cow', 'swap', 'oom'][Math.floor(Math.random() * 4)] }),
+    frames: v => {
+      const fr = [];
+      const pages = (label, list) => ({ t: 'flow', label, items: list, plain: true });
+      const ram = list => pages('RAM page frames (4 KiB each)', list);
+      if (v.what === 'touch') {
+        fr.push({ msg: 'A program asks for 16 KiB with malloc, which uses mmap or brk. The kernel only notes four new <b>virtual pages</b> in the address space. No RAM is used yet, which is why VSZ grows but RSS does not.', mood: 'think', layers: [pages('Virtual pages of the program', [['page 0', 'mapped, no frame', 'look'], ['page 1', 'mapped, no frame', 'look'], ['page 2', 'mapped, no frame', 'look'], ['page 3', 'mapped, no frame', 'look']]), ram([['frame 7', 'free', 'ghost'], ['frame 8', 'free', 'ghost'], ['frame 9', 'free', 'ghost']])] });
+        fr.push({ msg: 'The program writes to page 0. The CPU’s memory unit (MMU) finds no frame in the page table and raises a <b>page fault</b>. The kernel takes a free frame, fills it with zeros, records it in the page table and lets the program continue. This minor fault takes well under a microsecond.', mood: 'wow', fx: 'shake', layers: [pages('Virtual pages of the program', [['page 0', 'fault, gets frame 7', 'cur'], ['page 1', 'no frame', 'look'], ['page 2', 'no frame', 'look'], ['page 3', 'no frame', 'look']]), ram([['frame 7', 'page 0', 'cur'], ['frame 8', 'free', 'ghost'], ['frame 9', 'free', 'ghost']])] });
+        fr.push({ msg: 'Only pages that are used get frames. After writing pages 0 and 1, RSS (resident set size) is 8 KiB, while VSZ still counts all 16 KiB. The real run in this chapter shows the same with 1 GiB mapped and 200 MiB used.', mood: 'happy', fx: 'burst', layers: [pages('Virtual pages of the program', [['page 0', 'frame 7', 'yes'], ['page 1', 'frame 8', 'yes'], ['page 2', 'no frame', 'look'], ['page 3', 'no frame', 'look']]), ram([['frame 7', 'page 0', 'yes'], ['frame 8', 'page 1', 'yes'], ['frame 9', 'free', 'ghost']])] });
+        return fr;
+      }
+      if (v.what === 'cow') {
+        fr.push({ msg: 'A process with two pages in RAM calls fork. The kernel does not copy the memory. It gives the child the same frames and marks every page <b>read only</b> in both page tables: copy on write.', mood: 'think', layers: [pages('Parent pages', [['page 0', 'frame 7, read only', 'look'], ['page 1', 'frame 8, read only', 'look']]), pages('Child pages', [['page 0', 'frame 7, read only', 'look'], ['page 1', 'frame 8, read only', 'look']]), ram([['frame 7', 'shared', 'cur'], ['frame 8', 'shared', 'cur'], ['frame 9', 'free', 'ghost']])] });
+        fr.push({ msg: 'The child writes to page 1. The write hits a read-only page, so the CPU raises a page fault. The kernel copies frame 8 to a free frame 9, gives the child the copy with write access, and repeats the write. Page 0 is still shared.', mood: 'wow', fx: 'shake', layers: [pages('Parent pages', [['page 0', 'frame 7', 'look'], ['page 1', 'frame 8', 'yes']]), pages('Child pages', [['page 0', 'frame 7', 'look'], ['page 1', 'frame 9, its own copy', 'cur']]), ram([['frame 7', 'shared', 'look'], ['frame 8', 'parent', 'yes'], ['frame 9', 'child', 'cur']])] });
+        fr.push({ msg: 'This makes fork fast even for big programs, and fork followed by exec copies almost nothing. It is also why the RSS of a parent and its children can add up to more than the RAM in use: shared frames are counted in each of them. PSS in /proc/PID/smaps_rollup divides shared pages fairly.', mood: 'happy', fx: 'burst', layers: [ram([['frame 7', 'shared', 'yes'], ['frame 8', 'parent', 'yes'], ['frame 9', 'child', 'yes']])] });
+        return fr;
+      }
+      fr.push({ msg: 'RAM is nearly full. Some frames hold <b>anonymous</b> memory (heap and stack, with no file behind them) and some hold <b>page cache</b> (copies of file data).', mood: 'think', layers: [ram([['frame 1', 'cache: app.log', 'look'], ['frame 2', 'cache: libc.so', 'look'], ['frame 3', 'anon: java heap', 'cur'], ['frame 4', 'anon: java heap', 'cur'], ['frame 5', 'anon: idle daemon', 'cur']])] });
+      fr.push({ msg: 'A program needs more memory. The kernel <b>reclaims</b> frames: clean page cache is dropped at once, because the data is still in the file. Dirty cache is written back first. This is why buff/cache shrinks before anything else.', mood: 'look', layers: [ram([['frame 1', 'freed (cache dropped)', 'yes'], ['frame 2', 'cache: libc.so', 'look'], ['frame 3', 'anon: java heap', 'cur'], ['frame 4', 'anon: java heap', 'cur'], ['frame 5', 'anon: idle daemon', 'cur']])] });
+      if (v.what === 'swap') {
+        fr.push({ msg: 'Anonymous pages have no file to go back to, so the kernel writes rarely used ones to <b>swap</b>, here the idle daemon’s page, and frees the frame. vm.swappiness (60 by default) sets how willing it is to swap compared with dropping cache.', mood: 'wow', layers: [ram([['frame 1', 'new program', 'yes'], ['frame 2', 'cache: libc.so', 'look'], ['frame 3', 'anon: java heap', 'cur'], ['frame 4', 'anon: java heap', 'cur'], ['frame 5', 'freed, page in swap', 'yes']]), pages('Swap', [['slot 1', 'idle daemon page', 'look']])] });
+        fr.push({ msg: 'When the daemon wakes up and touches that page, it gets a <b>major page fault</b>: the kernel reads the page back from disk, which takes milliseconds instead of nanoseconds. A little swap use is fine. Constant swapping in and out (vmstat si and so columns) means the machine needs more RAM.', mood: 'happy', fx: 'burst', layers: [pages('Swap', [['slot 1', 'read back on a major fault', 'cur']])] });
+        return fr;
+      }
+      fr.push({ msg: 'There is no swap and no more cache to drop, and programs still ask for pages. Linux overcommits (vm.overcommit_memory = 0): it promised more memory than it has, hoping not all of it would be used. Now the promise cannot be kept.', mood: 'sad', layers: [ram([['frame 1', 'anon: new program', 'cur'], ['frame 2', 'anon: worker', 'cur'], ['frame 3', 'anon: java heap', 'no'], ['frame 4', 'anon: java heap', 'no'], ['frame 5', 'anon: idle daemon', 'cur']])] });
+      fr.push({ msg: 'The <b>OOM killer</b> picks the process with the highest badness score, mostly the one using the most memory, adjusted by its oom_score_adj (−1000 means never), and sends it SIGKILL. The kernel log says “Out of memory: Killed process 2261 (java)”, and the program’s status is 137.', mood: 'sad', fx: 'shake', layers: [ram([['frame 1', 'anon: new program', 'yes'], ['frame 2', 'anon: worker', 'yes'], ['frame 3', 'freed (java killed)', 'ghost'], ['frame 4', 'freed (java killed)', 'ghost'], ['frame 5', 'anon: idle daemon', 'yes']]), { t: 'term', label: 'journalctl -k', lines: [['e', 'Out of memory: Killed process 2261 (java) total-vm:4194304kB, anon-rss:3145728kB, file-rss:0kB, shmem-rss:0kB, UID:1001 pgtables:6400kB oom_score_adj:0']] }] });
+      fr.push({ msg: 'Protect a server with memory limits per service (MemoryMax= in systemd, which uses cgroups), so one leaky program is killed inside its own limit instead of taking the whole machine down, and watch MemAvailable, not MemFree.', mood: 'think', layers: [] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

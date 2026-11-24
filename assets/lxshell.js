@@ -57,7 +57,7 @@ const LXSH = (() => {
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
   const SBIN = 'ufw sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'mkfifo nproc pstree alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const CMDS = 'sysctl mkfifo nproc pstree alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -2699,7 +2699,7 @@ const LXSH = (() => {
       if (name === 'nginx' && p.pid === 905) { fds[6] = L('socket:[24518]', 'root', 0o700); fds[7] = L('socket:[24519]', 'root', 0o700); }
       if (p.self && this.procFd) Object.assign(fds, this.procFd(p.user, L));
       const env = (p.pid === 2001 || p.self) ? [...this.exported].filter(k => this.vars[k] !== undefined).map(k => k + '=' + this.vars[k]).join('\0') + '\0' : '';
-      kids[p.pid] = D({ status: F(status, 0o444, p.user), comm: F(name + '\n', 0o644, p.user), cmdline: F(p.cmd.replace(/^-bash$/, '-bash').split(' ').join('\0') + '\0', 0o444, p.user),
+      kids[p.pid] = D({ oom_score_adj: F('0\n', 0o644, p.user), status: F(status, 0o444, p.user), comm: F(name + '\n', 0o644, p.user), cmdline: F(p.cmd.replace(/^-bash$/, '-bash').split(' ').join('\0') + '\0', 0o444, p.user),
         environ: F(env, 0o400, p.user), cwd: L(p.self || p.pid === 2001 ? this.cwd : '/', p.user), exe: L(exe, p.user), fd: D(fds, 0o500, p.user),
         ns: D(Object.fromEntries(['cgroup', 'ipc', 'mnt', 'net', 'pid', 'user', 'uts'].map((k, i) => [k, L(`${k}:[40265318${30 + i}]`, p.user)])), 0o511, p.user) }, 0o555, p.user);
     }
@@ -2710,10 +2710,11 @@ const LXSH = (() => {
     kids.loadavg = F(`0.42 0.35 0.30 ${running}/${rows.length + 112} ${self}\n`);
     kids.uptime = F(`${(268860 + (this.clock - T0) / 1000).toFixed(2)} 530214.88\n`);
     kids.filesystems = F('nodev\tsysfs\nnodev\ttmpfs\nnodev\tbdev\nnodev\tproc\nnodev\tcgroup2\nnodev\tdevtmpfs\nnodev\tdebugfs\nnodev\tsecurityfs\nnodev\tsockfs\nnodev\tpipefs\nnodev\tdevpts\n\text4\nnodev\tsquashfs\n\tvfat\nnodev\tmqueue\n\txfs\nnodev\toverlay\n');
-    kids.cmdline = F('BOOT_IMAGE=/vmlinuz-6.8.0-practice root=UUID=b6e1c2a4-77aa-4e0f-9d3b-2f1c8a5e0d71 ro quiet splash\n');
-    kids.sys = D({ kernel: D({ hostname: F(HOST + '\n', 0o644), ostype: F('Linux\n'), osrelease: F('6.8.0-practice\n'), pid_max: F('4194304\n', 0o644), threads_max: F('63318\n', 0o644) }),
-      vm: D({ swappiness: F('60\n', 0o644), overcommit_memory: F('0\n', 0o644), dirty_ratio: F('20\n', 0o644) }),
-      net: D({ ipv4: D({ ip_forward: F('0\n', 0o644), tcp_syncookies: F('1\n', 0o644) }) }), fs: D({ 'file-max': F('9223372036854775807\n', 0o644) }) });
+    kids.cmdline = F('BOOT_IMAGE=/boot/vmlinuz-6.8.0-practice root=UUID=b6e1c2a4-77aa-4e0f-9d3b-2f1c8a5e0d71 ro quiet\n');
+    const tree = {};
+    for (const [k, val] of Object.entries(this.sysctls())) { const parts = k.split('.'); let t = tree; parts.slice(0, -1).forEach(x => { t = t[x] = t[x] || {}; }); t[parts[parts.length - 1]] = val; }
+    const mkTree = t => D(Object.fromEntries(Object.entries(t).map(([k, x]) => [k, typeof x === 'string' ? F(x + '\n', /^(ostype|osrelease)$/.test(k) ? 0o444 : 0o644) : mkTree(x)])));
+    kids.sys = mkTree(tree);
     for (const k in kids) kids[k].name = k;
     proc.kids = kids;
   };
@@ -2743,6 +2744,30 @@ const LXSH = (() => {
       this.mk(p, 'p', 0o666 & ~this.umask, this.user, '').mtime = this.now();
     }
     return 0;
+  };
+
+  /* kernel settings shared by /proc/sys and sysctl */
+  World.prototype.sysctls = function () {
+    if (!this.sysctlState) this.sysctlState = { 'fs.file-max': '9223372036854775807', 'fs.protected_hardlinks': '1', 'fs.protected_symlinks': '1', 'kernel.dmesg_restrict': '1', 'kernel.hostname': HOST, 'kernel.kptr_restrict': '1', 'kernel.osrelease': '6.8.0-practice', 'kernel.ostype': 'Linux', 'kernel.pid_max': '4194304', 'kernel.randomize_va_space': '2', 'kernel.threads-max': '63318', 'net.ipv4.conf.all.accept_redirects': '1', 'net.ipv4.conf.all.rp_filter': '2', 'net.ipv4.ip_forward': '0', 'net.ipv4.tcp_syncookies': '1', 'vm.dirty_background_ratio': '10', 'vm.dirty_expire_centisecs': '3000', 'vm.dirty_ratio': '20', 'vm.overcommit_memory': '0', 'vm.overcommit_ratio': '50', 'vm.swappiness': '60', 'vm.vfs_cache_pressure': '100' };
+    return this.sysctlState;
+  };
+  C.sysctl = function (a) {
+    const st = this.sysctls(); let n = false, w = false, all = false, code = 0; const keys = [];
+    for (const x of a) { if (x === '-n') n = true; else if (x === '-w') w = true; else if (x === '-a' || x === '-A' || x === '-X') all = true; else if (x === '--system' || x === '-p') { this.out(x === '-p' ? '' : '* Applying /usr/lib/sysctl.d/50-pid-max.conf ...\nkernel.pid_max = 4194304\n* Applying /etc/sysctl.d/99-sysctl.conf ...\n* Applying /etc/sysctl.conf ...\n'); return 0; } else keys.push(x); }
+    if (all) { this.out(Object.keys(st).sort().map(k => n ? st[k] : `${k} = ${st[k]}`).join('\n') + '\n'); return 0; }
+    if (!keys.length) { this.eout('sysctl: no variables specified\nTry `sysctl --help\' for more information.\n'); return 1; }
+    for (const x0 of keys) {
+      const eq = x0.indexOf('='), k = (eq >= 0 ? x0.slice(0, eq) : x0).replace(/\//g, '.'), val = eq >= 0 ? x0.slice(eq + 1) : null;
+      if (!(k in st)) { this.eout(`sysctl: cannot stat /proc/sys/${k.replace(/\./g, '/')}: No such file or directory\n`); code = 255; continue; }
+      if (val !== null || w) {
+        if (val === null) { this.eout(`sysctl: "${k}" must be of the form name=value\n`); code = 255; continue; }
+        if (this.user !== 'root') { this.eout(`sysctl: permission denied on key "${k}"\n`); code = 255; continue; }
+        if (/^kernel\.os/.test(k)) { this.eout(`sysctl: permission denied on key "${k}"\n`); code = 255; continue; }
+        st[k] = val; this.out(n ? val + '\n' : `${k} = ${val}\n`); continue;
+      }
+      this.out(n ? st[k] + '\n' : `${k} = ${st[k]}\n`);
+    }
+    return code;
   };
   C.lsblk = function (a) {
     const st = this.disks(), full = a.includes('-f') || a.includes('--fs'), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
@@ -3672,8 +3697,8 @@ const LXSH = (() => {
     const oi = a.findIndex(x => x === '-o' || x === '-eo' || x === 'o');
     if (oi >= 0) {
       const cols = a[oi + 1].split(',');
-      const H = { pid: ['PID', 7], lwp: ['LWP', 7], nlwp: ['NLWP', 4], ppid: ['PPID', 7], user: ['USER', -8], stat: ['STAT', -4], ni: ['NI', 3], comm: ['COMMAND', -15], cmd: ['CMD', 0], args: ['COMMAND', 0], '%cpu': ['%CPU', 4], '%mem': ['%MEM', 4], tty: ['TT', -8], etime: ['ELAPSED', 11] };
-      const val = (p, c) => ({ pid: p.pid, lwp: p.pid, nlwp: 1, ppid: p.ppid, user: p.user, stat: p.stat + (p.pid === 2001 ? 's' : ''), ni: p.ni || 0, comm: comm(p), cmd: p.cmd, args: p.cmd, '%cpu': (p.cpu || 0).toFixed(1), '%mem': '0.1', tty: tty(p), etime: '00:' + pad(Math.max(0, Math.round((this.clock - (p.start || T0)) / 1000)) % 60, 2).replace(' ', '0') })[c];
+      const H = { vsz: ['VSZ', 6], rss: ['RSS', 5], pid: ['PID', 7], lwp: ['LWP', 7], nlwp: ['NLWP', 4], ppid: ['PPID', 7], user: ['USER', -8], stat: ['STAT', -4], ni: ['NI', 3], comm: ['COMMAND', -15], cmd: ['CMD', 0], args: ['COMMAND', 0], '%cpu': ['%CPU', 4], '%mem': ['%MEM', 4], tty: ['TT', -8], etime: ['ELAPSED', 11] };
+      const val = (p, c) => ({ vsz: p.pid === 1 ? 167700 : 8000 + p.pid % 900 * 7, rss: p.pid === 1 ? 13020 : 3000 + p.pid % 700 * 3, pid: p.pid, lwp: p.pid, nlwp: 1, ppid: p.ppid, user: p.user, stat: p.stat + (p.pid === 2001 ? 's' : ''), ni: p.ni || 0, comm: comm(p), cmd: p.cmd, args: p.cmd, '%cpu': (p.cpu || 0).toFixed(1), '%mem': '0.1', tty: tty(p), etime: '00:' + pad(Math.max(0, Math.round((this.clock - (p.start || T0)) / 1000)) % 60, 2).replace(' ', '0') })[c];
       const line = f => cols.map((c, k) => { const [, w] = H[c] || [c.toUpperCase(), 8]; const s = String(f(c)); return k === cols.length - 1 && w <= 0 ? s : w < 0 ? pad(s, -w, true) : pad(s, w); }).join(' ');
       this.out(line(c => (H[c] || [c.toUpperCase()])[0]).replace(/\s+$/, '') + '\n' + rows.map(p => line(c => val(p, c))).join('\n') + '\n');
       return 0;

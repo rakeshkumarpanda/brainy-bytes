@@ -11002,6 +11002,22 @@ function lxAdvModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "memory", title: "Memory: virtual memory, page faults, swap and the OOM killer", emoji: "2.2", page: "content/linux/memory.html",
+        summary: "Pages, page faults, VSZ and RSS, copy on write, free, swap, OOM killer, MemoryMax.",
+        keywords: ["virtual memory", "page fault", "VSZ", "RSS", "PSS", "copy on write", "free", "meminfo", "swap", "swappiness", "overcommit", "OOM killer", "oom_score_adj", "cgroup", "MemoryMax"],
+        minutes: 55, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "virtual", title: "Virtual memory, pages and page faults", emoji: "", group: "Lesson", keywords: ["virtual memory", "virtual address space", "page", "page frame", "page table", "MMU", "VSZ", "RSS", "VmSize", "VmRSS", "page fault", "minor fault", "major fault", "demand paging", "mmap", "brk", "heap", "stack", "/proc/PID/maps", "vdso", "ASLR", "randomize_va_space"] },
+        { id: "cow", title: "Copy on write and shared memory", emoji: "", group: "Lesson", keywords: ["copy on write", "COW", "fork memory", "shared pages", "shared memory", "shm", "/dev/shm", "PSS", "smaps_rollup", "pmap", "ps --sort=-rss", "vsz rss", "shared libraries"] },
+        { id: "free", title: "Reading free, meminfo and swap", emoji: "", group: "Lesson", keywords: ["free", "free -h", "available memory", "buff/cache", "/proc/meminfo", "MemAvailable", "MemFree", "Dirty", "AnonPages", "Committed_AS", "swap", "swappiness", "vm.swappiness", "overcommit_memory", "vfs_cache_pressure", "min_free_kbytes", "vmstat si so", "PSI", "/proc/pressure/memory", "memory pressure"] },
+        { id: "oom", title: "The OOM killer and memory limits", emoji: "", group: "Lesson", keywords: ["OOM killer", "out of memory", "oom_score", "oom_score_adj", "OOMScoreAdjust", "Killed", "exit 137", "cgroup memory limit", "memory.max", "memory.events", "memory.limit_in_bytes", "MemoryMax", "MemoryHigh", "MemorySwapMax", "systemd-cgtop", "reclaim", "Xmx"] },
+        { id: "practice", title: "Practice: check memory on the practice server", emoji: "", group: "Lesson", keywords: ["memory lab", "free practice", "sysctl practice", "swappiness practice", "oom practice"] },
+        { id: "levels", title: "Memory from school to research", emoji: "", group: "Lesson", keywords: ["huge pages", "transparent huge pages", "THP", "NUMA", "numactl", "zram", "zswap", "systemd-oomd", "MGLRU", "CXL", "memory tiering", "valgrind", "memory leak", "Rowhammer", "ARM MTE"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
