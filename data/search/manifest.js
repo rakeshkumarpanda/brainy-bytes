@@ -21,5 +21,6 @@ window.LH_SEARCH_MANIFEST = {
  "playwright": "fad96ee3fe",
  "python": "4352be0f78",
  "selenium": "a4829dbe40",
+ "sql": "55e735a4fb",
  "testng": "2b7fcd8b82"
 };

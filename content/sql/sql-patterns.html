@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Query patterns: top N, streaks, pivots and JSON · SQL and Databases</title>
+<meta name="description" content="Top N per group with ROW_NUMBER, RANK and DISTINCT ON, gaps and islands with the row number difference and LEAD, pivoting with CASE and FILTER, finding and deleting duplicates, percent of total, JSON with -&gt;&gt;, json_each and json_group_array, unpivot.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 6: Advanced queries</span><span>›</span><span>Query patterns</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 6 · Topic 3 of 3 · Advanced</div>
+    <h1>Query patterns: top N, streaks, pivots and JSON</h1>
+    <p class="lead">Solve the questions that come up in every job and interview: top N per group, gaps and islands, pivots, duplicates, percent of total, and reading JSON with SQL.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">12 runnable queries</span><span class="cv-chip">5 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-patterns" data-topic="cheatsheet" data-h="sql-patterns">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#topn" data-l="topn"><span class="n">1</span><span class="t">Top N per group</span></a></li><li><a href="#islands" data-l="islands"><span class="n">2</span><span class="t">Gaps and islands: finding streaks</span></a></li><li><a href="#pivot" data-l="pivot"><span class="n">3</span><span class="t">Pivoting rows into columns</span></a></li><li><a href="#dupes" data-l="dupes"><span class="n">4</span><span class="t">Duplicates and percent of total</span></a></li><li><a href="#json" data-l="json"><span class="n">5</span><span class="t">JSON inside a database</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="topn" data-l="topn" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>Top N per group</h2>
+<p>"The two most expensive products in each category", "each customer’s latest order". LIMIT works on the whole result, not per group. The standard pattern ranks inside each group with a window function, then filters outside.</p>
+<div class="sq-run" data-q="top2"></div>
+<div class="sq-run" data-q="latest"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Want</th><th>Use</th></tr></thead><tbody><tr><td>exactly N rows per group</td><td>ROW_NUMBER() ... WHERE rn <= N</td></tr><tr><td>N, plus anyone tied with the Nth</td><td>RANK() ... WHERE rnk <= N</td></tr><tr><td>the top N distinct values</td><td>DENSE_RANK() ... WHERE dr <= N</td></tr><tr><td>one row per group, PostgreSQL only</td><td>SELECT DISTINCT ON (group) ... ORDER BY group, value DESC</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-top1"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="islands" data-l="islands" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Gaps and islands: finding streaks</h2>
+<p>Streaks of consecutive days, runs of the same status, ranges of free seats: these are <b>islands</b>, and the holes between them are <b>gaps</b>. The neat trick: subtract a row number from the value. Within a streak the difference stays constant.</p>
+<div class="viz" data-viz="pk" data-pk="sqisland"></div>
+<div class="sq-run" data-q="streak"></div>
+<div class="sq-run" data-q="gaps"></div>
+<div class="walk"><div class="walk-h"><span>The row number trick with dates</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Convert each date to a day number with julianday(d).</li><li>Subtract ROW_NUMBER() OVER (ORDER BY d).</li><li>GROUP BY the difference. Each group is one unbroken run of dates.</li><li><span class="eq">day − row number is constant inside an island</span></li></ol></div>
+<div class="sq-lab" data-lab="l-island"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="pivot" data-l="pivot" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Pivoting rows into columns</h2>
+<p>A <b>pivot</b> turns values in rows into columns: one row per customer with a column per status, or one row per student with a column per subject. Standard SQL does it with <b>conditional aggregation</b>.</p>
+<div class="sq-run" data-q="pivot"></div>
+<div class="sq-run" data-q="report"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>Pivot syntax</th></tr></thead><tbody><tr><td>Every engine</td><td>conditional aggregation with CASE, as above</td></tr><tr><td>SQL Server, Oracle</td><td>PIVOT ( aggregate FOR column IN (values) )</td></tr><tr><td>PostgreSQL</td><td>FILTER, or crosstab() from the tablefunc extension</td></tr><tr><td>DuckDB, Snowflake</td><td>PIVOT and UNPIVOT statements</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>The columns of a pivot must be known when you write the query. A pivot with columns decided by the data needs dynamic SQL built by a program.</div></div>
+<div class="sq-lab" data-lab="l-pivot"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="dupes" data-l="dupes" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Duplicates and percent of total</h2>
+<p>Real data arrives with duplicates: the same customer typed twice, a form submitted two times. First find them, then keep one copy of each.</p>
+<div class="sq-run" data-q="finddup"></div>
+<div class="sq-run" data-q="dedupe"></div>
+<div class="sq-run" data-q="pct"></div>
+<div class="note note-tip"><b>Remember</b><div>rowid is SQLite’s hidden row number. PostgreSQL has ctid, and elsewhere you use the primary key. The pattern is the same: number the copies, delete all but number 1.</div></div>
+<div class="sq-lab" data-lab="l-dupes"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="json" data-l="json" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>JSON inside a database</h2>
+<p>Many apps store flexible data as <b>JSON</b> text in a column: settings, tags, event details. Modern engines can read inside it with SQL. SQLite’s JSON functions are built in (since 3.38 by default).</p>
+<div class="sq-run" data-q="jsonread"></div>
+<div class="sq-run" data-q="jsoneach"></div>
+<div class="sq-run" data-q="jsonbuild"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>Read a field</th><th>Notes</th></tr></thead><tbody><tr><td>SQLite</td><td>data ->> '$.user'</td><td>JSON stored as text, functions json_extract, json_each</td></tr><tr><td>PostgreSQL</td><td>data ->> 'user'</td><td>jsonb type is binary and can be indexed with GIN</td></tr><tr><td>MySQL</td><td>data ->> '$.user'</td><td>JSON type, generated columns for indexing</td></tr><tr><td>SQL Server</td><td>JSON_VALUE(data, '$.user')</td><td>OPENJSON turns arrays into rows</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>JSON is handy for data whose shape varies. Fields you filter or join on every day usually deserve real columns, which get types, constraints and simple indexes.</div></div>
+<div class="sq-lab" data-lab="l-json"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Many hard looking questions are known patterns: rank and filter for top N, row number tricks for streaks, CASE inside SUM for pivots.</p></div><div class="ld-p" data-ld="college" hidden><p>Learn to recognise the pattern behind a question. Window functions, CTEs and conditional aggregation solve most reporting tasks in a single statement.</p></div><div class="ld-p" data-ld="masters" hidden><p>Each pattern has trade offs: correlated subqueries versus window functions, JSON versus columns, deleting duplicates versus preventing them with constraints. Read the query plan (chapter 7.2) to choose.</p></div><div class="ld-p" data-ld="research" hidden><p>Semi structured data in relational engines is an active field: binary JSON formats, JSON path standards (SQL:2016 added SQL/JSON), and automatic shredding of JSON into hidden columns for speed in systems such as Snowflake and SingleStore.</p></div></div>
+<details class="deep"><summary>Going deeper: Unpivot</summary><div class="deep-b"><p>The reverse of a pivot turns columns back into rows. Portable SQL uses UNION ALL: <code>SELECT name, 'algebra' AS subject, algebra AS score FROM report UNION ALL SELECT name, 'physics', physics FROM report</code>. SQL Server, Oracle and DuckDB also have an UNPIVOT keyword.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-recursive.html" data-topic="sql-recursive"><small>Previous topic</small><b>Recursive queries</b></a><a class="next" href="./sql-indexes.html" data-topic="sql-indexes"><small>Next topic</small><b>Indexes</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-patterns", "topic": "sql-patterns", "subject": "sql", "title": "Query patterns: top N, streaks, pivots and JSON", "codes": {}, "quiz": [{"lv": "e", "q": "Why can LIMIT 2 not give the top 2 per category?", "o": ["It is slow", "It limits the whole result, not each group", "It needs ORDER BY", "It removes NULLs"], "a": 1, "hint": "Whole result.", "why": "Rank per group, then filter."}, {"lv": "e", "q": "A pivot turns", "o": ["Columns into tables", "Row values into columns", "Tables into views", "NULLs into zeros"], "a": 1, "hint": "Rows to columns.", "why": "One column per value."}, {"lv": "e", "q": "Which finds duplicate emails?", "o": ["GROUP BY email HAVING COUNT(*) > 1", "WHERE email = email", "DISTINCT email", "ORDER BY email"], "a": 0, "hint": "Count per value.", "why": "Groups with more than one row are duplicates."}, {"lv": "e", "q": "In SQLite, data ->> '$.user' returns", "o": ["JSON text", "A plain SQL value", "An error", "The whole row"], "a": 1, "hint": "Double arrow.", "why": "->> gives an SQL value, -> gives JSON."}, {"lv": "m", "q": "In the islands trick, inside one streak day − row_number is", "o": ["Increasing", "Constant", "Zero", "NULL"], "a": 1, "hint": "Same.", "why": "Both go up by 1 together."}, {"lv": "m", "q": "COUNT(CASE WHEN status = 'pending' THEN 1 END) counts", "o": ["All rows", "Pending rows", "NULL rows", "Nothing"], "a": 1, "hint": "CASE gives NULL otherwise.", "why": "COUNT skips the NULLs."}, {"lv": "m", "q": "Top N with anyone tied for Nth place uses", "o": ["ROW_NUMBER", "RANK", "COUNT", "LAG"], "a": 1, "hint": "Ties included.", "why": "RANK keeps ties."}, {"lv": "m", "q": "json_each is used to", "o": ["Validate JSON", "Turn a JSON array into rows", "Index JSON", "Delete JSON"], "a": 1, "hint": "Array to rows.", "why": "One row per element."}, {"lv": "m", "q": "Why 100.0 instead of 100 in a percentage?", "o": ["Style", "To avoid integer division", "Required by SQLite", "Rounding"], "a": 1, "hint": "Real numbers.", "why": "Integer division would drop the fraction."}, {"lv": "h", "q": "After removing duplicates, what stops them coming back?", "o": ["An index only", "A UNIQUE constraint", "A view", "A trigger only"], "a": 1, "hint": "Prevention.", "why": "UNIQUE refuses future duplicates."}, {"lv": "x", "q": "Which standard added SQL/JSON functions?", "o": ["SQL:1999", "SQL:2003", "SQL:2016", "SQL:2023"], "a": 2, "hint": "2016.", "why": "SQL:2016 added SQL/JSON."}], "calc": [{"lv": "e", "q": "Login days 1, 2, 3, 6, 7, 9, 10, 11, 12. How many streaks are there?", "ans": "3", "hint": "Count the runs.", "steps": ["1 to 3 is one run.", "6 to 7 is another, 9 to 12 a third.", "<span class=\"eq\">3 streaks<\/span>"]}, {"lv": "e", "q": "For day 6 (the 4th row), what is day − row_number?", "ans": "2", "hint": "Subtract.", "steps": ["Day 6 is row 4.", "Subtract the row number from the day.", "<span class=\"eq\">6 − 4 = 2<\/span>"]}, {"lv": "m", "q": "With seats 1, 2, 3, 6, 7, 9, 10, 11, 12 booked, how many seat numbers are missing between 1 and 12?", "ans": "3", "hint": "Count the holes.", "steps": ["Seats 4 and 5 are missing.", "Seat 8 is missing.", "<span class=\"eq\">2 + 1 = 3<\/span>"]}, {"lv": "m", "q": "In the pivot, how many delivered orders does Asha (customer 1) have?", "ans": "1", "hint": "Her orders are 101, 103, 110.", "steps": ["101 is delivered.", "103 is shipped and 110 pending.", "<span class=\"eq\">1<\/span>"]}, {"lv": "m", "q": "What is the total stock of Stationery?", "ans": "260", "hint": "Three products.", "steps": ["Pencil box 40, Notebook 150.", "Geometry set 70.", "<span class=\"eq\">40 + 150 + 70 = 260<\/span>"]}, {"lv": "m", "q": "What percent of all stock is Stationery, to one decimal place?", "ans": "65.8", "hint": "Part over whole.", "steps": ["Stationery stock is 260.", "All stock: 40 + 150 + 25 + 0 + 12 + 30 + 60 + 8 + 0 + 70 = 395.", "<span class=\"eq\">100 × 260 ÷ 395 ≈ 65.8<\/span>"], "tol": 0.05}, {"lv": "h", "q": "Five signups with three distinct emails. How many rows does the dedupe DELETE remove?", "ans": "2", "hint": "Rows minus distinct.", "steps": ["Keep one row per email.", "Delete the rest.", "<span class=\"eq\">5 − 3 = 2<\/span>"]}, {"lv": "h", "q": "In the JSON events lab, what is asha’s total amount?", "ans": "1430", "hint": "Add her amounts.", "steps": ["Her events have amounts 180 and 1250.", "Add them.", "<span class=\"eq\">180 + 1250 = 1430<\/span>"]}], "assign": [], "must": [["Top N per group", "ROW_NUMBER or RANK with PARTITION BY in a CTE, then WHERE rn <= N outside."], ["Gaps and islands", "value − ROW_NUMBER is constant within a run. LEAD finds the gaps."], ["Pivot", "SUM or COUNT around CASE, or FILTER, one column per value. Columns must be known in advance."], ["Duplicates", "Find with GROUP BY ... HAVING COUNT(*) > 1, remove with ROW_NUMBER > 1, prevent with UNIQUE."], ["JSON", "->> and json_extract read fields, json_each makes rows, json_group_array and json_object build JSON."]], "summary": "<p>Rank and filter for top N, subtract row numbers for streaks, CASE inside aggregates for pivots, ROW_NUMBER for duplicates, and JSON functions for flexible data.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"top2": {"src": "WITH ranked AS (\n  SELECT name, category, price,\n         ROW_NUMBER() OVER (PARTITION BY category ORDER BY price DESC, id) AS rn\n  FROM products\n)\nSELECT category, name, price FROM ranked\nWHERE rn <= 2\nORDER BY category, rn;", "db": "shop", "setup": "", "title": "The two dearest products in each category", "notes": {"3": "Number the rows inside each category, dearest first. id breaks ties.", "7": "Keep the first two of every category."}, "out": [{"sql": "WITH ranked AS (\n  SELECT name, category, price,\n         ROW_NUMBER() OVER (PARTITION BY category ORDER BY price DESC, id) AS rn\n  FROM products\n)\nSELECT category, name, price FROM ranked\nWHERE rn <= 2\nORDER BY category, rn;", "cols": ["category", "name", "price"], "rows": [["Electronics", "Headphones", 1499], ["Electronics", "Desk lamp", 1250], ["Kitchen", "Lunch box", 399], ["Kitchen", "Water bottle", 250], ["Sports", "Football", 850], ["Sports", "Cricket ball", 180], ["Stationery", "Pencil box", 120], ["Stationery", "Geometry set", 95]]}]}, "latest": {"src": "SELECT c.name, o.id, o.order_date\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nWHERE o.order_date = (SELECT MAX(o2.order_date) FROM orders o2\n                      WHERE o2.customer_id = c.id);", "db": "shop", "setup": "", "title": "The same idea with a correlated subquery", "notes": {"4": "Works in every engine, even without window functions. Ties on the date would return both rows."}, "out": [{"sql": "SELECT c.name, o.id, o.order_date\nFROM customers c\nJOIN orders o ON o.customer_id = c.id\nWHERE o.order_date = (SELECT MAX(o2.order_date) FROM orders o2\n                      WHERE o2.customer_id = c.id);", "cols": ["name", "id", "order_date"], "rows": [["Nisha", 106, "2025-06-18"], ["Ravi", 107, "2025-06-21"], ["Meera", 108, "2025-06-25"], ["Sara", 109, "2025-07-02"], ["Asha", 110, "2025-07-05"]]}]}, "streak": {"src": "CREATE TABLE logins (day INTEGER);\nINSERT INTO logins VALUES (1), (2), (3), (6), (7), (9), (10), (11), (12);\nSELECT MIN(day) AS first_day, MAX(day) AS last_day, COUNT(*) AS streak\nFROM (SELECT day, day - ROW_NUMBER() OVER (ORDER BY day) AS grp FROM logins)\nGROUP BY grp ORDER BY first_day;", "db": "", "setup": "", "title": "Three streaks of logins", "notes": {"4": "Same grp value means same streak.", "5": "One row per island."}, "out": [{"sql": "CREATE TABLE logins (day INTEGER);", "cols": [], "rows": []}, {"sql": "INSERT INTO logins VALUES (1), (2), (3), (6), (7), (9), (10), (11), (12);", "cols": [], "rows": [], "changes": 9}, {"sql": "SELECT MIN(day) AS first_day, MAX(day) AS last_day, COUNT(*) AS streak\nFROM (SELECT day, day - ROW_NUMBER() OVER (ORDER BY day) AS grp FROM logins)\nGROUP BY grp ORDER BY first_day;", "cols": ["first_day", "last_day", "streak"], "rows": [[1, 3, 3], [6, 7, 2], [9, 12, 4]]}]}, "gaps": {"src": "CREATE TABLE seats (no INTEGER);\nINSERT INTO seats VALUES (1), (2), (3), (6), (7), (9), (10), (11), (12);\nSELECT no + 1 AS gap_from, next_no - 1 AS gap_to\nFROM (SELECT no, LEAD(no) OVER (ORDER BY no) AS next_no FROM seats)\nWHERE next_no - no > 1;", "db": "", "setup": "", "title": "The gaps: missing seat numbers", "notes": {"4": "LEAD looks at the next booked seat.", "5": "A jump of more than 1 means seats are missing in between."}, "out": [{"sql": "CREATE TABLE seats (no INTEGER);", "cols": [], "rows": []}, {"sql": "INSERT INTO seats VALUES (1), (2), (3), (6), (7), (9), (10), (11), (12);", "cols": [], "rows": [], "changes": 9}, {"sql": "SELECT no + 1 AS gap_from, next_no - 1 AS gap_to\nFROM (SELECT no, LEAD(no) OVER (ORDER BY no) AS next_no FROM seats)\nWHERE next_no - no > 1;", "cols": ["gap_from", "gap_to"], "rows": [[4, 5], [8, 8]]}]}, "pivot": {"src": "SELECT c.name,\n       COUNT(CASE WHEN o.status = 'delivered' THEN 1 END) AS delivered,\n       COUNT(CASE WHEN o.status = 'pending'   THEN 1 END) AS pending,\n       COUNT(*) FILTER (WHERE o.status = 'shipped')      AS shipped\nFROM customers c JOIN orders o ON o.customer_id = c.id\nGROUP BY c.id ORDER BY c.name;", "db": "shop", "setup": "", "title": "Orders per customer, one column per status", "notes": {"2": "CASE gives 1 for matching rows and NULL otherwise, and COUNT skips NULLs.", "4": "FILTER is the tidier standard form, in SQLite 3.30+ and PostgreSQL."}, "out": [{"sql": "SELECT c.name,\n       COUNT(CASE WHEN o.status = 'delivered' THEN 1 END) AS delivered,\n       COUNT(CASE WHEN o.status = 'pending'   THEN 1 END) AS pending,\n       COUNT(*) FILTER (WHERE o.status = 'shipped')      AS shipped\nFROM customers c JOIN orders o ON o.customer_id = c.id\nGROUP BY c.id ORDER BY c.name;", "cols": ["name", "delivered", "pending", "shipped"], "rows": [["Asha", 1, 1, 1], ["Meera", 1, 0, 1], ["Nisha", 1, 0, 0], ["Ravi", 1, 1, 0], ["Sara", 1, 0, 0]]}]}, "report": {"src": "SELECT s.name,\n       MAX(CASE WHEN m.course_id = 1 THEN m.score END) AS algebra,\n       MAX(CASE WHEN m.course_id = 2 THEN m.score END) AS physics,\n       MAX(CASE WHEN m.course_id = 3 THEN m.score END) AS poetry\nFROM students s LEFT JOIN marks m ON m.student_id = s.id\nGROUP BY s.id ORDER BY s.id;", "db": "school", "setup": "", "title": "A report card: one row per student", "notes": {"2": "MAX picks the single score, or NULL when the student has none."}, "out": [{"sql": "SELECT s.name,\n       MAX(CASE WHEN m.course_id = 1 THEN m.score END) AS algebra,\n       MAX(CASE WHEN m.course_id = 2 THEN m.score END) AS physics,\n       MAX(CASE WHEN m.course_id = 3 THEN m.score END) AS poetry\nFROM students s LEFT JOIN marks m ON m.student_id = s.id\nGROUP BY s.id ORDER BY s.id;", "cols": ["name", "algebra", "physics", "poetry"], "rows": [["Anu", 92, 78, 85], ["Bala", 64, null, 71], ["Chitra", 88, 95, null], ["Dev", null, 55, null], ["Esha", 99, null, 90], ["Farhan", null, 47, null], ["Gauri", null, null, 76], ["Hari", null, null, null]]}]}, "finddup": {"src": "CREATE TABLE signups (email TEXT, name TEXT, signed_on TEXT);\nINSERT INTO signups VALUES ('asha@mail.in', 'Asha', '2025-06-01'), ('ravi@mail.in', 'Ravi', '2025-06-02'),\n  ('asha@mail.in', 'Asha P', '2025-06-03'), ('meera@mail.in', 'Meera', '2025-06-03'), ('ravi@mail.in', 'Ravi', '2025-06-05');\nSELECT email, COUNT(*) AS copies FROM signups\nGROUP BY email HAVING COUNT(*) > 1;", "db": "", "setup": "", "title": "Find emails that appear more than once", "notes": {"5": "GROUP BY the column that should be unique, HAVING COUNT > 1."}, "out": [{"sql": "CREATE TABLE signups (email TEXT, name TEXT, signed_on TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO signups VALUES ('asha@mail.in', 'Asha', '2025-06-01'), ('ravi@mail.in', 'Ravi', '2025-06-02'),\n  ('asha@mail.in', 'Asha P', '2025-06-03'), ('meera@mail.in', 'Meera', '2025-06-03'), ('ravi@mail.in', 'Ravi', '2025-06-05');", "cols": [], "rows": [], "changes": 5}, {"sql": "SELECT email, COUNT(*) AS copies FROM signups\nGROUP BY email HAVING COUNT(*) > 1;", "cols": ["email", "copies"], "rows": [["asha@mail.in", 2], ["ravi@mail.in", 2]]}]}, "dedupe": {"src": "CREATE TABLE signups (email TEXT, name TEXT, signed_on TEXT);\nINSERT INTO signups VALUES ('asha@mail.in', 'Asha', '2025-06-01'), ('ravi@mail.in', 'Ravi', '2025-06-02'),\n  ('asha@mail.in', 'Asha P', '2025-06-03'), ('meera@mail.in', 'Meera', '2025-06-03'), ('ravi@mail.in', 'Ravi', '2025-06-05');\nDELETE FROM signups WHERE rowid IN (\n  SELECT rowid FROM (\n    SELECT rowid, ROW_NUMBER() OVER (PARTITION BY email ORDER BY signed_on) AS rn FROM signups)\n  WHERE rn > 1);\nSELECT * FROM signups ORDER BY email;", "db": "", "setup": "", "title": "Keep the earliest signup of each email", "notes": {"6": "Number the copies of each email, oldest first.", "7": "Delete every copy after the first.", "8": "Then add UNIQUE on email so it cannot happen again."}, "out": [{"sql": "CREATE TABLE signups (email TEXT, name TEXT, signed_on TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO signups VALUES ('asha@mail.in', 'Asha', '2025-06-01'), ('ravi@mail.in', 'Ravi', '2025-06-02'),\n  ('asha@mail.in', 'Asha P', '2025-06-03'), ('meera@mail.in', 'Meera', '2025-06-03'), ('ravi@mail.in', 'Ravi', '2025-06-05');", "cols": [], "rows": [], "changes": 5}, {"sql": "DELETE FROM signups WHERE rowid IN (\n  SELECT rowid FROM (\n    SELECT rowid, ROW_NUMBER() OVER (PARTITION BY email ORDER BY signed_on) AS rn FROM signups)\n  WHERE rn > 1);", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT * FROM signups ORDER BY email;", "cols": ["email", "name", "signed_on"], "rows": [["asha@mail.in", "Asha", "2025-06-01"], ["meera@mail.in", "Meera", "2025-06-03"], ["ravi@mail.in", "Ravi", "2025-06-02"]]}]}, "pct": {"src": "SELECT category, SUM(stock) AS stock,\n       ROUND(100.0 * SUM(stock) / SUM(SUM(stock)) OVER (), 1) AS pct\nFROM products GROUP BY category ORDER BY pct DESC;", "db": "shop", "setup": "", "title": "Percent of total: a window over a GROUP BY", "notes": {"2": "SUM(SUM(stock)) OVER (): the inner SUM is per group, the outer window adds all groups. 100.0 avoids integer division."}, "out": [{"sql": "SELECT category, SUM(stock) AS stock,\n       ROUND(100.0 * SUM(stock) / SUM(SUM(stock)) OVER (), 1) AS pct\nFROM products GROUP BY category ORDER BY pct DESC;", "cols": ["category", "stock", "pct"], "rows": [["Stationery", 260, 65.8], ["Sports", 68, 17.2], ["Electronics", 42, 10.6], ["Kitchen", 25, 6.3]]}]}, "jsonread": {"src": "CREATE TABLE events (id INTEGER PRIMARY KEY, data TEXT);\nINSERT INTO events (data) VALUES\n ('{\"user\": \"asha\", \"action\": \"buy\", \"items\": [\"pen\", \"book\"], \"amount\": 180}'),\n ('{\"user\": \"ravi\", \"action\": \"view\", \"items\": [\"lamp\"]}'),\n ('{\"user\": \"asha\", \"action\": \"buy\", \"items\": [\"lamp\"], \"amount\": 1250}');\nSELECT id, data ->> '$.user' AS user, json_extract(data, '$.amount') AS amount,\n       json_array_length(data, '$.items') AS n_items\nFROM events;", "db": "", "setup": "", "title": "Read fields out of JSON text", "notes": {"6": "->> returns a plain SQL value. json_extract does the same with a function call.", "7": "Length of the items array."}, "out": [{"sql": "CREATE TABLE events (id INTEGER PRIMARY KEY, data TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO events (data) VALUES\n ('{\"user\": \"asha\", \"action\": \"buy\", \"items\": [\"pen\", \"book\"], \"amount\": 180}'),\n ('{\"user\": \"ravi\", \"action\": \"view\", \"items\": [\"lamp\"]}'),\n ('{\"user\": \"asha\", \"action\": \"buy\", \"items\": [\"lamp\"], \"amount\": 1250}');", "cols": [], "rows": [], "changes": 3}, {"sql": "SELECT id, data ->> '$.user' AS user, json_extract(data, '$.amount') AS amount,\n       json_array_length(data, '$.items') AS n_items\nFROM events;", "cols": ["id", "user", "amount", "n_items"], "rows": [[1, "asha", 180, 2], [2, "ravi", null, 1], [3, "asha", 1250, 1]]}]}, "jsoneach": {"src": "CREATE TABLE events (id INTEGER PRIMARY KEY, data TEXT);\nINSERT INTO events (data) VALUES\n ('{\"user\": \"asha\", \"items\": [\"pen\", \"book\"]}'), ('{\"user\": \"ravi\", \"items\": [\"lamp\"]}'),\n ('{\"user\": \"asha\", \"items\": [\"lamp\"]}');\nSELECT j.value AS item, COUNT(*) AS times\nFROM events, json_each(events.data, '$.items') AS j\nGROUP BY j.value ORDER BY times DESC;", "db": "", "setup": "", "title": "json_each turns an array into rows", "notes": {"6": "One output row per array element, joined to its event."}, "out": [{"sql": "CREATE TABLE events (id INTEGER PRIMARY KEY, data TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO events (data) VALUES\n ('{\"user\": \"asha\", \"items\": [\"pen\", \"book\"]}'), ('{\"user\": \"ravi\", \"items\": [\"lamp\"]}'),\n ('{\"user\": \"asha\", \"items\": [\"lamp\"]}');", "cols": [], "rows": [], "changes": 3}, {"sql": "SELECT j.value AS item, COUNT(*) AS times\nFROM events, json_each(events.data, '$.items') AS j\nGROUP BY j.value ORDER BY times DESC;", "cols": ["item", "times"], "rows": [["lamp", 2], ["pen", 1], ["book", 1]]}]}, "jsonbuild": {"src": "SELECT category, json_group_array(name) AS names,\n       json_object('count', COUNT(*), 'max_price', MAX(price)) AS info\nFROM products GROUP BY category;", "db": "shop", "setup": "", "title": "Build JSON from rows", "notes": {"1": "Aggregate names into a JSON array.", "2": "Make a JSON object from values."}, "out": [{"sql": "SELECT category, json_group_array(name) AS names,\n       json_object('count', COUNT(*), 'max_price', MAX(price)) AS info\nFROM products GROUP BY category;", "cols": ["category", "names", "info"], "rows": [["Electronics", "[\"Headphones\",\"Phone charger\",\"Desk lamp\"]", "{\"count\":3,\"max_price\":1499}"], ["Kitchen", "[\"Water bottle\",\"Lunch box\"]", "{\"count\":2,\"max_price\":399}"], ["Sports", "[\"Cricket ball\",\"Football\"]", "{\"count\":2,\"max_price\":850}"], ["Stationery", "[\"Pencil box\",\"Notebook\",\"Geometry set\"]", "{\"count\":3,\"max_price\":120}"]]}]}}, "labs": [{"id": "l-top1", "lv": "m", "title": "Top earner per department", "task": "From the company database, show the <code>dept_id<\/code>, <code>name<\/code> and <code>salary<\/code> of the highest paid employee in each department. Leave out Zoya, who has no department.", "db": "company", "hint": "ROW_NUMBER() OVER (PARTITION BY dept_id ORDER BY salary DESC), then WHERE rn = 1 outside.", "why": "Each department has a single top earner here, so ROW_NUMBER and RANK agree.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["dept_id", "name", "salary"], "rows": [[1, "Priya", 250000], [2, "Lata", 140000], [3, "Mohan", 85000]]}, "solution": "WITH r AS (SELECT dept_id, name, salary, ROW_NUMBER() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rn FROM employees WHERE dept_id IS NOT NULL)\nSELECT dept_id, name, salary FROM r WHERE rn = 1;"}, {"id": "l-island", "lv": "h", "title": "Longest streak", "task": "The table <code>logins (day INTEGER)<\/code> holds days 1, 2, 3, 6, 7, 9, 10, 11, 12. Return one value <code>best<\/code>: the length of the longest streak.", "db": "", "hint": "Count the rows of each island, then take MAX of those counts.", "why": "Days 9 to 12 make the longest streak, 4 days.", "ordered": false, "setup": "CREATE TABLE logins (day INTEGER); INSERT INTO logins VALUES (1), (2), (3), (6), (7), (9), (10), (11), (12);", "starter": "", "want": {"cols": ["best"], "rows": [[4]]}, "solution": "SELECT MAX(n) AS best FROM (SELECT COUNT(*) AS n FROM (SELECT day - ROW_NUMBER() OVER (ORDER BY day) AS g FROM logins) GROUP BY g);"}, {"id": "l-pivot", "lv": "m", "title": "Stock by category", "task": "Return one row with three columns: <code>stationery<\/code>, <code>kitchen<\/code> and <code>sports<\/code>, each the total stock of that category.", "db": "shop", "hint": "One SUM(CASE WHEN category = ... THEN stock END) per column, no GROUP BY.", "why": "Without GROUP BY the whole table is one group, and each SUM picks its own category.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["stationery", "kitchen", "sports"], "rows": [[260, 25, 68]]}, "solution": "SELECT SUM(CASE WHEN category = 'Stationery' THEN stock END) AS stationery,\n       SUM(CASE WHEN category = 'Kitchen' THEN stock END) AS kitchen,\n       SUM(CASE WHEN category = 'Sports' THEN stock END) AS sports\nFROM products;"}, {"id": "l-dupes", "lv": "m", "title": "Count the duplicate copies", "task": "In <code>signups<\/code>, return one value <code>extra<\/code>: how many rows would be deleted if you kept only one row per email.", "db": "", "hint": "All rows minus the number of distinct emails.", "why": "5 rows, 3 distinct emails, so 2 extra copies.", "ordered": false, "setup": "CREATE TABLE signups (email TEXT, name TEXT, signed_on TEXT);\nINSERT INTO signups VALUES ('asha@mail.in', 'Asha', '2025-06-01'), ('ravi@mail.in', 'Ravi', '2025-06-02'), ('asha@mail.in', 'Asha P', '2025-06-03'), ('meera@mail.in', 'Meera', '2025-06-03'), ('ravi@mail.in', 'Ravi', '2025-06-05');", "starter": "", "want": {"cols": ["extra"], "rows": [[2]]}, "solution": "SELECT COUNT(*) - COUNT(DISTINCT email) AS extra FROM signups;"}, {"id": "l-json", "lv": "h", "title": "Total spend from events", "task": "The table <code>events (data TEXT)<\/code> holds JSON like <code>{{\"user\": \"asha\", \"amount\": 180}}<\/code>. Show each <code>user<\/code> and their total <code>amount<\/code> as <code>spent<\/code>, counting only events that have an amount.", "db": "", "hint": "data ->> '$.user' and data ->> '$.amount', with WHERE ... IS NOT NULL and GROUP BY.", "why": "asha spent 180 + 1250 = 1430, ravi 60.", "ordered": false, "setup": "CREATE TABLE events (data TEXT);\nINSERT INTO events VALUES ('{\"user\": \"asha\", \"amount\": 180}'), ('{\"user\": \"ravi\"}'), ('{\"user\": \"asha\", \"amount\": 1250}'), ('{\"user\": \"ravi\", \"amount\": 60}');", "starter": "", "want": {"cols": ["user", "spent"], "rows": [["asha", 1430], ["ravi", 60]]}, "solution": "SELECT data ->> '$.user' AS user, SUM(data ->> '$.amount') AS spent FROM events WHERE data ->> '$.amount' IS NOT NULL GROUP BY user;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

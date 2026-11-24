@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Databases and SQL: where data lives · SQL and Databases</title>
+<meta name="description" content="Data and databases, the relational model of Codd, tables, rows, columns, primary keys and NULL, the history and families of SQL, database engines and the journey of a query.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 1: Start here</span><span>›</span><span>What SQL is</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 1 of 3 · Beginner</div>
+    <h1>Databases and SQL: where data lives</h1>
+    <p class="lead">Learn why apps keep data in databases, read a real table cell by cell, run your first SQL query in the browser, and follow a query through the parser, planner and executor.</p>
+    <div class="cv-chips"><span class="cv-chip">About 35 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">2 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">1 runnable query</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-intro" data-topic="cheatsheet" data-h="sql-intro">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#data" data-l="data"><span class="n">1</span><span class="t">Data is everywhere, and it needs a home</span></a></li><li><a href="#relational" data-l="relational"><span class="n">2</span><span class="t">Tables, rows, columns and keys</span></a></li><li><a href="#sql-lang" data-l="sql-lang"><span class="n">3</span><span class="t">What SQL is and your first query</span></a></li><li><a href="#engines" data-l="engines"><span class="n">4</span><span class="t">Database engines and the journey of a query</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="data" data-l="data" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Data is everywhere, and it needs a home</h2>
+<p>Every time you order food on an app, top up a phone, or get your marks on a school portal, a computer somewhere writes down a few small facts. Who ordered. What they ordered. When. How much it cost. Those small facts are called <b>data</b>.</p>
+<p>A notebook works for ten facts. A spreadsheet works for a few thousand. But a train booking site has millions of seats, thousands of people booking at the same second, and no room for mistakes such as selling one seat twice. For that we need a <b>database</b>: an organised store of data, looked after by a program called a <b>database management system</b> (DBMS).</p>
+<div class="tw"><table class="cvt "><thead><tr><th>What you need</th><th>Notebook or spreadsheet</th><th>Database</th></tr></thead><tbody><tr><td>Many people changing data at the same time</td><td>Copies clash, last save wins</td><td>Built in, each change is safe</td></tr><tr><td>Rules such as "price must be above zero"</td><td>Easy to break by accident</td><td>The database refuses bad data</td></tr><tr><td>Millions of rows</td><td>Slow or crashes</td><td>Indexes find one row in a blink</td></tr><tr><td>A power cut in the middle of a change</td><td>File may be half written</td><td>Changes are all or nothing</td></tr><tr><td>Asking questions of the data</td><td>Formulas and filters by hand</td><td>One SQL query</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="sqanatomy"></div>
+<div class="note note-tip"><b>Remember</b><div>A database is not one file or one table. It is the whole collection of tables plus the rules that tie them together, kept by a DBMS.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="relational" data-l="relational" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Tables, rows, columns and keys</h2>
+<p>In 1970 Edgar F. Codd, a researcher at IBM, published a paper called <i>A Relational Model of Data for Large Shared Data Banks</i>. His idea was simple and powerful: keep all data in <b>tables</b>, and let people ask questions about what they want, without caring how the computer stores it on disk. Almost every business database today follows his idea.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Everyday word</th><th>Database word</th><th>Codd’s maths word</th><th>Example in the shop</th></tr></thead><tbody><tr><td>Table</td><td>table</td><td>relation</td><td>customers</td></tr><tr><td>Line or record</td><td>row</td><td>tuple</td><td>Asha from Pune</td></tr><tr><td>Heading</td><td>column</td><td>attribute</td><td>city</td></tr><tr><td>Allowed values</td><td>data type</td><td>domain</td><td>whole numbers for stock</td></tr><tr><td>Name tag</td><td>primary key</td><td>key</td><td>id 1 means Asha and nobody else</td></tr></tbody></table></div>
+<p>Here is the real <code>customers</code> table of the Bytes Bazaar shop that this subject uses. It was printed by SQLite when this page was built.</p>
+<div class="sq-grid"><div class="sq-gcap">customers (Bytes Bazaar)</div><div class="tw"><table class="cvt sq-t"><thead><tr><th>id</th><th>name</th><th>city</th><th>email</th><th>joined</th></tr></thead><tbody><tr><td>1</td><td>Asha</td><td>Pune</td><td>asha@mail.in</td><td>2025-01-10</td></tr><tr><td>2</td><td>Ravi</td><td>Delhi</td><td>ravi@mail.in</td><td>2025-02-02</td></tr><tr><td>3</td><td>Meera</td><td>Chennai</td><td>meera@mail.in</td><td>2025-02-20</td></tr><tr><td>4</td><td>Kabir</td><td>Pune</td><td><i class="sq-null">NULL</i></td><td>2025-03-05</td></tr><tr><td>5</td><td>Sara</td><td>Bhubaneswar</td><td>sara@mail.in</td><td>2025-03-18</td></tr><tr><td>6</td><td>Arjun</td><td><i class="sq-null">NULL</i></td><td>arjun@mail.in</td><td>2025-04-01</td></tr><tr><td>7</td><td>Nisha</td><td>Delhi</td><td>nisha@mail.in</td><td>2025-04-22</td></tr><tr><td>8</td><td>Vikram</td><td>Chennai</td><td><i class="sq-null">NULL</i></td><td>2025-05-09</td></tr></tbody></table></div></div>
+<div class="walk"><div class="walk-h"><span>Read the table like a database does</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The table has a name, customers. Names let SQL find it.</li><li>There are 5 columns: id, name, city, email and joined.</li><li>Each row is one customer. Row order has no meaning in the relational model, so SQL never promises an order unless you ask for one.</li><li>id is the primary key. It is unique and never empty, so it picks out exactly one row.</li><li><span class="eq">Kabir has no email. The cell holds NULL, which means unknown or missing</span></li></ol></div>
+<div class="note note-warn"><b>Common mistake</b><div>A primary key must be unique and must never be missing. Names are bad keys because two customers can both be called Asha.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sql-lang" data-l="sql-lang" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>What SQL is and your first query</h2>
+<p><b>SQL</b> stands for Structured Query Language. People say it as the letters S Q L or as the word "sequel". It began at IBM in 1974, when Donald Chamberlin and Raymond Boyce described a language called SEQUEL for asking questions of Codd style tables. The name was later shortened to SQL. It became an ANSI standard in 1986 and an ISO standard in 1987, and the standard is still updated: the current edition is SQL:2023 (ISO/IEC 9075).</p>
+<p>SQL is <b>declarative</b>. You describe the answer you want, and the database works out the steps. Compare asking a waiter for "one masala dosa" with walking into the kitchen and giving the cook a recipe.</p>
+<div class="sq-run" data-q="first"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Family</th><th>Stands for</th><th>Commands</th><th>Used to</th></tr></thead><tbody><tr><td>DQL</td><td>Data Query Language</td><td><code>SELECT</code></td><td>ask questions and read data</td></tr><tr><td>DML</td><td>Data Manipulation Language</td><td><code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code></td><td>add, change and remove rows</td></tr><tr><td>DDL</td><td>Data Definition Language</td><td><code>CREATE</code>, <code>ALTER</code>, <code>DROP</code></td><td>build and change tables</td></tr><tr><td>DCL</td><td>Data Control Language</td><td><code>GRANT</code>, <code>REVOKE</code></td><td>give and take away permissions</td></tr><tr><td>TCL</td><td>Transaction Control Language</td><td><code>BEGIN</code>, <code>COMMIT</code>, <code>ROLLBACK</code></td><td>group changes so they happen all or nothing</td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>The smallest query</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>SELECT column, column FROM table;</code></div><div class="fx-n">SELECT says which columns, FROM says which table. Keywords are not case sensitive, so select works too, but capitals make queries easier to read.</div></div><div class="fx"><div class="fx-h"><span>Every column</span></div><div class="fx-b"><code>SELECT * FROM table;</code></div><div class="fx-n">The star means all columns. Handy for a quick look, but real programs should name the columns they need.</div></div></div>
+<div class="sq-lab" data-lab="l-products"></div>
+<div class="sq-lab" data-lab="l-names"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="engines" data-l="engines" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Database engines and the journey of a query</h2>
+<p>SQL is the language. A <b>database engine</b> is the program that understands it. Each engine follows the SQL standard closely but adds its own extras, called a <b>dialect</b>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>Kind</th><th>Where you meet it</th></tr></thead><tbody><tr><td>SQLite</td><td>Embedded, a library inside the app, no server</td><td>Every Android and iPhone, browsers, and this page</td></tr><tr><td>PostgreSQL</td><td>Client and server, open source</td><td>Web apps, maps, banking and analytics</td></tr><tr><td>MySQL and MariaDB</td><td>Client and server, open source</td><td>Many websites and online shops</td></tr><tr><td>Microsoft SQL Server</td><td>Client and server, commercial</td><td>Company systems on Windows and Azure</td></tr><tr><td>Oracle Database</td><td>Client and server, commercial</td><td>Large banks, telecom and governments</td></tr></tbody></table></div>
+<p>The SQL on these pages runs on <b>SQLite</b>, compiled to WebAssembly so it works inside your browser (the sql.js project). It is the real SQLite, so every answer you see is the true answer, not a guess. The SQLite team describes it as the most widely deployed database engine in the world.</p>
+<div class="viz" data-viz="pk" data-pk="sqtrip"></div>
+<div class="walk"><div class="walk-h"><span>What happens after you press Run</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The <b>parser</b> checks the grammar and that every table and column exists. A spelling mistake stops here with a syntax error.</li><li>The <b>planner</b>, also called the optimizer, chooses a plan: read the whole table, or jump in using an index.</li><li>The <b>executor</b> follows the plan and reads the rows.</li><li><span class="eq">The result goes back to you as a new table, even if it has one row or none</span></li></ol></div>
+<div class="scene"><div class="scene-h">Real world scenario: two people book the last seat</div><p>Two friends in different cities press Book on the last train seat at the same moment. A client and server engine such as PostgreSQL receives both requests. It lets the first booking finish, then the second one sees the seat is gone and gets a friendly "sold out". Without the database keeping order, both might get a ticket for one seat.</p></div>
+<div class="sq-lab" data-lab="l-orders"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A database is a big, careful cupboard of tables. SQL is the polite way to ask the cupboard keeper for exactly what you need.</p></div><div class="ld-p" data-ld="college" hidden><p>A DBMS gives you a data model (tables), a language (SQL), integrity rules (keys and constraints), safe sharing (transactions) and fast access (indexes). The relational model treats a table as a set of rows, which is why row order is not part of the data.</p></div><div class="ld-p" data-ld="masters" hidden><p>Codd’s model rests on relational algebra: selection (WHERE), projection (the SELECT list), join, union, difference and rename. SQL is close to it but not identical. SQL tables can hold duplicate rows (a multiset or bag) and use NULL with three valued logic, two points Codd himself debated.</p></div><div class="ld-p" data-ld="research" hidden><p>Research engines explore learned query optimizers, column stores for analytics, and distributed SQL that keeps one logical database across many machines. The core idea of saying what you want and letting the system choose how is still the centre of all of them.</p></div></div>
+<details class="deep"><summary>Going deeper: Why SQL is called declarative</summary><div class="deep-b"><p>In a language such as Python you write a loop: open the file, read each line, check the city, keep matching lines. In SQL you write one sentence, and the planner may pick a different method each day as the data grows, for example an index instead of a full scan, without you changing the query.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><span></span><a class="next" href="./sql-select.html" data-topic="sql-select"><small>Next topic</small><b>SELECT in depth</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-intro", "topic": "sql-intro", "subject": "sql", "title": "Databases and SQL: where data lives", "codes": {}, "quiz": [{"lv": "e", "q": "What is one row of a table?", "o": ["One kind of fact for every record", "One record, everything about one thing", "The name of the table", "A rule on the data"], "a": 1, "hint": "Left to right.", "why": "A row is one record, for example one customer."}, {"lv": "e", "q": "Which keyword names the table a query reads from?", "o": ["SELECT", "WHERE", "FROM", "TABLE"], "a": 2, "hint": "Read from.", "why": "FROM names the table."}, {"lv": "e", "q": "What does SELECT * mean?", "o": ["Select the first row", "Select every column", "Select nothing", "Select a random row"], "a": 1, "hint": "The star.", "why": "The star means every column of the table."}, {"lv": "e", "q": "Who proposed the relational model in 1970?", "o": ["Edgar F. Codd", "Alan Turing", "Tim Berners-Lee", "Linus Torvalds"], "a": 0, "hint": "An IBM researcher.", "why": "Codd published the relational model in 1970."}, {"lv": "m", "q": "SQL is called declarative because", "o": ["It declares variables", "You say what you want, the engine decides how", "It only reads data", "It is written in capitals"], "a": 1, "hint": "What, not how.", "why": "The planner chooses the steps."}, {"lv": "m", "q": "Which family do CREATE and DROP belong to?", "o": ["DML", "DQL", "DDL", "TCL"], "a": 2, "hint": "Definition.", "why": "Data Definition Language builds and removes structures."}, {"lv": "m", "q": "What does NULL in a cell mean?", "o": ["Zero", "An empty word", "The value is missing or unknown", "An error"], "a": 2, "hint": "Not zero.", "why": "NULL marks a missing or unknown value."}, {"lv": "m", "q": "Which engine runs inside the app with no separate server?", "o": ["PostgreSQL", "SQLite", "SQL Server", "Oracle"], "a": 1, "hint": "Embedded.", "why": "SQLite is a library linked into the app."}, {"lv": "h", "q": "Why is a name a poor primary key?", "o": ["Names are too long", "Two people can share a name", "Names cannot be stored", "Keys must be numbers"], "a": 1, "hint": "Unique.", "why": "A key must be unique, names repeat."}, {"lv": "h", "q": "Which part of the engine chooses between a full scan and an index?", "o": ["Parser", "Planner (optimizer)", "Executor", "Client"], "a": 1, "hint": "Plans.", "why": "The planner picks the plan, the executor runs it."}, {"lv": "x", "q": "In what way do SQL tables differ from relations in pure relational theory?", "o": ["SQL tables cannot have keys", "SQL tables may hold duplicate rows and NULLs", "SQL tables must be sorted", "There is no difference"], "a": 1, "hint": "Bags and NULL.", "why": "A relation is a set with no duplicates and no NULL, SQL allows both."}], "calc": [{"lv": "e", "q": "How many rows does the customers table of the shop have? Run SELECT * FROM customers in the playground and count.", "ans": "8", "hint": "One row per customer.", "steps": ["Open the playground or look at the table in lesson 2.", "Count the rows from id 1 down.", "<span class=\"eq\">8 rows<\/span>"]}, {"lv": "e", "q": "How many columns does the customers table have?", "ans": "5", "hint": "Count the headings.", "steps": ["The headings are id, name, city, email and joined.", "Count them.", "<span class=\"eq\">5 columns<\/span>"]}, {"lv": "e", "q": "How many cells does the customers table hold in total?", "ans": "40", "hint": "Rows times columns.", "steps": ["There are 8 rows.", "There are 5 columns.", "<span class=\"eq\">8 × 5 = 40 cells<\/span>"]}, {"lv": "m", "q": "How many customers have a NULL email?", "ans": "2", "hint": "Look for NULL in the email column.", "steps": ["Read the email column top to bottom.", "Kabir and Vikram have no email.", "<span class=\"eq\">2 customers<\/span>"]}, {"lv": "m", "q": "How many rows does SELECT name, price FROM products return?", "ans": "10", "hint": "No WHERE means every row.", "steps": ["SELECT with no WHERE keeps every row.", "products has 10 rows.", "<span class=\"eq\">10 rows, each with 2 columns<\/span>"]}, {"lv": "m", "q": "SQL became an ANSI standard in 1986. How many years after Codd's 1970 paper was that?", "ans": "16", "hint": "Subtract.", "steps": ["Codd published in 1970.", "ANSI standardised SQL in 1986.", "<span class=\"eq\">1986 − 1970 = 16 years<\/span>"]}, {"lv": "h", "q": "A query returns 3 columns and 10 rows. How many values does it send back?", "ans": "30", "hint": "Each row has every column.", "steps": ["Each row holds 3 values.", "There are 10 rows.", "<span class=\"eq\">3 × 10 = 30 values<\/span>"]}, {"lv": "h", "q": "The orders table has 10 rows. You run SELECT id, status FROM orders. How many cells are in the result?", "ans": "20", "hint": "Two columns.", "steps": ["No WHERE, so every order comes back.", "Each row has 2 columns.", "<span class=\"eq\">10 × 2 = 20 cells<\/span>"]}], "assign": [], "must": [["Database and DBMS", "A database is an organised collection of data. A DBMS is the program that stores it, checks rules, shares it safely and answers queries."], ["Tables", "Data lives in tables of rows (records) and columns (kinds of fact). A primary key is unique and never missing, so it names one row."], ["NULL", "NULL means missing or unknown. It is not zero and not an empty string."], ["SQL", "Structured Query Language, from IBM SEQUEL (1974), ANSI 1986, ISO 1987, current edition SQL:2023. Declarative: say what, not how."], ["First query", "SELECT columns FROM table. SELECT * means every column. Statements end with a semicolon."], ["Engines", "SQLite is embedded. PostgreSQL, MySQL, SQL Server and Oracle are servers. Each has its own dialect of SQL."]], "summary": "<p>Data lives in tables of rows and columns, a primary key names each row, and SQL lets you ask for what you want while the engine decides how.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"first": {"src": "SELECT name, city\nFROM customers;", "db": "shop", "setup": "", "title": "Your first query: names and cities of all customers", "notes": {"1": "SELECT lists the columns you want back, separated by commas.", "2": "FROM names the table to read. The semicolon ends the statement."}, "out": [{"sql": "SELECT name, city\nFROM customers;", "cols": ["name", "city"], "rows": [["Asha", "Pune"], ["Ravi", "Delhi"], ["Meera", "Chennai"], ["Kabir", "Pune"], ["Sara", "Bhubaneswar"], ["Arjun", null], ["Nisha", "Delhi"], ["Vikram", "Chennai"]]}]}}, "labs": [{"id": "l-products", "lv": "e", "title": "Look at every product", "task": "Show <b>every column<\/b> of the <code>products<\/code> table.", "db": "shop", "hint": "The star means every column.", "why": "SELECT * returns every column, and with no WHERE clause every row comes back too.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["id", "name", "category", "price", "stock"], "rows": [[1, "Pencil box", "Stationery", 120, 40], [2, "Notebook", "Stationery", 60, 150], [3, "Water bottle", "Kitchen", 250, 25], [4, "Lunch box", "Kitchen", 399, 0], [5, "Headphones", "Electronics", 1499, 12], [6, "Phone charger", "Electronics", 699, 30], [7, "Cricket ball", "Sports", 180, 60], [8, "Football", "Sports", 850, 8], [9, "Desk lamp", "Electronics", 1250, 0], [10, "Geometry set", "Stationery", 95, 70]]}, "solution": "SELECT * FROM products;"}, {"id": "l-names", "lv": "e", "title": "Just the names and prices", "task": "Show only the <code>name<\/code> and <code>price<\/code> of every product, in that column order.", "db": "shop", "hint": "List two columns after SELECT with a comma between them.", "why": "The result has the columns in the order you list them after SELECT.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "price"], "rows": [["Pencil box", 120], ["Notebook", 60], ["Water bottle", 250], ["Lunch box", 399], ["Headphones", 1499], ["Phone charger", 699], ["Cricket ball", 180], ["Football", 850], ["Desk lamp", 1250], ["Geometry set", 95]]}, "solution": "SELECT name, price FROM products;"}, {"id": "l-orders", "lv": "e", "title": "The order list", "task": "Show the <code>id<\/code>, <code>order_date<\/code> and <code>status<\/code> of every order.", "db": "shop", "hint": "Three column names after SELECT, the table orders after FROM.", "why": "Naming columns makes the result smaller and clearer than SELECT *.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["id", "order_date", "status"], "rows": [[101, "2025-06-01", "delivered"], [102, "2025-06-03", "delivered"], [103, "2025-06-10", "shipped"], [104, "2025-06-11", "delivered"], [105, "2025-06-15", "cancelled"], [106, "2025-06-18", "delivered"], [107, "2025-06-21", "pending"], [108, "2025-06-25", "shipped"], [109, "2025-07-02", "delivered"], [110, "2025-07-05", "pending"]]}, "solution": "SELECT id, order_date, status FROM orders;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

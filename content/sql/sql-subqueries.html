@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subqueries: questions inside questions · SQL and Databases</title>
+<meta name="description" content="Scalar subqueries in WHERE and SELECT, IN and NOT IN with subqueries, ANY and ALL, EXISTS and NOT EXISTS, correlated subqueries, greatest per group, derived tables, nested aggregates and unnesting.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 3: Many tables</span><span>›</span><span>Subqueries</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 3 of 4 · Intermediate</div>
+    <h1>Subqueries: questions inside questions</h1>
+    <p class="lead">Answer two step questions in one statement with scalar subqueries, IN and NOT IN, EXISTS and correlated subqueries, and derived tables in FROM.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">7 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-subqueries" data-topic="cheatsheet" data-h="sql-subqueries">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#scalar" data-l="scalar"><span class="n">1</span><span class="t">A query inside a query</span></a></li><li><a href="#in" data-l="in"><span class="n">2</span><span class="t">IN and NOT IN with a list from a query</span></a></li><li><a href="#exists" data-l="exists"><span class="n">3</span><span class="t">EXISTS and correlated subqueries</span></a></li><li><a href="#derived" data-l="derived"><span class="n">4</span><span class="t">Subqueries in FROM: derived tables</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="scalar" data-l="scalar" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>A query inside a query</h2>
+<p>"Which products cost more than the average price?" has two steps: first work out the average, then compare each product with it. A <b>subquery</b> lets you write both steps in one statement. The inner query, in brackets, runs first and hands its answer to the outer query.</p>
+<div class="sq-run" data-q="above"></div>
+<p>A subquery that returns exactly one value is called a <b>scalar subquery</b>. You can use it anywhere a single value fits: in WHERE, in the SELECT list, even inside a calculation.</p>
+<div class="sq-run" data-q="inselect"></div>
+<div class="note note-warn"><b>Common mistake</b><div>If a scalar subquery returns more than one row, SQLite quietly uses the first row, while PostgreSQL and SQL Server raise an error. Make sure a scalar subquery can only return one row, for example with an aggregate or a key lookup.</div></div>
+<div class="sq-lab" data-lab="l-max"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="in" data-l="in" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>IN and NOT IN with a list from a query</h2>
+<p>A subquery can also return a whole column of values. <code>IN</code> then checks whether a value is in that list. "Customers who placed an order" is "customers whose id is in the list of customer ids in orders".</p>
+<div class="sq-run" data-q="in"></div>
+<div class="sq-run" data-q="notin"></div>
+<div class="note note-warn"><b>Common mistake</b><div>Remember the NULL trap from chapter 2.2: if the subquery list contains even one NULL, NOT IN returns no rows at all. NOT EXISTS, in the next lesson, does not have this problem.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Operator</th><th>True when</th><th>Engines</th></tr></thead><tbody><tr><td><code>x IN (subquery)</code></td><td>x equals some value in the list</td><td>all</td></tr><tr><td><code>x NOT IN (subquery)</code></td><td>x equals no value, and the list has no NULL</td><td>all</td></tr><tr><td><code>x &gt; ANY (subquery)</code></td><td>x is bigger than at least one value</td><td>PostgreSQL, MySQL, SQL Server, Oracle (not SQLite)</td></tr><tr><td><code>x &gt; ALL (subquery)</code></td><td>x is bigger than every value</td><td>PostgreSQL, MySQL, SQL Server, Oracle (not SQLite)</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-in"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="exists" data-l="exists" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>EXISTS and correlated subqueries</h2>
+<p>A <b>correlated subquery</b> refers to a column of the outer query, so it runs again for every outer row, like a question asked about each person in turn. <code>EXISTS</code> is true when the subquery returns at least one row. It does not care what the row contains, which is why people write <code>SELECT 1</code> inside it.</p>
+<div class="viz" data-viz="pk" data-pk="sqexists"></div>
+<div class="sq-run" data-q="exists"></div>
+<div class="sq-run" data-q="corr"></div>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>IN</th><th>EXISTS</th></tr></thead><tbody><tr><td>Looks at</td><td>the values the subquery returns</td><td>only whether any row comes back</td></tr><tr><td>NULL in the subquery</td><td>NOT IN breaks</td><td>NOT EXISTS works</td></tr><tr><td>Stops early</td><td>engine dependent</td><td>yes, at the first matching row</td></tr><tr><td>Typical use</td><td>short lists, readable filters</td><td>anti joins, correlated checks</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-exists"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="derived" data-l="derived" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Subqueries in FROM: derived tables</h2>
+<p>A subquery in the FROM clause builds a temporary table that the outer query reads like any other table. It is called a <b>derived table</b> and it must have an alias. It is perfect for "aggregate first, then filter or join the aggregate".</p>
+<div class="sq-run" data-q="derived"></div>
+<p>That query repeats the same inner query twice. Chapter 4.3 introduces <code>WITH</code> (common table expressions), which names a subquery once and reuses it, making such queries much easier to read.</p>
+<div class="scene"><div class="scene-h">Real world scenario: the loyalty programme</div><p>A shop wants to send a gift to customers who spend more than the average customer. The analyst first builds "spend per customer" as a derived table, then compares each row with the average of that table. Two clear steps, one query, and the marketing team gets the list in seconds.</p></div>
+<div class="sq-lab" data-lab="l-derived"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A subquery is a small question you answer first, so the big question can use the answer.</p></div><div class="ld-p" data-ld="college" hidden><p>Scalar subqueries return one value, IN subqueries one column, derived tables a whole table. Correlated subqueries are evaluated per outer row, at least logically.</p></div><div class="ld-p" data-ld="masters" hidden><p>Optimizers unnest subqueries: an IN or EXISTS subquery becomes a semi join, NOT EXISTS an anti join, and a correlated scalar subquery a join with a grouped derived table. After unnesting, the join algorithms from chapter 3.2 apply.</p></div><div class="ld-p" data-ld="research" hidden><p>Decorrelation of arbitrary nested queries is an active research topic. A 2015 paper by Neumann and Kemper, Unnesting Arbitrary Queries, showed a general method that removes correlation from any subquery, and systems such as Umbra and DuckDB build on it.</p></div></div>
+<details class="deep"><summary>Going deeper: Rewriting a correlated subquery as a join</summary><div class="deep-b"><p>The "most expensive product per category" query can be written as a join to a derived table: <code>JOIN (SELECT category, MAX(price) AS top FROM products GROUP BY category) AS m ON m.category = p.category AND p.price = m.top</code>. Window functions in chapter 6.1 give a third way.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-joins.html" data-topic="sql-joins"><small>Previous topic</small><b>Joins</b></a><a class="next" href="./sql-setops.html" data-topic="sql-setops"><small>Next topic</small><b>Set operations</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-subqueries", "topic": "sql-subqueries", "subject": "sql", "title": "Subqueries: questions inside questions", "codes": {}, "quiz": [{"lv": "e", "q": "Which part of a query with a subquery runs first, logically?", "o": ["The outer query", "The inner query in brackets", "Both at once", "ORDER BY"], "a": 1, "hint": "Inside out.", "why": "The inner query provides a value or list for the outer one."}, {"lv": "e", "q": "A subquery that returns exactly one value is", "o": ["A derived table", "A scalar subquery", "A join", "A view"], "a": 1, "hint": "One value.", "why": "Scalar means a single value."}, {"lv": "e", "q": "A subquery in FROM must have", "o": ["An ORDER BY", "An alias", "A WHERE", "A LIMIT"], "a": 1, "hint": "Name it.", "why": "Derived tables need a name."}, {"lv": "e", "q": "EXISTS is true when", "o": ["The subquery returns at least one row", "The subquery returns TRUE", "A column is not NULL", "The table exists"], "a": 0, "hint": "Any row.", "why": "EXISTS only checks for rows."}, {"lv": "m", "q": "A correlated subquery", "o": ["Runs once", "Refers to a column of the outer query", "Must be in FROM", "Cannot use WHERE"], "a": 1, "hint": "Depends on outer row.", "why": "It is evaluated per outer row."}, {"lv": "m", "q": "Why is NOT EXISTS safer than NOT IN?", "o": ["It is faster always", "It is not broken by NULLs in the subquery", "It is shorter", "It sorts"], "a": 1, "hint": "NULL trap.", "why": "NOT IN returns nothing if the list holds NULL."}, {"lv": "m", "q": "Why write SELECT 1 inside EXISTS?", "o": ["It is required", "The selected values are ignored, only rows matter", "It returns 1", "Speed only"], "a": 1, "hint": "Ignored.", "why": "EXISTS only checks whether rows exist."}, {"lv": "m", "q": "AVG(SUM(qty)) written directly", "o": ["Works", "Is an error, nest via a derived table", "Returns NULL", "Returns SUM"], "a": 1, "hint": "Nested aggregate.", "why": "Compute SUM per group first in a subquery."}, {"lv": "h", "q": "If a scalar subquery returns 3 rows, SQLite", "o": ["Raises an error", "Uses the first row", "Uses the last row", "Returns NULL"], "a": 1, "hint": "Quietly.", "why": "SQLite takes the first row, PostgreSQL raises an error."}, {"lv": "h", "q": "x &gt; ALL (subquery) is supported in", "o": ["SQLite", "PostgreSQL", "Neither", "Only SQL Server"], "a": 1, "hint": "Not SQLite.", "why": "SQLite has no ANY or ALL."}, {"lv": "x", "q": "An optimizer turning EXISTS into a join produces a", "o": ["Cross join", "Semi join", "Full join", "Self join"], "a": 1, "hint": "Keep left rows with a match.", "why": "Semi joins keep left rows that have a partner, without duplicates."}], "calc": [{"lv": "e", "q": "What is the average product price, to 1 decimal?", "ans": "540.2", "hint": "Sum of prices over 10.", "steps": ["Sum of prices = 5402.", "10 products.", "<span class=\"eq\">5402 / 10 = 540.2<\/span>"]}, {"lv": "e", "q": "How many products cost more than the average price?", "ans": "4", "hint": "Average is 540.2.", "steps": ["The average is 540.2.", "Above it: Headphones 1499, Desk lamp 1250, Football 850, Phone charger 699.", "<span class=\"eq\">4 products<\/span>"]}, {"lv": "m", "q": "How many customers have a pending order?", "ans": "2", "hint": "Pending orders 107 and 110.", "steps": ["Order 107 is Ravi’s, order 110 is Asha’s.", "Two different customers.", "<span class=\"eq\">2<\/span>"]}, {"lv": "m", "q": "How many rows does the \"most expensive product per category\" query return?", "ans": "4", "hint": "One per category unless there is a tie.", "steps": ["Four categories.", "No ties at the top price.", "<span class=\"eq\">4 rows<\/span>"]}, {"lv": "m", "q": "How many customers have at least one delivered order?", "ans": "5", "hint": "EXISTS per customer.", "steps": ["Delivered orders: 101 (1), 102 (2), 104 (3), 106 (7), 109 (5).", "Different customers: 1, 2, 3, 5, 7.", "<span class=\"eq\">5<\/span>"]}, {"lv": "h", "q": "Average items per order (sum of qty per order, averaged), to 2 decimals?", "ans": "4.00", "hint": "Derived table first.", "steps": ["Total items = 40.", "10 orders.", "<span class=\"eq\">40 / 10 = 4.00<\/span>"], "tol": 0.005}, {"lv": "h", "q": "How many employees earn more than the average salary of their own department? (company database, employees with a department only)", "ans": "4", "hint": "Correlated on dept_id.", "steps": ["Engineering average 146250: Priya and Rahul are above.", "Sales average 93333: Lata above. Support average 65000: Mohan above.", "<span class=\"eq\">4 employees<\/span>"]}, {"lv": "h", "q": "How many students scored above 80 in at least one course? Use EXISTS on the school database.", "ans": "3", "hint": "Any score above 80.", "steps": ["Anu 92, 85. Chitra 88, 95, 81. Esha 99, 90, 87.", "Others have no score above 80.", "<span class=\"eq\">3 students<\/span>"]}], "assign": [], "must": [["Subquery", "A query in brackets inside another. Scalar (one value), list (one column, used with IN), or table (in FROM, needs an alias)."], ["IN and NOT IN", "IN tests membership. NOT IN returns nothing if the list holds a NULL."], ["EXISTS", "True when the subquery returns any row. NOT EXISTS is the NULL safe anti join."], ["Correlated", "Refers to the outer row, so it is evaluated per outer row. Great for per group comparisons."], ["Derived tables", "Aggregate first, then filter or join. AVG(SUM(x)) needs a derived table."]], "summary": "<p>Subqueries answer the small question first: one value, a list for IN, a row check for EXISTS, or a whole table in FROM.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"above": {"src": "SELECT name, price\nFROM products\nWHERE price > (SELECT AVG(price) FROM products)\nORDER BY price;", "db": "shop", "setup": "", "title": "Products above the average price", "notes": {"3": "The subquery returns one value, the average (540.2). The outer WHERE compares every price with it."}, "out": [{"sql": "SELECT name, price\nFROM products\nWHERE price > (SELECT AVG(price) FROM products)\nORDER BY price;", "cols": ["name", "price"], "rows": [["Phone charger", 699], ["Football", 850], ["Desk lamp", 1250], ["Headphones", 1499]]}]}, "inselect": {"src": "SELECT name, price,\n       price - (SELECT AVG(price) FROM products) AS above_average\nFROM products\nORDER BY above_average DESC\nLIMIT 3;", "db": "shop", "setup": "", "title": "A subquery in the SELECT list", "notes": {"2": "The same average is subtracted from every price."}, "out": [{"sql": "SELECT name, price,\n       price - (SELECT AVG(price) FROM products) AS above_average\nFROM products\nORDER BY above_average DESC\nLIMIT 3;", "cols": ["name", "price", "above_average"], "rows": [["Headphones", 1499, 958.8], ["Desk lamp", 1250, 709.8], ["Football", 850, 309.79999999999995]]}]}, "in": {"src": "SELECT name\nFROM customers\nWHERE id IN (SELECT customer_id FROM orders WHERE status = 'pending');", "db": "shop", "setup": "", "title": "Customers with a pending order", "notes": {"3": "The inner query returns a list of ids. IN keeps customers whose id is in that list."}, "out": [{"sql": "SELECT name\nFROM customers\nWHERE id IN (SELECT customer_id FROM orders WHERE status = 'pending');", "cols": ["name"], "rows": [["Asha"], ["Ravi"]]}]}, "notin": {"src": "SELECT name\nFROM customers\nWHERE id NOT IN (SELECT customer_id FROM orders);", "db": "shop", "setup": "", "title": "Customers who never ordered", "notes": {"3": "Safe here only because orders.customer_id never holds NULL in this data."}, "out": [{"sql": "SELECT name\nFROM customers\nWHERE id NOT IN (SELECT customer_id FROM orders);", "cols": ["name"], "rows": [["Kabir"], ["Arjun"], ["Vikram"]]}]}, "exists": {"src": "SELECT c.name\nFROM customers AS c\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders AS o\n  WHERE o.customer_id = c.id\n);", "db": "shop", "setup": "", "title": "NOT EXISTS: never ordered, NULL safe", "notes": {"5": "c.id comes from the outer row, so the inner query is asked once per customer."}, "out": [{"sql": "SELECT c.name\nFROM customers AS c\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders AS o\n  WHERE o.customer_id = c.id\n);", "cols": ["name"], "rows": [["Kabir"], ["Arjun"], ["Vikram"]]}]}, "corr": {"src": "SELECT p.name, p.category, p.price\nFROM products AS p\nWHERE p.price = (\n  SELECT MAX(p2.price) FROM products AS p2\n  WHERE p2.category = p.category\n)\nORDER BY p.category;", "db": "shop", "setup": "", "title": "The most expensive product in each category", "notes": {"5": "For each product, the inner query finds the top price of that product’s own category."}, "out": [{"sql": "SELECT p.name, p.category, p.price\nFROM products AS p\nWHERE p.price = (\n  SELECT MAX(p2.price) FROM products AS p2\n  WHERE p2.category = p.category\n)\nORDER BY p.category;", "cols": ["name", "category", "price"], "rows": [["Headphones", "Electronics", 1499], ["Lunch box", "Kitchen", 399], ["Football", "Sports", 850], ["Pencil box", "Stationery", 120]]}]}, "derived": {"src": "SELECT t.customer_id, t.items\nFROM (\n  SELECT o.customer_id, SUM(oi.qty) AS items\n  FROM orders AS o\n  JOIN order_items AS oi ON oi.order_id = o.id\n  GROUP BY o.customer_id\n) AS t\nWHERE t.items > (SELECT AVG(items) FROM (\n  SELECT SUM(oi.qty) AS items\n  FROM orders AS o JOIN order_items AS oi ON oi.order_id = o.id\n  GROUP BY o.customer_id))\nORDER BY t.items DESC;", "db": "shop", "setup": "", "title": "Customers who bought more items than the average customer", "notes": {"3": "Inner step: items bought per customer.", "7": "The derived table is named t.", "8": "Compare each customer with the average of those totals."}, "out": [{"sql": "SELECT t.customer_id, t.items\nFROM (\n  SELECT o.customer_id, SUM(oi.qty) AS items\n  FROM orders AS o\n  JOIN order_items AS oi ON oi.order_id = o.id\n  GROUP BY o.customer_id\n) AS t\nWHERE t.items > (SELECT AVG(items) FROM (\n  SELECT SUM(oi.qty) AS items\n  FROM orders AS o JOIN order_items AS oi ON oi.order_id = o.id\n  GROUP BY o.customer_id))\nORDER BY t.items DESC;", "cols": ["customer_id", "items"], "rows": [[3, 14], [1, 12]]}]}}, "labs": [{"id": "l-max", "lv": "e", "title": "The most expensive product", "task": "Show the <code>name<\/code> of the product whose price equals the highest price, using a subquery.", "db": "shop", "hint": "WHERE price = (SELECT MAX(price) FROM products).", "why": "The inner query finds the top price, the outer query finds who has it. Ties would all be returned.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Headphones"]]}, "solution": "SELECT name FROM products WHERE price = (SELECT MAX(price) FROM products);"}, {"id": "l-in", "lv": "m", "title": "Products someone bought", "task": "Show the <code>name<\/code> of every product that appears in at least one order line, using IN.", "db": "shop", "hint": "id IN (SELECT product_id FROM order_items).", "why": "IN checks membership in the list the subquery returns. Duplicates in the list do not repeat rows.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Pencil box"], ["Notebook"], ["Water bottle"], ["Headphones"], ["Phone charger"], ["Cricket ball"], ["Football"], ["Geometry set"]]}, "solution": "SELECT name FROM products WHERE id IN (SELECT product_id FROM order_items);"}, {"id": "l-exists", "lv": "m", "title": "Customers with a delivered order", "task": "Show the <code>name<\/code> of every customer who has at least one order with status delivered. Use EXISTS.", "db": "shop", "hint": "Correlate on o.customer_id = c.id and add the status test inside.", "why": "EXISTS is true for a customer as soon as one delivered order is found.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Asha"], ["Ravi"], ["Meera"], ["Sara"], ["Nisha"]]}, "solution": "SELECT c.name FROM customers AS c WHERE EXISTS (SELECT 1 FROM orders AS o WHERE o.customer_id = c.id AND o.status = 'delivered');"}, {"id": "l-derived", "lv": "h", "title": "Average order size", "task": "Return one column <code>avg_items<\/code>: the average number of items (sum of qty) per order, rounded to 2 decimals.", "db": "shop", "hint": "First SUM(qty) per order in a derived table, then AVG over it.", "why": "You cannot nest aggregates such as AVG(SUM(qty)) directly, so the derived table computes the inner step first.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["avg_items"], "rows": [[4]]}, "solution": "SELECT ROUND(AVG(items), 2) AS avg_items FROM (SELECT order_id, SUM(qty) AS items FROM order_items GROUP BY order_id) AS t;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

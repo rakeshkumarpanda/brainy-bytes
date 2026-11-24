@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building tables: CREATE, types and constraints · SQL and Databases</title>
+<meta name="description" content="CREATE TABLE, data types across SQLite, PostgreSQL, MySQL and SQL Server, money types, NOT NULL, UNIQUE, CHECK, DEFAULT, type affinity, STRICT tables, ALTER TABLE, DROP TABLE, migrations.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 4: Building and changing data</span><span>›</span><span>Building tables</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 1 of 3 · Intermediate</div>
+    <h1>Building tables: CREATE, types and constraints</h1>
+    <p class="lead">Design your own tables with CREATE TABLE, choose the right data types, protect the data with constraints, and change tables later with ALTER and DROP.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">7 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-create" data-topic="cheatsheet" data-h="sql-create">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#create" data-l="create"><span class="n">1</span><span class="t">CREATE TABLE: drawing the empty form</span></a></li><li><a href="#constraints" data-l="constraints"><span class="n">2</span><span class="t">Constraints: rules every row must obey</span></a></li><li><a href="#affinity" data-l="affinity"><span class="n">3</span><span class="t">How SQLite treats types, and STRICT tables</span></a></li><li><a href="#alter" data-l="alter"><span class="n">4</span><span class="t">ALTER TABLE and DROP TABLE</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="create" data-l="create" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>CREATE TABLE: drawing the empty form</h2>
+<p>Until now every table already existed. Now you build your own. <code>CREATE TABLE</code> describes an empty table: its name, its columns, the kind of data each column holds, and the rules every row must follow. Think of printing a blank admission form before any student fills it in.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Create a table</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>CREATE TABLE name (column type constraints, ...);</code></div><div class="fx-n">One line per column. Constraints can follow each column, or come at the end for rules that cover several columns.</div></div><div class="fx"><div class="fx-h"><span>Only if missing</span></div><div class="fx-b"><code>CREATE TABLE IF NOT EXISTS name (...);</code></div><div class="fx-n">Does nothing, without an error, when the table is already there. Handy in setup scripts that run more than once.</div></div></div>
+<div class="sq-run" data-q="first"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Kind of data</th><th>SQLite</th><th>PostgreSQL</th><th>MySQL</th><th>SQL Server</th></tr></thead><tbody><tr><td>Whole numbers</td><td>INTEGER</td><td>integer, bigint</td><td>INT, BIGINT</td><td>int, bigint</td></tr><tr><td>Exact money</td><td>INTEGER (store paise)</td><td>numeric(10,2)</td><td>DECIMAL(10,2)</td><td>decimal(10,2)</td></tr><tr><td>Decimals, approximate</td><td>REAL</td><td>double precision</td><td>DOUBLE</td><td>float</td></tr><tr><td>Text</td><td>TEXT</td><td>text, varchar(n)</td><td>VARCHAR(n)</td><td>nvarchar(n)</td></tr><tr><td>Dates and times</td><td>TEXT in ISO 8601 form</td><td>date, timestamp</td><td>DATE, DATETIME</td><td>date, datetime2</td></tr><tr><td>True or false</td><td>INTEGER 0 or 1</td><td>boolean</td><td>BOOLEAN (TINYINT(1))</td><td>bit</td></tr><tr><td>Raw bytes</td><td>BLOB</td><td>bytea</td><td>BLOB</td><td>varbinary</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>Never store money in a floating point column. 0.1 + 0.2 is not exactly 0.3 in binary. Use a DECIMAL type, or store whole paise or cents as an integer, as our products table does with prices in rupees.</div></div>
+<div class="sq-lab" data-lab="l-pets"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="constraints" data-l="constraints" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Constraints: rules every row must obey</h2>
+<p>A <b>constraint</b> is a rule stored with the table. The database checks it on every INSERT and UPDATE, from every app, so bad data cannot sneak in through a program that forgot to check.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Constraint</th><th>Rule</th><th>Example</th></tr></thead><tbody><tr><td>NOT NULL</td><td>the column must have a value</td><td>name TEXT NOT NULL</td></tr><tr><td>UNIQUE</td><td>no two rows share this value (NULLs are allowed, and do not clash)</td><td>email TEXT UNIQUE</td></tr><tr><td>PRIMARY KEY</td><td>unique and identifies the row</td><td>id INTEGER PRIMARY KEY</td></tr><tr><td>CHECK (test)</td><td>the test must not be false</td><td>CHECK (price > 0)</td></tr><tr><td>DEFAULT value</td><td>used when the INSERT leaves the column out</td><td>status TEXT DEFAULT 'new'</td></tr><tr><td>REFERENCES t(c)</td><td>the value must exist in another table</td><td>customer_id INTEGER REFERENCES customers(id)</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="sqcheck"></div>
+<div class="sq-run" data-q="checkfail"></div>
+<div class="sq-run" data-q="default"></div>
+<div class="walk"><div class="walk-h"><span>A CHECK rule and NULL</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>CHECK refuses a row only when its test is <b>false</b>.</li><li>With age NULL, <code>age >= 18</code> is unknown, not false.</li><li>So the row is accepted. Add NOT NULL as well if the age must be known.</li><li><span class="eq">CHECK passes on TRUE and on UNKNOWN, it fails only on FALSE</span></li></ol></div>
+<div class="sq-lab" data-lab="l-check"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="affinity" data-l="affinity" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>How SQLite treats types, and STRICT tables</h2>
+<p>Most engines refuse text in an integer column. SQLite is more relaxed: a column’s type gives it an <b>affinity</b>, a preference, and SQLite converts values to that preference when it can. When it cannot, it stores the value as it is.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Declared type contains</th><th>Affinity</th><th>Example</th></tr></thead><tbody><tr><td>INT</td><td>INTEGER</td><td>INT, INTEGER, BIGINT</td></tr><tr><td>CHAR, CLOB or TEXT</td><td>TEXT</td><td>VARCHAR(20), TEXT</td></tr><tr><td>BLOB, or no type at all</td><td>BLOB</td><td>BLOB</td></tr><tr><td>REAL, FLOA or DOUB</td><td>REAL</td><td>REAL, DOUBLE, FLOAT</td></tr><tr><td>anything else</td><td>NUMERIC</td><td>DECIMAL(10,2), BOOLEAN, DATE</td></tr></tbody></table></div>
+<div class="sq-run" data-q="affinity"></div>
+<p>Since version 3.37 (2021) SQLite also offers <b>STRICT</b> tables. A STRICT table allows only the types INT, INTEGER, REAL, TEXT, BLOB and ANY, and refuses a value that cannot be converted losslessly, the way other engines do.</p>
+<div class="sq-run" data-q="strict"></div>
+<div class="note note-tip"><b>Remember</b><div>When you move a design from SQLite to PostgreSQL or MySQL, a STRICT table behaves much closer to what you will meet there.</div></div>
+<div class="sq-lab" data-lab="l-typeof"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="alter" data-l="alter" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>ALTER TABLE and DROP TABLE</h2>
+<p>Designs change. <code>ALTER TABLE</code> changes a table that already holds data, and <code>DROP TABLE</code> removes a table and every row in it.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Add a column</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>ALTER TABLE t ADD COLUMN c type DEFAULT v;</code></div><div class="fx-n">Existing rows get the default, or NULL when there is none.</div></div><div class="fx"><div class="fx-h"><span>Rename</span></div><div class="fx-b"><code>ALTER TABLE t RENAME TO t2;</code> and <code>ALTER TABLE t RENAME COLUMN a TO b;</code></div><div class="fx-n">Names change, data stays.</div></div><div class="fx"><div class="fx-h"><span>Drop a column</span></div><div class="fx-b"><code>ALTER TABLE t DROP COLUMN c;</code></div><div class="fx-n">SQLite 3.35 and later. It refuses a column used by an index, a key or a CHECK.</div></div><div class="fx"><div class="fx-h"><span>Remove a table</span></div><div class="fx-b"><code>DROP TABLE IF EXISTS t;</code></div><div class="fx-n">Gone with all its rows. There is no undo outside a transaction.</div></div></div>
+<div class="sq-run" data-q="alter"></div>
+<div class="sq-run" data-q="drop"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Engine</th><th>Where to see the tables</th></tr></thead><tbody><tr><td>SQLite</td><td>SELECT name FROM sqlite_schema WHERE type = 'table'</td></tr><tr><td>PostgreSQL, MySQL, SQL Server</td><td>SELECT table_name FROM information_schema.tables</td></tr><tr><td>Oracle</td><td>SELECT table_name FROM user_tables</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: a migration on a live app</div><p>A food delivery app wants to show a rating for each restaurant. The team writes a <b>migration</b>: a small script with <code>ALTER TABLE restaurants ADD COLUMN rating REAL</code>. Tools such as Flyway, Liquibase, Alembic or Rails migrations number these scripts and record which ones ran, so every copy of the database, on every laptop and server, ends up with the same shape.</p></div>
+<div class="sq-lab" data-lab="l-alter"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>CREATE TABLE draws a blank form with labelled boxes, and constraints are the rules printed on the form, such as "this box must not be empty".</p></div><div class="ld-p" data-ld="college" hidden><p>A schema is the set of table definitions. Types and constraints together keep the data valid. DDL (data definition language) is the part of SQL that creates and changes structure: CREATE, ALTER, DROP.</p></div><div class="ld-p" data-ld="masters" hidden><p>Constraints are declarative integrity rules: domain constraints (types, CHECK), entity integrity (primary keys) and referential integrity (foreign keys). The engine enforces them, which is stronger than checking in every application.</p></div><div class="ld-p" data-ld="research" hidden><p>Schema change on huge live tables is a research and engineering topic of its own. Some ALTERs rewrite every row. Tools such as gh-ost and pt-online-schema-change for MySQL copy the table in the background and swap it in, and PostgreSQL can add a column with a constant default without rewriting the table (since version 11).</p></div></div>
+<details class="deep"><summary>Going deeper: Why SQLite chose flexible typing</summary><div class="deep-b"><p>SQLite’s author describes flexible typing as a feature: a value has a type, and a column only prefers one. This matches scripting languages and lets old files keep working. STRICT tables were added later for people who want rigid columns. Both are documented on sqlite.org under datatype3 and stricttables.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-setops.html" data-topic="sql-setops"><small>Previous topic</small><b>Set operations</b></a><a class="next" href="./sql-modify.html" data-topic="sql-modify"><small>Next topic</small><b>Changing data</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-create", "topic": "sql-create", "subject": "sql", "title": "Building tables: CREATE, types and constraints", "codes": {}, "quiz": [{"lv": "e", "q": "Which statement makes a new table?", "o": ["NEW TABLE", "CREATE TABLE", "MAKE TABLE", "ADD TABLE"], "a": 1, "hint": "Create.", "why": "CREATE TABLE defines a table."}, {"lv": "e", "q": "NOT NULL means", "o": ["The value must be zero", "A value must be present", "The value is unique", "The column is hidden"], "a": 1, "hint": "Present.", "why": "NULL is not allowed."}, {"lv": "e", "q": "Which constraint stops two members sharing an email?", "o": ["CHECK", "DEFAULT", "UNIQUE", "NOT NULL"], "a": 2, "hint": "No repeats.", "why": "UNIQUE forbids duplicate values."}, {"lv": "e", "q": "What happens to a column left out of an INSERT when it has a DEFAULT?", "o": ["Error", "It gets the default", "It gets 0", "The row is skipped"], "a": 1, "hint": "Fill in.", "why": "The default value is used."}, {"lv": "m", "q": "A CHECK (age >= 18) meets age NULL. The row is", "o": ["Refused", "Accepted", "Changed to 18", "Deleted"], "a": 1, "hint": "Unknown is not false.", "why": "CHECK fails only on false."}, {"lv": "m", "q": "Best type for money in PostgreSQL", "o": ["real", "double precision", "numeric(10,2)", "text"], "a": 2, "hint": "Exact.", "why": "numeric is exact decimal arithmetic."}, {"lv": "m", "q": "In SQLite, a column declared VARCHAR(30) has which affinity?", "o": ["INTEGER", "TEXT", "REAL", "BLOB"], "a": 1, "hint": "Contains CHAR.", "why": "Any type name containing CHAR gets TEXT affinity."}, {"lv": "m", "q": "In SQLite, inserting 'hello' into a plain INTEGER column", "o": ["Fails", "Stores the text hello", "Stores 0", "Stores NULL"], "a": 1, "hint": "Affinity, not a rule.", "why": "It cannot convert, so it stores the text."}, {"lv": "m", "q": "What does ADD COLUMN give existing rows?", "o": ["Nothing, they are deleted", "The default, or NULL", "An error", "Random values"], "a": 1, "hint": "Default.", "why": "Existing rows take the default value."}, {"lv": "h", "q": "Which types does a STRICT table allow?", "o": ["Any name at all", "INT, INTEGER, REAL, TEXT, BLOB, ANY", "Only TEXT", "VARCHAR and DECIMAL"], "a": 1, "hint": "Six names.", "why": "Those six are the only ones allowed."}, {"lv": "x", "q": "In SQLite, DECIMAL(10,2) gets which affinity?", "o": ["TEXT", "REAL", "NUMERIC", "INTEGER"], "a": 2, "hint": "Anything else.", "why": "It matches none of the earlier rules, so it is NUMERIC."}], "calc": [{"lv": "e", "q": "Two books are inserted into a new table with id INTEGER PRIMARY KEY and no id given. What id does the second book get?", "ans": "2", "hint": "Counts from 1.", "steps": ["An empty table starts at 1.", "The next row gets the largest id plus one.", "<span class=\"eq\">2<\/span>"]}, {"lv": "e", "q": "How many columns does CREATE TABLE books (id, title, author, pages, price) define?", "ans": "5", "hint": "Count the names.", "steps": ["Each column is a name followed by its type.", "The names are id, title, author, pages and price.", "<span class=\"eq\">5 columns<\/span>"]}, {"lv": "m", "q": "Three members are inserted with ages 30, 15 and NULL into a table with CHECK (age >= 18), one INSERT each. How many are stored?", "ans": "2", "hint": "15 fails, NULL passes.", "steps": ["30 >= 18 is true: stored.", "15 >= 18 is false: refused.", "NULL >= 18 is unknown: stored.", "<span class=\"eq\">2 rows<\/span>"]}, {"lv": "m", "q": "A price of 1499 rupees is stored as whole paise. What integer is stored?", "ans": "149900", "hint": "100 paise in a rupee.", "steps": ["One rupee is 100 paise.", "Multiply the rupees by 100.", "<span class=\"eq\">1499 × 100 = 149900<\/span>"]}, {"lv": "m", "q": "After ALTER TABLE products ADD COLUMN rating INTEGER DEFAULT 3, what is the sum of rating over all products?", "ans": "30", "hint": "Every row gets 3.", "steps": ["There are 10 products.", "ADD COLUMN gives every existing row the default 3.", "<span class=\"eq\">10 × 3 = 30<\/span>"]}, {"lv": "m", "q": "A UNIQUE email column holds asha@mail.in, NULL, NULL and ravi@mail.in. How many rows can it hold without error?", "ans": "4", "hint": "NULLs do not clash.", "steps": ["The two real emails differ.", "In SQLite, PostgreSQL and MySQL two NULLs do not break UNIQUE.", "<span class=\"eq\">4 rows<\/span>"]}, {"lv": "h", "q": "How many of the declared types INT, VARCHAR(9), DOUBLE, DATE, BLOB get NUMERIC affinity in SQLite?", "ans": "1", "hint": "Only the one that matches no rule.", "steps": ["INT: INTEGER. VARCHAR: TEXT. DOUBLE: REAL. BLOB: BLOB.", "DATE matches none, so NUMERIC.", "<span class=\"eq\">1<\/span>"]}, {"lv": "h", "q": "In a plain table with a TEXT column t, you insert the number 7 and then compute length(t). What is the length?", "ans": "1", "hint": "Stored as the text 7.", "steps": ["The column has TEXT affinity.", "So the number 7 is stored as the text 7, one character.", "<span class=\"eq\">length = 1<\/span>"]}], "assign": [], "must": [["CREATE TABLE", "Names the table, its columns, their types and the rules. IF NOT EXISTS makes it safe to run twice."], ["Constraints", "NOT NULL, UNIQUE, PRIMARY KEY, CHECK, DEFAULT and REFERENCES are checked by the engine on every write."], ["CHECK and NULL", "CHECK refuses a row only when its test is false. NULL makes it unknown, which passes."], ["Types", "Use exact types for money. SQLite uses affinity, a preference, unless the table is STRICT."], ["ALTER and DROP", "ADD COLUMN, RENAME and DROP COLUMN change a live table. DROP TABLE deletes the table and its rows."]], "summary": "<p>CREATE TABLE draws the form, constraints are its rules, affinity or STRICT decides how types are kept, and ALTER or DROP change it later.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"first": {"src": "CREATE TABLE books (\n  id      INTEGER PRIMARY KEY,\n  title   TEXT NOT NULL,\n  author  TEXT,\n  pages   INTEGER,\n  price   REAL\n);\nINSERT INTO books (title, author, pages, price)\nVALUES ('Malgudi Days', 'R. K. Narayan', 256, 199.0),\n       ('Wings of Fire', 'A. P. J. Abdul Kalam', 180, 250.0);\nSELECT * FROM books;", "db": "", "setup": "", "title": "Your first table, from nothing", "notes": {"2": "INTEGER PRIMARY KEY in SQLite numbers rows by itself: 1, 2, 3.", "3": "NOT NULL: every book must have a title.", "8": "We leave out id, and SQLite fills it in."}, "out": [{"sql": "CREATE TABLE books (\n  id      INTEGER PRIMARY KEY,\n  title   TEXT NOT NULL,\n  author  TEXT,\n  pages   INTEGER,\n  price   REAL\n);", "cols": [], "rows": []}, {"sql": "INSERT INTO books (title, author, pages, price)\nVALUES ('Malgudi Days', 'R. K. Narayan', 256, 199.0),\n       ('Wings of Fire', 'A. P. J. Abdul Kalam', 180, 250.0);", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT * FROM books;", "cols": ["id", "title", "author", "pages", "price"], "rows": [[1, "Malgudi Days", "R. K. Narayan", 256, 199], [2, "Wings of Fire", "A. P. J. Abdul Kalam", 180, 250]]}]}, "checkfail": {"src": "CREATE TABLE members (\n  id    INTEGER PRIMARY KEY,\n  name  TEXT NOT NULL,\n  email TEXT UNIQUE,\n  age   INTEGER CHECK (age >= 18)\n);\nINSERT INTO members (name, email, age) VALUES ('Asha', 'asha@mail.in', 30);\nINSERT INTO members (name, email, age) VALUES ('Tara', 'tara@mail.in', 15);", "db": "", "setup": "", "title": "A CHECK rule stops a bad row", "notes": {"5": "The rule written once, inside the table.", "8": "Age 15 makes the CHECK false, so SQLite refuses the row."}, "out": [{"sql": "CREATE TABLE members (\n  id    INTEGER PRIMARY KEY,\n  name  TEXT NOT NULL,\n  email TEXT UNIQUE,\n  age   INTEGER CHECK (age >= 18)\n);", "cols": [], "rows": []}, {"sql": "INSERT INTO members (name, email, age) VALUES ('Asha', 'asha@mail.in', 30);", "cols": [], "rows": [], "changes": 1}, {"sql": "INSERT INTO members (name, email, age) VALUES ('Tara', 'tara@mail.in', 15);", "cols": [], "rows": [], "error": "CHECK constraint failed: age >= 18"}]}, "default": {"src": "CREATE TABLE tickets (\n  id      INTEGER PRIMARY KEY,\n  title   TEXT NOT NULL,\n  status  TEXT NOT NULL DEFAULT 'open',\n  made_on TEXT DEFAULT (date('2025-07-01'))\n);\nINSERT INTO tickets (title) VALUES ('Printer jam');\nSELECT * FROM tickets;", "db": "", "setup": "", "title": "DEFAULT fills in what you leave out", "notes": {"4": "A plain value as the default.", "5": "An expression in brackets can be a default too. Real systems often use CURRENT_TIMESTAMP."}, "out": [{"sql": "CREATE TABLE tickets (\n  id      INTEGER PRIMARY KEY,\n  title   TEXT NOT NULL,\n  status  TEXT NOT NULL DEFAULT 'open',\n  made_on TEXT DEFAULT (date('2025-07-01'))\n);", "cols": [], "rows": []}, {"sql": "INSERT INTO tickets (title) VALUES ('Printer jam');", "cols": [], "rows": [], "changes": 1}, {"sql": "SELECT * FROM tickets;", "cols": ["id", "title", "status", "made_on"], "rows": [[1, "Printer jam", "open", "2025-07-01"]]}]}, "affinity": {"src": "CREATE TABLE loose (n INTEGER, t TEXT);\nINSERT INTO loose VALUES ('42', 42), ('hello', 7);\nSELECT n, typeof(n), t, typeof(t) FROM loose;", "db": "", "setup": "", "title": "Affinity converts when it can", "notes": {"2": "'42' becomes the integer 42. 'hello' cannot become a number, so it stays text even in an INTEGER column.", "3": "typeof shows what was really stored."}, "out": [{"sql": "CREATE TABLE loose (n INTEGER, t TEXT);", "cols": [], "rows": []}, {"sql": "INSERT INTO loose VALUES ('42', 42), ('hello', 7);", "cols": [], "rows": [], "changes": 2}, {"sql": "SELECT n, typeof(n), t, typeof(t) FROM loose;", "cols": ["n", "typeof(n)", "t", "typeof(t)"], "rows": [[42, "integer", "42", "text"], ["hello", "text", "7", "text"]]}]}, "strict": {"src": "CREATE TABLE tight (n INTEGER, t TEXT) STRICT;\nINSERT INTO tight VALUES ('42', 42);\nSELECT n, typeof(n), t, typeof(t) FROM tight;\nINSERT INTO tight VALUES ('hello', 7);", "db": "", "setup": "", "title": "STRICT refuses what does not fit", "notes": {"2": "'42' still converts cleanly to 42, so it is accepted.", "4": "'hello' cannot be an integer, and a STRICT table says no."}, "out": [{"sql": "CREATE TABLE tight (n INTEGER, t TEXT) STRICT;", "cols": [], "rows": []}, {"sql": "INSERT INTO tight VALUES ('42', 42);", "cols": [], "rows": [], "changes": 1}, {"sql": "SELECT n, typeof(n), t, typeof(t) FROM tight;", "cols": ["n", "typeof(n)", "t", "typeof(t)"], "rows": [[42, "integer", "42", "text"]]}, {"sql": "INSERT INTO tight VALUES ('hello', 7);", "cols": [], "rows": [], "error": "cannot store TEXT value in INTEGER column tight.n"}]}, "alter": {"src": "ALTER TABLE products ADD COLUMN rating INTEGER DEFAULT 3;\nALTER TABLE products RENAME COLUMN stock TO in_stock;\nSELECT name, in_stock, rating FROM products LIMIT 3;", "db": "shop", "setup": "", "title": "Grow a table that already has data", "notes": {"1": "All ten existing products get rating 3 at once.", "2": "The column is renamed, its values stay."}, "out": [{"sql": "ALTER TABLE products ADD COLUMN rating INTEGER DEFAULT 3;", "cols": [], "rows": []}, {"sql": "ALTER TABLE products RENAME COLUMN stock TO in_stock;", "cols": [], "rows": []}, {"sql": "SELECT name, in_stock, rating FROM products LIMIT 3;", "cols": ["name", "in_stock", "rating"], "rows": [["Pencil box", 40, 3], ["Notebook", 150, 3], ["Water bottle", 25, 3]]}]}, "drop": {"src": "CREATE TABLE scratch (x INTEGER);\nDROP TABLE scratch;\nDROP TABLE IF EXISTS scratch;\nSELECT count(*) AS tables_named_scratch FROM sqlite_schema WHERE name = 'scratch';", "db": "", "setup": "", "title": "DROP, and the safe IF EXISTS form", "notes": {"3": "The table is already gone. IF EXISTS turns the error into a quiet no operation.", "4": "sqlite_schema is SQLite’s own list of tables."}, "out": [{"sql": "CREATE TABLE scratch (x INTEGER);", "cols": [], "rows": []}, {"sql": "DROP TABLE scratch;", "cols": [], "rows": []}, {"sql": "DROP TABLE IF EXISTS scratch;", "cols": [], "rows": []}, {"sql": "SELECT count(*) AS tables_named_scratch FROM sqlite_schema WHERE name = 'scratch';", "cols": ["tables_named_scratch"], "rows": [[0]]}]}}, "labs": [{"id": "l-pets", "lv": "e", "title": "A table for pets", "task": "Create a table <code>pets<\/code> with <code>id INTEGER PRIMARY KEY<\/code>, <code>name TEXT NOT NULL<\/code> and <code>kind TEXT<\/code>. Add Bruno the dog and Mitthu the parrot, then show <code>name<\/code> and <code>kind<\/code> of every pet.", "db": "", "hint": "Three statements: CREATE TABLE, INSERT with two rows, then SELECT.", "why": "The final SELECT returns the two rows you stored.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "kind"], "rows": [["Bruno", "dog"], ["Mitthu", "parrot"]]}, "solution": "CREATE TABLE pets (id INTEGER PRIMARY KEY, name TEXT NOT NULL, kind TEXT);\nINSERT INTO pets (name, kind) VALUES ('Bruno', 'dog'), ('Mitthu', 'parrot');\nSELECT name, kind FROM pets;"}, {"id": "l-check", "lv": "m", "title": "Prices must be positive", "task": "Create <code>items<\/code> with <code>name TEXT NOT NULL<\/code> and <code>price INTEGER CHECK (price > 0)<\/code>. Insert Pen at 10 and Eraser at 5, then show every row ordered by name.", "db": "", "hint": "Put the CHECK right after the price type.", "why": "Both prices pass the CHECK, so both rows are stored.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["name", "price"], "rows": [["Eraser", 5], ["Pen", 10]]}, "solution": "CREATE TABLE items (name TEXT NOT NULL, price INTEGER CHECK (price > 0));\nINSERT INTO items VALUES ('Pen', 10), ('Eraser', 5);\nSELECT * FROM items ORDER BY name;"}, {"id": "l-typeof", "lv": "m", "title": "What really got stored", "task": "Create <code>t (a INTEGER, b TEXT)<\/code>, insert the row <code>('7', 7)<\/code>, then show <code>typeof(a)<\/code> and <code>typeof(b)<\/code>.", "db": "", "hint": "typeof(column) names the storage class of each value.", "why": "The text '7' becomes integer 7 in a, and the number 7 becomes text '7' in b.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["typeof(a)", "typeof(b)"], "rows": [["integer", "text"]]}, "solution": "CREATE TABLE t (a INTEGER, b TEXT);\nINSERT INTO t VALUES ('7', 7);\nSELECT typeof(a), typeof(b) FROM t;"}, {"id": "l-alter", "lv": "m", "title": "Rate the sports products", "task": "Add a column <code>rating INTEGER DEFAULT 4<\/code> to <code>products<\/code>, then show <code>name<\/code> and <code>rating<\/code> of the Sports products.", "db": "shop", "hint": "ALTER TABLE ... ADD COLUMN ... DEFAULT 4, then a SELECT with WHERE.", "why": "Existing rows take the default value 4.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "rating"], "rows": [["Cricket ball", 4], ["Football", 4]]}, "solution": "ALTER TABLE products ADD COLUMN rating INTEGER DEFAULT 4;\nSELECT name, rating FROM products WHERE category = 'Sports';"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set operations: UNION, INTERSECT and EXCEPT · SQL and Databases</title>
+<meta name="description" content="UNION and UNION ALL, INTERSECT, EXCEPT and MINUS, column count and naming rules, ORDER BY on a compound select, NULLs in set operations, comparing tables, bag semantics.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 3: Many tables</span><span>›</span><span>Set operations</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 4 of 4 · Intermediate</div>
+    <h1>Set operations: UNION, INTERSECT and EXCEPT</h1>
+    <p class="lead">Stack query results with UNION and UNION ALL, find overlaps with INTERSECT and differences with EXCEPT, and use them to compare whole tables safely.</p>
+    <div class="cv-chips"><span class="cv-chip">About 30 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">4 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-setops" data-topic="cheatsheet" data-h="sql-setops">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#union" data-l="union"><span class="n">1</span><span class="t">UNION and UNION ALL: stacking results</span></a></li><li><a href="#intersect" data-l="intersect"><span class="n">2</span><span class="t">INTERSECT and EXCEPT</span></a></li><li><a href="#rules" data-l="rules"><span class="n">3</span><span class="t">Set operations versus joins and NULLs</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="union" data-l="union" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>UNION and UNION ALL: stacking results</h2>
+<p>Joins put tables side by side. <b>Set operations</b> stack results on top of each other. "Every city where we have a customer or a warehouse" is the customer cities stacked on the warehouse cities.</p>
+<div class="viz" data-viz="pk" data-pk="sqset"></div>
+<div class="sq-run" data-q="union"></div>
+<div class="sq-run" data-q="unionall"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Rule</th><th>Why</th></tr></thead><tbody><tr><td>Both queries must return the same number of columns</td><td>rows are stacked column by column</td></tr><tr><td>Matching columns should hold the same kind of data</td><td>a name on top of a price makes no sense, and strict engines refuse it</td></tr><tr><td>Column names come from the first query</td><td>so put aliases there</td></tr><tr><td>ORDER BY and LIMIT go once, at the very end</td><td>they apply to the whole combined result</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>UNION has to find and remove duplicates, which costs a sort or hash. When you know there are no duplicates, or you want them, use UNION ALL.</div></div>
+<div class="sq-lab" data-lab="l-union"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="intersect" data-l="intersect" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>INTERSECT and EXCEPT</h2>
+<p><code>INTERSECT</code> keeps rows that appear in <b>both</b> results. <code>EXCEPT</code> keeps rows of the first result that do <b>not</b> appear in the second. Oracle calls EXCEPT <code>MINUS</code>.</p>
+<div class="sq-run" data-q="inter"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Operator</th><th>Venn diagram idea</th><th>Duplicates</th><th>Also written</th></tr></thead><tbody><tr><td>UNION</td><td>everything in A or B</td><td>removed</td><td></td></tr><tr><td>UNION ALL</td><td>everything, counted twice if in both</td><td>kept</td><td></td></tr><tr><td>INTERSECT</td><td>the overlap of A and B</td><td>removed</td><td>INTERSECT ALL in PostgreSQL</td></tr><tr><td>EXCEPT</td><td>A without B</td><td>removed</td><td>MINUS in Oracle, EXCEPT ALL in PostgreSQL</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Order matters for EXCEPT</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>A EXCEPT B keeps what is in A and missing from B.</li><li>B EXCEPT A keeps what is in B and missing from A.</li><li>Warehouse cities EXCEPT customer cities gives Mumbai and Kolkata: warehouses with no local customers.</li><li><span class="eq">UNION and INTERSECT give the same rows either way round, EXCEPT does not</span></li></ol></div>
+<div class="sq-lab" data-lab="l-except"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="rules" data-l="rules" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Set operations versus joins and NULLs</h2>
+<p>Set operations compare <b>whole rows</b>, and here NULLs count as equal, unlike in a WHERE test. That makes INTERSECT and EXCEPT a neat, NULL safe way to compare two tables row by row, for example to check that a copy of a table matches the original.</p>
+<div class="sq-run" data-q="nullset"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Question</th><th>Set operation</th><th>Join or subquery form</th></tr></thead><tbody><tr><td>In A or B</td><td>A UNION B</td><td>FULL OUTER JOIN (with COALESCE)</td></tr><tr><td>In both</td><td>A INTERSECT B</td><td>JOIN, or WHERE EXISTS</td></tr><tr><td>In A, not in B</td><td>A EXCEPT B</td><td>LEFT JOIN ... WHERE b.key IS NULL, or NOT EXISTS</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: checking a data migration</div><p>A company copies its customers table from an old system to a new one. To prove nothing was lost or changed, an engineer runs <code>SELECT * FROM old_customers EXCEPT SELECT * FROM new_customers</code> and then the same the other way round. Two empty results mean the tables hold exactly the same rows, including rows with NULLs.</p></div>
+<div class="sq-lab" data-lab="l-both"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>UNION pours two lists together, INTERSECT keeps what both share, EXCEPT takes one list away from the other.</p></div><div class="ld-p" data-ld="college" hidden><p>Set operations need union compatible inputs: the same number of columns with compatible types. Duplicates are removed unless you write ALL.</p></div><div class="ld-p" data-ld="masters" hidden><p>In relational algebra these are union (∪), intersection (∩) and difference (−). SQL’s bag versions with ALL follow multiset rules: UNION ALL adds counts, INTERSECT ALL takes the smaller count, EXCEPT ALL subtracts counts.</p></div><div class="ld-p" data-ld="research" hidden><p>Engines implement duplicate removing set operations with sorting or hashing, much like GROUP BY. In SQLite, EXPLAIN QUERY PLAN shows a line such as COMPOUND QUERY with a temporary B-tree for UNION.</p></div></div>
+<details class="deep"><summary>Going deeper: UNION ALL as a view over partitions</summary><div class="deep-b"><p>Before native partitioning existed, people split a big table by year into sales_2024, sales_2025 and so on, then made one view: <code>SELECT * FROM sales_2024 UNION ALL SELECT * FROM sales_2025</code>. Queries on the view read every part, and some engines can skip parts whose CHECK rules exclude the requested dates.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-subqueries.html" data-topic="sql-subqueries"><small>Previous topic</small><b>Subqueries</b></a><a class="next" href="./sql-create.html" data-topic="sql-create"><small>Next topic</small><b>Building tables</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-setops", "topic": "sql-setops", "subject": "sql", "title": "Set operations: UNION, INTERSECT and EXCEPT", "codes": {}, "quiz": [{"lv": "e", "q": "UNION removes", "o": ["Nothing", "Duplicate rows", "NULL rows", "The second query"], "a": 1, "hint": "Each once.", "why": "UNION removes duplicates, UNION ALL keeps them."}, {"lv": "e", "q": "Which keeps rows in both results?", "o": ["UNION", "INTERSECT", "EXCEPT", "UNION ALL"], "a": 1, "hint": "Overlap.", "why": "INTERSECT is the overlap."}, {"lv": "e", "q": "Oracle’s name for EXCEPT is", "o": ["DIFF", "MINUS", "REMOVE", "WITHOUT"], "a": 1, "hint": "Subtract.", "why": "Oracle uses MINUS."}, {"lv": "e", "q": "Two queries in a UNION must have the same", "o": ["Table", "Number of columns", "WHERE", "Row count"], "a": 1, "hint": "Stacked.", "why": "Rows are stacked column by column."}, {"lv": "m", "q": "Where does ORDER BY go in a UNION?", "o": ["After each SELECT", "Once at the end", "Before UNION", "It is not allowed"], "a": 1, "hint": "Whole result.", "why": "It sorts the combined result."}, {"lv": "m", "q": "Which is faster when duplicates do not matter?", "o": ["UNION", "UNION ALL", "Same speed", "INTERSECT"], "a": 1, "hint": "No dedupe.", "why": "UNION ALL skips the duplicate removal."}, {"lv": "m", "q": "A EXCEPT B equals B EXCEPT A", "o": ["Always", "Never in general", "Only with ALL", "Only for numbers"], "a": 1, "hint": "Order matters.", "why": "Difference is not symmetric."}, {"lv": "m", "q": "The result column names of a UNION come from", "o": ["The second query", "The first query", "Both", "They are numbered"], "a": 1, "hint": "First.", "why": "Put aliases in the first query."}, {"lv": "h", "q": "In a set operation, two NULLs are treated as", "o": ["Different", "Equal", "An error", "Removed"], "a": 1, "hint": "Indistinct.", "why": "Set operations treat NULLs as the same value."}, {"lv": "h", "q": "Which join form matches A EXCEPT B on a key?", "o": ["INNER JOIN", "LEFT JOIN ... WHERE b.key IS NULL", "CROSS JOIN", "RIGHT JOIN"], "a": 1, "hint": "Anti join.", "why": "Keep A rows with no B partner."}, {"lv": "x", "q": "Under bag semantics, a row appears 3 times in A and 1 time in B. How many times in A EXCEPT ALL B?", "o": ["0", "1", "2", "3"], "a": 2, "hint": "Subtract counts.", "why": "3 − 1 = 2."}], "calc": [{"lv": "e", "q": "How many rows does the customer cities UNION warehouse cities query return (NULL left out)?", "ans": "6", "hint": "Each city once.", "steps": ["Customer cities: Pune, Delhi, Chennai, Bhubaneswar.", "Warehouses add Mumbai and Kolkata.", "<span class=\"eq\">6 cities<\/span>"]}, {"lv": "e", "q": "And with UNION ALL?", "ans": "11", "hint": "Every row kept.", "steps": ["7 customers have a city.", "4 warehouses.", "<span class=\"eq\">7 + 4 = 11<\/span>"]}, {"lv": "m", "q": "How many cities are in both lists (INTERSECT)?", "ans": "2", "hint": "The overlap.", "steps": ["Customer cities: Pune, Delhi, Chennai, Bhubaneswar.", "Warehouse cities: Pune, Mumbai, Chennai, Kolkata.", "<span class=\"eq\">Pune and Chennai: 2<\/span>"]}, {"lv": "m", "q": "How many customer cities have no warehouse (EXCEPT)?", "ans": "2", "hint": "First minus second.", "steps": ["Customer cities: Pune, Delhi, Chennai, Bhubaneswar.", "Remove Pune and Chennai.", "<span class=\"eq\">Delhi and Bhubaneswar: 2<\/span>"]}, {"lv": "m", "q": "Check: |A ∪ B| = |A| + |B| − |A ∩ B| for the distinct city sets. What is |A| + |B| − |A ∩ B|?", "ans": "6", "hint": "4 distinct customer cities, 4 warehouse cities.", "steps": ["|A| = 4, |B| = 4.", "|A ∩ B| = 2.", "<span class=\"eq\">4 + 4 − 2 = 6, the same as the UNION count<\/span>"]}, {"lv": "h", "q": "Total warehouse capacity in cities where we also have customers?", "ans": "9000", "hint": "Pune and Chennai.", "steps": ["Pune 5000.", "Chennai 4000.", "<span class=\"eq\">9000<\/span>"]}, {"lv": "h", "q": "A row is in A 3 times and in B 1 time. How many times is it in A UNION ALL B?", "ans": "4", "hint": "Add counts.", "steps": ["UNION ALL keeps every row.", "3 from A and 1 from B.", "<span class=\"eq\">3 + 1 = 4<\/span>"]}, {"lv": "h", "q": "How many rows does SELECT NULL INTERSECT SELECT NULL return?", "ans": "1", "hint": "NULLs are equal here.", "steps": ["Set operations treat NULLs as the same value.", "So the NULL row is in both inputs.", "<span class=\"eq\">1 row<\/span>"]}], "assign": [], "must": [["Stacking", "UNION, UNION ALL, INTERSECT and EXCEPT stack results. Same number of columns, names from the first query, ORDER BY once at the end."], ["Duplicates", "UNION, INTERSECT and EXCEPT remove duplicates. UNION ALL keeps them and is faster."], ["EXCEPT", "Rows of the first query missing from the second. Order matters. MINUS in Oracle."], ["NULLs", "Set operations treat NULLs as equal, so EXCEPT compares tables safely."], ["Twins", "INTERSECT is like EXISTS, EXCEPT like NOT EXISTS or an anti join."]], "summary": "<p>Set operations stack whole rows: UNION for either, INTERSECT for both, EXCEPT for first only, with NULLs treated as equal.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"union": {"src": "SELECT city FROM customers WHERE city IS NOT NULL\nUNION\nSELECT city FROM warehouses\nORDER BY city;", "db": "shop", "setup": "", "title": "All cities we deal with, each once", "notes": {"2": "UNION removes duplicate rows, so Pune appears once.", "4": "ORDER BY at the end sorts the whole combined result."}, "out": [{"sql": "SELECT city FROM customers WHERE city IS NOT NULL\nUNION\nSELECT city FROM warehouses\nORDER BY city;", "cols": ["city"], "rows": [["Bhubaneswar"], ["Chennai"], ["Delhi"], ["Kolkata"], ["Mumbai"], ["Pune"]]}]}, "unionall": {"src": "SELECT 'customer' AS kind, name FROM customers\nUNION ALL\nSELECT 'employee', name FROM employees\nLIMIT 5;", "db": "", "setup": "CREATE TABLE customers (name TEXT); INSERT INTO customers VALUES ('Asha'), ('Ravi');\nCREATE TABLE employees (name TEXT); INSERT INTO employees VALUES ('Asha'), ('Priya'), ('Rahul');", "title": "UNION ALL keeps every row, and is faster", "notes": {"2": "No duplicate removal: two different Ashas both stay, which is right here."}, "out": [{"sql": "SELECT 'customer' AS kind, name FROM customers\nUNION ALL\nSELECT 'employee', name FROM employees\nLIMIT 5;", "cols": ["kind", "name"], "rows": [["customer", "Asha"], ["customer", "Ravi"], ["employee", "Asha"], ["employee", "Priya"], ["employee", "Rahul"]]}]}, "inter": {"src": "-- Cities with both customers and a warehouse\nSELECT city FROM customers\nINTERSECT\nSELECT city FROM warehouses;\n\n-- Customer cities with no warehouse yet\nSELECT city FROM customers WHERE city IS NOT NULL\nEXCEPT\nSELECT city FROM warehouses;", "db": "shop", "setup": "", "title": "Both, and only the first", "notes": {"3": "Only Pune and Chennai are in both lists.", "8": "Delhi and Bhubaneswar have customers but no warehouse: a planning question."}, "out": [{"sql": "-- Cities with both customers and a warehouse\nSELECT city FROM customers\nINTERSECT\nSELECT city FROM warehouses;", "cols": ["city"], "rows": [["Chennai"], ["Pune"]]}, {"sql": "-- Customer cities with no warehouse yet\nSELECT city FROM customers WHERE city IS NOT NULL\nEXCEPT\nSELECT city FROM warehouses;", "cols": ["city"], "rows": [["Bhubaneswar"], ["Delhi"]]}]}, "nullset": {"src": "SELECT NULL AS city\nINTERSECT\nSELECT NULL;\n\nSELECT CASE WHEN NULL = NULL THEN 'equal' ELSE 'not known' END;", "db": "", "setup": "", "title": "NULL meets NULL in a set operation", "notes": {"1": "INTERSECT returns one row holding NULL: the two NULLs were treated as the same row.", "5": "But = still says unknown."}, "out": [{"sql": "SELECT NULL AS city\nINTERSECT\nSELECT NULL;", "cols": ["city"], "rows": [[null]]}, {"sql": "SELECT CASE WHEN NULL = NULL THEN 'equal' ELSE 'not known' END;", "cols": ["CASE WHEN NULL = NULL THEN 'equal' ELSE 'not known' END"], "rows": [["not known"]]}]}}, "labs": [{"id": "l-union", "lv": "e", "title": "Every place we know", "task": "List every city that appears either as a customer city or a warehouse city, each once, and leave out NULL.", "db": "shop", "hint": "Two SELECTs joined by UNION.", "why": "UNION stacks the results and removes duplicates.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["city"], "rows": [["Bhubaneswar"], ["Chennai"], ["Delhi"], ["Kolkata"], ["Mumbai"], ["Pune"]]}, "solution": "SELECT city FROM customers WHERE city IS NOT NULL UNION SELECT city FROM warehouses;"}, {"id": "l-except", "lv": "m", "title": "Warehouses without local customers", "task": "List warehouse cities where no customer lives.", "db": "shop", "hint": "Warehouses first, then EXCEPT the customer cities.", "why": "EXCEPT keeps rows of the first query that the second query does not return.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["city"], "rows": [["Kolkata"], ["Mumbai"]]}, "solution": "SELECT city FROM warehouses EXCEPT SELECT city FROM customers;"}, {"id": "l-both", "lv": "m", "title": "Cities with customers and a warehouse", "task": "List the cities that appear in both <code>customers<\/code> and <code>warehouses<\/code>.", "db": "shop", "hint": "INTERSECT keeps the overlap.", "why": "Only rows present in both results survive INTERSECT.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["city"], "rows": [["Chennai"], ["Pune"]]}, "solution": "SELECT city FROM customers INTERSECT SELECT city FROM warehouses;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

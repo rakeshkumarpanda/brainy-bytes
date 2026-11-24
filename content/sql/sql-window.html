@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Window functions: ranks, running totals and more · SQL and Databases</title>
+<meta name="description" content="OVER and PARTITION BY, ROW_NUMBER, RANK, DENSE_RANK, NTILE, PERCENT_RANK, CUME_DIST, running totals, LAG, LEAD, FIRST_VALUE, LAST_VALUE, frames with ROWS, RANGE and GROUPS, named WINDOW, filtering in an outer query.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 6: Advanced queries</span><span>›</span><span>Window functions</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 6 · Topic 1 of 3 · Advanced</div>
+    <h1>Window functions: ranks, running totals and more</h1>
+    <p class="lead">Put a group answer beside every row with OVER, rank with ROW_NUMBER, RANK and DENSE_RANK, build running totals, look at neighbouring rows with LAG and LEAD, and control frames.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">2 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">9 runnable queries</span><span class="cv-chip">4 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-window" data-topic="cheatsheet" data-h="sql-window">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#over" data-l="over"><span class="n">1</span><span class="t">OVER: an answer for every row</span></a></li><li><a href="#rank" data-l="rank"><span class="n">2</span><span class="t">Ranking: ROW_NUMBER, RANK and DENSE_RANK</span></a></li><li><a href="#offset" data-l="offset"><span class="n">3</span><span class="t">Running totals, LAG and LEAD</span></a></li><li><a href="#frames" data-l="frames"><span class="n">4</span><span class="t">Frames, named windows and the WHERE trap</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="over" data-l="over" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>OVER: an answer for every row</h2>
+<p>GROUP BY folds many rows into one. Sometimes you want a group answer <b>next to each row</b>: each employee with their department’s average, or each order with a running total. A <b>window function</b> does that. The word <code>OVER</code> turns an ordinary function into a window function.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Window function</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>function(...) OVER (PARTITION BY a ORDER BY b)</code></div><div class="fx-n">PARTITION BY makes groups, ORDER BY sorts inside each group. Both are optional.</div></div><div class="fx"><div class="fx-h"><span>Whole table</span></div><div class="fx-b"><code>AVG(salary) OVER ()</code></div><div class="fx-n">Empty brackets: the window is every row of the result.</div></div></div>
+<div class="sq-run" data-q="avg"></div>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>GROUP BY</th><th>Window function</th></tr></thead><tbody><tr><td>Rows in the result</td><td>one per group</td><td>one per input row</td></tr><tr><td>Can show row details</td><td>only grouped columns</td><td>yes, every column</td></tr><tr><td>Written</td><td>GROUP BY dept_id</td><td>OVER (PARTITION BY dept_id)</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-share"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="rank" data-l="rank" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Ranking: ROW_NUMBER, RANK and DENSE_RANK</h2>
+<p>Add <code>ORDER BY</code> inside OVER and the function can number or rank rows. The three ranking functions differ only in how they treat ties.</p>
+<div class="viz" data-viz="pk" data-pk="sqwin"></div>
+<div class="sq-run" data-q="ranks"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Function</th><th>Salaries 140, 70, 70, 60</th><th>Use it for</th></tr></thead><tbody><tr><td>ROW_NUMBER()</td><td>1, 2, 3, 4</td><td>picking exactly one row per group, paging</td></tr><tr><td>RANK()</td><td>1, 2, 2, 4</td><td>sports style positions</td></tr><tr><td>DENSE_RANK()</td><td>1, 2, 2, 3</td><td>the second highest distinct value</td></tr><tr><td>NTILE(4)</td><td>splits rows into 4 nearly equal buckets</td><td>quartiles</td></tr><tr><td>PERCENT_RANK(), CUME_DIST()</td><td>relative position from 0 to 1</td><td>percentiles</td></tr></tbody></table></div>
+<div class="sq-run" data-q="perdept"></div>
+<div class="note note-warn"><b>Common mistake</b><div>ROW_NUMBER breaks ties in no guaranteed order. Add a tie breaker such as id to the ORDER BY when the result must be the same every time.</div></div>
+<div class="sq-lab" data-lab="l-rank"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="offset" data-l="offset" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Running totals, LAG and LEAD</h2>
+<p>With ORDER BY, an aggregate such as SUM becomes a <b>running</b> aggregate: it adds rows from the start of the partition up to the current row. LAG and LEAD reach back or forward to a neighbouring row.</p>
+<div class="sq-run" data-q="running"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Function</th><th>Returns</th></tr></thead><tbody><tr><td>LAG(x) and LAG(x, n, default)</td><td>x from the row n places before, default when there is none</td></tr><tr><td>LEAD(x)</td><td>x from the next row</td></tr><tr><td>FIRST_VALUE(x), LAST_VALUE(x)</td><td>x from the first or last row of the frame</td></tr><tr><td>NTH_VALUE(x, n)</td><td>x from row n of the frame</td></tr></tbody></table></div>
+<div class="sq-run" data-q="lead"></div>
+<div class="sq-lab" data-lab="l-running"></div>
+<div class="sq-lab" data-lab="l-lag"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="frames" data-l="frames" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Frames, named windows and the WHERE trap</h2>
+<p>The <b>frame</b> is the exact set of rows an aggregate sees for the current row. You can set it yourself.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Frame</th><th>Meaning</th></tr></thead><tbody><tr><td>no ORDER BY</td><td>the whole partition</td></tr><tr><td>ORDER BY only (default)</td><td>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW: start to here, tied rows included</td></tr><tr><td>ROWS BETWEEN 2 PRECEDING AND CURRENT ROW</td><td>this row and the 2 before it: a 3 row moving window</td></tr><tr><td>ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING</td><td>the whole partition, needed for LAST_VALUE to mean the true last row</td></tr><tr><td>GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW</td><td>this group of tied rows and the group before (SQLite, PostgreSQL)</td></tr></tbody></table></div>
+<div class="sq-run" data-q="moving"></div>
+<div class="sq-run" data-q="named"></div>
+<div class="sq-run" data-q="trap"></div>
+<div class="sq-run" data-q="fix"></div>
+<div class="note note-tip"><b>Remember</b><div>In the logical order of a query, window functions run after WHERE, GROUP BY and HAVING, and before ORDER BY and LIMIT. That is why they can use aggregates but cannot be filtered by WHERE in the same SELECT.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A window function writes a group answer, such as a rank or an average, next to every row without hiding any rows.</p></div><div class="ld-p" data-ld="college" hidden><p>OVER (PARTITION BY ... ORDER BY ... frame) defines the window. Ranking, offset and aggregate functions all work over it. They run after GROUP BY and HAVING.</p></div><div class="ld-p" data-ld="masters" hidden><p>Frames come in ROWS, RANGE and GROUPS units with EXCLUDE options. Engines sort once per distinct window and sweep the rows, keeping running state, so a running SUM costs about one pass after sorting.</p></div><div class="ld-p" data-ld="research" hidden><p>Efficient evaluation of arbitrary frames uses segment trees and similar structures (Leis et al., VLDB 2015, "Efficient Processing of Window Functions in Analytical SQL Queries"). Some engines add QUALIFY, a WHERE for window results, found in Snowflake, BigQuery, Teradata and DuckDB.</p></div></div>
+<details class="deep"><summary>Going deeper: Where window functions came from</summary><div class="deep-b"><p>They entered the SQL standard in SQL:2003 (first as OLAP functions in an amendment to SQL:1999). PostgreSQL added them in 8.4 (2009), SQL Server in 2005 with fuller frame support in 2012, MySQL in 8.0 (2018), and SQLite in 3.25.0 (2018).</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-design.html" data-topic="sql-design"><small>Previous topic</small><b>Design in practice</b></a><a class="next" href="./sql-recursive.html" data-topic="sql-recursive"><small>Next topic</small><b>Recursive queries</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-window", "topic": "sql-window", "subject": "sql", "title": "Window functions: ranks, running totals and more", "codes": {}, "quiz": [{"lv": "e", "q": "What turns SUM into a window function?", "o": ["GROUP BY", "OVER", "WINDOW only", "HAVING"], "a": 1, "hint": "Over.", "why": "SUM(...) OVER (...) is a window function."}, {"lv": "e", "q": "A window function returns", "o": ["One row per group", "One value per input row", "One row total", "Nothing"], "a": 1, "hint": "Every row stays.", "why": "Rows are not folded."}, {"lv": "e", "q": "Salaries 90, 80, 80, 70. RANK gives", "o": ["1, 2, 3, 4", "1, 2, 2, 4", "1, 2, 2, 3", "1, 1, 2, 3"], "a": 1, "hint": "Gap after a tie.", "why": "Ties share 2, then 4."}, {"lv": "e", "q": "Same salaries. DENSE_RANK gives", "o": ["1, 2, 3, 4", "1, 2, 2, 4", "1, 2, 2, 3", "2, 2, 3, 4"], "a": 2, "hint": "No gap.", "why": "Ties share 2, then 3."}, {"lv": "m", "q": "PARTITION BY dept_id makes ranking", "o": ["Global", "Restart in each department", "Skip NULLs", "Fail"], "a": 1, "hint": "Restart.", "why": "Each partition is ranked separately."}, {"lv": "m", "q": "LAG(x) on the first row of a partition returns", "o": ["0", "x", "NULL", "An error"], "a": 2, "hint": "Nothing before.", "why": "NULL unless a default is given."}, {"lv": "m", "q": "SUM(x) OVER (ORDER BY d) computes", "o": ["The grand total", "A running total", "An average", "A count"], "a": 1, "hint": "Up to here.", "why": "The default frame runs from the start to the current row."}, {"lv": "m", "q": "Why does WHERE RANK() OVER (...) <= 3 fail?", "o": ["RANK is not real", "WHERE runs before window functions", "Needs GROUP BY", "Too many brackets"], "a": 1, "hint": "Order of steps.", "why": "Filter in an outer query instead."}, {"lv": "m", "q": "ROWS BETWEEN 2 PRECEDING AND CURRENT ROW covers", "o": ["2 rows", "3 rows", "All rows", "1 row"], "a": 1, "hint": "Two plus this.", "why": "The current row and the two before."}, {"lv": "h", "q": "LAST_VALUE(x) OVER (ORDER BY d) often returns the current row’s x because", "o": ["A bug", "The default frame ends at the current row", "NULLs", "Sorting is random"], "a": 1, "hint": "Frame.", "why": "Use ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING."}, {"lv": "x", "q": "Which clause filters window results directly in Snowflake and DuckDB?", "o": ["HAVING", "QUALIFY", "FILTER", "LIMIT"], "a": 1, "hint": "Qualify.", "why": "QUALIFY is a WHERE for window functions."}], "calc": [{"lv": "e", "q": "What is the average salary in Engineering (dept 1)?", "ans": "146250", "hint": "Four salaries.", "steps": ["250000 + 150000 + 90000 + 95000 = 585000.", "There are 4 engineers.", "<span class=\"eq\">585000 ÷ 4 = 146250<\/span>"]}, {"lv": "e", "q": "Across the whole company, what is Joseph’s RANK by salary, highest first?", "ans": "7", "hint": "Count higher salaries.", "steps": ["Higher salaries: 250000, 150000, 140000, 95000, 90000, 85000.", "That is 6 people above him.", "<span class=\"eq\">6 + 1 = 7<\/span>"]}, {"lv": "m", "q": "What is Zoya’s DENSE_RANK by salary across the company?", "ans": "8", "hint": "Distinct higher salaries plus 1.", "steps": ["Distinct salaries above 60000: 250000, 150000, 140000, 95000, 90000, 85000, 70000.", "That is 7 distinct values.", "<span class=\"eq\">7 + 1 = 8<\/span>"]}, {"lv": "m", "q": "In the running sales total, what is the value on 2025-06-03?", "ans": "2039", "hint": "Two days so far.", "steps": ["2025-06-01: order 101 = 2 × 120 + 5 × 60 = 540.", "2025-06-03: order 102 = 1 × 1499.", "<span class=\"eq\">540 + 1499 = 2039<\/span>"]}, {"lv": "m", "q": "Ten rows are split by NTILE(4). How many rows does the first bucket get?", "ans": "3", "hint": "Larger buckets come first.", "steps": ["10 ÷ 4 = 2 remainder 2.", "The first 2 buckets get one extra row.", "<span class=\"eq\">2 + 1 = 3 rows<\/span>"]}, {"lv": "m", "q": "Customer 1 ordered on 2025-06-01 and 2025-06-10. What does the LAG gap give for order 103?", "ans": "9", "hint": "Day numbers.", "steps": ["LAG gives 2025-06-01 for order 103.", "Subtract the day numbers.", "<span class=\"eq\">10 − 1 = 9 days<\/span>"]}, {"lv": "h", "q": "Algebra scores by student id are 92, 64, 88, 99. What is the 3 row moving average for student 2?", "ans": "81.33", "hint": "One before, this, one after.", "steps": ["Student 2 sits between students 1 and 3.", "Average of 92, 64 and 88.", "<span class=\"eq\">(92 + 64 + 88) ÷ 3 = 244 ÷ 3 ≈ 81.33<\/span>"], "tol": 0.01}, {"lv": "h", "q": "Salaries in Sales sorted high to low are 140000, 70000, 70000. With the default RANGE frame, what is the running SUM on the first 70000 row?", "ans": "280000", "hint": "Tied rows are in the frame.", "steps": ["RANGE includes all peers of the current row.", "Both 70000 rows are peers.", "<span class=\"eq\">140000 + 70000 + 70000 = 280000<\/span>"]}], "assign": [], "must": [["OVER", "function(...) OVER (PARTITION BY ... ORDER BY ...) gives a group answer on every row. Rows are not folded."], ["Ranking", "ROW_NUMBER never ties, RANK ties with gaps, DENSE_RANK ties without gaps. Add a tie breaker for stable results."], ["Running and neighbours", "An aggregate with ORDER BY is a running aggregate. LAG and LEAD read the previous and next rows."], ["Frames", "No ORDER BY means the whole partition. ORDER BY means start to current row with peers. ROWS BETWEEN sets your own."], ["Filtering", "Window functions run after WHERE, GROUP BY and HAVING. Filter on them in an outer query or CTE."]], "summary": "<p>Window functions keep every row and add a group answer: ranks, running totals, neighbours, all over a frame you control.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"avg": {"src": "SELECT name, dept_id, salary,\n       AVG(salary) OVER (PARTITION BY dept_id) AS dept_avg,\n       salary - AVG(salary) OVER (PARTITION BY dept_id) AS diff\nFROM employees\nWHERE dept_id IS NOT NULL\nORDER BY dept_id, salary DESC;", "db": "company", "setup": "", "title": "Each employee beside their department’s average", "notes": {"2": "One average per department, repeated on every row of that department.", "3": "Compare each person with their own group, impossible with plain GROUP BY."}, "out": [{"sql": "SELECT name, dept_id, salary,\n       AVG(salary) OVER (PARTITION BY dept_id) AS dept_avg,\n       salary - AVG(salary) OVER (PARTITION BY dept_id) AS diff\nFROM employees\nWHERE dept_id IS NOT NULL\nORDER BY dept_id, salary DESC;", "cols": ["name", "dept_id", "salary", "dept_avg", "diff"], "rows": [["Priya", 1, 250000, 146250, 103750], ["Rahul", 1, 150000, 146250, 3750], ["Imran", 1, 95000, 146250, -51250], ["Sneha", 1, 90000, 146250, -56250], ["Lata", 2, 140000, 93333.33333333333, 46666.66666666667], ["Joseph", 2, 70000, 93333.33333333333, -23333.33333333333], ["Kiran", 2, 70000, 93333.33333333333, -23333.33333333333], ["Mohan", 3, 85000, 65000, 20000], ["Tara", 3, 45000, 65000, -20000]]}]}, "ranks": {"src": "SELECT name, salary,\n       ROW_NUMBER() OVER (ORDER BY salary DESC) AS row_num,\n       RANK()       OVER (ORDER BY salary DESC) AS rnk,\n       DENSE_RANK() OVER (ORDER BY salary DESC) AS dense\nFROM employees\nWHERE dept_id = 2;", "db": "company", "setup": "", "title": "Joseph and Kiran earn the same", "notes": {"2": "Ties get different numbers, in no promised order.", "3": "Ties share 2, and the next rank is 4: a gap.", "4": "Ties share 2, and the next rank is 3: no gap."}, "out": [{"sql": "SELECT name, salary,\n       ROW_NUMBER() OVER (ORDER BY salary DESC) AS row_num,\n       RANK()       OVER (ORDER BY salary DESC) AS rnk,\n       DENSE_RANK() OVER (ORDER BY salary DESC) AS dense\nFROM employees\nWHERE dept_id = 2;", "cols": ["name", "salary", "row_num", "rnk", "dense"], "rows": [["Lata", 140000, 1, 1, 1], ["Joseph", 70000, 2, 2, 2], ["Kiran", 70000, 3, 2, 2]]}]}, "perdept": {"src": "SELECT name, dept_id, salary,\n       RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rank_in_dept\nFROM employees\nWHERE dept_id IS NOT NULL\nORDER BY dept_id, rank_in_dept;", "db": "company", "setup": "", "title": "Rank inside each department", "notes": {"2": "Ranking restarts at 1 in every partition."}, "out": [{"sql": "SELECT name, dept_id, salary,\n       RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rank_in_dept\nFROM employees\nWHERE dept_id IS NOT NULL\nORDER BY dept_id, rank_in_dept;", "cols": ["name", "dept_id", "salary", "rank_in_dept"], "rows": [["Priya", 1, 250000, 1], ["Rahul", 1, 150000, 2], ["Imran", 1, 95000, 3], ["Sneha", 1, 90000, 4], ["Lata", 2, 140000, 1], ["Joseph", 2, 70000, 2], ["Kiran", 2, 70000, 2], ["Mohan", 3, 85000, 1], ["Tara", 3, 45000, 2]]}]}, "running": {"src": "WITH daily AS (\n  SELECT o.order_date, SUM(oi.qty * p.price) AS sales\n  FROM orders o JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p ON p.id = oi.product_id\n  WHERE o.status <> 'cancelled'\n  GROUP BY o.order_date\n)\nSELECT order_date, sales,\n       SUM(sales) OVER (ORDER BY order_date) AS running_total,\n       sales - LAG(sales) OVER (ORDER BY order_date) AS change\nFROM daily;", "db": "shop", "setup": "", "title": "Sales per day with a running total and the change from the day before", "notes": {"9": "Adds every day up to this one.", "10": "LAG gives the previous day’s sales, NULL on the first day."}, "out": [{"sql": "WITH daily AS (\n  SELECT o.order_date, SUM(oi.qty * p.price) AS sales\n  FROM orders o JOIN order_items oi ON oi.order_id = o.id\n  JOIN products p ON p.id = oi.product_id\n  WHERE o.status <> 'cancelled'\n  GROUP BY o.order_date\n)\nSELECT order_date, sales,\n       SUM(sales) OVER (ORDER BY order_date) AS running_total,\n       sales - LAG(sales) OVER (ORDER BY order_date) AS change\nFROM daily;", "cols": ["order_date", "sales", "running_total", "change"], "rows": [["2025-06-01", 540, 540, null], ["2025-06-03", 1499, 2039, 959], ["2025-06-10", 790, 2829, -709], ["2025-06-11", 1998, 4827, 1208], ["2025-06-18", 500, 5327, -1498], ["2025-06-21", 2198, 7525, 1698], ["2025-06-25", 360, 7885, -1838], ["2025-07-02", 680, 8565, 320], ["2025-07-05", 850, 9415, 170]]}]}, "lead": {"src": "SELECT name, hired,\n       LEAD(name) OVER (ORDER BY hired) AS next_hire,\n       FIRST_VALUE(name) OVER (ORDER BY hired) AS first_hire\nFROM employees ORDER BY hired;", "db": "company", "setup": "", "title": "Who joined next, and who was first", "notes": {"2": "The next person by hire date, NULL for the newest.", "3": "The first row of the frame is always the earliest hire."}, "out": [{"sql": "SELECT name, hired,\n       LEAD(name) OVER (ORDER BY hired) AS next_hire,\n       FIRST_VALUE(name) OVER (ORDER BY hired) AS first_hire\nFROM employees ORDER BY hired;", "cols": ["name", "hired", "next_hire", "first_hire"], "rows": [["Priya", "2018-04-02", "Lata", "Priya"], ["Lata", "2019-03-20", "Rahul", "Priya"], ["Rahul", "2019-07-15", "Mohan", "Priya"], ["Mohan", "2020-02-28", "Imran", "Priya"], ["Imran", "2021-11-01", "Sneha", "Priya"], ["Sneha", "2022-01-10", "Kiran", "Priya"], ["Kiran", "2022-09-12", "Joseph", "Priya"], ["Joseph", "2023-06-05", "Tara", "Priya"], ["Tara", "2024-01-08", "Zoya", "Priya"], ["Zoya", "2025-05-19", null, "Priya"]]}]}, "moving": {"src": "SELECT student_id, score,\n       ROUND(AVG(score) OVER (ORDER BY student_id\n             ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING), 1) AS smooth\nFROM marks WHERE course_id = 1;", "db": "school", "setup": "", "title": "A moving average over three rows", "notes": {"3": "The row before, this row and the row after."}, "out": [{"sql": "SELECT student_id, score,\n       ROUND(AVG(score) OVER (ORDER BY student_id\n             ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING), 1) AS smooth\nFROM marks WHERE course_id = 1;", "cols": ["student_id", "score", "smooth"], "rows": [[1, 92, 78], [2, 64, 81.3], [3, 88, 83.7], [5, 99, 93.5]]}]}, "named": {"src": "SELECT name, salary,\n       RANK() OVER w AS rnk,\n       SUM(salary) OVER w AS running\nFROM employees\nWHERE dept_id = 1\nWINDOW w AS (ORDER BY salary DESC);", "db": "company", "setup": "", "title": "WINDOW names a window once", "notes": {"6": "Both functions reuse w."}, "out": [{"sql": "SELECT name, salary,\n       RANK() OVER w AS rnk,\n       SUM(salary) OVER w AS running\nFROM employees\nWHERE dept_id = 1\nWINDOW w AS (ORDER BY salary DESC);", "cols": ["name", "salary", "rnk", "running"], "rows": [["Priya", 250000, 1, 250000], ["Rahul", 150000, 2, 400000], ["Imran", 95000, 3, 495000], ["Sneha", 90000, 4, 585000]]}]}, "trap": {"src": "SELECT name, RANK() OVER (ORDER BY salary DESC) AS rnk\nFROM employees\nWHERE RANK() OVER (ORDER BY salary DESC) <= 3;", "db": "company", "setup": "", "title": "Window functions are not allowed in WHERE", "notes": {"3": "WHERE runs before window functions are computed, so SQLite refuses."}, "out": [{"sql": "SELECT name, RANK() OVER (ORDER BY salary DESC) AS rnk\nFROM employees\nWHERE RANK() OVER (ORDER BY salary DESC) <= 3;", "cols": [], "rows": [], "error": "misuse of window function RANK()"}]}, "fix": {"src": "SELECT name, salary FROM (\n  SELECT name, salary, RANK() OVER (ORDER BY salary DESC) AS rnk\n  FROM employees\n) WHERE rnk <= 3;", "db": "company", "setup": "", "title": "The fix: rank in a subquery, filter outside", "notes": {"4": "The outer WHERE can read the finished ranks."}, "out": [{"sql": "SELECT name, salary FROM (\n  SELECT name, salary, RANK() OVER (ORDER BY salary DESC) AS rnk\n  FROM employees\n) WHERE rnk <= 3;", "cols": ["name", "salary"], "rows": [["Priya", 250000], ["Rahul", 150000], ["Lata", 140000]]}]}}, "labs": [{"id": "l-share", "lv": "e", "title": "Share of the company payroll", "task": "From the company database, show each employee’s <code>name<\/code>, <code>salary<\/code> and <code>total<\/code>, the sum of all salaries, on every row.", "db": "company", "hint": "SUM(salary) OVER () with empty brackets.", "why": "Empty OVER () makes the whole table one window.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "salary", "total"], "rows": [["Priya", 250000, 1055000], ["Rahul", 150000, 1055000], ["Sneha", 90000, 1055000], ["Imran", 95000, 1055000], ["Lata", 140000, 1055000], ["Joseph", 70000, 1055000], ["Kiran", 70000, 1055000], ["Mohan", 85000, 1055000], ["Tara", 45000, 1055000], ["Zoya", 60000, 1055000]]}, "solution": "SELECT name, salary, SUM(salary) OVER () AS total FROM employees;"}, {"id": "l-rank", "lv": "m", "title": "Rank the marks", "task": "From the school database, show <code>student_id<\/code>, <code>score<\/code> and <code>pos<\/code>, the DENSE_RANK of the score from highest to lowest, for course 1.", "db": "school", "hint": "DENSE_RANK() OVER (ORDER BY score DESC), with WHERE course_id = 1.", "why": "WHERE runs first, then the ranking runs over the four Algebra marks.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["student_id", "score", "pos"], "rows": [[5, 99, 1], [1, 92, 2], [3, 88, 3], [2, 64, 4]]}, "solution": "SELECT student_id, score, DENSE_RANK() OVER (ORDER BY score DESC) AS pos FROM marks WHERE course_id = 1;"}, {"id": "l-running", "lv": "m", "title": "Running count of customers", "task": "Show each customer’s <code>name<\/code>, <code>joined<\/code> date and <code>so_far<\/code>, the number of customers who had joined up to that date, ordered by joined.", "db": "shop", "hint": "COUNT(*) OVER (ORDER BY joined).", "why": "With ORDER BY, COUNT counts from the first row up to the current one.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["name", "joined", "so_far"], "rows": [["Asha", "2025-01-10", 1], ["Ravi", "2025-02-02", 2], ["Meera", "2025-02-20", 3], ["Kabir", "2025-03-05", 4], ["Sara", "2025-03-18", 5], ["Arjun", "2025-04-01", 6], ["Nisha", "2025-04-22", 7], ["Vikram", "2025-05-09", 8]]}, "solution": "SELECT name, joined, COUNT(*) OVER (ORDER BY joined) AS so_far FROM customers ORDER BY joined;"}, {"id": "l-lag", "lv": "h", "title": "Days between orders", "task": "For customer 1, show each order <code>id<\/code>, <code>order_date<\/code> and <code>gap<\/code>, the number of days since that customer’s previous order (NULL for the first). Use julianday.", "db": "shop", "hint": "julianday(order_date) - julianday(LAG(order_date) OVER (ORDER BY order_date))", "why": "LAG fetches the previous date, julianday turns both dates into day numbers.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["id", "order_date", "gap"], "rows": [[101, "2025-06-01", null], [103, "2025-06-10", 9], [110, "2025-07-05", 25]]}, "solution": "SELECT id, order_date, julianday(order_date) - julianday(LAG(order_date) OVER (ORDER BY order_date)) AS gap FROM orders WHERE customer_id = 1;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

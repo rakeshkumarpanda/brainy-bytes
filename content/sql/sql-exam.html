@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam and interview revision · SQL and Databases</title>
+<meta name="description" content="Course map, logical order, school and first year SQL questions, WHERE versus HAVING, DELETE versus DROP, second and Nth highest salary, self join, anti join, top per group, schema design model answer, mock paper with hands on tasks.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 9: Exam and interview revision</span><span>›</span><span>Exam revision</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 9 · Topic 1 of 1 · All levels</div>
+    <h1>Exam and interview revision</h1>
+    <p class="lead">Revise the whole course: a chapter map, school board questions with model answers, the classic interview queries and their traps, a full design answer, and a mock paper checked by SQLite.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">13 quiz questions</span><span class="cv-chip">10 runnable queries</span><span class="cv-chip">9 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-exam" data-topic="cheatsheet" data-h="sql-exam">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Revise</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#map" data-l="map"><span class="n">1</span><span class="t">The whole course on one page</span></a></li><li><a href="#school" data-l="school"><span class="n">2</span><span class="t">School and first year questions</span></a></li><li><a href="#interview" data-l="interview"><span class="n">3</span><span class="t">Classic interview queries</span></a></li><li><a href="#design" data-l="design"><span class="n">4</span><span class="t">A design question, answered</span></a></li><li><a href="#mock" data-l="mock"><span class="n">5</span><span class="t">Mock paper: hands on tasks</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">Where to go next</span></a></li></ol>
+    <article class="cv-lesson" id="map" data-l="map" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>The whole course on one page</h2>
+<p>Use this map to find where each kind of exam or interview question is taught, then revise that chapter’s Summary tab.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Question asks you to</th><th>Key idea</th><th>Chapter</th></tr></thead><tbody><tr><td>pick columns, filter, sort</td><td>SELECT, WHERE, ORDER BY, LIMIT</td><td>1.2, 1.3</td></tr><tr><td>handle missing values</td><td>IS NULL, COALESCE, three valued logic</td><td>2.2</td></tr><tr><td>count, total, average per group</td><td>GROUP BY, HAVING</td><td>2.3</td></tr><tr><td>combine tables</td><td>INNER, LEFT, self and anti joins</td><td>3.1, 3.2</td></tr><tr><td>answer a question inside a question</td><td>subqueries, EXISTS, IN</td><td>3.3</td></tr><tr><td>create and change tables and rows</td><td>CREATE, ALTER, INSERT, UPDATE, DELETE, UPSERT</td><td>4.1, 4.2</td></tr><tr><td>simplify long queries</td><td>views and CTEs</td><td>4.3</td></tr><tr><td>design or normalize a schema</td><td>keys, functional dependencies, 1NF to BCNF, ER diagrams</td><td>5.1, 5.2</td></tr><tr><td>rank, running totals, previous row</td><td>window functions</td><td>6.1</td></tr><tr><td>hierarchies and series</td><td>recursive CTEs</td><td>6.2</td></tr><tr><td>top N per group, streaks, pivots</td><td>query patterns</td><td>6.3</td></tr><tr><td>make it faster</td><td>indexes, plans, sargable conditions</td><td>7.1, 7.2</td></tr><tr><td>keep data correct with many users</td><td>ACID, isolation, locks</td><td>7.3</td></tr><tr><td>triggers, security, scale, engines</td><td>triggers, injection, sharding, dialects</td><td>8.1 to 8.4</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="sqpipe"></div>
+<div class="note note-tip"><b>Remember</b><div>In almost every written exam, first say the logical order: FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT. It explains half of the tricky questions on aliases, WHERE versus HAVING and window functions.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="school" data-l="school" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>School and first year questions</h2>
+<p>School boards and first year courses ask short, precise questions. Here are typical ones with model answers on the school database.</p>
+<div class="sq-run" data-q="q1"></div>
+<div class="sq-run" data-q="q2"></div>
+<div class="sq-run" data-q="q3"></div>
+<div class="sq-run" data-q="q4"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Short answer question</th><th>Model answer</th></tr></thead><tbody><tr><td>Difference between WHERE and HAVING</td><td>WHERE filters rows before grouping, HAVING filters groups after grouping, and only HAVING can use aggregates</td></tr><tr><td>Difference between DELETE, DROP and TRUNCATE</td><td>DELETE removes chosen rows, DROP removes the table itself, TRUNCATE removes all rows quickly (SQLite uses DELETE without WHERE)</td></tr><tr><td>Primary key versus unique key</td><td>both refuse duplicates, a table has one primary key and it cannot be NULL, it may have many unique keys</td></tr><tr><td>What is a foreign key</td><td>a column whose values must exist in the primary key of another table</td></tr><tr><td>DDL versus DML</td><td>DDL defines structure (CREATE, ALTER, DROP), DML changes data (INSERT, UPDATE, DELETE)</td></tr><tr><td>What does COUNT(column) skip</td><td>NULL values, while COUNT(*) counts every row</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-s1"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="interview" data-l="interview" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Classic interview queries</h2>
+<p>These questions appear again and again in data and developer interviews. Each one tests a pattern from the course. They run on the company database.</p>
+<div class="sq-run" data-q="second"></div>
+<div class="sq-run" data-q="nth"></div>
+<div class="sq-run" data-q="mgr"></div>
+<div class="sq-run" data-q="nodept"></div>
+<div class="sq-run" data-q="deptmax"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Question</th><th>Pattern</th><th>Trap to mention</th></tr></thead><tbody><tr><td>Second or Nth highest</td><td>MAX below MAX, or DENSE_RANK</td><td>ties and NULLs</td></tr><tr><td>Earn more than manager</td><td>self join</td><td>the top boss has no manager</td></tr><tr><td>Customers with no orders</td><td>LEFT JOIN ... IS NULL or NOT EXISTS</td><td>NOT IN with a NULL returns nothing</td></tr><tr><td>Duplicate emails</td><td>GROUP BY ... HAVING COUNT(*) > 1</td><td>case and spaces in emails</td></tr><tr><td>Running total</td><td>SUM() OVER (ORDER BY ...)</td><td>ties under the default RANGE frame</td></tr><tr><td>Top N per group</td><td>ROW_NUMBER or RANK in a CTE</td><td>which one when ties exist</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-i1"></div>
+<div class="sq-lab" data-lab="l-i2"></div>
+<div class="sq-lab" data-lab="l-i3"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="design" data-l="design" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>A design question, answered</h2>
+<p>University papers often ask you to design a schema from a story, then normalize it and write queries. Here is a full answer.</p>
+<div class="scene"><div class="scene-h">Real world scenario: the question</div><p>"A college runs clubs. Each club has a name and a faculty adviser. Students can join many clubs, and each membership records the joining date and the student’s role (member, secretary, president). Each club has at most one president. Design the tables, state the keys, show the schema is in 3NF, and write a query listing each club with its president."</p></div>
+<div class="sq-run" data-q="clubs"></div>
+<div class="walk"><div class="walk-h"><span>Why the schema is in 3NF</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Every cell holds one value, so it is in 1NF.</li><li>memberships has key (student_id, club_id), and joined_on and role depend on the whole pair, so it is in 2NF.</li><li>The adviser’s name depends on the adviser, so it lives in advisers, not in clubs. No non key column depends on another non key column, so it is in 3NF.</li><li>Business rules are constraints: role is checked, one president per club is a partial unique index.</li></ol></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="mock" data-l="mock" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Mock paper: hands on tasks</h2>
+<p>Ten minutes each. Every task is checked by the real SQLite engine, just like the labs in each chapter. Try them without looking back, then use Show answer.</p>
+<div class="sq-lab" data-lab="l-m1"></div>
+<div class="sq-lab" data-lab="l-m2"></div>
+<div class="sq-lab" data-lab="l-m3"></div>
+<div class="sq-lab" data-lab="l-m4"></div>
+<div class="sq-lab" data-lab="l-m5"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Where to go next</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>You can ask a database clear questions: filter, sort, group and join. Keep practising on real data you care about, such as your expenses or a sports table.</p></div><div class="ld-p" data-ld="college" hidden><p>You can design schemas, write window functions and recursive queries, read plans and use transactions. Build a small app with PostgreSQL or SQLite and write its queries by hand.</p></div><div class="ld-p" data-ld="masters" hidden><p>Go deeper into internals: read the SQLite architecture pages, PostgreSQL’s planner and MVCC documentation, and Database System Concepts or the CMU database course lectures by Andy Pavlo.</p></div><div class="ld-p" data-ld="research" hidden><p>Research directions: query optimization, transaction processing at scale, learned database components, and natural language to SQL. Read papers from SIGMOD, VLDB and CIDR, starting with the classics cited in each chapter here.</p></div></div>
+<details class="deep"><summary>Going deeper: Practice sites and datasets</summary><div class="deep-b"><p>Practise with public datasets such as the Chinook music store or Northwind sample databases, government open data portals, and interview practice sites that offer SQL problems. Run everything in a local SQLite or PostgreSQL, so you also learn to load data and create indexes.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-dialects.html" data-topic="sql-dialects"><small>Previous topic</small><b>Standards and dialects</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-exam", "topic": "sql-exam", "subject": "sql", "title": "Exam and interview revision", "codes": {}, "quiz": [{"lv": "e", "q": "Which clause filters groups after GROUP BY?", "o": ["WHERE", "HAVING", "ORDER BY", "LIMIT"], "a": 1, "hint": "Groups.", "why": "HAVING filters groups."}, {"lv": "e", "q": "COUNT(*) versus COUNT(email)", "o": ["Same always", "COUNT(email) skips NULL emails", "COUNT(*) skips NULLs", "Both skip duplicates"], "a": 1, "hint": "NULLs.", "why": "COUNT(column) ignores NULL."}, {"lv": "e", "q": "Which join keeps every row of the left table?", "o": ["INNER", "LEFT", "CROSS", "NATURAL"], "a": 1, "hint": "Left.", "why": "Unmatched left rows get NULLs."}, {"lv": "e", "q": "DROP TABLE removes", "o": ["Some rows", "The table and all its rows", "Only the index", "Nothing"], "a": 1, "hint": "Gone.", "why": "The whole table."}, {"lv": "m", "q": "Which runs first in the logical order?", "o": ["SELECT", "WHERE", "ORDER BY", "HAVING"], "a": 1, "hint": "Before grouping.", "why": "FROM, then WHERE."}, {"lv": "m", "q": "NOT IN (subquery) returns no rows when the subquery", "o": ["Is empty", "Contains a NULL", "Has duplicates", "Is sorted"], "a": 1, "hint": "Unknown.", "why": "Use NOT EXISTS."}, {"lv": "m", "q": "Salaries 9, 8, 8, 7. The 2nd highest distinct salary is", "o": ["9", "8", "7", "8 and 8"], "a": 1, "hint": "Distinct.", "why": "DENSE_RANK = 2 gives 8."}, {"lv": "m", "q": "A covering index helps because", "o": ["It is unique", "The table is not read", "It sorts randomly", "It locks rows"], "a": 1, "hint": "Index only.", "why": "All needed columns are in the index."}, {"lv": "m", "q": "3NF removes", "o": ["Repeating groups", "Partial dependencies", "Transitive dependencies", "Foreign keys"], "a": 2, "hint": "Non key to non key.", "why": "Transitive dependencies."}, {"lv": "m", "q": "A lost update is prevented by", "o": ["SET balance = 600", "SET balance = balance + 100", "A view", "An index"], "a": 1, "hint": "Atomic.", "why": "Let the database do the arithmetic."}, {"lv": "h", "q": "Which keeps ties for top N per group?", "o": ["ROW_NUMBER", "RANK", "NTILE", "LAG"], "a": 1, "hint": "Ties.", "why": "RANK shares ranks."}, {"lv": "h", "q": "The main defence against SQL injection", "o": ["Escaping by hand", "Parameterized queries", "Long table names", "Views"], "a": 1, "hint": "Parameters.", "why": "Values never become code."}, {"lv": "x", "q": "Snapshot isolation can still allow", "o": ["Dirty reads", "Write skew", "Lost commits", "Syntax errors"], "a": 1, "hint": "Disjoint writes.", "why": "Write skew."}], "calc": [{"lv": "e", "q": "What is the second highest salary at Orbit Tech?", "ans": "150000", "hint": "Below the maximum.", "steps": ["The highest is 250000 (Priya).", "The next is 150000 (Rahul).", "<span class=\"eq\">150000<\/span>"]}, {"lv": "e", "q": "How many students are in class 9?", "ans": "3", "hint": "Count the rows.", "steps": ["Chitra, Dev and Hari are in class 9.", "Count them.", "<span class=\"eq\">3 students<\/span>"]}, {"lv": "m", "q": "What is the 3rd highest distinct salary?", "ans": "140000", "hint": "DENSE_RANK = 3.", "steps": ["Distinct salaries from the top: 250000, 150000, 140000.", "The third is 140000.", "<span class=\"eq\">140000<\/span>"]}, {"lv": "m", "q": "How many employees earn more than their manager?", "ans": "0", "hint": "Self join and compare.", "steps": ["Compare each salary with the manager’s salary.", "Every manager here earns more than each of their reports.", "<span class=\"eq\">0<\/span>"]}, {"lv": "m", "q": "How many customers have never ordered?", "ans": "3", "hint": "Anti join.", "steps": ["Customers 4, 6 and 8 have no orders.", "Count them.", "<span class=\"eq\">3 customers<\/span>"]}, {"lv": "m", "q": "What is the highest revenue of a single order (cancelled left out)?", "ans": "2198", "hint": "Compute per order.", "steps": ["Order 107: 1499 + 699 = 2198.", "Order 104: 2 × 699 + 10 × 60 = 1998, order 102: 1499.", "<span class=\"eq\">highest = 2198<\/span>"]}, {"lv": "h", "q": "What is the average Chemistry (course 4) score, rounded to 1 decimal?", "ans": "84.0", "hint": "NULL is skipped.", "steps": ["Scores 81, NULL and 87.", "AVG skips NULL: (81 + 87) ÷ 2.", "<span class=\"eq\">84.0<\/span>"]}, {"lv": "h", "q": "A 3 table schema has tables of 10, 1,000 and 1,000,000 rows, joined by indexed keys starting from the 10 row table. About how many index lookups does a nested loop need if each row matches one row in the next table?", "ans": "20", "hint": "One lookup per row per step.", "steps": ["10 rows look up 10 rows in the second table.", "Those 10 rows look up 10 rows in the third.", "<span class=\"eq\">10 + 10 = 20 lookups<\/span>"]}], "assign": [], "must": [["Logical order", "FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT explains aliases, HAVING and window function rules."], ["Interview patterns", "Second highest, self join, anti join, top N per group, duplicates, running totals, recursive chains."], ["Traps", "NULLs in NOT IN, ties in ranking, COUNT(column) skipping NULLs, missing WHERE in UPDATE and DELETE."], ["Design answers", "Entities, keys, relationships, constraints for rules, then argue 1NF, 2NF and 3NF."], ["Keep practising", "Use the playground daily and real datasets. Revise each chapter’s Summary tab before an exam."]], "summary": "<p>Map each question to its pattern, mention the traps, and practise with the engine until the patterns feel natural.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"q1": {"src": "-- Q1. Display the names of students of class 9, in alphabetical order.\nSELECT name FROM students WHERE class = 9 ORDER BY name;", "db": "school", "setup": "", "title": "Filter and sort", "notes": {"2": "WHERE for the condition, ORDER BY for alphabetical order."}, "out": [{"sql": "-- Q1. Display the names of students of class 9, in alphabetical order.\nSELECT name FROM students WHERE class = 9 ORDER BY name;", "cols": ["name"], "rows": [["Chitra"], ["Dev"], ["Hari"]]}]}, "q2": {"src": "-- Q2. Display each class and the number of students in it.\nSELECT class, COUNT(*) AS students FROM students GROUP BY class;", "db": "school", "setup": "", "title": "Count per group", "notes": {"2": "One row per class."}, "out": [{"sql": "-- Q2. Display each class and the number of students in it.\nSELECT class, COUNT(*) AS students FROM students GROUP BY class;", "cols": ["class", "students"], "rows": [[8, 3], [9, 3], [10, 2]]}]}, "q3": {"src": "-- Q3. Display the average score of each course, rounded to 1 decimal, only where it is above 80.\nSELECT course_id, ROUND(AVG(score), 1) AS avg_score\nFROM marks GROUP BY course_id HAVING AVG(score) > 80;", "db": "school", "setup": "", "title": "HAVING filters groups", "notes": {"3": "The NULL score is ignored by AVG."}, "out": [{"sql": "-- Q3. Display the average score of each course, rounded to 1 decimal, only where it is above 80.\nSELECT course_id, ROUND(AVG(score), 1) AS avg_score\nFROM marks GROUP BY course_id HAVING AVG(score) > 80;", "cols": ["course_id", "avg_score"], "rows": [[1, 85.8], [3, 80.5], [4, 84]]}]}, "q4": {"src": "-- Q4. Display the names of students who live in a city starting with P.\nSELECT name, city FROM students WHERE city LIKE 'P%';", "db": "school", "setup": "", "title": "Patterns with LIKE", "notes": {"2": "% matches any run of characters."}, "out": [{"sql": "-- Q4. Display the names of students who live in a city starting with P.\nSELECT name, city FROM students WHERE city LIKE 'P%';", "cols": ["name", "city"], "rows": [["Anu", "Pune"], ["Chitra", "Pune"], ["Hari", "Pune"]]}]}, "second": {"src": "-- Second highest salary\nSELECT MAX(salary) AS second_highest FROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);", "db": "company", "setup": "", "title": "Second highest salary", "notes": {"3": "The highest salary below the overall highest. DENSE_RANK = 2 also works, and generalises to N."}, "out": [{"sql": "-- Second highest salary\nSELECT MAX(salary) AS second_highest FROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);", "cols": ["second_highest"], "rows": [[150000]]}]}, "nth": {"src": "-- Nth highest distinct salary, here N = 3\nSELECT DISTINCT salary FROM (\n  SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS r FROM employees\n) WHERE r = 3;", "db": "company", "setup": "", "title": "Nth highest with DENSE_RANK", "notes": {"3": "DENSE_RANK gives ties the same number without gaps, which is what \"Nth highest distinct\" means."}, "out": [{"sql": "-- Nth highest distinct salary, here N = 3\nSELECT DISTINCT salary FROM (\n  SELECT salary, DENSE_RANK() OVER (ORDER BY salary DESC) AS r FROM employees\n) WHERE r = 3;", "cols": ["salary"], "rows": [[140000]]}]}, "mgr": {"src": "-- Employees who earn more than their manager\nSELECT e.name, e.salary, m.name AS manager, m.salary AS manager_salary\nFROM employees e JOIN employees m ON m.id = e.manager_id\nWHERE e.salary > m.salary;", "db": "company", "setup": "", "title": "Self join: earning more than the manager", "notes": {"3": "The same table twice: e for the employee, m for the manager."}, "out": [{"sql": "-- Employees who earn more than their manager\nSELECT e.name, e.salary, m.name AS manager, m.salary AS manager_salary\nFROM employees e JOIN employees m ON m.id = e.manager_id\nWHERE e.salary > m.salary;", "cols": ["name", "salary", "manager", "manager_salary"], "rows": []}]}, "nodept": {"src": "-- Departments with no employees\nSELECT d.name FROM departments d\nWHERE NOT EXISTS (SELECT 1 FROM employees e WHERE e.dept_id = d.id);", "db": "company", "setup": "", "title": "Anti join with NOT EXISTS", "notes": {"3": "Research has nobody yet. NOT EXISTS is safe even when dept_id has NULLs, unlike NOT IN."}, "out": [{"sql": "-- Departments with no employees\nSELECT d.name FROM departments d\nWHERE NOT EXISTS (SELECT 1 FROM employees e WHERE e.dept_id = d.id);", "cols": ["name"], "rows": [["Research"]]}]}, "deptmax": {"src": "-- Highest paid employee in each department, ties included\nSELECT dept_id, name, salary FROM (\n  SELECT dept_id, name, salary, RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS r\n  FROM employees WHERE dept_id IS NOT NULL\n) WHERE r = 1;", "db": "company", "setup": "", "title": "Top earner per department", "notes": {"3": "RANK keeps ties. ROW_NUMBER would pick exactly one."}, "out": [{"sql": "-- Highest paid employee in each department, ties included\nSELECT dept_id, name, salary FROM (\n  SELECT dept_id, name, salary, RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS r\n  FROM employees WHERE dept_id IS NOT NULL\n) WHERE r = 1;", "cols": ["dept_id", "name", "salary"], "rows": [[1, "Priya", 250000], [2, "Lata", 140000], [3, "Mohan", 85000]]}]}, "clubs": {"src": "CREATE TABLE advisers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nCREATE TABLE clubs (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, adviser_id INTEGER NOT NULL REFERENCES advisers(id));\nCREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL);\nCREATE TABLE memberships (\n  student_id INTEGER REFERENCES students(id),\n  club_id INTEGER REFERENCES clubs(id),\n  joined_on TEXT NOT NULL,\n  role TEXT NOT NULL CHECK (role IN ('member', 'secretary', 'president')),\n  PRIMARY KEY (student_id, club_id));\nCREATE UNIQUE INDEX one_president ON memberships(club_id) WHERE role = 'president';\nINSERT INTO advisers VALUES (1, 'Dr Rao'), (2, 'Dr Iyer');\nINSERT INTO clubs VALUES (1, 'Chess', 1), (2, 'Music', 2);\nINSERT INTO students VALUES (1, 'Anu'), (2, 'Bala'), (3, 'Chitra');\nINSERT INTO memberships VALUES (1, 1, '2025-07-01', 'president'), (2, 1, '2025-07-03', 'member'), (2, 2, '2025-07-05', 'president'), (3, 2, '2025-07-06', 'secretary');\nSELECT c.name AS club, a.name AS adviser, s.name AS president\nFROM clubs c JOIN advisers a ON a.id = c.adviser_id\nLEFT JOIN memberships m ON m.club_id = c.id AND m.role = 'president'\nLEFT JOIN students s ON s.id = m.student_id;", "db": "", "setup": "", "title": "The model answer, runnable", "notes": {"4": "Many to many between students and clubs, with its own facts.", "10": "A partial unique index enforces \"at most one president per club\".", "16": "LEFT JOIN keeps a club even if it has no president yet."}, "out": [{"sql": "CREATE TABLE advisers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);", "cols": [], "rows": []}, {"sql": "CREATE TABLE clubs (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, adviser_id INTEGER NOT NULL REFERENCES advisers(id));", "cols": [], "rows": []}, {"sql": "CREATE TABLE students (id INTEGER PRIMARY KEY, name TEXT NOT NULL);", "cols": [], "rows": []}, {"sql": "CREATE TABLE memberships (\n  student_id INTEGER REFERENCES students(id),\n  club_id INTEGER REFERENCES clubs(id),\n  joined_on TEXT NOT NULL,\n  role TEXT NOT NULL CHECK (role IN ('member', 'secretary', 'president')),\n  PRIMARY KEY (student_id, club_id));", "cols": [], "rows": []}, {"sql": "CREATE UNIQUE INDEX one_president ON memberships(club_id) WHERE role = 'president';", "cols": [], "rows": []}, {"sql": "INSERT INTO advisers VALUES (1, 'Dr Rao'), (2, 'Dr Iyer');", "cols": [], "rows": [], "changes": 2}, {"sql": "INSERT INTO clubs VALUES (1, 'Chess', 1), (2, 'Music', 2);", "cols": [], "rows": [], "changes": 2}, {"sql": "INSERT INTO students VALUES (1, 'Anu'), (2, 'Bala'), (3, 'Chitra');", "cols": [], "rows": [], "changes": 3}, {"sql": "INSERT INTO memberships VALUES (1, 1, '2025-07-01', 'president'), (2, 1, '2025-07-03', 'member'), (2, 2, '2025-07-05', 'president'), (3, 2, '2025-07-06', 'secretary');", "cols": [], "rows": [], "changes": 4}, {"sql": "SELECT c.name AS club, a.name AS adviser, s.name AS president\nFROM clubs c JOIN advisers a ON a.id = c.adviser_id\nLEFT JOIN memberships m ON m.club_id = c.id AND m.role = 'president'\nLEFT JOIN students s ON s.id = m.student_id;", "cols": ["club", "adviser", "president"], "rows": [["Chess", "Dr Rao", "Anu"], ["Music", "Dr Iyer", "Bala"]]}]}}, "labs": [{"id": "l-s1", "lv": "e", "title": "Students without a city", "task": "From the school database, display the <code>name<\/code> of every student whose city is not recorded.", "db": "school", "hint": "IS NULL, never = NULL.", "why": "Farhan is the only student with no city.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Farhan"]]}, "solution": "SELECT name FROM students WHERE city IS NULL;"}, {"id": "l-i1", "lv": "m", "title": "Second highest salary", "task": "From the company database, return one value <code>second_highest<\/code>: the second highest distinct salary.", "db": "company", "hint": "The MAX of salaries below the overall MAX.", "why": "250000 is the highest, so the answer is 150000.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["second_highest"], "rows": [[150000]]}, "solution": "SELECT MAX(salary) AS second_highest FROM employees WHERE salary < (SELECT MAX(salary) FROM employees);"}, {"id": "l-i2", "lv": "m", "title": "Earns more than their manager", "task": "Imran has just been promoted to a salary of 160000. Show the <code>name<\/code> of every employee who now earns more than their manager.", "db": "company", "hint": "Join employees to itself on m.id = e.manager_id, then compare salaries.", "why": "Imran (160000) now earns more than his manager Rahul (150000).", "ordered": false, "setup": "UPDATE employees SET salary = 160000 WHERE name = 'Imran';", "starter": "", "want": {"cols": ["name"], "rows": [["Imran"]]}, "solution": "SELECT e.name FROM employees e JOIN employees m ON m.id = e.manager_id WHERE e.salary > m.salary;"}, {"id": "l-i3", "lv": "h", "title": "Department payroll share", "task": "Show each department <code>name<\/code> and <code>pct<\/code>, its share of total salaries (employees with a department only), as a percentage rounded to 1 decimal.", "db": "company", "hint": "SUM per department divided by SUM(SUM(salary)) OVER ().", "why": "A window over a GROUP BY gives the grand total on every row.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "pct"], "rows": [["Engineering", 58.8], ["Sales", 28.1], ["Support", 13.1]]}, "solution": "SELECT d.name, ROUND(100.0 * SUM(e.salary) / SUM(SUM(e.salary)) OVER (), 1) AS pct FROM employees e JOIN departments d ON d.id = e.dept_id GROUP BY d.id;"}, {"id": "l-m1", "lv": "e", "title": "Task 1: products to reorder", "task": "Show the <code>name<\/code> and <code>stock<\/code> of products with fewer than 20 in stock, lowest stock first, then by name.", "db": "shop", "hint": "WHERE stock < 20 ORDER BY stock, name", "why": "Two products have 0 stock, so name breaks the tie.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["name", "stock"], "rows": [["Desk lamp", 0], ["Lunch box", 0], ["Football", 8], ["Headphones", 12]]}, "solution": "SELECT name, stock FROM products WHERE stock < 20 ORDER BY stock, name;"}, {"id": "l-m2", "lv": "m", "title": "Task 2: revenue per order", "task": "Show each order <code>id<\/code> and <code>revenue<\/code> (sum of qty × price), for orders that are not cancelled, highest revenue first.", "db": "shop", "hint": "Join three tables, filter, GROUP BY o.id, ORDER BY revenue DESC.", "why": "A three table join and a group by, the backbone of most reports.", "ordered": true, "setup": "", "starter": "", "want": {"cols": ["id", "revenue"], "rows": [[107, 2198], [104, 1998], [102, 1499], [110, 850], [103, 790], [109, 680], [101, 540], [106, 500], [108, 360]]}, "solution": "SELECT o.id, SUM(oi.qty * p.price) AS revenue FROM orders o JOIN order_items oi ON oi.order_id = o.id JOIN products p ON p.id = oi.product_id WHERE o.status <> 'cancelled' GROUP BY o.id ORDER BY revenue DESC, o.id;"}, {"id": "l-m3", "lv": "m", "title": "Task 3: customers who never ordered", "task": "Show the <code>name<\/code> of every customer with no orders.", "db": "shop", "hint": "NOT EXISTS, or LEFT JOIN with IS NULL.", "why": "Kabir, Arjun and Vikram have never ordered.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Kabir"], ["Arjun"], ["Vikram"]]}, "solution": "SELECT name FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id);"}, {"id": "l-m4", "lv": "h", "title": "Task 4: each customer’s latest order", "task": "Show each customer’s <code>name<\/code> with the <code>id<\/code> and <code>order_date<\/code> of their most recent order. Leave out customers without orders.", "db": "shop", "hint": "ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date DESC), keep rn = 1.", "why": "Top 1 per group with a window function.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "id", "order_date"], "rows": [["Asha", 110, "2025-07-05"], ["Ravi", 107, "2025-06-21"], ["Meera", 108, "2025-06-25"], ["Sara", 109, "2025-07-02"], ["Nisha", 106, "2025-06-18"]]}, "solution": "WITH r AS (SELECT customer_id, id, order_date, ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date DESC) AS rn FROM orders)\nSELECT c.name, r.id, r.order_date FROM r JOIN customers c ON c.id = r.customer_id WHERE r.rn = 1;"}, {"id": "l-m5", "lv": "h", "title": "Task 5: the whole reporting chain", "task": "From the company database, show every employee’s <code>name<\/code> and <code>level<\/code> in the org chart, where Priya (no manager) is level 0.", "db": "company", "hint": "A recursive CTE starting from manager_id IS NULL.", "why": "Each round goes one level down the chart.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name", "level"], "rows": [["Priya", 0], ["Lata", 1], ["Mohan", 1], ["Rahul", 1], ["Zoya", 1], ["Joseph", 2], ["Kiran", 2], ["Tara", 2], ["Imran", 2], ["Sneha", 2]]}, "solution": "WITH RECURSIVE c(id, name, level) AS (SELECT id, name, 0 FROM employees WHERE manager_id IS NULL UNION ALL SELECT e.id, e.name, c.level + 1 FROM employees e JOIN c ON e.manager_id = c.id)\nSELECT name, level FROM c;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

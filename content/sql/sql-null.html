@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NULL and three valued logic · SQL and Databases</title>
+<meta name="description" content="NULL as unknown, NULL arithmetic, three valued logic with truth tables, WHERE keeping only TRUE, IS NULL and IS DISTINCT FROM, NOT IN with NULL, aggregates skipping NULL, grouping NULLs, CHECK and NULL.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/sql.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,database,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp sqlp" data-fxh="Syntax sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=sql">SQL and Databases learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=sql" target="_top">SQL and Databases</a><span>›</span><span>Step 2: Shaping results</span><span>›</span><span>NULL explained</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 2 of 3 · Beginner</div>
+    <h1>NULL and three valued logic</h1>
+    <p class="lead">Understand the value that means "I do not know", why NULL = NULL is not true, how rows quietly vanish from filters, and the NOT IN and AVG traps that catch professionals.</p>
+    <div class="cv-chips"><span class="cv-chip">About 35 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">3 syntax cards</span><span class="cv-chip">8 worked problems</span><span class="cv-chip">11 quiz questions</span><span class="cv-chip">4 runnable queries</span><span class="cv-chip">3 SQL labs</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#sql-null" data-topic="cheatsheet" data-h="sql-null">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Syntax</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#unknown" data-l="unknown"><span class="n">1</span><span class="t">NULL means unknown</span></a></li><li><a href="#three" data-l="three"><span class="n">2</span><span class="t">Three valued logic: TRUE, FALSE and UNKNOWN</span></a></li><li><a href="#traps" data-l="traps"><span class="n">3</span><span class="t">NULL traps: NOT IN, aggregates and DISTINCT</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">From intuition to research</span></a></li></ol>
+    <article class="cv-lesson" id="unknown" data-l="unknown" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>NULL means unknown</h2>
+<p>A form asks for your phone number and you leave it blank. The database does not know your number. It is not zero, not an empty string, simply <b>unknown</b>. SQL writes that as <code>NULL</code>. Because NULL is unknown, almost every operation on it gives unknown too: unknown plus 5 is still unknown.</p>
+<div class="sq-run" data-q="arith"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Value</th><th>Means</th><th>length() of it</th></tr></thead><tbody><tr><td><code>NULL</code></td><td>unknown or missing</td><td>NULL</td></tr><tr><td><code>''</code></td><td>a known, empty piece of text</td><td>0</td></tr><tr><td><code>0</code></td><td>the known number zero</td><td>1 (the text 0)</td></tr></tbody></table></div>
+<div class="sq-lab" data-lab="l-noemail"></div>
+<div class="note note-exam"><b>In the exam</b><div>Oracle treats an empty string '' as NULL. SQLite, PostgreSQL, MySQL and SQL Server keep them different. This is a common surprise when moving data between engines.</div></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="three" data-l="three" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>Three valued logic: TRUE, FALSE and UNKNOWN</h2>
+<p>Because of NULL, SQL logic has three answers: TRUE, FALSE and UNKNOWN (written as NULL). The rules follow common sense. If you know one side of an AND is false, the whole AND is false, whatever the unknown side is. If you know one side of an OR is true, the whole OR is true.</p>
+<div class="viz" data-viz="pk" data-pk="sqnull"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>A</th><th>B</th><th>A AND B</th><th>A OR B</th></tr></thead><tbody><tr><td>TRUE</td><td>NULL</td><td>NULL</td><td>TRUE</td></tr><tr><td>FALSE</td><td>NULL</td><td>FALSE</td><td>NULL</td></tr><tr><td>NULL</td><td>NULL</td><td>NULL</td><td>NULL</td></tr></tbody></table></div>
+<p>The big rule for queries: <b>WHERE keeps a row only when the condition is TRUE</b>. FALSE and UNKNOWN rows are both dropped. This is why a test such as <code>city &lt;&gt; 'Pune'</code> silently leaves out customers whose city is NULL.</p>
+<div class="sq-run" data-q="lost"></div>
+<div class="walk"><div class="walk-h"><span>Why the count does not add up</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>8 customers in total.</li><li>city = 'Pune' keeps 2 rows (Asha, Kabir).</li><li>city &lt;&gt; 'Pune' keeps 5 rows.</li><li><span class="eq">2 + 5 = 7, not 8. Arjun, with a NULL city, is in neither answer</span></li></ol></div>
+<div class="sq-lab" data-lab="l-notpune"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="traps" data-l="traps" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>NULL traps: NOT IN, aggregates and DISTINCT</h2>
+<p>Three places where NULL changes answers in ways that surprise even experienced developers.</p>
+<h3>1. NOT IN with a NULL in the list</h3>
+<div class="sq-run" data-q="notin"></div>
+<h3>2. Aggregates skip NULLs</h3>
+<div class="sq-run" data-q="agg"></div>
+<h3>3. Grouping and DISTINCT treat NULLs as one group</h3>
+<p>For <code>GROUP BY</code>, <code>DISTINCT</code> and <code>UNION</code>, all NULLs are put together as if they were equal. But a <code>UNIQUE</code> column may hold many NULLs, because two unknowns are not known to be the same. The SQLite documentation lists exactly these rules.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Safe NULL comparison</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>a IS b</code>, <code>a IS NOT b</code></div><div class="fx-n">Like = and &lt;&gt;, but NULL IS NULL is TRUE. Never returns NULL. Standard SQL spells it IS NOT DISTINCT FROM.</div></div><div class="fx"><div class="fx-h"><span>Fallback</span></div><div class="fx-b"><code>COALESCE(x, default)</code></div><div class="fx-n">Replace NULL with a value before comparing or adding.</div></div><div class="fx"><div class="fx-h"><span>Safe NOT IN</span></div><div class="fx-b"><code>WHERE NOT EXISTS (...)</code></div><div class="fx-n">NOT EXISTS is not fooled by NULLs in the subquery. Chapter 3.3 explains it.</div></div></div>
+<div class="sq-lab" data-lab="l-countnull"></div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>From intuition to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>NULL is a question mark. Sums with a question mark are question marks, and a question mark never passes a strict test.</p></div><div class="ld-p" data-ld="college" hidden><p>SQL uses three valued logic. WHERE, HAVING and ON keep only TRUE. CHECK constraints are the opposite: they reject only FALSE, so a NULL passes a CHECK.</p></div><div class="ld-p" data-ld="masters" hidden><p>NULL breaks some algebra rules people rely on. x = x is not always TRUE, and NOT (a = b) is not the same as a &lt;&gt; b plus the NULL rows. Query rewrites in optimizers must respect this, which is why NOT IN and NOT EXISTS are not always interchangeable.</p></div><div class="ld-p" data-ld="research" hidden><p>Codd later proposed two different kinds of missing value: applicable but unknown, and not applicable. Researchers such as Date and Darwen argued against NULL entirely and for designs that avoid it. Modern database theory studies certain answers: results that are true for every possible value the NULLs might take.</p></div></div>
+<details class="deep"><summary>Going deeper: CHECK and NULL</summary><div class="deep-b"><p>The shop table has <code>CHECK (price &gt; 0)</code>. Inserting a price of NULL would pass that check, because NULL &gt; 0 is UNKNOWN, not FALSE. That is why the column also says NOT NULL. Use both together when a value must exist and follow a rule.</p></div></details>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sql-functions.html" data-topic="sql-functions"><small>Previous topic</small><b>Functions and CASE</b></a><a class="next" href="./sql-aggregate.html" data-topic="sql-aggregate"><small>Next topic</small><b>GROUP BY and HAVING</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "sql-null", "topic": "sql-null", "subject": "sql", "title": "NULL and three valued logic", "codes": {}, "quiz": [{"lv": "e", "q": "What is 5 + NULL?", "o": ["5", "0", "NULL", "An error"], "a": 2, "hint": "Unknown.", "why": "Arithmetic with NULL gives NULL."}, {"lv": "e", "q": "Which test finds missing emails?", "o": ["email = NULL", "email IS NULL", "email = ''", "email = 0"], "a": 1, "hint": "IS.", "why": "Only IS NULL works."}, {"lv": "e", "q": "What is NULL = NULL?", "o": ["TRUE", "FALSE", "NULL", "An error"], "a": 2, "hint": "Unknown.", "why": "Two unknowns are not known to be equal."}, {"lv": "e", "q": "WHERE keeps rows where the condition is", "o": ["TRUE", "TRUE or NULL", "not FALSE", "anything"], "a": 0, "hint": "Strict.", "why": "Only TRUE passes."}, {"lv": "m", "q": "FALSE AND NULL is", "o": ["TRUE", "FALSE", "NULL", "An error"], "a": 1, "hint": "False wins in AND.", "why": "One false side makes AND false."}, {"lv": "m", "q": "TRUE OR NULL is", "o": ["TRUE", "FALSE", "NULL", "An error"], "a": 0, "hint": "True wins in OR.", "why": "One true side makes OR true."}, {"lv": "m", "q": "COUNT(score) counts", "o": ["Every row", "Rows where score is not NULL", "Distinct scores", "NULL scores"], "a": 1, "hint": "Known values.", "why": "COUNT(column) skips NULLs."}, {"lv": "m", "q": "A CHECK (price &gt; 0) constraint and a NULL price", "o": ["Rejects it", "Accepts it", "Turns it into 0", "Depends on the engine"], "a": 1, "hint": "CHECK rejects only FALSE.", "why": "NULL &gt; 0 is UNKNOWN, so the CHECK passes."}, {"lv": "h", "q": "id NOT IN (1, 2, NULL) returns", "o": ["All rows except 1 and 2", "No rows", "Only NULL ids", "An error"], "a": 1, "hint": "One unknown spoils it.", "why": "The AND chain always contains an UNKNOWN."}, {"lv": "h", "q": "Which is TRUE in SQLite?", "o": ["NULL = NULL", "NULL IS NULL", "NULL &lt;&gt; NULL", "NOT NULL"], "a": 1, "hint": "IS never gives NULL.", "why": "IS treats two NULLs as the same."}, {"lv": "x", "q": "GROUP BY city with three NULL cities makes", "o": ["Three groups of NULL", "One NULL group", "No NULL group", "An error"], "a": 1, "hint": "Grouping treats NULLs as equal.", "why": "GROUP BY puts all NULLs in one group."}], "calc": [{"lv": "e", "q": "How many rows are in the marks table?", "ans": "15", "hint": "COUNT(*).", "steps": ["COUNT(*) counts every row.", "Including the row with a NULL score.", "<span class=\"eq\">15 rows<\/span>"]}, {"lv": "e", "q": "How many marks rows have a known score?", "ans": "14", "hint": "COUNT(score).", "steps": ["15 rows in total.", "1 score is NULL.", "<span class=\"eq\">15 − 1 = 14<\/span>"]}, {"lv": "m", "q": "What is AVG(score) over marks, to 2 decimal places?", "ans": "79.14", "hint": "Divide by known scores only.", "steps": ["SUM(score) = 1108.", "Known scores: 14.", "<span class=\"eq\">1108 / 14 ≈ 79.14<\/span>"], "tol": 0.005}, {"lv": "m", "q": "If the NULL score counted as 0, what would the average be, to 2 decimals?", "ans": "73.87", "hint": "Divide by all rows.", "steps": ["SUM(score) = 1108.", "All rows: 15.", "<span class=\"eq\">1108 / 15 ≈ 73.87<\/span>"], "tol": 0.005}, {"lv": "m", "q": "How many customers does WHERE city &lt;&gt; 'Pune' return?", "ans": "5", "hint": "NULL city is dropped.", "steps": ["8 customers, 2 in Pune.", "Arjun has a NULL city, which gives UNKNOWN.", "<span class=\"eq\">8 − 2 − 1 = 5<\/span>"]}, {"lv": "h", "q": "How many rows does SELECT name FROM products WHERE id NOT IN (1, 2, NULL) return?", "ans": "0", "hint": "The NULL spoils every row.", "steps": ["For each row the test includes id &lt;&gt; NULL.", "That part is UNKNOWN, so the AND is never TRUE.", "<span class=\"eq\">0 rows<\/span>"]}, {"lv": "h", "q": "How many groups does SELECT house FROM students GROUP BY house give? (One student has no house.)", "ans": "4", "hint": "NULLs form one group.", "steps": ["Houses: Red, Blue, Green.", "Plus one NULL group for Gauri.", "<span class=\"eq\">3 + 1 = 4 groups<\/span>"]}, {"lv": "h", "q": "What does SELECT (NULL IS NULL) + (NULL = NULL IS NULL) return?", "ans": "2", "hint": "Both parts are TRUE, which is 1.", "steps": ["NULL IS NULL is TRUE, stored as 1.", "NULL = NULL is NULL, and NULL IS NULL is TRUE, so 1.", "<span class=\"eq\">1 + 1 = 2<\/span>"]}], "assign": [], "must": [["NULL is unknown", "Not zero, not empty text. Arithmetic and comparisons with NULL give NULL. NULL = NULL is NULL."], ["Three values", "TRUE, FALSE, UNKNOWN. FALSE wins in AND, TRUE wins in OR."], ["Filters keep TRUE", "WHERE, HAVING and ON drop FALSE and UNKNOWN. CHECK rejects only FALSE, so NULL passes a CHECK."], ["Tests", "IS NULL, IS NOT NULL, a IS b (never NULL). COALESCE gives a fallback."], ["Traps", "NOT IN with a NULL returns nothing. COUNT(col), SUM, AVG skip NULLs. GROUP BY and DISTINCT treat NULLs as one value."]], "summary": "<p>NULL means unknown, logic gains a third value, filters keep only TRUE, and NOT IN, COUNT and AVG each treat NULL in their own way.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script type="application/json" id="sqdata">{"runs": {"arith": {"src": "SELECT 5 + NULL      AS plus,\n       NULL * 0      AS times_zero,\n       'Hi ' || NULL AS joined,\n       NULL = NULL   AS equal,\n       NULL IS NULL  AS is_null;", "db": "", "setup": "", "title": "Almost everything with NULL becomes NULL", "notes": {"2": "Even zero times unknown is unknown in SQL.", "4": "Two unknowns are not known to be equal.", "5": "IS NULL is the one test that answers yes or no."}, "out": [{"sql": "SELECT 5 + NULL      AS plus,\n       NULL * 0      AS times_zero,\n       'Hi ' || NULL AS joined,\n       NULL = NULL   AS equal,\n       NULL IS NULL  AS is_null;", "cols": ["plus", "times_zero", "joined", "equal", "is_null"], "rows": [[null, null, null, null, 1]]}]}, "lost": {"src": "-- Customers not in Pune?\nSELECT name, city FROM customers WHERE city <> 'Pune';\n\n-- Arjun (city NULL) is missing above. Add him back explicitly:\nSELECT name, city FROM customers WHERE city <> 'Pune' OR city IS NULL;", "db": "shop", "setup": "", "title": "The row that vanishes", "notes": {"2": "For Arjun, NULL <> 'Pune' is UNKNOWN, so WHERE drops him.", "5": "IS NULL catches the unknown city."}, "out": [{"sql": "-- Customers not in Pune?\nSELECT name, city FROM customers WHERE city <> 'Pune';", "cols": ["name", "city"], "rows": [["Ravi", "Delhi"], ["Meera", "Chennai"], ["Sara", "Bhubaneswar"], ["Nisha", "Delhi"], ["Vikram", "Chennai"]]}, {"sql": "-- Arjun (city NULL) is missing above. Add him back explicitly:\nSELECT name, city FROM customers WHERE city <> 'Pune' OR city IS NULL;", "cols": ["name", "city"], "rows": [["Ravi", "Delhi"], ["Meera", "Chennai"], ["Sara", "Bhubaneswar"], ["Arjun", null], ["Nisha", "Delhi"], ["Vikram", "Chennai"]]}]}, "notin": {"src": "SELECT name FROM products WHERE id NOT IN (1, 2);\nSELECT name FROM products WHERE id NOT IN (1, 2, NULL);", "db": "shop", "setup": "", "title": "One NULL empties the whole answer", "notes": {"2": "id NOT IN (1, 2, NULL) means id &lt;&gt; 1 AND id &lt;&gt; 2 AND id &lt;&gt; NULL. The last part is UNKNOWN, so no row is ever TRUE."}, "out": [{"sql": "SELECT name FROM products WHERE id NOT IN (1, 2);", "cols": ["name"], "rows": [["Water bottle"], ["Lunch box"], ["Headphones"], ["Phone charger"], ["Cricket ball"], ["Football"], ["Desk lamp"], ["Geometry set"]]}, {"sql": "SELECT name FROM products WHERE id NOT IN (1, 2, NULL);", "cols": ["name"], "rows": []}]}, "agg": {"src": "SELECT COUNT(*)      AS all_rows,\n       COUNT(score)  AS scores_known,\n       AVG(score)    AS average,\n       SUM(score) * 1.0 / COUNT(*) AS average_if_null_were_zero\nFROM marks;", "db": "school", "setup": "", "title": "COUNT(*) counts rows, COUNT(column) counts known values", "notes": {"1": "Counts every row, NULL or not.", "2": "Counts only rows where score is not NULL.", "3": "AVG divides by the count of known scores, not by every row."}, "out": [{"sql": "SELECT COUNT(*)      AS all_rows,\n       COUNT(score)  AS scores_known,\n       AVG(score)    AS average,\n       SUM(score) * 1.0 / COUNT(*) AS average_if_null_were_zero\nFROM marks;", "cols": ["all_rows", "scores_known", "average", "average_if_null_were_zero"], "rows": [[15, 14, 79.14285714285714, 73.86666666666666]]}]}}, "labs": [{"id": "l-noemail", "lv": "e", "title": "Who has no email", "task": "Show the <code>name<\/code> of every customer whose <code>email<\/code> is missing.", "db": "shop", "hint": "IS NULL, not = NULL.", "why": "Only IS NULL can find a missing value.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Kabir"], ["Vikram"]]}, "solution": "SELECT name FROM customers WHERE email IS NULL;"}, {"id": "l-notpune", "lv": "m", "title": "Everyone outside Pune, really", "task": "Show the <code>name<\/code> of every customer who does not live in Pune, including customers whose city is unknown.", "db": "shop", "hint": "Add OR city IS NULL.", "why": "A NULL city makes the not equal test UNKNOWN, so it needs its own test.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["name"], "rows": [["Ravi"], ["Meera"], ["Sara"], ["Arjun"], ["Nisha"], ["Vikram"]]}, "solution": "SELECT name FROM customers WHERE city <> 'Pune' OR city IS NULL;"}, {"id": "l-countnull", "lv": "m", "title": "Known and unknown scores", "task": "From the school database, return one row with two columns: <code>total<\/code>, the number of rows in <code>marks<\/code>, and <code>missing<\/code>, the number of rows whose score is NULL.", "db": "school", "hint": "COUNT(*) minus COUNT(score) counts the NULLs.", "why": "COUNT(column) skips NULLs, so the difference is the number of NULL scores. SUM(score IS NULL) works too.", "ordered": false, "setup": "", "starter": "", "want": {"cols": ["total", "missing"], "rows": [[15, 1]]}, "solution": "SELECT COUNT(*) AS total, COUNT(*) - COUNT(score) AS missing FROM marks;"}]}</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/vendor/sqljs/sql-wasm.js"></script>
+<script src="../../assets/sqlrun.js"></script>
+<script src="../../assets/sqldata.js"></script>
+<script src="../../assets/sqlplay.js"></script>
+<script src="../../assets/sqlwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>
