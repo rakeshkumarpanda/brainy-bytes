@@ -11037,6 +11037,23 @@ function lxAdvModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "performance", title: "Performance: find the bottleneck with USE, vmstat, iostat, perf and sar", emoji: "3.2", page: "content/linux/performance.html",
+        summary: "USE method, load average, vmstat, mpstat, pidstat, iostat, strace -c, perf, sar.",
+        keywords: ["performance", "USE method", "load average", "vmstat", "mpstat", "pidstat", "iostat", "sar", "sysstat", "strace -c", "perf", "flame graph", "eBPF", "stress-ng", "bottleneck"],
+        minutes: 55, counts: {"lessons": 7, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "method", title: "Measure first: the USE method and the 60 second checklist", emoji: "", group: "Lesson", keywords: ["performance", "latency", "throughput", "utilization", "saturation", "errors", "USE method", "Brendan Gregg", "60 second checklist", "percentile", "p99", "bottleneck", "sysstat", "PSI", "/proc/pressure"] },
+        { id: "cpu", title: "CPU: load average, vmstat, mpstat and pidstat", emoji: "", group: "Lesson", keywords: ["load average", "/proc/loadavg", "uptime", "run queue", "uninterruptible sleep", "D state", "vmstat", "r column", "b column", "si so", "context switches", "user time", "system time", "iowait", "steal time", "mpstat", "pidstat", "stress-ng", "ps --sort", "nproc"] },
+        { id: "disk", title: "Disks: iostat, await, queue size and %util", emoji: "", group: "Lesson", keywords: ["iostat", "iostat -x", "IOPS", "r_await", "w_await", "aqu-sz", "%util", "rareq-sz", "disk saturation", "iowait", "pidstat -d", "iotop", "SSD util", "NVMe", "random I/O", "sequential I/O"] },
+        { id: "calls", title: "Where the time goes: time, strace -c, perf and eBPF", emoji: "", group: "Lesson", keywords: ["time command", "real user sys", "strace -c", "system call overhead", "dd block size", "perf", "perf stat", "perf top", "perf record", "perf report", "flame graph", "FlameGraph", "eBPF", "bcc", "bpfcc-tools", "bpftrace", "execsnoop", "biolatency", "runqlat", "linux-tools", "perf_event_paranoid"] },
+        { id: "history", title: "History with sar, and fixing what you found", emoji: "", group: "Lesson", keywords: ["sar", "sysstat", "sadc", "/var/log/sysstat", "sysstat-collect.timer", "ENABLED true", "sar -u", "sar -r", "sar -q", "sar -d", "sar -n DEV", "sar -f", "Prometheus", "node_exporter", "Grafana", "tuning", "CPUQuota", "MemoryMax", "measure again"] },
+        { id: "practice", title: "Practice: find the busy process", emoji: "", group: "Lesson", keywords: ["performance lab", "find busy process", "vmstat practice", "mpstat practice", "pidstat practice", "iostat practice"] },
+        { id: "levels", title: "Performance from school to research", emoji: "", group: "Lesson", keywords: ["SRE", "latency objective", "continuous profiling", "Parca", "Pyroscope", "off-CPU analysis", "queueing theory", "load testing", "NUMA", "CPU frequency", "I/O scheduler", "tail latency", "EEVDF", "sched_ext", "noisy neighbour"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

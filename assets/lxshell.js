@@ -57,7 +57,7 @@ const LXSH = (() => {
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
   const SBIN = 'setcap ufw sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'capsh getcap sysctl mkfifo nproc pstree alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const CMDS = 'vmstat iostat mpstat pidstat capsh getcap sysctl mkfifo nproc pstree alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -3719,6 +3719,8 @@ const LXSH = (() => {
     if (pi >= 0) rows = this.allProcs().filter(p => a[pi + 1].split(',').map(Number).includes(p.pid));
     if (ui >= 0) rows = this.allProcs().filter(p => a[ui + 1].split(',').includes(p.user));
     if (ci >= 0) rows = this.allProcs().filter(p => comm(p) === a[ci + 1]);
+    const so = flat.match(/--sort[= ](-?)([%\w]+)/);
+    if (so) { const key = { '%cpu': p => p.cpu || 0, pcpu: p => p.cpu || 0, '%mem': p => p.pid % 700, rss: p => p.pid % 700, pid: p => p.pid }[so[2]] || (p => p.pid); rows = rows.slice().sort((x, y) => (so[1] ? key(y) - key(x) : key(x) - key(y)) || x.pid - y.pid); }
     const tty = p => p.ppid === 2001 || p.pid === 2001 ? 'pts/0' : '?';
     const t0 = p => when(p.start || T0 - 3 * 86400000).slice(7);
     const oi = a.findIndex(x => x === '-o' || x === '-eo' || x === 'o');
@@ -3813,6 +3815,78 @@ const LXSH = (() => {
       this.out(`${t} (process ID) old priority ${p.ni || 0}, new priority ${n}\n`); p.ni = n;
     });
     return code;
+  };
+  /* performance tools of procps and sysstat with steady numbers for a quiet 2 CPU practice server */
+  const statHead = w => `Linux 6.8.0-practice (${HOST}) \t${(d => `${pad(d.getUTCMonth() + 1, 2).replace(' ', '0')}/${pad(d.getUTCDate(), 2).replace(' ', '0')}/${String(d.getUTCFullYear()).slice(2)}`)(new Date(w.clock))} \t_x86_64_\t(2 CPU)\n`;
+  const hms = ms => new Date(ms).toISOString().slice(11, 19);
+  const interval = rest => { const n = rest.filter(x => /^\d+$/.test(x)).map(Number); return { delay: n[0], count: n.length > 1 ? n[1] : n.length ? Infinity : 0 }; };
+  C.vmstat = function (a) {
+    const [f, rest] = opts(a, 'S');
+    const { delay, count } = interval(rest);
+    const rows = delay ? Math.min(count, 5) : 1, unit = f.S === 'M' ? 1024 : f.S === 'm' ? 1000 / 1.024 : 1;
+    const mem = k => Math.round(k / unit), hogs = Math.min(2, this.procs.filter(p => p.cpu).length);
+    let o = 'procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------\n r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu\n';
+    for (let i = 0; i < rows; i++) {
+      const v = i === 0 ? [1, 0, 0, 3142212, 315556, 2389412, 0, 0, 12, 34, 180, 320, 2, 1, 97, 0, 0, 0] : [i % 2, 0, 0, 3142212 - 96 * i, 315556, 2389412 + 8 * i, 0, 0, 0, 8 * i, 150 + 7 * i, 290 + 11 * i, 1, 0, 99, 0, 0, 0];
+      if (i && hogs) { const us = Math.min(99, Math.round(hogs * 99.7 / 2)); v[0] = hogs; v[10] += 900 * hogs; v[11] += 60 * hogs; v[12] = us; v[13] = 1; v[14] = 99 - us; }
+      v[3] = mem(v[3]); v[4] = mem(v[4]); v[5] = mem(v[5]);
+      const w = [2, 2, 6, 6, 6, 6, 4, 4, 5, 5, 4, 4, 2, 2, 2, 2, 2, 2];
+      o += v.map((x, k) => pad(x, w[k])).join(' ') + '\n';
+    }
+    if (delay && count > 5) o += '(the practice shell stops after 5 lines. A real vmstat keeps printing until the count is reached or you press Ctrl+C)\n';
+    this.out(o); this.clock += (rows - 1) * (delay || 0) * 1000; return 0;
+  };
+  C.iostat = function (a) {
+    const [f, rest] = opts(a);
+    const { delay, count } = interval(rest);
+    const reps = delay ? Math.min(count, 3) : 1;
+    let o = statHead(this) + '\n';
+    for (let i = 0; i < reps; i++) {
+      const q = i === 0 ? 1 : 0.4;
+      if (!f.d) o += `avg-cpu:  %user   %nice %system %iowait  %steal   %idle\n${['%user', 'nice', 'sys', 'wa', 'st'].map((k, j) => pad([2.1 * q, 0, 0.8 * q, 0.3 * q, 0][j].toFixed(2), j ? 8 : 15)).join('')}${pad((100 - 3.2 * q).toFixed(2), 8)}\n\n`;
+      if (!f.c) {
+        const r = (3.10 * q).toFixed(2), rk = (24.5 * q).toFixed(2), wr = (5.42 * q).toFixed(2), wk = (68.2 * q).toFixed(2);
+        o += f.x ? 'Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util\n' +
+          `sda          ${pad(r, 8)} ${pad(rk, 9)} ${pad('0.04', 8)} ${pad('1.27', 6)} ${pad('0.61', 7)} ${pad('7.90', 8)} ${pad(wr, 7)} ${pad(wk, 9)} ${pad('2.31', 8)} ${pad('29.88', 6)} ${pad('1.92', 7)} ${pad('12.58', 8)} ${pad('0.00', 7)} ${pad('0.00', 9)} ${pad('0.00', 8)} ${pad('0.00', 6)} ${pad('0.00', 7)} ${pad('0.00', 8)} ${pad('0.21', 7)} ${pad('0.85', 7)} ${pad('0.01', 7)} ${pad((0.62 * q).toFixed(2), 6)}\n\n`
+          : 'Device             tps    kB_read/s    kB_wrtn/s    kB_dscd/s    kB_read    kB_wrtn    kB_dscd\n' +
+          `sda          ${pad((8.52 * q).toFixed(2), 9)} ${pad(rk, 12)} ${pad(wk, 12)} ${pad('0.00', 12)} ${pad(i ? Math.round(24.5 * q * delay) : 5694213, 10)} ${pad(i ? Math.round(68.2 * q * delay) : 15852340, 10)} ${pad(0, 10)}\n\n`;
+      }
+    }
+    if (delay && count > 3) o += '(the practice shell stops after 3 reports)\n';
+    this.out(o); this.clock += (reps - 1) * (delay || 0) * 1000; return 0;
+  };
+  C.mpstat = function (a) {
+    const [f, rest] = opts(a, 'P');
+    const { delay, count } = interval(rest);
+    const cpus = f.P === 'ALL' ? ['all', '0', '1'] : f.P !== undefined && f.P !== true ? ['all', ...String(f.P).split(',')].filter((x, i, s) => s.indexOf(x) === i && (x === 'all' || x === '0' || x === '1')) : ['all'];
+    const head = t => `${t}     CPU    %usr   %nice    %sys %iowait    %irq   %soft  %steal  %guest  %gnice   %idle\n`;
+    const hogs = Math.min(2, this.procs.filter(p => p.cpu).length);
+    const line = (t, c, q) => {
+      const busy = q < 1 && hogs && (c === '0' || (c === '1' && hogs > 1) || c === 'all');
+      const u = busy ? (c === 'all' ? hogs * 49.85 : 99.7) : { all: 2.1, 0: 3.4, 1: 0.8 }[c] * q, s = busy ? (c === 'all' ? 0.15 * hogs + (hogs > 1 ? 0 : 0.1) : 0.3) : { all: 0.8, 0: 1.1, 1: 0.5 }[c] * q, rest = busy ? 0 : 0.4 * q;
+      return `${t}     ${pad(c, 3)} ${[u, 0, s, busy ? 0 : 0.3 * q, 0, busy ? 0 : 0.1 * q, 0, 0, 0].map(x => pad(x.toFixed(2), 7)).join(' ')} ${pad(Math.max(0, 100 - u - s - rest).toFixed(2), 7)}\n`;
+    };
+    let o = statHead(this) + '\n';
+    if (!delay) { const t = hms(this.clock); o += head(t) + cpus.map(c => line(t, c, 1)).join(''); }
+    else {
+      const reps = Math.min(count, 3);
+      for (let i = 1; i <= reps; i++) { const t = hms(this.clock + i * delay * 1000); o += head(t) + cpus.map(c => line(t, c, 0.4)).join('') + '\n'; }
+      o += head('Average:') .replace('Average:     ', 'Average:     ') + cpus.map(c => line('Average:', c, 0.4)).join('');
+      this.clock += reps * delay * 1000;
+    }
+    this.out(o); return 0;
+  };
+  C.pidstat = function (a) {
+    const [f, rest] = opts(a, 'p');
+    const { delay } = interval(rest);
+    let rows = this.procs.filter(p => p.pid > 1);
+    if (f.p && f.p !== 'ALL') rows = this.procs.filter(p => String(f.p).split(',').map(Number).includes(p.pid));
+    const t = delay ? hms(this.clock + delay * 1000) : hms(this.clock), uid = u => u === 'root' ? 0 : u === 'www-data' ? 33 : 1000;
+    let o = statHead(this) + '\n';
+    if (f.r) o += `${t}      UID       PID  minflt/s  majflt/s     VSZ     RSS   %MEM  Command\n` + rows.map(p => `${t} ${pad(uid(p.user), 8)} ${pad(p.pid, 9)} ${pad((p.pid % 13 * 0.31).toFixed(2), 9)} ${pad('0.00', 9)} ${pad(8000 + p.pid % 900 * 7, 7)} ${pad(3000 + p.pid % 700 * 3, 7)} ${pad('0.04', 6)}  ${comm(p)}`).join('\n') + '\n';
+    else if (f.d) o += `${t}      UID       PID   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command\n` + rows.map(p => `${t} ${pad(uid(p.user), 8)} ${pad(p.pid, 9)} ${pad('0.00', 9)} ${pad((comm(p) === 'rsyslogd' || comm(p) === 'nginx' ? 1.37 : 0).toFixed(2), 9)} ${pad('0.00', 9)} ${pad(0, 7)}  ${comm(p)}`).join('\n') + '\n';
+    else o += `${t}      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command\n` + rows.map(p => { const u = p.cpu ? 99.0 : (p.pid % 7) * 0.02, sy = p.cpu ? 0.7 : u / 4; return `${t} ${pad(uid(p.user), 8)} ${pad(p.pid, 9)} ${pad(u.toFixed(2), 7)} ${pad(sy.toFixed(2), 7)} ${pad('0.00', 7)} ${pad('0.00', 7)} ${pad((u + sy).toFixed(2), 7)} ${pad(p.pid % 2, 5)}  ${comm(p)}`; }).join('\n') + '\n';
+    this.out(o); if (delay) this.clock += delay * 1000; return 0;
   };
   C.top = function () {
     const rows = this.allProcs().filter(p => !p.me).sort((x, y) => (y.cpu || 0) - (x.cpu || 0) || x.pid - y.pid);

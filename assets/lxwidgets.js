@@ -1494,6 +1494,43 @@
     }
   }));
 
+  /* adv 3.2 the USE method: check utilization, saturation and errors of every resource for one symptom */
+  def('lx-use', el => W(el, {
+    title: 'Find the bottleneck with the USE method',
+    sub: 'Pick what users complain about. Pip checks every resource for Utilization, Saturation and Errors, with the command and the number it would see, and stops at the resource that explains the symptom.',
+    inputs: [{ k: 'case', label: 'Symptom', type: 'seg', val: 'cpu', opts: [['cpu', 'pages slow, fans loud'], ['mem', 'everything sluggish'], ['disk', 'saves take ages'], ['net', 'uploads time out']] }],
+    random: () => ({ case: ['cpu', 'mem', 'disk', 'net'][Math.floor(Math.random() * 4)] }),
+    frames: v => {
+      const fr = [];
+      const R = {
+        cpu: { u: ['mpstat -P ALL 1', 'both CPUs 100 % usr'], s: ['vmstat 1, column r', 'r = 7 on 2 CPUs'], e: ['dmesg', 'no machine check errors'] },
+        mem: { u: ['free -m', 'available 90 MiB of 7860'], s: ['vmstat 1, columns si so', 'si 2100, so 3400 pages/s'], e: ['journalctl -k', 'Out of memory: Killed process'] },
+        disk: { u: ['iostat -xz 1, %util', 'sda 100 %'], s: ['iostat aqu-sz, w_await', 'aqu-sz 31, w_await 180 ms'], e: ['dmesg, smartctl -H', 'no I/O errors'] },
+        net: { u: ['sar -n DEV 1', 'eth0 at 118 MB/s of 125'], s: ['nstat, TcpRetransSegs', 'retransmits climbing'], e: ['ip -s link', 'RX dropped 4210'] }
+      };
+      const order = ['cpu', 'mem', 'disk', 'net'], name = { cpu: 'CPU', mem: 'Memory', disk: 'Disk', net: 'Network' };
+      const calm = { cpu: ['vmstat 1', 'us+sy 6 %, r 0 or 1'], mem: ['free -m', 'available 5300 MiB, si so 0'], disk: ['iostat -xz 1', '%util 2 %, w_await 1 ms'], net: ['ip -s link', 'no drops, low traffic'] };
+      const table = cur => ({ t: 'flow', label: 'USE check list', items: order.map(r => [name[r], r === cur ? 'checking now' : order.indexOf(r) < order.indexOf(cur) ? 'fine' : 'not yet', r === cur ? 'cur' : order.indexOf(r) < order.indexOf(cur) ? 'yes' : 'ghost']), plain: true });
+      fr.push({ msg: 'The <b>USE method</b> (Brendan Gregg) asks three questions for every resource: how busy is it (<b>Utilization</b>), is work waiting for it (<b>Saturation</b>), and are there <b>Errors</b>. Going through CPU, memory, disk and network in order stops guessing.', mood: 'think', layers: [table('cpu')] });
+      for (const r of order) {
+        if (r !== v.case) { fr.push({ msg: `${name[r]}: <code>${calm[r][0]}</code> shows ${calm[r][1]}. Not busy, nothing waiting, no errors. Move on.`, mood: 'look', layers: [table(r)] }); continue; }
+        const x = R[r];
+        fr.push({ msg: `${name[r]}, Utilization: <code>${x.u[0]}</code> shows <b>${x.u[1]}</b>. Busy alone is not yet a problem.`, mood: 'wow', layers: [table(r), { t: 'flow', label: name[r], items: [['U', x.u[1], 'cur'], ['S', 'next', 'ghost'], ['E', 'next', 'ghost']], plain: true }] });
+        fr.push({ msg: `${name[r]}, Saturation: <code>${x.s[0]}</code> shows <b>${x.s[1]}</b>. Work is queuing, and queuing is what users feel as slowness.`, mood: 'wow', fx: 'shake', layers: [table(r), { t: 'flow', label: name[r], items: [['U', x.u[1], 'no'], ['S', x.s[1], 'no'], ['E', 'next', 'ghost']], plain: true }] });
+        fr.push({ msg: `${name[r]}, Errors: <code>${x.e[0]}</code> shows ${x.e[1]}. Errors often explain a problem faster than any graph, so always look.`, mood: 'look', layers: [table(r), { t: 'flow', label: name[r], items: [['U', x.u[1], 'no'], ['S', x.s[1], 'no'], ['E', x.e[1], r === 'mem' || r === 'net' ? 'no' : 'yes']], plain: true }] });
+        const next = {
+          cpu: 'Found it: the CPUs are saturated. Next ask who: <code>top</code> or <code>pidstat 1</code> names the process, and <code>perf top</code> names the function inside it. Then fix the code, add CPUs or spread the load.',
+          mem: 'Found it: memory is exhausted, the kernel swaps and the OOM killer acts. <code>ps -eo pid,rss,comm --sort=-rss</code> names the biggest process. Fix the leak, give the service a MemoryMax= limit or add RAM.',
+          disk: 'Found it: the disk is saturated. <code>pidstat -d 1</code> or <code>iotop</code> names the writer. Batch the writes, move logs to another disk, or use faster storage.',
+          net: 'Found it: the link is nearly full and drops packets. <code>ss -tin</code> shows retransmits per connection and <code>iftop</code> or <code>nethogs</code> names the traffic. Limit the backup job or get a faster link.'
+        }[r];
+        fr.push({ msg: next, mood: 'happy', fx: 'burst', layers: [{ t: 'flow', label: 'Result', items: [[name[r], 'the bottleneck', 'no'], ['next step', 'find the process, then the code', 'yes']], plain: true }] });
+        break;
+      }
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
