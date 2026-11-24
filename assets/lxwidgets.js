@@ -1342,6 +1342,48 @@
     }
   }));
 
+  /* adv 1.2 fork, exec, wait and exit: how bash starts a command, and how zombies and orphans happen */
+  def('lx-fork', el => W(el, {
+    title: 'How a process is born and dies',
+    sub: 'Pick what you type, or what goes wrong. Pip shows the processes after each step: who forks, who runs execve, who waits, and what is left over.',
+    inputs: [{ k: 'what', label: 'Situation', type: 'seg', val: 'ext', opts: [['ext', 'ls'], ['builtin', 'cd /tmp'], ['bg', 'sleep 60 &'], ['zombie', 'parent never waits'], ['orphan', 'parent exits first']] }],
+    random: () => ({ what: ['ext', 'builtin', 'bg', 'zombie', 'orphan'][Math.floor(Math.random() * 5)] }),
+    frames: v => {
+      const fr = [];
+      const tree = (label, rows) => ({ t: 'flow', label, items: rows.map(([n, sub, st]) => [n, sub, st]), plain: true });
+      const ps = rows => ({ t: 'term', label: 'ps -o pid,ppid,stat,cmd', lines: [['c', 'ps -o pid,ppid,stat,cmd'], ['o', '    PID    PPID STAT CMD']].concat(rows.map(r => [/Z/.test(r[2]) ? 'e' : 'o', `${String(r[0]).padStart(7)} ${String(r[1]).padStart(7)} ${r[2].padEnd(4)} ${r[3]}`])) });
+      const shell = ['bash', 'PID 2001, the shell'];
+      if (v.what === 'builtin') {
+        fr.push({ msg: '<code>cd</code> must change the current folder of the shell itself. A child process could only change its own folder, and that change would vanish when it exits. So cd is a <b>builtin</b>: bash runs it inside its own process, with no fork at all.', mood: 'think', layers: [tree('Processes', [shell.concat(['cur'])])] });
+        fr.push({ msg: 'bash makes one system call, <code>chdir("/tmp")</code>, and the prompt shows the new folder. The same is true for export, exit, source and read, which all have to change the shell’s own state. <code>type cd</code> says “cd is a shell builtin”.', mood: 'happy', fx: 'burst', layers: [tree('Processes', [shell.concat(['yes'])]), { t: 'term', label: 'Practice shell', lines: [['c', 'type cd'], ['o', 'cd is a shell builtin']] }] });
+        return fr;
+      }
+      fr.push({ msg: v.what === 'zombie' || v.what === 'orphan' ? 'A program called <b>report</b> (PID 2400, started from bash) starts a helper, the same way bash starts every command.' : 'bash reads your command and finds the program in PATH. To run it without losing itself, bash first calls <b>fork()</b> (clone on Linux): the kernel makes a copy of the bash process with a new process id.', mood: 'think', layers: [tree('Processes', v.what === 'zombie' || v.what === 'orphan' ? [shell.concat(['yes']), ['report', 'PID 2400, parent 2001', 'cur']] : [shell.concat(['cur'])])] });
+      if (v.what === 'zombie' || v.what === 'orphan') {
+        fr.push({ msg: 'report calls fork(). The child (PID 2401) calls execve("/usr/bin/sleep") and becomes the helper. Both now run at the same time, and the parent of 2401 is 2400.', mood: 'look', layers: [tree('Processes', [shell.concat(['yes']), ['report', 'PID 2400, parent 2001', 'yes'], ['sleep', 'PID 2401, parent 2400', 'cur']]), ps([[2001, 1, 'Ss', '-bash'], [2400, 2001, 'S', 'report'], [2401, 2400, 'S', 'sleep 1']])] });
+        if (v.what === 'zombie') {
+          fr.push({ msg: 'The helper finishes and calls exit(0). The kernel frees its memory but keeps a tiny entry with the exit status, so that the parent can collect it with <b>wait()</b>. report never calls wait, so the entry stays: a <b>zombie</b>, state Z, shown as &lt;defunct&gt;. It uses no CPU and no memory, only a process id.', mood: 'sad', fx: 'shake', layers: [tree('Processes', [shell.concat(['yes']), ['report', 'PID 2400, never waits', 'look'], ['sleep', 'PID 2401, zombie', 'no']]), ps([[2001, 1, 'Ss', '-bash'], [2400, 2001, 'S', 'report'], [2401, 2400, 'Z', '[sleep] <defunct>']])] });
+          fr.push({ msg: 'You cannot kill a zombie, it is already dead. Fix the parent so it calls wait (or ignores SIGCHLD), or end the parent: <code>kill 2400</code>. The zombie then gets PID 1 as its new parent, and systemd reaps it at once. Thousands of zombies can use up all process ids (pid_max), so a parent that leaks them is a real bug.', mood: 'happy', fx: 'burst', layers: [tree('Processes', [shell.concat(['yes']), ['systemd', 'PID 1, reaps it', 'yes']]), ps([[2001, 1, 'Ss', '-bash']])] });
+        } else {
+          fr.push({ msg: 'report exits before its helper. The helper is now an <b>orphan</b>: its parent is gone. The kernel gives it a new parent at once, PID 1 (or the nearest process marked as a subreaper, such as systemd --user). It keeps running normally.', mood: 'wow', layers: [tree('Processes', [['systemd', 'PID 1, the new parent', 'cur'], shell.concat(['yes']), ['sleep', 'PID 2401, parent now 1', 'yes']]), ps([[2001, 1, 'Ss', '-bash'], [2401, 1, 'S', 'sleep 60']])] });
+          fr.push({ msg: 'When the orphan exits, PID 1 calls wait for it, so no zombie is left. This is how daemons detach from the terminal: they fork, the parent exits, and the child lives on under PID 1. In a container the first process (PID 1 of the container) must do this reaping too, which is why tools like tini exist.', mood: 'happy', fx: 'burst', layers: [tree('Processes', [['systemd', 'PID 1, reaped it', 'yes'], shell.concat(['yes'])])] });
+        }
+        return fr;
+      }
+      const cmd = v.what === 'bg' ? 'sleep 60' : 'ls';
+      fr.push({ msg: `The child is an exact copy of bash, with the same open files and variables. Thanks to copy on write, the kernel does not copy memory yet, it only shares the pages until one side writes. In the child, fork returned 0, in the parent it returned the child’s PID, 2400.`, mood: 'look', layers: [tree('Processes', [shell.concat(['yes']), ['bash (copy)', 'PID 2400, parent 2001', 'cur']])] });
+      fr.push({ msg: `The child sets up redirections, if any, and calls <b>execve("/usr/bin/${cmd.split(' ')[0]}")</b>. The kernel replaces the program in process 2400 with ${cmd.split(' ')[0]}. The PID stays the same, and open file descriptors are kept, which is how ${cmd.split(' ')[0]} inherits your terminal as standard output.`, mood: 'wow', layers: [tree('Processes', [shell.concat(['yes']), [cmd.split(' ')[0], 'PID 2400, parent 2001', 'cur']]), ps([[2001, 1, 'Ss', '-bash'], [2400, 2001, v.what === 'bg' ? 'S' : 'R', cmd]])] });
+      if (v.what === 'bg') {
+        fr.push({ msg: 'Because of the &amp;, bash does <b>not</b> wait. It prints the job number and the PID, <code>[1] 2400</code>, and shows the prompt again while sleep runs. <code>$!</code> now holds 2400.', mood: 'look', layers: [tree('Processes', [shell.concat(['yes']), ['sleep', 'PID 2400, in the background', 'cur']]), { t: 'term', label: 'Practice shell', lines: [['c', 'sleep 60 &'], ['o', '[1] 2400'], ['c', 'echo $!'], ['o', '2400']] }] });
+        fr.push({ msg: 'When sleep exits, the kernel sends bash the signal SIGCHLD. bash calls wait to collect the exit status, and before the next prompt it reports <code>[1]+  Done  sleep 60</code>. Without that wait, sleep would stay a zombie.', mood: 'happy', fx: 'burst', layers: [tree('Processes', [shell.concat(['yes'])]), { t: 'term', label: 'Practice shell', lines: [['o', '[1]+  Done                    sleep 60']] }] });
+        return fr;
+      }
+      fr.push({ msg: 'Meanwhile the parent bash is blocked in <b>wait4()</b>. ls prints the listing and calls exit_group(0). For a moment process 2400 is a zombie: dead, but its exit status is still kept for the parent.', mood: 'look', layers: [tree('Processes', [shell.concat(['look']), ['ls', 'PID 2400, exited, status 0', 'no']])] });
+      fr.push({ msg: 'wait4 returns the status, the kernel removes the last trace of 2400, and bash stores the status in <code>$?</code>. Then it prints the next prompt. Every command you type goes through these four steps: fork, exec, exit and wait.', mood: 'happy', fx: 'burst', layers: [tree('Processes', [shell.concat(['yes'])]), { t: 'term', label: 'Practice shell', lines: [['c', 'echo $?'], ['o', '0']] }] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

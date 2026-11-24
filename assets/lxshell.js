@@ -57,7 +57,7 @@ const LXSH = (() => {
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
   const SBIN = 'ufw sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'nproc alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const CMDS = 'nproc pstree alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -3639,15 +3639,39 @@ const LXSH = (() => {
     const oi = a.findIndex(x => x === '-o' || x === '-eo' || x === 'o');
     if (oi >= 0) {
       const cols = a[oi + 1].split(',');
-      const H = { pid: ['PID', 7], ppid: ['PPID', 7], user: ['USER', -8], stat: ['STAT', -4], ni: ['NI', 3], comm: ['COMMAND', -15], cmd: ['CMD', 0], args: ['COMMAND', 0], '%cpu': ['%CPU', 4], '%mem': ['%MEM', 4], tty: ['TT', -8], etime: ['ELAPSED', 11] };
-      const val = (p, c) => ({ pid: p.pid, ppid: p.ppid, user: p.user, stat: p.stat + (p.pid === 2001 ? 's' : ''), ni: p.ni || 0, comm: comm(p), cmd: p.cmd, args: p.cmd, '%cpu': (p.cpu || 0).toFixed(1), '%mem': '0.1', tty: tty(p), etime: '00:' + pad(Math.max(0, Math.round((this.clock - (p.start || T0)) / 1000)) % 60, 2).replace(' ', '0') })[c];
+      const H = { pid: ['PID', 7], lwp: ['LWP', 7], nlwp: ['NLWP', 4], ppid: ['PPID', 7], user: ['USER', -8], stat: ['STAT', -4], ni: ['NI', 3], comm: ['COMMAND', -15], cmd: ['CMD', 0], args: ['COMMAND', 0], '%cpu': ['%CPU', 4], '%mem': ['%MEM', 4], tty: ['TT', -8], etime: ['ELAPSED', 11] };
+      const val = (p, c) => ({ pid: p.pid, lwp: p.pid, nlwp: 1, ppid: p.ppid, user: p.user, stat: p.stat + (p.pid === 2001 ? 's' : ''), ni: p.ni || 0, comm: comm(p), cmd: p.cmd, args: p.cmd, '%cpu': (p.cpu || 0).toFixed(1), '%mem': '0.1', tty: tty(p), etime: '00:' + pad(Math.max(0, Math.round((this.clock - (p.start || T0)) / 1000)) % 60, 2).replace(' ', '0') })[c];
       const line = f => cols.map((c, k) => { const [, w] = H[c] || [c.toUpperCase(), 8]; const s = String(f(c)); return k === cols.length - 1 && w <= 0 ? s : w < 0 ? pad(s, -w, true) : pad(s, w); }).join(' ');
       this.out(line(c => (H[c] || [c.toUpperCase()])[0]).replace(/\s+$/, '') + '\n' + rows.map(p => line(c => val(p, c))).join('\n') + '\n');
       return 0;
     }
     if (/u/.test(flat) && !/-u/.test(flat)) { this.out('USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\n' + rows.map(p => `${pad(p.user, 8, true)} ${pad(p.pid, 7)} ${pad((p.cpu || 0).toFixed(1), 4)}  0.1  ${pad(p.pid === 1 ? 167700 : 8000 + p.pid % 900 * 7, 6)} ${pad(p.pid === 1 ? 13020 : 3000 + p.pid % 700 * 3, 5)} ${pad(tty(p), 8, true)} ${pad(p.stat + (p.pid === 2001 || p.pid === 1 ? 's' : ''), 4, true)} ${pad(t0(p), 5)}   0:00 ${p.cmd}`).join('\n') + '\n'); return 0; }
     if (/-ef|-f/.test(flat)) { this.out('UID          PID    PPID  C STIME TTY          TIME CMD\n' + rows.map(p => `${pad(p.user, 8, true)} ${pad(p.pid, 7)} ${pad(p.ppid, 7)}  0 ${t0(p)} ${pad(tty(p), 8, true)} 00:00:00 ${p.cmd}`).join('\n') + '\n'); return 0; }
+    if (/(^|\s)-L\b/.test(flat)) { this.out('    PID     LWP TTY          TIME CMD\n' + rows.map(p => `${pad(p.pid, 7)} ${pad(p.pid, 7)} ${pad(tty(p), 8, true)} 00:00:00 ${comm(p)}`).join('\n') + '\n'); return 0; }
     this.out('    PID TTY          TIME CMD\n' + rows.map(p => `${pad(p.pid, 7)} ${pad(tty(p), 8, true)} 00:00:00 ${comm(p)}`).join('\n') + '\n');
+    return 0;
+  };
+  /* pstree as psmisc 23.7 draws it: children sorted by name, equal leaves merged as N*[name] unless -p */
+  C.pstree = function (a) {
+    const [f] = opts(a);
+    const rows = this.allProcs().map(p => p.me ? Object.assign({}, p, { cmd: 'pstree' }) : p);
+    const nm = p => (p.pid === 1 ? 'systemd' : comm(p).replace(/:$/, '')) + (f.p ? `(${p.pid})` : '');
+    const kids = pid => rows.filter(p => p.ppid === pid && p.pid !== pid).sort((x, y) => nm(x).localeCompare(nm(y)) || x.pid - y.pid);
+    const draw = p => {
+      let ch = kids(p.pid).map(k => ({ p: k, lines: draw(k) }));
+      if (!f.p) { const out = []; for (const c of ch) { const last = out[out.length - 1]; if (last && last.lines.length === 1 && c.lines.length === 1 && last.lines[0].replace(/^\d+\*\[(.*)\]$/, '$1') === c.lines[0]) { last.n = (last.n || 1) + 1; last.lines = [`${last.n}*[${c.lines[0]}]`]; } else out.push(Object.assign({}, c, { lines: c.lines.slice() })); } ch = out; }
+      const me = nm(p);
+      if (!ch.length) return [me];
+      const ind = ' '.repeat(me.length);
+      if (ch.length === 1) return ch[0].lines.map((l, i) => (i ? ind + '   ' : me + '───') + l);
+      const res = [];
+      ch.forEach((c, i) => c.lines.forEach((l, j) => {
+        const first = i === 0 && j === 0, lastc = i === ch.length - 1;
+        res.push((first ? me + '─┬─' : ind + (j ? (lastc ? '   ' : ' │ ') : (lastc ? ' └─' : ' ├─'))) + l);
+      }));
+      return res;
+    };
+    this.out(draw(rows.find(p => p.pid === 1)).join('\n') + '\n');
     return 0;
   };
   C.pgrep = function (a) {

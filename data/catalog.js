@@ -10968,6 +10968,22 @@ function lxAdvModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "process-lifecycle", title: "How processes live: fork, exec, wait, states and threads", emoji: "1.2", page: "content/linux/process-lifecycle.html",
+        summary: "fork and exec, wait and exit statuses, states, zombies, orphans, threads, nice.",
+        keywords: ["fork", "exec", "execve", "wait", "exit status", "process tree", "pstree", "PID 1", "process state", "zombie", "orphan", "thread", "LWP", "scheduler", "nice", "chrt", "taskset"],
+        minutes: 55, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "born", title: "fork, exec, exit and wait", emoji: "", group: "Lesson", keywords: ["fork", "clone", "execve", "exec", "exit", "wait", "waitpid", "WEXITSTATUS", "exit status", "process creation", "child process", "parent process", "copy on write", "execlp", "fflush", "shell builtin"] },
+        { id: "tree", title: "The process tree, PID 1 and exit statuses", emoji: "", group: "Lesson", keywords: ["process tree", "pstree", "PPID", "PID 1", "systemd PID 1", "init", "ps -ef --forest", "exit status", "$?", "PIPESTATUS", "126", "127", "128+N", "exit code 137", "exit code 143", "tini", "docker run --init"] },
+        { id: "states", title: "Process states, zombies and orphans", emoji: "", group: "Lesson", keywords: ["process state", "STAT column", "R running", "S sleeping", "D uninterruptible sleep", "T stopped", "Z zombie", "defunct", "I idle", "orphan process", "reparenting", "subreaper", "unshare --pid", "PID namespace", "reap", "SIGCHLD", "NFS hang"] },
+        { id: "threads", title: "Threads and the scheduler", emoji: "", group: "Lesson", keywords: ["thread", "pthread", "clone", "CLONE_VM", "TID", "LWP", "NLWP", "ps -L", "/proc/PID/task", "scheduler", "EEVDF", "CFS", "nice", "renice", "niceness", "PRI", "chrt", "SCHED_OTHER", "SCHED_FIFO", "SCHED_BATCH", "SCHED_IDLE", "real-time priority", "taskset", "CPU affinity", "ionice"] },
+        { id: "practice", title: "Practice: follow processes through their life", emoji: "", group: "Lesson", keywords: ["process lab", "pstree practice", "ps -o practice", "proc status practice", "nice practice"] },
+        { id: "levels", title: "Processes from school to research", emoji: "", group: "Lesson", keywords: ["process supervisor", "Restart=", "posix_spawn", "vfork", "sched_ext", "isolcpus", "cpuset", "/proc/PID/stack", "gdb", "Firecracker", "Resource temporarily unavailable", "fork bomb"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

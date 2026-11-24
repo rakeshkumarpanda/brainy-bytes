@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How processes live: fork, exec, wait, states and threads · Unix and Linux</title>
+<meta name="description" content="fork, execve, exit and wait in C and in bash, builtins, the process tree and PID 1, exit statuses and 128+N, process states R, S, D, T, Z, zombies and orphans in a PID namespace, threads with ps -L and /proc/PID/task, and the scheduler with nice, chrt, taskset and EEVDF.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=advanced">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=advanced" target="_top">Unix and Linux</a><span>›</span><span>Internals and Advanced</span><span>›</span><span>Step 1: Kernel and processes</span><span>›</span><span>Process life cycle</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 2 of 2 · Expert</div>
+    <h1>How processes live: fork, exec, wait, states and threads</h1>
+    <p class="lead">Follow a process from fork and exec to exit and wait, read exit statuses and process states, understand zombies and orphans, and see how threads and the scheduler share the CPUs.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#process-lifecycle" data-topic="cheatsheet" data-h="process-lifecycle">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#born" data-l="born"><span class="n">1</span><span class="t">fork, exec, exit and wait</span></a></li><li><a href="#tree" data-l="tree"><span class="n">2</span><span class="t">The process tree, PID 1 and exit statuses</span></a></li><li><a href="#states" data-l="states"><span class="n">3</span><span class="t">Process states, zombies and orphans</span></a></li><li><a href="#threads" data-l="threads"><span class="n">4</span><span class="t">Threads and the scheduler</span></a></li><li><a href="#practice" data-l="practice"><span class="n">5</span><span class="t">Practice: follow processes through their life</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">Processes from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="born" data-l="born" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>fork, exec, exit and wait</h2>
+<p>Every process except the very first is made by another process. Unix splits this into two steps that you can combine freely: <b>fork</b> copies the running process, and <b>execve</b> replaces the program inside a process with a new one.</p>
+<div class="walk"><div class="walk-h"><span>The life of one command</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li><b>fork()</b>: the kernel makes a child that is a copy of the parent, with a new PID. fork returns twice: 0 in the child and the child’s PID in the parent. On Linux the system call behind it is clone.</li><li><b>execve(path, argv, envp)</b>: the child loads a new program. The PID, the parent, the open file descriptors and the current folder stay. Memory, code and signal handlers are replaced.</li><li><b>exit(status)</b>: the program ends. The kernel frees almost everything but keeps the exit status for the parent.</li><li><b>wait()</b> or waitpid(): the parent collects the status, and only then does the process disappear completely. In bash the status ends up in <code>$?</code>.</li></ol></div>
+<div class="viz" data-viz="pk" data-pk="lx-fork"></div>
+<div class="lx-run"><div class="lx-rh"><span>fork, exec and wait in a small C program</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; forkdemo.c &lt;&lt;'EOF'
+#include &lt;stdio.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/wait.h&gt;
+
+int main(void) {
+    printf("parent %d starts\n", getpid());
+    fflush(stdout);
+    pid_t pid = fork();
+    if (pid == 0) {
+        printf("child %d, my parent is %d\n", getpid(), getppid());
+        fflush(stdout);
+        execlp("ls", "ls", "/nope", (char *)NULL);
+        _exit(127);
+    }
+    int status;
+    waitpid(pid, &amp;status, 0);
+    printf("child %d exited with status %d\n", pid, WEXITSTATUS(status));
+    return 0;
+}
+EOF</span>
+<span class="lx-cmd">gcc -Wall -o forkdemo forkdemo.c</span>
+<span class="lx-cmd">./forkdemo</span>
+<span class="lx-o">parent 24721 starts
+child 24722, my parent is 24721
+ls: cannot access '/nope': No such file or directory
+child 24722 exited with status 2</span></pre><div class="lx-note">fork returns 0 in the child, which prints its own PID and its parent and then runs execlp, a libc helper for execve that searches PATH. ls fails because /nope does not exist and exits with 2. The line after execlp only runs if exec itself fails (127 is what shells use for “command not found”). The parent waits for exactly this child and reads its status with WEXITSTATUS. fflush matters: without it, text still sitting in the output buffer would be copied by fork and could be printed twice.</div></div>
+<div class="note note-tip"><b>Remember</b><div>This split is why redirections and pipes are easy in Unix. Between fork and exec, the child can close and reopen file descriptors (dup2, as in chapter 1.1), change folder, drop privileges or set limits, and the new program simply starts with that setup.</div></div>
+<div class="vt-talk" hidden>Every process on Linux is made by another one, in two steps. Fork makes a copy of the running process with a new process id. Fork returns twice: zero in the child, and the child’s process id in the parent. Then the child calls exec, which loads a new program into the same process. The process id, the parent and the open files stay. When the program ends, it calls exit with a status, and the parent collects that status with wait. Bash does exactly this for every external command you type, and puts the status in dollar question mark. In the C demo you can see all four steps, and ls failing with status two.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="tree" data-l="tree" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>The process tree, PID 1 and exit statuses</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>pstree, pstree -p</code></td><td>The process tree, with PIDs</td><td><code>pstree -p $$</code></td></tr><tr><td><code>ps -o pid,ppid,stat,cmd</code></td><td>Choose the columns, here the parent and the state</td><td><code>ps -o pid,ppid,stat,cmd</code></td></tr><tr><td><code>ps -ef --forest</code></td><td>All processes, children indented under their parents</td><td><code>ps -ef --forest</code></td></tr><tr><td><code>echo $?</code></td><td>Exit status of the last command</td><td><code>false; echo $?</code></td></tr><tr><td><code>echo ${{PIPESTATUS[@]}}</code></td><td>Exit statuses of every command in the last pipeline</td><td><code>false | true; echo ${{PIPESTATUS[@]}}</code></td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Status</th><th>Meaning</th></tr></thead><tbody><tr><td>0</td><td>success</td></tr><tr><td>1 to 125</td><td>the program’s own error codes (grep: 1 no match, 2 error)</td></tr><tr><td>126</td><td>found but could not be run (no x permission)</td></tr><tr><td>127</td><td>command not found</td></tr><tr><td>128 + N</td><td>killed by signal N: 130 is Ctrl+C (SIGINT, 2), 137 is SIGKILL (9), 143 is SIGTERM (15)</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>A tree, and statuses from signals</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">bash -c 'sleep 30 &amp; sleep 30 &amp; pstree -p $$ | sed -E "s/[0-9]+/N/g"; kill %1 %2'</span>
+<span class="lx-o">bash(N)-+-pstree(N)
+            |-sed(N)
+            |-sleep(N)
+            `-sleep(N)</span>
+<span class="lx-cmd">sleep 30 &amp;</span>
+<span class="lx-cmd">kill -TERM $!</span>
+<span class="lx-cmd">wait $!</span>
+<span class="lx-cmd">echo "status $?"</span>
+<span class="lx-o">status 143</span>
+<span class="lx-cmd">sleep 30 &amp;</span>
+<span class="lx-cmd">kill -KILL $!</span>
+<span class="lx-cmd">wait $!</span>
+<span class="lx-o">bash: 24751 Killed                  sleep 30</span>
+<span class="lx-cmd">echo "status $?"</span>
+<span class="lx-o">status 137</span>
+<span class="lx-cmd">bash -c 'exit 300'</span>
+<span class="lx-cmd">echo "status $?"</span>
+<span class="lx-o">status 44</span></pre><div class="lx-note">pstree draws the inner bash with its children: the two sleeps and the two sides of the pipe, pstree and sed (which hides the process ids, as they change every run). When its output is not a terminal, pstree draws with plain ASCII characters instead of lines. A process killed by a signal has no exit code of its own, so the shell reports 128 plus the signal number: 143 for SIGTERM and 137 for SIGKILL. A status is only 8 bits, so exit 300 becomes 300 − 256 = 44.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>PID 1 is special. On Ubuntu it is systemd, which starts every service. The kernel never lets PID 1 die (if it exits, the kernel panics), it does not get signals it has no handler for, and it becomes the parent of every orphaned process. In a container, your own program may be PID 1, which is why containers use a small init such as tini or docker run --init.</div></div>
+<div class="vt-talk" hidden>All processes form one tree. At the top is process one, systemd on Ubuntu, which the kernel starts at boot. Every other process has a parent, shown as P P I D, and pstree draws the whole family. When a process ends, it leaves an exit status for its parent. Zero means success and anything else is an error. Some numbers have fixed meanings: one hundred twenty seven means command not found, and one hundred twenty eight plus a signal number means the process was killed by that signal. So one hundred thirty seven means it got SIGKILL, number nine, which is what you see when the kernel kills a program that uses too much memory.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="states" data-l="states" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Process states, zombies and orphans</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>STAT</th><th>State</th><th>What it means</th></tr></thead><tbody><tr><td>R</td><td>running or runnable</td><td>on a CPU now, or waiting in the run queue for one</td></tr><tr><td>S</td><td>interruptible sleep</td><td>waiting for something: input, a timer, a network packet. Most processes, most of the time</td></tr><tr><td>D</td><td>uninterruptible sleep</td><td>waiting for I/O inside the kernel, usually a disk or a network file system. Cannot be killed until the I/O ends</td></tr><tr><td>T</td><td>stopped</td><td>paused by SIGSTOP or Ctrl+Z, or held by a debugger</td></tr><tr><td>Z</td><td>zombie</td><td>has exited, but the parent has not called wait yet</td></tr><tr><td>I</td><td>idle</td><td>an idle kernel thread</td></tr><tr><td>extra letters</td><td><code>s</code> session leader, <code>l</code> has threads, <code>+</code> in the foreground, <code>&lt;</code> high priority, <code>N</code> low priority</td><td></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Make a zombie and an orphan, in a private PID namespace</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">unshare --pid --fork --mount-proc bash -c '
+bash -c "sleep 1 &amp; exec sleep 4" &amp;
+sleep 2
+ps -o pid,ppid,stat,args | cut -c1-44
+wait
+bash -c "sleep 3 &amp;"
+ps -o pid,ppid,stat,args | cut -c1-44
+true'</span>
+<span class="lx-o">    PID    PPID STAT COMMAND
+      1       0 S    bash -c  bash -c "sleep
+      2       1 S    sleep 4
+      4       2 Z    [sleep] &lt;defunct&gt;
+      5       1 R    ps -o pid,ppid,stat,arg
+      6       1 S    cut -c1-44
+    PID    PPID STAT COMMAND
+      1       0 S    bash -c  bash -c "sleep
+      8       1 S    sleep 3
+      9       1 R    ps -o pid,ppid,stat,arg
+     10       1 S    cut -c1-44</span></pre><div class="lx-note">unshare gives the demo its own PID namespace, so the outer bash is PID 1 here and ps sees only the demo. The inner bash starts sleep 1 in the background and then replaces itself with sleep 4 (exec), a program that never calls wait. When sleep 1 exits, it stays behind as a zombie, Z and &lt;defunct&gt;, with its parent still alive. In the second part, bash -c starts sleep 3 and exits at once. The orphaned sleep gets PID 1 as its new parent (PPID 1), and PID 1 will reap it.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Many processes in state D at once, a high load average with idle CPUs, and commands that hang on <code>ls</code> often mean a disk or an NFS server that does not answer. kill -9 cannot help with D, because the signal is only handled when the I/O returns. Look at <code>dmesg</code> for I/O errors and at the storage itself.</div></div>
+<div class="vt-talk" hidden>Every process is in a state, shown in the stat column of p s. R means running or ready to run, and S means sleeping while it waits for something, which is the normal state of most processes. D is a deep sleep inside the kernel while it waits for a disk, and such a process cannot be killed until the disk answers. T means stopped, for example by control Z. Z means zombie: the process has exited, but its parent has not collected the exit status yet. A zombie uses no memory, but a parent that never waits can leak thousands of them. If a parent dies first, the child becomes an orphan and gets process one as its new parent, which cleans up after it. The demo makes both, for real, in a private process namespace.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="threads" data-l="threads" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Threads and the scheduler</h2>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>Process</th><th>Thread</th></tr></thead><tbody><tr><td>Memory</td><td>its own address space</td><td>shares the address space of its process</td></tr><tr><td>Made with</td><td>fork (clone without sharing flags)</td><td>pthread_create (clone with CLONE_VM, CLONE_FILES and others)</td></tr><tr><td>Seen as</td><td>a PID in ps</td><td>a TID, shown as LWP in ps -L, and a folder in /proc/PID/task/</td></tr><tr><td>A crash</td><td>affects only that process</td><td>takes down the whole process</td></tr><tr><td>Talking</td><td>pipes, sockets, shared memory</td><td>any variable, with locks to stay safe</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Threads of a Python program, nice and the scheduling policy</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; threads.py &lt;&lt;'EOF'
+import os, subprocess, threading, time
+for i in range(3):
+    threading.Thread(target=time.sleep, args=(3,)).start()
+subprocess.run(["ps", "-L", "-o", "pid,lwp,nlwp,stat,comm", "-p", str(os.getpid())])
+print("tasks:", len(os.listdir(f"/proc/{os.getpid()}/task")))
+EOF</span>
+<span class="lx-cmd">python3 threads.py</span>
+<span class="lx-o">  PID   LWP NLWP STAT COMMAND
+24809 24809    4 Sl   python3
+24809 24810    4 Sl   python3
+24809 24811    4 Sl   python3
+24809 24812    4 Sl   python3
+tasks: 4</span>
+<span class="lx-cmd">nice -n 10 sleep 30 &amp;</span>
+<span class="lx-cmd">ps -o pid,ni,pri,comm -p $!</span>
+<span class="lx-o">  PID  NI PRI COMMAND
+24814  10   9 sleep</span>
+<span class="lx-cmd">chrt -p $!</span>
+<span class="lx-o">pid 24814's current scheduling policy: SCHED_OTHER
+pid 24814's current scheduling priority: 0</span>
+<span class="lx-cmd">kill $!</span></pre><div class="lx-note">The Python program has one PID and four threads: the main thread, whose TID equals the PID, and three more. NLWP counts them, l in Sl says the process has threads, and every thread has a folder under /proc/PID/task. nice -n 10 starts sleep with a lower priority: NI 10, and ps shows PRI 9 on its own scale where a higher number means more important. chrt shows the normal policy SCHED_OTHER, the one nearly every program uses.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Tool</th><th>What it changes</th></tr></thead><tbody><tr><td><code>nice -n N CMD</code>, <code>renice -n N -p PID</code></td><td>niceness from -20 (most CPU) to 19 (least). Only root may lower it below 0</td></tr><tr><td><code>chrt -f -p 50 PID</code></td><td>real-time policy SCHED_FIFO with priority 1 to 99, which always runs before normal tasks (careful: it can freeze a machine)</td></tr><tr><td><code>chrt -b CMD</code>, <code>chrt -i CMD</code></td><td>SCHED_BATCH for long batch jobs, SCHED_IDLE for work that should only use idle CPU</td></tr><tr><td><code>taskset -c 0,1 CMD</code></td><td>CPU affinity: which CPUs a process may run on</td></tr><tr><td><code>ionice -c 3 CMD</code></td><td>disk I/O priority, class 3 is idle</td></tr><tr><td><code>systemd-run --scope -p CPUQuota=50% CMD</code></td><td>a hard CPU limit through cgroups (chapter 3.1)</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Since Linux 6.6 the normal scheduler is EEVDF (earliest eligible virtual deadline first), which replaced CFS. Both give each runnable task a fair share of CPU time weighted by its nice value: each nice step changes the weight by about 25 percent, so a nice 0 task gets about 1.25 times the CPU of a nice 1 task when they compete.</div></div>
+<div class="vt-talk" hidden>A process can contain several threads. Threads share the memory and the open files of their process, so they can work on the same data, but a crash in one thread ends the whole process. On Linux every thread is a task of its own with a thread id, shown as L W P in p s dash capital L, and a folder in slash proc slash P I D slash task. The scheduler decides which task runs on which C P U and for how long. Nice values from minus twenty to nineteen change a task’s share: nicer tasks get less. Chrt sets special policies such as real time, and taskset pins a process to certain C P Us. Since kernel six point six, the scheduler is called E E V D F.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Practice: follow processes through their life</h2>
+<p>Start, inspect, pause and end processes on the practice server, and read their state in /proc.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Process life cycle&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Show the process tree.&quot;, &quot;hint&quot;: &quot;pstree&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;systemd─┬─bash&quot;}]}, {&quot;t&quot;: &quot;Show the tree with process ids.&quot;, &quot;hint&quot;: &quot;pstree -p&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;bash\\(\\d+\\)&quot;}]}, {&quot;t&quot;: &quot;Start sleep 300 in the background.&quot;, &quot;hint&quot;: &quot;sleep 300 &amp;&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^\\[1\\] \\d+&quot;}]}, {&quot;t&quot;: &quot;Show the columns pid, ppid, stat and cmd of your processes.&quot;, &quot;hint&quot;: &quot;ps -o pid,ppid,stat,cmd&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;sleep 300&quot;}]}, {&quot;t&quot;: &quot;Show the State line of the background job in /proc (its PID is in $!).&quot;, &quot;hint&quot;: &quot;grep State /proc/$!/status&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;S \\(sleeping\\)&quot;}]}, {&quot;t&quot;: &quot;Stop the job with SIGSTOP.&quot;, &quot;hint&quot;: &quot;kill -STOP %1&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;kill\\s+-(STOP|19|SIGSTOP)&quot;}]}, {&quot;t&quot;: &quot;Read its State again.&quot;, &quot;hint&quot;: &quot;grep State /proc/$!/status&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;T \\(stopped\\)&quot;}]}, {&quot;t&quot;: &quot;Let it continue.&quot;, &quot;hint&quot;: &quot;kill -CONT %1&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;kill\\s+-(CONT|18|SIGCONT)&quot;}]}, {&quot;t&quot;: &quot;Run a shell that exits with status 3.&quot;, &quot;hint&quot;: &quot;bash -c &#x27;exit 3&#x27;&quot;, &quot;check&quot;: [{&quot;code&quot;: 3}]}, {&quot;t&quot;: &quot;Print the status of the last command.&quot;, &quot;hint&quot;: &quot;echo $?&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^3$&quot;}]}, {&quot;t&quot;: &quot;Start sleep 100 with niceness 10 in the background.&quot;, &quot;hint&quot;: &quot;nice -n 10 sleep 100 &amp;&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;nice\\s+-n\\s*10&quot;}]}, {&quot;t&quot;: &quot;Show pid, ni and cmd of your processes.&quot;, &quot;hint&quot;: &quot;ps -o pid,ni,cmd&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;\\s10 sleep 100&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now follow processes yourself. Draw the process tree with pstree, once with process ids. Start sleep in the background and look at its parent and state with p s dash o. Read its state in slash proc, stop it with SIGSTOP and read the state again, which turns into T for stopped. Let it continue. Then run a shell that exits with status three and print the status. Finally start a nicer sleep with niceness ten and check the N I column.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Processes from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A process is a program that is running. Each one has a number, a parent that started it, and a state such as running or sleeping. When it ends, it leaves a result code: 0 means everything went well.</p></div><div class="ld-p" data-ld="college" hidden><p>Read the tree with pstree and ps, understand fork, exec, exit and wait, exit statuses including 128+N, process states (D, Z, T), zombies and orphans, threads in ps -L, and priorities with nice, chrt and taskset.</p></div><div class="ld-p" data-ld="masters" hidden><p>Engineers write services that handle SIGTERM and SIGCHLD correctly, use process supervisors (systemd units with Restart=, or a small init in containers), choose between processes and threads (or event loops) for concurrency, pin latency critical work to CPUs, isolate CPUs with isolcpus or cgroup cpusets, and debug with /proc/PID/stack, gdb and perf.</p></div><div class="ld-p" data-ld="research" hidden><p>Research studies schedulers (EEVDF, sched_ext in Linux 6.12, which lets schedulers be written as BPF programs), the cost of fork for large processes and alternatives such as posix_spawn and vfork, process creation in microservices and serverless systems that start thousands of short tasks per second, and lightweight virtual machines such as Firecracker.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the server that ran out of process ids</div><p>A monitoring agent on a build server started a small check script every second, but never called wait for it. After two days, ps showed over 30000 &lt;defunct&gt; entries, and new logins failed with “fork: retry: Resource temporarily unavailable”. Killing the agent made systemd the parent of all zombies, which reaped them in a second. The vendor fixed the agent, and the team added a check that alerts when the number of Z processes grows.</p></div>
+<div class="vt-talk" hidden>Here is how understanding processes grows. At school you learn that a process is a running program with a number, a parent and a result code. Professionals read the process tree, understand fork, exec and wait, know what states like D and Z mean, and use nice and chrt to share the C P U. Engineers build services that handle signals and child processes correctly, pick between processes and threads, and pin critical work to C P Us. Researchers design new schedulers, including ones written as B P F programs, and find faster ways to start thousands of tiny tasks per second.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./kernel-syscalls.html" data-topic="kernel-syscalls"><small>Previous topic</small><b>Kernel and system calls</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "process-lifecycle", "topic": "process-lifecycle", "subject": "linux", "title": "How processes live: fork, exec, wait, states and threads", "codes": {}, "quiz": [{"lv": "e", "q": "Which system call makes a copy of the running process?", "o": ["exec", "fork", "wait", "kill"], "a": 1, "hint": "Copy.", "why": "On Linux it is clone underneath."}, {"lv": "e", "q": "What does exec do?", "o": ["Makes a new process", "Replaces the program inside the current process", "Ends the process", "Waits for a child"], "a": 1, "hint": "Same PID, new program.", "why": "Open files stay."}, {"lv": "e", "q": "What does exit status 0 mean?", "o": ["Error", "Success", "Killed", "Not found"], "a": 1, "hint": "Zero is good.", "why": "Anything else is an error."}, {"lv": "e", "q": "Which command draws the process tree?", "o": ["ls -R", "pstree", "tree", "top"], "a": 1, "hint": "Process tree.", "why": "pstree -p adds PIDs."}, {"lv": "m", "q": "Why is cd a shell builtin?", "o": ["It is faster", "A child process could not change the shell’s own folder", "It needs root", "It is older"], "a": 1, "hint": "Own state.", "why": "The same for export and exit."}, {"lv": "m", "q": "What is a zombie process?", "o": ["A virus", "A process that exited but whose parent has not called wait yet", "A process using 100 % CPU", "A stopped process"], "a": 1, "hint": "Dead but not collected.", "why": "State Z, defunct."}, {"lv": "m", "q": "A program exits with status 137. What happened?", "o": ["Not found", "It was killed by SIGKILL (128 + 9)", "It succeeded", "Permission denied"], "a": 1, "hint": "128 plus a signal.", "why": "Often the OOM killer."}, {"lv": "m", "q": "Who becomes the parent of an orphan?", "o": ["Nobody", "PID 1, or the nearest subreaper", "The shell", "The kernel thread kthreadd"], "a": 1, "hint": "Reparenting.", "why": "It reaps the orphan when it exits."}, {"lv": "m", "q": "What does state D mean?", "o": ["Dead", "Uninterruptible sleep, usually waiting for disk I/O", "Daemon", "Debugging"], "a": 1, "hint": "Deep sleep.", "why": "kill -9 waits until the I/O ends."}, {"lv": "h", "q": "How do you get rid of zombies?", "o": ["kill -9 the zombie", "Make the parent call wait, or end the parent so PID 1 reaps them", "Reboot only", "rm /proc/PID"], "a": 1, "hint": "They are already dead.", "why": "Fix or kill the parent."}, {"lv": "h", "q": "What do threads of one process share?", "o": ["Nothing", "The address space and open files", "Only the PID", "Only the stack"], "a": 1, "hint": "Shared memory.", "why": "Each has its own stack and TID."}, {"lv": "h", "q": "What does nice -n 19 do?", "o": ["Gives the most CPU", "Gives the process the lowest normal priority", "Makes it real time", "Pins it to CPU 19"], "a": 1, "hint": "Nicest to others.", "why": "Range -20 to 19."}, {"lv": "h", "q": "Why can text be printed twice after fork in a C program?", "o": ["A kernel bug", "Unflushed text in the stdio buffer is copied into the child", "printf runs twice", "The terminal echoes it"], "a": 1, "hint": "Buffers are copied.", "why": "Call fflush before fork."}, {"lv": "x", "q": "Why does a container often need a small init such as tini as PID 1?", "o": ["For networking", "PID 1 must reap orphans and forward signals, which most programs do not do", "To save memory", "For logging"], "a": 1, "hint": "PID 1 duties.", "why": "docker run --init adds one."}], "calc": [{"lv": "e", "q": "A process is killed with SIGTERM (15). Which status does the shell report?", "ans": "143", "hint": "128 plus the signal.", "steps": ["128 + 15.", "Shells add 128.", "<span class=\"eq\">143<\/span>"]}, {"lv": "e", "q": "bash -c \"exit 260\". Which status do you see?", "ans": "4", "hint": "Statuses are 8 bits.", "steps": ["The status is taken modulo 256.", "260 − 256.", "<span class=\"eq\">4<\/span>"]}, {"lv": "m", "q": "Ctrl+C sends SIGINT (2). Which status does the shell show?", "ans": "130", "hint": "128 plus 2.", "steps": ["128 + 2.", "SIGINT is 2.", "<span class=\"eq\">130<\/span>"]}, {"lv": "m", "q": "A parent forks 3 children, and each child forks 2 more. How many processes are there in total, the parent included?", "ans": "10", "hint": "Count each level.", "steps": ["1 parent.", "3 children, 3 × 2 = 6 grandchildren.", "<span class=\"eq\">1 + 3 + 6 = 10<\/span>"]}, {"lv": "h", "q": "A loop calls fork() 4 times, and every process (parent and children) keeps looping. How many processes exist at the end?", "ans": "16", "hint": "Doubles each time.", "steps": ["Each fork doubles the number.", "2 to the power 4.", "<span class=\"eq\">2 × 2 × 2 × 2 = 16<\/span>"]}, {"lv": "h", "q": "pid_max is 32768. A buggy agent leaks 1 zombie per second. After how many whole hours are all process ids used, ignoring the ones already in use?", "ans": "9", "hint": "Seconds to hours.", "steps": ["32768 seconds.", "÷ 3600 = 9.1.", "<span class=\"eq\">9 hours<\/span>"]}, {"lv": "x", "q": "Each nice step changes the CPU weight by about 1.25 times. Roughly how many times more CPU does a nice 0 task get than a nice 3 task?", "ans": "2", "hint": "Multiply three times.", "steps": ["1.25 × 1.25 × 1.25 = 1.95.", "Round.", "<span class=\"eq\">about 2 times<\/span>"]}], "assign": [], "must": [["Birth and death", "fork copies (returns 0 in the child), execve replaces the program (PID and open files stay), exit leaves a status, wait collects it. Builtins such as cd run without fork."], ["Tree and status", "pstree -p, ps -o pid,ppid,stat,cmd. PID 1 is systemd. Status 0 ok, 126 not executable, 127 not found, 128+N killed by signal N (130, 137, 143)."], ["States", "R running, S sleeping, D waiting for I/O (cannot be killed), T stopped, Z zombie. Orphans get PID 1 as parent."], ["Threads", "Share memory and files. TID shown as LWP in ps -L, folders in /proc/PID/task, l in STAT."], ["Scheduler", "EEVDF since 6.6. nice and renice -20 to 19, chrt for policies (SCHED_OTHER, FIFO, BATCH, IDLE), taskset for CPUs, ionice for disks."]], "summary": "<p>A process is born when its parent forks and usually runs a new program with execve. It ends with exit, and stays a zombie until the parent collects the status with wait. Orphans move to PID 1. Statuses follow fixed rules (127 not found, 128+N for signals). Threads share their process’s memory, and the EEVDF scheduler shares the CPUs by nice value and policy.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>
