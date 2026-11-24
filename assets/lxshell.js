@@ -57,7 +57,7 @@ const LXSH = (() => {
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
   const SBIN = 'ufw sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const CMDS = 'nproc alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -142,6 +142,7 @@ const LXSH = (() => {
     /* find a node. follow = true follows a symbolic link at the end of the path too */
     node(path, follow = true, depth = 0) {
       const parts = norm(path).split('/').filter(Boolean);
+      if (parts[0] === 'proc' && this.procFs && !this.inProcFs) { this.inProcFs = true; try { this.procFs(); } finally { this.inProcFs = false; } }
       let n = this.root, here = '/';
       for (let i = 0; i < parts.length; i++) {
         if (n.type === 'l') { n = this.node(n.target.startsWith('/') ? n.target : dirName(here) + '/' + n.target, true, depth + 1); if (!n) return null; }
@@ -169,7 +170,7 @@ const LXSH = (() => {
       return ((n.mode >> sh) & bit) !== 0;
     }
     inGroup(g) { if (g === this.user) return true; const row = (this.node('/etc/group').data || '').split('\n').find(l => l.startsWith(g + ':')); return !!row && row.split(':')[3].split(',').includes(this.user); }
-    size(n) { if (n.big) return n.big; if (n.type === 'f' && n.data && n.data.charCodeAt(0) === 0 && this.unpack && this.unpack(n.data)) return this.unpack(n.data).size; return n.type === 'd' ? 4096 : n.type === 'l' ? n.target.length : n.type === 'c' ? 0 : enc(n.data); }
+    size(n) { if (n.proc) return n.type === 'l' ? 64 : 0; if (n.big) return n.big; if (n.type === 'f' && n.data && n.data.charCodeAt(0) === 0 && this.unpack && this.unpack(n.data)) return this.unpack(n.data).size; return n.type === 'd' ? 4096 : n.type === 'l' ? n.target.length : n.type === 'c' ? 0 : enc(n.data); }
     tilde(p) { return p === HOME ? '~' : p.startsWith(HOME + '/') ? '~' + p.slice(HOME.length) : p; }
     prompt() { return { user: this.user, host: HOST, dir: this.tilde(this.cwd), sign: this.user === 'root' ? '#' : '$' }; }
 
@@ -919,14 +920,15 @@ const LXSH = (() => {
     const [f, rest] = opts(a);
     const long = f.l, all = f.a, almost = f.A, hum = f.h || f['--human-readable'];
     const targets = rest.length ? rest : ['.'];
-    const nlink = n => n.type === 'd' ? Object.keys(n.kids).filter(k => n.kids[k].type === 'd').length + 2 : 1;
+    const nlink = n => this.links(n);
     const sz = n => String(hum ? human(this.size(n)) : this.size(n));
+    let IW = 1; const ino = n => f.i ? pad(this.ino(n), IW) + ' ' : '';
     let W = [1, 1, 1, 1];
-    const widths = rows => { W = [0, 0, 0, 0]; rows.forEach(([n]) => { W = [Math.max(W[0], String(nlink(n)).length), Math.max(W[1], n.owner.length), Math.max(W[2], n.group.length), Math.max(W[3], sz(n).length)]; }); };
+    const widths = rows => { W = [0, 0, 0, 0]; IW = Math.max(1, ...rows.map(([n]) => String(this.ino(n)).length)); rows.forEach(([n]) => { W = [Math.max(W[0], String(nlink(n)).length), Math.max(W[1], n.owner.length), Math.max(W[2], n.group.length), Math.max(W[3], sz(n).length)]; }); };
     const show = (n, name) => {
-      if (!long) return name;
+      if (!long) return ino(n) + name;
       const tgt = n.type === 'l' ? ' -> ' + n.target : '';
-      return `${modeStr(n)} ${pad(nlink(n), W[0])} ${pad(n.owner, W[1], true)} ${pad(n.group, W[2], true)} ${pad(sz(n), W[3])} ${when(n.mtime)} ${name}${tgt}`;
+      return `${ino(n)}${modeStr(n)} ${pad(nlink(n), W[0])} ${pad(n.owner, W[1], true)} ${pad(n.group, W[2], true)} ${pad(sz(n), W[3])} ${when(n.mtime)} ${name}${tgt}`;
     };
     const listing = (n, path) => {
       if (!this.can(n, 'r')) { this.eout(`ls: cannot open directory '${path}': Permission denied\n`); this.err = true; return []; }
@@ -946,13 +948,13 @@ const LXSH = (() => {
       if (n.type === 'd' && !f.d) dirs.push([n, t]); else files.push([n, t]);
     });
     const parts = [];
-    if (files.length) { widths(files); parts.push(files.map(([n, t]) => show(n, t)).join(long || f['1'] || this.notty ? '\n' : '  ')); }
+    if (files.length) { widths(files); if (!long) IW = 1; parts.push(files.map(([n, t]) => show(n, t)).join(long || f['1'] || this.notty ? '\n' : '  ')); }
     const walk = (n, t, head) => {
       if (!this.can(n, 'r')) { listing(n, t); return ''; }
       const rows = listing(n, t);
       let s = head ? `${t}:\n` : '';
-      if (long) s += `total ${rows.reduce((sum, [m]) => sum + (m.type === 'd' ? 4 : this.size(m) ? Math.ceil(this.size(m) / 4096) * 4 : 0), 0)}\n`;
-      widths(rows);
+      if (long) s += `total ${rows.reduce((sum, [m]) => sum + (m.proc ? 0 : m.type === 'd' ? 4 : this.size(m) ? Math.ceil(this.size(m) / 4096) * 4 : 0), 0)}\n`;
+      widths(rows); if (!long) IW = 1;
       s += rows.map(([m, k]) => show(m, k)).join(long || f['1'] || this.notty ? '\n' : '  ');
       parts.push(s.replace(/\n$/, ''));
       if (f.R) rows.filter(([m, k]) => m.type === 'd' && k !== '.' && k !== '..').forEach(([m, k]) => walk(m, (t === '.' && !head ? '.' : t).replace(/\/$/, '') + '/' + k, true));
@@ -2659,6 +2661,61 @@ const LXSH = (() => {
     }
     this.eout('ERROR: Invalid syntax\n\nUsage: ufw COMMAND\n'); return 1;
   };
+
+  /* ---------- inodes, link counts and a live /proc built from the process table ---------- */
+  World.prototype.ino = function (n) {
+    if (n === this.root) return 2;
+    if (!n.ino) n.ino = n.proc ? 40000 + (this.procIno = (this.procIno || 0) + 1) : (this.inoNext = (this.inoNext || 1310721) + 7);
+    return n.ino;
+  };
+  World.prototype.links = function (n) {
+    if (n.type === 'd') return Object.keys(n.kids).filter(k => n.kids[k].type === 'd').length + 2;
+    let c = 0; const walk = d => { for (const k in d.kids) { const m = d.kids[k]; if (m === n) c++; if (m.type === 'd' && !m.proc && k !== 'proc') walk(m); } };
+    walk(this.root); return Math.max(c, 1);
+  };
+  C.nproc = function () { this.out('2\n'); return 0; };
+  const CAP_ALL = '000001ffffffffff';
+  World.prototype.procFs = function () {
+    const proc = this.root.kids.proc, keep = {}; if (!proc || !this.procs) return;
+    for (const k in proc.kids) if (!proc.kids[k].proc) keep[k] = proc.kids[k];
+    const self = this.nextPid, me = this.user;
+    const F = (data, mode = 0o444, owner = 'root') => ({ type: 'f', name: '', mode, owner, group: owner, mtime: this.clock, data, proc: true });
+    const L = (target, owner = 'root', mode = 0o777) => ({ type: 'l', name: '', mode, owner, group: owner, mtime: this.clock, target, proc: true });
+    const D = (kids, mode = 0o555, owner = 'root') => { const n = { type: 'd', name: '', mode, owner, group: owner, mtime: this.clock, kids, proc: true }; for (const k in kids) kids[k].name = k; return n; };
+    const ids = u => { const r = this.pwRow(u); return r ? [r[2], r[3]] : ['1000', '1000']; };
+    const rows = this.procs.concat([{ pid: self, ppid: 2001, user: me, cmd: this.cmdNameReal || 'cat', comm: this.cmdNameReal || 'cat', stat: 'R', self: true }]);
+    const kids = Object.assign({}, keep);
+    for (const p of rows) {
+      const name = (p.comm || baseName(p.cmd.split(' ')[0]).replace(/:$/, '')).slice(0, 15), [uid, gid] = ids(p.user), root = p.user === 'root';
+      const state = p.self ? 'R (running)' : p.stat === 'T' ? 'T (stopped)' : p.stat === 'Z' ? 'Z (zombie)' : 'S (sleeping)';
+      const virt = p.pid === 1 ? 167700 : 8000 + p.pid % 900 * 7, rss = 3000 + p.pid % 700 * 3;
+      const tty = p.pid === 2001 || p.ppid === 2001;
+      const status = `Name:\t${name}\nUmask:\t0022\nState:\t${state}\nTgid:\t${p.pid}\nNgid:\t0\nPid:\t${p.pid}\nPPid:\t${p.ppid}\nTracerPid:\t0\nUid:\t${uid}\t${uid}\t${uid}\t${uid}\nGid:\t${gid}\t${gid}\t${gid}\t${gid}\nFDSize:\t${tty ? 256 : 64}\nGroups:\t${root ? '' : '27 ' + gid + ' '}\nVmPeak:\t${pad(virt + 120, 8)} kB\nVmSize:\t${pad(virt, 8)} kB\nVmRSS:\t${pad(rss, 8)} kB\nVmSwap:\t       0 kB\nThreads:\t1\nCapInh:\t0000000000000000\nCapPrm:\t${root ? CAP_ALL : '0000000000000000'}\nCapEff:\t${root ? CAP_ALL : '0000000000000000'}\nCapBnd:\t${CAP_ALL}\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\n`;
+      const exe = p.pid === 1 ? '/usr/lib/systemd/systemd' : p.self ? (this.lookup(p.comm) ? this.lookup(p.comm).path : '/usr/bin/' + p.comm) : name === 'sshd' ? '/usr/sbin/sshd' : name === 'nginx' ? '/usr/sbin/nginx' : name === 'cron' ? '/usr/sbin/cron' : name === 'bash' ? '/usr/bin/bash' : '/usr/bin/' + name;
+      const fds = tty ? { 0: L('/dev/pts/0', p.user, 0o700), 1: L('/dev/pts/0', p.user, 0o700), 2: L('/dev/pts/0', p.user, 0o700) } : { 0: L('/dev/null', p.user, 0o500), 1: L('socket:[21307]', p.user, 0o700), 2: L('socket:[21307]', p.user, 0o700) };
+      if (p.pid === 2001) fds[255] = L('/dev/pts/0', p.user, 0o700);
+      if (name === 'sshd') { fds[3] = L('socket:[22941]', 'root', 0o700); fds[4] = L('socket:[22943]', 'root', 0o700); }
+      if (name === 'nginx' && p.pid === 905) { fds[6] = L('socket:[24518]', 'root', 0o700); fds[7] = L('socket:[24519]', 'root', 0o700); }
+      if (p.self && this.procFd) Object.assign(fds, this.procFd(p.user, L));
+      const env = (p.pid === 2001 || p.self) ? [...this.exported].filter(k => this.vars[k] !== undefined).map(k => k + '=' + this.vars[k]).join('\0') + '\0' : '';
+      kids[p.pid] = D({ status: F(status, 0o444, p.user), comm: F(name + '\n', 0o644, p.user), cmdline: F(p.cmd.replace(/^-bash$/, '-bash').split(' ').join('\0') + '\0', 0o444, p.user),
+        environ: F(env, 0o400, p.user), cwd: L(p.self || p.pid === 2001 ? this.cwd : '/', p.user), exe: L(exe, p.user), fd: D(fds, 0o500, p.user),
+        ns: D(Object.fromEntries(['cgroup', 'ipc', 'mnt', 'net', 'pid', 'user', 'uts'].map((k, i) => [k, L(`${k}:[40265318${30 + i}]`, p.user)])), 0o511, p.user) }, 0o555, p.user);
+    }
+    kids.self = L(String(self));
+    const total = 8048304, free = 3142212, avail = 5563880, cached = 2389412, buffers = 315556, swk = this.disks ? this.disks().swaps.reduce((t, x) => t + x.size / 1024 - 4, 0) : 0;
+    kids.meminfo = F(`MemTotal:       ${pad(total, 8)} kB\nMemFree:        ${pad(free, 8)} kB\nMemAvailable:   ${pad(avail, 8)} kB\nBuffers:        ${pad(buffers, 8)} kB\nCached:         ${pad(cached, 8)} kB\nSwapCached:            0 kB\nActive:         ${pad(2650120, 8)} kB\nInactive:       ${pad(1498200, 8)} kB\nSwapTotal:      ${pad(swk, 8)} kB\nSwapFree:       ${pad(swk, 8)} kB\nDirty:                88 kB\nAnonPages:      ${pad(1442060, 8)} kB\nMapped:         ${pad(412300, 8)} kB\nShmem:          ${pad(122880, 8)} kB\nSlab:           ${pad(301240, 8)} kB\nPageTables:     ${pad(14320, 8)} kB\nCommitLimit:    ${pad(Math.floor(total / 2) + swk, 8)} kB\nCommitted_AS:   ${pad(3920400, 8)} kB\nHugePages_Total:       0\nHugepagesize:       2048 kB\n`);
+    const running = rows.filter(r => r.self || r.cpu).length;
+    kids.loadavg = F(`0.42 0.35 0.30 ${running}/${rows.length + 112} ${self}\n`);
+    kids.uptime = F(`${(268860 + (this.clock - T0) / 1000).toFixed(2)} 530214.88\n`);
+    kids.filesystems = F('nodev\tsysfs\nnodev\ttmpfs\nnodev\tbdev\nnodev\tproc\nnodev\tcgroup2\nnodev\tdevtmpfs\nnodev\tdebugfs\nnodev\tsecurityfs\nnodev\tsockfs\nnodev\tpipefs\nnodev\tdevpts\n\text4\nnodev\tsquashfs\n\tvfat\nnodev\tmqueue\n\txfs\nnodev\toverlay\n');
+    kids.cmdline = F('BOOT_IMAGE=/vmlinuz-6.8.0-practice root=UUID=b6e1c2a4-77aa-4e0f-9d3b-2f1c8a5e0d71 ro quiet splash\n');
+    kids.sys = D({ kernel: D({ hostname: F(HOST + '\n', 0o644), ostype: F('Linux\n'), osrelease: F('6.8.0-practice\n'), pid_max: F('4194304\n', 0o644), threads_max: F('63318\n', 0o644) }),
+      vm: D({ swappiness: F('60\n', 0o644), overcommit_memory: F('0\n', 0o644), dirty_ratio: F('20\n', 0o644) }),
+      net: D({ ipv4: D({ ip_forward: F('0\n', 0o644), tcp_syncookies: F('1\n', 0o644) }) }), fs: D({ 'file-max': F('9223372036854775807\n', 0o644) }) });
+    for (const k in kids) kids[k].name = k;
+    proc.kids = kids;
+  };
   C.lsblk = function (a) {
     const st = this.disks(), full = a.includes('-f') || a.includes('--fs'), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
     const mnt = p => (st.mounts.find(m => m.dev === p.name) || {}).dir || (st.swaps.some(x => x.dev === p) ? '[SWAP]' : '');
@@ -2907,7 +2964,7 @@ const LXSH = (() => {
       }
       const ty = n.type === 'd' ? 'directory' : n.type === 'l' ? 'symbolic link' : n.type === 'c' ? 'character special file' : this.size(n) ? 'regular file' : 'regular empty file';
       const dt = new Date(n.mtime).toISOString().replace('T', ' ').replace(/\.\d+Z/, '.000000000 +0000');
-      this.out(`  File: ${t}${n.type === 'l' ? ' -> ' + n.target : ''}\n  Size: ${this.size(n)}\t\tBlocks: ${n.type === 'd' ? 8 : this.size(n) ? 8 : 0}\tIO Block: 4096   ${ty}\nAccess: (${n.mode.toString(8).padStart(4, '0')}/${modeStr(n)})  Uid: (${pad(this.pwRow(n.owner) ? this.pwRow(n.owner)[2] : 1000, 5)}/${pad(n.owner, 8)})   Gid: (${pad(this.grRow(n.group) ? this.grRow(n.group)[2] : 1000, 5)}/${pad(n.group, 8)})\nModify: ${dt}\n`);
+      this.out(`  File: ${t}${n.type === 'l' ? ' -> ' + n.target : ''}\n  Size: ${this.size(n)}\t\tBlocks: ${n.type === 'd' ? 8 : this.size(n) ? 8 : 0}\tIO Block: 4096   ${ty}\nDevice: ${n.proc ? '0,22' : '8,1'}\tInode: ${String(this.ino(n)).padEnd(11)} Links: ${this.links(n)}\nAccess: (${n.mode.toString(8).padStart(4, '0')}/${modeStr(n)})  Uid: (${pad(this.pwRow(n.owner) ? this.pwRow(n.owner)[2] : 1000, 5)}/${pad(n.owner, 8)})   Gid: (${pad(this.grRow(n.group) ? this.grRow(n.group)[2] : 1000, 5)}/${pad(n.group, 8)})\nAccess: ${dt}\nModify: ${dt}\nChange: ${dt}\n Birth: ${dt}\n`);
     });
     return this.err ? 1 : 0;
   };

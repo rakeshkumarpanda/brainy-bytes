@@ -1294,6 +1294,54 @@
     }
   }));
 
+  /* adv 1.1 a program asks the kernel: each system call of a small command, as strace showed it on Ubuntu 24.04 */
+  def('lx-syscall', el => W(el, {
+    title: 'A command, one system call at a time',
+    sub: 'Pick a command. Pip follows the program as it crosses from user space into the kernel and back. Every line is real strace output from Ubuntu 24.04, with the start-up calls of the loader left out.',
+    inputs: [{ k: 'cmd', label: 'Command', type: 'seg', val: 'cat', opts: [['cat', 'cat hello.txt'], ['miss', 'cat missing.txt'], ['redir', 'echo hi > out.txt'], ['ls', 'ls (count calls)']] }],
+    random: () => ({ cmd: ['cat', 'miss', 'redir', 'ls'][Math.floor(Math.random() * 4)] }),
+    frames: v => {
+      const S = {
+        cat: { label: '$ strace cat hello.txt', steps: [
+          ['execve("/usr/bin/cat", ["cat", "hello.txt"], 0x7ffc959a83f8 /* 1 var */) = 0', 'The shell asked the kernel to run /usr/bin/cat. execve replaces the program in this process with cat. Then the loader opens /etc/ld.so.cache and libc.so.6, which are left out here.', 2],
+          ['openat(AT_FDCWD, "hello.txt", O_RDONLY) = 3', 'cat calls open() in libc, and libc makes the openat system call. The kernel finds the file, checks your read permission, and returns file descriptor 3, the lowest free number after 0, 1 and 2.', 3],
+          ['read(3, "hello\\n", 131072)              = 6', 'read asks for up to 131072 bytes from descriptor 3. The kernel copies the 6 bytes of the file from the page cache (or the disk) into cat’s memory.', 3],
+          ['write(1, "hello\\n", 6)                  = 6', 'write sends the 6 bytes to descriptor 1, standard output, here the terminal. The kernel passes them to the terminal driver.', 3],
+          ['read(3, "", 131072)                     = 0', 'A read that returns 0 means end of file. cat now knows it is done.', 3],
+          ['close(3)                                = 0', 'close gives descriptor 3 back.', 2],
+          ['exit_group(0)                           = ?', 'exit_group ends the process with status 0. The kernel frees its memory and tells the parent shell.', 1]] },
+        miss: { label: '$ strace cat missing.txt', steps: [
+          ['openat(AT_FDCWD, "missing.txt", O_RDONLY) = -1 ENOENT (No such file or directory)', 'The kernel cannot find the name, so the system call returns -1 and sets errno to ENOENT. libc keeps the number in the variable errno.', 3],
+          ['write(2, "cat: ", 5)                    = 5', 'cat turns errno into a message with strerror and writes it to descriptor 2, standard error, in pieces.', 3],
+          ['write(2, ": No such file or directory", 27) = 27', 'The text “No such file or directory” comes from the C library’s table for ENOENT. This is why so many programs print exactly the same words.', 3],
+          ['exit_group(1)                           = ?', 'cat ends with status 1, which the shell shows as $? = 1.', 1]] },
+        redir: { label: '$ strace bash -c \'echo hi > out.txt\'', steps: [
+          ['openat(AT_FDCWD, "out.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666) = 3', 'For > the shell opens the file for writing, creates it if needed and empties it (O_TRUNC). The mode 0666 is reduced by your umask, usually to 0644.', 3],
+          ['fcntl(1, F_DUPFD, 10)                   = 10', 'echo is a builtin, so bash saves its own standard output as a copy on descriptor 10, to restore it afterwards.', 2],
+          ['dup2(3, 1)                              = 1', 'dup2 makes descriptor 1 point to the same open file as 3. From now on, “standard output” is out.txt. This is all redirection is.', 2],
+          ['close(3)                                = 0', 'The extra descriptor is not needed any more.', 2],
+          ['write(1, "hi\\n", 3)                     = 3', 'echo writes to descriptor 1 as always. It does not know that 1 is now a file.', 3],
+          ['dup2(10, 1)                             = 1', 'bash puts its own standard output back from the saved copy and closes 10.', 2]] },
+        ls: { label: '$ strace -c ls', table: [['mmap', '17'], ['close', '8'], ['fstat', '7'], ['openat', '6'], ['mprotect', '5'], ['read', '5'], ['brk', '3'], ['getdents64', '2'], ['write', '1'], ['execve', '1'], ['total', '69']] }
+      }[v.cmd];
+      const layers = ['your program', 'C library (libc)', 'system call', 'kernel'];
+      const flow = (k, bad) => ({ t: 'flow', label: 'Where the work happens', items: layers.map((x, i) => [x, i < 2 ? 'user space' : i === 2 ? 'the border' : 'kernel space', bad && i === k ? 'no' : i === k ? 'cur' : i < k ? 'yes' : '']), arrows: layers.slice(1).map((_, i) => i < k ? 'yes' : '') });
+      const fr = [{ msg: 'A program cannot touch the disk, the network or the screen itself. It asks the kernel with a <b>system call</b>. libc wraps each call in a normal C function such as open, read or write, and a special CPU instruction switches into kernel mode.', mood: 'think', layers: [flow(0)] }];
+      if (S.table) {
+        fr.push({ msg: '<code>strace -c</code> counts the calls instead of printing them. ls in a folder with one file made 69 calls. Most are mmap and mprotect while the loader maps libc into memory. Two getdents64 calls read the folder, and one write prints the result.', mood: 'wow', layers: [flow(2), { t: 'flow', label: 'strace -c ls, calls per system call', items: S.table.map(r => [r[0], r[1], 'cur']), plain: true }] });
+        fr.push({ msg: 'This is how you find what a slow or failing program really does: <code>strace -f -e trace=file PROGRAM</code> shows every file it tries to open, and the ENOENT lines often point straight at a missing config file.', mood: 'happy', fx: 'burst', layers: [flow(3)] });
+        return fr;
+      }
+      const lines = [['c', S.label]];
+      S.steps.forEach(([ln, msg, k], i) => {
+        const bad = /= -1/.test(ln);
+        lines.push([bad ? 'e' : 'o', ln]);
+        fr.push({ msg, mood: bad ? 'sad' : i === S.steps.length - 1 ? 'happy' : 'look', fx: bad ? 'shake' : i === S.steps.length - 1 ? 'burst' : undefined, layers: [flow(k, bad), { t: 'term', label: 'strace output', lines: lines.slice() }] });
+      });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
