@@ -56,8 +56,8 @@ const LXSH = (() => {
     ]
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
-  const SBIN = 'ufw sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'sysctl mkfifo nproc pstree alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const SBIN = 'setcap ufw sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
+  const CMDS = 'capsh getcap sysctl mkfifo nproc pstree alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -2699,7 +2699,8 @@ const LXSH = (() => {
       if (name === 'nginx' && p.pid === 905) { fds[6] = L('socket:[24518]', 'root', 0o700); fds[7] = L('socket:[24519]', 'root', 0o700); }
       if (p.self && this.procFd) Object.assign(fds, this.procFd(p.user, L));
       const env = (p.pid === 2001 || p.self) ? [...this.exported].filter(k => this.vars[k] !== undefined).map(k => k + '=' + this.vars[k]).join('\0') + '\0' : '';
-      kids[p.pid] = D({ oom_score_adj: F('0\n', 0o644, p.user), status: F(status, 0o444, p.user), comm: F(name + '\n', 0o644, p.user), cmdline: F(p.cmd.replace(/^-bash$/, '-bash').split(' ').join('\0') + '\0', 0o444, p.user),
+      const cg = p.pid === 1 ? '/init.scope' : p.user === 'root' || p.user === 'www-data' ? `/system.slice/${name === 'sshd' ? 'ssh' : name}.service` : '/user.slice/user-1000.slice/session-3.scope';
+      kids[p.pid] = D({ cgroup: F(`0::${cg}\n`, 0o444, p.user), oom_score_adj: F('0\n', 0o644, p.user), status: F(status, 0o444, p.user), comm: F(name + '\n', 0o644, p.user), cmdline: F(p.cmd.replace(/^-bash$/, '-bash').split(' ').join('\0') + '\0', 0o444, p.user),
         environ: F(env, 0o400, p.user), cwd: L(p.self || p.pid === 2001 ? this.cwd : '/', p.user), exe: L(exe, p.user), fd: D(fds, 0o500, p.user),
         ns: D(Object.fromEntries(['cgroup', 'ipc', 'mnt', 'net', 'pid', 'user', 'uts'].map((k, i) => [k, L(`${k}:[40265318${30 + i}]`, p.user)])), 0o511, p.user) }, 0o555, p.user);
     }
@@ -2768,6 +2769,32 @@ const LXSH = (() => {
       this.out(n ? st[k] + '\n' : `${k} = ${st[k]}\n`);
     }
     return code;
+  };
+
+  /* capabilities: names in bit order as libcap 2.66 prints them */
+  const CAPS = 'chown dac_override dac_read_search fowner fsetid kill setgid setuid setpcap linux_immutable net_bind_service net_broadcast net_admin net_raw ipc_lock ipc_owner sys_module sys_rawio sys_chroot sys_ptrace sys_pacct sys_admin sys_boot sys_nice sys_resource sys_time sys_tty_config mknod lease audit_write audit_control setfcap mac_override mac_admin syslog wake_alarm block_suspend audit_read perfmon bpf checkpoint_restore'.split(' ');
+  C.capsh = function (a) {
+    const d = a.find(x => x.startsWith('--decode='));
+    if (d) { const hex = d.slice(9).replace(/^0x/, ''); let v = BigInt('0x' + (hex || '0')); const names = []; CAPS.forEach((c, i) => { if ((v >> BigInt(i)) & 1n) names.push('cap_' + c); }); this.out(`0x${hex.padStart(16, '0')}=${names.join(',')}\n`); return 0; }
+    if (a.includes('--print')) { const root = this.user === 'root', all = CAPS.map(c => 'cap_' + c).join(','); this.out(`Current: ${root ? '=ep' : '='}\nBounding set =${all}\nAmbient set =\nCurrent IAB: \nSecurebits: 00/0x0/1'b0 (no-new-privs=0)\n secure-noroot: no (unlocked)\n secure-no-suid-fixup: no (unlocked)\n secure-keep-caps: no (unlocked)\n secure-no-ambient-raise: no (unlocked)\nuid=${root ? 0 : 1000}(${this.user}) euid=${root ? 0 : 1000}(${this.user})\ngid=${root ? 0 : 1000}(${root ? 'root' : USER})\ngroups=${root ? '0(root)' : '27(sudo),1000(learner)'}\nGuessed mode: HYBRID (4)\n`); return 0; }
+    this.eout('capsh: in the practice shell use capsh --decode=HEX or capsh --print\n'); return 1;
+  };
+  World.prototype.fcaps = function () { if (!this.fcapState) this.fcapState = { '/usr/bin/ping': 'cap_net_raw=ep' }; return this.fcapState; };
+  C.getcap = function (a) {
+    const [f, rest] = opts(a); const st = this.fcaps();
+    if (f.r) { const base = this.abs(rest[0] || '.'); Object.keys(st).sort().filter(k => k.startsWith(base === '/' ? '/' : base + '/')).forEach(k => this.out(`${k} ${st[k]}\n`)); return 0; }
+    for (const t of rest) { const p = this.abs(t); if (!this.node(p)) { this.eout(`Failed to get capabilities of file '${t}' (No such file or directory)\n`); continue; } if (st[p]) this.out(`${t} ${st[p]}\n`); }
+    return 0;
+  };
+  C.setcap = function (a) {
+    if (this.user !== 'root') { this.eout('unable to set CAP_SETFCAP effective capability: Operation not permitted\n'); return 1; }
+    const rm = a[0] === '-r', spec = rm ? null : a[0], t = rm ? a[1] : a[1];
+    if (!t || !this.node(this.abs(t))) { this.eout(`Failed to set capabilities on file '${t}' (No such file or directory)\n`); return 1; }
+    const st = this.fcaps(), p = this.abs(t);
+    if (rm) { delete st[p]; return 0; }
+    const m = /^((?:cap_[a-z_]+,?)+)[=+-]+([eip]*)$/.exec(spec || '');
+    if (!m) { this.eout(`fatal error: Invalid argument\nusage: setcap [-h] [-q] [-v] [-n <rootid>] (-r|-|<caps>) <filename> [ ... (-r|-|<capsN>) <filenameN> ]\n`); return 1; }
+    st[p] = `${m[1]}=${m[2]}`; return 0;
   };
   C.lsblk = function (a) {
     const st = this.disks(), full = a.includes('-f') || a.includes('--fs'), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));

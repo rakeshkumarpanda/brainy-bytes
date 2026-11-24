@@ -11019,6 +11019,25 @@ function lxAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-adv-3", title: "Containers and performance", emoji: "3", step: 3, part: "advanced", level: "Expert", blurb: "Build a container from kernel features by hand, then find out why a system is slow with the right tools and method, and finish with a full revision of the course.", topics: [
+      { id: "containers-inside", title: "Containers under the hood: namespaces, cgroups, layers and capabilities", emoji: "3.1", page: "content/linux/containers-inside.html",
+        summary: "Namespaces, a container by hand, overlayfs, cgroups, capabilities, seccomp, runc.",
+        keywords: ["container", "namespaces", "unshare", "nsenter", "chroot", "overlayfs", "cgroups", "cgroup v2", "capabilities", "setcap", "seccomp", "rootless", "Docker", "Podman", "runc", "containerd"],
+        minutes: 60, counts: {"lessons": 7, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "what", title: "A container is a process with its own view", emoji: "", group: "Lesson", keywords: ["container", "namespace", "mount namespace", "UTS namespace", "IPC namespace", "PID namespace", "network namespace", "user namespace", "cgroup namespace", "time namespace", "container vs virtual machine", "shared kernel", "isolation"] },
+        { id: "handmade", title: "A container by hand: unshare, chroot and /proc/PID/ns", emoji: "", group: "Lesson", keywords: ["unshare", "nsenter", "lsns", "/proc/PID/ns", "chroot", "pivot_root", "busybox", "root file system", "rootfs", "mount-proc", "container by hand", "docker inspect State.Pid"] },
+        { id: "layers", title: "Images and overlayfs", emoji: "", group: "Lesson", keywords: ["container image", "image layers", "overlayfs", "overlay2", "lowerdir", "upperdir", "workdir", "copy up", "whiteout", "writable layer", "Dockerfile layers", "layer cache", "docker diff", "volume"] },
+        { id: "cgroups", title: "cgroups: limits for CPU, memory and processes", emoji: "", group: "Lesson", keywords: ["cgroups", "cgroup v2", "cgroup v1", "control groups", "/sys/fs/cgroup", "cgroup.procs", "memory.max", "memory.current", "cpu.max", "pids.max", "memory.events", "/proc/PID/cgroup", "systemd slice", "systemd-cgls", "systemd-cgtop", "systemd-run --scope", "CPUQuota", "set-property", "fork bomb", "Resource temporarily unavailable", "docker --memory", "docker --cpus", "--pids-limit"] },
+        { id: "caps", title: "Capabilities, seccomp and rootless containers", emoji: "", group: "Lesson", keywords: ["capabilities", "CAP_NET_BIND_SERVICE", "CAP_NET_RAW", "CAP_SYS_ADMIN", "file capabilities", "getcap", "setcap", "capsh", "CapEff", "cap-drop", "cap-add", "no-new-privileges", "read-only container", "seccomp profile", "privileged container", "rootless", "Podman", "subuid", "subgid", "dockerd", "containerd", "runc", "OCI", "CRI-O", "docker.sock"] },
+        { id: "practice", title: "Practice: namespaces, cgroups and capabilities", emoji: "", group: "Lesson", keywords: ["namespace lab", "cgroup lab", "capability lab", "getcap practice", "setcap practice"] },
+        { id: "levels", title: "Containers from school to research", emoji: "", group: "Lesson", keywords: ["Kubernetes", "resource limits", "Pod Security Standards", "NetworkPolicy", "image scanning", "Trivy", "cosign", "SBOM", "gVisor", "Kata Containers", "Firecracker", "container escape", "Falco", "Tetragon", "WebAssembly sandbox", "confidential containers"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

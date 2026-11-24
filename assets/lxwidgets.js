@@ -1464,6 +1464,36 @@
     }
   }));
 
+  /* adv 3.1 a container is a process with its own views: choose the namespaces and see what the process inside sees */
+  def('lx-ns', el => W(el, {
+    title: 'Build a container from namespaces',
+    sub: 'Choose which namespaces the new process gets. Pip adds them one by one and shows what the process inside sees: its host name, its processes, its network and its files.',
+    inputs: [{ k: 'uts', label: 'Host name (uts)', type: 'seg', val: 'own', opts: [['host', 'shared'], ['own', 'own']] },
+             { k: 'pid', label: 'Processes (pid)', type: 'seg', val: 'own', opts: [['host', 'shared'], ['own', 'own']] },
+             { k: 'net', label: 'Network (net)', type: 'seg', val: 'own', opts: [['host', 'shared'], ['own', 'own']] },
+             { k: 'mnt', label: 'Files (mnt + new root)', type: 'seg', val: 'own', opts: [['host', 'shared'], ['own', 'own']] }],
+    random: () => { const r = () => Math.random() < 0.5 ? 'host' : 'own'; return { uts: r(), pid: r(), net: r(), mnt: r() }; },
+    frames: v => {
+      const fr = [];
+      const st = { uts: false, pid: false, net: false, mnt: false };
+      const view = () => ({ t: 'flow', label: 'What the process inside sees', items: [
+        ['hostname', st.uts ? 'box' : 'brainy', st.uts ? 'yes' : 'look'],
+        ['ps', st.pid ? 'PID 1 sh, PID 2 ps' : 'every process of the host', st.pid ? 'yes' : 'look'],
+        ['ip link', st.net ? 'only lo, down' : 'lo and enp0s3', st.net ? 'yes' : 'look'],
+        ['ls /', st.mnt ? 'bin etc proc (the image)' : 'the whole host tree', st.mnt ? 'yes' : 'look']], plain: true });
+      const flags = () => ['--fork'].concat(st.uts ? ['--uts'] : [], st.pid ? ['--pid', '--mount-proc'] : [], st.net ? ['--net'] : [], st.mnt ? ['--mount', 'chroot rootfs'] : []);
+      fr.push({ msg: 'A container is not a small virtual machine. It is a normal Linux process that the kernel shows a different view of the system, through <b>namespaces</b>. Without any, the new process sees exactly what the host sees.', mood: 'think', layers: [view()] });
+      const add = (k, msg) => { st[k] = true; fr.push({ msg, mood: 'wow', layers: [view(), { t: 'term', label: 'The same with unshare', lines: [['c', 'sudo unshare ' + flags().join(' ') + ' /bin/sh']] }] }); };
+      if (v.uts === 'own') add('uts', 'A new <b>UTS namespace</b> gives the process its own host name. <code>hostname box</code> inside changes nothing outside.');
+      if (v.pid === 'own') add('pid', 'A new <b>PID namespace</b> starts counting at 1. The first process inside is PID 1 and sees only its own children. The host still sees it under its normal, bigger PID. --mount-proc mounts a /proc that matches, or ps would read the host’s /proc.');
+      if (v.net === 'own') add('net', 'A new <b>network namespace</b> has its own interfaces, addresses, routes, firewall rules and ports. At first it has only lo, switched off. Docker and Podman then add a veth pair to a bridge, as in chapter 4.1.');
+      if (v.mnt === 'own') add('mnt', 'A new <b>mount namespace</b> has its own list of mounts, and a new root (chroot, or pivot_root in real runtimes) shows only the image’s files: a small tree with its own /bin, /etc and libraries. This is what a container image provides.');
+      const all = Object.values(st).every(Boolean);
+      fr.push({ msg: all ? 'With all four, the process looks like its own little machine, but it still shares the host’s kernel. Real runtimes such as runc also add user and IPC namespaces, cgroups to limit CPU and memory, dropped capabilities and a seccomp filter, which the next lessons show.' : 'Any namespace left out is shared with the host. That is sometimes on purpose: <code>docker run --network host</code> shares the network, and Kubernetes pods share one network namespace between their containers.', mood: all ? 'happy' : 'look', fx: all ? 'burst' : undefined, layers: [view()] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
