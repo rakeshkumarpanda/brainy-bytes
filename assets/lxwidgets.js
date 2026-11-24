@@ -1249,6 +1249,51 @@
     }
   }));
 
+  /* admin 4.3 a firewall decides: ufw rules checked top to bottom, the first match wins, then the default policy */
+  def('lx-firewall', el => W(el, {
+    title: 'How a firewall decides',
+    sub: 'Pick who knocks, on which port, and where the block rule sits. Pip checks the ufw rules of the practice server from the top and stops at the first one that matches.',
+    inputs: [{ k: 'src', label: 'From', type: 'seg', val: 'bad', opts: [['lan', 'office PC 192.168.1.60'], ['bad', 'attacker 203.0.113.7'], ['net', 'visitor 198.51.100.9']] },
+             { k: 'port', label: 'Port', type: 'seg', val: '22', opts: [['22', '22 ssh'], ['80', '80 web'], ['5432', '5432 database']] },
+             { k: 'order', label: 'Block rule', type: 'seg', val: 'last', opts: [['first', 'inserted at the top'], ['last', 'added at the end']] }],
+    random: () => ({ src: ['lan', 'bad', 'net'][Math.floor(Math.random() * 3)], port: ['22', '80', '5432'][Math.floor(Math.random() * 3)], order: Math.random() < 0.5 ? 'first' : 'last' }),
+    frames: v => {
+      const w = world(), fr = [], ip = { lan: '192.168.1.60', bad: '203.0.113.7', net: '198.51.100.9' }[v.src], port = +v.port;
+      const sh = cmd => { const r = w.run(cmd); return { t: 'term', label: 'Practice shell', lines: [['c', cmd]].concat((r.out + (r.err || '')).replace(/\n+$/, '').split('\n').filter(x => x).map(x => [r.code ? 'e' : 'o', x])) }; };
+      w.run('sudo ufw default deny incoming');
+      w.run('sudo ufw allow OpenSSH');
+      w.run('sudo ufw allow 80/tcp');
+      w.run('sudo ufw allow from 192.168.1.0/24 to any port 5432 proto tcp');
+      w.run(v.order === 'first' ? 'sudo ufw insert 1 deny from 203.0.113.7' : 'sudo ufw deny from 203.0.113.7');
+      w.run('sudo ufw --force enable');
+      const rules = w.ufw().rules;
+      const portOf = to => to === 'Anywhere' ? 0 : to === 'OpenSSH' ? 22 : parseInt(to, 10);
+      const inNet = (from, a) => { if (from === 'Anywhere') return true; const [net, len] = from.split('/'); if (!len) return net === a; const n = s => s.split('.').reduce((x, y) => x * 256 + +y, 0); const m = 2 ** 32 - 2 ** (32 - +len); return (n(net) & m) >>> 0 === (n(a) & m) >>> 0; };
+      const text = r => r.from === 'Anywhere' ? `${r.action.toLowerCase()} ${r.to}` : `${r.action.toLowerCase()} from ${r.from}${r.to === 'Anywhere' ? '' : ' port ' + r.to}`;
+      const rows = rules.map((r, i) => [`[${i + 1}] ${text(r)}`, r.action, '']).concat([['default policy', 'DENY', '']]);
+      const view = (k, hit) => ({ t: 'flow', label: `Packet from ${ip} to port ${port}`, items: rows.map((r, j) => [r[0], r[1], hit != null ? (j === hit ? (rows[j][1] === 'ALLOW' ? 'yes' : 'no') : j < hit ? 'look' : 'ghost') : j < k ? 'look' : j === k ? 'cur' : '']), plain: true });
+      fr.push({ msg: `A new connection from ${ip} to port ${port} reaches the practice server. Before your own rules, ufw lets through loopback traffic and replies to connections the server opened itself (connection tracking, state ESTABLISHED). This packet is a new one, so it goes through the rules below, from the top.`, mood: 'think', layers: [view(-1), sh('sudo ufw status numbered')] });
+      let hit = -1;
+      for (let i = 0; i < rules.length; i++) {
+        const r = rules[i], p = portOf(r.to), okPort = !p || p === port, okSrc = inNet(r.from, ip), ok = okPort && okSrc;
+        const why = !okSrc ? `the source ${ip} is not ${r.from}` : !okPort ? `the port is ${port}, not ${p}` : 'source and port both fit';
+        fr.push({ msg: `Rule ${i + 1}, <code>${esc(text(r))}</code>: ${why}. ${ok ? '<b>Match.</b>' : 'No match, go to the next rule.'}`, mood: ok ? 'wow' : 'look', layers: [view(i)] });
+        if (ok) { hit = i; break; }
+      }
+      if (hit < 0) {
+        fr.push({ msg: `No rule matched, so the default incoming policy decides: deny. The packet is dropped without an answer, and the client waits until it times out. That is why a firewall should start from default deny and open only what you need.`, mood: 'sad', fx: 'shake', layers: [view(0, rows.length - 1)] });
+        return fr;
+      }
+      const r = rules[hit], allowed = r.action === 'ALLOW';
+      const late = v.src === 'bad' && v.order === 'last' && allowed;
+      fr.push({ msg: allowed
+        ? `Rule ${hit + 1} allows it, and ufw stops looking. ${late ? 'The deny rule for 203.0.113.7 sits further down and is never reached, so the attacker gets through. Put a block rule above the allow rules with <code>sudo ufw insert 1 deny from 203.0.113.7</code>.' : 'The packet goes on to the program listening on that port.'}`
+        : `Rule ${hit + 1} denies it, and ufw stops looking. The packet is dropped silently${v.order === 'first' && v.src === 'bad' ? ', because the block rule was inserted at the top, above every allow rule' : ''}.`,
+        mood: late ? 'sad' : allowed ? 'happy' : 'happy', fx: late ? 'shake' : 'burst', layers: [view(0, hit)] });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',

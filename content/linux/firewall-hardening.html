@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firewall and hardening: ufw, nftables and a safer server · Unix and Linux</title>
+<meta name="description" content="netfilter hooks, connection tracking, first match and default deny, ufw defaults, allow, deny, limit, insert, delete and app profiles, nftables tables, chains, sets and counters, unattended-upgrades, ss -tulpn, SUID files, sysctl hardening, fail2ban, auditd and AppArmor, run for real with ufw, nft and fail2ban in network namespaces.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=admin">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 4: Networking and security</span><span>›</span><span>Firewall</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 3 of 3 · Advanced</div>
+    <h1>Firewall and hardening: ufw, nftables and a safer server</h1>
+    <p class="lead">Understand how the kernel decides which packets to let in, set up ufw and nftables with default deny, and harden a server with automatic updates, fewer services, fail2ban, audit rules and AppArmor.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">7 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#firewall-hardening" data-topic="cheatsheet" data-h="firewall-hardening">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#what" data-l="what"><span class="n">1</span><span class="t">What a firewall does</span></a></li><li><a href="#ufw" data-l="ufw"><span class="n">2</span><span class="t">ufw: a simple firewall for Ubuntu</span></a></li><li><a href="#nft" data-l="nft"><span class="n">3</span><span class="t">nftables: the rules underneath</span></a></li><li><a href="#harden" data-l="harden"><span class="n">4</span><span class="t">Hardening a server step by step</span></a></li><li><a href="#watch" data-l="watch"><span class="n">5</span><span class="t">fail2ban, auditd and AppArmor</span></a></li><li><a href="#practice" data-l="practice"><span class="n">6</span><span class="t">Practice: lock down the practice server</span></a></li><li><a href="#levels" data-l="levels"><span class="n">7</span><span class="t">Firewalls from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="what" data-l="what" hidden><div class="cv-lno">Lesson 1 of 7</div><h2>What a firewall does</h2>
+<p>A <b>firewall</b> decides, packet by packet, which network traffic may reach a machine, leave it or pass through it. On Linux the filtering itself happens inside the kernel, in a framework called <b>netfilter</b>. Tools such as <code>nft</code>, <code>iptables</code>, <code>ufw</code> and <code>firewalld</code> only write the rules.</p>
+<div class="walk"><div class="walk-h"><span>How a new incoming connection is judged</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The packet arrives on a network card. The kernel sees that it is for this machine and passes it to the <b>input</b> hook. Packets the machine sends go through <b>output</b>, and packets it routes for others through <b>forward</b>.</li><li><b>Connection tracking</b> (conntrack) checks whether the packet belongs to a connection that is already allowed. Replies and the rest of an allowed connection are accepted at once. This is what makes the firewall <b>stateful</b>.</li><li>A new connection is compared with the rules from the top. The first rule that matches decides: accept, drop (silently) or reject (with an error back).</li><li>If no rule matches, the chain’s <b>policy</b> decides. A safe server uses <b>default deny</b> for incoming traffic and opens only the ports it needs.</li></ol></div>
+<div class="viz" data-viz="pk" data-pk="lx-firewall"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Tool</th><th>What it is</th><th>Where you meet it</th></tr></thead><tbody><tr><td><code>nft</code> (nftables)</td><td>the current rule language and tool for netfilter</td><td>Debian, Ubuntu and RHEL use nftables underneath</td></tr><tr><td><code>iptables</code></td><td>the older tool. Today it is usually iptables-nft, which writes nftables rules</td><td>old guides and scripts, Docker</td></tr><tr><td><code>ufw</code></td><td>uncomplicated firewall, a simple front end</td><td>Ubuntu, installed by default but inactive</td></tr><tr><td><code>firewalld</code></td><td>a front end with zones (public, internal and so on)</td><td>Fedora, RHEL, Rocky, AlmaLinux</td></tr><tr><td>cloud security groups</td><td>filters in front of the virtual machine</td><td>AWS, Azure, Google Cloud, used together with the host firewall</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Drop or reject. A dropped packet gets no answer, so the client waits until it gives up. A rejected one gets an error back at once (“Connection refused”). Drop is the usual choice for traffic from the internet, reject is friendlier inside your own network.</div></div>
+<div class="vt-talk" hidden>A firewall decides which network traffic may reach your machine. On Linux the real work happens in the kernel, in a part called net filter, and tools such as n f t, i p tables and u f w just write the rules for it. When a packet arrives for your machine, connection tracking first checks whether it belongs to a connection that is already allowed, such as the reply to a web page you asked for. Those packets pass at once. A brand new connection is compared with your rules from the top, and the first rule that matches decides. If no rule matches, the default policy decides, and on a server that should be deny. Try the animation. Notice how a block rule placed below an allow rule never gets a chance, because the allow rule matches first.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="ufw" data-l="ufw" hidden><div class="cv-lno">Lesson 2 of 7</div><h2>ufw: a simple firewall for Ubuntu</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>ufw status verbose</code></td><td>Show whether it is on, the defaults and the rules</td><td><code>sudo ufw status verbose</code></td></tr><tr><td><code>ufw default deny incoming</code></td><td>Block new incoming connections unless a rule allows them</td><td><code>sudo ufw default deny incoming</code></td></tr><tr><td><code>ufw allow PROFILE|PORT/PROTO</code></td><td>Open a service by app profile or by port</td><td><code>sudo ufw allow OpenSSH</code></td></tr><tr><td><code>ufw allow from NET to any port P proto tcp</code></td><td>Open a port for one address or network only</td><td><code>sudo ufw allow from 192.168.1.0/24 to any port 5432 proto tcp</code></td></tr><tr><td><code>ufw limit PORT/PROTO</code></td><td>Allow, but deny an address that opens 6 or more connections in 30 seconds</td><td><code>sudo ufw limit 22/tcp</code></td></tr><tr><td><code>ufw insert N RULE</code></td><td>Put a rule at position N instead of the end</td><td><code>sudo ufw insert 1 deny from 203.0.113.7</code></td></tr><tr><td><code>ufw status numbered, ufw delete N</code></td><td>List rules with numbers, delete one</td><td><code>sudo ufw delete 3</code></td></tr><tr><td><code>ufw enable, disable, reset</code></td><td>Turn on (and at boot), turn off, remove all rules</td><td><code>sudo ufw enable</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Turn ufw on for a server and test it from another machine</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">for n in web pc; do ip netns add $n; ip -n $n link set lo up; done</span>
+<span class="lx-cmd lx-root">ip link add eth0 netns pc type veth peer name eth0 netns web</span>
+<span class="lx-cmd lx-root">ip -n web addr add 10.0.0.80/24 dev eth0</span>
+<span class="lx-cmd lx-root">ip -n pc addr add 10.0.0.50/24 dev eth0</span>
+<span class="lx-cmd lx-root">ip -n web link set eth0 up</span>
+<span class="lx-cmd lx-root">ip -n pc link set eth0 up</span>
+<span class="lx-cmd lx-root">for p in 22 80 5432; do ip netns exec web nc -lk -p $p &gt; /dev/null 2&gt;&amp;1 &amp; done</span>
+<span class="lx-cmd lx-root">sleep 1</span>
+<span class="lx-cmd lx-root">probe() { for p in 22 80 5432; do ip netns exec pc nc -z -w 1 10.0.0.80 $p 2&gt;/dev/null &amp;&amp; echo "port $p open" || echo "port $p blocked"; done; }</span>
+<span class="lx-cmd lx-root">probe</span>
+<span class="lx-o">port 22 open
+port 80 open
+port 5432 open</span>
+<span class="lx-cmd lx-root">fw() { ip netns exec web ufw "$@"; }</span>
+<span class="lx-cmd lx-root">fw default deny incoming</span>
+<span class="lx-o">Default incoming policy changed to 'deny'
+(be sure to update your rules accordingly)</span>
+<span class="lx-cmd lx-root">fw allow OpenSSH</span>
+<span class="lx-o">Rules updated</span>
+<span class="lx-cmd lx-root">fw allow 80/tcp</span>
+<span class="lx-o">Rules updated</span>
+<span class="lx-cmd lx-root">fw --force enable</span>
+<span class="lx-o">Firewall is active and enabled on system startup</span>
+<span class="lx-cmd lx-root">fw status verbose</span>
+<span class="lx-o">Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp (OpenSSH)           ALLOW IN    Anywhere                  
+80/tcp                     ALLOW IN    Anywhere                  </span>
+<span class="lx-cmd lx-root">probe</span>
+<span class="lx-o">port 22 open
+port 80 open
+port 5432 blocked</span>
+<span class="lx-cmd lx-root">fw insert 1 deny from 10.0.0.50 to any port 80 proto tcp</span>
+<span class="lx-o">Rule inserted</span>
+<span class="lx-cmd lx-root">fw status numbered</span>
+<span class="lx-o">Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 80/tcp                     DENY IN     10.0.0.50                 
+[ 2] OpenSSH                    ALLOW IN    Anywhere                  
+[ 3] 80/tcp                     ALLOW IN    Anywhere                  </span>
+<span class="lx-cmd lx-root">probe</span>
+<span class="lx-o">port 22 open
+port 80 blocked
+port 5432 blocked</span>
+<span class="lx-cmd lx-root">fw --force delete 1</span>
+<span class="lx-o">Rule deleted</span>
+<span class="lx-cmd lx-root">probe</span>
+<span class="lx-o">port 22 open
+port 80 open
+port 5432 blocked</span>
+<span class="lx-cmd lx-root">fw --force reset &gt; /dev/null</span>
+<span class="lx-cmd lx-root">rm -f /etc/ufw/*.rules.20*</span>
+<span class="lx-cmd lx-root">kill $(jobs -p)</span></pre><div class="lx-note">The box runs ufw inside the namespace web, a small server with something listening on ports 22, 80 and 5432, and tests it from the namespace pc with nc. Before ufw is on, all three ports answer. After default deny with ssh and web allowed, 5432 is blocked. The deny rule for the client 10.0.0.50 is inserted at position 1, above the allow rules, so it wins for port 80. Deleting rule 1 opens port 80 again. --force skips the yes or no questions of enable and delete, which is needed here because the page is built without a keyboard. No (v6) rows appear in this lab namespace. On a normal Ubuntu server, where IPV6=yes in /etc/default/ufw, every rule without an address shows up twice, once for IPv4 and once as (v6).</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Always allow ssh before you run <code>ufw enable</code> on a remote server. ufw warns “Command may disrupt existing ssh connections” for this reason. Keep your session open and test a new login, as in chapter 4.2. Cloud consoles have a serial console for the day it still goes wrong.</div></div>
+<div class="vt-talk" hidden>U f w, the uncomplicated firewall, comes with Ubuntu but starts switched off. A good start is ufw default deny incoming, then allow only what the server offers, for example OpenSSH and port eighty. Allow s s h before you enable the firewall, or you lock yourself out of a remote server. A rule can name an app profile, a port with its protocol, or a source address, such as allowing the database port only from the office network. Rules are checked from the top, so a block rule for one bad address must be inserted at position one with ufw insert. Ufw status numbered shows the order, and ufw delete with a number removes a rule. In the demo, nc from a second machine shows each port opening and closing for real.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="nft" data-l="nft" hidden><div class="cv-lno">Lesson 3 of 7</div><h2>nftables: the rules underneath</h2>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>A small server ruleset, /etc/nftables.conf</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>table inet filter {
+	chain input {
+		type filter hook input priority filter; policy drop;
+		iif "lo" accept
+		ct state established,related accept
+		ct state invalid drop
+		icmp type echo-request accept
+		tcp dport { 22, 80 } counter accept
+		counter comment "dropped by policy"
+	}
+}</pre><div class="lx-note">A table holds chains, and the family inet covers IPv4 and IPv6 together. A base chain is attached to a hook (input) with a priority and a policy. Each rule is a list of matches and a verdict, read from left to right. { 22, 80 } is an anonymous set. counter counts packets and bytes, so you can see which rules are used.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>nft list ruleset</code></td><td>Show every table, chain and rule</td><td><code>sudo nft list ruleset</code></td></tr><tr><td><code>nft -c -f FILE</code></td><td>Check a file without loading it</td><td><code>sudo nft -c -f /etc/nftables.conf</code></td></tr><tr><td><code>nft -f FILE</code></td><td>Load a file in one atomic step</td><td><code>sudo nft -f /etc/nftables.conf</code></td></tr><tr><td><code>nft -a list chain inet filter input</code></td><td>Show rules with their handle numbers</td><td><code>sudo nft -a list chain inet filter input</code></td></tr><tr><td><code>nft insert rule ...</code></td><td>Add a rule at the top of a chain (add puts it at the end)</td><td><code>sudo nft insert rule inet filter input tcp dport 443 accept</code></td></tr><tr><td><code>nft delete rule inet filter input handle N</code></td><td>Delete one rule by handle</td><td><code>sudo nft delete rule inet filter input handle 7</code></td></tr><tr><td><code>systemctl enable --now nftables</code></td><td>Load /etc/nftables.conf at every boot</td><td><code>sudo systemctl enable --now nftables</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Load a ruleset, test it and read the counters</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">for n in web pc; do ip netns add $n; ip -n $n link set lo up; done</span>
+<span class="lx-cmd lx-root">ip link add eth0 netns pc type veth peer name eth0 netns web</span>
+<span class="lx-cmd lx-root">ip -n web addr add 10.0.0.80/24 dev eth0</span>
+<span class="lx-cmd lx-root">ip -n pc addr add 10.0.0.50/24 dev eth0</span>
+<span class="lx-cmd lx-root">ip -n web link set eth0 up</span>
+<span class="lx-cmd lx-root">ip -n pc link set eth0 up</span>
+<span class="lx-cmd lx-root">for p in 22 80 5432; do ip netns exec web nc -lk -p $p &gt; /dev/null 2&gt;&amp;1 &amp; done</span>
+<span class="lx-cmd lx-root">sleep 1</span>
+<span class="lx-cmd lx-root">probe() { for p in 22 80 5432; do ip netns exec pc nc -z -w 1 10.0.0.80 $p 2&gt;/dev/null &amp;&amp; echo "port $p open" || echo "port $p blocked"; done; }</span>
+<span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">cat &gt; fw.nft &lt;&lt;'NFT'
+table inet filter {
+	chain input {
+		type filter hook input priority filter; policy drop;
+		iif "lo" accept
+		ct state established,related accept
+		ct state invalid drop
+		icmp type echo-request accept
+		tcp dport { 22, 80 } counter accept
+		counter comment "dropped by policy"
+	}
+}
+NFT</span>
+<span class="lx-cmd lx-root">ip netns exec web nft -c -f fw.nft &amp;&amp; echo "syntax ok"</span>
+<span class="lx-o">syntax ok</span>
+<span class="lx-cmd lx-root">ip netns exec web nft -f fw.nft</span>
+<span class="lx-cmd lx-root">probe</span>
+<span class="lx-o">port 22 open
+port 80 open
+port 5432 blocked</span>
+<span class="lx-cmd lx-root">ip netns exec pc ping -c 1 -W 1 10.0.0.80 | grep -o '1 received'</span>
+<span class="lx-o">1 received</span>
+<span class="lx-cmd lx-root">ip netns exec web nft list ruleset</span>
+<span class="lx-o">table inet filter {
+	chain input {
+		type filter hook input priority filter; policy drop;
+		iif "lo" accept
+		ct state established,related accept
+		ct state invalid drop
+		icmp type echo-request accept
+		tcp dport { 22, 80 } counter packets 2 bytes 120 accept
+		counter packets 1 bytes 60 comment "dropped by policy"
+	}
+}</span>
+<span class="lx-cmd lx-root">ip netns exec web nft insert rule inet filter input ip saddr 10.0.0.0/24 tcp dport 5432 accept</span>
+<span class="lx-cmd lx-root">probe</span>
+<span class="lx-o">port 22 open
+port 80 open
+port 5432 open</span>
+<span class="lx-cmd lx-root">ip netns exec web nft -a list chain inet filter input | sed -n '2,5p'</span>
+<span class="lx-o">	chain input { # handle 1
+		type filter hook input priority filter; policy drop;
+		ip saddr 10.0.0.0/24 tcp dport 5432 accept # handle 9
+		iif "lo" accept # handle 2</span>
+<span class="lx-cmd lx-root">kill $(jobs -p)</span></pre><div class="lx-note">nft -c only checks the file, which catches typos before anything changes. Loading with -f replaces the rules in one step, so there is never a moment with half a firewall. Ports 22 and 80 are accepted and counted, 5432 falls through to the last counter and then to policy drop, and ping passes because echo requests are allowed. The counters show 2 packets accepted (one SYN for each open port) and 1 packet dropped. insert puts the new database rule at the top of the chain, so it is checked before everything else, and -a shows the handle numbers you need to delete a rule later.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Use one tool per machine. ufw, firewalld and Docker all write nftables or iptables rules, and mixing them by hand makes the order hard to follow. On Ubuntu with ufw, look with <code>sudo nft list ruleset</code> but change things with ufw.</div></div>
+<div class="vt-talk" hidden>Underneath u f w and firewalld, modern Linux uses n f tables. A ruleset has tables, a table has chains, and a base chain hangs on a hook such as input with a default policy. On a server the policy is drop, and the rules then accept traffic on loopback, packets of connections that are already established, ping, and the ports the server offers. Curly braces make a set, so one rule can cover several ports. Counters show how many packets each rule matched, which is the fastest way to see whether a rule is used at all. Check a file with n f t dash c before you load it, load it with n f t dash f, and enable the n f tables service so the rules come back after a reboot.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="harden" data-l="harden" hidden><div class="cv-lno">Lesson 4 of 7</div><h2>Hardening a server step by step</h2>
+<div class="walk"><div class="walk-h"><span>A short hardening checklist for a new server</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Install security updates automatically. On Ubuntu, <code>unattended-upgrades</code> installs updates from the security pocket every day.</li><li>Log in with ssh keys only, no root login (chapter 4.2), and give each admin their own account with sudo (chapter 1.1).</li><li>List what listens on the network with <code>sudo ss -tulpn</code>. Stop and disable every service you do not need with <code>sudo systemctl disable --now NAME</code>, and bind internal ones to 127.0.0.1.</li><li>Turn on the firewall with default deny incoming and only the needed ports open.</li><li>Check files with the SUID bit, which run as their owner (often root). Only well known programs such as passwd and sudo should have it.</li><li>Set safe kernel network settings with sysctl, and keep logs, an audit trail and backups so you notice and recover from a break-in.</li></ol></div>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>/etc/apt/apt.conf.d/20auto-upgrades</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";</pre><div class="lx-note">"1" means every day. Which updates are installed is set in /etc/apt/apt.conf.d/50unattended-upgrades, where Ubuntu allows the release’s security pocket by default. Run sudo dpkg-reconfigure -plow unattended-upgrades to write this file, and sudo unattended-upgrade --dry-run --debug to see what it would do. A reboot is still needed for a new kernel, and /var/run/reboot-required says so.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Find listening services, SUID files and kernel settings</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">ip netns add web</span>
+<span class="lx-cmd lx-root">ip -n web link set lo up</span>
+<span class="lx-cmd lx-root">ip netns exec web python3 -m http.server 8000 --bind 0.0.0.0 &gt; /dev/null 2&gt;&amp;1 &amp;</span>
+<span class="lx-cmd lx-root">ip netns exec web python3 -m http.server 6379 --bind 127.0.0.1 &gt; /dev/null 2&gt;&amp;1 &amp;</span>
+<span class="lx-cmd lx-root">sleep 1</span>
+<span class="lx-cmd lx-root">ip netns exec web ss -tlnp | sed 's/,pid=[0-9]*//; s/,fd=[0-9]*//'</span>
+<span class="lx-o">State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess                            
+LISTEN 0      5          127.0.0.1:6379      0.0.0.0:*    users:(("python3"))
+LISTEN 0      5            0.0.0.0:8000      0.0.0.0:*    users:(("python3"))</span>
+<span class="lx-cmd lx-root">find /usr/bin /usr/sbin -perm -4000 -type f | sort</span>
+<span class="lx-o">/usr/bin/chfn
+/usr/bin/chsh
+/usr/bin/gpasswd
+/usr/bin/mount
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/su
+/usr/bin/sudo
+/usr/bin/umount</span>
+<span class="lx-cmd lx-root">stat -c '%A %U %n' /usr/bin/passwd</span>
+<span class="lx-o">-rwsr-xr-x root /usr/bin/passwd</span>
+<span class="lx-cmd lx-root">ip netns exec web sysctl net.ipv4.ip_forward net.ipv4.tcp_syncookies net.ipv4.conf.all.accept_redirects</span>
+<span class="lx-o">net.ipv4.ip_forward = 0
+net.ipv4.tcp_syncookies = 1
+net.ipv4.conf.all.accept_redirects = 1</span>
+<span class="lx-cmd lx-root">sysctl kernel.randomize_va_space</span>
+<span class="lx-o">kernel.randomize_va_space = 2</span>
+<span class="lx-cmd lx-root">kill $(jobs -p)</span></pre><div class="lx-note">ss -tlnp lists TCP sockets in LISTEN state with the program that owns them (process ids are cut out here). 0.0.0.0:8000 is reachable from every network, 127.0.0.1:6379 only from the machine itself, which is how a cache or database should listen. -perm -4000 finds files with the SUID bit, shown as the s in -rwsr-xr-x. This list is the normal one for Ubuntu 24.04. A new or unknown SUID file is a classic sign of a break-in. In the sysctl output, ip_forward 0 means the machine does not route for others, syncookies 1 protects against SYN floods, randomize_va_space 2 is full address space randomisation, and accept_redirects 1 is worth turning off on a server.</div></div>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>/etc/sysctl.d/99-hardening.conf</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>net.ipv4.conf.all.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.tcp_syncookies = 1
+kernel.kptr_restrict = 1</pre><div class="lx-note">Files in /etc/sysctl.d are read at boot. Apply them now with sudo sysctl --system. ICMP redirects let another machine change your routes, rp_filter drops packets whose source address could not come from that interface, and kptr_restrict hides kernel addresses from normal users.</div></div>
+<div class="vt-talk" hidden>Hardening means making a server a smaller target. First, let unattended upgrades install security updates every day, so known holes get fixed without you. Second, use ssh keys only and personal accounts with sudo. Third, look at what listens on the network with s s tulpn. Every listening program is a door, so stop the ones you do not need, and bind internal ones such as a cache or database to one twenty seven dot zero dot zero dot one. Fourth, switch on the firewall. Fifth, check for files with the S U I D bit, because they run as root, and an unknown one is a warning sign. Finally, set a few kernel network settings with sysctl, such as refusing I C M P redirects, and keep logs and backups so you can notice a problem and recover.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="watch" data-l="watch" hidden><div class="cv-lno">Lesson 5 of 7</div><h2>fail2ban, auditd and AppArmor</h2>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>/etc/fail2ban/jail.local</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>[DEFAULT]
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+
+[sshd]
+enabled = true</pre><div class="lx-note">fail2ban reads logs, counts failures per address with a filter, and bans an address that fails maxretry times within findtime, for bantime. On Ubuntu 24.04 the file jail.d/defaults-debian.conf already enables the sshd jail, reads the systemd journal (backend = systemd) and bans with nftables. Put your own values in jail.local, because package updates replace jail.conf.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Watch fail2ban ban a password guesser</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">ip netns add web</span>
+<span class="lx-cmd lx-root">ip -n web link set lo up</span>
+<span class="lx-cmd lx-root">d=/srv/f2blab</span>
+<span class="lx-cmd lx-root">mkdir -p $d</span>
+<span class="lx-cmd lx-root">cp -r /etc/fail2ban $d/conf</span>
+<span class="lx-cmd lx-root">rm -f $d/conf/jail.d/*</span>
+<span class="lx-cmd lx-root">touch $d/auth.log</span>
+<span class="lx-cmd lx-root">printf '%s\n' '[DEFAULT]' 'banaction = nftables' 'backend = polling' '[sshd]' 'enabled = true' "logpath = $d/auth.log" 'maxretry = 5' 'findtime = 10m' 'bantime = 10m' &gt; $d/conf/jail.local</span>
+<span class="lx-cmd lx-root">f2b() { ip netns exec web fail2ban-client -c $d/conf -s $d/sock "$@"; }</span>
+<span class="lx-cmd lx-root">ip netns exec web fail2ban-server -c $d/conf -s $d/sock -p $d/pid --logtarget $d/f2b.log -b 2&gt;/dev/null</span>
+<span class="lx-o">Server ready</span>
+<span class="lx-cmd lx-root">sleep 2</span>
+<span class="lx-cmd lx-root">for i in 1 2 3 4 5 6; do echo "$(date -u +%Y-%m-%dT%H:%M:%S).000000+00:00 web1 sshd[210$i]: Failed password for invalid user admin from 203.0.113.7 port 5100$i ssh2" &gt;&gt; $d/auth.log; done</span>
+<span class="lx-cmd lx-root">fail2ban-regex $d/auth.log $d/conf/filter.d/sshd.conf | grep '^Lines'</span>
+<span class="lx-o">Lines: 6 lines, 0 ignored, 6 matched, 0 missed</span>
+<span class="lx-cmd lx-root">sleep 4</span>
+<span class="lx-cmd lx-root">f2b status sshd</span>
+<span class="lx-o">Status for the jail: sshd
+|- Filter
+|  |- Currently failed:	1
+|  |- Total failed:	6
+|  `- File list:	/srv/f2blab/auth.log
+`- Actions
+   |- Currently banned:	1
+   |- Total banned:	1
+   `- Banned IP list:	203.0.113.7</span>
+<span class="lx-cmd lx-root">ip netns exec web nft list ruleset</span>
+<span class="lx-o">table inet f2b-table {
+	set addr-set-sshd {
+		type ipv4_addr
+		elements = { 203.0.113.7 }
+	}
+
+	chain f2b-chain {
+		type filter hook input priority filter - 1; policy accept;
+		tcp dport 22 ip saddr @addr-set-sshd reject with icmp port-unreachable
+	}
+}</span>
+<span class="lx-cmd lx-root">f2b set sshd unbanip 203.0.113.7</span>
+<span class="lx-o">1</span>
+<span class="lx-cmd lx-root">f2b stop</span>
+<span class="lx-o">Shutdown successful</span>
+<span class="lx-cmd lx-root">rm -r $d</span></pre><div class="lx-note">The box writes six failed ssh logins from 203.0.113.7 into a log file. fail2ban-regex tests the stock sshd filter against that file and matches all six lines, a good check before you trust a jail. The server, running in its own network namespace with a polling backend, counts five failures within ten minutes and bans the address. The ban is a real nftables set with a rule that rejects port 22 for every address in it. unbanip lifts a ban by hand, for example when a colleague locked themselves out.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>fail2ban-client status sshd</code></td><td>Failures and banned addresses of a jail</td><td><code>sudo fail2ban-client status sshd</code></td></tr><tr><td><code>fail2ban-client set JAIL unbanip IP</code></td><td>Lift a ban</td><td><code>sudo fail2ban-client set sshd unbanip 192.168.1.60</code></td></tr><tr><td><code>auditctl -w FILE -p wa -k KEY</code></td><td>Record every write or attribute change of a file</td><td><code>sudo auditctl -w /etc/passwd -p wa -k identity</code></td></tr><tr><td><code>ausearch -k KEY -i</code></td><td>Show the audit records with that key, readable</td><td><code>sudo ausearch -k identity -i</code></td></tr><tr><td><code>aa-status</code></td><td>Which AppArmor profiles are loaded, in enforce or complain mode</td><td><code>sudo aa-status</code></td></tr><tr><td><code>aa-complain, aa-enforce PROFILE</code></td><td>Switch a profile to logging only, or back to blocking</td><td><code>sudo aa-enforce /etc/apparmor.d/usr.bin.tcpdump</code></td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Rules added with auditctl are lost at reboot. Make them permanent in a file in /etc/audit/rules.d/ and load them with sudo augenrules --load. AppArmor is on by default in Ubuntu and limits what a program may open even when it runs as root. Its denials appear in the kernel log as apparmor="DENIED".</div></div>
+<div class="vt-talk" hidden>Three more tools watch and limit a server. Fail2ban reads the logs, counts failed logins per address, and bans an address that fails too often, here five times in ten minutes. In the demo it really bans the address with an n f tables rule. Ubuntu enables its s s h jail as soon as you install it. Auditd records security events. A watch rule on slash etc slash passwd, made with auditctl dash w, logs every change to that file with a key you can search for with ausearch. App armor gives a program a profile that lists the files and abilities it may use, so even a broken program running as root cannot read everything. Aa status shows which profiles are loaded and whether they block or only log.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 6 of 7</div><h2>Practice: lock down the practice server</h2>
+<p>The practice server runs ssh on port 22 and nginx on port 80. A database on port 5432 should be reachable from the office network 192.168.1.0/24 only, and the address 203.0.113.7 keeps guessing passwords.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Firewall and hardening&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Show whether the firewall is on.&quot;, &quot;hint&quot;: &quot;sudo ufw status&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Status: inactive&quot;}]}, {&quot;t&quot;: &quot;Set the default for incoming traffic to deny.&quot;, &quot;hint&quot;: &quot;sudo ufw default deny incoming&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Default incoming policy changed to &#x27;deny&#x27;&quot;}]}, {&quot;t&quot;: &quot;List the app profiles ufw knows.&quot;, &quot;hint&quot;: &quot;sudo ufw app list&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;OpenSSH&quot;}]}, {&quot;t&quot;: &quot;Allow ssh by its app profile, before you switch anything on.&quot;, &quot;hint&quot;: &quot;sudo ufw allow OpenSSH&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;allow\\s+OpenSSH&quot;}, {&quot;out&quot;: &quot;Rules updated&quot;}]}, {&quot;t&quot;: &quot;Allow the web server on 80/tcp.&quot;, &quot;hint&quot;: &quot;sudo ufw allow 80/tcp&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;allow\\s+80/tcp&quot;}, {&quot;out&quot;: &quot;Rules updated&quot;}]}, {&quot;t&quot;: &quot;Allow port 5432 over tcp from 192.168.1.0/24 only.&quot;, &quot;hint&quot;: &quot;sudo ufw allow from 192.168.1.0/24 to any port 5432 proto tcp&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;from\\s+192\\.168\\.1\\.0/24.*5432&quot;}, {&quot;out&quot;: &quot;Rules updated&quot;}]}, {&quot;t&quot;: &quot;Switch the firewall on.&quot;, &quot;hint&quot;: &quot;sudo ufw enable&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Firewall is active and enabled on system startup&quot;}]}, {&quot;t&quot;: &quot;Block 203.0.113.7 with a rule at position 1.&quot;, &quot;hint&quot;: &quot;sudo ufw insert 1 deny from 203.0.113.7&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Rule inserted&quot;}]}, {&quot;t&quot;: &quot;Show the rules with their numbers.&quot;, &quot;hint&quot;: &quot;sudo ufw status numbered&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;\\[ 1\\] Anywhere\\s+DENY IN\\s+203\\.0\\.113\\.7&quot;}]}, {&quot;t&quot;: &quot;Show the defaults and the ports behind each profile.&quot;, &quot;hint&quot;: &quot;sudo ufw status verbose&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Default: deny \\(incoming\\)&quot;}]}, {&quot;t&quot;: &quot;List the TCP ports that programs listen on, with the programs.&quot;, &quot;hint&quot;: &quot;sudo ss -tlnp&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;ss\\s+-\\w*t\\w*l&quot;}, {&quot;out&quot;: &quot;sshd&quot;}]}, {&quot;t&quot;: &quot;Find files with the SUID bit in /usr/bin.&quot;, &quot;hint&quot;: &quot;find /usr/bin -perm -4000&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-perm\\s+-4000&quot;}, {&quot;out&quot;: &quot;/usr/bin/passwd&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now lock down the practice server yourself. Check that the firewall is off, set the default for incoming traffic to deny, and look at the app profiles. Allow OpenSSH first, so you never lock yourself out, then the web port, and the database port only for the office network. Switch the firewall on, then block the password guesser with a rule at position one, above the allow rules. Look at the numbered and the verbose status to check the order and the defaults. Finally, list the listening ports with s s, and search for files with the S U I D bit.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 7 of 7</div><h2>Firewalls from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A firewall is a set of rules that decides which network traffic may come in or go out. A server should allow only the few services it offers, such as ssh and a web site, and block everything else.</p></div><div class="ld-p" data-ld="college" hidden><p>Use default deny, allow ssh first, open ports per service and per network, insert block rules above allow rules, test from another machine with nc, and read counters in nft. Keep the server updated with unattended-upgrades, remove services you do not need, check SUID files, use fail2ban against guessing, auditd for a trail and AppArmor to contain programs.</p></div><div class="ld-p" data-ld="masters" hidden><p>Teams keep firewall rules in configuration management (Ansible, Terraform for cloud security groups), use network segmentation with separate zones for web, application and database servers, filter outgoing traffic too (egress filtering), and follow benchmarks such as the CIS Benchmarks and DISA STIGs, checked with tools like Lynis or OpenSCAP. Kubernetes uses NetworkPolicies, often enforced with eBPF tools such as Cilium.</p></div><div class="ld-p" data-ld="research" hidden><p>Research covers fast packet filtering with eBPF and XDP, which drops unwanted packets in the network driver before the normal kernel path, verification of firewall rule sets for conflicts and shadowed rules, zero trust networks where every connection is authenticated instead of trusting the local network, and intrusion detection with machine learning.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the database that was open to the world</div><p>A start-up moved its database to a cloud server and left it listening on 0.0.0.0:5432 with no firewall, “just for the move”. Within days, automated scanners found it and tried thousands of logins. An engineer noticed the noise in the logs, bound the database to the private network, added a ufw rule that allowed 5432 only from the application servers, and set up fail2ban for ssh. The team then added a check that runs ss -tlnp on every server each night and reports any new listening port.</p></div>
+<div class="vt-talk" hidden>Here is how firewall skills grow. At school you learn that a firewall is a set of rules that lets only wanted traffic in. Professionals use default deny, open each port only for the networks that need it, test from another machine, and harden the server with updates, fewer services, fail2ban, audit rules and app armor. Teams manage rules as code, split networks into zones, filter outgoing traffic too, and check servers against security benchmarks. Researchers build very fast filters with e B P F and X D P, check large rule sets for mistakes automatically, and work on zero trust networks, where no connection is trusted just because it comes from inside.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./ssh.html" data-topic="ssh"><small>Previous topic</small><b>SSH</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "firewall-hardening", "topic": "firewall", "subject": "linux", "title": "Firewall and hardening: ufw, nftables and a safer server", "codes": {}, "quiz": [{"lv": "e", "q": "What should a server’s default policy for incoming traffic be?", "o": ["allow", "deny", "reject everything including replies", "none"], "a": 1, "hint": "Default deny.", "why": "Then open only what you need."}, {"lv": "e", "q": "Which command shows whether ufw is on and lists its rules?", "o": ["ufw show", "ufw status", "ufw list", "ufw rules"], "a": 1, "hint": "Status.", "why": "Add verbose or numbered for more."}, {"lv": "e", "q": "What must you allow before ufw enable on a remote server?", "o": ["Port 80", "ssh (port 22)", "ping", "DNS"], "a": 1, "hint": "Your own way in.", "why": "Otherwise you lock yourself out."}, {"lv": "e", "q": "Which command lists the ports that programs listen on?", "o": ["ls -ports", "ss -tulpn", "ps aux", "ip route"], "a": 1, "hint": "Socket statistics.", "why": "With the owning program."}, {"lv": "m", "q": "A deny rule for one address sits below an allow rule for port 22. What happens to that address on port 22?", "o": ["It is denied", "It is allowed, because the first match wins", "ufw refuses the rule", "It is rate limited"], "a": 1, "hint": "Top to bottom.", "why": "Use ufw insert 1."}, {"lv": "m", "q": "What does connection tracking add to a firewall?", "o": ["Speed only", "Replies of allowed connections pass without their own rules", "Logging", "Encryption"], "a": 1, "hint": "Stateful.", "why": "ct state established,related accept."}, {"lv": "m", "q": "What is the difference between drop and reject?", "o": ["None", "drop sends no answer, reject sends an error back", "reject is slower", "drop logs the packet"], "a": 1, "hint": "Silent or not.", "why": "Drop causes a timeout."}, {"lv": "m", "q": "What does ufw limit 22/tcp do?", "o": ["Opens port 22 for one hour", "Allows, but denies an address that connects 6 or more times in 30 seconds", "Limits bandwidth", "Allows only IPv4"], "a": 1, "hint": "Rate limit.", "why": "A simple brake on guessing."}, {"lv": "m", "q": "Why is a new SUID root file a warning sign?", "o": ["It uses disk space", "It runs as root for any user who starts it", "It slows the boot", "It disables sudo"], "a": 1, "hint": "Set user ID.", "why": "Attackers leave them as back doors."}, {"lv": "h", "q": "Which nft command checks a ruleset file without loading it?", "o": ["nft -f", "nft -c -f", "nft list ruleset", "nft --test"], "a": 1, "hint": "Check.", "why": "Then load with nft -f."}, {"lv": "h", "q": "fail2ban has maxretry 5 and findtime 10m. When is an address banned?", "o": ["After 5 failures in a day", "After 5 failures within 10 minutes", "After 10 failures", "At once"], "a": 1, "hint": "Within findtime.", "why": "For bantime."}, {"lv": "h", "q": "A cache must be used only by programs on the same machine. How should it listen?", "o": ["0.0.0.0", "127.0.0.1", "The public address", "Any port above 1024"], "a": 1, "hint": "Loopback.", "why": "Then no firewall rule is even needed."}, {"lv": "h", "q": "Where should auditd rules go so they survive a reboot?", "o": ["In ~/.bashrc", "A file in /etc/audit/rules.d/, loaded with augenrules", "Only auditctl", "/etc/sysctl.conf"], "a": 1, "hint": "rules.d.", "why": "auditctl rules are temporary."}, {"lv": "x", "q": "Why does nft -f load a whole file in one step matter?", "o": ["It is shorter", "There is never a moment with only half the rules loaded", "It saves memory", "It skips conntrack"], "a": 1, "hint": "Atomic.", "why": "Either all rules or none."}], "calc": [{"lv": "e", "q": "A server offers ssh, http and https. With default deny, how many ports must be opened?", "ans": "3", "hint": "One per service.", "steps": ["22, 80 and 443.", "Count them.", "<span class=\"eq\">3 ports<\/span>"]}, {"lv": "e", "q": "A ufw rule without an address shows twice in ufw status, for IPv4 and IPv6. How many rows do 4 such rules give?", "ans": "8", "hint": "Two each.", "steps": ["Each rule has a v6 twin.", "4 × 2.", "<span class=\"eq\">8 rows<\/span>"]}, {"lv": "m", "q": "A robot makes one failed guess every 30 seconds, starting at minute 0. With maxretry 5 and findtime 10m, after how many minutes is it banned?", "ans": "2", "hint": "Time of the 5th failure.", "steps": ["Failures at 0, 0.5, 1, 1.5 and 2 minutes.", "The 5th one triggers the ban.", "<span class=\"eq\">4 × 0.5 = 2 minutes<\/span>"]}, {"lv": "m", "q": "ufw limit denies an address after 6 connections in 30 seconds. At most how many connections per minute can one address make?", "ans": "10", "hint": "Up to 5 per 30 seconds.", "steps": ["The 6th is denied.", "5 per 30 s, two windows.", "<span class=\"eq\">5 × 2 = 10<\/span>"]}, {"lv": "h", "q": "A port scan tries all 65535 TCP ports. Default deny with 3 open ports. How many ports are dropped?", "ans": "65532", "hint": "Subtract the open ones.", "steps": ["65535 ports in total.", "3 are allowed.", "<span class=\"eq\">65535 − 3 = 65532<\/span>"]}, {"lv": "h", "q": "An nft counter shows 1800 packets dropped by policy in 1 hour. How many per minute on average?", "ans": "30", "hint": "Divide by 60.", "steps": ["1 hour is 60 minutes.", "1800 ÷ 60.", "<span class=\"eq\">30 packets per minute<\/span>"]}, {"lv": "x", "q": "With maxretry 5 per address, how many addresses must a botnet use to make 1000 guesses without any ban?", "ans": "250", "hint": "Under the limit per address.", "steps": ["4 failures per address stay below 5.", "1000 ÷ 4.", "<span class=\"eq\">250 addresses<\/span>"]}], "assign": [], "must": [["How it decides", "netfilter in the kernel, input, output and forward hooks, conntrack lets established traffic pass, first matching rule wins, then the policy. Default deny on servers."], ["ufw", "default deny incoming, allow OpenSSH first, allow PORT/PROTO, allow from NET to any port P, limit, insert 1, status numbered and verbose, delete N, enable."], ["nftables", "table inet filter, a base chain on hook input with policy drop, ct state established,related accept, sets in braces, counters, nft -c -f, nft -f, nftables.service."], ["Hardening", "unattended-upgrades, ssh keys only, ss -tulpn and disable unused services, bind internal services to 127.0.0.1, find -perm -4000, sysctl.d settings."], ["Watching", "fail2ban jails with maxretry, findtime and bantime, auditctl -w with ausearch -k, AppArmor profiles with aa-status."]], "summary": "<p>The kernel’s netfilter lets replies of allowed connections pass, checks new ones against the rules from the top and falls back to the policy, which should be deny. ufw and nft write those rules. A hardened server also installs updates by itself, runs only the services it needs, has no unexpected SUID files, and uses fail2ban, auditd and AppArmor to slow down, record and contain attacks.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

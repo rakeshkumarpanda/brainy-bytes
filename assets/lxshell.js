@@ -2625,7 +2625,7 @@ const LXSH = (() => {
       return { action, dir, to, from };
     };
     const same = (x, y) => x.action === y.action && x.dir === y.dir && x.to === y.to && x.from === y.from;
-    const list = () => { const v4 = st.rules.map(r => ({ r, v6: false })), v6 = st.rules.filter(r => v6ok(r.from)).map(r => ({ r, v6: true })); return v4.concat(v6); };
+    const list = () => { const v4 = st.rules.filter(r => !r.no4).map(r => ({ r, v6: false })), v6 = st.rules.filter(r => v6ok(r.from) && !r.no6).map(r => ({ r, v6: true })); return v4.concat(v6); };
     const label = (r, v6, verbose) => { const t = r.to === 'Anywhere' ? 'Anywhere' : (verbose && UFW_APPS[r.to] ? `${UFW_APPS[r.to]} (${r.to})` : r.to); return v6 ? (t === 'Anywhere' ? 'Anywhere (v6)' : t.replace(/ \((.+)\)$/, ' ($1 (v6))').replace(/^([^ (]+)$/, '$1 (v6)')) : t; };
     const table = (numbered, verbose) => {
       const L = list(); if (!L.length) return '';
@@ -2641,11 +2641,11 @@ const LXSH = (() => {
     if (cmd === 'enable') { if (!force) this.out('Command may disrupt existing ssh connections. Proceed with operation (y|n)? y\n'); st.on = true; this.out('Firewall is active and enabled on system startup\n'); return 0; }
     if (cmd === 'disable') { st.on = false; this.out('Firewall stopped and disabled on system startup\n'); return 0; }
     if (cmd === 'reload') { this.out(st.on ? 'Firewall reloaded\n' : 'Firewall not enabled (skipping reload)\n'); return 0; }
-    if (cmd === 'reset') { if (!force) this.out('Resetting all rules to installed defaults. Proceed with operation (y|n)? y\n'); st.on = false; st.rules = []; st.def = { incoming: 'deny', outgoing: 'allow', routed: 'disabled' }; return 0; }
+    if (cmd === 'reset') { if (!force) this.out('Resetting all rules to installed defaults. Proceed with operation (y|n)? y\n'); const ts = new Date(this.clock).toISOString().slice(0, 19).replace(/-|:/g, '').replace('T', '_'); this.out(['user', 'before', 'after', 'user6', 'before6', 'after6'].map(f => `Backing up '${f}.rules' to '/etc/ufw/${f}.rules.${ts}'\n`).join('') + '\n'); st.on = false; st.rules = []; st.def = { incoming: 'deny', outgoing: 'allow', routed: 'disabled' }; return 0; }
     if (cmd === 'default') { const pol = a[1], d = a[2]; if (!/^(allow|deny|reject)$/.test(pol || '') || !/^(incoming|outgoing|routed)$/.test(d || '')) { this.eout('ERROR: Invalid syntax\n'); return 1; } st.def[d] = pol; this.out(`Default ${d} policy changed to '${pol}'\n(be sure to update your rules accordingly)\n`); return 0; }
-    if (cmd === 'app') { if (a[1] === 'list') { this.out('Available applications:\n' + Object.keys(UFW_APPS).filter(k => k === 'OpenSSH' || this.node('/etc/nginx')).sort().map(k => '  ' + k).join('\n') + '\n'); return 0; } if (a[1] === 'info' && UFW_APPS[a.slice(2).join(' ')]) { const n = a.slice(2).join(' '); this.out(`Profile: ${n}\nTitle: ${n === 'OpenSSH' ? 'Secure shell server, an rshd replacement' : 'Web Server'}\nDescription: ${n === 'OpenSSH' ? 'OpenSSH is a free implementation of the Secure Shell protocol.' : 'Small, but very powerful and efficient web server'}\n\nPort${/,/.test(UFW_APPS[n]) ? 's' : ''}:\n  ${UFW_APPS[n]}\n`); return 0; } }
+    if (cmd === 'app') { if (a[1] === 'list') { this.out('Available applications:\n' + Object.keys(UFW_APPS).sort().map(k => '  ' + k).join('\n') + '\n'); return 0; } if (a[1] === 'info' && UFW_APPS[a.slice(2).join(' ')]) { const n = a.slice(2).join(' '); this.out(`Profile: ${n}\nTitle: ${n === 'OpenSSH' ? 'Secure shell server, an rshd replacement' : 'Web Server'}\nDescription: ${n === 'OpenSSH' ? 'OpenSSH is a free implementation of the Secure Shell protocol.' : 'Small, but very powerful and efficient web server'}\n\nPort${/,/.test(UFW_APPS[n]) ? 's' : ''}:\n  ${UFW_APPS[n]}\n`); return 0; } }
     if (cmd === 'delete') {
-      if (/^\d+$/.test(a[1] || '')) { const L = list(), k = +a[1] - 1; if (!L[k]) { this.eout(`ERROR: Could not find rule '${a[1]}'\n`); return 1; } if (!force) this.out(`Deleting:\n ${L[k].r.action.toLowerCase()} ${L[k].r.from === 'Anywhere' ? L[k].r.to : 'from ' + L[k].r.from}\nProceed with operation (y|n)? y\n`); st.rules.splice(st.rules.indexOf(L[k].r), 1); this.out('Rule deleted\n' + (v6ok(L[k].r.from) ? 'Rule deleted (v6)\n' : '')); return 0; }
+      if (/^\d+$/.test(a[1] || '')) { const L = list(), k = +a[1] - 1; if (!L[k]) { this.eout(`ERROR: Could not find rule '${a[1]}'\n`); return 1; } if (!force) { const q = L[k].r, m = /^(\d[\d,:]*)\/(tcp|udp)$/.exec(q.to); this.out(`Deleting:\n ${q.action.toLowerCase()} ${q.from === 'Anywhere' ? q.to : 'from ' + q.from + (q.to === 'Anywhere' ? '' : m ? ` to any port ${m[1]} proto ${m[2]}` : ` to any port ${q.to}`)}\nProceed with operation (y|n)? y\n`); } const q = L[k].r; if (L[k].v6) q.no6 = true; else q.no4 = true; if (q.no4 && (q.no6 || !v6ok(q.from))) st.rules.splice(st.rules.indexOf(q), 1); this.out(L[k].v6 ? 'Rule deleted (v6)\n' : 'Rule deleted\n'); return 0; }
       const r = parse(a.slice(1)); if (r.err) { this.eout(r.err + '\n'); return 1; } const k = st.rules.findIndex(x => same(x, r)); if (k < 0) { this.out('Could not delete non-existent rule\n' + (v6ok(r.from) ? 'Could not delete non-existent rule (v6)\n' : '')); return 0; } st.rules.splice(k, 1); this.out('Rule deleted\n' + (v6ok(r.from) ? 'Rule deleted (v6)\n' : '')); return 0;
     }
     let at = -1, w = a;
@@ -2654,7 +2654,7 @@ const LXSH = (() => {
       const r = parse(w); if (r.err) { this.eout(r.err + '\n'); return 1; }
       if (st.rules.some(x => same(x, r))) { this.out(at >= 0 ? 'Skipping inserting existing rule\n' : 'Skipping adding existing rule\n' + (v6ok(r.from) ? 'Skipping adding existing rule (v6)\n' : '')); return 0; }
       if (at >= 0) st.rules.splice(at, 0, r); else st.rules.push(r);
-      this.out(at >= 0 ? 'Rule inserted\n' + (v6ok(r.from) ? 'Rule inserted (v6)\n' : '') : 'Rules updated\n' + (v6ok(r.from) ? 'Rules updated (v6)\n' : ''));
+      const word = at >= 0 ? 'Rule inserted' : st.on ? 'Rule added' : 'Rules updated'; this.out(word + '\n' + (v6ok(r.from) ? word + ' (v6)\n' : ''));
       return 0;
     }
     this.eout('ERROR: Invalid syntax\n\nUsage: ufw COMMAND\n'); return 1;

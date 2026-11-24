@@ -10929,6 +10929,23 @@ function lxAdminModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "firewall", title: "Firewall and hardening: ufw, nftables and a safer server", emoji: "4.3", page: "content/linux/firewall-hardening.html",
+        summary: "Default deny, ufw, nftables, hardening checklist, fail2ban, auditd, AppArmor.",
+        keywords: ["firewall", "ufw", "nftables", "nft", "iptables", "netfilter", "conntrack", "default deny", "hardening", "unattended-upgrades", "SUID", "sysctl", "fail2ban", "auditd", "AppArmor"],
+        minutes: 60, counts: {"lessons": 7, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "what", title: "What a firewall does", emoji: "", group: "Lesson", keywords: ["firewall", "packet filter", "netfilter", "input chain", "output chain", "forward chain", "connection tracking", "conntrack", "stateful firewall", "default deny", "policy drop", "first match", "drop vs reject", "nftables", "iptables-nft", "ufw", "firewalld", "security group"] },
+        { id: "ufw", title: "ufw: a simple firewall for Ubuntu", emoji: "", group: "Lesson", keywords: ["ufw", "ufw enable", "ufw status", "ufw status verbose", "ufw status numbered", "ufw default deny incoming", "ufw allow", "ufw deny", "ufw limit", "ufw insert", "ufw delete", "ufw reset", "app profile", "OpenSSH profile", "allow from subnet", "lock yourself out"] },
+        { id: "nft", title: "nftables: the rules underneath", emoji: "", group: "Lesson", keywords: ["nftables", "nft", "nft list ruleset", "nft -f", "nft -c", "table inet filter", "base chain", "hook input", "policy drop", "ct state established,related", "ct state invalid", "anonymous set", "counter", "rule handle", "nft insert rule", "nft delete rule", "/etc/nftables.conf", "nftables.service", "iptables-nft"] },
+        { id: "harden", title: "Hardening a server step by step", emoji: "", group: "Lesson", keywords: ["hardening", "server hardening", "unattended-upgrades", "20auto-upgrades", "security updates", "reboot-required", "ss -tulpn", "listening ports", "attack surface", "systemctl disable --now", "bind to localhost", "SUID", "find -perm -4000", "sysctl", "sysctl.d", "accept_redirects", "rp_filter", "tcp_syncookies", "randomize_va_space", "kptr_restrict"] },
+        { id: "watch", title: "fail2ban, auditd and AppArmor", emoji: "", group: "Lesson", keywords: ["fail2ban", "jail.local", "jail.conf", "defaults-debian.conf", "bantime", "findtime", "maxretry", "fail2ban-client status", "unbanip", "fail2ban-regex", "sshd jail", "auditd", "auditctl -w", "audit rules", "ausearch", "augenrules", "AppArmor", "aa-status", "aa-enforce", "aa-complain", "apparmor DENIED"] },
+        { id: "practice", title: "Practice: lock down the practice server", emoji: "", group: "Lesson", keywords: ["ufw lab", "firewall practice", "hardening practice", "ufw insert practice", "ss practice", "SUID practice"] },
+        { id: "levels", title: "Firewalls from school to research", emoji: "", group: "Lesson", keywords: ["egress filtering", "network segmentation", "CIS Benchmark", "DISA STIG", "Lynis", "OpenSCAP", "NetworkPolicy", "Cilium", "eBPF", "XDP", "zero trust", "shadowed rules", "intrusion detection"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];
