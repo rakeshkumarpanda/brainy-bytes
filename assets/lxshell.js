@@ -56,7 +56,7 @@ const LXSH = (() => {
     ]
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
-  const SBIN = 'sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
+  const SBIN = 'ufw sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
   const CMDS = 'alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
@@ -2605,6 +2605,59 @@ const LXSH = (() => {
     n.data.split('\n').forEach((l, i) => { const t = l.replace(/#.*/, '').trim(); if (!t) return; const k = t.split(/[\s=]+/)[0].toLowerCase(); if (!SSHD_OPTS.includes(k)) { this.eout(`${cf}: line ${i + 1}: Bad configuration option: ${t.split(/[\s=]+/)[0]}\n`); bad++; } else if (k === 'permitrootlogin' && !/^(yes|no|prohibit-password|without-password|forced-commands-only)$/i.test(t.split(/[\s=]+/)[1] || '')) { this.eout(`${cf} line ${i + 1}: unsupported option "${t.split(/[\s=]+/)[1] || ''}".\n`); bad++; } else if (/^(passwordauthentication|pubkeyauthentication|usepam|x11forwarding)$/.test(k) && !/^(yes|no)$/i.test(t.split(/[\s=]+/)[1] || '')) { this.eout(`${cf} line ${i + 1}: unsupported option "${t.split(/[\s=]+/)[1] || ''}".\n`); bad++; } });
     if (bad) { this.eout(`${cf}: terminating, ${bad} bad configuration options\n`); return 255; }
     return 0;
+  };
+
+  /* ---------- ufw: rules, defaults and status as ufw 0.36 on Ubuntu 24.04 prints them (IPv6 on, as by default) ---------- */
+  const UFW_APPS = { OpenSSH: '22/tcp', 'Nginx Full': '80,443/tcp', 'Nginx HTTP': '80/tcp', 'Nginx HTTPS': '443/tcp' };
+  World.prototype.ufw = function () { if (!this.ufwState) this.ufwState = { on: false, def: { incoming: 'deny', outgoing: 'allow', routed: 'disabled' }, rules: [] }; return this.ufwState; };
+  C.ufw = function (a0) {
+    if (this.user !== 'root') { this.eout('ERROR: You need to be root to run this script\n'); return 1; }
+    const st = this.ufw(), force = a0.includes('--force'), a = a0.filter(x => x !== '--force'), cmd = a[0] || '';
+    const v6ok = from => from === 'Anywhere' || /:/.test(from);
+    const parse = w => {
+      let action = w[0].toUpperCase(), i = 1, dir = 'IN', to = '', from = 'Anywhere', port = '', proto = '';
+      if (w[i] === 'in' || w[i] === 'out') { dir = w[i].toUpperCase(); i++; }
+      if (w[i] === 'from') { from = w[i + 1] === 'any' ? 'Anywhere' : w[i + 1]; i += 2; if (w[i] === 'to') { i += 2; } if (w[i] === 'port') { port = w[i + 1]; i += 2; } if (w[i] === 'proto') { proto = w[i + 1]; i += 2; } to = port ? port + (proto ? '/' + proto : '') : 'Anywhere'; }
+      else if (w[i] === 'to') { i += 2; if (w[i] === 'port') { port = w[i + 1]; i += 2; } if (w[i] === 'proto') { proto = w[i + 1]; i += 2; } to = port + (proto ? '/' + proto : ''); }
+      else { const spec = w.slice(i).join(' '); if (UFW_APPS[spec]) to = spec; else if (/^\d+(:\d+)?(,\d+)*(\/(tcp|udp))?$/.test(spec) && spec.split(/[/,:]/).filter(x => /^\d+$/.test(x)).every(x => +x > 0 && +x < 65536)) to = spec; else if (/^\d+/.test(spec)) return { err: 'ERROR: Bad port' }; else return { err: `ERROR: Could not find a profile matching '${spec}'` }; }
+      if (port && port.split(/[,:]/).some(x => !(+x > 0 && +x < 65536))) return { err: 'ERROR: Bad port' };
+      if (!['ALLOW', 'DENY', 'REJECT', 'LIMIT'].includes(action)) return { err: `ERROR: Invalid syntax` };
+      return { action, dir, to, from };
+    };
+    const same = (x, y) => x.action === y.action && x.dir === y.dir && x.to === y.to && x.from === y.from;
+    const list = () => { const v4 = st.rules.map(r => ({ r, v6: false })), v6 = st.rules.filter(r => v6ok(r.from)).map(r => ({ r, v6: true })); return v4.concat(v6); };
+    const label = (r, v6, verbose) => { const t = r.to === 'Anywhere' ? 'Anywhere' : (verbose && UFW_APPS[r.to] ? `${UFW_APPS[r.to]} (${r.to})` : r.to); return v6 ? (t === 'Anywhere' ? 'Anywhere (v6)' : t.replace(/ \((.+)\)$/, ' ($1 (v6))').replace(/^([^ (]+)$/, '$1 (v6)')) : t; };
+    const table = (numbered, verbose) => {
+      const L = list(); if (!L.length) return '';
+      const rows = L.map(({ r, v6 }, i) => (numbered ? `[${String(i + 1).padStart(2)}] ` : '') + label(r, v6, verbose).padEnd(27) + ((numbered || verbose) ? (r.action + ' ' + r.dir) : r.action).padEnd(12) + (v6 ? (r.from === 'Anywhere' ? 'Anywhere (v6)' : r.from) : r.from).padEnd(26));
+      const pad = numbered ? '     ' : '';
+      return `\n${pad}To                         Action      From\n${pad}--                         ------      ----\n${rows.join('\n')}\n\n`;
+    };
+    if (cmd === 'status') {
+      if (!st.on) { this.out('Status: inactive\n'); return 0; }
+      if (a[1] === 'verbose') { this.out(`Status: active\nLogging: on (low)\nDefault: ${st.def.incoming} (incoming), ${st.def.outgoing} (outgoing), ${st.def.routed} (routed)\nNew profiles: skip\n${table(false, true)}`); return 0; }
+      this.out('Status: active\n' + table(a[1] === 'numbered', false)); return 0;
+    }
+    if (cmd === 'enable') { if (!force) this.out('Command may disrupt existing ssh connections. Proceed with operation (y|n)? y\n'); st.on = true; this.out('Firewall is active and enabled on system startup\n'); return 0; }
+    if (cmd === 'disable') { st.on = false; this.out('Firewall stopped and disabled on system startup\n'); return 0; }
+    if (cmd === 'reload') { this.out(st.on ? 'Firewall reloaded\n' : 'Firewall not enabled (skipping reload)\n'); return 0; }
+    if (cmd === 'reset') { if (!force) this.out('Resetting all rules to installed defaults. Proceed with operation (y|n)? y\n'); st.on = false; st.rules = []; st.def = { incoming: 'deny', outgoing: 'allow', routed: 'disabled' }; return 0; }
+    if (cmd === 'default') { const pol = a[1], d = a[2]; if (!/^(allow|deny|reject)$/.test(pol || '') || !/^(incoming|outgoing|routed)$/.test(d || '')) { this.eout('ERROR: Invalid syntax\n'); return 1; } st.def[d] = pol; this.out(`Default ${d} policy changed to '${pol}'\n(be sure to update your rules accordingly)\n`); return 0; }
+    if (cmd === 'app') { if (a[1] === 'list') { this.out('Available applications:\n' + Object.keys(UFW_APPS).filter(k => k === 'OpenSSH' || this.node('/etc/nginx')).sort().map(k => '  ' + k).join('\n') + '\n'); return 0; } if (a[1] === 'info' && UFW_APPS[a.slice(2).join(' ')]) { const n = a.slice(2).join(' '); this.out(`Profile: ${n}\nTitle: ${n === 'OpenSSH' ? 'Secure shell server, an rshd replacement' : 'Web Server'}\nDescription: ${n === 'OpenSSH' ? 'OpenSSH is a free implementation of the Secure Shell protocol.' : 'Small, but very powerful and efficient web server'}\n\nPort${/,/.test(UFW_APPS[n]) ? 's' : ''}:\n  ${UFW_APPS[n]}\n`); return 0; } }
+    if (cmd === 'delete') {
+      if (/^\d+$/.test(a[1] || '')) { const L = list(), k = +a[1] - 1; if (!L[k]) { this.eout(`ERROR: Could not find rule '${a[1]}'\n`); return 1; } if (!force) this.out(`Deleting:\n ${L[k].r.action.toLowerCase()} ${L[k].r.from === 'Anywhere' ? L[k].r.to : 'from ' + L[k].r.from}\nProceed with operation (y|n)? y\n`); st.rules.splice(st.rules.indexOf(L[k].r), 1); this.out('Rule deleted\n' + (v6ok(L[k].r.from) ? 'Rule deleted (v6)\n' : '')); return 0; }
+      const r = parse(a.slice(1)); if (r.err) { this.eout(r.err + '\n'); return 1; } const k = st.rules.findIndex(x => same(x, r)); if (k < 0) { this.out('Could not delete non-existent rule\n' + (v6ok(r.from) ? 'Could not delete non-existent rule (v6)\n' : '')); return 0; } st.rules.splice(k, 1); this.out('Rule deleted\n' + (v6ok(r.from) ? 'Rule deleted (v6)\n' : '')); return 0;
+    }
+    let at = -1, w = a;
+    if (cmd === 'insert') { at = +a[1] - 1; w = a.slice(2); if (!(at >= 0) || at > st.rules.length) { this.eout(`ERROR: Invalid position '${a[1]}'\n`); return 1; } }
+    if (/^(allow|deny|reject|limit)$/.test(w[0] || '')) {
+      const r = parse(w); if (r.err) { this.eout(r.err + '\n'); return 1; }
+      if (st.rules.some(x => same(x, r))) { this.out(at >= 0 ? 'Skipping inserting existing rule\n' : 'Skipping adding existing rule\n' + (v6ok(r.from) ? 'Skipping adding existing rule (v6)\n' : '')); return 0; }
+      if (at >= 0) st.rules.splice(at, 0, r); else st.rules.push(r);
+      this.out(at >= 0 ? 'Rule inserted\n' + (v6ok(r.from) ? 'Rule inserted (v6)\n' : '') : 'Rules updated\n' + (v6ok(r.from) ? 'Rules updated (v6)\n' : ''));
+      return 0;
+    }
+    this.eout('ERROR: Invalid syntax\n\nUsage: ufw COMMAND\n'); return 1;
   };
   C.lsblk = function (a) {
     const st = this.disks(), full = a.includes('-f') || a.includes('--fs'), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
