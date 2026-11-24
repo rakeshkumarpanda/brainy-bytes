@@ -10985,6 +10985,24 @@ function lxAdvModules() {
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
+    ] },
+    { id: "lx-adv-2", title: "Files and memory inside", emoji: "2", step: 2, part: "advanced", level: "Expert", blurb: "See what files and memory really are to the kernel: inodes, links and open descriptors, the page cache, virtual memory, swapping and the OOM killer.", topics: [
+      { id: "files-inside", title: "Files inside: inodes, links, open descriptors and the page cache", emoji: "2.1", page: "content/linux/files-inside.html",
+        summary: "Inodes, file types, hard and symbolic links, descriptors, deleted open files, page cache.",
+        keywords: ["inode", "hard link", "symbolic link", "ln", "link count", "df -i", "file descriptor", "lsof", "deleted open file", "VFS", "page cache", "fsync", "dirty pages", "mkfifo"],
+        minutes: 55, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "inode", title: "Names, inodes and data", emoji: "", group: "Lesson", keywords: ["inode", "inode number", "ls -i", "stat", "directory entry", "dentry", "link count", "data blocks", "extents", "file types", "regular file", "named pipe", "FIFO", "mkfifo", "character device", "block device", "socket file", "df -i", "inode exhaustion", "No space left on device", "mkfs.ext4 -N", "debugfs"] },
+        { id: "links", title: "Hard links and symbolic links", emoji: "", group: "Lesson", keywords: ["hard link", "symbolic link", "symlink", "soft link", "ln", "ln -s", "ln -sfn", "link count", "dangling link", "broken symlink", "find -xtype l", "find -samefile", "find -inum", "readlink -f", "Invalid cross-device link", "protected_hardlinks", "relative symlink"] },
+        { id: "fds", title: "Open files: descriptors and deleted files", emoji: "", group: "Lesson", keywords: ["file descriptor", "fd", "file descriptor table", "open file description", "offset", "/proc/PID/fd", "lsof", "lsof +L1", "lsof -i", "fuser", "deleted but open", "(deleted)", "recover deleted file", "disk full after rm", "truncate file", "ulimit -n", "Too many open files", "EMFILE", "LimitNOFILE"] },
+        { id: "cache", title: "The VFS, the page cache and fsync", emoji: "", group: "Lesson", keywords: ["VFS", "virtual file system", "page cache", "buffer cache", "dirty pages", "write-back", "fsync", "fdatasync", "sync", "dirty_ratio", "dirty_background_ratio", "dirty_expire_centisecs", "drop_caches", "O_DIRECT", "atomic rename", "safe file write", "buff/cache"] },
+        { id: "practice", title: "Practice: inodes and links on the practice server", emoji: "", group: "Lesson", keywords: ["inode lab", "hard link practice", "symlink practice", "mkfifo practice"] },
+        { id: "levels", title: "Files from school to research", emoji: "", group: "Lesson", keywords: ["reflink", "cp --reflink", "rsync --link-dest", "deduplication", "crash consistency", "copy on write file system", "Btrfs", "ZFS", "bcachefs", "FUSE", "filefrag", "xfs_db", "mkfs -i"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
     ] }
   ];
 }

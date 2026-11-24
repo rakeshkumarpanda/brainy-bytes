@@ -57,7 +57,7 @@ const LXSH = (() => {
   };
   const PKGCMDS = ['cowsay', 'jq', 'figlet'];
   const SBIN = 'ufw sshd tcpdump pvcreate pvs pvremove vgcreate vgextend vgs vgremove lvcreate lvextend lvreduce lvresize lvs lvremove mkswap swapon swapoff mkfs mkfs.ext4 mkfs.xfs mkfs.vfat parted e2fsck chpasswd groupadd groupdel useradd userdel usermod'.split(' ');
-  const CMDS = 'nproc pstree alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
+  const CMDS = 'mkfifo nproc pstree alias blkid fallocate scp ssh ssh-copy-id ssh-keygen curl dig host ip nc nslookup ping ss tracepath traceroute findmnt fsck lsblk mount umount dmesg logger journalctl systemctl apt apt-cache apt-get at atq atrm awk basename bash batch bg bunzip2 bzcat bzip2 cal cat cd chage chmod chown clear cp crontab cut date df diff dpkg dpkg-query dirname disown du echo env exit export expr false fg file find flock free getent grep groups gunzip gzip head help history hostname id jobs kill killall less ln ls man mkdir more mv nice nl nohup pgrep pkill printenv printf ps pwd renice readlink rev rm rmdir sed seq sh sleep sort source stat sudo tac tail tar tee test time top touch tr tree true type umask unalias uname uniq unset unxz unzip uptime wait wc which whoami xargs yes xz xzcat zcat zip'.split(' ');
   const BUILTIN = new Set('alias cd echo exit export help history pwd source test true false type umask unalias unset printf kill jobs read fg bg wait disown time declare typeset readonly set unset local shift let getopts mapfile readarray trap break continue return : eval shopt command'.split(' '));
 
   /* ---------- small helpers ---------- */
@@ -91,7 +91,7 @@ const LXSH = (() => {
     return { n: '\n', t: '\t', r: '\r', a: '\x07', b: '\b', e: '\x1b', E: '\x1b', f: '\f', v: '\v', '\\': '\\', "'": "'", '"': '"', '?': '?' }[c] ?? m;
   });
   function modeStr(n) {
-    const t = n.type === 'd' ? 'd' : n.type === 'l' ? 'l' : n.type === 'c' ? 'c' : n.type === 'b' ? 'b' : '-';
+    const t = n.type === 'd' ? 'd' : n.type === 'l' ? 'l' : n.type === 'c' ? 'c' : n.type === 'b' ? 'b' : n.type === 'p' ? 'p' : n.type === 's' ? 's' : '-';
     const m = n.mode, b = (v, ch) => v ? ch : '-';
     let s = t;
     [[6, 0o4000, 's'], [3, 0o2000, 's'], [0, 0o1000, 't']].forEach(([sh, sp, ch]) => {
@@ -157,6 +157,7 @@ const LXSH = (() => {
     mk(path, type, mode, owner, content = '', link = false) {
       const p = norm(path), parent = this.node(dirName(p));
       const n = { type, name: baseName(p), mode, owner, group: owner, mtime: T0, kids: type === 'd' ? {} : undefined };
+      n.ino = this.inoNext = (this.inoNext || 1310714) + 7;
       if (type === 'l') n.target = content; else if (type !== 'd') n.data = content;
       parent.kids[n.name] = n;
       return n;
@@ -2716,6 +2717,33 @@ const LXSH = (() => {
     for (const k in kids) kids[k].name = k;
     proc.kids = kids;
   };
+
+  /* the mount a path lives on, for cross-device checks */
+  World.prototype.mountOf = function (path) {
+    const dirs = this.disks().mounts.map(m => m.dir).concat(['/dev/shm', '/proc', '/run']);
+    return dirs.filter(d => path === d || path.startsWith(d === '/' ? '/' : d + '/')).sort((x, y) => y.length - x.length)[0] || '/';
+  };
+  /* realpath: follow every symbolic link. The last part may be missing, as with readlink -f */
+  World.prototype.canon = function (path, depth = 0) {
+    const parts = norm(path).split('/').filter(Boolean); let cur = '/';
+    for (let i = 0; i < parts.length; i++) {
+      const next = norm(cur + '/' + parts[i]), n = this.node(next, false);
+      if (!n) return i === parts.length - 1 ? next : null;
+      if (n.type === 'l') { if (depth > 40) return null; const t = n.target.startsWith('/') ? n.target : cur + '/' + n.target; const r = this.canon(t, depth + 1); if (r === null) return null; cur = r; } else cur = next;
+    }
+    return cur;
+  };
+  C.mkfifo = function (a) {
+    const [, rest] = opts(a, 'm');
+    if (!rest.length) { this.eout('mkfifo: missing operand\n'); return 1; }
+    for (const t of rest) {
+      const p = this.abs(t);
+      if (this.node(p, false)) { this.eout(`mkfifo: cannot create fifo '${t}': File exists\n`); return 1; }
+      if (!this.node(dirName(p))) { this.eout(`mkfifo: cannot create fifo '${t}': No such file or directory\n`); return 1; }
+      this.mk(p, 'p', 0o666 & ~this.umask, this.user, '').mtime = this.now();
+    }
+    return 0;
+  };
   C.lsblk = function (a) {
     const st = this.disks(), full = a.includes('-f') || a.includes('--fs'), names = a.filter(x => !x.startsWith('-')).map(x => x.replace(/^\/dev\//, ''));
     const mnt = p => (st.mounts.find(m => m.dev === p.name) || {}).dir || (st.swaps.some(x => x.dev === p) ? '[SWAP]' : '');
@@ -2957,12 +2985,12 @@ const LXSH = (() => {
       const n = this.node(this.abs(t), false);
       if (!n) { this.eout(`stat: cannot statx '${t}': No such file or directory\n`); this.err = true; return; }
       if (f.c) {
-        const typ = n.type === 'd' ? 'directory' : n.type === 'l' ? 'symbolic link' : this.size(n) ? 'regular file' : 'regular empty file';
-        const map = { a: n.mode.toString(8), A: modeStr(n), n: t, U: n.owner, G: n.group, u: String(this.pwRow(n.owner) ? this.pwRow(n.owner)[2] : 1000), g: String(this.grRow(n.group) ? this.grRow(n.group)[2] : 1000), s: String(this.size(n)), F: typ, '%': '%' };
+        const typ = n.type === 'd' ? 'directory' : n.type === 'l' ? 'symbolic link' : n.type === 'p' ? 'fifo' : n.type === 'c' ? 'character special file' : this.size(n) ? 'regular file' : 'regular empty file';
+        const map = { i: String(this.ino(n)), h: String(this.links(n)), a: n.mode.toString(8), A: modeStr(n), n: t, U: n.owner, G: n.group, u: String(this.pwRow(n.owner) ? this.pwRow(n.owner)[2] : 1000), g: String(this.grRow(n.group) ? this.grRow(n.group)[2] : 1000), s: String(this.size(n)), F: typ, '%': '%' };
         this.out(String(f.c).replace(/%(.)/g, (m, k) => map[k] ?? m) + '\n');
         return;
       }
-      const ty = n.type === 'd' ? 'directory' : n.type === 'l' ? 'symbolic link' : n.type === 'c' ? 'character special file' : this.size(n) ? 'regular file' : 'regular empty file';
+      const ty = n.type === 'd' ? 'directory' : n.type === 'l' ? 'symbolic link' : n.type === 'p' ? 'fifo' : n.type === 'c' ? 'character special file' : this.size(n) ? 'regular file' : 'regular empty file';
       const dt = new Date(n.mtime).toISOString().replace('T', ' ').replace(/\.\d+Z/, '.000000000 +0000');
       this.out(`  File: ${t}${n.type === 'l' ? ' -> ' + n.target : ''}\n  Size: ${this.size(n)}\t\tBlocks: ${n.type === 'd' ? 8 : this.size(n) ? 8 : 0}\tIO Block: 4096   ${ty}\nDevice: ${n.proc ? '0,22' : '8,1'}\tInode: ${String(this.ino(n)).padEnd(11)} Links: ${this.links(n)}\nAccess: (${n.mode.toString(8).padStart(4, '0')}/${modeStr(n)})  Uid: (${pad(this.pwRow(n.owner) ? this.pwRow(n.owner)[2] : 1000, 5)}/${pad(n.owner, 8)})   Gid: (${pad(this.grRow(n.group) ? this.grRow(n.group)[2] : 1000, 5)}/${pad(n.group, 8)})\nAccess: ${dt}\nModify: ${dt}\nChange: ${dt}\n Birth: ${dt}\n`);
     });
@@ -2978,9 +3006,11 @@ const LXSH = (() => {
     const src = this.node(this.abs(tgt));
     if (!src) { this.eout(`ln: failed to access '${tgt}': No such file or directory\n`); return 1; }
     if (src.type === 'd') { this.eout(`ln: ${tgt}: hard link not allowed for directory\n`); return 1; }
+    if (this.mountOf(this.abs(tgt)) !== this.mountOf(to)) { this.eout(`ln: failed to create hard link '${link}' => '${tgt}': Invalid cross-device link\n`); return 1; }
+    if (this.user !== 'root' && src.owner !== this.user && !(this.can(src, 'r') && this.can(src, 'w'))) { this.eout(`ln: failed to create hard link '${link}' => '${tgt}': Operation not permitted\n`); return 1; }
     this.node(dirName(to)).kids[baseName(to)] = src;   /* the same node under a second name, just like a hard link */
   };
-  C.readlink = function (a) { const [f, rest] = opts(a); const n = this.node(this.abs(rest[0]), false); if (f.f) { this.out(this.abs(rest[0]) + '\n'); return 0; } if (!n || n.type !== 'l') return 1; this.out(n.target + '\n'); };
+  C.readlink = function (a) { const [f, rest] = opts(a); const n = this.node(this.abs(rest[0]), false); if (f.f || f.e || f.m) { const r = this.canon(this.abs(rest[0])); if (r === null || (f.e && !this.node(r))) return 1; this.out(r + '\n'); return 0; } if (!n || n.type !== 'l') return 1; this.out(n.target + '\n'); };
   C.find = function (a) {
     let i = 0; const starts = [];
     while (a[i] !== undefined && !/^-./.test(a[i]) && a[i] !== '!' && a[i] !== '(') starts.push(a[i++]);
@@ -3002,6 +3032,9 @@ const LXSH = (() => {
       if (o === '-name' || o === '-iname') { const re = new RegExp(globRe(need(o)).source, o === '-iname' ? 'i' : ''); return c => re.test(c.name); }
       if (o === '-path' || o === '-wholename' || o === '-ipath') { const g = need(o); const re = new RegExp('^' + g.split('*').map(x => x.replace(/[.+^${}()|[\]\\?]/g, '\\$&')).join('.*').replace(/\\\?/g, '.') + '$', o === '-ipath' ? 'i' : ''); return c => re.test(c.path); }
       if (o === '-type') { const v = need(o); return c => v.split(',').includes(c.n.type); }
+      if (o === '-inum') { const v = need(o); return c => cmpNum(v, self.ino(c.n)); }
+      if (o === '-samefile') { const v = need(o), r = self.node(self.abs(v)); if (!r) throw new Error(`‘${v}’: No such file or directory`); return c => c.n === r; }
+      if (o === '-links') { const v = need(o); return c => cmpNum(v, self.links(c.n)); }
       if (o === '-maxdepth') { maxd = +need(o); return () => true; }
       if (o === '-mindepth') { mind = +need(o); return () => true; }
       if (o === '-empty') return c => (c.n.type === 'd' ? !Object.keys(c.n.kids).length : c.n.type === 'f' && self.size(c.n) === 0);

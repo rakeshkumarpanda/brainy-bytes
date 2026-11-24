@@ -1384,6 +1384,50 @@
     }
   }));
 
+  /* adv 2.1 names, inodes and data: what ln, ln -s, rm and mv really change */
+  def('lx-inode', el => W(el, {
+    title: 'Names, inodes and data blocks',
+    sub: 'Pick an operation on notes.txt. Pip shows the folder’s name table, the inode and the data after each step, and runs the same commands in the practice shell.',
+    inputs: [{ k: 'op', label: 'Operation', type: 'seg', val: 'hard', opts: [['hard', 'ln notes.txt copy'], ['soft', 'ln -s notes.txt link'], ['rmhard', 'hard link, then rm notes.txt'], ['rmsoft', 'symlink, then rm notes.txt'], ['mv', 'mv notes.txt todo.txt']] }],
+    random: () => ({ op: ['hard', 'soft', 'rmhard', 'rmsoft', 'mv'][Math.floor(Math.random() * 5)] }),
+    frames: v => {
+      const w = world(), fr = [];
+      const sh = (cmd) => { const r = w.run(cmd); return { t: 'term', label: 'Practice shell', lines: [['c', cmd]].concat((r.out + (r.err || '')).replace(/\n+$/, '').split('\n').filter(x => x).map(x => [r.code ? 'e' : 'o', x])) }; };
+      const node = p => w.node(w.abs(p), false);
+      const view = (names, hi, bad) => {
+        const items = names.map(n => { const x = node(n); return [n, !x ? 'gone' : x.type === 'l' ? 'symlink → ' + x.target : 'inode ' + w.ino(x), hi.includes(n) ? (bad === n ? 'no' : 'cur') : x ? 'yes' : 'ghost']; });
+        const ids = [...new Set(names.map(node).filter(x => x))];
+        ids.forEach(x => items.push([`inode ${w.ino(x)}`, x.type === 'l' ? `type link, ${w.size(x)} bytes: the path` : `links ${w.links(x)}, ${w.size(x)} bytes, ${modeName(x)}`, 'look']));
+        const f = names.map(node).find(x => x && x.type === 'f');
+        items.push(['data blocks', f ? JSON.stringify(f.data.split('\n')[0] + '…') : 'freed', f ? 'yes' : 'ghost']);
+        return { t: 'flow', label: 'Folder /home/learner, inodes, data', items, plain: true };
+      };
+      const lay = (names, hi, bad, ...cmds) => { const terms = cmds.map(c => typeof c === 'string' ? sh(c) : c); return [view(names, hi, bad)].concat(terms); };
+      const modeName = x => x.mode.toString(8).padStart(4, '0') + ' ' + x.owner;
+      fr.push({ msg: 'A folder is a small table that pairs <b>names</b> with <b>inode numbers</b>. The inode holds everything about the file except its name: type, owner, mode, size, times, the link count and where the data blocks are.', mood: 'think', layers: lay(['notes.txt'], [], undefined, 'ls -li notes.txt') });
+      if (v.op === 'hard' || v.op === 'rmhard') {
+        fr.push({ msg: '<code>ln notes.txt copy</code> adds a second name that points to the <b>same inode</b>. No data is copied, and the link count goes up to 2. Both names are equal: neither is “the original”.', mood: 'wow', layers: lay(['notes.txt', 'copy'], ['copy'], undefined, 'ln notes.txt copy', 'ls -li notes.txt copy') });
+        if (v.op === 'hard') { fr.push({ msg: 'A change through one name shows through the other, because there is only one file. Hard links only work inside one file system, because inode numbers are only unique there, and not for folders.', mood: 'happy', fx: 'burst', layers: lay(['notes.txt', 'copy'], [], undefined, 'echo "Water the plants" >> copy', 'tail -n 1 notes.txt') }); return fr; }
+        const r = sh('rm notes.txt');
+        fr.push({ msg: '<code>rm</code> calls unlink: it removes one <b>name</b> and lowers the link count to 1. The inode and the data stay, because the name copy still points to them.', mood: 'look', layers: lay(['notes.txt', 'copy'], ['notes.txt'], 'notes.txt', r, 'ls -li copy') });
+        fr.push({ msg: 'The data is freed only when the link count reaches 0 and no process has the file open. That is why rm on a big log that a service still writes frees no space until the service closes it.', mood: 'happy', fx: 'burst', layers: lay(['copy'], [], undefined, 'cat copy') });
+        return fr;
+      }
+      if (v.op === 'soft' || v.op === 'rmsoft') {
+        fr.push({ msg: '<code>ln -s notes.txt link</code> makes a new, tiny file of type <b>symbolic link</b> with its own inode. Its content is just the path “notes.txt”. The link count of notes.txt does not change.', mood: 'wow', layers: lay(['notes.txt', 'link'], ['link'], undefined, 'ln -s notes.txt link', 'ls -li notes.txt link') });
+        if (v.op === 'soft') { fr.push({ msg: 'When a program opens link, the kernel reads the path and follows it. Symbolic links can point to folders and to other file systems, and <code>readlink -f</code> shows the final target.', mood: 'happy', fx: 'burst', layers: lay(['notes.txt', 'link'], [], undefined, 'readlink -f link', 'head -n 1 link') }); return fr; }
+        const r = sh('rm notes.txt');
+        fr.push({ msg: 'Removing notes.txt drops its only name, so the link count reaches 0 and the data is freed. The symbolic link still contains the path notes.txt, which now leads nowhere: a <b>dangling</b> link.', mood: 'sad', fx: 'shake', layers: lay(['notes.txt', 'link'], ['notes.txt'], 'notes.txt', r, 'cat link') });
+        fr.push({ msg: '<code>ls -l</code> still shows link → notes.txt. <code>find -xtype l</code> lists dangling links. Create a new notes.txt and the link works again, because it stores a name, not an inode.', mood: 'think', layers: lay(['link'], [], undefined, 'ls -l link') });
+        return fr;
+      }
+      const before = w.ino(node('notes.txt'));
+      fr.push({ msg: `<code>mv</code> inside one file system calls rename: it changes the name in the folder table and nothing else. The inode keeps its number ${before}, and not a byte of data moves, so even a 50 GB file is renamed at once. rename is also atomic: other programs see the old name or the new one, never neither.`, mood: 'wow', layers: lay(['notes.txt', 'todo.txt'], ['todo.txt'], undefined, 'mv notes.txt todo.txt', 'ls -li todo.txt') });
+      fr.push({ msg: 'Across file systems, for example to a USB stick, mv has to copy the data to a new inode there and then remove the old name, which takes as long as the copy.', mood: 'happy', fx: 'burst', layers: lay(['todo.txt'], [], undefined) });
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
