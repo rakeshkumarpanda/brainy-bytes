@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finding files: find, xargs and locate · Unix and Linux</title>
+<meta name="description" content="find tests (-name -iname -type -size -mtime -mmin -newer -empty -user -perm -maxdepth), operators and grouping, -prune, actions (-exec per file and with +, -delete, -print0), xargs with -n -I -0 -P, locate and updatedb, which, type and command -v, and how find and xargs work inside.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=power">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=power" target="_top">Unix and Linux</a><span>›</span><span>Shell Power Tools</span><span>›</span><span>Step 3: Finding and packing files</span><span>›</span><span>find and xargs</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 1 of 2 · Intermediate</div>
+    <h1>Finding files: find, xargs and locate</h1>
+    <p class="lead">Search the whole file tree by name, type, size, age and owner, combine tests with and, or and not, act on the results safely with -exec and xargs, and use locate, which and type for quick lookups.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#find-files" data-topic="cheatsheet" data-h="find-files">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#find" data-l="find"><span class="n">1</span><span class="t">find: search the tree by name, type, size and age</span></a></li><li><a href="#combine" data-l="combine"><span class="n">2</span><span class="t">Combining tests: and, or, not, prune</span></a></li><li><a href="#act" data-l="act"><span class="n">3</span><span class="t">Doing something with the results: -exec, -delete and xargs</span></a></li><li><a href="#locate" data-l="locate"><span class="n">4</span><span class="t">Faster lookups: locate, which and type</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Finding files from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="find" data-l="find" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>find: search the tree by name, type, size and age</h2>
+<p><code>find WHERE TESTS</code> walks through a folder and everything below it, checks each entry against your tests and prints the ones that pass. Unlike ls, it looks inside every sub folder, and unlike grep it searches names and details, not content.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>find . -name '*.txt'</code></td><td>Names matching a pattern (quote it!)</td><td><code>find ~ -name '*.pdf'</code></td></tr><tr><td><code>find . -iname 'readme*'</code></td><td>Same, ignoring case</td><td><code>find . -iname '*.JPG'</code></td></tr><tr><td><code>find . -type f</code></td><td>Only regular files (d folders, l symbolic links)</td><td><code>find /etc -type d</code></td></tr><tr><td><code>find . -size +100M</code></td><td>Bigger than 100 MiB (- smaller, k M G units, c bytes)</td><td><code>find / -size +1G</code></td></tr><tr><td><code>find . -mtime -7</code></td><td>Content changed less than 7 days ago (+7 more than 7)</td><td><code>find logs -mtime +30</code></td></tr><tr><td><code>find . -mmin -10</code></td><td>Changed in the last 10 minutes</td><td><code>find /tmp -mmin -10</code></td></tr><tr><td><code>find . -newer FILE</code></td><td>Changed more recently than FILE</td><td><code>find . -newer build.log</code></td></tr><tr><td><code>find . -empty</code></td><td>Empty files and folders</td><td><code>find . -type d -empty</code></td></tr><tr><td><code>find . -user NAME</code></td><td>Owned by a user (-group for a group)</td><td><code>find /home -user asha</code></td></tr><tr><td><code>find . -perm -u+x</code></td><td>Mode includes these bits (-perm 644 exact)</td><td><code>find . -perm -o+w</code></td></tr><tr><td><code>find . -maxdepth 1</code></td><td>Do not go deeper than one level</td><td><code>find . -maxdepth 2 -type d</code></td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-find"></div>
+<div class="lx-run"><div class="lx-rh"><span>Searching the home folder</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">find . -name '*.txt' | sort</span>
+<span class="lx-o">./fruits.txt
+./notes.txt
+./poem.txt</span>
+<span class="lx-cmd">find . -type d | sort</span>
+<span class="lx-o">.
+./logs
+./photos
+./projects
+./scripts</span>
+<span class="lx-cmd">find logs -type f | sort</span>
+<span class="lx-o">logs/app.log
+logs/old.log</span>
+<span class="lx-cmd">find . -maxdepth 1 -type f -name '*.csv'</span>
+<span class="lx-o">./marks.csv</span>
+<span class="lx-cmd">find . -empty</span>
+<span class="lx-o">./projects</span>
+<span class="lx-cmd">find . -iname 'NOTES*'</span>
+<span class="lx-o">./notes.txt</span>
+<span class="lx-cmd">find /etc -maxdepth 1 -name 'host*' | sort</span>
+<span class="lx-o">/etc/host.conf
+/etc/hostname
+/etc/hosts
+/etc/hosts.allow
+/etc/hosts.deny</span></pre><div class="lx-note">find visits entries in the order the file system stores them, which is not alphabetical, so these lines pipe the result through sort. -empty finds the empty projects folder.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Always quote the pattern: find . -name "*.txt". Without quotes the shell expands *.txt in the current folder first, and find then searches for those exact names only.</div></div>
+<div class="vt-talk" hidden>find is the tool for questions like where did I save that file, which logs are older than a month, or what is eating my disk. You tell it where to start and what to look for, and it walks through every folder underneath, checking each entry. Tests can look at the name with dash name, at the kind of entry with dash type, at the size with dash size and at the age with dash m time. Units matter: dash size plus one hundred M means bigger than one hundred mebibytes, and dash m time plus thirty means changed more than thirty days ago. Always put the name pattern in quotes. Otherwise the shell expands the star before find even starts, and you get confusing results. find has been part of Unix since the nineteen seventies, and the GNU version on Linux adds many extra tests.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="combine" data-l="combine" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Combining tests: and, or, not, prune</h2>
+<p>Tests written one after another must <b>all</b> be true (an implied -a, "and"). <code>-o</code> means "or", <code>!</code> means "not", and parentheses group tests. In the shell the parentheses must be escaped or quoted: <code>\( ... \)</code>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Expression</th><th>Meaning</th></tr></thead><tbody><tr><td><code>-type f -name '*.log'</code></td><td>files AND named *.log</td></tr><tr><td><code>-name '*.jpg' -o -name '*.png'</code></td><td>named *.jpg OR *.png</td></tr><tr><td><code>! -name '*.txt'</code> or <code>-not -name '*.txt'</code></td><td>NOT named *.txt</td></tr><tr><td><code>-type f \( -name '*.jpg' -o -name '*.png' \)</code></td><td>files that are jpg or png (the brackets group the or)</td></tr><tr><td><code>-path ./node_modules -prune -o -type f -print</code></td><td>skip a whole folder, list the files everywhere else</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Combined expressions</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">find . -type f \( -name '*.jpg' -o -name '*.png' \) | sort</span>
+<span class="lx-o">./photos/beach.jpg
+./photos/cat.png</span>
+<span class="lx-cmd">find . -type f ! -name '*.txt' | sort</span>
+<span class="lx-o">./.bashrc
+./logs/app.log
+./logs/old.log
+./marks.csv
+./photos/beach.jpg
+./photos/cat.png
+./scripts/hello.sh</span>
+<span class="lx-cmd">find . -path ./logs -prune -o -type f -print | sort</span>
+<span class="lx-o">./.bashrc
+./fruits.txt
+./marks.csv
+./notes.txt
+./photos/beach.jpg
+./photos/cat.png
+./poem.txt
+./scripts/hello.sh</span>
+<span class="lx-cmd">find . -type f -size -1k -name '*.log' | sort</span></pre><div class="lx-note">-prune stops find from going into ./logs, and -print is then needed so that only the -o part prints. -size -1k means "rounded up to whole KiB, less than 1", which only empty files pass, so the last command prints nothing even though app.log is tiny.</div></div>
+<div class="note note-tip"><b>Remember</b><div>The and binds tighter than the or. find . -name "*.jpg" -o -name "*.png" -type f means jpg files of any type, or png files that are regular files. Use parentheses whenever you mix -o with other tests.</div></div>
+<div class="vt-talk" hidden>Once you need more than one condition, find becomes a small logic language. Tests next to each other must all pass, so dash type f dash name star dot log means files and also named dot log. Dash o means or, and an exclamation mark means not. Because and is stronger than or, mixing them without brackets gives surprising results, so put round brackets around the or part. In the shell the brackets must be escaped with a backslash. One more useful word is dash prune, which tells find not to enter a folder. Developers use it all the time to skip huge folders such as node underscore modules or dot git, which can contain hundreds of thousands of files they never want to search.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="act" data-l="act" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Doing something with the results: -exec, -delete and xargs</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>find ... -exec CMD {} \;</code></td><td>Run CMD once for each file, {} is the file name</td><td><code>find . -name '*.sh' -exec chmod +x {} \;</code></td></tr><tr><td><code>find ... -exec CMD {} +</code></td><td>Run CMD once with many file names at the end (faster)</td><td><code>find logs -name '*.log' -exec wc -l {} +</code></td></tr><tr><td><code>find ... -delete</code></td><td>Delete every match (test without -delete first!)</td><td><code>find /tmp -name '*.tmp' -mtime +7 -delete</code></td></tr><tr><td><code>find ... -print0 | xargs -0 CMD</code></td><td>Pass names safely, even with spaces or newlines in them</td><td><code>find . -name '*.log' -print0 | xargs -0 ls -l</code></td></tr><tr><td><code>CMD | xargs CMD2</code></td><td>Turn input words into arguments of CMD2</td><td><code>echo a b c | xargs mkdir</code></td></tr><tr><td><code>xargs -n 1</code></td><td>Use one argument per run</td><td><code>cat urls.txt | xargs -n 1 echo get</code></td></tr><tr><td><code>xargs -I{} CMD {}</code></td><td>Put each input line where {} is</td><td><code>ls *.jpg | xargs -I{} cp {} backup/{}</code></td></tr><tr><td><code>xargs -P 4</code></td><td>Run up to 4 commands at the same time</td><td><code>find . -name '*.png' | xargs -P 4 -n 1 optipng</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Acting on matches</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">find . -name '*.sh' -exec ls -l {} \;</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 105 Nov 23 09:30 ./scripts/hello.sh</span>
+<span class="lx-cmd">find logs -name '*.log' -exec wc -l {} + | sort -n</span>
+<span class="lx-o">  1 logs/old.log
+  7 logs/app.log
+  8 total</span>
+<span class="lx-cmd">find . -name '*.txt' | sort | xargs wc -l</span>
+<span class="lx-o">  8 ./fruits.txt
+  3 ./notes.txt
+  4 ./poem.txt
+ 15 total</span>
+<span class="lx-cmd">echo mon tue wed | xargs -n 1 echo day</span>
+<span class="lx-o">day mon
+day tue
+day wed</span>
+<span class="lx-cmd">ls logs | xargs -I{} echo "found {}"</span>
+<span class="lx-o">found app.log
+found old.log</span>
+<span class="lx-cmd">mkdir -p tmp/a &amp;&amp; touch tmp/a/x.tmp tmp/y.tmp</span>
+<span class="lx-cmd">find tmp -name '*.tmp' | sort</span>
+<span class="lx-o">tmp/a/x.tmp
+tmp/y.tmp</span>
+<span class="lx-cmd">find tmp -name '*.tmp' -delete</span>
+<span class="lx-cmd">find tmp | sort</span>
+<span class="lx-o">tmp
+tmp/a</span></pre><div class="lx-note">With + find collects names and runs wc once, which also prints a total. -delete removed both .tmp files, and the folders stay.</div></div>
+<div class="walk"><div class="walk-h"><span>A safe routine for -delete and -exec rm</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Run the find command with no action and read the list.</li><li>Add the action only when the list is exactly what you want to remove.</li><li>Keep -delete at the end: placed first, find -delete -name x deletes everything it visits.</li><li>For names that may contain spaces, use -print0 with xargs -0, or -exec ... + instead of a plain pipe.</li></ol></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Find and act&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Find every file in your home folder whose name ends with &lt;code&gt;.log&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;find . -name &#x27;*.log&#x27;&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;find&quot;}, {&quot;out&quot;: &quot;./logs/app.log&quot;}, {&quot;out&quot;: &quot;./logs/old.log&quot;}]}, {&quot;t&quot;: &quot;List only the folders under your home folder.&quot;, &quot;hint&quot;: &quot;find . -type d&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-type\\s+d&quot;}, {&quot;out&quot;: &quot;^\\.\\n\\./logs&quot;}]}, {&quot;t&quot;: &quot;Find empty files or folders.&quot;, &quot;hint&quot;: &quot;find . -empty&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-empty&quot;}, {&quot;out&quot;: &quot;^\\./projects$&quot;}]}, {&quot;t&quot;: &quot;Find the pictures: files named *.jpg or *.png, using -o.&quot;, &quot;hint&quot;: &quot;find . -name &#x27;*.jpg&#x27; -o -name &#x27;*.png&#x27;&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-o&quot;}, {&quot;out&quot;: &quot;beach\\.jpg&quot;}, {&quot;out&quot;: &quot;cat\\.png&quot;}]}, {&quot;t&quot;: &quot;Count the lines of every .log file in &lt;code&gt;logs&lt;/code&gt; with one wc run (-exec ... +).&quot;, &quot;hint&quot;: &quot;find logs -name &#x27;*.log&#x27; -exec wc -l {} +&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-exec\\s+wc\\s+-l\\s+\\{\\}\\s*\\+&quot;}, {&quot;out&quot;: &quot;8 total&quot;}]}, {&quot;t&quot;: &quot;Make &lt;code&gt;scripts/hello.sh&lt;/code&gt; executable by running chmod through find -exec.&quot;, &quot;hint&quot;: &quot;find scripts -name &#x27;*.sh&#x27; -exec chmod u+x {} \\;&quot;, &quot;check&quot;: [{&quot;mode&quot;: [&quot;scripts/hello.sh&quot;, &quot;744&quot;]}]}, {&quot;t&quot;: &quot;Pipe the names of the .txt files into xargs to count their lines.&quot;, &quot;hint&quot;: &quot;find . -name &#x27;*.txt&#x27; | xargs wc -l&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\|\\s*xargs&quot;}, {&quot;out&quot;: &quot;total&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Finding files is often only the first step. With dash exec, find runs a command for each match, and the curly braces stand for the file name. End it with a backslash semicolon to run the command once per file, or with a plus sign to pass many files to one run, which is much faster when there are thousands. Dash delete removes every match, so always run the same find without it first and read the list. The xargs command does a similar job in a pipeline. It reads words from its input and adds them as arguments to another command. File names with spaces can confuse it, so the safe pair is find dash print zero with xargs dash zero, which separates names with an invisible null character that can never appear in a file name. xargs dash P even runs several commands in parallel to use all your processor cores.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="locate" data-l="locate" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Faster lookups: locate, which and type</h2>
+<p>find reads the disk every time, which can take minutes on a big system. <code>locate</code> searches a database of file names instead, built by <code>updatedb</code>, usually once a day by a timer. It answers in a fraction of a second, but it does not know about files created since the last update. On current Debian and Ubuntu it is provided by the plocate package.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>locate NAME</code></td><td>Every path containing NAME, from the database</td><td><code>locate sshd_config</code></td></tr><tr><td><code>locate -i NAME</code></td><td>Ignore case</td><td><code>locate -i readme</code></td></tr><tr><td><code>sudo updatedb</code></td><td>Rebuild the database now</td><td><code>sudo updatedb</code></td></tr><tr><td><code>which CMD</code></td><td>Which program file runs for CMD, using PATH</td><td><code>which python3</code></td></tr><tr><td><code>type CMD</code></td><td>Bash: is CMD an alias, a function, a builtin or a file</td><td><code>type cd ls</code></td></tr><tr><td><code>command -v CMD</code></td><td>Portable test that CMD exists, good in scripts</td><td><code>command -v git || echo "no git"</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>locate in action</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">locate sshd_config</span>
+<span class="lx-o">/etc/ssh/sshd_config
+/etc/ssh/sshd_config.d
+/usr/share/doc/openssh-server/examples/sshd_config</span></pre><div class="lx-note">Paths depend on what is installed. If locate is missing, install it with sudo apt install plocate.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Which program runs</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">which ls bash</span>
+<span class="lx-o">/usr/bin/ls
+/usr/bin/bash</span>
+<span class="lx-cmd">type cd</span>
+<span class="lx-o">cd is a shell builtin</span>
+<span class="lx-cmd">type ls</span>
+<span class="lx-o">ls is /usr/bin/ls</span>
+<span class="lx-cmd">command -v grep</span>
+<span class="lx-o">/usr/bin/grep</span>
+<span class="lx-cmd">command -v notarealcommand || echo "not installed"</span>
+<span class="lx-o">not installed</span></pre><div class="lx-note">cd is built into bash, so there is no file for it. type ls may show an alias on systems that set one in ~/.bashrc, this build shell has none.</div></div>
+<div class="vt-talk" hidden>Searching the whole disk with find can take a long time on a big server. locate takes a different approach. Once a day, a program called updatedb walks the file system and stores every path in a compact database. locate then searches only that database, so it answers almost instantly. The price is freshness: a file created five minutes ago is not in the database until the next update, unless you run sudo updatedb yourself. Two other small commands answer a related question: which program will run when I type this name. which follows the PATH variable and prints the file. type is built into bash and also knows about aliases, functions and built in commands such as cd. In scripts, command dash v is the portable way to check whether a tool is installed before using it.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Finding files from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>find searches folders for files by name, type, size or age, and can run a command on each one. locate is faster because it searches a list made earlier. which shows where a command lives.</p></div><div class="ld-p" data-ld="college" hidden><p>find evaluates a boolean expression of tests, operators and actions for each directory entry in a depth first walk. -exec {{}} + batches arguments like xargs, -print0 and xargs -0 use NUL separators. locate trades freshness for speed with a periodically built index.</p></div><div class="ld-p" data-ld="masters" hidden><p>GNU find walks the tree with the fts library, reading directory entries with getdents64() and calling stat (or using the d_type field to skip stat) only when a test needs metadata, which makes -name searches fast. xargs keeps each command line below the limit given by sysconf(_SC_ARG_MAX), minus the size of the environment, which is why it splits huge lists into several runs. plocate uses a posting list index with compression and io_uring to answer queries in milliseconds.</p></div><div class="ld-p" data-ld="research" hidden><p>File search at scale moves to indexes: desktop search engines (Spotlight, Tracker, Windows Search) watch the file system with inotify or similar events and update a full text index. Research on file system metadata search (for example Spyglass, FAST 2009, and GUFI from Los Alamos) builds indexes that answer find style questions over billions of files on supercomputer storage in seconds.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the full disk at night</div><p>A database server runs out of space. The engineer runs <code>sudo find / -xdev -type f -size +1G -exec ls -lh {{}} + 2&gt;/dev/null</code> and spots a 40 GB core dump in /var/crash from a crashed program. After checking it is not needed, <code>sudo find /var/crash -name "*.crash" -mtime +7 -delete</code> frees the space, and a ticket is opened to fix the crash.</p></div>
+<div class="vt-talk" hidden>Under the hood, find walks the directory tree depth first, reading the list of names in each folder. A clever detail is that it avoids asking for full file details unless a test needs them, because the folder listing already tells it whether an entry is a file or a folder. That is why searching by name is fast. xargs hides another detail: the kernel limits how long a command line can be, so when you pipe a million names into xargs, it quietly splits them into several runs that each fit the limit. At larger scale, searching the disk every time becomes too slow, so desktop search tools keep an index that is updated whenever a file changes. Supercomputer centres face file systems with billions of files, and research projects such as GUFI at Los Alamos National Laboratory build special indexes so that administrators can answer find style questions in seconds instead of days.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./awk.html" data-topic="awk"><small>Previous topic</small><b>awk</b></a><a class="next" href="./archives.html" data-topic="archives"><small>Next topic</small><b>tar, gzip and zip</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "find-files", "topic": "find-files", "subject": "linux", "title": "Finding files: find, xargs and locate", "codes": {}, "quiz": [{"lv": "e", "q": "Which command finds all files named report.pdf under your home folder?", "o": ["grep report.pdf ~", "find ~ -name 'report.pdf'", "ls -R report.pdf", "locate -r ~"], "a": 1, "hint": "Search names.", "why": "find searches the tree by name."}, {"lv": "e", "q": "Which test limits find to regular files?", "o": ["-type d", "-type f", "-file", "-regular"], "a": 1, "hint": "f for file.", "why": "-type f selects regular files."}, {"lv": "e", "q": "Why put the pattern in quotes: find . -name \"*.txt\"?", "o": ["Quotes make find faster", "So the shell does not expand *.txt before find runs", "Quotes are required for every option", "To ignore case"], "a": 1, "hint": "Who expands the star.", "why": "Unquoted, the shell would replace *.txt with names in the current folder."}, {"lv": "e", "q": "What does find . -mtime +30 select?", "o": ["Files changed in the last 30 days", "Files changed more than 30 days ago", "Files bigger than 30 MB", "Files with 30 lines"], "a": 1, "hint": "Plus means more.", "why": "+30 means more than 30 days."}, {"lv": "m", "q": "Which runs wc -l once with all matching files?", "o": ["find . -name '*.log' -exec wc -l {} (the per-file ending)", "find . -name '*.log' -exec wc -l {} +", "find . -name '*.log' | wc -l", "find . -wc"], "a": 1, "hint": "Plus batches.", "why": "-exec ... + collects many names into one run."}, {"lv": "m", "q": "Which finds jpg or png files only, not folders?", "o": ["find . -type f -name '*.jpg' -o -name '*.png'", "find . -type f '(' -name '*.jpg' -o -name '*.png' ')'", "find . -name '*.jpg,*.png'", "find . -type jpg,png"], "a": 1, "hint": "Group the or.", "why": "Without brackets, -type f only applies to the jpg part."}, {"lv": "m", "q": "What does find . -path ./node_modules -prune -o -type f -print do?", "o": ["Deletes node_modules", "Lists files everywhere except inside ./node_modules", "Lists only node_modules", "Fails"], "a": 1, "hint": "Prune skips.", "why": "-prune stops find from descending into that folder."}, {"lv": "m", "q": "Why use find -print0 | xargs -0 instead of find | xargs?", "o": ["It is shorter", "File names with spaces or newlines are passed safely", "It runs as root", "It sorts the names"], "a": 1, "hint": "NUL separators.", "why": "A NUL byte cannot appear in a file name, so it is a safe separator."}, {"lv": "m", "q": "locate does not find a file you created a minute ago. Why?", "o": ["locate is broken", "Its database was built before the file existed, run sudo updatedb", "The file is hidden", "locate only searches /etc"], "a": 1, "hint": "Indexed search.", "why": "locate reads a database that is refreshed periodically."}, {"lv": "h", "q": "Which command tells you whether ls is an alias, a builtin or a program?", "o": ["which ls", "type ls", "whereis ls", "file ls"], "a": 1, "hint": "Bash knows its aliases.", "why": "type reports aliases, functions, builtins and files."}, {"lv": "h", "q": "find / -name \"*.conf\" prints many \"Permission denied\" lines. How do you hide them?", "o": ["find / -name \"*.conf\" 2> /dev/null", "find / -name \"*.conf\" > /dev/null", "find -q /", "sudo find -silent"], "a": 0, "hint": "Errors are stream 2.", "why": "Redirect stderr to /dev/null."}, {"lv": "h", "q": "What does find . -size -1k match?", "o": ["Files under 1024 bytes", "Only empty files, because sizes are rounded up to whole KiB", "Files over 1 KiB", "Nothing ever"], "a": 1, "hint": "Rounding up.", "why": "A 300 byte file counts as 1k, which is not less than 1."}, {"lv": "x", "q": "Why does xargs sometimes run the command several times for one input list?", "o": ["A bug", "To keep each command line below the kernel limit ARG_MAX", "To use more CPUs by default", "Because of -0"], "a": 1, "hint": "Argument length limit.", "why": "xargs splits arguments so execve does not fail with \"Argument list too long\"."}], "calc": [{"lv": "e", "q": "find . -mtime -7 runs on Friday. Files changed on which earlier day still match: 5 days ago (1) or 9 days ago (0)?", "ans": "1", "hint": "Less than 7 days.", "steps": ["-7 means less than 7 days ago.", "5 days is less than 7.", "<span class=\"eq\">1 (yes)<\/span>"]}, {"lv": "e", "q": "find runs -exec rm {} with the per-file ending (backslash semicolon) on 250 files. How many times does rm start?", "ans": "250", "hint": "The per-file ending runs once per file", "steps": ["The per-file ending runs the command for each match.", "Matches: 250.", "<span class=\"eq\">250 runs<\/span>"]}, {"lv": "m", "q": "xargs -n 50 receives 1230 file names. How many times does it run the command?", "ans": "25", "hint": "Divide and round up.", "steps": ["1230 ÷ 50 = 24.6.", "A partial group still needs a run.", "<span class=\"eq\">25 runs<\/span>"]}, {"lv": "m", "q": "A file is 2,500,000 bytes. With -size in M units (1 MiB = 1,048,576 bytes, rounded up), what size does find use?", "ans": "3", "hint": "Round up.", "steps": ["2,500,000 ÷ 1,048,576 ≈ 2.38.", "find rounds up to whole units.", "<span class=\"eq\">3 (so -size -3M does not match it)<\/span>"]}, {"lv": "m", "q": "A tree has 12 folders with 40 files each. find . -type f prints how many lines?", "ans": "480", "hint": "Files per folder times folders.", "steps": ["Folders: 12.", "Files each: 40.", "<span class=\"eq\">12 × 40 = 480<\/span>"]}, {"lv": "h", "q": "xargs -P 4 runs jobs that take 3 seconds each. About how many seconds for 20 jobs?", "ans": "15", "hint": "Four at a time.", "steps": ["20 jobs ÷ 4 at once = 5 rounds.", "Each round takes 3 seconds.", "<span class=\"eq\">5 × 3 = 15 seconds<\/span>"]}], "assign": [], "must": [["find", "find WHERE TESTS. -name (quote it), -iname, -type f/d/l, -size +100M, -mtime -7, -mmin, -empty, -user, -perm, -maxdepth."], ["Logic", "Tests side by side mean and. -o is or, ! is not, quoted brackets group, and binds tighter than or. -prune skips a folder."], ["Actions", "-exec cmd {} with the backslash semicolon ending runs per file, -exec cmd {} + in batches, -delete (preview first, keep it last)."], ["xargs", "Turns input into arguments. -n count, -I{} placement, -0 with find -print0 for safe names, -P parallel."], ["Lookups", "locate uses a daily database (sudo updatedb to refresh). which, type and command -v tell what a command name runs."]], "summary": "<p>find walks a tree and tests every entry. Combine tests with ! -o and brackets, skip folders with -prune, act with -exec or -delete, pass names to xargs safely with -print0 and -0.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

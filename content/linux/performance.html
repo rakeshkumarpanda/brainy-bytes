@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Performance: find the bottleneck with USE, vmstat, iostat, perf and sar · Unix and Linux</title>
+<meta name="description" content="Latency, throughput, utilization and saturation, the USE method and the 60 second checklist, load average and the run queue, vmstat columns, mpstat and pidstat, iostat -x with await, aqu-sz and %util, time, strace -c and the cost of system calls, perf and flame graphs, eBPF tools, and sar history from sysstat.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=advanced">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=advanced" target="_top">Unix and Linux</a><span>›</span><span>Internals and Advanced</span><span>›</span><span>Step 3: Containers and performance</span><span>›</span><span>Performance</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 2 of 3 · Expert</div>
+    <h1>Performance: find the bottleneck with USE, vmstat, iostat, perf and sar</h1>
+    <p class="lead">Turn “the server is slow” into numbers. Check CPU, memory, disk and network with the USE method, read vmstat, mpstat, pidstat and iostat, find where a program spends its time with strace and perf, and look back in time with sar.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">7 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#performance" data-topic="cheatsheet" data-h="performance">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#method" data-l="method"><span class="n">1</span><span class="t">Measure first: the USE method and the 60 second checklist</span></a></li><li><a href="#cpu" data-l="cpu"><span class="n">2</span><span class="t">CPU: load average, vmstat, mpstat and pidstat</span></a></li><li><a href="#disk" data-l="disk"><span class="n">3</span><span class="t">Disks: iostat, await, queue size and %util</span></a></li><li><a href="#calls" data-l="calls"><span class="n">4</span><span class="t">Where the time goes: time, strace -c, perf and eBPF</span></a></li><li><a href="#history" data-l="history"><span class="n">5</span><span class="t">History with sar, and fixing what you found</span></a></li><li><a href="#practice" data-l="practice"><span class="n">6</span><span class="t">Practice: find the busy process</span></a></li><li><a href="#levels" data-l="levels"><span class="n">7</span><span class="t">Performance from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="method" data-l="method" hidden><div class="cv-lno">Lesson 1 of 7</div><h2>Measure first: the USE method and the 60 second checklist</h2>
+<p>“The server is slow” is a feeling, not a measurement. Performance work starts by turning it into numbers: <b>latency</b> (how long one request takes, best as percentiles such as p99), <b>throughput</b> (requests or bytes per second), <b>utilization</b> (how busy a resource is) and <b>saturation</b> (how much work waits in a queue).</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Resource</th><th>Utilization</th><th>Saturation</th><th>Errors</th></tr></thead><tbody><tr><td>CPU</td><td><code>mpstat -P ALL 1</code>, us + sy per CPU</td><td><code>vmstat 1</code> r above the number of CPUs, load average</td><td><code>dmesg</code> machine check messages</td></tr><tr><td>Memory</td><td><code>free -m</code>, available</td><td><code>vmstat 1</code> si and so (swapping), PSI in /proc/pressure/memory</td><td>OOM killer lines in <code>journalctl -k</code></td></tr><tr><td>Disk</td><td><code>iostat -xz 1</code> %util</td><td>aqu-sz, r_await and w_await</td><td><code>dmesg</code> I/O errors, <code>smartctl -H</code></td></tr><tr><td>Network</td><td><code>sar -n DEV 1</code> rxkB/s and txkB/s against link speed</td><td><code>nstat</code> or <code>ss -ti</code> retransmits</td><td><code>ip -s link</code> errors and drops</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-use"></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>uptime</code></td><td>Load averages over 1, 5 and 15 minutes: rising or falling</td><td><code>uptime</code></td></tr><tr><td><code>dmesg | tail</code></td><td>Recent kernel messages: OOM kills, I/O errors, dropped packets</td><td><code>sudo dmesg -T | tail</code></td></tr><tr><td><code>vmstat 1</code></td><td>Run queue, memory, swap, I/O and CPU split every second</td><td><code>vmstat 1 5</code></td></tr><tr><td><code>mpstat -P ALL 1</code></td><td>CPU use per CPU: one hot CPU means a single threaded hot spot</td><td><code>mpstat -P ALL 1 3</code></td></tr><tr><td><code>pidstat 1</code></td><td>CPU use per process, like a top that scrolls</td><td><code>pidstat 1 5</code></td></tr><tr><td><code>iostat -xz 1</code></td><td>Per disk: requests, throughput, wait times, queue and %util</td><td><code>iostat -xz 1 3</code></td></tr><tr><td><code>free -m</code></td><td>Memory in MiB, look at available</td><td><code>free -m</code></td></tr><tr><td><code>sar -n DEV 1</code></td><td>Network throughput per interface</td><td><code>sar -n DEV 1 3</code></td></tr><tr><td><code>sar -n TCP,ETCP 1</code></td><td>New TCP connections and retransmits per second</td><td><code>sar -n TCP,ETCP 1 3</code></td></tr><tr><td><code>top</code></td><td>A summary to check that nothing was missed</td><td><code>top</code></td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>This list of ten commands is Brendan Gregg’s 60 second checklist from Netflix. All of them come with Ubuntu or with the sysstat package (<code>sudo apt install sysstat</code>), so they are ready before an incident starts.</div></div>
+<div class="vt-talk" hidden>When someone says the server is slow, first turn the feeling into numbers. Latency is how long one request takes, throughput is how many requests per second get done, utilization is how busy a part is, and saturation is how much work is waiting for it. The USE method checks every resource, C P U, memory, disk and network, for utilization, saturation and errors, in a fixed order, so you do not guess. In the animation, pick a symptom and follow the check. The ten commands of the sixty second checklist give a first picture of any Linux server in about a minute.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="cpu" data-l="cpu" hidden><div class="cv-lno">Lesson 2 of 7</div><h2>CPU: load average, vmstat, mpstat and pidstat</h2>
+<p>The <b>load average</b> in <code>uptime</code> and /proc/loadavg is the average number of tasks that are running, waiting for a CPU, or in uninterruptible sleep (state D, usually waiting for disk), over 1, 5 and 15 minutes. Compare it with the number of CPUs: a load of 4 is full use on 4 CPUs but a long queue on 1.</p>
+<div class="lx-run"><div class="lx-rh"><span>Two CPU hogs seen by vmstat and pidstat</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">nproc</span>
+<span class="lx-o">4</span>
+<span class="lx-cmd lx-root">stress-ng --cpu 2 --timeout 6s --quiet &amp;</span>
+<span class="lx-cmd lx-root">sleep 1</span>
+<span class="lx-cmd lx-root">vmstat 1 3 | awk '{print $1, $2, $13, $14, $15, $16}'</span>
+<span class="lx-o">procs -----------memory----------    
+r b us sy id wa
+3 0 3 1 95 0
+2 0 49 1 50 0
+2 0 50 0 50 0</span>
+<span class="lx-cmd lx-root">pidstat -u -C stress-ng 1 1 | grep Average</span>
+<span class="lx-o">Average:      UID       PID    %usr %system  %guest   %wait    %CPU   CPU  Command
+Average:        0     26709   99.01    0.00    0.00    0.00   99.01     -  stress-ng-cpu
+Average:        0     26710   98.02    0.00    0.00    0.00   98.02     -  stress-ng-cpu</span>
+<span class="lx-cmd lx-root">wait</span></pre><div class="lx-note">stress-ng starts two workers that only compute. The build machine has 4 CPUs, so two busy workers make us (user time) about 50 %. The first vmstat line is the average since boot, as vmstat(8) says, so it looks quiet. r counts the tasks that run or wait to run. pidstat names the two workers, each near 100 % of one CPU. awk keeps only the columns r, b, us, sy, id and wa.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>vmstat column</th><th>Meaning</th><th>Look out for</th></tr></thead><tbody><tr><td>r</td><td>tasks running or waiting for a CPU</td><td>r above the number of CPUs for a long time: CPU saturation</td></tr><tr><td>b</td><td>tasks blocked, waiting for I/O</td><td>often above 0: a disk problem</td></tr><tr><td>si, so</td><td>memory swapped in and out per second</td><td>both above 0 all the time: not enough RAM</td></tr><tr><td>bi, bo</td><td>blocks read from and written to disks per second</td><td>compare with what the disk can do</td></tr><tr><td>in, cs</td><td>interrupts and context switches per second</td><td>a sudden jump: lock contention or too many threads</td></tr><tr><td>us, sy</td><td>CPU time in programs and in the kernel</td><td>high sy: many system calls, see the next lessons</td></tr><tr><td>id, wa</td><td>idle, and idle while waiting for I/O</td><td>high wa: CPUs are free but tasks wait for the disk</td></tr><tr><td>st</td><td>time stolen by the hypervisor for other VMs</td><td>above a few percent on a cloud VM: noisy neighbours or a too small instance</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>uptime</code></td><td>Load averages for 1, 5 and 15 minutes</td><td><code>uptime</code></td></tr><tr><td><code>cat /proc/loadavg</code></td><td>The same numbers, plus running/total tasks and the last PID</td><td><code>cat /proc/loadavg</code></td></tr><tr><td><code>vmstat DELAY COUNT</code></td><td>A line every DELAY seconds, COUNT times, the first is since boot</td><td><code>vmstat 1 5</code></td></tr><tr><td><code>vmstat -S M</code></td><td>Memory columns in MiB</td><td><code>vmstat -S M 1 3</code></td></tr><tr><td><code>mpstat -P ALL 1</code></td><td>Per CPU use, find one CPU at 100 %</td><td><code>mpstat -P ALL 1 3</code></td></tr><tr><td><code>pidstat 1</code></td><td>Per process CPU use (-r memory, -d disk, -w context switches)</td><td><code>pidstat -d 1 3</code></td></tr><tr><td><code>ps -eo pid,comm,%cpu --sort=-%cpu</code></td><td>Processes sorted by CPU use</td><td><code>ps -eo pid,comm,%cpu --sort=-%cpu | head</code></td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>A load of 8 on a 2 CPU machine with id near 0 means CPU saturation. A load of 8 with id high and wa high means tasks in state D, waiting for disk or a hung NFS server, so adding CPUs would not help.</div></div>
+<div class="vt-talk" hidden>The load average is the number of tasks that run, wait for a C P U, or wait in uninterruptible sleep, usually for the disk, averaged over one, five and fifteen minutes. Always compare it with the number of C P Us. In the demo, two workers of stress n g keep two of four C P Us busy, so vmstat shows about fifty percent user time and pidstat shows each worker near one hundred percent. Read vmstat from left to right: r for the run queue, b for tasks blocked on I O, s i and s o for swapping, then the C P U split into user, system, idle, wait and steal. Remember that the first line of vmstat is the average since boot.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="disk" data-l="disk" hidden><div class="cv-lno">Lesson 3 of 7</div><h2>Disks: iostat, await, queue size and %util</h2>
+<p>Disk trouble shows as slow saves, high <b>wa</b> in vmstat, and tasks in state D. <code>iostat -x</code> shows each device: requests per second, kilobytes per second, the average time a request takes including the wait in the queue (r_await and w_await, in milliseconds), the average queue length (aqu-sz) and %util, the share of time the device had at least one request.</p>
+<div class="lx-run"><div class="lx-rh"><span>A disk writer seen by vmstat and pidstat</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">mkdir -p /srv/iolab</span>
+<span class="lx-cmd lx-root">stress-ng --hdd 1 --hdd-bytes 64M --timeout 5s --quiet --temp-path /srv/iolab &amp;</span>
+<span class="lx-cmd lx-root">sleep 1</span>
+<span class="lx-cmd lx-root">vmstat 1 3 | awk '{print $1, $2, $9, $10, $15, $16}'</span>
+<span class="lx-o">procs -----------memory----------    
+r b bi bo id wa
+1 0 387 6672 95 0
+1 0 0 1310720 73 12
+1 0 0 1310720 73 12</span>
+<span class="lx-cmd lx-root">pidstat -d -C stress-ng 1 1 | grep Average</span>
+<span class="lx-o">Average:      UID       PID   kB_rd/s   kB_wr/s kB_ccwr/s iodelay  Command
+Average:        0     26740      0.00 1353728.00      0.00       0  stress-ng-hdd</span>
+<span class="lx-cmd lx-root">wait</span>
+<span class="lx-cmd lx-root">rm -rf /srv/iolab</span></pre><div class="lx-note">The hdd worker writes and rereads a 64 MiB file as fast as it can. vmstat shows bo (blocks written per second) jump, and wa rises while id falls. On a slower disk b also shows the tasks blocked waiting for I/O. pidstat -d names the process and its write rate in kB/s. The exact numbers differ on every run and every disk.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>iostat -x column</th><th>Meaning</th></tr></thead><tbody><tr><td>r/s, w/s</td><td>read and write requests completed per second (IOPS)</td></tr><tr><td>rkB/s, wkB/s</td><td>kilobytes read and written per second (throughput)</td></tr><tr><td>r_await, w_await</td><td>average milliseconds per request, including the queue time</td></tr><tr><td>rareq-sz, wareq-sz</td><td>average request size in kB: small means random I/O</td></tr><tr><td>aqu-sz</td><td>average number of requests in the queue and in service</td></tr><tr><td>%util</td><td>share of time the device was busy with at least one request</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>On devices that serve many requests in parallel, such as RAID arrays and NVMe or SATA SSDs, %util at 100 does not mean the device is at its limit, as iostat(1) itself warns. Watch await and aqu-sz instead: if the wait times grow while throughput stays flat, the device is saturated.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>iostat on the practice server</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">iostat -xz 1 2</span>
+<span class="lx-o">Linux 6.8.0-practice (brainy) 	11/24/26 	_x86_64_	(2 CPU)
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           2.10    0.00    0.80    0.30    0.00   96.80
+
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+sda              3.10     24.50     0.04   1.27    0.61     7.90    5.42     68.20     2.31  29.88    1.92    12.58    0.00      0.00     0.00   0.00    0.00     0.00    0.21    0.85    0.01   0.62
+
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+           0.84    0.00    0.32    0.12    0.00   98.72
+
+Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+sda              1.24      9.80     0.04   1.27    0.61     7.90    2.17     27.28     2.31  29.88    1.92    12.58    0.00      0.00     0.00   0.00    0.00     0.00    0.21    0.85    0.01   0.25</span></pre><div class="lx-note">On the practice server the disk sda is quiet: a few requests per second, 1 to 2 ms per request and under 1 % util. The first report is the average since boot, the second covers the last second. -z hides devices with no activity, which keeps the output short on machines with many loop devices.</div></div>
+<div class="vt-talk" hidden>Disk problems show as slow saves, a high wait value in vmstat and tasks in state D. In the demo, a worker writes a sixty four megabyte file again and again: vmstat shows the written blocks jump and the wait time rise, and pidstat names the writer. iostat with minus x gives each disk: requests per second, kilobytes per second, the average time per request in milliseconds, the queue size, and percent util. On S S Ds and RAID arrays, percent util can be one hundred while the device still has room, so watch the wait times and the queue size.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="calls" data-l="calls" hidden><div class="cv-lno">Lesson 4 of 7</div><h2>Where the time goes: time, strace -c, perf and eBPF</h2>
+<p>Once you know which process is slow, ask where its time goes: in its own code (user time), in the kernel (system time, for example many small system calls), or waiting (real time much longer than user plus sys).</p>
+<div class="lx-run"><div class="lx-rh"><span>About 200 kB copied with 1 byte and with 64 KiB per call</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">dd if=/dev/zero of=/dev/null bs=1 count=200000 2&gt;&amp;1 | tail -n 1</span>
+<span class="lx-o">200000 bytes (200 kB, 195 KiB) copied, 0.0472582 s, 4.2 MB/s</span>
+<span class="lx-cmd">dd if=/dev/zero of=/dev/null bs=64k count=4 2&gt;&amp;1 | tail -n 1</span>
+<span class="lx-o">262144 bytes (262 kB, 256 KiB) copied, 4.1274e-05 s, 6.4 GB/s</span>
+<span class="lx-cmd">strace -c -o /tmp/one.txt dd if=/dev/zero of=/dev/null bs=1 count=200000 status=none</span>
+<span class="lx-cmd">head -n 4 /tmp/one.txt</span>
+<span class="lx-o">% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 50.22    1.635700           8    200003           read
+ 49.78    1.621185           8    200000           write</span>
+<span class="lx-cmd">strace -c -o /tmp/big.txt dd if=/dev/zero of=/dev/null bs=64k count=4 status=none</span>
+<span class="lx-cmd">head -n 4 /tmp/big.txt</span>
+<span class="lx-o">% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 34.31    0.000329          10        32        13 openat
+ 16.37    0.000157           7        22           close</span></pre><div class="lx-note">The first copies 200 kB and the second 256 KiB, nearly the same amount. With bs=1 dd makes 200 000 read and 200 000 write calls, and each call crosses into the kernel and back. The rate line shows how much slower that is. strace -c counts the calls: about 200 000 reads and writes against a handful with 64 KiB blocks. strace itself makes every call much slower, so its times are only good for comparing, and it is not for busy production servers.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>time CMD</code></td><td>real (wall clock), user and sys time of one command</td><td><code>time gzip -k big.log</code></td></tr><tr><td><code>strace -c CMD</code></td><td>Count and time the system calls of a command</td><td><code>strace -c -f ./build.sh</code></td></tr><tr><td><code>strace -p PID -T</code></td><td>Watch a running process, with the time each call took</td><td><code>sudo strace -p 2261 -T -e trace=read,write</code></td></tr><tr><td><code>perf stat CMD</code></td><td>CPU counters: cycles, instructions, cache misses, context switches</td><td><code>sudo perf stat gzip -k big.log</code></td></tr><tr><td><code>perf top</code></td><td>The functions using the most CPU right now, system wide</td><td><code>sudo perf top</code></td></tr><tr><td><code>perf record -F 99 -g -p PID</code></td><td>Sample stacks 99 times a second for later analysis</td><td><code>sudo perf record -F 99 -g -p 2261 -- sleep 30</code></td></tr><tr><td><code>perf report</code></td><td>Browse the samples saved in perf.data</td><td><code>sudo perf report</code></td></tr><tr><td><code>execsnoop-bpfcc</code></td><td>eBPF: print every new process as it starts</td><td><code>sudo execsnoop-bpfcc</code></td></tr><tr><td><code>biolatency-bpfcc</code></td><td>eBPF: a histogram of disk I/O latency</td><td><code>sudo biolatency-bpfcc 10 1</code></td></tr><tr><td><code>runqlat-bpfcc</code></td><td>eBPF: how long tasks wait in the CPU run queue</td><td><code>sudo runqlat-bpfcc 10 1</code></td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Profile a slow program with perf</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Install perf on Ubuntu with <code>sudo apt install linux-tools-common linux-tools-$(uname -r)</code>, because perf must match the running kernel.</li><li>Record the slow program under real load: <code>sudo perf record -F 99 -g -p PID -- sleep 30</code>.</li><li>Look at the hottest functions with <code>sudo perf report</code>, or draw a <b>flame graph</b>: <code>perf script</code> piped into stackcollapse-perf.pl and flamegraph.pl from Brendan Gregg’s FlameGraph project. The widest boxes are where the CPU time goes.</li><li>For questions perf cannot answer cheaply, such as the latency of each disk request or how long tasks wait for a CPU, use the eBPF tools of bcc (package bpfcc-tools, commands ending in -bpfcc) or a one line bpftrace program.</li></ol></div>
+<div class="note note-tip"><b>Remember</b><div>Unlike strace, perf and eBPF tools sample or count inside the kernel with little overhead, which is why they are the tools for production. Normal users may be limited by kernel.perf_event_paranoid, so run them with sudo.</div></div>
+<div class="vt-talk" hidden>After you know which process is slow, find out where its time goes. The time command splits it into real time, user time in the program and system time in the kernel. In the demo, dd copies the same two hundred kilobytes once with one byte per call and once with sixty four kilobytes per call. strace minus c counts two hundred thousand reads and writes against a handful, and the rate shows the cost of so many trips into the kernel. strace slows a program down a lot, so on production servers use perf, which samples the C P U with little cost, flame graphs to see the hottest code, and e B P F tools such as biolatency and runqlat.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="history" data-l="history" hidden><div class="cv-lno">Lesson 5 of 7</div><h2>History with sar, and fixing what you found</h2>
+<p>The tools so far show <b>now</b>. To answer “what happened at 3 a.m.?” you need history. The sysstat package collects it: on Ubuntu 24.04 the timer sysstat-collect.timer runs every 10 minutes and saves a file per day in /var/log/sysstat, which sar reads.</p>
+<div class="walk"><div class="walk-h"><span>Keep a performance history with sysstat</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Install and switch it on: <code>sudo apt install sysstat</code>, set <code>ENABLED="true"</code> in /etc/default/sysstat (it is "false" after install), then <code>sudo systemctl enable --now sysstat</code>.</li><li>Read today: <code>sar -u</code> (CPU), <code>sar -r</code> (memory), <code>sar -q</code> (run queue and load), <code>sar -d</code> (disks), <code>sar -n DEV</code> (network).</li><li>Read an earlier day with <code>sar -u -f /var/log/sysstat/sa23</code> for the 23rd, and a time window with <code>-s 02:50:00 -e 03:20:00</code>.</li><li>For many servers, ship the same numbers to a monitoring system such as Prometheus with node_exporter, and graph them in Grafana.</li></ol></div>
+<div class="tw"><table class="cvt "><thead><tr><th>What you found</th><th>Typical fixes</th></tr></thead><tbody><tr><td>one process uses all of one CPU</td><td>profile it with perf, fix the hot loop, or run more workers on the other CPUs</td></tr><tr><td>every CPU busy, run queue long</td><td>fewer jobs at once, nice or CPUQuota= for batch jobs, more CPUs</td></tr><tr><td>swapping (si, so) and OOM kills</td><td>find the leak, MemoryMax= per service, more RAM</td></tr><tr><td>disk await high, small requests</td><td>bigger writes, fewer fsync calls, the page cache, a faster disk</td></tr><tr><td>many system calls, high sy</td><td>bigger buffers, batching, fewer small reads and writes</td></tr><tr><td>high st on a cloud VM</td><td>a bigger or dedicated instance type</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>Change one thing at a time and measure again with the same tool. A fix that is not measured is a guess, and a tuning value copied from the internet without a measurement often makes things worse.</div></div>
+<div class="vt-talk" hidden>The tools so far show what is happening now, but often the question is what happened last night. The sysstat package saves numbers every ten minutes on Ubuntu, after you set enabled to true in slash etc slash default slash sysstat and enable the service. sar reads them back: minus u for C P U, minus r for memory, minus q for the run queue, minus d for disks and minus n DEV for the network, with minus f for an earlier day. Then fix what the numbers show, one change at a time, and measure again with the same tool.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 6 of 7</div><h2>Practice: find the busy process</h2>
+<p>Start a CPU hog on the practice server, then find it with the performance tools, and stop it.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Performance tools&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Count the CPUs of the server.&quot;, &quot;hint&quot;: &quot;nproc&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^2$&quot;}]}, {&quot;t&quot;: &quot;Show the load averages with uptime.&quot;, &quot;hint&quot;: &quot;uptime&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;load average&quot;}]}, {&quot;t&quot;: &quot;Read the same numbers from /proc/loadavg.&quot;, &quot;hint&quot;: &quot;cat /proc/loadavg&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^\\d+\\.\\d\\d \\d+\\.\\d\\d \\d+\\.\\d\\d \\d+/\\d+ \\d+$&quot;}]}, {&quot;t&quot;: &quot;Start a CPU hog in the background: yes with its output sent to /dev/null.&quot;, &quot;hint&quot;: &quot;yes &gt; /dev/null &amp;&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^yes\\s*&gt;\\s*/dev/null\\s*&amp;$&quot;}]}, {&quot;t&quot;: &quot;Run vmstat every second, 3 times.&quot;, &quot;hint&quot;: &quot;vmstat 1 3&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;r\\s+b\\s+swpd&quot;}]}, {&quot;t&quot;: &quot;Show the use of each CPU with mpstat, once a second, once.&quot;, &quot;hint&quot;: &quot;mpstat -P ALL 1 1&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Average:\\s+0\\s+99\\.70&quot;}]}, {&quot;t&quot;: &quot;Show CPU use per process with pidstat for one second.&quot;, &quot;hint&quot;: &quot;pidstat 1 1&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;99\\.70\\s+\\d\\s+yes&quot;}]}, {&quot;t&quot;: &quot;List processes sorted by CPU use, with pid, comm and %cpu.&quot;, &quot;hint&quot;: &quot;ps -eo pid,comm,%cpu --sort=-%cpu&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;PID COMMAND\\s+%CPU\\n\\s+\\d+ yes&quot;}]}, {&quot;t&quot;: &quot;Stop the hog with pkill.&quot;, &quot;hint&quot;: &quot;pkill yes&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^pkill\\s+(-x\\s+)?yes$&quot;}]}, {&quot;t&quot;: &quot;Show the disks with iostat -xz.&quot;, &quot;hint&quot;: &quot;iostat -xz&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;sda\\s+\\d&quot;}]}, {&quot;t&quot;: &quot;Show memory in MiB with vmstat -S M.&quot;, &quot;hint&quot;: &quot;vmstat -S M&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;swpd\\s+free&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now practise on the server. Count the C P Us with n proc and read the load averages with uptime and from slash proc slash load avg. Start a C P U hog with yes sent to slash dev slash null in the background. Run vmstat, then mpstat for each C P U, and see one C P U at almost one hundred percent. pidstat and ps sorted by C P U both name yes as the culprit. Stop it with pkill, and finish with a look at the disks with iostat and at memory in megabytes with vmstat.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 7 of 7</div><h2>Performance from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A computer has parts that can get too busy: the processor, the memory, the disk and the network. When one of them has more work than it can do, things wait in a line and the computer feels slow. Good tools show which part is busy.</p></div><div class="ld-p" data-ld="college" hidden><p>Use the USE method and the 60 second checklist, read load average, vmstat, mpstat, pidstat, iostat -x and sar, know what %util means on SSDs, compare real, user and sys time, count system calls with strace -c on a test system, and change one thing at a time.</p></div><div class="ld-p" data-ld="masters" hidden><p>Site reliability engineers set latency objectives in percentiles, profile production with perf and continuous profilers (Parca, Pyroscope), draw flame graphs and off-CPU graphs, trace with eBPF (bcc, bpftrace), size systems with queueing theory and load tests, and tune CPU frequency, NUMA placement, interrupts and I/O schedulers with measurements.</p></div><div class="ld-p" data-ld="research" hidden><p>Research works on tail latency at scale, scheduler designs (the EEVDF scheduler since Linux 6.6, sched_ext with BPF schedulers), low overhead always on tracing, performance models of cloud machines with noisy neighbours, and automatic tuning with machine learning.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the slow website at 9 a.m.</div><p>Every morning at 9 the shop’s pages took 6 seconds. The CPUs were at 40 %, so the team first blamed the database. Following the USE method, vmstat showed wa at 35 % and b at 6, and iostat showed w_await of 200 ms on the data disk with small 4 kB writes. pidstat -d named a log shipper that started at 9, read every log file again and called fsync after each line. Batching the writes and moving the logs to their own disk brought the pages back under 300 ms, and sar the next morning showed the disk queue gone.</p></div>
+<div class="vt-talk" hidden>Here is how performance skills grow. At school you learn that a computer has parts that can be too busy, and then work waits in a line. Professionals use the U S E method and the sixty second checklist, read vmstat, mpstat, pidstat, iostat and sar, and change one thing at a time. Reliability engineers set targets for slow requests, profile production with perf and flame graphs, and trace with e B P F. Researchers work on tail latency, new schedulers such as E E V D F and s c h e d e x t, and tracing that is cheap enough to leave on all the time.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./containers-inside.html" data-topic="containers-inside"><small>Previous topic</small><b>Containers inside</b></a><a class="next" href="./course-revision.html" data-topic="course-revision"><small>Next topic</small><b>Course revision</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "performance", "topic": "performance", "subject": "linux", "title": "Performance: find the bottleneck with USE, vmstat, iostat, perf and sar", "codes": {}, "quiz": [{"lv": "e", "q": "Which command shows the load averages?", "o": ["free", "uptime", "df", "lsblk"], "a": 1, "hint": "Also in /proc/loadavg.", "why": "1, 5 and 15 minutes."}, {"lv": "e", "q": "What does the USE method check for every resource?", "o": ["Users, Services, Events", "Utilization, Saturation, Errors", "Uptime, Swap, Energy", "Updates, Security, Encryption"], "a": 1, "hint": "Three questions.", "why": "Brendan Gregg’s method."}, {"lv": "e", "q": "Which package gives iostat, mpstat, pidstat and sar on Ubuntu?", "o": ["procps", "sysstat", "coreutils", "util-linux"], "a": 1, "hint": "System statistics.", "why": "sudo apt install sysstat."}, {"lv": "e", "q": "What does the r column of vmstat count?", "o": ["Reads per second", "Tasks running or waiting for a CPU", "RAM in use", "Retransmits"], "a": 1, "hint": "The run queue.", "why": "Compare with the number of CPUs."}, {"lv": "m", "q": "Why does the first line of vmstat 1 look different from the rest?", "o": ["It is a header", "It is the average since boot", "It is always zero", "It is the maximum"], "a": 1, "hint": "vmstat(8).", "why": "Read the later lines."}, {"lv": "m", "q": "Load average is 8, the machine has 2 CPUs, id is 60 % and wa is 35 %. What is the likely cause?", "o": ["CPU saturation", "Tasks waiting for I/O in state D", "Too little swap", "A network loop"], "a": 1, "hint": "Linux counts D state in the load.", "why": "CPUs are idle, the disk is not."}, {"lv": "m", "q": "Which iostat column is the average time per request, including the queue?", "o": ["%util", "r_await and w_await", "rkB/s", "rrqm/s"], "a": 1, "hint": "Await.", "why": "In milliseconds."}, {"lv": "m", "q": "An NVMe SSD shows %util 100. What should you check before calling it saturated?", "o": ["Nothing, it is full", "await and aqu-sz, because the device serves many requests in parallel", "The CPU temperature", "The swap size"], "a": 1, "hint": "iostat(1) warns about this.", "why": "Parallel devices."}, {"lv": "m", "q": "mpstat shows CPU 0 at 100 % and CPU 1 to 7 idle. What does that suggest?", "o": ["A disk problem", "A single threaded hot spot", "Memory leak", "Nothing"], "a": 1, "hint": "One CPU.", "why": "More CPUs would not help."}, {"lv": "h", "q": "A program shows real 10 s, user 0.5 s, sys 0.3 s. Where did most of the time go?", "o": ["In its own code", "In the kernel", "Waiting, for example for disk, network or a lock", "In perf"], "a": 2, "hint": "real minus user minus sys.", "why": "Off-CPU time."}, {"lv": "h", "q": "Why is strace a poor choice on a busy production server?", "o": ["It needs a reboot", "It slows every system call of the traced program a lot", "It only works on files", "It cannot attach"], "a": 1, "hint": "ptrace stops at each call.", "why": "Use perf or eBPF."}, {"lv": "h", "q": "What does the width of a box in a flame graph show?", "o": ["The time of day", "How often that function was on the CPU in the samples", "The memory use", "The number of threads"], "a": 1, "hint": "Width, not colour.", "why": "Widest boxes are the hot spots."}, {"lv": "h", "q": "Which vmstat column shows time taken by the hypervisor for other VMs?", "o": ["wa", "st", "sy", "gu"], "a": 1, "hint": "Steal.", "why": "Cloud VMs."}, {"lv": "x", "q": "Where does sar read history from on Ubuntu 24.04?", "o": ["/var/log/syslog", "/var/log/sysstat, filled by sysstat-collect.timer every 10 minutes", "/proc/history", "journalctl"], "a": 1, "hint": "One file per day.", "why": "Set ENABLED=\"true\" first."}], "calc": [{"lv": "e", "q": "A machine has 4 CPUs and a load average of 6. What is the load per CPU?", "ans": "1.5", "hint": "Divide.", "steps": ["6 ÷ 4.", "Above 1 means tasks wait.", "<span class=\"eq\">1.5 per CPU<\/span>"]}, {"lv": "e", "q": "Two CPU bound workers run on 4 CPUs. About what percent does vmstat show as us?", "ans": "50", "hint": "Share of all CPUs.", "steps": ["2 of 4 CPUs busy.", "2 ÷ 4 = 0.5.", "<span class=\"eq\">50 %<\/span>"]}, {"lv": "m", "q": "dd copies 200000 bytes with bs=1. How many read and write calls does it make together, roughly?", "ans": "400000", "hint": "One read and one write per block.", "steps": ["200000 blocks.", "× 2 calls each.", "<span class=\"eq\">400000 system calls<\/span>"]}, {"lv": "m", "q": "A disk does 400 requests per second, each with an average await of 50 ms. How many requests are in the queue and in service on average? (Little’s law)", "ans": "20", "hint": "L = λ × W.", "steps": ["λ = 400 per second.", "W = 0.05 s.", "<span class=\"eq\">400 × 0.05 = 20<\/span>"]}, {"lv": "m", "q": "mpstat on an 8 CPU machine shows one CPU at 100 % and the rest idle. What is the overall %usr for all, roughly?", "ans": "12.5", "hint": "Average over all CPUs.", "steps": ["100 ÷ 8.", "The average hides the hot CPU.", "<span class=\"eq\">12.5 %<\/span>"]}, {"lv": "h", "q": "A command shows real 12 s, user 3 s, sys 1 s on one thread. How many seconds did it spend off the CPU, waiting?", "ans": "8", "hint": "real − user − sys.", "steps": ["12 − 3 − 1.", "Waiting for I/O, network or locks.", "<span class=\"eq\">8 s<\/span>"]}, {"lv": "x", "q": "sysstat collects every 10 minutes. How many samples does one day’s file hold?", "ans": "144", "hint": "Minutes in a day.", "steps": ["24 × 60 = 1440 minutes.", "1440 ÷ 10.", "<span class=\"eq\">144 samples<\/span>"]}], "assign": [], "must": [["Method", "Turn “slow” into latency, throughput, utilization and saturation. USE: Utilization, Saturation, Errors for CPU, memory, disk and network. The 60 second checklist."], ["CPU", "Load average counts running, runnable and D state tasks: compare with nproc. vmstat r, us, sy, wa, st. mpstat -P ALL for one hot CPU, pidstat and top for the process."], ["Disks", "iostat -xz: r/s, w/s, kB/s, r_await and w_await, aqu-sz, %util. On SSDs %util 100 is not saturation, watch await and the queue."], ["Where time goes", "time: real, user, sys. strace -c counts system calls but slows the program. perf stat, top, record and report, flame graphs, eBPF tools from bpfcc-tools."], ["History and fixes", "sysstat with ENABLED=\"true\", sar -u -r -q -d -n DEV and -f for an earlier day. Change one thing, measure again with the same tool."]], "summary": "<p>Performance work measures before it changes anything. The USE method checks utilization, saturation and errors of CPU, memory, disk and network. Load average is compared with the number of CPUs, vmstat shows the run queue, swapping and the CPU split, mpstat and pidstat find the hot CPU and process, and iostat -x shows await and queue size per disk. time, strace -c and perf show where a program spends its time, and sar keeps the history.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

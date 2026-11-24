@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your first shell scripts · Unix and Linux</title>
+<meta name="description" content="What a script is, the shebang line and chmod +x, ./script versus bash script versus source versus PATH, comments, positional parameters $0 $1 ${10} $# &quot;$@&quot; &quot;$*&quot; and shift, default values, exit statuses, $?, exit, &amp;&amp; and ||, echo and printf, stderr with &gt;&amp;2, read with -r and -p, here documents and here strings, and how the kernel runs a #! file.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=scripting">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=scripting" target="_top">Unix and Linux</a><span>›</span><span>Shell Scripting</span><span>›</span><span>Step 1: Writing scripts</span><span>›</span><span>First scripts</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 1 of 2 · Intermediate</div>
+    <h1>Your first shell scripts</h1>
+    <p class="lead">Write a script, make it executable and run it four different ways, read arguments with $1 and "$@", report success or failure with exit statuses, and talk to the user with printf, read and here documents.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#first-scripts" data-topic="cheatsheet" data-h="first-scripts">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#first" data-l="first"><span class="n">1</span><span class="t">A script is a file of commands</span></a></li><li><a href="#args" data-l="args"><span class="n">2</span><span class="t">Arguments: $1, $2, $# and &quot;$@&quot;</span></a></li><li><a href="#status" data-l="status"><span class="n">3</span><span class="t">Exit status: how scripts say yes or no</span></a></li><li><a href="#io" data-l="io"><span class="n">4</span><span class="t">Talking to the user: echo, printf, read and here documents</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">First scripts from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="first" data-l="first" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>A script is a file of commands</h2>
+<p>A <b>shell script</b> is a text file that holds commands you could type yourself. bash reads it from top to bottom and runs each line. Anything you repeat more than twice, such as a backup, a report or a setup, is a good first script.</p>
+<div class="walk"><div class="walk-h"><span>Write and run a script</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Create the file with an editor, for example nano greet.sh.</li><li>Make the first line the shebang: #!/bin/bash. It tells the kernel which program should read the file.</li><li>Write the commands, one per line. Lines that start with # are comments and are ignored.</li><li>Make it executable once: chmod +x greet.sh.</li><li>Run it with its path: ./greet.sh. The ./ is needed because the current folder is not in PATH.</li></ol></div>
+<div class="lx-run"><div class="lx-rh"><span>Your first script</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; greet.sh &lt;&lt;'EOF'
+#!/bin/bash
+# greet.sh: say hello to everyone named on the command line
+echo "Script: $0, number of names: $#"
+for name in "$@"; do
+  echo "Hello, $name!"
+done
+EOF</span>
+<span class="lx-cmd">chmod +x greet.sh</span>
+<span class="lx-cmd">ls -l greet.sh</span>
+<span class="lx-o">-rwxr-xr-x 1 learner learner 160 Nov 24 05:25 greet.sh</span>
+<span class="lx-cmd">./greet.sh Asha "Ravi Kumar"</span>
+<span class="lx-o">Script: ./greet.sh, number of names: 2
+Hello, Asha!
+Hello, Ravi Kumar!</span>
+<span class="lx-cmd">bash greet.sh Meera</span>
+<span class="lx-o">Script: greet.sh, number of names: 1
+Hello, Meera!</span>
+<span class="lx-cmd">greet.sh</span>
+<span class="lx-o">bash: greet.sh: command not found</span></pre><div class="lx-note">The here document (cat with EOF) writes the script in one go. chmod +x added the x bits. Typing greet.sh alone fails with status 127, because bash looks for commands only in the PATH folders.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>How you run it</th><th>Needs x bit?</th><th>Runs in</th><th>Typical use</th></tr></thead><tbody><tr><td><code>./greet.sh</code></td><td>yes</td><td>a new bash process (from the shebang)</td><td>the normal way</td></tr><tr><td><code>bash greet.sh</code></td><td>no</td><td>a new bash process</td><td>testing, or when you cannot chmod</td></tr><tr><td><code>source greet.sh</code> or <code>. greet.sh</code></td><td>no</td><td>the current shell</td><td>loading variables and functions, such as ~/.bashrc</td></tr><tr><td><code>greet.sh</code></td><td>yes</td><td>a new bash process</td><td>after copying it into a folder on PATH, such as ~/bin</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>Use #!/bin/bash when the script uses bash features such as [[ ]] or arrays. #!/bin/sh asks for a plain POSIX shell, which on Debian and Ubuntu is dash, and many bash features fail there.</div></div>
+<div class="vt-talk" hidden>A shell script is simply a text file full of commands. Instead of typing the same ten lines every morning, you write them once and run the file. The first line, called the shebang, starts with a hash and an exclamation mark followed by the path of the interpreter, for example slash bin slash bash. When you run the file, the kernel reads those two characters and starts that program to read the rest. Lines starting with a hash are comments for humans. Before you can run the script by name, give it permission to execute with chmod plus x, and then start it with dot slash and its name. The dot slash matters: for safety, the current folder is not in PATH, so bash would not find the script otherwise. You can also run any script with bash followed by the file name, or load it into your current shell with source.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="args" data-l="args" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Arguments: $1, $2, $# and &quot;$@&quot;</h2>
+<p>Words typed after the script name are its <b>arguments</b>. Inside the script they are the <b>positional parameters</b> $1, $2 and so on. From the tenth on you need braces: ${10}.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Parameter</th><th>Holds</th></tr></thead><tbody><tr><td><code>$0</code></td><td>the name the script was started with</td></tr><tr><td><code>$1</code> ... <code>$9</code>, <code>${10}</code></td><td>the arguments, one each</td></tr><tr><td><code>$#</code></td><td>how many arguments there are</td></tr><tr><td><code>"$@"</code></td><td>all arguments, each kept as its own word (almost always what you want)</td></tr><tr><td><code>"$*"</code></td><td>all arguments joined into one word with spaces</td></tr><tr><td><code>shift</code></td><td>drops $1 and moves the others down by one</td></tr><tr><td><code>${1:-default}</code></td><td>$1, or the default when it is empty or missing</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-args"></div>
+<div class="lx-run"><div class="lx-rh"><span>Arguments in action</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; args.sh &lt;&lt;'EOF'
+#!/bin/bash
+echo "name: $0  count: $#"
+echo "first: $1  second: $2"
+echo "all, one per line:"
+printf '  [%s]\n' "$@"
+shift
+echo "after shift: $# left, first is now $1"
+EOF</span>
+<span class="lx-cmd">bash args.sh Asha "New Delhi" 42</span>
+<span class="lx-o">name: args.sh  count: 3
+first: Asha  second: New Delhi
+all, one per line:
+  [Asha]
+  [New Delhi]
+  [42]
+after shift: 2 left, first is now New Delhi</span>
+<span class="lx-cmd">bash args.sh</span>
+<span class="lx-o">name: args.sh  count: 0
+first:   second: 
+all, one per line:
+  []
+after shift: 0 left, first is now </span>
+<span class="lx-cmd">cat &gt; hello.sh &lt;&lt;'EOF'
+#!/bin/bash
+name=${1:-friend}
+echo "Hello, $name!"
+EOF</span>
+<span class="lx-cmd">bash hello.sh</span>
+<span class="lx-o">Hello, friend!</span>
+<span class="lx-cmd">bash hello.sh Ravi</span>
+<span class="lx-o">Hello, Ravi!</span></pre><div class="lx-note">printf repeats its format for every argument, so it prints each one in brackets. The quotes kept "New Delhi" as one argument. With no arguments, $1 is empty and ${1:-friend} falls back to friend.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Always quote "$1" and "$@". Without quotes a file name like My Report.pdf becomes two words, and an empty argument disappears completely.</div></div>
+<div class="vt-talk" hidden>Scripts become useful when they take input from the command line. Every word after the script name is an argument, and inside the script you read them as dollar one, dollar two and so on, while dollar zero holds the name of the script itself. Dollar hash tells you how many arguments were given, which is how a script checks that it was used correctly. To pass all the arguments on, write dollar at sign inside double quotes. That keeps every argument as its own word, even if it contains spaces. The shift command throws away the first argument and moves the rest down, which is handy when you process them one by one in a loop. And a default value such as dollar brace one colon dash friend gives a friendly fallback when the user types nothing.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="status" data-l="status" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Exit status: how scripts say yes or no</h2>
+<p>Every command ends with an <b>exit status</b>, a number from 0 to 255. <b>0 means success</b> and anything else means some kind of failure. The status of the last command is in <code>$?</code>. A script sets its own status with <code>exit N</code>, and without it the script returns the status of its last command.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Status</th><th>Usual meaning</th></tr></thead><tbody><tr><td>0</td><td>success</td></tr><tr><td>1</td><td>general failure (grep: no line matched)</td></tr><tr><td>2</td><td>wrong usage, for example a bad option</td></tr><tr><td>126</td><td>found but not executable (no x bit)</td></tr><tr><td>127</td><td>command not found</td></tr><tr><td>128 + N</td><td>killed by signal N, for example 130 after Ctrl+C</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Reading and setting exit statuses</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls notes.txt; echo "status $?"</span>
+<span class="lx-o">notes.txt
+status 0</span>
+<span class="lx-cmd">ls nothere; echo "status $?"</span>
+<span class="lx-o">ls: cannot access 'nothere': No such file or directory
+status 2</span>
+<span class="lx-cmd">grep -q milk notes.txt; echo "grep found it: status $?"</span>
+<span class="lx-o">grep found it: status 0</span>
+<span class="lx-cmd">grep -q pizza notes.txt; echo "grep found nothing: status $?"</span>
+<span class="lx-o">grep found nothing: status 1</span>
+<span class="lx-cmd">nosuchcmd; echo "status $?"</span>
+<span class="lx-o">bash: nosuchcmd: command not found
+status 127</span>
+<span class="lx-cmd">cat &gt; check.sh &lt;&lt;'EOF'
+#!/bin/bash
+if [ $# -eq 0 ]; then
+  echo "usage: $0 FILE" &gt;&amp;2
+  exit 2
+fi
+echo "checking $1"
+EOF</span>
+<span class="lx-cmd">bash check.sh; echo "status $?"</span>
+<span class="lx-o">usage: check.sh FILE
+status 2</span>
+<span class="lx-cmd">bash check.sh notes.txt; echo "status $?"</span>
+<span class="lx-o">checking notes.txt
+status 0</span>
+<span class="lx-cmd">mkdir -p backup &amp;&amp; cp notes.txt backup/ &amp;&amp; echo "copied"</span>
+<span class="lx-o">copied</span>
+<span class="lx-cmd">cd nowhere || echo "could not enter nowhere"</span>
+<span class="lx-o">bash: cd: nowhere: No such file or directory
+could not enter nowhere</span></pre><div class="lx-note">ls notes.txt prints the file name and succeeds. grep -q prints nothing and only sets the status. check.sh writes its usage message to stderr with >&2 and exits with 2. && runs the next command only after a success, || only after a failure.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Test a status right after the command. Even echo changes $?, so save it first if you need it twice: rc=$?.</div></div>
+<div class="vt-talk" hidden>In the shell, success and failure are numbers. Every command finishes with an exit status, and zero means everything went well, while any other number means something went wrong. That is the opposite of many programming languages, where zero means false, so it is worth remembering. The special variable dollar question mark holds the status of the last command, so you can print it or test it. Some numbers have fixed meanings: one hundred and twenty seven means the command was not found, and one hundred and twenty six means it could not be executed. Your own scripts should follow the same rule: exit zero when they succeed, and exit with a small non zero number, often one or two, when they fail. That lets other scripts and tools such as cron, make and CI pipelines know whether your script worked. The operators double ampersand and double bar build on exit statuses: run the next command only if the last one succeeded, or only if it failed.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="io" data-l="io" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Talking to the user: echo, printf, read and here documents</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>echo "text"</code></td><td>Print a line (-n no newline, -e turns escape codes into characters)</td><td><code>echo "Done in $SECONDS s"</code></td></tr><tr><td><code>printf FORMAT ARGS</code></td><td>Formatted output, the portable choice</td><td><code>printf '%-8s %5.1f\n' Asha 91.5</code></td></tr><tr><td><code>echo "msg" &gt;&amp;2</code></td><td>Write an error or progress message to stderr</td><td><code>echo "error: no such file" &gt;&amp;2</code></td></tr><tr><td><code>read -r VAR</code></td><td>Read one line from the keyboard (or stdin) into VAR</td><td><code>read -r answer</code></td></tr><tr><td><code>read -r -p "Name: " VAR</code></td><td>Show a prompt first</td><td><code>read -r -p "Continue? [y/N] " ok</code></td></tr><tr><td><code>read -r A B REST</code></td><td>Split the line into words, the last variable gets the rest</td><td><code>read -r first last &lt;&lt;&lt; "Asha Rao"</code></td></tr><tr><td><code>cat &lt;&lt;EOF ... EOF</code></td><td>A here document: many lines of text, $variables expanded</td><td><code>cat &lt;&lt;EOF &gt; report.txt</code></td></tr><tr><td><code>cat &lt;&lt;'EOF' ... EOF</code></td><td>Quoted end word: text is taken literally</td><td><code>cat &lt;&lt;'EOF' &gt; script.sh</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Output and input in scripts</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">printf '%-8s|%6s|%s\n' name score grade</span>
+<span class="lx-o">name    | score|grade</span>
+<span class="lx-cmd">printf '%-8s|%6.1f|%s\n' Asha 91.5 A Ravi 78 B</span>
+<span class="lx-o">Asha    |  91.5|A
+Ravi    |  78.0|B</span>
+<span class="lx-cmd">read -r first last &lt;&lt;&lt; "Asha Rao"</span>
+<span class="lx-cmd">echo "first=$first last=$last"</span>
+<span class="lx-o">first=Asha last=Rao</span>
+<span class="lx-cmd">read -r -p "Your city: " city &lt;&lt;&lt; "Pune"</span>
+<span class="lx-cmd">echo "city=$city"</span>
+<span class="lx-o">city=Pune</span>
+<span class="lx-cmd">user=$USER</span>
+<span class="lx-cmd">cat &lt;&lt;EOF
+Report for $user
+Files here: $(ls | wc -l)
+EOF</span>
+<span class="lx-o">Report for learner
+Files here: 9</span>
+<span class="lx-cmd">cat &lt;&lt;'EOF'
+Nothing is expanded here: $user $(date)
+EOF</span>
+<span class="lx-o">Nothing is expanded here: $user $(date)</span></pre><div class="lx-note">printf reused its format for the second pair of values. read takes its input from a here string here, and with no terminal attached the -p prompt is not shown. The first here document expanded the variable and the command, the quoted EOF kept the text exactly.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Write your first scripts&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Create &lt;code&gt;hi.sh&lt;/code&gt; whose first line is &lt;code&gt;#!/bin/bash&lt;/code&gt; and second line is &lt;code&gt;echo \&quot;Hi, $1\&quot;&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;printf &#x27;#!/bin/bash\\necho \&quot;Hi, $1\&quot;\\n&#x27; &gt; hi.sh&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;hi.sh&quot;, &quot;#!/bin/bash&quot;]}, {&quot;has&quot;: [&quot;hi.sh&quot;, &quot;echo \&quot;Hi, $1\&quot;&quot;]}]}, {&quot;t&quot;: &quot;Make &lt;code&gt;hi.sh&lt;/code&gt; executable for everyone.&quot;, &quot;hint&quot;: &quot;chmod +x hi.sh&quot;, &quot;check&quot;: [{&quot;mode&quot;: [&quot;hi.sh&quot;, &quot;755&quot;]}]}, {&quot;t&quot;: &quot;Run it with its path and the argument Asha.&quot;, &quot;hint&quot;: &quot;./hi.sh Asha&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\./hi\\.sh&quot;}, {&quot;out&quot;: &quot;^Hi, Asha$&quot;}]}, {&quot;t&quot;: &quot;Run it through bash with the argument Ravi.&quot;, &quot;hint&quot;: &quot;bash hi.sh Ravi&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^bash\\s+hi\\.sh&quot;}, {&quot;out&quot;: &quot;^Hi, Ravi$&quot;}]}, {&quot;t&quot;: &quot;Run a command that does not exist, then print the exit status.&quot;, &quot;hint&quot;: &quot;nosuchcmd; echo $?&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^127$&quot;}]}, {&quot;t&quot;: &quot;Create &lt;code&gt;count.sh&lt;/code&gt; that prints &lt;code&gt;$# args: $@&lt;/code&gt;, then run it with bash and the arguments a, \&quot;b c\&quot; and d.&quot;, &quot;hint&quot;: &quot;printf &#x27;#!/bin/bash\\necho \&quot;$# args: $@\&quot;\\n&#x27; &gt; count.sh &amp;&amp; bash count.sh a \&quot;b c\&quot; d&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^3 args: a b c d$&quot;}]}, {&quot;t&quot;: &quot;Read the words &lt;code&gt;Asha Rao&lt;/code&gt; from a here string into the variables first and last.&quot;, &quot;hint&quot;: &quot;read -r first last &lt;&lt;&lt; \&quot;Asha Rao\&quot;&quot;, &quot;check&quot;: [{&quot;env&quot;: [&quot;first&quot;, &quot;Asha&quot;]}, {&quot;env&quot;: [&quot;last&quot;, &quot;Rao&quot;]}]}]}"></div>
+<div class="vt-talk" hidden>Scripts talk to people through standard output and standard error. echo is quick for simple lines, while printf gives exact control with a format string, much like in C: percent s for text, percent d for whole numbers and percent point one f for one decimal place. Send error messages and progress notes to standard error with greater than ampersand two, so they still reach the screen when the normal output goes into a file or a pipe. To ask a question, use read dash r with a variable name, and dash p to show a prompt. Here documents let you write many lines of text at once, such as a report or a config file. Without quotes around the end word, variables and commands inside are expanded. With quotes, the text is written exactly as it is, which is perfect for creating another script.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>First scripts from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A script is a list of commands saved in a file. The first line says which program runs it. Arguments come in as $1, $2, and the script answers with an exit status, where 0 means it worked.</p></div><div class="ld-p" data-ld="college" hidden><p>When you run ./greet.sh, the kernel’s execve() sees the two bytes #! at the start, reads the interpreter path and runs it with the script path as an argument, as if you typed /bin/bash ./greet.sh. The shell then parses the file line by line, so a syntax error late in the file appears only when that line is reached. Exit statuses are 8 bits, so exit 256 becomes 0.</p></div><div class="ld-p" data-ld="masters" hidden><p>The #! line allows one optional argument and is limited in length (256 bytes on current Linux). #!/usr/bin/env bash finds bash through PATH, which helps on systems where bash lives elsewhere, at the cost of trusting PATH. POSIX sh scripts run on any Unix (dash, busybox ash, ksh), while bash scripts may use arrays, [[ ]] and other extensions. Tools such as ShellCheck read scripts statically and warn about unquoted variables, missing exit checks and portability problems.</p></div><div class="ld-p" data-ld="research" hidden><p>Studies of real shell scripts (for example the Smoosh formal semantics of POSIX shell, POPL 2020, and work on static analysis of Dockerfiles and CI scripts) show how hard the shell language is to analyse: word splitting and expansion depend on runtime values. Projects such as Oil and NGS design new shells that keep compatibility while removing these traps.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the morning report</div><p>An analyst runs the same five commands every morning to count yesterday’s orders from a log. She writes them into <code>orders.sh</code>, takes the date as <code>$1</code> with today as the default, prints a usage line to stderr and exits with 2 when the log is missing. Now <code>./orders.sh 2026-11-22</code> gives the answer in a second, and the team’s dashboard calls the same script.</p></div>
+<div class="vt-talk" hidden>Here is what really happens when you run a script by name. The kernel opens the file, sees the two characters hash and exclamation mark at the very start, reads the interpreter path that follows, and runs that interpreter with your script as its argument. bash then reads the file and executes it line by line, which is why a typo near the end only shows up when that line is reached. Exit statuses are stored in eight bits, so the largest is two hundred and fifty five. Experienced writers often start scripts with hash bang slash usr slash bin slash env bash, which finds bash wherever it is installed. They also run ShellCheck, a free tool that reads a script and warns about common mistakes, especially missing quotes. Researchers have even written exact mathematical descriptions of how the shell expands words, because the rules are so easy to get wrong, and some new shells try to keep the convenience while removing the traps.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><span></span><a class="next" href="./expansions.html" data-topic="expansions"><small>Next topic</small><b>Expansions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "first-scripts", "topic": "first-scripts", "subject": "linux", "title": "Your first shell scripts", "codes": {}, "quiz": [{"lv": "e", "q": "What must the first line of a bash script be?", "o": ["# bash", "#!/bin/bash", "//bash", "run bash"], "a": 1, "hint": "Hash bang.", "why": "The shebang names the interpreter."}, {"lv": "e", "q": "You wrote backup.sh. Which command makes it executable?", "o": ["chmod +x backup.sh", "exec backup.sh", "chown +x backup.sh", "run backup.sh"], "a": 0, "hint": "Change mode.", "why": "chmod +x adds execute permission."}, {"lv": "e", "q": "Why do you type ./backup.sh and not just backup.sh?", "o": ["./ makes it faster", "The current folder is not in PATH", "./ means run as root", "It is a typing habit only"], "a": 1, "hint": "Command search.", "why": "bash only searches PATH for names without a slash."}, {"lv": "e", "q": "What does exit status 0 mean?", "o": ["Failure", "Success", "Not found", "Killed"], "a": 1, "hint": "Zero is good.", "why": "In the shell, 0 means success."}, {"lv": "m", "q": "A script is run as ./s.sh a \"b c\" d. What is $#?", "o": ["3", "4", "5", "2"], "a": 0, "hint": "Quotes keep words together.", "why": "a, b c and d are three arguments."}, {"lv": "m", "q": "Which passes all arguments on unchanged, even ones with spaces?", "o": ["$*", "$@", "\"$@\"", "\"$*\""], "a": 2, "hint": "Quoted at sign.", "why": "\"$@\" keeps each argument as its own word."}, {"lv": "m", "q": "What does name=${1:-guest} do?", "o": ["Always sets guest", "Uses $1, or guest when $1 is empty or unset", "Deletes $1", "Fails without $1"], "a": 1, "hint": "Default value.", "why": ":- supplies a default."}, {"lv": "m", "q": "How should a script print an error message?", "o": ["echo \"error\" > error", "echo \"error\" >&2", "print error", "echo -e error"], "a": 1, "hint": "Stream 2.", "why": ">&2 sends the message to stderr."}, {"lv": "m", "q": "Which runs a script inside the current shell, so its variables stay?", "o": ["bash s.sh", "./s.sh", "source s.sh", "exec s.sh"], "a": 2, "hint": "Load it here.", "why": "source (or .) runs the file in the current shell."}, {"lv": "h", "q": "What is the difference between <<EOF and <<'EOF'?", "o": ["None", "Quoted EOF stops $variables and $(commands) from expanding", "Quoted EOF adds a newline", "Unquoted EOF is not allowed"], "a": 1, "hint": "Literal text.", "why": "Quoting the end word makes the here document literal."}, {"lv": "h", "q": "A script ends with exit 300. What status does the caller see?", "o": ["300", "44", "255", "0"], "a": 1, "hint": "8 bits.", "why": "300 mod 256 = 44."}, {"lv": "h", "q": "Your script uses [[ ]] and arrays but starts with #!/bin/sh. What happens on Ubuntu?", "o": ["Works the same", "dash runs it and the bash features fail", "It runs as root", "It is converted to bash"], "a": 1, "hint": "sh is dash there.", "why": "Use #!/bin/bash for bash features."}, {"lv": "x", "q": "What does the kernel do with the line #!/usr/bin/env bash?", "o": ["Ignores it", "Runs /usr/bin/env with bash and the script path, and env finds bash in PATH", "Runs bash from /usr/bin/env/bash", "Compiles the script"], "a": 1, "hint": "execve and the interpreter line.", "why": "env searches PATH for bash, then runs it on the script."}], "calc": [{"lv": "e", "q": "A script is run as ./s.sh one two three four. What is $#?", "ans": "4", "hint": "Count words after the name.", "steps": ["Words after ./s.sh: one, two, three, four.", "$0 is not counted.", "<span class=\"eq\">4<\/span>"]}, {"lv": "e", "q": "After one shift in that script, how many arguments are left?", "ans": "3", "hint": "shift drops one.", "steps": ["Before: 4.", "shift removes $1.", "<span class=\"eq\">4 − 1 = 3<\/span>"]}, {"lv": "m", "q": "A command was killed by Ctrl+C (SIGINT, signal 2). What does $? show?", "ans": "130", "hint": "128 plus the signal.", "steps": ["Signal deaths add 128.", "128 + 2.", "<span class=\"eq\">130<\/span>"]}, {"lv": "m", "q": "printf repeats its format. With the format \"%s-%s\" plus a newline code and the values a b c d, how many lines are printed?", "ans": "2", "hint": "Two values per line.", "steps": ["The format uses 2 arguments.", "4 arguments ÷ 2 per line.", "<span class=\"eq\">2 lines: a-b and c-d<\/span>"]}, {"lv": "m", "q": "A script takes ${12}. How many arguments must be given at least for it to be non-empty?", "ans": "12", "hint": "Position 12.", "steps": ["${12} is the twelfth argument.", "Fewer arguments leave it empty.", "<span class=\"eq\">12<\/span>"]}, {"lv": "h", "q": "exit 513 is used in a script. What status does the parent see?", "ans": "1", "hint": "Only 8 bits survive.", "steps": ["Statuses are taken mod 256.", "513 = 2 × 256 + 1.", "<span class=\"eq\">1<\/span>"]}], "assign": [], "must": [["Script basics", "First line #!/bin/bash, then chmod +x and run with ./name.sh. bash name.sh needs no x bit, source runs it in the current shell."], ["Arguments", "$0 name, $1..$9 and ${10}, $# count, \"$@\" all as separate words, shift moves them down, ${1:-default} for a fallback."], ["Exit status", "0 is success. $? holds the last status. exit N ends the script. 127 not found, 126 not executable, 128+N killed by signal N."], ["Output", "printf for exact formats, echo for simple lines, errors to stderr with >&2."], ["Input", "read -r VAR (add -p \"prompt\"), read -r a b rest splits words. Here documents: <<EOF expands, <<'EOF' keeps text literal."]], "summary": "<p>A script is a file of commands with #!/bin/bash on top. Arguments arrive as $1, $2 and \"$@\", the script answers with an exit status (0 is success), and printf, read and here documents handle output and input.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archives and compression: tar, gzip, xz and zip · Unix and Linux</title>
+<meta name="description" content="tar create, list and extract with -C, --exclude and --strip-components, compressed tarballs with -z -j -J and --zstd, gzip gunzip zcat with -k -l -t and levels, bzip2, xz -T0, zip and unzip, tar over pipes and ssh, incremental backups, checksums, and how the tar format and DEFLATE work.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=power">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=power" target="_top">Unix and Linux</a><span>›</span><span>Shell Power Tools</span><span>›</span><span>Step 3: Finding and packing files</span><span>›</span><span>tar, gzip and zip</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 2 of 2 · Intermediate</div>
+    <h1>Archives and compression: tar, gzip, xz and zip</h1>
+    <p class="lead">Bundle files and folders with tar, shrink them with gzip, bzip2, xz and zstd, share them as zip files, and build backups that stream over ssh and can be trusted.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#archives" data-topic="cheatsheet" data-h="archives">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#tar" data-l="tar"><span class="n">1</span><span class="t">tar: many files in, one archive out</span></a></li><li><a href="#squeeze" data-l="squeeze"><span class="n">2</span><span class="t">Compression: gzip, bzip2, xz and zstd</span></a></li><li><a href="#zip" data-l="zip"><span class="n">3</span><span class="t">zip and unzip: the format everyone can open</span></a></li><li><a href="#backup" data-l="backup"><span class="n">4</span><span class="t">Real backups: pipes, ssh, increments and safety</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Archives and compression from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="tar" data-l="tar" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>tar: many files in, one archive out</h2>
+<p>An <b>archive</b> is one file that holds many files and folders, with their names, permissions, owners and times. <code>tar</code> (short for tape archive, from Unix Version 7 in 1979) is the standard archiver on Linux. On its own it only glues files together, it does not make them smaller.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>tar -cvf NAME.tar FILES</code></td><td>Create an archive (c create, v list names, f file name follows)</td><td><code>tar -cvf logs.tar logs</code></td></tr><tr><td><code>tar -tvf NAME.tar</code></td><td>List what is inside without extracting (t table)</td><td><code>tar -tvf logs.tar</code></td></tr><tr><td><code>tar -xvf NAME.tar</code></td><td>Extract everything into the current folder (x extract)</td><td><code>tar -xvf logs.tar</code></td></tr><tr><td><code>tar -xvf NAME.tar -C DIR</code></td><td>Extract into another folder (it must exist)</td><td><code>tar -xvf logs.tar -C restore</code></td></tr><tr><td><code>tar -xvf NAME.tar PATH</code></td><td>Extract only one member</td><td><code>tar -xvf logs.tar logs/app.log</code></td></tr><tr><td><code>tar -rvf NAME.tar FILE</code></td><td>Append a file to an uncompressed archive</td><td><code>tar -rvf logs.tar notes.txt</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Making, reading and unpacking a tar archive</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">tar -cvf logs.tar --sort=name logs</span>
+<span class="lx-o">logs/
+logs/app.log
+logs/old.log</span>
+<span class="lx-cmd">ls -l logs.tar</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 10240 Nov 24 05:25 logs.tar</span>
+<span class="lx-cmd">tar -tf logs.tar</span>
+<span class="lx-o">logs/
+logs/app.log
+logs/old.log</span>
+<span class="lx-cmd">mkdir restore</span>
+<span class="lx-cmd">tar -xvf logs.tar -C restore</span>
+<span class="lx-o">logs/
+logs/app.log
+logs/old.log</span>
+<span class="lx-cmd">ls -R restore</span>
+<span class="lx-o">restore:
+logs
+
+restore/logs:
+app.log
+old.log</span>
+<span class="lx-cmd">tar -tf logs.tar poem.txt</span>
+<span class="lx-o">tar: poem.txt: Not found in archive
+tar: Exiting with failure status due to previous errors</span></pre><div class="lx-note">--sort=name makes the order stable, without it tar uses the order the file system returns. The archive is 10240 bytes even though the two logs hold under 400 bytes, the next lesson explains why. Asking for a member that is not inside gives exit status 2.</div></div>
+<div class="viz" data-viz="pk" data-pk="lx-tar"></div>
+<div class="note note-warn"><b>Common mistake</b><div>The f option takes the next word as the archive name, so keep f last in a bundle: tar -cvf out.tar works, tar -cfv out.tar makes an archive called v. The dash is optional for the first bundle, so tar cvf is the same as tar -cvf.</div></div>
+<div class="vt-talk" hidden>tar takes many files and folders and writes them into a single file called an archive, keeping each name, permission, owner and time. The three main modes are dash c to create, dash t to list the table of contents and dash x to extract. Dash v makes tar print each name as it works, and dash f tells tar which archive file to use. Keep the f last in the bundle of letters, because the word after it is taken as the file name. When you extract, tar writes into the current folder unless you give dash capital C with another folder. A good habit is to list an archive with dash t before extracting it, so you know whether it unpacks into a tidy folder or spills hundreds of files into your current one. The name tar comes from tape archive, because it was first used to write backups to magnetic tape, and its file format still reflects that history.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="squeeze" data-l="squeeze" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Compression: gzip, bzip2, xz and zstd</h2>
+<p>A compressor rewrites a file so repeated patterns take less space. It works on one stream of bytes, so to compress a folder you first tar it and then compress the tar. tar can call the compressor for you with one letter.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Tool</th><th>Suffix</th><th>tar letter</th><th>Speed and size</th></tr></thead><tbody><tr><td>gzip</td><td><code>.gz</code>, <code>.tgz</code></td><td><code>-z</code></td><td>fast, good, available everywhere (DEFLATE, RFC 1951)</td></tr><tr><td>bzip2</td><td><code>.bz2</code></td><td><code>-j</code></td><td>slower, a bit smaller than gzip (Burrows-Wheeler blocks of 900 kB)</td></tr><tr><td>xz</td><td><code>.xz</code></td><td><code>-J</code></td><td>slowest to pack, smallest, quick to unpack (LZMA2)</td></tr><tr><td>zstd</td><td><code>.zst</code></td><td><code>--zstd</code></td><td>very fast at both ends, size close to xz at high levels</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>gzip FILE</code></td><td>Replace FILE with FILE.gz</td><td><code>gzip access.log</code></td></tr><tr><td><code>gzip -k FILE</code></td><td>Keep the original too</td><td><code>gzip -k report.csv</code></td></tr><tr><td><code>gunzip FILE.gz</code></td><td>Decompress (same as gzip -d)</td><td><code>gunzip access.log.gz</code></td></tr><tr><td><code>zcat FILE.gz</code></td><td>Print the decompressed text, file untouched</td><td><code>zcat access.log.gz | grep ERROR</code></td></tr><tr><td><code>gzip -l FILE.gz</code></td><td>Show compressed and original sizes</td><td><code>gzip -l backup.tar.gz</code></td></tr><tr><td><code>gzip -t FILE.gz</code></td><td>Test that the file is not damaged</td><td><code>gzip -t backup.tar.gz</code></td></tr><tr><td><code>gzip -9 FILE</code></td><td>Best compression (-1 fastest, -6 default)</td><td><code>gzip -9 big.sql</code></td></tr><tr><td><code>xz -T0 FILE</code></td><td>xz using every CPU core</td><td><code>xz -T0 -k dump.sql</code></td></tr><tr><td><code>tar -czf NAME.tar.gz DIR</code></td><td>Create a gzip compressed tarball</td><td><code>tar -czf site.tar.gz site</code></td></tr><tr><td><code>tar -xf NAME.tar.xz</code></td><td>Extract any of them: GNU tar detects the compression itself</td><td><code>tar -xf linux-6.8.tar.xz</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Compressing the same file four ways</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">seq 1 20000 &gt; numbers.txt</span>
+<span class="lx-cmd">gzip -k numbers.txt</span>
+<span class="lx-cmd">bzip2 -k numbers.txt</span>
+<span class="lx-cmd">xz -k numbers.txt</span>
+<span class="lx-cmd">ls -l numbers.txt*</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 108894 Nov 24 05:25 numbers.txt
+-rw-r--r-- 1 learner learner  25147 Nov 24 05:25 numbers.txt.bz2
+-rw-r--r-- 1 learner learner  45016 Nov 24 05:25 numbers.txt.gz
+-rw-r--r-- 1 learner learner   4948 Nov 24 05:25 numbers.txt.xz</span>
+<span class="lx-cmd">gzip -l numbers.txt.gz</span>
+<span class="lx-o">         compressed        uncompressed  ratio uncompressed_name
+              45016              108894  58.7% numbers.txt</span>
+<span class="lx-cmd">zcat numbers.txt.gz | tail -n 2</span>
+<span class="lx-o">19999
+20000</span>
+<span class="lx-cmd">gzip -t numbers.txt.gz &amp;&amp; echo "gzip file is fine"</span>
+<span class="lx-o">gzip file is fine</span>
+<span class="lx-cmd">gzip numbers.txt</span>
+<span class="lx-o">gzip: numbers.txt.gz already exists;	not overwritten</span></pre><div class="lx-note">seq makes 20000 numbered lines, 108894 bytes of very repetitive text. Each tool keeps its own copy with -k. The last line fails because numbers.txt.gz already exists, gzip never overwrites without -f.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Compressed tarballs</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">tar -czf home.tar.gz --sort=name scripts notes.txt</span>
+<span class="lx-cmd">tar -tzvf home.tar.gz</span>
+<span class="lx-o">drwxr-xr-x learner/learner   0 2026-11-23 09:30 scripts/
+-rw-r--r-- learner/learner 105 2026-11-23 09:30 scripts/hello.sh
+-rw-r--r-- learner/learner  46 2026-11-23 09:30 notes.txt</span>
+<span class="lx-cmd">tar -cJf home.tar.xz --sort=name scripts notes.txt</span>
+<span class="lx-cmd">file home.tar.gz home.tar.xz</span>
+<span class="lx-o">home.tar.gz: gzip compressed data, from Unix, original size modulo 2^32 10240
+home.tar.xz: XZ compressed data, checksum CRC64</span>
+<span class="lx-cmd">tar -czf nologs.tar.gz --exclude='*.log' --sort=name logs scripts</span>
+<span class="lx-cmd">tar -tf nologs.tar.gz</span>
+<span class="lx-o">logs/
+scripts/
+scripts/hello.sh</span></pre><div class="lx-note">--exclude skips matching names. The logs folder is still stored, just without the .log files inside it.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Text, logs and databases compress very well, often to a fifth of their size or less. Photos (JPEG), videos and zip files are already compressed and hardly shrink, so do not waste CPU on them.</div></div>
+<div class="vt-talk" hidden>Compression finds patterns that repeat and stores them only once. The classic tool on Linux is gzip, from nineteen ninety two, which uses the DEFLATE method, the same one inside zip files and PNG images. bzip2 usually gives smaller files but is slower. xz is slower still when packing but gives the smallest files and unpacks quickly, which is why the Linux kernel source is published as tar dot xz. zstd, made at Facebook in twenty sixteen, is very fast in both directions and is now used by many distributions for their packages. Each of these tools works on a single stream of bytes, so to compress a folder you combine them with tar. tar can call the compressor for you: dash z for gzip, dash j for bzip2 and capital J for xz. When extracting, GNU tar looks at the file and picks the right tool on its own, so tar dash x f works for all of them. By default gzip replaces the original file, so add dash k to keep it.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="zip" data-l="zip" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>zip and unzip: the format everyone can open</h2>
+<p>A zip file is an archive and a compressor in one. Each file inside is compressed on its own, and a table at the end of the file lists every member, so one file can be extracted without reading the rest. Windows and macOS open zip files with no extra software, which makes zip the right choice when you send files to people who do not use Linux.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>zip NAME.zip FILES</code></td><td>Make or update a zip with files</td><td><code>zip notes.zip notes.txt poem.txt</code></td></tr><tr><td><code>zip -r NAME.zip DIR</code></td><td>Include folders and everything inside (-r recursive)</td><td><code>zip -r site.zip site</code></td></tr><tr><td><code>unzip -l NAME.zip</code></td><td>List the contents</td><td><code>unzip -l site.zip</code></td></tr><tr><td><code>unzip NAME.zip</code></td><td>Extract into the current folder</td><td><code>unzip site.zip</code></td></tr><tr><td><code>unzip NAME.zip -d DIR</code></td><td>Extract into DIR (created if needed)</td><td><code>unzip site.zip -d /tmp/site</code></td></tr><tr><td><code>unzip -o NAME.zip</code></td><td>Overwrite existing files without asking</td><td><code>unzip -o site.zip</code></td></tr><tr><td><code>zip -e NAME.zip FILES</code></td><td>Ask for a password (weak ZipCrypto, do not trust it for secrets)</td><td><code>zip -e tax.zip tax.pdf</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Working with zip files</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">zip notes.zip notes.txt poem.txt</span>
+<span class="lx-o">  adding: notes.txt (stored 0%)
+  adding: poem.txt (deflated 19%)</span>
+<span class="lx-cmd">zip -r notes.zip scripts</span>
+<span class="lx-o">  adding: scripts/ (stored 0%)
+  adding: scripts/hello.sh (deflated 11%)</span>
+<span class="lx-cmd">unzip -l notes.zip</span>
+<span class="lx-o">Archive:  notes.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+       46  2026-11-23 09:30   notes.txt
+      107  2026-11-23 09:30   poem.txt
+        0  2026-11-23 09:30   scripts/
+      105  2026-11-23 09:30   scripts/hello.sh
+---------                     -------
+      258                     4 files</span>
+<span class="lx-cmd">unzip notes.zip -d copy</span>
+<span class="lx-o">Archive:  notes.zip
+ extracting: copy/notes.txt          
+  inflating: copy/poem.txt           
+   creating: copy/scripts/
+  inflating: copy/scripts/hello.sh   </span>
+<span class="lx-cmd">ls -R copy</span>
+<span class="lx-o">copy:
+notes.txt
+poem.txt
+scripts
+
+copy/scripts:
+hello.sh</span></pre><div class="lx-note">zip adds new members to an existing zip file. Small files are stored without compression because deflating them would not save space.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>unzip asks before replacing an existing file. In a script, use -o to overwrite or -n to never overwrite, so it does not stop and wait for an answer.</div></div>
+<div class="vt-talk" hidden>Zip is both an archive and a compressor in one format. It was created by Phil Katz in nineteen eighty nine, and today every operating system opens zip files without extra software. That makes zip the polite choice when you send files to Windows or Mac users. Inside a zip file each member is compressed on its own, and a central directory at the end of the file lists all of them, so a program can pull out a single file quickly. tar dot gz compresses everything as one stream, which usually gives a smaller result but means reading from the start to reach the last file. Use zip dash r to include folders, unzip dash l to look inside and unzip dash d to choose where the files go. The password option of zip uses an old method that can be broken easily, so do not rely on it for real secrets.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="backup" data-l="backup" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Real backups: pipes, ssh, increments and safety</h2>
+<p>Because tar can read and write standard input and output with <code>-f -</code>, it fits into pipelines. That is how administrators copy whole folder trees between machines, or stream a backup without a temporary file.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>tar -czf - DIR | ssh HOST "cat &gt; DIR.tgz"</code></td><td>Stream a backup to another machine</td><td><code>tar -czf - site | ssh backup@vault 'cat &gt; site.tgz'</code></td></tr><tr><td><code>ssh HOST "tar -czf - DIR" | tar -xzf -</code></td><td>Pull a folder from a server and unpack it here</td><td><code>ssh web1 'tar -czf - /etc/nginx' | tar -xzf -</code></td></tr><tr><td><code>tar -cf - DIR | tar -xf - -C DEST</code></td><td>Copy a tree and keep every permission and time</td><td><code>tar -cf - project | tar -xf - -C /mnt/usb</code></td></tr><tr><td><code>tar -xf NAME.tar --strip-components=1</code></td><td>Drop the top folder of each member when extracting</td><td><code>tar -xf app-2.1.tar.gz --strip-components=1</code></td></tr><tr><td><code>tar -g snap.file -czf FULL.tgz DIR</code></td><td>Incremental: the next run with the same snap file stores only changes</td><td><code>tar -g home.snar -czf mon.tgz /home</code></td></tr><tr><td><code>sha256sum NAME.tar.gz</code></td><td>Fingerprint the archive to check it later</td><td><code>sha256sum backup.tar.gz &gt; backup.sha256</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Streaming and checking archives</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">tar -czf - --sort=name logs | tar -tzf -</span>
+<span class="lx-o">logs/
+logs/app.log
+logs/old.log</span>
+<span class="lx-cmd">mkdir mirror</span>
+<span class="lx-cmd">tar -cf - scripts | tar -xf - -C mirror</span>
+<span class="lx-cmd">ls -l mirror/scripts</span>
+<span class="lx-o">total 4
+-rw-r--r-- 1 learner learner 105 Nov 23 09:30 hello.sh</span>
+<span class="lx-cmd">tar -czf app.tar.gz --sort=name logs</span>
+<span class="lx-cmd">mkdir flat</span>
+<span class="lx-cmd">tar -xzf app.tar.gz -C flat --strip-components=1</span>
+<span class="lx-cmd">ls flat</span>
+<span class="lx-o">app.log
+old.log</span>
+<span class="lx-cmd">sha256sum app.tar.gz &gt; app.sha256</span>
+<span class="lx-cmd">sha256sum -c app.sha256</span>
+<span class="lx-o">app.tar.gz: OK</span></pre><div class="lx-note">The first tar writes a compressed stream to its standard output and the second reads it from standard input. --strip-components=1 removed the logs/ prefix, so the files landed straight inside flat.</div></div>
+<div class="walk"><div class="walk-h"><span>A backup you can trust</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Archive with paths relative to a known folder, for example tar -czf home.tgz -C / home, so restores land where you expect.</li><li>Run tar -tzf on the result (or gzip -t) to prove the file is readable.</li><li>Store a sha256sum next to it and check it after every copy.</li><li>Keep at least one copy on another machine or disk. A backup on the same disk dies with it.</li><li>Practise a restore into an empty folder. A backup that was never restored is only a hope.</li></ol></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Pack and unpack&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Create a tar archive &lt;code&gt;logs.tar&lt;/code&gt; of the &lt;code&gt;logs&lt;/code&gt; folder.&quot;, &quot;hint&quot;: &quot;tar -cvf logs.tar logs&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^tar\\s&quot;}, {&quot;exists&quot;: &quot;logs.tar&quot;, &quot;type&quot;: &quot;f&quot;}]}, {&quot;t&quot;: &quot;List what is inside &lt;code&gt;logs.tar&lt;/code&gt; without extracting it.&quot;, &quot;hint&quot;: &quot;tar -tvf logs.tar&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-\\w*t&quot;}, {&quot;out&quot;: &quot;logs/app\\.log&quot;}]}, {&quot;t&quot;: &quot;Create a gzip compressed tarball &lt;code&gt;home.tar.gz&lt;/code&gt; of &lt;code&gt;scripts&lt;/code&gt; and &lt;code&gt;notes.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;tar -czvf home.tar.gz scripts notes.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-\\w*z&quot;}, {&quot;exists&quot;: &quot;home.tar.gz&quot;, &quot;type&quot;: &quot;f&quot;}]}, {&quot;t&quot;: &quot;Extract &lt;code&gt;home.tar.gz&lt;/code&gt; into the &lt;code&gt;projects&lt;/code&gt; folder using -C.&quot;, &quot;hint&quot;: &quot;tar -xzvf home.tar.gz -C projects&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-C\\s+projects&quot;}, {&quot;exists&quot;: &quot;projects/scripts/hello.sh&quot;, &quot;type&quot;: &quot;f&quot;}]}, {&quot;t&quot;: &quot;Compress &lt;code&gt;poem.txt&lt;/code&gt; with gzip but keep the original file.&quot;, &quot;hint&quot;: &quot;gzip -k poem.txt&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;poem.txt.gz&quot;, &quot;type&quot;: &quot;f&quot;}, {&quot;exists&quot;: &quot;poem.txt&quot;, &quot;type&quot;: &quot;f&quot;}]}, {&quot;t&quot;: &quot;Read the compressed poem without unpacking it to a file.&quot;, &quot;hint&quot;: &quot;zcat poem.txt.gz&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;zcat|gzip\\s+-\\w*c|gunzip\\s+-\\w*c&quot;}, {&quot;out&quot;: &quot;Twinkle&quot;}]}, {&quot;t&quot;: &quot;Make &lt;code&gt;photos.zip&lt;/code&gt; with the whole &lt;code&gt;photos&lt;/code&gt; folder inside.&quot;, &quot;hint&quot;: &quot;zip -r photos.zip photos&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;zip\\s+-r&quot;}, {&quot;exists&quot;: &quot;photos.zip&quot;, &quot;type&quot;: &quot;f&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Real backups use a few extra tricks. Writing dash f dash, a single dash as the file name, makes tar write to standard output or read from standard input, so you can pipe an archive straight into ssh and store it on another machine without a temporary file. The same trick copies a folder tree with every permission and time kept, by piping one tar into another. Dash dash strip components drops the top folder of each path while extracting, which is handy for downloads that unpack into a folder named after the version. GNU tar can also make incremental backups with dash g and a snapshot file, so each new run stores only what changed since the last one. Whatever you do, check your archives. List them with dash t, keep a sha two five six checksum beside them, keep a copy on another disk, and practise restoring, because a backup that was never restored is only a hope.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Archives and compression from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>tar puts many files into one. gzip, xz and zip make files smaller by storing repeated parts only once. Always look inside an archive before unpacking it.</p></div><div class="ld-p" data-ld="college" hidden><p>A tar file is a sequence of 512 byte blocks: a header block per member (name, mode, owner, size, time, checksum) followed by its data padded to whole blocks, then two zero blocks. GNU tar writes in records of 20 blocks, 10240 bytes. DEFLATE combines LZ77 back references (a 32 KiB window) with Huffman codes. xz uses LZMA2 with windows of many megabytes, which is why it compresses better and needs more memory.</p></div><div class="ld-p" data-ld="masters" hidden><p>The POSIX pax format (ustar plus extended headers) removes the old 100 character name and 8 GiB size limits, and GNU tar can write it with --format=pax. Compressed tarballs are not seekable, so extracting the last member reads the whole stream, while zip seeks through its central directory. zstd adds long range matching and trained dictionaries that compress many tiny similar files (such as JSON records) far better than any general method. Reproducible builds need stable archives: --sort=name, --mtime and --owner=0 --group=0 --numeric-owner give byte identical tarballs.</p></div><div class="ld-p" data-ld="research" hidden><p>Compression research balances ratio, speed and memory. Asymmetric numeral systems (ANS, Jarek Duda, 2009) give entropy coding as tight as arithmetic coding at the speed of Huffman, and power zstd and Apple LZFSE. Neural compressors using learned probability models now beat classic tools on text and images but are far too slow for daily use. Supply chain security joined the field in 2024 when CVE-2024-3094 showed a backdoor hidden in the build scripts of xz-utils 5.6.0 and 5.6.1, caught by Andres Freund through a half second slowdown in ssh logins.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the 4 a.m. restore</div><p>A developer deletes a customer table by mistake. The nightly job has run <code>pg_dump shop | zstd -T0 &gt; /backup/shop-2026-11-22.sql.zst</code> and copied it to another region, with a sha256 file beside it. The on-call engineer checks the checksum, runs <code>zstd -dc shop-2026-11-22.sql.zst | psql shop_restore</code> into a fresh database, copies the missing rows back, and the shop is fixed before customers wake up.</p></div>
+<div class="vt-talk" hidden>Inside, a tar file is simple. Each member gets a five hundred and twelve byte header block holding its name, size, permissions, owner and time, followed by its data rounded up to whole blocks, and two empty blocks mark the end. GNU tar writes whole records of ten thousand two hundred and forty bytes, which is why a tiny archive is still ten kilobytes before compression. gzip uses DEFLATE, which replaces repeated text with short references back to an earlier copy, then codes the result with Huffman codes, giving short codes to common symbols. xz looks much further back, many megabytes, so it finds more repeats and makes smaller files. Modern tools such as zstd use a newer coding method called asymmetric numeral systems, which is both tight and fast. Compression even became a security story in twenty twenty four, when an engineer at Microsoft noticed ssh logins were half a second slower and uncovered a backdoor hidden in the xz library. That event changed how open source projects review their build scripts.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./find-files.html" data-topic="find-files"><small>Previous topic</small><b>find and xargs</b></a><a class="next" href="./processes.html" data-topic="processes"><small>Next topic</small><b>Processes and signals</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "archives", "topic": "archives", "subject": "linux", "title": "Archives and compression: tar, gzip, xz and zip", "codes": {}, "quiz": [{"lv": "e", "q": "Which command creates an archive called site.tar from the folder site?", "o": ["tar -xvf site.tar site", "tar -cvf site.tar site", "tar -tvf site site.tar", "gzip site"], "a": 1, "hint": "c for create.", "why": "c creates, v lists names, f names the archive."}, {"lv": "e", "q": "How do you look inside backup.tar.gz without extracting it?", "o": ["tar -xzf backup.tar.gz", "tar -tzf backup.tar.gz", "cat backup.tar.gz", "gunzip backup.tar.gz"], "a": 1, "hint": "t for table.", "why": "tar -t lists the members."}, {"lv": "e", "q": "What happens to notes.txt after gzip notes.txt?", "o": ["Nothing, a copy is made", "It is replaced by notes.txt.gz", "It is deleted with no copy", "It is renamed to notes.zip"], "a": 1, "hint": "gzip replaces by default.", "why": "Use -k to keep the original."}, {"lv": "e", "q": "Which format opens on Windows without extra software?", "o": [".tar.xz", ".zip", ".bz2", ".zst"], "a": 1, "hint": "The common one.", "why": "Windows and macOS open zip files natively."}, {"lv": "m", "q": "Which tar letter selects xz compression?", "o": ["-z", "-j", "-J", "-x"], "a": 2, "hint": "Capital letter.", "why": "-z gzip, -j bzip2, -J xz."}, {"lv": "m", "q": "Where does tar -xf app.tar -C /opt put the files?", "o": ["In the current folder", "Inside /opt", "In /tmp", "It fails"], "a": 1, "hint": "C changes folder.", "why": "-C makes tar work inside that folder."}, {"lv": "m", "q": "Why does tar -cfv out.tar notes.txt go wrong?", "o": ["v is not an option", "f takes the next word as the name, so the archive is called v", "tar needs -z", "notes.txt is too small"], "a": 1, "hint": "f takes a value.", "why": "Keep f last in the bundle."}, {"lv": "m", "q": "Which reads a compressed log without creating any new file?", "o": ["gunzip app.log.gz", "zcat app.log.gz", "gzip -k app.log.gz", "tar -xf app.log.gz"], "a": 1, "hint": "cat for gz.", "why": "zcat prints the decompressed data to standard output."}, {"lv": "m", "q": "Why do JPEG photos hardly shrink in a tar.gz?", "o": ["tar skips images", "They are already compressed", "gzip only reads text", "They are too big"], "a": 1, "hint": "Little repetition left.", "why": "Compressed data has almost no patterns left to remove."}, {"lv": "h", "q": "What does tar -cf - project | tar -xf - -C /backup do?", "o": ["Deletes project", "Copies the tree to /backup keeping modes and times", "Makes a file called -", "Compresses project"], "a": 1, "hint": "Dash means a stream.", "why": "-f - writes to stdout and reads from stdin."}, {"lv": "h", "q": "What does --strip-components=1 do when extracting app-2.1/bin/run?", "o": ["Skips the file", "Writes it as bin/run", "Writes it as run", "Strips the permission bits"], "a": 1, "hint": "Drop one leading folder.", "why": "One path element is removed from the front."}, {"lv": "h", "q": "A tar holds one 100 byte file. Why is it 10240 bytes?", "o": ["tar adds a picture", "Blocks of 512 bytes are written in records of 20 blocks", "The file is copied 100 times", "It is compressed backwards"], "a": 1, "hint": "Blocking.", "why": "GNU tar pads the archive to a whole 10240 byte record."}, {"lv": "x", "q": "Why can zip extract its last member faster than tar.gz can?", "o": ["zip files are smaller", "zip has a central directory and compresses each member on its own", "tar.gz has no names", "zip uses xz"], "a": 1, "hint": "Seeking.", "why": "A gzip stream must be read from the start, zip jumps to the member."}], "calc": [{"lv": "e", "q": "A 400 MB log compresses to 40 MB. What percent of the space is saved?", "ans": "90", "hint": "Saved over original.", "steps": ["Saved: 400 − 40 = 360 MB.", "360 ÷ 400 = 0.9.", "<span class=\"eq\">90%<\/span>"]}, {"lv": "e", "q": "How many 512 byte data blocks does tar use for a 1300 byte file?", "ans": "3", "hint": "Round up.", "steps": ["1300 ÷ 512 ≈ 2.54.", "Partial blocks are padded to a whole block.", "<span class=\"eq\">3 blocks<\/span>"]}, {"lv": "m", "q": "Total blocks for one 1300 byte file in a tar, counting its header and the two end blocks?", "ans": "6", "hint": "Header plus data plus end.", "steps": ["Header: 1 block.", "Data: 3 blocks.", "End marker: 2 blocks.", "<span class=\"eq\">1 + 3 + 2 = 6 blocks<\/span>"]}, {"lv": "m", "q": "An archive needs 25 blocks of 512 bytes. GNU tar writes 10240 byte records. How many bytes is the file?", "ans": "20480", "hint": "Records of 20 blocks.", "steps": ["25 blocks need 2 records of 20 blocks.", "Each record is 10240 bytes.", "<span class=\"eq\">2 × 10240 = 20480 bytes<\/span>"]}, {"lv": "m", "q": "gzip -l shows compressed 2500 and uncompressed 10000. What is the ratio column (percent saved)?", "ans": "75", "hint": "One minus the fraction.", "steps": ["2500 ÷ 10000 = 0.25.", "1 − 0.25 = 0.75.", "<span class=\"eq\">75.0%<\/span>"]}, {"lv": "h", "q": "xz takes 120 s on one core. With xz -T0 on 8 cores and perfect scaling, how many seconds?", "ans": "15", "hint": "Divide by cores.", "steps": ["Cores: 8.", "120 ÷ 8 = 15.", "<span class=\"eq\">15 seconds (real runs scale a little worse)<\/span>"]}], "assign": [], "must": [["tar", "tar -cvf make, -tvf list, -xvf extract, -C DIR to choose the folder. Keep f last, the next word is the archive name."], ["Compress", "tar -z gzip, -j bzip2, -J xz, --zstd. GNU tar detects the method when extracting. gzip replaces the file, -k keeps it."], ["Read packed files", "zcat, xzcat and bzcat print without unpacking. gzip -l shows sizes, gzip -t tests the file."], ["zip", "zip -r out.zip dir, unzip -l to look, unzip -d DIR to place, -o to overwrite. Best for sharing with Windows and Mac users."], ["Backups", "Stream with -f - over ssh, strip a top folder with --strip-components, check with tar -t and sha256sum, test a restore."]], "summary": "<p>tar bundles, compressors shrink one stream, so a folder becomes a .tar.gz or .tar.xz. zip does both per file and opens everywhere. Stream archives with -f -, and check every backup by listing it and restoring it.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

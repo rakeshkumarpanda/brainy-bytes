@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Files inside: inodes, links, open descriptors and the page cache · Unix and Linux</title>
+<meta name="description" content="Folder entries and inodes, file types, inode numbers and inode exhaustion on a real ext4 image, hard and symbolic links with cross-device and protected_hardlinks errors, file descriptors and open file descriptions, deleted but open files with lsof and /proc/PID/fd, the VFS, the page cache, write-back, fsync and atomic rename.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=advanced">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=advanced" target="_top">Unix and Linux</a><span>›</span><span>Internals and Advanced</span><span>›</span><span>Step 2: Files and memory inside</span><span>›</span><span>Files inside</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 1 of 2 · Expert</div>
+    <h1>Files inside: inodes, links, open descriptors and the page cache</h1>
+    <p class="lead">Learn what a file really is to the kernel: a name in a folder that points to an inode, hard and symbolic links, descriptors that keep deleted files alive, and the page cache that makes writes fast but needs fsync to be safe.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#files-inside" data-topic="cheatsheet" data-h="files-inside">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#inode" data-l="inode"><span class="n">1</span><span class="t">Names, inodes and data</span></a></li><li><a href="#links" data-l="links"><span class="n">2</span><span class="t">Hard links and symbolic links</span></a></li><li><a href="#fds" data-l="fds"><span class="n">3</span><span class="t">Open files: descriptors and deleted files</span></a></li><li><a href="#cache" data-l="cache"><span class="n">4</span><span class="t">The VFS, the page cache and fsync</span></a></li><li><a href="#practice" data-l="practice"><span class="n">5</span><span class="t">Practice: inodes and links on the practice server</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">Files from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="inode" data-l="inode" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>Names, inodes and data</h2>
+<p>A file on Linux has three parts. Its <b>name</b> is an entry in a folder. The entry points to an <b>inode</b>, a numbered record with everything else about the file. The inode points to the <b>data blocks</b> with the content.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>An inode holds</th><th>An inode does not hold</th></tr></thead><tbody><tr><td>the type and the permission bits</td><td>the name, which lives in the folder</td></tr><tr><td>the owner and group (as numbers)</td><td>the path, a file can have several</td></tr><tr><td>the size and the block or extent list</td><td></td></tr><tr><td>the times: access, modify, change, birth</td><td></td></tr><tr><td>the link count: how many names point to it</td><td></td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-inode"></div>
+<div class="lx-run"><div class="lx-rh"><span>The seven file types and their inodes</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">echo 'Buy milk' &gt; notes.txt</span>
+<span class="lx-cmd">mkdir box</span>
+<span class="lx-cmd">ln -s notes.txt link</span>
+<span class="lx-cmd">mkfifo pipe</span>
+<span class="lx-cmd">ls -lid notes.txt box link pipe</span>
+<span class="lx-o">729119 drwxr-xr-x 2 learner learner 4096 Nov 24 05:26 box
+640877 lrwxrwxrwx 1 learner learner    9 Nov 24 05:26 link -&gt; notes.txt
+639888 -rw-r--r-- 1 learner learner    9 Nov 24 05:26 notes.txt
+640878 prw-r--r-- 1 learner learner    0 Nov 24 05:26 pipe</span>
+<span class="lx-cmd">stat -c '%n: inode %i, %h links, %F' notes.txt box link pipe /dev/null</span>
+<span class="lx-o">notes.txt: inode 639888, 1 links, regular file
+box: inode 729119, 2 links, directory
+link: inode 640877, 1 links, symbolic link
+pipe: inode 640878, 1 links, fifo
+/dev/null: inode 3, 1 links, character special file</span>
+<span class="lx-cmd">ls -id / /home .</span>
+<span class="lx-o">640011 .
+     2 /
+    28 /home</span></pre><div class="lx-note">The first column of ls -i is the inode number, and the first letter of the mode is the type: - regular file, d directory, l symbolic link, p named pipe (FIFO), c character device such as /dev/null, b block device such as /dev/sda, s socket. A new folder starts with 2 links, its name in the parent and its own . entry, and every subfolder adds one more for its .. entry. The root folder of an ext4 file system is always inode 2, which is what / shows. Inode numbers are only unique inside one file system, and /home shows a low number too because it is a separate file system in the build container.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Run out of inodes while the disk is nearly empty</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">mkdir -p /mnt/tiny</span>
+<span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">truncate -s 64M disk.img</span>
+<span class="lx-cmd lx-root">mkfs.ext4 -q -N 64 disk.img</span>
+<span class="lx-cmd lx-root">mount -o loop disk.img /mnt/tiny</span>
+<span class="lx-cmd lx-root">for i in $(seq 1 70); do touch /mnt/tiny/f$i || break; done</span>
+<span class="lx-o">touch: cannot touch '/mnt/tiny/f54': No space left on device</span>
+<span class="lx-cmd lx-root">df -i /mnt/tiny</span>
+<span class="lx-o">Filesystem     Inodes IUsed IFree IUse% Mounted on
+/dev/loop0         64    64     0  100% /mnt/tiny</span>
+<span class="lx-cmd lx-root">df -h /mnt/tiny</span>
+<span class="lx-o">Filesystem      Size  Used Avail Use% Mounted on
+/dev/loop0       60M   24K   56M   1% /mnt/tiny</span>
+<span class="lx-cmd lx-root">umount /mnt/tiny</span>
+<span class="lx-cmd lx-root">debugfs -R 'ls -l /' disk.img 2&gt; /dev/null | head -n 5</span>
+<span class="lx-o">      2   40755 (2)      0      0    4096 24-Nov-2026 05:26 .
+      2   40755 (2)      0      0    4096 24-Nov-2026 05:26 ..
+     11   40700 (2)      0      0   16384 24-Nov-2026 05:26 lost+found
+     12  100644 (1)      0      0       0 24-Nov-2026 05:26 f1
+     13  100644 (1)      0      0       0 24-Nov-2026 05:26 f2</span></pre><div class="lx-note">mkfs.ext4 -N 64 makes a file system with only 64 inodes. The first 11 are reserved (2 is the root folder, 11 is lost+found), so touch fails at the 54th file with “No space left on device”, although df -h shows 56M free. df -i shows 100 % of inodes used. Real servers hit this with millions of tiny files, such as session files or a mail queue. debugfs reads the image directly and shows the inode number, the mode in octal (40755 is a folder, 100644 a regular file) and the link count of each entry.</div></div>
+<div class="vt-talk" hidden>A file on Linux is more than its name. The name is only an entry in a folder, and it points to an inode, a numbered record that holds everything else: the type, the owner, the permissions, the size, the times, and where the data is stored. The inode also counts how many names point to it. You can see inode numbers with ls dash i and stat. Every file system has a fixed number of inodes, set when it is made. In the demo, a tiny file system runs out of inodes after fifty three files, while the disk is still almost empty, and touch reports no space left on device. Df dash i shows the inode usage, and it is the first thing to check when that error appears on a disk with free space.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="links" data-l="links" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Hard links and symbolic links</h2>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>Hard link (ln)</th><th>Symbolic link (ln -s)</th></tr></thead><tbody><tr><td>What it is</td><td>a second name for the same inode</td><td>a small file that holds a path</td></tr><tr><td>Inode</td><td>the same number</td><td>its own inode, type l</td></tr><tr><td>Link count</td><td>goes up by one</td><td>does not change</td></tr><tr><td>Target removed</td><td>the data stays while any name is left</td><td>the link dangles and opening it fails</td></tr><tr><td>Across file systems</td><td>no (Invalid cross-device link)</td><td>yes</td></tr><tr><td>To folders</td><td>no</td><td>yes</td></tr><tr><td>Typical use</td><td>snapshots that share unchanged files (rsync --link-dest), package tools</td><td>versions (python3 → python3.12), /etc/alternatives, config in a repo</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Make, change, delete and break links</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">echo 'Call grandma' &gt; notes.txt</span>
+<span class="lx-cmd">ln notes.txt copy</span>
+<span class="lx-cmd">ln -s notes.txt link</span>
+<span class="lx-cmd">ls -li notes.txt copy link</span>
+<span class="lx-o">639888 -rw-r--r-- 2 learner learner 13 Nov 24 05:26 copy
+640877 lrwxrwxrwx 1 learner learner  9 Nov 24 05:26 link -&gt; notes.txt
+639888 -rw-r--r-- 2 learner learner 13 Nov 24 05:26 notes.txt</span>
+<span class="lx-cmd">echo 'Water plants' &gt;&gt; copy</span>
+<span class="lx-cmd">cat notes.txt</span>
+<span class="lx-o">Call grandma
+Water plants</span>
+<span class="lx-cmd">rm notes.txt</span>
+<span class="lx-cmd">cat copy</span>
+<span class="lx-o">Call grandma
+Water plants</span>
+<span class="lx-cmd">cat link</span>
+<span class="lx-o">cat: link: No such file or directory</span>
+<span class="lx-cmd">find . -xtype l</span>
+<span class="lx-o">./link</span>
+<span class="lx-cmd">ln copy /dev/shm/copy</span>
+<span class="lx-o">ln: failed to create hard link '/dev/shm/copy' =&gt; 'copy': Invalid cross-device link</span>
+<span class="lx-cmd">ln /etc/hostname myhost</span>
+<span class="lx-o">ln: failed to create hard link 'myhost' =&gt; '/etc/hostname': Operation not permitted</span></pre><div class="lx-note">notes.txt and copy share one inode with link count 2, so text added through copy appears in notes.txt. After rm notes.txt the data is still there under the name copy. The symbolic link stores only the path notes.txt, so it now dangles and cat fails. find -xtype l finds such broken links. A hard link to /dev/shm fails, because it is another file system (tmpfs). The last line fails for a different reason: Ubuntu sets fs.protected_hardlinks = 1, so you may only hard link files you own or can read and write, which stops tricks with links to root’s files in shared folders.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>ln TARGET NAME</code></td><td>Hard link: another name for the same inode</td><td><code>ln report.pdf report-2026.pdf</code></td></tr><tr><td><code>ln -s TARGET NAME</code></td><td>Symbolic link (the target path is stored as text)</td><td><code>ln -s /srv/app/releases/v42 /srv/app/current</code></td></tr><tr><td><code>ln -sfn TARGET NAME</code></td><td>Replace an existing link, also one that points to a folder</td><td><code>ln -sfn releases/v43 current</code></td></tr><tr><td><code>readlink LINK, readlink -f PATH</code></td><td>The stored path, or the final real path after all links</td><td><code>readlink -f /usr/bin/python3</code></td></tr><tr><td><code>find -samefile F, find -inum N</code></td><td>All names of one inode</td><td><code>find / -xdev -samefile notes.txt</code></td></tr><tr><td><code>find -xtype l</code></td><td>Dangling symbolic links</td><td><code>find /etc -xtype l</code></td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>A relative symbolic link is resolved from the folder the link is in, not from your current folder. ln -s ../shared/config.yml app/config.yml works, ln -s shared/config.yml app/config.yml from the parent folder makes a link that points to app/shared/config.yml.</div></div>
+<div class="vt-talk" hidden>There are two kinds of links. A hard link is a second name for the same inode. Both names are equal, a change through one is visible through the other, and the data stays until the last name is gone. Hard links only work inside one file system and not for folders. A symbolic link is a tiny file of its own that stores a path. The kernel follows that path whenever a program opens the link, so symbolic links can point to folders and to other disks. But if the target is deleted or moved, the link dangles. In the demo you see the shared inode number, the link count of two, a dangling link, and two refused hard links: one to another file system, and one to a file that belongs to root.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="fds" data-l="fds" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Open files: descriptors and deleted files</h2>
+<div class="walk"><div class="walk-h"><span>Three tables behind every open file</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Each process has a <b>file descriptor table</b>: small numbers 0, 1, 2, 3 and so on. You see it in <code>/proc/PID/fd</code>.</li><li>Each descriptor points to an <b>open file description</b> in the kernel, which holds the current offset and the open flags (read, write, append). After fork, or after dup2, two descriptors share one description, and therefore one offset. That is why the lines of a parent and a child do not overwrite each other in a shared log.</li><li>The description points to the <b>inode</b>. The kernel counts open descriptions as well as names, and frees the data only when both reach zero.</li></ol></div>
+<div class="lx-run"><div class="lx-rh"><span>A file deleted while a program still writes it</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">python3 -c 'import time; f = open("big.log", "w"); f.write("x" * 5000000); f.flush(); time.sleep(20)' &amp;</span>
+<span class="lx-cmd">sleep 1</span>
+<span class="lx-cmd">ls -l big.log</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 5000000 Nov 24 05:26 big.log</span>
+<span class="lx-cmd">rm big.log</span>
+<span class="lx-cmd">ls -l /proc/$!/fd | grep big</span>
+<span class="lx-o">l-wx------ 1 learner learner 64 Nov 24 05:26 3 -&gt; /home/learner/big.log (deleted)</span>
+<span class="lx-cmd">lsof -p $! 2&gt; /dev/null | grep deleted</span>
+<span class="lx-o">python3 26419 learner    3w   REG  254,0  5000000  640877 /home/learner/big.log (deleted)</span>
+<span class="lx-cmd">cp /proc/$!/fd/3 rescued.log</span>
+<span class="lx-cmd">ls -l rescued.log</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 5000000 Nov 24 05:26 rescued.log</span>
+<span class="lx-cmd">kill $!</span></pre><div class="lx-note">After rm the name is gone, but the Python process still has the file open on descriptor 3, so the 5 MB stay on the disk and df does not go down. /proc/PID/fd shows the link with “(deleted)”, and lsof shows the same with the size and the inode number. Copying from /proc/PID/fd/3 rescues the content, which has saved many deleted databases and logs. On a server, <code>sudo lsof +L1</code> lists every open file whose link count is 0.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>lsof -p PID</code></td><td>Every file, socket and pipe a process has open</td><td><code>sudo lsof -p 905</code></td></tr><tr><td><code>lsof FILE, fuser -v FILE</code></td><td>Who has this file open (why umount says busy)</td><td><code>sudo lsof /var/log/syslog</code></td></tr><tr><td><code>lsof +L1</code></td><td>Open files that were deleted (link count 0)</td><td><code>sudo lsof +L1</code></td></tr><tr><td><code>lsof -i :PORT</code></td><td>Who uses a network port</td><td><code>sudo lsof -i :80</code></td></tr><tr><td><code>: &gt; FILE</code></td><td>Empty a file in place, without deleting it, so writers keep working</td><td><code>sudo sh -c ": &gt; /var/log/huge.log"</code></td></tr><tr><td><code>ulimit -n</code></td><td>The most descriptors one process may open</td><td><code>ulimit -n</code></td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>“Too many open files” (EMFILE) means a process hit its descriptor limit, often 1024. Check <code>ls /proc/PID/fd | wc -l</code> to see whether it leaks descriptors, and raise the limit in the service with LimitNOFILE= only if the program really needs that many.</div></div>
+<div class="vt-talk" hidden>When a program opens a file, the kernel gives it a small number called a file descriptor. Zero, one and two are standard input, output and error, and new files get three, four and so on. Slash proc slash P I D slash f d shows every descriptor of a process. The kernel keeps a file’s data as long as any name points to it or any process has it open. That is why deleting a huge log that a service still writes does not free any space. In the demo, the deleted file still shows up in slash proc with the word deleted, lsof finds it, and copying from slash proc rescues the content. To free the space safely, empty the file in place instead of deleting it, or restart the service.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="cache" data-l="cache" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>The VFS, the page cache and fsync</h2>
+<div class="walk"><div class="walk-h"><span>What happens to a write()</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The <b>VFS</b> (virtual file system) is the common layer that turns open, read and write into calls of the right file system driver: ext4, xfs, vfat, tmpfs, NFS, procfs and so on.</li><li>write() copies your data into the <b>page cache</b> in RAM and returns at once. The pages are now <b>dirty</b>: newer in memory than on disk.</li><li>Kernel flusher threads write dirty pages to the disk later, after about 30 seconds (vm.dirty_expire_centisecs = 3000) or sooner when too much memory is dirty (vm.dirty_background_ratio and vm.dirty_ratio).</li><li><b>fsync(fd)</b> makes the kernel write a file’s dirty data and metadata to the disk now and waits until the disk confirms it. <code>sync</code> does that for everything. Databases call fsync before they tell you a transaction is saved.</li><li>Reads go through the same cache. A file read twice comes from RAM the second time, which is why the buff/cache column of free is large on a healthy server. That memory is given back as soon as programs need it.</li></ol></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Situation</th><th>What it means for you</th></tr></thead><tbody><tr><td>power loss right after cp</td><td>the copy may be incomplete unless you ran sync. Pull a USB stick only after umount or eject</td></tr><tr><td>a program says “saved”</td><td>only true after fsync. Editors and databases do it, simple scripts usually do not</td></tr><tr><td>free shows little free memory</td><td>normal: look at the available column, which counts cache that can be dropped</td></tr><tr><td>benchmarking a disk</td><td>the cache makes reads look too fast. Use fio with --direct=1, or drop the cache first with <code>echo 3 | sudo tee /proc/sys/vm/drop_caches</code> on a test machine only</td></tr><tr><td>rename to replace a file</td><td>write a temp file, fsync it, then rename it over the old name. Readers see the old or the new file, never half of one</td></tr></tbody></table></div>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>Writing a file safely</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>write new content to  config.yml.tmp
+fsync(config.yml.tmp)          the data is on the disk
+rename(config.yml.tmp, config.yml)   atomic switch
+fsync(the folder)              the new name is on the disk</pre><div class="lx-note">This is how editors, package managers and databases avoid half written files after a crash. In shell scripts, mv on one file system is the rename step, and the sync command can do the fsync steps.</div></div>
+<div class="vt-talk" hidden>Under every file system sits the V F S, the virtual file system, which gives all of them the same open, read and write calls. When a program writes, the data first lands in the page cache in memory, and write returns at once. The kernel writes these dirty pages to the disk a little later, usually within thirty seconds. This makes Linux fast, but it means a power cut can lose the last seconds of writes. Fsync tells the kernel to write one file to the disk now and to wait until it is safe, and sync does it for everything. Reads use the same cache, which is why Linux seems to use a lot of memory for buff slash cache. That memory is handed back the moment programs need it.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Practice: inodes and links on the practice server</h2>
+<p>Explore inodes and links in your home folder on the practice server.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Inodes and links&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Show the inode number of notes.txt.&quot;, &quot;hint&quot;: &quot;ls -i notes.txt&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^\\d+ notes\\.txt&quot;}]}, {&quot;t&quot;: &quot;Make a hard link called notes-copy.txt.&quot;, &quot;hint&quot;: &quot;ln notes.txt notes-copy.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^ln\\s+(?!-s)&quot;}, {&quot;exists&quot;: &quot;notes-copy.txt&quot;}]}, {&quot;t&quot;: &quot;List both with ls -li to see the shared inode and the link count 2.&quot;, &quot;hint&quot;: &quot;ls -li notes.txt notes-copy.txt&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot; 2 learner&quot;}]}, {&quot;t&quot;: &quot;Print inode, link count and type of notes.txt with stat -c.&quot;, &quot;hint&quot;: &quot;stat -c \&quot;%i %h %F\&quot; notes.txt&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^\\d+ 2 regular file$&quot;}]}, {&quot;t&quot;: &quot;Find every name of the same inode in your home folder.&quot;, &quot;hint&quot;: &quot;find . -samefile notes.txt&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;notes-copy.txt&quot;}]}, {&quot;t&quot;: &quot;Make a symbolic link todo that points to notes.txt.&quot;, &quot;hint&quot;: &quot;ln -s notes.txt todo&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;ln\\s+-s&quot;}]}, {&quot;t&quot;: &quot;Show where todo finally leads.&quot;, &quot;hint&quot;: &quot;readlink -f todo&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;/home/learner/notes.txt&quot;}]}, {&quot;t&quot;: &quot;Delete notes.txt.&quot;, &quot;hint&quot;: &quot;rm notes.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^rm\\s+notes\\.txt&quot;}]}, {&quot;t&quot;: &quot;Read notes-copy.txt, which still has the data.&quot;, &quot;hint&quot;: &quot;cat notes-copy.txt&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Buy milk&quot;}]}, {&quot;t&quot;: &quot;Try to read todo, which now dangles.&quot;, &quot;hint&quot;: &quot;cat todo&quot;, &quot;check&quot;: [{&quot;code&quot;: 1}]}, {&quot;t&quot;: &quot;Try a hard link to /etc/hostname, which belongs to root.&quot;, &quot;hint&quot;: &quot;ln /etc/hostname myhost&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Operation not permitted&quot;}]}, {&quot;t&quot;: &quot;Make a named pipe called jobs.&quot;, &quot;hint&quot;: &quot;mkfifo jobs&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;mkfifo\\s+jobs&quot;}]}, {&quot;t&quot;: &quot;Show its type letter with ls -l.&quot;, &quot;hint&quot;: &quot;ls -l jobs&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^p&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now try inodes and links yourself. Show the inode number of notes, make a hard link, and see the same number and a link count of two. Use stat to print the inode, the link count and the type, and find every name of the inode with find dash samefile. Then make a symbolic link and follow it with readlink dash f. Delete notes and see that the hard link still has the data while the symbolic link dangles. Try a hard link to a file of root, which Ubuntu refuses, and finally make a named pipe and look at its type letter.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Files from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A file’s name is like a label on a box. The box (the inode) holds the details and points to the contents. You can stick several labels on one box (hard links) or write down where another box is (symbolic links).</p></div><div class="ld-p" data-ld="college" hidden><p>Read inode numbers and link counts, use hard and symbolic links on purpose, check df -i when “No space left” appears on a disk with space, find deleted but open files with lsof +L1, empty logs with : &gt; instead of rm, and write files safely with a temp file, fsync and rename.</p></div><div class="ld-p" data-ld="masters" hidden><p>Storage engineers plan inode counts (mkfs -N or -i) for millions of small files, use reflinks on XFS and Btrfs (cp --reflink) that share data blocks until one copy changes, deduplicate backups with hard links (rsync --link-dest), tune the dirty page settings for write heavy servers, and debug with debugfs, xfs_db and filefrag.</p></div><div class="ld-p" data-ld="research" hidden><p>Research covers crash consistency (studies such as “All File Systems Are Not Created Equal”, OSDI 2014, found many applications that lose data because they rename without fsync), copy on write file systems (Btrfs, ZFS, bcachefs), file systems for persistent memory, and user space file systems with FUSE and io_uring.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the disk that was full with space left</div><p>A PHP web shop suddenly showed errors, and logs said “No space left on device”. df -h showed 40 % free. A colleague ran df -i: 100 % of inodes were used. A broken cleanup job had left 6 million session files in /var/lib/php/sessions. Deleting the old files with <code>find /var/lib/php/sessions -type f -mmin +1440 -delete</code> freed the inodes, and the team fixed the cleanup timer and added an inode alert to the monitoring.</p></div>
+<div class="vt-talk" hidden>Here is how understanding files grows. At school you learn that a name is a label on a box, and that one box can have several labels. Professionals read inode numbers and link counts, check d f dash i when a disk with free space says it is full, find deleted files that are still open, and write important files safely with fsync and rename. Storage engineers plan inode counts, share data between copies with reflinks, and build backups from hard links. Researchers study how programs lose data after crashes and design new copy on write file systems.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./process-lifecycle.html" data-topic="process-lifecycle"><small>Previous topic</small><b>Process life cycle</b></a><a class="next" href="./memory.html" data-topic="memory"><small>Next topic</small><b>Memory</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "files-inside", "topic": "files-inside", "subject": "linux", "title": "Files inside: inodes, links, open descriptors and the page cache", "codes": {}, "quiz": [{"lv": "e", "q": "Where is a file’s name stored?", "o": ["In the inode", "In the folder that contains it", "In the data blocks", "In /etc/files"], "a": 1, "hint": "Folder entries.", "why": "The inode has everything else."}, {"lv": "e", "q": "Which command shows inode numbers?", "o": ["ls -i", "ls -n", "df -h", "du"], "a": 0, "hint": "i for inode.", "why": "stat shows it too."}, {"lv": "e", "q": "What does ln -s make?", "o": ["A hard link", "A symbolic link", "A copy", "A folder"], "a": 1, "hint": "s for symbolic.", "why": "It stores a path."}, {"lv": "e", "q": "What does the first letter p in ls -l mean?", "o": ["A program", "A named pipe (FIFO)", "Protected", "A partition"], "a": 1, "hint": "Pipe.", "why": "Made with mkfifo."}, {"lv": "m", "q": "You delete one of two hard links to a file. What happens to the data?", "o": ["It is deleted", "It stays, because one name still points to the inode", "It is moved to the trash", "It becomes read only"], "a": 1, "hint": "Link count.", "why": "Freed only at 0."}, {"lv": "m", "q": "The target of a symbolic link is deleted. What happens?", "o": ["The link is deleted too", "The link dangles and opening it fails", "The link keeps the data", "The target comes back"], "a": 1, "hint": "It stores a path.", "why": "find -xtype l finds them."}, {"lv": "m", "q": "touch says “No space left on device” but df -h shows free space. What do you check next?", "o": ["free -h", "df -i", "top", "lsblk"], "a": 1, "hint": "Inodes.", "why": "Too many small files."}, {"lv": "m", "q": "Why does ln fail with “Invalid cross-device link”?", "o": ["No permission", "Hard links cannot span file systems", "The file is open", "The disk is full"], "a": 1, "hint": "Inodes are per file system.", "why": "Use ln -s instead."}, {"lv": "m", "q": "Why does deleting a big log not free space?", "o": ["rm is slow", "A process still has the file open", "The trash keeps it", "df is cached"], "a": 1, "hint": "Open descriptors.", "why": "lsof +L1 shows it."}, {"lv": "h", "q": "How do you empty a log that a service still writes, without restarting it?", "o": ["rm the file", ": > file", "mv file /tmp", "chmod 000 file"], "a": 1, "hint": "Truncate in place.", "why": "Same inode, size 0."}, {"lv": "h", "q": "What do two descriptors share after dup2 or fork?", "o": ["Nothing", "One open file description, including the offset", "Only the name", "Only the inode number"], "a": 1, "hint": "Shared offset.", "why": "Appends do not overwrite each other."}, {"lv": "h", "q": "A program writes a file and the power fails 5 seconds later. Why may the file be missing?", "o": ["Disks are slow", "The data was still dirty in the page cache, and the program did not call fsync", "The VFS lost it", "The inode table is full"], "a": 1, "hint": "Write-back.", "why": "fsync forces it to disk."}, {"lv": "h", "q": "Why do editors write to a temp file and then rename it?", "o": ["To save memory", "rename is atomic, so readers never see a half written file", "To keep a backup", "rename is faster than write"], "a": 1, "hint": "Atomic switch.", "why": "fsync before rename."}, {"lv": "x", "q": "Why can a new folder have link count 2?", "o": ["A bug", "Its name in the parent and its own . entry both point to its inode", "It has two files", "ext4 counts twice"], "a": 1, "hint": ". and the name.", "why": "Each subfolder adds one for .."}], "calc": [{"lv": "e", "q": "A file has 3 hard links. You delete 2 of them. What is the link count now?", "ans": "1", "hint": "Subtract.", "steps": ["3 names.", "3 − 2.", "<span class=\"eq\">1 link<\/span>"]}, {"lv": "e", "q": "A folder contains 4 subfolders. What is its link count?", "ans": "6", "hint": "2 plus one per subfolder.", "steps": ["2 for its name and .", "4 subfolders add one .. each.", "<span class=\"eq\">2 + 4 = 6<\/span>"]}, {"lv": "m", "q": "mke2fs makes one inode per 16 KiB. How many inodes does a 64 GiB file system get?", "ans": "4194304", "hint": "Divide the sizes.", "steps": ["64 GiB = 67108864 KiB.", "67108864 ÷ 16.", "<span class=\"eq\">4194304 inodes<\/span>"]}, {"lv": "m", "q": "Each inode on ext4 is 256 bytes. How many KiB does a table of 4096 inodes use?", "ans": "1024", "hint": "Multiply, then divide by 1024.", "steps": ["4096 × 256 = 1048576 bytes.", "÷ 1024.", "<span class=\"eq\">1024 KiB<\/span>"]}, {"lv": "h", "q": "A mail server stores 2 million messages, one file each. The file system has 1310720 inodes. How many messages are too many?", "ans": "689280", "hint": "Subtract.", "steps": ["2000000 messages.", "1310720 inodes, ignoring the reserved ones.", "<span class=\"eq\">2000000 − 1310720 = 689280<\/span>"]}, {"lv": "h", "q": "A deleted log is still open and grows by 30 MB per minute. How many GB does it fill in 10 hours (1 GB = 1000 MB)?", "ans": "18", "hint": "Minutes in 10 hours.", "steps": ["600 minutes.", "600 × 30 MB = 18000 MB.", "<span class=\"eq\">18 GB<\/span>"]}, {"lv": "x", "q": "Dirty pages are written after 30 s at the latest. A program writes 20 MB per second and never calls fsync. At most how many MB can a power cut lose?", "ans": "600", "hint": "Rate times delay.", "steps": ["Up to 30 s of writes.", "20 MB × 30.", "<span class=\"eq\">600 MB<\/span>"]}], "assign": [], "must": [["Inodes", "Name in the folder, everything else in the inode (type, owner, mode, size, times, link count, blocks). ls -i, stat, df -i. Running out of inodes gives No space left on device."], ["File types", "- regular, d folder, l symlink, p FIFO, c and b devices, s socket."], ["Links", "ln: same inode, count +1, one file system, no folders. ln -s: own inode with a path, can dangle. readlink -f, find -samefile, find -xtype l."], ["Open files", "Descriptors in /proc/PID/fd, data freed only when no name and no open descriptor are left. lsof +L1, : > file to empty in place."], ["Page cache", "write lands in RAM as dirty pages, written back within about 30 s. fsync and sync force it. Safe write: temp file, fsync, rename."]], "summary": "<p>A folder maps names to inode numbers, and the inode holds the rest of the file. Hard links add names to one inode, symbolic links store a path and can dangle. The kernel frees data only when no name and no open descriptor remain, so lsof +L1 finds space held by deleted files. Writes go to the page cache first, and fsync plus rename makes them safe.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

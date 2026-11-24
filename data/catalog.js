@@ -95,8 +95,8 @@ window.CATALOG = {
           blurb: 'Cryptography, networks, application security and security operations, from the basics to expert level.',
           subjects: ['cyber-security'] },
         { id: 'systems', title: 'Systems and DevOps', icon: 'dns', color: '#e65100',
-          blurb: 'Version control and CI/CD pipelines with Git, and parallel programming on the GPU with CUDA.',
-          subjects: ['git', 'cuda'] }
+          blurb: 'Unix and Linux from your first command to the kernel, version control and CI/CD pipelines with Git, and parallel programming on the GPU with CUDA.',
+          subjects: ['linux', 'git', 'cuda'] }
       ]
     }
   ],
@@ -365,6 +365,29 @@ window.CATALOG = {
       intro: 'Follow the path one step at a time. You start with what data and databases are and run your first query, then learn to filter, sort, shape and group results, join many tables, build and change tables with constraints, and design a database with normal forms. The advanced steps cover window functions, recursive queries, indexes and B-trees, query plans, transactions and isolation levels, triggers, security, SQL at scale and the differences between engines, and the last step revises everything for exams and interviews. Every query on these pages runs on the real SQLite inside your browser, every animation is worked out by that same engine from what you type, and every chapter has hands on labs that check your answer, plus a playground with three sample databases.',
       tags: ['SELECT', 'Joins', 'GROUP BY', 'Design', 'Window functions', 'Indexes', 'Transactions'],
       modules: sqlModules().concat(sheetModule('sql'))
+    },
+    {
+      id: 'linux',
+      title: 'Unix and Linux',
+      emoji: '🐧',
+      color: '#e65100',
+      layout: 'path',
+      blurb: 'Unix and Linux in five sections, from what a terminal is to the kernel: Foundations, Shell Power Tools, Shell Scripting, System Administration, and Internals and Advanced.',
+      intro: 'Pick a section at the top, then follow its steps in order. Every chapter starts from zero in plain everyday words, then climbs to expert level. Commands on the pages were run for real on Linux while the pages were built, so every output you see is true. Playful step animations with your own input show what happens inside, and a voice can read each step and tell the background story of each lesson. Every chapter has a practice terminal inside the page: a safe pretend Linux computer with its own files and missions that it checks as you type. Each chapter ends with worked problems, quizzes from easy to expert and a summary, and the subject ends with exam revision, a cheatsheet and interview questions.',
+      tags: ['Terminal', 'Files', 'Permissions', 'Pipes', 'grep sed awk', 'Bash scripting', 'systemd', 'Networking', 'Kernel', 'Containers'],
+      parts: [
+        { id: 'basics', title: 'Foundations', blurb: 'What Unix and Linux are, the terminal and the shell, getting help, the file tree, working with files, reading files, permissions and editors.',
+          intro: 'Foundations starts from nothing. You meet Unix and Linux, open a terminal, learn to ask the system for help, walk the file tree, make, copy, move and delete files, read them, control who may use them, and edit them with nano and vim.' },
+        { id: 'power', title: 'Shell Power Tools', blurb: 'Redirection and pipes, grep and regular expressions, cut, sort, uniq and friends, sed and awk, find and xargs, processes and signals, the environment, archives and compression.',
+          intro: 'Shell Power Tools teaches the small programs that become powerful when you join them: send output anywhere, search text with patterns, slice and count data, edit streams, find files, control running programs and pack files.' },
+        { id: 'scripting', title: 'Shell Scripting', blurb: 'Your first scripts, variables and quoting, expansions, conditions and loops, functions, arrays, error handling, debugging and scheduled jobs.',
+          intro: 'Shell Scripting turns the commands you know into programs that run by themselves, from a three line script to a careful tool that checks its input, handles errors and runs on a schedule.' },
+        { id: 'admin', title: 'System Administration', blurb: 'Users, groups and sudo, packages, the boot process and systemd, disks and filesystems, logs and monitoring, networking, SSH, firewalls and hardening.',
+          intro: 'System Administration is the job of keeping a Linux machine healthy: who may log in, what software is installed, which services run, where data lives, what the logs say, how the machine talks to the network and how it stays safe.' },
+        { id: 'advanced', title: 'Internals and Advanced', blurb: 'The kernel and system calls, how processes are born and die, inodes and file descriptors, virtual memory, namespaces and cgroups behind containers, performance and the exam revision.',
+          intro: 'Internals and Advanced opens the machine: what the kernel does for every command, how fork and exec make processes, what an inode is, how memory is shared and swapped, how containers are built from kernel features, and how to find why a system is slow.' }
+      ],
+      modules: lxBasicsModules().concat(lxPowerModules(), lxScriptModules(), lxAdminModules(), lxAdvModules(), sheetModule('linux'), iqModule('linux'))
     },
     {
       id: 'git',
@@ -1424,6 +1447,7 @@ function sheetModule(sid) {
     'computer-vision': ['content/computer-vision/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Computer Vision chapters on one page, from pixels and filters to detection, segmentation and CLIP. Search it, filter it, print it or download the PDF.', ['image size formula', 'convolution output size', 'Sobel', 'Harris', 'optical flow', 'IoU', 'NMS', 'focal loss', 'mAP', 'Dice', 'mIoU']],
     'ai': ['content/ai/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from both sections on one page. Core AI runs from agents and BFS to A*, local search, CSPs, minimax and alpha beta, logic and resolution, planning, Bayesian networks, causality and reinforcement learning. Advanced AI runs from preferences and utility to expected utility, risk, discounting, games, dominance and IESDS. Search it, filter it, print it or download the PDF.', ['A*', 'admissible heuristic', 'alpha beta', 'arc consistency', 'resolution', 'unification', 'STRIPS', 'Bayes rule', 'd-separation', 'Bellman equation', 'Q learning', 'utility', 'expected utility', 'IESDS']],
     'cuda': ['content/cuda/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the GPU Programming chapters on one page, from latency, Amdahl and thread indexing to occupancy, coalescing, bank conflicts, the roofline, tiling, reductions, streams, atomics and tensor cores. Search it, filter it, print it or download the PDF.', ['global thread index', 'warps', 'occupancy', 'Amdahl', 'coalescing', 'bank conflicts', 'roofline', 'arithmetic intensity', 'tiled matmul', 'reduction', 'tensor cores']],
+    'linux': ['content/linux/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from all five Unix and Linux sections on one page: the file tree and permissions, pipes and redirection, grep, sed and awk, find, processes and signals, Bash scripting, users and sudo, packages, systemd and journalctl, disks and mounts, networking and SSH, firewalls, system calls, inodes, memory, namespaces and cgroups. Search it, filter it, print it or download the PDF.', ['ls', 'cd', 'chmod', 'umask', 'grep', 'sed', 'awk', 'find', 'xargs', 'pipes', 'redirection', 'kill', 'bash script', 'cron', 'systemctl', 'journalctl', 'mount', 'ssh', 'ip', 'iptables', 'strace', 'inode', 'cgroups'], 'twelve'],
     'git': ['content/git/cheatsheet.html', 'Every command, key idea, table, memory aid and common mistake from the Git and CI/CD chapters on one page, from git init and the three areas to rebase, reflog and internals, and from workflow YAML to GitLab rules and artifacts. Search it, filter it, print it or download the PDF.', ['git commands', 'git reset', 'git rebase', 'reflog', 'gitignore', 'GitHub Actions', 'GitLab CI', 'artifacts', 'cache', 'rules']],
     'machine-learning': ['content/machine-learning/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from all four sections on one page: Foundations (the learning loop, NumPy, pandas, the maths and data preparation), Supervised (regression, classification, trees, ensembles, metrics and tuning), Unsupervised (clustering, PCA, anomalies, recommenders) and Reinforcement (MDPs, Bellman, Q learning, policy gradients). Search it, filter it, print it or download the PDF.', ['mean squared error', 'gradient descent', 'normal equation', 'sigmoid', 'log loss', 'entropy', 'gini', 'precision recall', 'ROC AUC', 'bias variance', 'k means', 'PCA', 'Bellman equation', 'Q learning', 'policy gradient'], 'eighteen'],
     'deep-learning': ['content/deep-learning/cheatsheet.html', 'Every formula, key idea, table, memory aid and common mistake from the Deep Learning chapters on one page, from the perceptron and backpropagation to optimisers, normalisation, CNNs, RNNs and LSTMs, attention and transformers, autoencoders, VAEs, GANs, diffusion, Hopfield networks, Boltzmann machines and RBMs. Search it, filter it, print it or download the PDF.', ['perceptron', 'backpropagation', 'chain rule', 'Adam', 'dropout', 'batch normalisation', 'convolution output size', 'receptive field', 'LSTM gates', 'attention', 'positional encoding', 'VAE', 'ELBO', 'KL divergence', 'DDPM', 'classifier free guidance', 'Hopfield', 'RBM', 'contrastive divergence'], 'eight'],
@@ -1507,6 +1531,7 @@ function iqModule(sid) {
     'python': ['content/python/interview-questions.html', 'Python interview questions for developers, data and QA engineers: mutable and immutable types, is against ==, copying, list and dict internals, comprehensions, *args and **kwargs, closures and decorators, generators, the GIL and concurrency, exceptions, OOP, MRO and magic methods, testing, and Flask, Django, REST and FastAPI questions, with output questions run on CPython.', ['mutable vs immutable', 'is vs ==', 'shallow vs deep copy', 'list vs tuple', 'dict internals', 'mutable default argument', 'args kwargs', 'closure', 'decorator', 'generator', 'GIL', 'multiprocessing', 'asyncio', 'MRO', 'dunder methods', 'pytest fixtures', 'Flask vs Django', 'REST', 'FastAPI', 'JWT']],
     'nlp': ['content/nlp/interview-questions.html', 'NLP interview questions on tokenisation, stemming and lemmatisation, Zipf, entropy, cross entropy and KL, perplexity, n-gram models, add-k, Good-Turing, Kneser-Ney, backoff and interpolation, HMM tagging, Viterbi, parsing and evaluation, with scenario questions.', ['tokenisation', 'stemming vs lemmatisation', 'Zipf law', 'entropy', 'cross entropy', 'perplexity', 'n-gram', 'Laplace smoothing', 'Kneser-Ney', 'interpolation', 'OOV', 'HMM', 'Viterbi', 'POS tagging', 'CKY', 'BLEU']],
     'cuda': ['content/cuda/interview-questions.html', 'GPU and CUDA interview questions for ML engineers, HPC developers and systems roles: the execution model, thread indexing, warps and divergence, occupancy, the memory hierarchy, coalescing, bank conflicts, the roofline, tiling, reductions, atomics, streams, tensor cores, profiling and debugging scenarios.', ['CUDA thread hierarchy', 'warp', 'SIMT', 'occupancy', 'coalescing', 'shared memory', 'bank conflict', '__syncthreads', 'atomicAdd', 'roofline', 'streams', 'pinned memory', 'tensor cores', 'Nsight']],
+    'linux': ['content/linux/interview-questions.html', 'Unix and Linux interview questions for developers, DevOps, SRE and system administrator roles: the file tree, permissions and special bits, hard and soft links, pipes and redirection, grep, sed and awk one liners, processes, signals and zombies, Bash scripting traps, cron, users and sudo, systemd, disks, LVM and fstab, networking and SSH, firewalls, load average, memory and swap, inodes, system calls, namespaces and cgroups, with troubleshooting scenarios.', ['chmod 755', 'setuid', 'sticky bit', 'hard link vs soft link', 'inode', '2>&1', 'grep', 'awk', 'sed', 'zombie process', 'SIGTERM vs SIGKILL', 'nohup', 'cron', 'set -euo pipefail', 'sudo', 'systemctl', 'journalctl', 'fstab', 'LVM', 'ssh keys', 'load average', 'OOM killer', 'strace', 'namespaces', 'cgroups']],
     'git': ['content/git/interview-questions.html', 'Git and CI/CD interview questions for developers and QA engineers: the three areas, reset, revert and restore, merge versus rebase, conflicts, reflog recovery, remotes and force pushes, internals, GitHub Actions and GitLab CI/CD pipelines, caches, artifacts, secrets, flaky tests and pipeline design scenarios.', ['git reset vs revert', 'merge vs rebase', 'fast forward', 'cherry-pick', 'reflog', 'detached HEAD', 'force-with-lease', 'git bisect', 'git objects', 'GitHub Actions', 'needs', 'matrix', 'artifacts', 'GitLab rules', 'cache vs artifacts', 'secrets']],
     'cyber-security': ['content/cyber-security/interview-questions.html', 'Cybersecurity interview questions for SOC analyst, security engineer, application security, cloud and research roles: the CIA triad and risk, AES, hashing, RSA, Diffie-Hellman, TLS 1.3 and post quantum crypto, firewalls, MFA, Kerberos and zero trust, SQL injection, XSS and CSRF, SIEM, the base rate, incident response and forensics, cloud and GDPR, adversarial examples, federated learning and differential privacy, with scenario and design questions.', ['CIA triad', 'ALE', 'symmetric vs asymmetric', 'password hashing', 'ECB mode', 'RSA', 'Diffie-Hellman', 'TLS 1.3', 'post quantum', 'IDS vs IPS', 'MFA', 'Kerberos', 'zero trust', 'SQL injection', 'XSS vs CSRF', 'OWASP Top 10', 'base rate', 'incident response', 'order of volatility', 'shared responsibility', 'FGSM', 'federated averaging', 'Krum', 'differential privacy']],
     'computer-vision': ['content/computer-vision/interview-questions.html', 'Computer vision interview questions on images and filters, edges, Harris, SIFT and HOG, optical flow, CNN arithmetic, anchors, IoU, NMS, focal loss, precision, recall and mAP, segmentation metrics, U-Net, ViT, CLIP and SAM, with debugging scenarios and system design.', ['convolution output size', 'parameter count', 'receptive field', 'Harris', 'optical flow', 'IoU', 'NMS', 'anchor boxes', 'focal loss', 'mAP50-95', 'mIoU', 'Dice', 'U-Net', 'transposed convolution', 'ViT', 'CLIP', 'SAM', 'domain shift']],
@@ -10351,6 +10376,720 @@ function cyAdvModules() {
   ];
 }
 /* ===== end of cy-advanced-build ===== */
+
+/* ===== lx-basics-build: Unix and Linux chapters. Generated by tools/linux-build/build.py, edit the topic files instead. ===== */
+function lxBasicsModules() {
+  return [
+    { id: "lx-basics-1", title: "Meet Unix and Linux", emoji: "1", step: 1, part: "basics", level: "Beginner", blurb: "What an operating system is, where Unix and Linux came from, the terminal and the shell, and how to ask the system for help.", topics: [
+      { id: "what-is-linux", title: "Meet Unix and Linux", emoji: "1.1", page: "content/linux/what-is-linux.html",
+        summary: "Operating systems, the story of Unix and Linux, kernel and user space, distributions, where to practise, first commands and the Unix philosophy.",
+        keywords: ["what is linux", "unix", "operating system", "kernel", "distribution", "ubuntu", "posix", "gnu", "linus torvalds", "wsl", "unix philosophy"],
+        minutes: 35, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "os", title: "What an operating system does", emoji: "", group: "Lesson", keywords: ["operating system", "OS", "kernel", "CPU", "memory", "drivers", "Android"] },
+        { id: "story", title: "The story of Unix and Linux", emoji: "", group: "Lesson", keywords: ["history", "Bell Labs", "Ken Thompson", "Dennis Ritchie", "C language", "BSD", "POSIX", "GNU", "Richard Stallman", "Linus Torvalds", "GPL", "Single UNIX Specification"] },
+        { id: "layers", title: "Kernel, shell and tools: the layers of Linux", emoji: "", group: "Lesson", keywords: ["kernel", "user space", "kernel space", "system call", "glibc", "shell", "coreutils", "uname", "os-release", "kernel version"] },
+        { id: "distros", title: "Distributions: many flavours, one kernel", emoji: "", group: "Lesson", keywords: ["distribution", "distro", "Ubuntu", "Debian", "Fedora", "RHEL", "Arch", "Alpine", "LTS", "rolling release", "apt", "dnf", "pacman", "apk"] },
+        { id: "practice", title: "Where you can practise, and your first commands", emoji: "", group: "Lesson", keywords: ["WSL", "wsl --install", "macOS Terminal", "zsh", "virtual machine", "whoami", "pwd", "ls", "date", "echo", "case sensitive"] },
+        { id: "levels", title: "The Unix way of thinking, from school to research", emoji: "", group: "Lesson", keywords: ["Unix philosophy", "Doug McIlroy", "do one thing well", "pipes", "everything is a file", "text streams", "Rust for Linux", "eBPF", "PREEMPT_RT"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "terminal-and-shell", title: "The terminal and the shell", emoji: "1.2", page: "content/linux/terminal-and-shell.html",
+        summary: "Terminal versus shell, the prompt, command syntax, options and arguments, builtins and PATH, history and keyboard shortcuts.",
+        keywords: ["terminal", "shell", "bash", "zsh", "prompt", "PS1", "options", "arguments", "PATH", "type", "which", "history", "tab completion", "ctrl r", "ctrl c"],
+        minutes: 35, counts: {"lessons": 6, "problems": 6, "quiz": 12, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "terminal", title: "Terminal, console and shell are three different things", emoji: "", group: "Lesson", keywords: ["terminal", "terminal emulator", "shell", "console", "tty", "bash", "zsh", "dash", "CLI"] },
+        { id: "prompt", title: "Reading the prompt", emoji: "", group: "Lesson", keywords: ["prompt", "PS1", "root", "$ and #", "hostname", "whoami", "home folder", "tilde"] },
+        { id: "anatomy", title: "The shape of every command", emoji: "", group: "Lesson", keywords: ["command syntax", "options", "flags", "arguments", "short options", "long options", "quotes", "spaces in names"] },
+        { id: "findcmd", title: "Where commands come from: builtins, PATH and type", emoji: "", group: "Lesson", keywords: ["builtin", "PATH", "type", "which", "command -v", "command not found", "alias", "function", "./"] },
+        { id: "keys", title: "History, Tab completion and shortcuts that save hours", emoji: "", group: "Lesson", keywords: ["tab completion", "history", "Ctrl R", "Ctrl C", "Ctrl D", "Ctrl L", "readline", "!!", "!$", "keyboard shortcuts"] },
+        { id: "levels", title: "The shell from school to research", emoji: "", group: "Lesson", keywords: ["shell language", "fork exec", "pseudo terminal", "pts", "SIGINT", "ShellCheck", "Nushell", "PowerShell"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "getting-help", title: "Getting help: man, --help and friends", emoji: "1.3", page: "content/linux/getting-help.html",
+        summary: "man pages, manual sections, apropos and whatis, --help, help for builtins, info and tldr, and reading error messages.",
+        keywords: ["man", "man page", "apropos", "whatis", "help", "--help", "info", "tldr", "manual sections", "error messages"],
+        minutes: 25, counts: {"lessons": 5, "problems": 6, "quiz": 11, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "man", title: "The manual: man pages", emoji: "", group: "Lesson", keywords: ["man", "manual page", "man pages", "SYNOPSIS", "less", "pager", "q to quit"] },
+        { id: "sections", title: "Manual sections and searching the manual", emoji: "", group: "Lesson", keywords: ["man sections", "man 5", "apropos", "man -k", "whatis", "mandb", "section 1", "section 8"] },
+        { id: "quick", title: "Quick help: --help, help, info and tldr", emoji: "", group: "Lesson", keywords: ["--help", "help builtin", "--version", "info", "tldr", "GNU coding standards", "BSD vs GNU"] },
+        { id: "practice", title: "Getting unstuck, step by step", emoji: "", group: "Lesson", keywords: ["error messages", "No such file or directory", "Permission denied", "command not found", "troubleshooting", "apropos"] },
+        { id: "levels", title: "Documentation from school to research", emoji: "", group: "Lesson", keywords: ["roff", "groff", "mandoc", "man-pages project", "explainshell", "documentation"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-basics-2", title: "Files and folders", emoji: "2", step: 2, part: "basics", level: "Beginner", blurb: "The single file tree, paths, making, copying, moving and deleting files and folders, wildcards, and reading files.", topics: [
+      { id: "file-tree", title: "The file tree and paths", emoji: "2.1", page: "content/linux/file-tree.html",
+        summary: "The single tree, standard folders (FHS), absolute and relative paths, pwd, cd and ls in depth, hidden files.",
+        keywords: ["file tree", "root directory", "fhs", "path", "absolute path", "relative path", "pwd", "cd", "ls", "hidden files", "/etc", "/var", "/home"],
+        minutes: 35, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "onetree", title: "One tree for everything", emoji: "", group: "Lesson", keywords: ["root directory", "slash", "single tree", "directory", "folder", "mount", "drive letters"] },
+        { id: "fhs", title: "What lives where: the standard folders", emoji: "", group: "Lesson", keywords: ["FHS", "Filesystem Hierarchy Standard", "/etc", "/home", "/var", "/usr", "/bin", "/tmp", "/dev", "/proc", "/opt", "usrmerge"] },
+        { id: "paths", title: "Absolute and relative paths, . .. and ~", emoji: "", group: "Lesson", keywords: ["absolute path", "relative path", "dot", "dot dot", "tilde", "cd -", "pwd", "cd", "parent directory"] },
+        { id: "ls", title: "Seeing what is there: ls in depth", emoji: "", group: "Lesson", keywords: ["ls", "ls -l", "ls -a", "hidden files", "dotfiles", "ls -lh", "ls -ltr", "ls -R", "ls -d", "long listing columns"] },
+        { id: "levels", title: "The file tree from school to research", emoji: "", group: "Lesson", keywords: ["namespace", "mount", "path resolution", "dentry", "chroot", "mount namespace", "openat2", "Plan 9"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "manage-files", title: "Working with files and folders", emoji: "2.2", page: "content/linux/manage-files.html",
+        summary: "mkdir, touch, cp, mv, rm and rmdir, safe deleting, wildcards and brace expansion.",
+        keywords: ["mkdir", "touch", "cp", "mv", "rm", "rmdir", "rename", "wildcards", "glob", "brace expansion", "delete files"],
+        minutes: 35, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "make", title: "Making folders and files: mkdir and touch", emoji: "", group: "Lesson", keywords: ["mkdir", "mkdir -p", "touch", "file names", "case sensitive", "extensions"] },
+        { id: "copymove", title: "Copying, moving and renaming: cp and mv", emoji: "", group: "Lesson", keywords: ["cp", "cp -r", "cp -a", "mv", "rename", "overwrite", "cp -i", "mv -n"] },
+        { id: "remove", title: "Deleting safely: rm and rmdir", emoji: "", group: "Lesson", keywords: ["rm", "rm -r", "rm -f", "rm -i", "rmdir", "no recycle bin", "preserve-root", "safe delete"] },
+        { id: "glob", title: "Wildcards and braces: many files at once", emoji: "", group: "Lesson", keywords: ["wildcards", "globbing", "*", "?", "[abc]", "brace expansion", "{1..5}", "pattern", "nullglob"] },
+        { id: "levels", title: "File operations from school to research", emoji: "", group: "Lesson", keywords: ["unlink", "rename atomic", "open file deleted", "reflink", "crash consistency", "secure delete"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "read-files", title: "Reading and inspecting files", emoji: "2.3", page: "content/linux/read-files.html",
+        summary: "cat, less, head, tail -f, wc, file, stat and diff.",
+        keywords: ["cat", "less", "head", "tail", "tail -f", "wc", "file", "stat", "diff", "read file", "log file"],
+        minutes: 30, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "cat", title: "Printing a whole file: cat and friends", emoji: "", group: "Lesson", keywords: ["cat", "concatenate", "cat -n", "cat -A", "tac", "nl", "print file", "hidden characters"] },
+        { id: "less", title: "Reading long files page by page: less", emoji: "", group: "Lesson", keywords: ["less", "pager", "more", "search in file", "/pattern", "less -N", "less -S", "less F follow"] },
+        { id: "headtail", title: "The start and the end: head and tail", emoji: "", group: "Lesson", keywords: ["head", "tail", "head -n", "tail -n", "tail -n +2", "tail -f", "tail -F", "log rotation", "first lines", "last lines"] },
+        { id: "inspect", title: "Measuring and comparing files: wc, file, stat, diff", emoji: "", group: "Lesson", keywords: ["wc", "wc -l", "file", "magic number", "stat", "inode", "mtime", "ctime", "diff", "diff -u", "cmp", "od", "line endings"] },
+        { id: "levels", title: "Reading files from school to research", emoji: "", group: "Lesson", keywords: ["read system call", "seek", "inotify", "Myers diff", "patience diff", "Magika", "log analysis"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-basics-3", title: "Permissions and editing", emoji: "3", step: 3, part: "basics", level: "Beginner", blurb: "Who may read, change or run each file, and how to edit text in the terminal with nano and vim.", topics: [
+      { id: "permissions", title: "Users, groups and permissions", emoji: "3.1", page: "content/linux/permissions.html",
+        summary: "rwx, 644 and 755, chmod, chown, umask, setuid, setgid and the sticky bit.",
+        keywords: ["permissions", "chmod", "chown", "chgrp", "umask", "rwx", "octal", "setuid", "setgid", "sticky bit", "Permission denied"],
+        minutes: 40, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "who", title: "Users, groups and the ls -l mode string", emoji: "", group: "Lesson", keywords: ["owner", "group", "others", "rwx", "mode string", "ls -l", "id", "octal permissions", "644", "755"] },
+        { id: "decide", title: "How the kernel decides", emoji: "", group: "Lesson", keywords: ["permission check", "root", "CAP_DAC_OVERRIDE", "search permission", "folder x bit", "path resolution", "Permission denied"] },
+        { id: "chmod", title: "Changing permissions: chmod, chown, chgrp", emoji: "", group: "Lesson", keywords: ["chmod", "chmod numeric", "chmod symbolic", "u+x", "go-w", "chmod -R", "capital X", "chown", "chgrp", "777", "600"] },
+        { id: "special", title: "umask and the special bits", emoji: "", group: "Lesson", keywords: ["umask", "022", "077", "setuid", "setgid", "sticky bit", "/tmp", "passwd", "S_ISUID", "team folder", "chmod 2775"] },
+        { id: "levels", title: "Permissions from school to research", emoji: "", group: "Lesson", keywords: ["capabilities", "ACL", "getfacl", "setfacl", "SELinux", "AppArmor", "MAC", "DAC", "privilege escalation", "Bell LaPadula"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "editors", title: "Editing text: nano and vim", emoji: "3.2", page: "content/linux/editors.html",
+        summary: "nano, vim modes and keys, :wq and :q!, EDITOR, visudo and sudoedit.",
+        keywords: ["nano", "vim", "vi", "exit vim", ":wq", "editor", "EDITOR variable", "visudo", "sudoedit", "vimtutor"],
+        minutes: 35, counts: {"lessons": 4, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "nano", title: "nano: the friendly editor", emoji: "", group: "Lesson", keywords: ["nano", "Ctrl+O", "Ctrl+X", "write out", "cut paste line", "terminal editor", "Pico"] },
+        { id: "vim", title: "vim: the editor with modes", emoji: "", group: "Lesson", keywords: ["vim", "vi", "Normal mode", "Insert mode", ":wq", ":q!", "dd", "yy", "how to exit vim", "vimtutor", "operator motion"] },
+        { id: "choose", title: "Choosing an editor and editing without one", emoji: "", group: "Lesson", keywords: ["EDITOR", "VISUAL", "select-editor", "sudoedit", "visudo", "here document", "append line", "vim -Es", "view"] },
+        { id: "levels", title: "Editors from school to research", emoji: "", group: "Lesson", keywords: ["buffer", "terminfo", "swap file", "recovery", "modal editing", "piece table", "rope", "CRDT"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of lx-basics-build ===== */
+
+/* ===== lx-power-build: Unix and Linux chapters. Generated by tools/linux-build/build.py, edit the topic files instead. ===== */
+function lxPowerModules() {
+  return [
+    { id: "lx-power-1", title: "Streams and pipes", emoji: "1", step: 1, part: "power", level: "Intermediate", blurb: "Standard input, output and error, redirecting them to files, and joining commands with pipes into small data factories.", topics: [
+      { id: "redirection", title: "Streams and redirection", emoji: "1.1", page: "content/linux/redirection.html",
+        summary: "stdin, stdout, stderr, >, >>, 2>&1, <, here documents, /dev/null and tee.",
+        keywords: ["redirection", "stdout", "stderr", "stdin", "2>&1", ">>", "here document", "/dev/null", "tee", "file descriptor"],
+        minutes: 40, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "streams", title: "Three streams for every command", emoji: "", group: "Lesson", keywords: ["stdin", "stdout", "stderr", "file descriptor", "0 1 2", "standard streams", "/dev/null"] },
+        { id: "output", title: "Sending output to files: > and >>", emoji: "", group: "Lesson", keywords: [">", ">>", "2>", "2>&1", "&>", "append", "overwrite", "noclobber", ">|", "order of redirections", "log file"] },
+        { id: "input", title: "Feeding input: <, here documents and here strings", emoji: "", group: "Lesson", keywords: ["<", "input redirection", "here document", "heredoc", "<<", "<<-", "here string", "<<<"] },
+        { id: "tee", title: "Seeing and saving at the same time: tee", emoji: "", group: "Lesson", keywords: ["tee", "tee -a", "sudo tee", "pipe", "save and show", "Permission denied sudo echo"] },
+        { id: "levels", title: "Redirection from school to research", emoji: "", group: "Lesson", keywords: ["fork", "dup2", "execve", "file descriptor table", "buffering", "Plan 9", "everything is a file", "Capsicum"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "pipes-filters", title: "Pipes and filters", emoji: "1.2", page: "content/linux/pipes-filters.html",
+        summary: "|, sort, uniq -c, cut, tr, wc, exit status, PIPESTATUS and pipefail.",
+        keywords: ["pipe", "pipeline", "sort", "uniq", "cut", "tr", "wc", "pipefail", "PIPESTATUS", "exit status", "filters"],
+        minutes: 40, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "pipe", title: "The pipe: one command feeds the next", emoji: "", group: "Lesson", keywords: ["pipe", "|", "pipeline", "stdout to stdin", "Unix philosophy", "McIlroy", "|&"] },
+        { id: "sort", title: "Sorting and counting: sort, uniq, wc", emoji: "", group: "Lesson", keywords: ["sort", "sort -n", "sort -r", "sort -k", "sort -t", "sort -u", "sort -h", "uniq", "uniq -c", "uniq -d", "top N", "locale"] },
+        { id: "cut", title: "Slicing and changing text: cut and tr", emoji: "", group: "Lesson", keywords: ["cut", "cut -d", "cut -f", "cut -c", "tr", "tr -d", "tr -s", "columns", "word frequency", "Knuth McIlroy"] },
+        { id: "status", title: "Did the pipeline work: exit status and pipefail", emoji: "", group: "Lesson", keywords: ["exit status", "$?", "PIPESTATUS", "pipefail", "&&", "||", "SIGPIPE", "yes | head"] },
+        { id: "levels", title: "Pipes from school to research", emoji: "", group: "Lesson", keywords: ["pipe()", "pipe buffer", "65536", "flow control", "SIGPIPE", "subshell", "lastpipe", "PaSh", "stream processing"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-power-2", title: "Searching and editing text", emoji: "2", step: 2, part: "power", level: "Intermediate", blurb: "Find lines with grep and regular expressions, change text with sed, and turn columns into reports with awk.", topics: [
+      { id: "grep-regex", title: "grep and regular expressions", emoji: "2.1", page: "content/linux/grep-regex.html",
+        summary: "grep options, basic and extended regular expressions, anchors, sets, repeats and groups.",
+        keywords: ["grep", "regex", "regular expression", "grep -E", "grep -r", "grep -v", "anchors", "character class", "search text", "log search"],
+        minutes: 45, counts: {"lessons": 4, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "grep", title: "Finding lines: grep", emoji: "", group: "Lesson", keywords: ["grep", "grep -i", "grep -v", "grep -c", "grep -n", "grep -r", "grep -l", "grep -o", "grep -A", "grep -q", "g/re/p"] },
+        { id: "basic", title: "Regular expressions: the basic building blocks", emoji: "", group: "Lesson", keywords: ["regular expression", "regex", ".", "*", "^", "$", "[a-z]", "[^0-9]", "character class", "[[:digit:]]", "escape", "Kleene"] },
+        { id: "extended", title: "Extended regular expressions: grep -E", emoji: "", group: "Lesson", keywords: ["grep -E", "extended regex", "+", "?", "{n,m}", "alternation", "|", "group", "word boundary", "greedy", "grep -P"] },
+        { id: "levels", title: "grep and regex from school to research", emoji: "", group: "Lesson", keywords: ["BRE", "ERE", "finite automaton", "DFA", "NFA", "Boyer Moore", "backtracking", "ReDoS", "RE2", "ripgrep", "back reference"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "sed", title: "sed: the stream editor", emoji: "2.2", page: "content/linux/sed.html",
+        summary: "The sed cycle, s/old/new/g, addresses and ranges, d and p, -n, -E and -i.",
+        keywords: ["sed", "stream editor", "find and replace", "s///g", "sed -i", "sed -n", "addresses", "regex replace", "delete lines"],
+        minutes: 45, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "idea", title: "A stream editor: how sed works", emoji: "", group: "Lesson", keywords: ["sed", "stream editor", "pattern space", "sed cycle", "McMahon", "non interactive"] },
+        { id: "subst", title: "Find and replace: the s command", emoji: "", group: "Lesson", keywords: ["s command", "substitute", "s///g", "global", "&", "capture group", "\\1", "delimiter", "sed -E", "find and replace"] },
+        { id: "address", title: "Choosing lines: addresses, d, p and friends", emoji: "", group: "Lesson", keywords: ["address", "range", "/regex/", "$", "negation !", "d delete", "p print", "sed -n", "q quit", "insert", "append", "change", "y command"] },
+        { id: "inplace", title: "Editing files in place: sed -i", emoji: "", group: "Lesson", keywords: ["sed -i", "in place", "sed -i.bak", "backup", "macOS sed", "BSD sed", "multiple -e", "config edit"] },
+        { id: "levels", title: "sed from school to research", emoji: "", group: "Lesson", keywords: ["hold space", "N", "h H g G x", "branch", "Turing complete", "inode", "structural regular expressions", "FlashFill"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "awk", title: "awk: columns, patterns and reports", emoji: "2.3", page: "content/linux/awk.html",
+        summary: "Fields and -F, patterns, BEGIN and END, sums, arrays, printf and small awk programs.",
+        keywords: ["awk", "columns", "fields", "NR", "NF", "BEGIN", "END", "printf", "associative array", "sum column", "report", "gawk", "mawk"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "model", title: "Lines, fields and the pattern { action } idea", emoji: "", group: "Lesson", keywords: ["awk", "fields", "records", "$0", "$1", "$NF", "NR", "NF", "-F", "pattern action", "Aho Weinberger Kernighan"] },
+        { id: "patterns", title: "Choosing lines: patterns, BEGIN and END", emoji: "", group: "Lesson", keywords: ["awk pattern", "comparison", "regex match", "~", "!~", "NR > 1", "range pattern", "BEGIN", "END", "&&", "||"] },
+        { id: "calc", title: "Calculating: sums, averages, counts and printf", emoji: "", group: "Lesson", keywords: ["awk sum", "average", "maximum", "associative array", "count per group", "printf", "%d", "%s", "%.2f", "group by"] },
+        { id: "programs", title: "Real programs: if, loops, functions and options", emoji: "", group: "Lesson", keywords: ["awk if", "awk for loop", "awk while", "next", "awk -v", "awk -f", "OFS", "awk function", "gsub", "substr", "split", "mawk", "gawk"] },
+        { id: "levels", title: "awk from school to research", emoji: "", group: "Lesson", keywords: ["awk implementation", "mawk", "gawk", "one true awk", "Perl", "little languages", "CSV", "UTF-8", "Miller", "DuckDB"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-power-3", title: "Finding and packing files", emoji: "3", step: 3, part: "power", level: "Intermediate", blurb: "Search the file tree with find and xargs, and bundle and compress files with tar, gzip, xz and zip.", topics: [
+      { id: "find-files", title: "Finding files: find, xargs and locate", emoji: "3.1", page: "content/linux/find-files.html",
+        summary: "find by name, type, size and age, -o and -prune, -exec and -delete, xargs, locate and which.",
+        keywords: ["find", "xargs", "locate", "find -exec", "find -name", "find -size", "find -mtime", "print0", "which", "type", "search files"],
+        minutes: 45, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "find", title: "find: search the tree by name, type, size and age", emoji: "", group: "Lesson", keywords: ["find", "find -name", "find -type", "find -size", "find -mtime", "find -mmin", "find -newer", "find -empty", "find -perm", "find -user", "maxdepth"] },
+        { id: "combine", title: "Combining tests: and, or, not, prune", emoji: "", group: "Lesson", keywords: ["find -o", "find !", "find -not", "parentheses", "find -prune", "and or not", "operator precedence"] },
+        { id: "act", title: "Doing something with the results: -exec, -delete and xargs", emoji: "", group: "Lesson", keywords: ["find -exec", "{} \\;", "{} +", "find -delete", "xargs", "xargs -n", "xargs -I", "xargs -0", "print0", "xargs -P", "parallel"] },
+        { id: "locate", title: "Faster lookups: locate, which and type", emoji: "", group: "Lesson", keywords: ["locate", "plocate", "updatedb", "which", "type", "command -v", "PATH lookup", "builtin"] },
+        { id: "levels", title: "Finding files from school to research", emoji: "", group: "Lesson", keywords: ["fts", "getdents", "d_type", "ARG_MAX", "plocate", "io_uring", "inotify", "metadata index", "GUFI"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "archives", title: "Archives and compression: tar, gzip, xz and zip", emoji: "3.2", page: "content/linux/archives.html",
+        summary: "tar -c -t -x, gzip and xz, zip and unzip, streaming backups and checking them.",
+        keywords: ["tar", "gzip", "gunzip", "zcat", "xz", "bzip2", "zstd", "zip", "unzip", "tar.gz", "archive", "compress", "backup"],
+        minutes: 45, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "tar", title: "tar: many files in, one archive out", emoji: "", group: "Lesson", keywords: ["tar", "tar -c", "tar -x", "tar -t", "tar -v", "tar -f", "tar -C", "archive", "extract", "tape archive"] },
+        { id: "squeeze", title: "Compression: gzip, bzip2, xz and zstd", emoji: "", group: "Lesson", keywords: ["gzip", "gunzip", "zcat", "bzip2", "xz", "zstd", "tar -z", "tar -J", "tar -j", "tar.gz", "tgz", "compression level", "DEFLATE", "LZMA"] },
+        { id: "zip", title: "zip and unzip: the format everyone can open", emoji: "", group: "Lesson", keywords: ["zip", "unzip", "zip -r", "unzip -l", "unzip -d", "unzip -o", "central directory", "zip vs tar"] },
+        { id: "backup", title: "Real backups: pipes, ssh, increments and safety", emoji: "", group: "Lesson", keywords: ["tar -f -", "tar ssh", "backup", "strip-components", "incremental backup", "listed-incremental", "snapshot", "sha256sum", "restore test", "3-2-1"] },
+        { id: "levels", title: "Archives and compression from school to research", emoji: "", group: "Lesson", keywords: ["tar format", "512 byte block", "record size", "ustar", "pax", "LZ77", "Huffman", "LZMA2", "ANS", "reproducible builds", "CVE-2024-3094", "xz backdoor"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-power-4", title: "Processes and the shell environment", emoji: "4", step: 4, part: "power", level: "Intermediate", blurb: "See and control running programs with ps, top, signals and job control, then shape your shell with variables, PATH, aliases and startup files.", topics: [
+      { id: "processes", title: "Processes, jobs and signals", emoji: "4.1", page: "content/linux/processes.html",
+        summary: "PIDs and states, ps and top, kill and signals, background jobs, nohup and nice.",
+        keywords: ["process", "ps", "top", "kill", "signal", "SIGTERM", "SIGKILL", "jobs", "fg", "bg", "nohup", "nice", "pgrep", "background job"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "what", title: "What a process is", emoji: "", group: "Lesson", keywords: ["process", "program", "PID", "PPID", "fork", "exec", "process state", "zombie", "/proc", "$$", "init", "systemd"] },
+        { id: "watch", title: "Watching processes: ps, top and pgrep", emoji: "", group: "Lesson", keywords: ["ps", "ps aux", "ps -ef", "ps -o", "top", "htop", "pgrep", "pstree", "load average", "RSS", "VSZ", "STAT"] },
+        { id: "signals", title: "Signals: asking and forcing processes to stop", emoji: "", group: "Lesson", keywords: ["signal", "kill", "kill -9", "SIGTERM", "SIGKILL", "SIGINT", "SIGHUP", "SIGSTOP", "SIGCONT", "Ctrl+C", "pkill", "killall", "exit status 143", "128+N"] },
+        { id: "jobs", title: "Job control: &, Ctrl+Z, fg, bg and nohup", emoji: "", group: "Lesson", keywords: ["job control", "background", "foreground", "&", "Ctrl+Z", "jobs", "fg", "bg", "wait", "nohup", "disown", "tmux", "screen", "SIGHUP"] },
+        { id: "levels", title: "Processes from school to research", emoji: "", group: "Lesson", keywords: ["nice", "renice", "niceness", "scheduler", "EEVDF", "CFS", "task_struct", "clone", "threads", "process group", "session", "cgroups", "sched_ext", "PSI"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "environment", title: "The shell environment: variables, PATH and startup files", emoji: "4.2", page: "content/linux/environment.html",
+        summary: "Variables and export, PATH lookup, .bashrc and .profile, aliases, functions, history and the prompt.",
+        keywords: ["environment variable", "export", "PATH", ".bashrc", ".profile", "alias", "source", "history", "PS1", "env", "printenv", "login shell", "Ctrl+R"],
+        minutes: 45, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "vars", title: "Shell variables and environment variables", emoji: "", group: "Lesson", keywords: ["variable", "shell variable", "environment variable", "export", "env", "printenv", "unset", "declare", "readonly", "HOME", "USER", "LANG", "EDITOR", "environ"] },
+        { id: "path", title: "PATH: how bash finds commands", emoji: "", group: "Lesson", keywords: ["PATH", "command lookup", "command not found", "exit 127", "~/bin", "which", "type", "command -v", "hash", "builtin", "precedence"] },
+        { id: "startup", title: "Startup files, aliases and functions", emoji: "", group: "Lesson", keywords: [".bashrc", ".profile", ".bash_profile", "/etc/profile", "login shell", "non-login shell", "source", "alias", "unalias", "function", "startup files"] },
+        { id: "history", title: "History and the prompt", emoji: "", group: "Lesson", keywords: ["history", "!!", "!$", "!N", "Ctrl+R", "reverse search", ".bash_history", "HISTSIZE", "PS1", "prompt", "sudo !!"] },
+        { id: "levels", title: "The environment from school to research", emoji: "", group: "Lesson", keywords: ["execve", "getenv", "environ", "hash -r", "LD_PRELOAD", "env_reset", "sudo environment", "systemd Environment", "twelve factor", "Shellshock", "CVE-2014-6271", "direnv", "secrets"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of lx-power-build ===== */
+
+/* ===== lx-scripting-build: Unix and Linux chapters. Generated by tools/linux-build/build.py, edit the topic files instead. ===== */
+function lxScriptModules() {
+  return [
+    { id: "lx-script-1", title: "Writing scripts", emoji: "1", step: 1, part: "scripting", level: "Intermediate", blurb: "Turn commands into reusable scripts: the shebang, arguments, exit statuses, input and output, and how the shell expands every word.", topics: [
+      { id: "first-scripts", title: "Your first shell scripts", emoji: "1.1", page: "content/linux/first-scripts.html",
+        summary: "Shebang and chmod +x, arguments and \"$@\", exit statuses, printf, read and here documents.",
+        keywords: ["shell script", "bash script", "shebang", "chmod +x", "arguments", "$1", "\"$@\"", "exit status", "$?", "printf", "read", "here document"],
+        minutes: 45, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "first", title: "A script is a file of commands", emoji: "", group: "Lesson", keywords: ["shell script", "shebang", "#!/bin/bash", "chmod +x", "./script", "bash script.sh", "source", "comment", "sh vs bash", "dash"] },
+        { id: "args", title: "Arguments: $1, $2, $# and \"$@\"", emoji: "", group: "Lesson", keywords: ["arguments", "positional parameters", "$1", "$0", "$#", "\"$@\"", "\"$*\"", "shift", "${1:-default}", "quoting arguments"] },
+        { id: "status", title: "Exit status: how scripts say yes or no", emoji: "", group: "Lesson", keywords: ["exit status", "exit code", "$?", "exit", "return code", "0 means success", "127", "126", "&&", "||", "usage message"] },
+        { id: "io", title: "Talking to the user: echo, printf, read and here documents", emoji: "", group: "Lesson", keywords: ["echo", "printf", "read", "read -p", "read -r", "stderr", ">&2", "here document", "<<EOF", "<<'EOF'", "here string", "prompt"] },
+        { id: "levels", title: "First scripts from school to research", emoji: "", group: "Lesson", keywords: ["execve", "shebang internals", "#!/usr/bin/env bash", "POSIX sh", "dash", "ShellCheck", "exit status range", "portability", "Smoosh", "Oil shell"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "expansions", title: "Quoting and expansions", emoji: "1.2", page: "content/linux/expansions.html",
+        summary: "Quoting, the order of expansions, ${...} operators, $( ), $(( )), <( ) and IFS.",
+        keywords: ["quoting", "expansion", "parameter expansion", "word splitting", "IFS", "command substitution", "arithmetic expansion", "process substitution", "brace expansion", "globbing"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "quotes", title: "Four ways to quote", emoji: "", group: "Lesson", keywords: ["quoting", "single quotes", "double quotes", "backslash", "$'...'", "ANSI-C quoting", "escape", "spaces in file names", "quote a variable"] },
+        { id: "order", title: "The order of expansions", emoji: "", group: "Lesson", keywords: ["expansion order", "brace expansion", "tilde expansion", "parameter expansion", "command substitution", "arithmetic expansion", "word splitting", "pathname expansion", "globbing", "quote removal", "{1..$n}"] },
+        { id: "params", title: "Parameter expansion: editing a value without sed", emoji: "", group: "Lesson", keywords: ["parameter expansion", "${#var}", "${var:-default}", "${var:=}", "${var:?}", "${var:+}", "${var#}", "${var##}", "${var%}", "${var%%}", "${var/old/new}", "substring", "${var^^}", "basename", "dirname", "file extension"] },
+        { id: "subst", title: "Command, arithmetic and process substitution, and IFS", emoji: "", group: "Lesson", keywords: ["command substitution", "$(...)", "backticks", "arithmetic expansion", "$((...))", "integer arithmetic", "process substitution", "<(...)", "IFS", "field separator", "read with IFS", "word splitting"] },
+        { id: "levels", title: "Expansions from school to research", emoji: "", group: "Lesson", keywords: ["POSIX shell expansion", "IFS white space", "empty field", "subshell", "set -f", "nullglob", "Smoosh", "ShellCheck SC2086", "rm with spaces"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-script-2", title: "Decisions and loops", emoji: "2", step: 2, part: "scripting", level: "Intermediate", blurb: "Let scripts choose and repeat: if, test, [[ ]], (( )) and case, then for, while and until loops over files, lines and numbers.", topics: [
+      { id: "conditions", title: "Decisions: if, test and case", emoji: "2.1", page: "content/linux/conditions.html",
+        summary: "if and exit statuses, test and [ ], [[ ]] and (( )), and case.",
+        keywords: ["if", "elif", "test", "[ ]", "[[ ]]", "(( ))", "case", "condition", "BASH_REMATCH", "file test", "string comparison", "number comparison"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "if", title: "if, elif and else: decisions by exit status", emoji: "", group: "Lesson", keywords: ["if", "then", "elif", "else", "fi", "condition", "exit status", "grep -q", "! negation", "&& ||", "if statement"] },
+        { id: "test", title: "test and [ ]: files, strings and numbers", emoji: "", group: "Lesson", keywords: ["test", "[ ]", "-f", "-d", "-e", "-z", "-n", "-eq", "-lt", "-gt", "string comparison", "number comparison", "unary operator expected", "file tests"] },
+        { id: "dbl", title: "The bash way: [[ ]] and (( ))", emoji: "", group: "Lesson", keywords: ["[[ ]]", "(( ))", "pattern matching", "==", "=~", "BASH_REMATCH", "regular expression", "arithmetic condition", "string sort order", "test vs [["] },
+        { id: "case", title: "case: choose by pattern", emoji: "", group: "Lesson", keywords: ["case", "esac", "pattern", ";;", ";&", ";;&", "*)", "catch-all", "service script", "start stop restart", "usage message"] },
+        { id: "levels", title: "Decisions from school to research", emoji: "", group: "Lesson", keywords: ["condition list", "test argument count", "regex in a variable", "nocasematch", "octal in (( ))", "10#08", "set -e and if", "ShellCheck", "deployment check"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "loops", title: "Loops: for, while and until", emoji: "2.2", page: "content/linux/loops.html",
+        summary: "for, C-style for, while and until, while read, break and continue.",
+        keywords: ["for loop", "while loop", "until", "while read", "read line by line", "break", "continue", "nullglob", "subshell", "select", "find -print0", "IFS"],
+        minutes: 50, counts: {"lessons": 4, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "for", title: "for loops: one pass per item", emoji: "", group: "Lesson", keywords: ["for loop", "for in", "do done", "C-style for", "for (( ))", "loop over files", "glob in for", "brace range", "nullglob", "for arg in \"$@\""] },
+        { id: "while", title: "while and until, and reading files line by line", emoji: "", group: "Lesson", keywords: ["while loop", "until loop", "while true", "while read", "read line by line", "IFS= read -r", "CSV fields", "process substitution", "pipe subshell", "last line without newline"] },
+        { id: "control", title: "break, continue and whole-loop redirection", emoji: "", group: "Lesson", keywords: ["break", "continue", "break 2", "nested loops", "done > file", "loop output", "select menu", "PS3", "find -print0", "read -d", "safe file names"] },
+        { id: "levels", title: "Loops from school to research", emoji: "", group: "Lesson", keywords: ["loop performance", "subshell in pipeline", "lastpipe", "mapfile", "awk instead of loop", "xargs -P", "GNU parallel", "PaSh", "ShellCheck SC2045"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-script-3", title: "Functions and data", emoji: "3", step: 3, part: "scripting", level: "Intermediate", blurb: "Build scripts from named, tested pieces: functions with local variables, libraries, arrays and option parsing with getopts.", topics: [
+      { id: "functions", title: "Functions, scope and libraries", emoji: "3.1", page: "content/linux/functions.html",
+        summary: "Functions, return statuses and values, local and dynamic scope, libraries and main \"$@\".",
+        keywords: ["function", "return", "local", "scope", "dynamic scope", "source", "library", "main", "FUNCNAME", "recursion", "printf -v"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "define", title: "Defining and calling a function", emoji: "", group: "Lesson", keywords: ["function", "define a function", "call a function", "name() { }", "function keyword", "function arguments", "type", "declare -F", "unset -f"] },
+        { id: "return", title: "Getting results out: status, output and variables", emoji: "", group: "Lesson", keywords: ["return", "exit status of a function", "return value", "command substitution", "printf -v", "recursion", "factorial", "function in if", "status is 8 bits"] },
+        { id: "scope", title: "local variables and dynamic scope", emoji: "", group: "Lesson", keywords: ["local", "global variable", "dynamic scope", "call stack", "FUNCNAME", "subshell", "function in $( )", "function body in ( )", "variable leak"] },
+        { id: "library", title: "Function libraries and the main layout", emoji: "", group: "Lesson", keywords: ["function library", "source", "include guard", "log function", "die function", "main \"$@\"", "script layout", "stderr logging", "FUNCNAME[1]"] },
+        { id: "levels", title: "Functions from school to research", emoji: "", group: "Lesson", keywords: ["nameref", "local -n", "export -f", "Shellshock", "CVE-2014-6271", "dynamic vs lexical scope", "bats", "shUnit2", "BASH_SOURCE", "testing shell functions"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "arrays-options", title: "Arrays and command-line options", emoji: "3.2", page: "content/linux/arrays-options.html",
+        summary: "Indexed and associative arrays, mapfile and read -a, and getopts.",
+        keywords: ["array", "associative array", "declare -A", "mapfile", "readarray", "read -a", "getopts", "OPTARG", "OPTIND", "options", "usage"],
+        minutes: 55, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "indexed", title: "Indexed arrays: many values under one name", emoji: "", group: "Lesson", keywords: ["array", "indexed array", "array index", "\"${a[@]}\"", "${#a[@]}", "${!a[@]}", "append to array", "unset element", "array slice", "negative index", "sparse array", "declare -p"] },
+        { id: "assoc", title: "Associative arrays: values looked up by name", emoji: "", group: "Lesson", keywords: ["associative array", "declare -A", "dictionary", "hash map", "keys", "${!a[@]}", "-v key exists", "word count", "count items", "key order"] },
+        { id: "fill", title: "Filling, joining and passing arrays", emoji: "", group: "Lesson", keywords: ["mapfile", "readarray", "read -a", "array from file", "array from glob", "join array", "\"${a[*]}\"", "IFS join", "sort an array", "pass array to function", "split string into array"] },
+        { id: "options", title: "Command-line options with getopts", emoji: "", group: "Lesson", keywords: ["getopts", "command-line options", "OPTARG", "OPTIND", "shift", "option string", "leading colon", "usage function", "long options", "--", "getopt"] },
+        { id: "levels", title: "Arrays and options from school to research", emoji: "", group: "Lesson", keywords: ["sparse arrays", "bash 4 associative arrays", "macOS bash 3.2", "local -n", "mapfile -d", "POSIX utility syntax", "OPTIND reset", "docopt", "argbash", "Korn shell arrays"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-script-4", title: "Robust and scheduled scripts", emoji: "4", step: 4, part: "scripting", level: "Advanced", blurb: "Write scripts that fail safely, clean up after themselves, are easy to debug, and run on a schedule with cron, at and systemd timers.", topics: [
+      { id: "robust-scripts", title: "Robust scripts: errors, traps and debugging", emoji: "4.1", page: "content/linux/robust-scripts.html",
+        summary: "set -euo pipefail, trap and mktemp, bash -n, set -x and ShellCheck, defensive habits.",
+        keywords: ["set -e", "set -u", "pipefail", "trap", "EXIT", "ERR", "mktemp", "bash -x", "bash -n", "ShellCheck", "flock", "idempotent"],
+        minutes: 55, counts: {"lessons": 5, "problems": 6, "quiz": 13, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "strict", title: "Stop on the first error: set -e, -u and pipefail", emoji: "", group: "Lesson", keywords: ["set -e", "errexit", "set -u", "nounset", "pipefail", "set -euo pipefail", "strict mode", "unbound variable", "errexit exceptions", "(( n++ )) gotcha"] },
+        { id: "trap", title: "Cleaning up with trap and temporary files", emoji: "", group: "Lesson", keywords: ["trap", "EXIT trap", "ERR trap", "cleanup", "mktemp", "mktemp -d", "temporary files", "SIGINT", "SIGTERM", "LINENO", "BASH_COMMAND", "Ctrl+C in scripts"] },
+        { id: "debug", title: "Finding bugs: bash -n, set -x and ShellCheck", emoji: "", group: "Lesson", keywords: ["bash -n", "syntax check", "bash -x", "set -x", "xtrace", "PS4", "debugging scripts", "ShellCheck", "SC2086", "SC2164", "trace with line numbers"] },
+        { id: "defend", title: "Defensive habits for scripts that run unattended", emoji: "", group: "Lesson", keywords: ["defensive scripting", "command -v", "readonly", "umask 077", "flock", "lock file", "dry run", "idempotent", "end of options --", "unattended scripts"] },
+        { id: "levels", title: "Robust scripts from school to research", emoji: "", group: "Lesson", keywords: ["errexit exceptions", "local hides status", "set -E", "errtrace", "inherit_errexit", "PIPESTATUS", "BashFAQ 105", "explicit error checks", "Ansible idempotence"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "scheduling", title: "Scheduled jobs: cron, at and systemd timers", emoji: "4.2", page: "content/linux/scheduling.html",
+        summary: "crontab fields and rules, the cron environment, system cron folders and anacron, at and batch, systemd timers.",
+        keywords: ["cron", "crontab", "at", "atq", "batch", "anacron", "run-parts", "systemd timer", "OnCalendar", "systemd-analyze"],
+        minutes: 55, counts: {"lessons": 7, "problems": 6, "quiz": 15, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "fields", title: "cron: a schedule in five fields", emoji: "", group: "Lesson", keywords: ["cron", "crontab", "cron syntax", "five fields", "minute hour day month weekday", "cron step */15", "cron range", "@daily", "@reboot", "@hourly", "day of month or day of week", "cron expression"] },
+        { id: "crontab", title: "Managing your crontab and the cron environment", emoji: "", group: "Lesson", keywords: ["crontab -e", "crontab -l", "crontab -r", "install crontab", "cron environment", "cron PATH", "MAILTO", "cron percent sign", "cron job not running", "cron log output", "bad minute", "flock in cron"] },
+        { id: "system", title: "System crontabs, cron.daily and anacron", emoji: "", group: "Lesson", keywords: ["/etc/crontab", "/etc/cron.d", "cron.daily", "cron.hourly", "run-parts", "run-parts skips dot", "anacron", "anacrontab", "cron.allow", "cron.deny", "system crontab user field"] },
+        { id: "at", title: "Run once later: at, atq, atrm and batch", emoji: "", group: "Lesson", keywords: ["at command", "run once later", "atq", "atrm", "at -f", "batch", "at now + minutes", "teatime", "at -c", "atd"] },
+        { id: "timers", title: "systemd timers: the modern scheduler", emoji: "", group: "Lesson", keywords: ["systemd timer", "OnCalendar", "Persistent=true", "RandomizedDelaySec", "OnBootSec", "OnUnitActiveSec", "systemd-analyze calendar", "systemctl list-timers", "timers.target", "journalctl -u", "cron vs systemd timer"] },
+        { id: "levels", title: "Scheduled jobs from school to research", emoji: "", group: "Lesson", keywords: ["cron best practices", "flock -n cron", "daylight saving cron", "UTC servers", "thundering herd", "heartbeat monitoring", "Kubernetes CronJob", "Apache Airflow", "first Monday of month cron"] },
+        { id: "practice", title: "Practice: schedule jobs in the practice shell", emoji: "", group: "Lesson", keywords: ["practice cron", "crontab exercise", "at exercise", "install crontab", "atq atrm practice"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of lx-scripting-build ===== */
+
+/* ===== lx-admin-build: Unix and Linux chapters. Generated by tools/linux-build/build.py, edit the topic files instead. ===== */
+function lxAdminModules() {
+  return [
+    { id: "lx-admin-1", title: "Users and software", emoji: "1", step: 1, part: "admin", level: "Intermediate", blurb: "Manage accounts, groups and sudo rights, and install, update and remove software with package managers.", topics: [
+      { id: "users-sudo", title: "Users, groups and sudo", emoji: "1.1", page: "content/linux/users-sudo.html",
+        summary: "Account files, managing users and groups, passwords and ageing, sudo and sudoers.",
+        keywords: ["useradd", "usermod", "userdel", "groupadd", "passwd", "shadow", "sudo", "sudoers", "visudo", "getent", "UID", "GID"],
+        minutes: 50, counts: {"lessons": 5, "problems": 6, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "accounts", title: "Accounts: users, groups and the files behind them", emoji: "", group: "Lesson", keywords: ["/etc/passwd", "/etc/shadow", "/etc/group", "UID", "GID", "UID 0 root", "system account", "login.defs", "getent passwd", "id command", "password hash", "passwd fields"] },
+        { id: "manage", title: "Creating, changing and removing accounts", emoji: "", group: "Lesson", keywords: ["useradd", "useradd -m", "adduser", "usermod -aG", "add user to group", "groupadd", "passwd", "chpasswd", "chage", "password ageing", "userdel -r", "lock account", "/etc/skel"] },
+        { id: "sudo", title: "sudo, su and the sudoers file", emoji: "", group: "Lesson", keywords: ["sudo", "sudo -i", "sudo -u", "sudo -l", "su", "su -", "sudoers", "visudo", "sudoers.d", "NOPASSWD", "%sudo group", "secure_path", "auth.log", "least privilege"] },
+        { id: "practice", title: "Practice: manage an account in the practice shell", emoji: "", group: "Lesson", keywords: ["useradd practice", "usermod practice", "account lab", "chpasswd practice", "userdel practice"] },
+        { id: "levels", title: "Accounts and privilege from school to research", emoji: "", group: "Lesson", keywords: ["least privilege", "sudo shell escape", "nologin", "chage -E", "nsswitch.conf", "LDAP", "SSSD", "PAM", "yescrypt", "Linux capabilities", "privilege separation"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "packages", title: "Installing software: apt, dpkg and other package managers", emoji: "1.2", page: "content/linux/packages.html",
+        summary: "Repositories and dependencies, apt and dpkg, .deb files, other package managers, snap and Flatpak, source builds.",
+        keywords: ["apt", "apt-get", "dpkg", "deb", "rpm", "dnf", "pacman", "zypper", "snap", "flatpak", "repository", "dependency"],
+        minutes: 50, counts: {"lessons": 6, "problems": 6, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "what", title: "Packages, repositories and dependencies", emoji: "", group: "Lesson", keywords: ["package", "package manager", "repository", "dependencies", ".deb", ".rpm", "dpkg -S", "dpkg -l", "sources.list", "ubuntu.sources", "main universe", "apt-cache policy"] },
+        { id: "apt", title: "Installing, upgrading and removing with apt", emoji: "", group: "Lesson", keywords: ["apt update", "apt upgrade", "apt full-upgrade", "apt install", "apt remove", "apt purge", "apt autoremove", "apt search", "apt show", "apt list --installed", "apt-mark hold", "apt-get", "automatic packages"] },
+        { id: "deb", title: "Inside a .deb file, and dpkg", emoji: "", group: "Lesson", keywords: ["dpkg", "dpkg -i", "dpkg -L", "dpkg -r", "dpkg-deb", ".deb file", "control archive", "maintainer scripts", "postinst", "apt install ./file.deb", "apt-get download", "apt install -f"] },
+        { id: "other", title: "Other package managers, universal packages and source builds", emoji: "", group: "Lesson", keywords: ["dnf", "rpm -qf", "yum", "pacman", "zypper", "snap", "flatpak", "AppImage", "build from source", "./configure make make install", "/usr/local", "apt vs dnf"] },
+        { id: "practice", title: "Practice: install a tool in the practice shell", emoji: "", group: "Lesson", keywords: ["apt practice", "install jq", "apt lab", "dpkg -S practice", "autoremove practice"] },
+        { id: "levels", title: "Software management from school to research", emoji: "", group: "Lesson", keywords: ["unattended-upgrades", "dnf-automatic", "reboot-required", "apt history.log", "repository mirror", "Ansible packages", "image based OS", "reproducible builds", "Nix", "Guix", "supply chain", "xz backdoor"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-admin-2", title: "Boot, services and logs", emoji: "2", step: 2, part: "admin", level: "Intermediate", blurb: "Follow the boot from firmware to login, manage services with systemd, and read the logs to find out what went wrong.", topics: [
+      { id: "boot-systemd", title: "Boot and services: GRUB, systemd and systemctl", emoji: "2.1", page: "content/linux/boot-systemd.html",
+        summary: "The boot stages, targets, unit files, systemctl, and writing your own service.",
+        keywords: ["boot", "GRUB", "initramfs", "systemd", "systemctl", "unit file", "target", "service", "enable", "daemon-reload"],
+        minutes: 55, counts: {"lessons": 6, "problems": 6, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "boot", title: "How Linux starts: firmware to login", emoji: "", group: "Lesson", keywords: ["boot process", "UEFI", "BIOS", "GRUB", "update-grub", "kernel command line", "initramfs", "dracut", "systemd PID 1", "targets", "runlevels", "multi-user.target", "rescue mode", "emergency mode"] },
+        { id: "units", title: "Units and unit files", emoji: "", group: "Lesson", keywords: ["systemd unit", "unit file", ".service", ".timer", ".socket", ".target", "/etc/systemd/system", "/usr/lib/systemd/system", "drop-in", "systemctl edit", "systemd-analyze verify", "daemon-reload", "WantedBy"] },
+        { id: "systemctl", title: "Managing services with systemctl", emoji: "", group: "Lesson", keywords: ["systemctl status", "systemctl start", "systemctl stop", "systemctl restart", "systemctl reload", "systemctl enable", "enable --now", "systemctl disable", "systemctl mask", "is-active", "is-enabled", "systemctl --failed", "list-units"] },
+        { id: "write", title: "Writing your own service", emoji: "", group: "Lesson", keywords: ["write systemd service", "ExecStart", "Type=simple", "Type=oneshot", "Type=forking", "Restart=on-failure", "User=", "EnvironmentFile", "ProtectSystem", "PrivateTmp", "DynamicUser", "network-online.target", "custom service"] },
+        { id: "practice", title: "Practice: fix and add services in the practice shell", emoji: "", group: "Lesson", keywords: ["systemctl practice", "service lab", "journalctl practice", "enable --now practice", "failed unit practice"] },
+        { id: "levels", title: "Boot and services from school to research", emoji: "", group: "Lesson", keywords: ["After vs Wants", "Requires", "systemd-analyze blame", "critical-chain", "socket activation", "cgroups", "MemoryMax", "systemd-analyze security", "Secure Boot", "measured boot", "TPM", "SysV init", "unified kernel image", "Firecracker"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "logs-health", title: "Logs and health checks: journalctl, /var/log and logrotate", emoji: "2.2", page: "content/linux/logs-health.html",
+        summary: "The journal and journalctl, text logs in /var/log, log analysis, logrotate, quick health checks.",
+        keywords: ["journalctl", "journal", "/var/log", "syslog", "auth.log", "logrotate", "logger", "dmesg", "uptime", "free", "df", "vmstat"],
+        minutes: 55, counts: {"lessons": 7, "problems": 6, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "where", title: "Where Linux keeps its logs", emoji: "", group: "Lesson", keywords: ["logs", "/var/log", "systemd journal", "journald", "rsyslog", "syslog", "auth.log", "/var/log/secure", "kern.log", "dpkg.log", "apt history.log", "log priority", "adm group"] },
+        { id: "journalctl", title: "Searching the journal with journalctl", emoji: "", group: "Lesson", keywords: ["journalctl", "journalctl -u", "journalctl -p err", "journalctl -b", "journalctl --since", "journalctl -f", "journalctl -k", "journalctl -g", "_COMM", "persistent journal", "journald.conf", "vacuum"] },
+        { id: "text", title: "Reading text logs with grep, awk and friends", emoji: "", group: "Lesson", keywords: ["grep logs", "awk logs", "count failed logins", "uniq -c", "tail -f", "zgrep", "logger", "log analysis", "ssh brute force", "NF-3"] },
+        { id: "rotate", title: "Keeping logs small with logrotate", emoji: "", group: "Lesson", keywords: ["logrotate", "log rotation", "/etc/logrotate.d", "rotate 7", "compress", "delaycompress", "postrotate", "copytruncate", "logrotate -d", "logrotate -f", "disk full logs"] },
+        { id: "health", title: "Quick health checks: load, memory, disk and the kernel", emoji: "", group: "Lesson", keywords: ["uptime", "load average", "nproc", "free -h", "available memory", "df -h", "df -i", "inodes", "du -sh", "vmstat", "dmesg", "OOM killer", "health check"] },
+        { id: "practice", title: "Practice: investigate an incident in the practice shell", emoji: "", group: "Lesson", keywords: ["log lab", "incident investigation", "auth.log practice", "journalctl practice", "logger practice"] },
+        { id: "levels", title: "Logs and monitoring from school to research", emoji: "", group: "Lesson", keywords: ["persistent journal", "log forwarding", "central logging", "ELK", "Loki", "Prometheus", "node_exporter", "Grafana", "structured logging", "auditd", "OpenTelemetry", "log parsing", "monitoring alerts"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-admin-3", title: "Storage", emoji: "3", step: 3, part: "admin", level: "Advanced", blurb: "Partition and format disks, mount them by hand and at boot, keep them healthy and growing, and make storage flexible and safe with LVM, RAID, swap and backups.", topics: [
+      { id: "disks-filesystems", title: "Disks and file systems: partitions, mkfs, mount and fstab", emoji: "3.1", page: "content/linux/disks-filesystems.html",
+        summary: "Disk names, partition tables, file systems, mounting, /etc/fstab, checking and growing.",
+        keywords: ["lsblk", "blkid", "parted", "GPT", "MBR", "mkfs", "ext4", "xfs", "mount", "umount", "fstab", "fsck", "resize2fs"],
+        minutes: 60, counts: {"lessons": 8, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "devices", title: "Disks, partitions and their names", emoji: "", group: "Lesson", keywords: ["block device", "/dev/sda", "nvme0n1", "/dev/vda", "mmcblk0", "partition", "lsblk", "lsblk -f", "blkid", "UUID", "LABEL", "/dev/disk/by-uuid", "loop device", "losetup", "truncate sparse file"] },
+        { id: "partitions", title: "Partition tables: MBR, GPT and parted", emoji: "", group: "Lesson", keywords: ["partition table", "MBR", "msdos label", "GPT", "GUID partition table", "EFI System Partition", "parted", "mklabel", "mkpart", "sfdisk", "fdisk", "gdisk", "cfdisk", "partition alignment", "2 TiB limit"] },
+        { id: "mkfs", title: "Making a file system: ext4, xfs and vfat", emoji: "", group: "Lesson", keywords: ["mkfs", "mkfs.ext4", "mke2fs", "mkfs.xfs", "mkfs.vfat", "FAT32", "exfat", "btrfs", "ext4", "xfs", "superblock", "inode", "inode table", "journal", "reserved blocks", "tune2fs", "file system label"] },
+        { id: "mount", title: "Mounting: attaching a file system to the tree", emoji: "", group: "Lesson", keywords: ["mount", "mount point", "umount", "target is busy", "findmnt", "df -hT", "mount options", "ro", "noexec", "nosuid", "nodev", "noatime", "remount", "fuser", "lsof", "lost+found"] },
+        { id: "fstab", title: "Mounting at boot with /etc/fstab", emoji: "", group: "Lesson", keywords: ["/etc/fstab", "fstab fields", "fs_spec", "fs_passno", "UUID in fstab", "LABEL=", "defaults", "noatime", "nofail", "noauto", "x-systemd.automount", "findmnt --verify", "mount -a", "daemon-reload", "emergency mode"] },
+        { id: "check", title: "Checking, repairing and growing file systems", emoji: "", group: "Lesson", keywords: ["fsck", "e2fsck", "e2fsck -n", "xfs_repair", "resize2fs", "xfs_growfs", "growpart", "grow root disk", "cloud disk resize", "dumpe2fs", "smartctl", "SMART", "file system check"] },
+        { id: "practice", title: "Practice: set up a new data disk in the practice shell", emoji: "", group: "Lesson", keywords: ["disk lab", "new disk practice", "parted practice", "mkfs practice", "fstab practice", "mount -a practice"] },
+        { id: "levels", title: "Storage from school to research", emoji: "", group: "Lesson", keywords: ["separate /var", "mount hardening", "noexec /tmp", "NFS", "SMB", "automount", "EBS", "persistent volume", "copy on write", "ZFS", "F2FS", "disk failure statistics", "fstab device name problem"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "lvm-raid-backup", title: "LVM, RAID, swap and backups", emoji: "3.2", page: "content/linux/lvm-raid-backup.html",
+        summary: "LVM volumes, software RAID, swap files, and backups with tar and rsync.",
+        keywords: ["LVM", "pvcreate", "vgcreate", "lvcreate", "lvextend", "RAID", "mdadm", "swap", "mkswap", "swapon", "backup", "tar", "rsync"],
+        minutes: 60, counts: {"lessons": 7, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "lvm", title: "LVM: storage pools made of disks", emoji: "", group: "Lesson", keywords: ["LVM", "logical volume manager", "physical volume", "PV", "volume group", "VG", "logical volume", "LV", "extent", "PE size", "pvcreate", "vgcreate", "lvcreate", "pvs", "vgs", "lvs", "/dev/mapper", "device-mapper"] },
+        { id: "lvmgrow", title: "Growing, moving and snapshotting volumes", emoji: "", group: "Lesson", keywords: ["lvextend", "lvextend -r", "100%FREE", "vgextend", "pvmove", "vgreduce", "pvremove", "LVM snapshot", "lvcreate -s", "thin pool", "lvmthin", "online resize", "grow logical volume"] },
+        { id: "raid", title: "RAID: surviving a broken disk", emoji: "", group: "Lesson", keywords: ["RAID", "RAID 0", "RAID 1", "RAID 5", "RAID 6", "RAID 10", "mirror", "parity", "striping", "mdadm", "/proc/mdstat", "degraded array", "rebuild", "resync", "mdadm.conf", "RAID is not a backup"] },
+        { id: "swap", title: "Swap: room for memory pages on disk", emoji: "", group: "Lesson", keywords: ["swap", "swap file", "swap partition", "mkswap", "swapon", "swapoff", "swapon --show", "fallocate", "swappiness", "vm.swappiness", "fstab swap line", "hibernation", "free -h swap"] },
+        { id: "backup", title: "Backups with tar and rsync", emoji: "", group: "Lesson", keywords: ["backup", "3-2-1 rule", "full backup", "incremental backup", "differential backup", "tar --listed-incremental", "snapshot file", "restore test", "rsync", "rsync -a", "rsync --delete", "rsync --dry-run", "rsync --link-dest", "hard link snapshots", "restic", "borg", "pg_dump"] },
+        { id: "practice", title: "Practice: grow storage with LVM and add swap", emoji: "", group: "Lesson", keywords: ["LVM lab", "lvextend practice", "swap file practice", "vgextend practice"] },
+        { id: "levels", title: "Storage safety from school to research", emoji: "", group: "Lesson", keywords: ["3-2-1 backups", "ZFS", "btrfs", "silent corruption", "object lock", "ransomware backup", "RTO", "RPO", "erasure coding", "Reed-Solomon", "deduplication", "restore testing"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-admin-4", title: "Networking and security", emoji: "4", step: 4, part: "admin", level: "Advanced", blurb: "Configure and troubleshoot networks, log in and copy files securely with SSH, and protect a server with a firewall and sensible hardening.", topics: [
+      { id: "networking", title: "Networking: addresses, routes, DNS and sockets", emoji: "4.1", page: "content/linux/networking.html",
+        summary: "Addresses and subnets, the ip command, routing, DNS, sockets, troubleshooting, netplan.",
+        keywords: ["ip", "ip addr", "ip route", "ping", "traceroute", "DNS", "dig", "/etc/hosts", "ss", "curl", "nc", "tcpdump", "netplan", "nmcli"],
+        minutes: 65, counts: {"lessons": 9, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "basics", title: "Addresses, subnets, gateways, names and ports", emoji: "", group: "Lesson", keywords: ["IP address", "IPv4", "CIDR", "prefix length", "subnet", "subnet mask", "MAC address", "default gateway", "router", "DNS", "port", "TCP", "UDP", "RFC 1918", "private addresses", "loopback", "localhost", "interface name", "enp0s3"] },
+        { id: "ip", title: "The ip command: interfaces, addresses and routes", emoji: "", group: "Lesson", keywords: ["ip command", "ip addr", "ip -br addr", "ip link", "ip route", "ip route get", "ip neigh", "ARP", "neighbour table", "ip addr add", "ip link set up", "ping", "network namespace", "ip netns", "veth"] },
+        { id: "routing", title: "Routing between networks", emoji: "", group: "Lesson", keywords: ["routing", "default route", "routing table", "longest prefix match", "router", "ip_forward", "sysctl net.ipv4.ip_forward", "traceroute", "tracepath", "TTL", "Network is unreachable", "Destination Host Unreachable"] },
+        { id: "dns", title: "Names: /etc/hosts, DNS and systemd-resolved", emoji: "", group: "Lesson", keywords: ["DNS", "name resolution", "/etc/hosts", "nsswitch.conf", "systemd-resolved", "127.0.0.53", "resolvectl", "resolv.conf", "dig", "dig +short", "host", "getent hosts", "A record", "AAAA", "CNAME", "MX record", "TXT record", "PTR reverse lookup", "NXDOMAIN", "dnsmasq"] },
+        { id: "ports", title: "Ports and sockets: ss, curl and nc", emoji: "", group: "Lesson", keywords: ["port", "socket", "listening socket", "ss", "ss -tlnp", "ss -tulpn", "netstat", "0.0.0.0", "bind address", "curl", "curl -I", "curl -v", "nc -zv", "netcat", "Connection refused", "backlog"] },
+        { id: "trouble", title: "Troubleshooting step by step, and tcpdump", emoji: "", group: "Lesson", keywords: ["network troubleshooting", "bottom-up troubleshooting", "tcpdump", "packet capture", "pcap", "Wireshark", "three-way handshake", "SYN", "SYN-ACK", "ACK", "TCP flags", "curl -v"] },
+        { id: "config", title: "Permanent settings: netplan and NetworkManager", emoji: "", group: "Lesson", keywords: ["netplan", "/etc/netplan", "netplan try", "netplan apply", "YAML", "dhcp4", "static IP", "systemd-networkd", "NetworkManager", "nmcli", "nmcli connection", "hostnamectl", "set-hostname"] },
+        { id: "practice", title: "Practice: diagnose the network of the practice server", emoji: "", group: "Lesson", keywords: ["network lab", "ip practice", "ping practice", "dig practice", "ss practice", "curl practice", "hosts file practice"] },
+        { id: "levels", title: "Networking from school to research", emoji: "", group: "Lesson", keywords: ["container networking", "bridge", "NAT", "VLAN", "bonding", "WireGuard", "IPv6", "SLAAC", "reverse proxy", "load balancer", "VPC", "security group", "SDN", "eBPF", "XDP", "BBR", "QUIC", "HTTP/3", "BGP"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "ssh", title: "SSH: keys, remote work, tunnels and a safe sshd", emoji: "4.2", page: "content/linux/ssh.html",
+        summary: "Key pairs, known hosts, logging in, copying files, tunnels, hardening sshd.",
+        keywords: ["ssh", "sshd", "ssh-keygen", "ssh-copy-id", "authorized_keys", "known_hosts", "ssh-agent", "scp", "sftp", "rsync", "ssh tunnel", "ProxyJump", "sshd_config"],
+        minutes: 60, counts: {"lessons": 8, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-23",
+        sections: [
+        { id: "how", title: "How an ssh login works", emoji: "", group: "Lesson", keywords: ["ssh", "sshd", "port 22", "secure shell", "key exchange", "host key", "known_hosts", "fingerprint", "public key authentication", "authorized_keys", "private key", "man-in-the-middle", "sntrup761x25519", "REMOTE HOST IDENTIFICATION HAS CHANGED"] },
+        { id: "keys", title: "Key pairs: ssh-keygen, passphrases and ssh-agent", emoji: "", group: "Lesson", keywords: ["ssh-keygen", "ed25519", "RSA key", "key pair", "passphrase", "ssh-keygen -lf", "fingerprint", "randomart", "ssh-agent", "ssh-add", "id_ed25519.pub", "key per device"] },
+        { id: "login", title: "Installing a key and logging in", emoji: "", group: "Lesson", keywords: ["ssh-copy-id", "authorized_keys", "first login", "StrictHostKeyChecking", "accept-new", "BatchMode", "Host key verification failed", "Permission denied (publickey)", "remote command", "SSH_CONNECTION", "ssh -v", "bad ownership or modes"] },
+        { id: "config", title: "Aliases, file copies and rsync over ssh", emoji: "", group: "Lesson", keywords: ["~/.ssh/config", "Host alias", "HostName", "IdentityFile", "scp", "scp -r", "sftp", "rsync over ssh", "rsync -e ssh", "remote copy", "file transfer"] },
+        { id: "tunnels", title: "Port forwarding and jump hosts", emoji: "", group: "Lesson", keywords: ["port forwarding", "ssh tunnel", "ssh -L", "local forwarding", "ssh -R", "remote forwarding", "ssh -D", "SOCKS proxy", "ProxyJump", "ssh -J", "jump host", "bastion", "ExitOnForwardFailure", "agent forwarding"] },
+        { id: "server", title: "Securing sshd", emoji: "", group: "Lesson", keywords: ["sshd_config", "sshd_config.d", "PasswordAuthentication no", "PermitRootLogin", "prohibit-password", "AllowUsers", "AllowGroups", "MaxAuthTries", "sshd -t", "sshd -T", "systemctl reload ssh", "SIGHUP", "fail2ban", "ssh hardening"] },
+        { id: "practice", title: "Practice: key login to the file server", emoji: "", group: "Lesson", keywords: ["ssh lab", "ssh-keygen practice", "ssh-copy-id practice", "scp practice", "sshd hardening practice"] },
+        { id: "levels", title: "Remote access from school to research", emoji: "", group: "Lesson", keywords: ["SSH certificates", "certificate authority", "ssh-keygen -s", "short-lived certificates", "FIDO2", "ed25519-sk", "bastion", "session recording", "Ansible", "post-quantum ssh", "ML-KEM", "Terrapin attack", "strict key exchange"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "firewall", title: "Firewall and hardening: ufw, nftables and a safer server", emoji: "4.3", page: "content/linux/firewall-hardening.html",
+        summary: "Default deny, ufw, nftables, hardening checklist, fail2ban, auditd, AppArmor.",
+        keywords: ["firewall", "ufw", "nftables", "nft", "iptables", "netfilter", "conntrack", "default deny", "hardening", "unattended-upgrades", "SUID", "sysctl", "fail2ban", "auditd", "AppArmor"],
+        minutes: 60, counts: {"lessons": 7, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "what", title: "What a firewall does", emoji: "", group: "Lesson", keywords: ["firewall", "packet filter", "netfilter", "input chain", "output chain", "forward chain", "connection tracking", "conntrack", "stateful firewall", "default deny", "policy drop", "first match", "drop vs reject", "nftables", "iptables-nft", "ufw", "firewalld", "security group"] },
+        { id: "ufw", title: "ufw: a simple firewall for Ubuntu", emoji: "", group: "Lesson", keywords: ["ufw", "ufw enable", "ufw status", "ufw status verbose", "ufw status numbered", "ufw default deny incoming", "ufw allow", "ufw deny", "ufw limit", "ufw insert", "ufw delete", "ufw reset", "app profile", "OpenSSH profile", "allow from subnet", "lock yourself out"] },
+        { id: "nft", title: "nftables: the rules underneath", emoji: "", group: "Lesson", keywords: ["nftables", "nft", "nft list ruleset", "nft -f", "nft -c", "table inet filter", "base chain", "hook input", "policy drop", "ct state established,related", "ct state invalid", "anonymous set", "counter", "rule handle", "nft insert rule", "nft delete rule", "/etc/nftables.conf", "nftables.service", "iptables-nft"] },
+        { id: "harden", title: "Hardening a server step by step", emoji: "", group: "Lesson", keywords: ["hardening", "server hardening", "unattended-upgrades", "20auto-upgrades", "security updates", "reboot-required", "ss -tulpn", "listening ports", "attack surface", "systemctl disable --now", "bind to localhost", "SUID", "find -perm -4000", "sysctl", "sysctl.d", "accept_redirects", "rp_filter", "tcp_syncookies", "randomize_va_space", "kptr_restrict"] },
+        { id: "watch", title: "fail2ban, auditd and AppArmor", emoji: "", group: "Lesson", keywords: ["fail2ban", "jail.local", "jail.conf", "defaults-debian.conf", "bantime", "findtime", "maxretry", "fail2ban-client status", "unbanip", "fail2ban-regex", "sshd jail", "auditd", "auditctl -w", "audit rules", "ausearch", "augenrules", "AppArmor", "aa-status", "aa-enforce", "aa-complain", "apparmor DENIED"] },
+        { id: "practice", title: "Practice: lock down the practice server", emoji: "", group: "Lesson", keywords: ["ufw lab", "firewall practice", "hardening practice", "ufw insert practice", "ss practice", "SUID practice"] },
+        { id: "levels", title: "Firewalls from school to research", emoji: "", group: "Lesson", keywords: ["egress filtering", "network segmentation", "CIS Benchmark", "DISA STIG", "Lynis", "OpenSCAP", "NetworkPolicy", "Cilium", "eBPF", "XDP", "zero trust", "shadowed rules", "intrusion detection"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of lx-admin-build ===== */
+
+/* ===== lx-advanced-build: Unix and Linux chapters. Generated by tools/linux-build/build.py, edit the topic files instead. ===== */
+function lxAdvModules() {
+  return [
+    { id: "lx-adv-1", title: "Kernel and processes", emoji: "1", step: 1, part: "advanced", level: "Expert", blurb: "Look under the shell: how programs ask the kernel for everything with system calls, how the kernel shows its state in /proc and /sys, and how processes are born, run and die.", topics: [
+      { id: "kernel-syscalls", title: "The kernel and system calls: strace, /proc, /sys and modules", emoji: "1.1", page: "content/linux/kernel-syscalls.html",
+        summary: "User and kernel space, system calls, strace, /proc, /sys, modules.",
+        keywords: ["kernel", "system call", "syscall", "strace", "ltrace", "errno", "/proc", "/sys", "procfs", "sysfs", "kernel module", "modprobe", "lsmod", "dmesg", "uname"],
+        minutes: 55, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "layers", title: "User space, kernel space and the system call", emoji: "", group: "Lesson", keywords: ["kernel", "user space", "kernel space", "kernel mode", "system call", "syscall", "glibc", "libc wrapper", "errno", "ENOENT", "EACCES", "VFS", "monolithic kernel", "execve", "openat", "read", "write", "mmap", "fork"] },
+        { id: "strace", title: "Watching system calls with strace", emoji: "", group: "Lesson", keywords: ["strace", "strace -e trace", "strace -f", "strace -c", "strace -o", "strace -p", "trace=file", "ltrace", "errno", "strerror", "EPERM", "EACCES", "ENOENT", "missing config file", "perf trace", "opensnoop", "eBPF"] },
+        { id: "proc", title: "/proc and /sys: the kernel as files", emoji: "", group: "Lesson", keywords: ["/proc", "procfs", "/proc/PID", "/proc/self", "/proc/PID/status", "/proc/PID/cmdline", "/proc/PID/fd", "/proc/PID/environ", "/proc/meminfo", "/proc/loadavg", "/proc/cmdline", "/proc/sys", "sysfs", "/sys", "/sys/class/net", "pid_max", "operstate", "virtual file system"] },
+        { id: "modules", title: "Kernel versions, modules and the kernel log", emoji: "", group: "Lesson", keywords: ["uname -r", "kernel release", "kernel module", "loadable module", ".ko", "lsmod", "modinfo", "modprobe", "modprobe -r", "modules.dep", "modprobe.d", "blacklist", "modules-load.d", "udev", "dmesg", "journalctl -k", "dmesg_restrict", "/proc/cmdline", "linux-image", "HWE kernel", "monolithic kernel"] },
+        { id: "practice", title: "Practice: explore the kernel through /proc", emoji: "", group: "Lesson", keywords: ["/proc lab", "kernel lab", "meminfo practice", "proc self practice"] },
+        { id: "levels", title: "The kernel from school to research", emoji: "", group: "Lesson", keywords: ["microkernel", "seL4", "unikernel", "Rust for Linux", "io_uring", "live patching", "Livepatch", "kpatch", "eBPF", "bpftrace", "seccomp", "Meltdown", "Spectre"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "process-lifecycle", title: "How processes live: fork, exec, wait, states and threads", emoji: "1.2", page: "content/linux/process-lifecycle.html",
+        summary: "fork and exec, wait and exit statuses, states, zombies, orphans, threads, nice.",
+        keywords: ["fork", "exec", "execve", "wait", "exit status", "process tree", "pstree", "PID 1", "process state", "zombie", "orphan", "thread", "LWP", "scheduler", "nice", "chrt", "taskset"],
+        minutes: 55, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "born", title: "fork, exec, exit and wait", emoji: "", group: "Lesson", keywords: ["fork", "clone", "execve", "exec", "exit", "wait", "waitpid", "WEXITSTATUS", "exit status", "process creation", "child process", "parent process", "copy on write", "execlp", "fflush", "shell builtin"] },
+        { id: "tree", title: "The process tree, PID 1 and exit statuses", emoji: "", group: "Lesson", keywords: ["process tree", "pstree", "PPID", "PID 1", "systemd PID 1", "init", "ps -ef --forest", "exit status", "$?", "PIPESTATUS", "126", "127", "128+N", "exit code 137", "exit code 143", "tini", "docker run --init"] },
+        { id: "states", title: "Process states, zombies and orphans", emoji: "", group: "Lesson", keywords: ["process state", "STAT column", "R running", "S sleeping", "D uninterruptible sleep", "T stopped", "Z zombie", "defunct", "I idle", "orphan process", "reparenting", "subreaper", "unshare --pid", "PID namespace", "reap", "SIGCHLD", "NFS hang"] },
+        { id: "threads", title: "Threads and the scheduler", emoji: "", group: "Lesson", keywords: ["thread", "pthread", "clone", "CLONE_VM", "TID", "LWP", "NLWP", "ps -L", "/proc/PID/task", "scheduler", "EEVDF", "CFS", "nice", "renice", "niceness", "PRI", "chrt", "SCHED_OTHER", "SCHED_FIFO", "SCHED_BATCH", "SCHED_IDLE", "real-time priority", "taskset", "CPU affinity", "ionice"] },
+        { id: "practice", title: "Practice: follow processes through their life", emoji: "", group: "Lesson", keywords: ["process lab", "pstree practice", "ps -o practice", "proc status practice", "nice practice"] },
+        { id: "levels", title: "Processes from school to research", emoji: "", group: "Lesson", keywords: ["process supervisor", "Restart=", "posix_spawn", "vfork", "sched_ext", "isolcpus", "cpuset", "/proc/PID/stack", "gdb", "Firecracker", "Resource temporarily unavailable", "fork bomb"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-adv-2", title: "Files and memory inside", emoji: "2", step: 2, part: "advanced", level: "Expert", blurb: "See what files and memory really are to the kernel: inodes, links and open descriptors, the page cache, virtual memory, swapping and the OOM killer.", topics: [
+      { id: "files-inside", title: "Files inside: inodes, links, open descriptors and the page cache", emoji: "2.1", page: "content/linux/files-inside.html",
+        summary: "Inodes, file types, hard and symbolic links, descriptors, deleted open files, page cache.",
+        keywords: ["inode", "hard link", "symbolic link", "ln", "link count", "df -i", "file descriptor", "lsof", "deleted open file", "VFS", "page cache", "fsync", "dirty pages", "mkfifo"],
+        minutes: 55, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "inode", title: "Names, inodes and data", emoji: "", group: "Lesson", keywords: ["inode", "inode number", "ls -i", "stat", "directory entry", "dentry", "link count", "data blocks", "extents", "file types", "regular file", "named pipe", "FIFO", "mkfifo", "character device", "block device", "socket file", "df -i", "inode exhaustion", "No space left on device", "mkfs.ext4 -N", "debugfs"] },
+        { id: "links", title: "Hard links and symbolic links", emoji: "", group: "Lesson", keywords: ["hard link", "symbolic link", "symlink", "soft link", "ln", "ln -s", "ln -sfn", "link count", "dangling link", "broken symlink", "find -xtype l", "find -samefile", "find -inum", "readlink -f", "Invalid cross-device link", "protected_hardlinks", "relative symlink"] },
+        { id: "fds", title: "Open files: descriptors and deleted files", emoji: "", group: "Lesson", keywords: ["file descriptor", "fd", "file descriptor table", "open file description", "offset", "/proc/PID/fd", "lsof", "lsof +L1", "lsof -i", "fuser", "deleted but open", "(deleted)", "recover deleted file", "disk full after rm", "truncate file", "ulimit -n", "Too many open files", "EMFILE", "LimitNOFILE"] },
+        { id: "cache", title: "The VFS, the page cache and fsync", emoji: "", group: "Lesson", keywords: ["VFS", "virtual file system", "page cache", "buffer cache", "dirty pages", "write-back", "fsync", "fdatasync", "sync", "dirty_ratio", "dirty_background_ratio", "dirty_expire_centisecs", "drop_caches", "O_DIRECT", "atomic rename", "safe file write", "buff/cache"] },
+        { id: "practice", title: "Practice: inodes and links on the practice server", emoji: "", group: "Lesson", keywords: ["inode lab", "hard link practice", "symlink practice", "mkfifo practice"] },
+        { id: "levels", title: "Files from school to research", emoji: "", group: "Lesson", keywords: ["reflink", "cp --reflink", "rsync --link-dest", "deduplication", "crash consistency", "copy on write file system", "Btrfs", "ZFS", "bcachefs", "FUSE", "filefrag", "xfs_db", "mkfs -i"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "memory", title: "Memory: virtual memory, page faults, swap and the OOM killer", emoji: "2.2", page: "content/linux/memory.html",
+        summary: "Pages, page faults, VSZ and RSS, copy on write, free, swap, OOM killer, MemoryMax.",
+        keywords: ["virtual memory", "page fault", "VSZ", "RSS", "PSS", "copy on write", "free", "meminfo", "swap", "swappiness", "overcommit", "OOM killer", "oom_score_adj", "cgroup", "MemoryMax"],
+        minutes: 55, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "virtual", title: "Virtual memory, pages and page faults", emoji: "", group: "Lesson", keywords: ["virtual memory", "virtual address space", "page", "page frame", "page table", "MMU", "VSZ", "RSS", "VmSize", "VmRSS", "page fault", "minor fault", "major fault", "demand paging", "mmap", "brk", "heap", "stack", "/proc/PID/maps", "vdso", "ASLR", "randomize_va_space"] },
+        { id: "cow", title: "Copy on write and shared memory", emoji: "", group: "Lesson", keywords: ["copy on write", "COW", "fork memory", "shared pages", "shared memory", "shm", "/dev/shm", "PSS", "smaps_rollup", "pmap", "ps --sort=-rss", "vsz rss", "shared libraries"] },
+        { id: "free", title: "Reading free, meminfo and swap", emoji: "", group: "Lesson", keywords: ["free", "free -h", "available memory", "buff/cache", "/proc/meminfo", "MemAvailable", "MemFree", "Dirty", "AnonPages", "Committed_AS", "swap", "swappiness", "vm.swappiness", "overcommit_memory", "vfs_cache_pressure", "min_free_kbytes", "vmstat si so", "PSI", "/proc/pressure/memory", "memory pressure"] },
+        { id: "oom", title: "The OOM killer and memory limits", emoji: "", group: "Lesson", keywords: ["OOM killer", "out of memory", "oom_score", "oom_score_adj", "OOMScoreAdjust", "Killed", "exit 137", "cgroup memory limit", "memory.max", "memory.events", "memory.limit_in_bytes", "MemoryMax", "MemoryHigh", "MemorySwapMax", "systemd-cgtop", "reclaim", "Xmx"] },
+        { id: "practice", title: "Practice: check memory on the practice server", emoji: "", group: "Lesson", keywords: ["memory lab", "free practice", "sysctl practice", "swappiness practice", "oom practice"] },
+        { id: "levels", title: "Memory from school to research", emoji: "", group: "Lesson", keywords: ["huge pages", "transparent huge pages", "THP", "NUMA", "numactl", "zram", "zswap", "systemd-oomd", "MGLRU", "CXL", "memory tiering", "valgrind", "memory leak", "Rowhammer", "ARM MTE"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] },
+    { id: "lx-adv-3", title: "Containers and performance", emoji: "3", step: 3, part: "advanced", level: "Expert", blurb: "Build a container from kernel features by hand, then find out why a system is slow with the right tools and method, and finish with a full revision of the course.", topics: [
+      { id: "containers-inside", title: "Containers under the hood: namespaces, cgroups, layers and capabilities", emoji: "3.1", page: "content/linux/containers-inside.html",
+        summary: "Namespaces, a container by hand, overlayfs, cgroups, capabilities, seccomp, runc.",
+        keywords: ["container", "namespaces", "unshare", "nsenter", "chroot", "overlayfs", "cgroups", "cgroup v2", "capabilities", "setcap", "seccomp", "rootless", "Docker", "Podman", "runc", "containerd"],
+        minutes: 60, counts: {"lessons": 7, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "what", title: "A container is a process with its own view", emoji: "", group: "Lesson", keywords: ["container", "namespace", "mount namespace", "UTS namespace", "IPC namespace", "PID namespace", "network namespace", "user namespace", "cgroup namespace", "time namespace", "container vs virtual machine", "shared kernel", "isolation"] },
+        { id: "handmade", title: "A container by hand: unshare, chroot and /proc/PID/ns", emoji: "", group: "Lesson", keywords: ["unshare", "nsenter", "lsns", "/proc/PID/ns", "chroot", "pivot_root", "busybox", "root file system", "rootfs", "mount-proc", "container by hand", "docker inspect State.Pid"] },
+        { id: "layers", title: "Images and overlayfs", emoji: "", group: "Lesson", keywords: ["container image", "image layers", "overlayfs", "overlay2", "lowerdir", "upperdir", "workdir", "copy up", "whiteout", "writable layer", "Dockerfile layers", "layer cache", "docker diff", "volume"] },
+        { id: "cgroups", title: "cgroups: limits for CPU, memory and processes", emoji: "", group: "Lesson", keywords: ["cgroups", "cgroup v2", "cgroup v1", "control groups", "/sys/fs/cgroup", "cgroup.procs", "memory.max", "memory.current", "cpu.max", "pids.max", "memory.events", "/proc/PID/cgroup", "systemd slice", "systemd-cgls", "systemd-cgtop", "systemd-run --scope", "CPUQuota", "set-property", "fork bomb", "Resource temporarily unavailable", "docker --memory", "docker --cpus", "--pids-limit"] },
+        { id: "caps", title: "Capabilities, seccomp and rootless containers", emoji: "", group: "Lesson", keywords: ["capabilities", "CAP_NET_BIND_SERVICE", "CAP_NET_RAW", "CAP_SYS_ADMIN", "file capabilities", "getcap", "setcap", "capsh", "CapEff", "cap-drop", "cap-add", "no-new-privileges", "read-only container", "seccomp profile", "privileged container", "rootless", "Podman", "subuid", "subgid", "dockerd", "containerd", "runc", "OCI", "CRI-O", "docker.sock"] },
+        { id: "practice", title: "Practice: namespaces, cgroups and capabilities", emoji: "", group: "Lesson", keywords: ["namespace lab", "cgroup lab", "capability lab", "getcap practice", "setcap practice"] },
+        { id: "levels", title: "Containers from school to research", emoji: "", group: "Lesson", keywords: ["Kubernetes", "resource limits", "Pod Security Standards", "NetworkPolicy", "image scanning", "Trivy", "cosign", "SBOM", "gVisor", "Kata Containers", "Firecracker", "container escape", "Falco", "Tetragon", "WebAssembly sandbox", "confidential containers"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "performance", title: "Performance: find the bottleneck with USE, vmstat, iostat, perf and sar", emoji: "3.2", page: "content/linux/performance.html",
+        summary: "USE method, load average, vmstat, mpstat, pidstat, iostat, strace -c, perf, sar.",
+        keywords: ["performance", "USE method", "load average", "vmstat", "mpstat", "pidstat", "iostat", "sar", "sysstat", "strace -c", "perf", "flame graph", "eBPF", "stress-ng", "bottleneck"],
+        minutes: 55, counts: {"lessons": 7, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "method", title: "Measure first: the USE method and the 60 second checklist", emoji: "", group: "Lesson", keywords: ["performance", "latency", "throughput", "utilization", "saturation", "errors", "USE method", "Brendan Gregg", "60 second checklist", "percentile", "p99", "bottleneck", "sysstat", "PSI", "/proc/pressure"] },
+        { id: "cpu", title: "CPU: load average, vmstat, mpstat and pidstat", emoji: "", group: "Lesson", keywords: ["load average", "/proc/loadavg", "uptime", "run queue", "uninterruptible sleep", "D state", "vmstat", "r column", "b column", "si so", "context switches", "user time", "system time", "iowait", "steal time", "mpstat", "pidstat", "stress-ng", "ps --sort", "nproc"] },
+        { id: "disk", title: "Disks: iostat, await, queue size and %util", emoji: "", group: "Lesson", keywords: ["iostat", "iostat -x", "IOPS", "r_await", "w_await", "aqu-sz", "%util", "rareq-sz", "disk saturation", "iowait", "pidstat -d", "iotop", "SSD util", "NVMe", "random I/O", "sequential I/O"] },
+        { id: "calls", title: "Where the time goes: time, strace -c, perf and eBPF", emoji: "", group: "Lesson", keywords: ["time command", "real user sys", "strace -c", "system call overhead", "dd block size", "perf", "perf stat", "perf top", "perf record", "perf report", "flame graph", "FlameGraph", "eBPF", "bcc", "bpfcc-tools", "bpftrace", "execsnoop", "biolatency", "runqlat", "linux-tools", "perf_event_paranoid"] },
+        { id: "history", title: "History with sar, and fixing what you found", emoji: "", group: "Lesson", keywords: ["sar", "sysstat", "sadc", "/var/log/sysstat", "sysstat-collect.timer", "ENABLED true", "sar -u", "sar -r", "sar -q", "sar -d", "sar -n DEV", "sar -f", "Prometheus", "node_exporter", "Grafana", "tuning", "CPUQuota", "MemoryMax", "measure again"] },
+        { id: "practice", title: "Practice: find the busy process", emoji: "", group: "Lesson", keywords: ["performance lab", "find busy process", "vmstat practice", "mpstat practice", "pidstat practice", "iostat practice"] },
+        { id: "levels", title: "Performance from school to research", emoji: "", group: "Lesson", keywords: ["SRE", "latency objective", "continuous profiling", "Parca", "Pyroscope", "off-CPU analysis", "queueing theory", "load testing", "NUMA", "CPU frequency", "I/O scheduler", "tail latency", "EEVDF", "sched_ext", "noisy neighbour"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "course-revision", title: "Course revision: the whole of Unix and Linux in one chapter", emoji: "3.3", page: "content/linux/course-revision.html",
+        summary: "Course map, key numbers, pipelines, incidents, final lab, next steps.",
+        keywords: ["revision", "exam", "LPIC-1", "RHCSA", "LFCS", "Linux+", "permissions", "umask", "exit status", "pipelines", "troubleshooting", "final lab"],
+        minutes: 45, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "map", title: "The whole course on one page", emoji: "", group: "Lesson", keywords: ["revision", "course summary", "Linux exam", "LPIC-1", "CompTIA Linux+", "RHCSA", "EX200", "LFCS", "hands-on exam", "interview preparation", "commands to know"] },
+        { id: "numbers", title: "The numbers that come up again and again", emoji: "", group: "Lesson", keywords: ["chmod octal", "permission digits", "umask 027", "SUID SGID sticky", "exit status 137", "exit status 127", "128 + n", "cron fields", "file descriptors", "CIDR hosts", "well known ports", "read permission string"] },
+        { id: "pipes", title: "Read and build pipelines", emoji: "", group: "Lesson", keywords: ["pipeline", "sort uniq -c", "awk average", "awk sum", "grep cut", "xargs sed", "find size mtime", "while read", "print0", "quote variables", "predict output"] },
+        { id: "incidents", title: "Incidents: the whole course at work", emoji: "", group: "Lesson", keywords: ["troubleshooting", "incident", "no space left on device", "df -i", "lsof +L1", "service will not start", "address already in use", "connection refused", "connection timed out", "permission denied", "namei", "cron PATH", "runbook"] },
+        { id: "practice", title: "Final practice: one lab across the course", emoji: "", group: "Lesson", keywords: ["final lab", "mixed practice", "revision lab", "grep -c", "uniq -c", "awk sum", "chmod 750", "tar czf", "systemctl is-active", "ss -tln", "df -h", "vmstat"] },
+        { id: "levels", title: "Where to go from here", emoji: "", group: "Lesson", keywords: ["next steps", "Ansible", "Docker", "Kubernetes", "CI/CD", "Prometheus", "Grafana", "cloud", "kernel module", "eBPF program", "LWN", "homelab", "break and fix"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] }
+    ] }
+  ];
+}
+/* ===== end of lx-advanced-build ===== */
 
 /* ===== sql-build: SQL and Databases chapters. Generated by tools/sql-build/build.py, edit the topic files instead. ===== */
 function sqlModules() {

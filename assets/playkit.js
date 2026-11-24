@@ -1,3 +1,4 @@
+/* Copy of tools/dsa-build/playkit.js for pages that load it as a file (Unix and Linux subject). Keep the two in step. */
 /* ===== Playful step animations for the newer DSA chapters (tools/dsa-build/playkit.js) =====
    The builder copies this file into every page whose topic sets 'play': True, right after the shared VIZ engine.
    A widget is written as a list of frames. Each frame is a picture of the data plus a sentence from Pip, the guide.

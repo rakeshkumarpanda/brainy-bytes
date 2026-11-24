@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Installing software: apt, dpkg and other package managers · Unix and Linux</title>
+<meta name="description" content="Packages, repositories and signing, apt update, upgrade, full-upgrade, install, remove, purge, autoremove, search, show and list, automatic packages and apt-mark hold, dpkg -l, -L, -S and -i, dpkg-deb and maintainer scripts, dnf and rpm, pacman, zypper, snap, Flatpak, AppImage, building from source into /usr/local, and unattended upgrades.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=admin">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 1: Users and software</span><span>›</span><span>Packages</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 2 of 2 · Intermediate</div>
+    <h1>Installing software: apt, dpkg and other package managers</h1>
+    <p class="lead">Install, upgrade and remove software with apt, understand repositories, dependencies and .deb files, translate the commands to dnf, pacman and zypper, and know when snap, Flatpak or a source build makes sense.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#packages" data-topic="cheatsheet" data-h="packages">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#what" data-l="what"><span class="n">1</span><span class="t">Packages, repositories and dependencies</span></a></li><li><a href="#apt" data-l="apt"><span class="n">2</span><span class="t">Installing, upgrading and removing with apt</span></a></li><li><a href="#deb" data-l="deb"><span class="n">3</span><span class="t">Inside a .deb file, and dpkg</span></a></li><li><a href="#other" data-l="other"><span class="n">4</span><span class="t">Other package managers, universal packages and source builds</span></a></li><li><a href="#practice" data-l="practice"><span class="n">5</span><span class="t">Practice: install a tool in the practice shell</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">Software management from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="what" data-l="what" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>Packages, repositories and dependencies</h2>
+<p>On Linux you rarely download programs from websites. A <b>package</b> is an archive with a program’s files plus facts about it: its name, version, the other packages it needs (its <b>dependencies</b>), and scripts to run when it is installed. Packages come from <b>repositories</b>, servers run by the distribution, and a <b>package manager</b> fetches, checks, installs, upgrades and removes them.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Family</th><th>Package file</th><th>Low-level tool</th><th>Everyday tool</th><th>Used by</th></tr></thead><tbody><tr><td>Debian</td><td><code>.deb</code></td><td>dpkg</td><td>apt</td><td>Debian, Ubuntu, Linux Mint, Raspberry Pi OS</td></tr><tr><td>Red Hat</td><td><code>.rpm</code></td><td>rpm</td><td>dnf (yum on old systems)</td><td>Fedora, RHEL, Rocky Linux, AlmaLinux</td></tr><tr><td>Arch</td><td><code>.pkg.tar.zst</code></td><td>pacman</td><td>pacman</td><td>Arch Linux, Manjaro</td></tr><tr><td>SUSE</td><td><code>.rpm</code></td><td>rpm</td><td>zypper</td><td>openSUSE, SUSE Linux Enterprise</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-apt"></div>
+<div class="lx-run"><div class="lx-rh"><span>Where packages come from on Ubuntu 24.04</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">grep -v '^#' /etc/apt/sources.list.d/ubuntu.sources | grep .</span>
+<span class="lx-o">Types: deb
+URIs: http://archive.ubuntu.com/ubuntu/
+Suites: noble noble-updates noble-backports
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+Types: deb
+URIs: http://security.ubuntu.com/ubuntu/
+Suites: noble-security
+Components: main universe restricted multiverse
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg</span>
+<span class="lx-cmd">dpkg -S /usr/bin/ls /usr/bin/sudo /usr/sbin/useradd</span>
+<span class="lx-o">coreutils: /usr/bin/ls
+sudo: /usr/bin/sudo
+passwd: /usr/sbin/useradd</span>
+<span class="lx-cmd">dpkg -l bash coreutils</span>
+<span class="lx-o">Desired=Unknown/Install/Remove/Purge/Hold
+| Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
+|/ Err?=(none)/Reinst-required (Status,Err: uppercase=bad)
+||/ Name           Version         Architecture Description
++++-==============-===============-============-=================================
+ii  bash           5.2.21-2ubuntu4 amd64        GNU Bourne Again SHell
+ii  coreutils      9.4-3ubuntu6.3  amd64        GNU core utilities</span>
+<span class="lx-cmd">apt-cache policy cowsay</span>
+<span class="lx-o">cowsay:
+  Installed: (none)
+  Candidate: 3.03+dfsg2-8
+  Version table:
+     3.03+dfsg2-8 500
+        500 http://archive.ubuntu.com/ubuntu noble/universe amd64 Packages</span></pre><div class="lx-note">The sources file names the servers, the releases (noble is the code name of Ubuntu 24.04) and the components: main and restricted are supported by Canonical, universe and multiverse by the community. dpkg -S tells which package owns a file. In dpkg -l, ii means desired install and actually installed. apt-cache policy shows the version that is installed and the version apt would install, with the repository it comes from.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>The Signed-By key in the sources file is how apt knows that the package lists are genuine. Only add a third-party repository when you trust its owner, because its packages run their scripts as root.</div></div>
+<div class="vt-talk" hidden>On Linux you seldom download programs from websites. Instead, the distribution keeps huge collections of ready made software, called repositories, and a package manager installs it for you. A package is an archive that holds the program’s files together with facts about it, such as its version and the other packages it depends on. Debian and Ubuntu use dot deb packages with the tools dpkg and apt. Fedora and Red Hat use dot r p m packages with rpm and dnf. Arch uses pacman. The ideas are the same everywhere. The list of repositories is in slash etc slash apt on Ubuntu, and each one is signed with a key, so apt can detect a fake. Every installed file belongs to exactly one package, and dpkg dash capital S tells you which. In the animation, watch apt find the dependencies of a package, download them, unpack them and set them up in the right order.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="apt" data-l="apt" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Installing, upgrading and removing with apt</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>sudo apt update</code></td><td>Download fresh package lists from every repository. Run it before installing or upgrading</td><td><code>sudo apt update</code></td></tr><tr><td><code>sudo apt upgrade</code></td><td>Install newer versions of installed packages</td><td><code>sudo apt update &amp;&amp; sudo apt upgrade</code></td></tr><tr><td><code>sudo apt full-upgrade</code></td><td>Upgrade even when packages must be added or removed to do it</td><td><code>sudo apt full-upgrade</code></td></tr><tr><td><code>sudo apt install PKG...</code></td><td>Install packages and their dependencies</td><td><code>sudo apt install -y nginx</code></td></tr><tr><td><code>sudo apt remove PKG</code></td><td>Remove the package, keep its configuration files</td><td><code>sudo apt remove nginx</code></td></tr><tr><td><code>sudo apt purge PKG</code></td><td>Remove the package and its configuration files</td><td><code>sudo apt purge nginx</code></td></tr><tr><td><code>sudo apt autoremove</code></td><td>Remove automatic dependencies that nothing needs any more</td><td><code>sudo apt autoremove</code></td></tr><tr><td><code>apt search WORD, apt show PKG</code></td><td>Find packages, show details</td><td><code>apt show jq</code></td></tr><tr><td><code>apt list --installed, --upgradable</code></td><td>List installed packages, or ones with updates</td><td><code>apt list --upgradable</code></td></tr><tr><td><code>apt-mark hold PKG, apt-mark unhold PKG</code></td><td>Keep a package at its current version</td><td><code>sudo apt-mark hold postgresql-16</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Install, use and remove a package, run as root</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">apt-get install -y -q cowsay 2&gt;&amp;1 | grep -v -e 'Reading database' -e '^debconf'</span>
+<span class="lx-o">Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  libtext-charwidth-perl
+Suggested packages:
+  filters cowsay-off
+The following NEW packages will be installed:
+  cowsay libtext-charwidth-perl
+0 upgraded, 2 newly installed, 0 to remove and 30 not upgraded.
+Need to get 27.9 kB of archives.
+After this operation, 135 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu noble/main amd64 libtext-charwidth-perl amd64 0.04-11build3 [9358 B]
+Get:2 http://archive.ubuntu.com/ubuntu noble/universe amd64 cowsay all 3.03+dfsg2-8 [18.6 kB]
+Fetched 27.9 kB in 0s (337 kB/s)
+Selecting previously unselected package libtext-charwidth-perl:amd64.
+Preparing to unpack .../libtext-charwidth-perl_0.04-11build3_amd64.deb ...
+Unpacking libtext-charwidth-perl:amd64 (0.04-11build3) ...
+Selecting previously unselected package cowsay.
+Preparing to unpack .../cowsay_3.03+dfsg2-8_all.deb ...
+Unpacking cowsay (3.03+dfsg2-8) ...
+Setting up libtext-charwidth-perl:amd64 (0.04-11build3) ...
+Setting up cowsay (3.03+dfsg2-8) ...</span>
+<span class="lx-cmd lx-root">dpkg -L cowsay | grep games/</span>
+<span class="lx-o">/usr/games/cowsay
+/usr/games/cowthink</span>
+<span class="lx-cmd lx-root">/usr/games/cowsay "installed by apt"</span>
+<span class="lx-o"> __________________
+&lt; installed by apt &gt;
+ ------------------
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||</span>
+<span class="lx-cmd lx-root">apt-mark showauto | grep -x libtext-charwidth-perl</span>
+<span class="lx-o">libtext-charwidth-perl</span>
+<span class="lx-cmd lx-root">apt-get remove -y -q cowsay 2&gt;&amp;1 | grep -v 'Reading database'</span>
+<span class="lx-o">Reading package lists...
+Building dependency tree...
+Reading state information...
+The following package was automatically installed and is no longer required:
+  libtext-charwidth-perl
+Use 'apt autoremove' to remove it.
+The following packages will be REMOVED:
+  cowsay
+0 upgraded, 0 newly installed, 1 to remove and 30 not upgraded.
+After this operation, 93.2 kB disk space will be freed.
+Removing cowsay (3.03+dfsg2-8) ...</span>
+<span class="lx-cmd lx-root">apt-get autoremove -y -q 2&gt;&amp;1 | grep -v 'Reading database'</span>
+<span class="lx-o">Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages will be REMOVED:
+  libtext-charwidth-perl
+0 upgraded, 0 newly installed, 1 to remove and 30 not upgraded.
+After this operation, 42.0 kB disk space will be freed.
+Removing libtext-charwidth-perl:amd64 (0.04-11build3) ...</span></pre><div class="lx-note">apt pulled in libtext-charwidth-perl because cowsay depends on it, and marked it as automatic. The program went to /usr/games, which is not in the PATH of root or sudo, so it needs the full path. Removing cowsay left the automatic package behind until autoremove cleaned it up. Scripts use apt-get, because apt itself warns that its output may change between versions.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Read the plan before you answer Y. Upgrades and removals can list far more packages than you expect, for example when a library change removes a desktop or a database server.</div></div>
+<div class="vt-talk" hidden>Apt is the everyday tool on Debian and Ubuntu. Start with sudo apt update, which downloads the latest lists of packages from the repositories. It does not install anything. Then sudo apt upgrade installs newer versions of what you already have, and this is how a server gets its security fixes. Sudo apt install followed by a name installs a program together with everything it needs, and apt marks those extra packages as automatic. Remove takes a program away but keeps its settings, purge also deletes the settings, and autoremove cleans up automatic packages that nothing needs any more. Apt search and apt show help you find the right package. When you write scripts, use apt get instead of apt, because apt’s screen output may change between versions. And always read the summary before you say yes, especially before removals.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="deb" data-l="deb" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Inside a .deb file, and dpkg</h2>
+<p>apt finds and downloads packages, then calls <b>dpkg</b> to do the actual installing. A .deb file is an archive with two parts: <b>control</b> (the facts and the maintainer scripts) and <b>data</b> (the files that go into the file tree).</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>dpkg -l [PKG]</code></td><td>List installed packages, with their state</td><td><code>dpkg -l | grep nginx</code></td></tr><tr><td><code>dpkg -L PKG</code></td><td>Every file a package installed</td><td><code>dpkg -L openssh-server</code></td></tr><tr><td><code>dpkg -S FILE</code></td><td>Which package owns a file</td><td><code>dpkg -S /usr/bin/ssh</code></td></tr><tr><td><code>dpkg-deb -I FILE.deb, dpkg-deb -c FILE.deb</code></td><td>Show the control facts, list the files inside</td><td><code>dpkg-deb -c tool.deb</code></td></tr><tr><td><code>sudo dpkg -i FILE.deb</code></td><td>Install a .deb file. It does not fetch dependencies</td><td><code>sudo dpkg -i ./tool.deb</code></td></tr><tr><td><code>sudo apt install ./FILE.deb</code></td><td>Install a local .deb and fetch its dependencies from the repositories</td><td><code>sudo apt install ./tool_1.0_amd64.deb</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Look inside a .deb file</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">apt-get download figlet 2&gt;/dev/null</span>
+<span class="lx-o">Get:1 http://archive.ubuntu.com/ubuntu noble/universe amd64 figlet amd64 2.2.5-3 [133 kB]
+Fetched 133 kB in 0s (1591 kB/s)</span>
+<span class="lx-cmd">ls *.deb</span>
+<span class="lx-o">figlet_2.2.5-3_amd64.deb</span>
+<span class="lx-cmd">dpkg-deb -I figlet_*.deb | sed -n '1,8p'</span>
+<span class="lx-o"> new Debian package, version 2.0.
+ size 133198 bytes: control archive=2869 bytes.
+      36 bytes,     1 lines      conffiles
+     744 bytes,    18 lines      control
+    4437 bytes,    71 lines      md5sums
+     271 bytes,    12 lines   *  postinst             #!/bin/sh
+     147 bytes,    10 lines   *  prerm                #!/bin/sh
+ Package: figlet</span>
+<span class="lx-cmd">dpkg-deb -I figlet_*.deb | grep -E '^ (Package|Version|Depends|Installed-Size):'</span>
+<span class="lx-o"> Package: figlet
+ Version: 2.2.5-3
+ Installed-Size: 734
+ Depends: libc6 (&gt;= 2.14)</span>
+<span class="lx-cmd">dpkg-deb -c figlet_*.deb | grep -E 'bin/'</span>
+<span class="lx-o">drwxr-xr-x root/root         0 2017-06-22 21:31 ./usr/bin/
+-rwxr-xr-x root/root     18440 2017-06-22 21:31 ./usr/bin/chkfont
+-rwxr-xr-x root/root     47168 2017-06-22 21:31 ./usr/bin/figlet-figlet
+-rwxr-xr-x root/root      1396 2017-06-22 21:31 ./usr/bin/figlist
+-rwxr-xr-x root/root      1360 2017-06-22 21:31 ./usr/bin/showfigfonts</span></pre><div class="lx-note">apt-get download fetched the file without installing it, so it worked as a normal user. The control part has the package facts and maintainer scripts such as postinst, which runs after the files are unpacked, and prerm, which runs before removal. The data part puts the programs in /usr/bin, the main one under the name figlet-figlet.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Install and remove it with dpkg, run as root</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">dpkg -i /home/learner/figlet_*.deb 2&gt;&amp;1 | grep -v -e 'Reading database' -e 'warning:'</span>
+<span class="lx-o">Selecting previously unselected package figlet.
+Preparing to unpack .../figlet_2.2.5-3_amd64.deb ...
+Unpacking figlet (2.2.5-3) ...
+Setting up figlet (2.2.5-3) ...
+update-alternatives: using /usr/bin/figlet-figlet to provide /usr/bin/figlet (figlet) in auto mode</span>
+<span class="lx-cmd lx-root">figlet Hi</span>
+<span class="lx-o"> _   _ _ 
+| | | (_)
+| |_| | |
+|  _  | |
+|_| |_|_|
+         </span>
+<span class="lx-cmd lx-root">dpkg -r figlet 2&gt;&amp;1 | grep -v 'Reading database'</span>
+<span class="lx-o">Removing figlet (2.2.5-3) ...</span></pre><div class="lx-note">figlet only needs libc6, which every system has, so dpkg could install it alone. With a missing dependency dpkg would stop and leave the package half configured, and sudo apt install -f would then fetch what is missing. The postinst script registered /usr/bin/figlet through update-alternatives.</div></div>
+<div class="vt-talk" hidden>Under apt sits dpkg, the tool that really unpacks packages and keeps the database of every installed file in slash var slash lib slash dpkg. A dot deb file has two parts. The control part holds the facts, such as the name, version and dependencies, plus small maintainer scripts that run before and after installing or removing, for example to create a service user. The data part holds the files that go into the file tree. You can look inside without installing, using dpkg deb dash capital I for the facts and dash c for the file list. Dpkg dash i installs a downloaded dot deb file, but it does not fetch dependencies, so the better way is sudo apt install with a dot slash in front of the file name, which lets apt fetch whatever is missing. Dpkg dash capital L lists a package’s files, and dpkg dash capital S finds which package owns a file.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="other" data-l="other" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Other package managers, universal packages and source builds</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Task</th><th>Debian, Ubuntu (apt)</th><th>Fedora, RHEL (dnf)</th><th>Arch (pacman)</th><th>openSUSE (zypper)</th></tr></thead><tbody><tr><td>refresh lists</td><td><code>apt update</code></td><td><code>dnf makecache</code> (also automatic)</td><td>part of <code>pacman -Syu</code></td><td><code>zypper refresh</code></td></tr><tr><td>upgrade all</td><td><code>apt upgrade</code></td><td><code>dnf upgrade</code></td><td><code>pacman -Syu</code></td><td><code>zypper update</code></td></tr><tr><td>install</td><td><code>apt install PKG</code></td><td><code>dnf install PKG</code></td><td><code>pacman -S PKG</code></td><td><code>zypper install PKG</code></td></tr><tr><td>remove</td><td><code>apt remove PKG</code></td><td><code>dnf remove PKG</code></td><td><code>pacman -R PKG</code></td><td><code>zypper remove PKG</code></td></tr><tr><td>search</td><td><code>apt search WORD</code></td><td><code>dnf search WORD</code></td><td><code>pacman -Ss WORD</code></td><td><code>zypper search WORD</code></td></tr><tr><td>which package owns a file</td><td><code>dpkg -S FILE</code></td><td><code>rpm -qf FILE</code></td><td><code>pacman -Qo FILE</code></td><td><code>rpm -qf FILE</code></td></tr><tr><td>files of a package</td><td><code>dpkg -L PKG</code></td><td><code>rpm -ql PKG</code></td><td><code>pacman -Ql PKG</code></td><td><code>rpm -ql PKG</code></td></tr><tr><td>history</td><td><code>/var/log/apt/history.log</code></td><td><code>dnf history</code></td><td><code>/var/log/pacman.log</code></td><td><code>/var/log/zypp/history</code></td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Way</th><th>Example</th><th>Good for</th><th>Watch out for</th></tr></thead><tbody><tr><td>snap</td><td><code>sudo snap install code --classic</code></td><td>apps bundled with their libraries, updated automatically</td><td>larger downloads, mainly Ubuntu</td></tr><tr><td>Flatpak</td><td><code>flatpak install flathub org.gimp.GIMP</code></td><td>desktop apps from Flathub, run in a sandbox</td><td>desktop use, not servers</td></tr><tr><td>AppImage</td><td><code>chmod +x Tool.AppImage && ./Tool.AppImage</code></td><td>one file that runs without installing</td><td>no automatic updates</td></tr><tr><td>Language managers</td><td><code>pip</code>, <code>npm</code>, <code>cargo</code></td><td>libraries for your own projects</td><td>use virtual environments, never sudo pip</td></tr><tr><td>From source</td><td><code>./configure && make && sudo make install</code></td><td>newest versions, custom builds</td><td>apt does not know these files, so no updates or clean removal</td></tr></tbody></table></div>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>Building from source (the GNU convention)</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>tar xf tool-2.1.tar.gz &amp;&amp; cd tool-2.1
+./configure --prefix=/usr/local     # check the system, write the Makefile
+make                                # compile
+sudo make install                   # copy into /usr/local/bin, /usr/local/lib ...</pre><div class="lx-note">/usr/local is kept for software that the package manager does not manage, so the two never overwrite each other. /usr/local/bin comes before /usr/bin in PATH.</div></div>
+<div class="vt-talk" hidden>Other distributions use other tools, but they do the same jobs. On Fedora and Red Hat you type dnf install, on Arch pacman dash capital S, and on openSUSE zypper install. The table lets you translate between them. There are also universal formats that work across distributions. Snap and Flatpak bundle an application with its libraries and keep it updated, and Flatpak runs desktop apps in a sandbox. An AppImage is a single file you make executable and run. Programming languages have their own managers, such as pip and npm, which are for project libraries and should not be run with sudo. And when you need a version that no package offers, you can build from source with configure, make and make install, which by convention goes into slash usr slash local so it never collides with packaged files.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Practice: install a tool in the practice shell</h2>
+<p>The practice shell has a small apt and dpkg with real Ubuntu 24.04 package data, so versions, sizes and dependencies match a real system. Downloads are pretend.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Find, install, use and remove jq&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Try to run jq, which is not installed yet.&quot;, &quot;hint&quot;: &quot;jq --version&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*jq\\b&quot;}, {&quot;code&quot;: 127}]}, {&quot;t&quot;: &quot;Refresh the package lists.&quot;, &quot;hint&quot;: &quot;sudo apt update&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;sudo\\s+apt(-get)?\\s+update&quot;}, {&quot;out&quot;: &quot;Reading package lists&quot;}]}, {&quot;t&quot;: &quot;Search for packages about JSON.&quot;, &quot;hint&quot;: &quot;apt search json&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;apt(-cache)?\\s+search&quot;}, {&quot;out&quot;: &quot;^jq/&quot;}]}, {&quot;t&quot;: &quot;Install jq without being asked to confirm.&quot;, &quot;hint&quot;: &quot;sudo apt install -y jq&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;/usr/bin/jq&quot;}]}, {&quot;t&quot;: &quot;Print the version of jq.&quot;, &quot;hint&quot;: &quot;jq --version&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^jq-1\\.7\\.1$&quot;}]}, {&quot;t&quot;: &quot;Use jq to print the name from the JSON {\&quot;name\&quot;: \&quot;web1\&quot;}.&quot;, &quot;hint&quot;: &quot;echo &#x27;{\&quot;name\&quot;: \&quot;web1\&quot;}&#x27; | jq -r .name&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^web1$&quot;}]}, {&quot;t&quot;: &quot;Find which package owns /usr/bin/jq.&quot;, &quot;hint&quot;: &quot;dpkg -S /usr/bin/jq&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^jq: /usr/bin/jq$&quot;}]}, {&quot;t&quot;: &quot;Remove jq without confirming.&quot;, &quot;hint&quot;: &quot;sudo apt remove -y jq&quot;, &quot;check&quot;: [{&quot;gone&quot;: &quot;/usr/bin/jq&quot;}]}, {&quot;t&quot;: &quot;Remove the libraries that came with it.&quot;, &quot;hint&quot;: &quot;sudo apt autoremove -y&quot;, &quot;check&quot;: [{&quot;gone&quot;: &quot;/usr/lib/x86_64-linux-gnu/libjq.so.1&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now try it yourself. The practice shell has a small version of apt that uses real Ubuntu twenty four point zero four package data, so the versions and sizes are the true ones. First check that jq, a popular tool for reading JSON, is missing. Then refresh the lists with sudo apt update, search for JSON, and install jq with dash y. Run it, print a value from a small JSON text, and ask dpkg which package owns its file. Finally remove jq and use autoremove to clean up the two libraries that came with it.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Software management from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Install software from the distribution’s repositories with the package manager. Run sudo apt update and sudo apt upgrade often, because most updates are security fixes.</p></div><div class="ld-p" data-ld="college" hidden><p>Servers install security updates automatically with unattended-upgrades on Debian and Ubuntu, or dnf-automatic on Fedora and RHEL, and reboot in a planned window when the kernel changes (needrestart and /var/run/reboot-required tell you). Pin important versions with apt-mark hold, and read /var/log/apt/history.log to see what changed and when.</p></div><div class="ld-p" data-ld="masters" hidden><p>Companies mirror repositories (aptly, Pulp, Artifactory) so every server installs exactly the same tested versions. Configuration management (Ansible, Puppet, Salt) states which packages must be present. Container images and image-based systems such as Fedora Silverblue or Ubuntu Core replace package by package upgrades with whole images that are swapped and can be rolled back.</p></div><div class="ld-p" data-ld="research" hidden><p>Reproducible builds aim for identical binary packages from identical source, so anyone can check that a package matches its code. Debian, Arch and others track this at reproducible-builds.org. Nix and Guix install every package under a path made from a hash of all its inputs, which allows many versions side by side and atomic rollbacks. The 2024 xz-utils backdoor showed why supply chain checks matter.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the upgrade that broke production</div><p>An admin ran <code>sudo apt full-upgrade -y</code> on a database server on a Friday evening. A new major version of the database package was pulled in, and the service did not start because its data needed a migration. Since then, the team holds the database package with <code>apt-mark hold</code>, lets unattended-upgrades install only security updates, tests every upgrade on a staging copy first, and reads <code>/var/log/apt/history.log</code> after each change.</p></div>
+<div class="vt-talk" hidden>Here is how software management grows up. At home, keeping a system updated is the single most important security habit. On servers, security updates are usually installed automatically with unattended upgrades, while bigger changes go through a test server first, and important packages are held at a fixed version. Larger companies keep their own copies of the repositories so that every machine gets exactly the same tested packages, and tools such as Ansible describe which packages each server must have. Newer systems go further and update the whole system as one image that can be rolled back. Researchers work on reproducible builds, which let anyone check that a binary package really comes from its published source code. And systems such as Nix give every package a unique path from a hash of its inputs, so many versions can live side by side.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./users-sudo.html" data-topic="users-sudo"><small>Previous topic</small><b>Users and sudo</b></a><a class="next" href="./boot-systemd.html" data-topic="boot-systemd"><small>Next topic</small><b>Boot and systemd</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "packages", "topic": "packages", "subject": "linux", "title": "Installing software: apt, dpkg and other package managers", "codes": {}, "quiz": [{"lv": "e", "q": "Which command downloads fresh package lists on Ubuntu?", "o": ["sudo apt upgrade", "sudo apt update", "sudo apt refresh", "sudo apt list"], "a": 1, "hint": "Update the lists.", "why": "update only refreshes the lists."}, {"lv": "e", "q": "Which package file type does Fedora use?", "o": [".deb", ".rpm", ".apk", ".exe"], "a": 1, "hint": "Red Hat.", "why": "RPM packages."}, {"lv": "e", "q": "Which command installs a package on Debian?", "o": ["sudo apt install PKG", "sudo dnf install PKG", "sudo pacman -S PKG", "sudo get PKG"], "a": 0, "hint": "apt.", "why": "apt install."}, {"lv": "e", "q": "What is a dependency?", "o": ["A virus", "Another package that a package needs", "A backup", "A user group"], "a": 1, "hint": "Needs.", "why": "apt installs dependencies automatically."}, {"lv": "m", "q": "What is the difference between apt remove and apt purge?", "o": ["None", "purge also deletes configuration files", "remove deletes more", "purge only works on Fedora"], "a": 1, "hint": "Config.", "why": "remove keeps the configuration files."}, {"lv": "m", "q": "Which command shows which package owns /usr/bin/ssh?", "o": ["dpkg -L /usr/bin/ssh", "dpkg -S /usr/bin/ssh", "apt show /usr/bin/ssh", "which ssh"], "a": 1, "hint": "Search.", "why": "dpkg -S searches the file lists."}, {"lv": "m", "q": "Why should scripts use apt-get rather than apt?", "o": ["apt-get is faster", "apt’s output may change between versions", "apt needs a desktop", "apt cannot install"], "a": 1, "hint": "Stable interface.", "why": "apt warns about its unstable CLI."}, {"lv": "m", "q": "What does apt autoremove remove?", "o": ["All packages", "Automatic dependencies that nothing needs", "Old kernels only", "Configuration files"], "a": 1, "hint": "Orphans.", "why": "Automatic packages no longer required."}, {"lv": "m", "q": "Which command keeps a package at its current version?", "o": ["apt-mark hold PKG", "apt freeze PKG", "dpkg -l PKG", "apt lock PKG"], "a": 0, "hint": "Hold.", "why": "apt-mark hold."}, {"lv": "h", "q": "dpkg -i stopped because a dependency is missing. What fixes it?", "o": ["Reboot", "sudo apt install -f", "sudo dpkg --force-all", "Delete /var/lib/dpkg"], "a": 1, "hint": "Fix broken.", "why": "apt -f fetches the missing dependencies."}, {"lv": "h", "q": "Where does software built with ./configure && make install go by default?", "o": ["/usr/bin", "/usr/local", "/opt/apt", "/home"], "a": 1, "hint": "Local.", "why": "The default prefix is /usr/local."}, {"lv": "h", "q": "What is the rpm equivalent of dpkg -L PKG?", "o": ["rpm -qf PKG", "rpm -ql PKG", "rpm -i PKG", "rpm -e PKG"], "a": 1, "hint": "Query list.", "why": "rpm -ql lists the files."}, {"lv": "h", "q": "Which maintainer script runs after a package’s files are unpacked?", "o": ["prerm", "postinst", "preinst", "postrm"], "a": 1, "hint": "After install.", "why": "postinst runs after unpacking."}, {"lv": "x", "q": "What guarantees that apt’s package lists were not changed by an attacker?", "o": ["HTTPS only", "The Release file signed with the repository key, with hashes of the lists", "File names", "dpkg -S"], "a": 1, "hint": "Signed.", "why": "The signature covers hashes of the lists, which cover each .deb."}], "calc": [{"lv": "e", "q": "apt says it will install 3 new packages and 0 others change. How many packages appear on the NEW line?", "ans": "3", "hint": "Count them.", "steps": ["The summary says 3 newly installed.", "All of them are new.", "<span class=\"eq\">3<\/span>"]}, {"lv": "e", "q": "jq needs libjq1, and libjq1 needs libonig5. How many packages does sudo apt install jq add on a fresh system?", "ans": "3", "hint": "Follow the chain.", "steps": ["jq itself.", "libjq1 and libonig5.", "<span class=\"eq\">1 + 2 = 3<\/span>"]}, {"lv": "m", "q": "cowsay is 91 KiB and libtext-charwidth-perl 41 KiB. How many KiB do both use?", "ans": "132", "hint": "Add them.", "steps": ["91 + 41.", "apt shows it as 135 kB, since it multiplies by 1024 and divides by 1000.", "<span class=\"eq\">132 KiB<\/span>"]}, {"lv": "m", "q": "Downloads of 18572 and 9358 bytes. What is the total in bytes?", "ans": "27930", "hint": "apt shows 27.9 kB.", "steps": ["18572 + 9358.", "Divide by 1000 for kB.", "<span class=\"eq\">27930 B<\/span>"]}, {"lv": "h", "q": "Removing jq frees 113 KiB. How many bytes is that?", "ans": "115712", "hint": "Times 1024.", "steps": ["1 KiB is 1024 bytes.", "113 × 1024.", "<span class=\"eq\">115712 B<\/span>"]}, {"lv": "h", "q": "A server has 41 upgradable packages and you hold 2 of them. How many will apt upgrade install?", "ans": "39", "hint": "Holds are skipped.", "steps": ["Held packages stay.", "41 − 2.", "<span class=\"eq\">39<\/span>"]}], "assign": [], "must": [["apt", "sudo apt update, then upgrade. install, remove, purge (also config), autoremove, search, show, list --installed."], ["dpkg", "dpkg -l lists, -L files of a package, -S owner of a file, -i installs a .deb without dependencies."], ["Repositories", "Listed in /etc/apt/sources.list.d, signed with keys. Add third-party ones only when you trust them."], ["Other families", "dnf and rpm (Fedora, RHEL), pacman (Arch), zypper (SUSE). snap and Flatpak bundle apps."], ["Safe habits", "Read the plan before Y, use apt-get in scripts, hold critical packages, automatic security updates, build from source into /usr/local."]], "summary": "<p>Package managers install software from signed repositories with all its dependencies. apt update refreshes the lists, apt upgrade installs fixes, and install, remove, purge and autoremove manage packages, while dpkg works with single .deb files and the database of installed files. dnf, pacman and zypper do the same jobs on other distributions.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

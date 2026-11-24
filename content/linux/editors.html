@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editing text: nano and vim · Unix and Linux</title>
+<meta name="description" content="nano keys (write out, exit, cut, paste, search, undo), vim modes, motions, operators, search and replace, saving and quitting, vimtutor, VISUAL and EDITOR, select-editor, sudoedit, visudo, swap files and recovery.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=basics">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=basics" target="_top">Unix and Linux</a><span>›</span><span>Foundations</span><span>›</span><span>Step 3: Permissions and editing</span><span>›</span><span>nano and vim</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 2 of 2 · Beginner</div>
+    <h1>Editing text: nano and vim</h1>
+    <p class="lead">Edit files inside the terminal: nano for quick friendly changes, vim for speed once you know its modes, and how to choose your default editor and make small edits without opening one.</p>
+    <div class="cv-chips"><span class="cv-chip">About 35 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">4 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#editors" data-topic="cheatsheet" data-h="editors">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#nano" data-l="nano"><span class="n">1</span><span class="t">nano: the friendly editor</span></a></li><li><a href="#vim" data-l="vim"><span class="n">2</span><span class="t">vim: the editor with modes</span></a></li><li><a href="#choose" data-l="choose"><span class="n">3</span><span class="t">Choosing an editor and editing without one</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">Editors from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="nano" data-l="nano" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>nano: the friendly editor</h2>
+<p>Servers usually have no mouse and no windows, so you edit configuration files right inside the terminal. <code>nano</code> is the easiest editor to start with: you type and the text appears, and the main commands are listed at the bottom of the screen. In that list <b>^</b> means the Ctrl key and <b>M-</b> means the Alt key.</p>
+<div class="lx-run"><div class="lx-rh"><span>What nano looks like</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">nano notes.txt</span>
+<span class="lx-o">  GNU nano 7.2                       notes.txt
+Buy milk
+Call grandma
+Finish the Linux lesson
+
+
+                             [ Read 3 lines ]
+^G Help      ^O Write Out ^W Where Is  ^K Cut       ^T Execute   ^C Location
+^X Exit      ^R Read File ^\ Replace   ^U Paste     ^J Justify   ^/ Go To Line</span></pre><div class="lx-note">The two bottom rows are the shortcut list. The exact list changes a little between nano versions.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Keys</th><th>What it does</th><th>Shown as</th></tr></thead><tbody><tr><td><code>Ctrl+O, Enter</code></td><td>Write out (save) the file, Enter accepts the file name</td><td><code>^O</code></td></tr><tr><td><code>Ctrl+X</code></td><td>Exit. If there are unsaved changes nano asks Y or N first</td><td><code>^X</code></td></tr><tr><td><code>Ctrl+K</code></td><td>Cut the current line</td><td><code>^K</code></td></tr><tr><td><code>Ctrl+U</code></td><td>Paste the lines you cut</td><td><code>^U</code></td></tr><tr><td><code>Ctrl+W</code></td><td>Search for text (Where Is)</td><td><code>^W</code></td></tr><tr><td><code>Alt+U and Alt+E</code></td><td>Undo and redo</td><td><code>M-U</code></td></tr><tr><td><code>Ctrl+G</code></td><td>Help with every shortcut</td><td><code>^G</code></td></tr><tr><td><code>nano +12 FILE</code></td><td>Open the file with the cursor on line 12</td><td><code>nano +12 app.conf</code></td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Edit a file with nano</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Open it: <code>nano notes.txt</code>.</li><li>Move with the arrow keys and type your change.</li><li>Press Ctrl+O, check the file name at the bottom, press Enter.</li><li>Press Ctrl+X to leave.</li></ol></div>
+<div class="vt-talk" hidden>If you have never edited a file in a terminal, start with nano. It works like a basic notepad. You open a file, move with the arrow keys, type, and the text appears. The only new thing is that commands use the Control key, and nano lists them at the bottom of the screen, where a small hat symbol means Control. Control O writes the file to disk, which nano calls write out. Control X exits, and if you forgot to save, nano asks you first. Control K cuts a whole line and Control U pastes it back, which is the quickest way to move lines around. nano began in 1999 as a free copy of an older editor called Pico, and today it is installed by default on Ubuntu and many other distributions, so it is a safe choice on almost any server you log into.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="vim" data-l="vim" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>vim: the editor with modes</h2>
+<p><code>vim</code> (Vi IMproved) is on nearly every Unix system, often also as <code>vi</code>. It looks strange at first because it has <b>modes</b>. In <b>Normal</b> mode every key is a command: j moves down, dd deletes a line. In <b>Insert</b> mode keys type text. You switch between them all the time, and once your fingers know the keys, editing becomes very fast.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Normal</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">the starting mode</div><div class="fx-n">Keys move the cursor and change text. Esc always brings you back here.</div></div><div class="fx"><div class="fx-h"><span>Insert</span></div><div class="fx-b">typing text</div><div class="fx-n">Enter with i, a, A, o or O. The bottom line shows -- INSERT --.</div></div><div class="fx fx-key"><div class="fx-h"><span>Command line</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">starts with :</div><div class="fx-n">:w saves, :q quits, :wq saves and quits, :q! quits without saving.</div></div><div class="fx"><div class="fx-h"><span>Visual</span></div><div class="fx-b">selecting</div><div class="fx-n">v selects characters, V whole lines. Then d deletes or y copies the selection.</div></div></div>
+<div class="viz" data-viz="pk" data-pk="lx-vim"></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>In Normal mode</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>h j k l</code></td><td>Left, down, up, right (the arrow keys work too)</td><td><code>jjj</code></td></tr><tr><td><code>w and b</code></td><td>Next word, back one word</td><td><code>w</code></td></tr><tr><td><code>0 and $</code></td><td>Start and end of the line</td><td><code>$</code></td></tr><tr><td><code>gg and G</code></td><td>First line and last line. 12G goes to line 12</td><td><code>G</code></td></tr><tr><td><code>i a A o O</code></td><td>Insert before, append after, append at line end, open line below, open line above</td><td><code>o</code></td></tr><tr><td><code>x</code></td><td>Delete the character under the cursor</td><td><code>x</code></td></tr><tr><td><code>dd and yy</code></td><td>Delete (cut) a line, yank (copy) a line</td><td><code>dd</code></td></tr><tr><td><code>p and P</code></td><td>Paste after or before the cursor</td><td><code>p</code></td></tr><tr><td><code>u and Ctrl+R</code></td><td>Undo and redo</td><td><code>u</code></td></tr><tr><td><code>/word, n, N</code></td><td>Search forwards, next match, previous match</td><td><code>/ERROR</code></td></tr><tr><td><code>:%s/old/new/g</code></td><td>Replace every old with new in the whole file</td><td><code>:%s/http/https/g</code></td></tr><tr><td><code>:w :q :wq :q!</code></td><td>Save, quit, save and quit, quit and discard changes</td><td><code>:wq</code></td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Stuck in vim with keys doing strange things? Press Esc two times, then type <code>:q!</code> and Enter to leave without saving. Run <code>vimtutor</code> for a free 30 minute lesson inside vim itself.</div></div>
+<details class="deep"><summary>Going deeper: Why vim keys combine like words</summary><div class="deep-b"><p>Most Normal mode commands are an <b>operator</b> followed by a <b>motion</b>. d is delete, c is change, y is yank. w is a word, $ is the end of the line, G is the end of the file. So dw deletes a word, d$ deletes to the end of the line, yG copies everything to the end of the file and cw changes a word. A number repeats: 3dd deletes three lines. Once you know 5 operators and 10 motions you have 50 commands without learning each one.</p></div></details>
+<div class="vt-talk" hidden>vim is famous for being hard to quit. A question on Stack Overflow called how do I exit the vim editor has been viewed millions of times. The reason is modes. When vim opens, it is in Normal mode, where letters are commands, not text. Press i to enter Insert mode and type normally. Press Escape to go back. To save and quit, type colon w q and press Enter. To quit and throw away changes, type colon q exclamation mark. The original vi was written by Bill Joy at Berkeley in 1976, for slow terminals where every keystroke mattered. Bram Moolenaar released vim in 1991 and looked after it for over thirty years. Why learn it? Because vi or vim is present on almost every Unix machine, even tiny rescue systems, and because its keys work like a small language. d means delete and w means word, so d w deletes a word.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="choose" data-l="choose" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>Choosing an editor and editing without one</h2>
+<p>Programs such as <code>crontab -e</code>, <code>git commit</code> and <code>visudo</code> open an editor for you. They look at the <b>VISUAL</b> and <b>EDITOR</b> variables to decide which one. On Debian and Ubuntu, <code>select-editor</code> asks you once and remembers the answer.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>export EDITOR=nano</code></td><td>Use nano from now on in this shell (add it to ~/.bashrc to keep it)</td><td><code>export EDITOR=vim</code></td></tr><tr><td><code>select-editor</code></td><td>Debian and Ubuntu: pick your editor from a numbered list</td><td><code>select-editor</code></td></tr><tr><td><code>sudoedit FILE</code></td><td>Edit a root owned file safely: your editor works on a copy, sudo writes it back</td><td><code>sudoedit /etc/hosts</code></td></tr><tr><td><code>vim -R FILE or view FILE</code></td><td>Open read only, so you cannot change it by accident</td><td><code>view /etc/fstab</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Small edits without opening an editor</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">echo "Water the plants" &gt;&gt; notes.txt</span>
+<span class="lx-cmd">cat notes.txt</span>
+<span class="lx-o">Buy milk
+Call grandma
+Finish the Linux lesson
+Water the plants</span>
+<span class="lx-cmd">cat &gt; shopping.txt &lt;&lt; 'END'
+milk
+eggs
+bread
+END</span>
+<span class="lx-cmd">cat shopping.txt</span>
+<span class="lx-o">milk
+eggs
+bread</span>
+<span class="lx-cmd">vim -Es -u NONE -c '%s/milk/oat milk/' -c 'wq' shopping.txt</span>
+<span class="lx-cmd">cat shopping.txt</span>
+<span class="lx-o">oat milk
+eggs
+bread</span></pre><div class="lx-note">&gt;&gt; adds a line at the end of a file, and cat with a here document writes several lines at once. Both are explained fully in Shell Power Tools. The vim line runs vim with no screen: it replaces milk with oat milk and saves, which is handy in scripts.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Never edit /etc/sudoers with a normal editor. Use <code>visudo</code>, which checks the file before saving. A typing mistake in that file can stop sudo working for everyone.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Edit files the shell way&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Add the line &lt;code&gt;Water the plants&lt;/code&gt; to the end of &lt;code&gt;notes.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;echo \&quot;Water the plants\&quot; &gt;&gt; notes.txt&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;notes.txt&quot;, &quot;Water the plants&quot;]}, {&quot;has&quot;: [&quot;notes.txt&quot;, &quot;Buy milk&quot;]}]}, {&quot;t&quot;: &quot;Create &lt;code&gt;todo.txt&lt;/code&gt; containing the single line &lt;code&gt;learn vim&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;echo \&quot;learn vim\&quot; &gt; todo.txt&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;todo.txt&quot;, &quot;learn vim&quot;]}, {&quot;lines&quot;: [&quot;todo.txt&quot;, 1]}]}, {&quot;t&quot;: &quot;Write a three line file &lt;code&gt;list.txt&lt;/code&gt; (milk, eggs, bread) with cat and a here document.&quot;, &quot;hint&quot;: &quot;cat &gt; list.txt &lt;&lt; &#x27;END&#x27;\nmilk\neggs\nbread\nEND&quot;, &quot;check&quot;: [{&quot;lines&quot;: [&quot;list.txt&quot;, 3]}, {&quot;has&quot;: [&quot;list.txt&quot;, &quot;eggs&quot;]}]}, {&quot;t&quot;: &quot;Make vim your default editor for this shell.&quot;, &quot;hint&quot;: &quot;export EDITOR=vim&quot;, &quot;check&quot;: [{&quot;env&quot;: [&quot;EDITOR&quot;, &quot;vim&quot;]}]}, {&quot;t&quot;: &quot;Check the result by printing the variable.&quot;, &quot;hint&quot;: &quot;echo $EDITOR&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^vim$&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Some commands open an editor on their own. When you run crontab dash e to schedule a job, or git commit without a message, the program needs to know which editor you like. It checks a variable called VISUAL, then one called EDITOR, and falls back to a default, often nano or vi. Set EDITOR in your bashrc file and every program follows your choice. Also remember that many small edits need no editor at all. Two arrows add a line to the end of a file. cat with a here document writes several lines at once. Even vim can be told to make a change and save without showing a screen, which is useful in scripts. And for the system file that controls sudo, always use visudo, because it refuses to save a broken file that could lock everyone out.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>Editors from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>nano is the easy editor: type, Ctrl+O to save, Ctrl+X to exit. vim has modes: i to type, Esc to stop typing, :wq to save and quit, :q! to quit without saving.</p></div><div class="ld-p" data-ld="college" hidden><p>Terminal editors read the file into a buffer, let you change it, and write the buffer back on save. vim is modal and composes operators (d, c, y) with motions (w, $, G, text objects such as iw). Programs pick an editor from VISUAL, then EDITOR, and Debian also offers the sensible-editor command.</p></div><div class="ld-p" data-ld="masters" hidden><p>Editors draw the screen through terminal escape codes described by the terminfo database (TERM). Safe saving writes a new file and renames it over the old one, or writes in place with a backup, which vim controls with the backupcopy option. vim keeps a swap file (.notes.txt.swp) so a crash or a lost SSH connection does not lose work, and warns when another vim already edits the same file.</p></div><div class="ld-p" data-ld="research" hidden><p>Text editors are a research subject in human computer interaction, from studies of modal versus modeless editing (Larry Tesler argued against modes at Xerox PARC in the 1970s) to the data structures that hold the text, such as gap buffers, piece tables and ropes, and to CRDTs that let several people edit the same file at once without a central server.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the lost SSH session</div><p>An admin edits /etc/nginx/nginx.conf in vim over a slow connection and the session drops. On logging back in, vim says a swap file .nginx.conf.swp exists. Pressing R recovers the unsaved changes, and after checking them the admin deletes the swap file. nano saves a similar emergency copy named nginx.conf.save.</p></div>
+<div class="vt-talk" hidden>Under the surface, an editor is a program that loads a file into memory, lets you change that copy, and writes it back when you save. The screen is drawn with special character codes that the terminal understands, and the TERM variable tells the editor which codes to use. vim protects you with a swap file. If your connection drops in the middle of editing, the swap file still holds your changes, and vim offers to recover them the next time you open the file. Researchers have studied editors for decades. Larry Tesler at Xerox famously argued that modes confuse people, while vim users argue that modes make editing faster once learned. Inside, editors use clever structures such as piece tables and ropes to change large files quickly, and modern collaborative editors use special data types called CRDTs so many people can type in the same document at once.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./permissions.html" data-topic="permissions"><small>Previous topic</small><b>Permissions</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "editors", "topic": "editors", "subject": "linux", "title": "Editing text: nano and vim", "codes": {}, "quiz": [{"lv": "e", "q": "In nano, which keys save the file?", "o": ["Ctrl+S", "Ctrl+O then Enter", "Ctrl+X", "Esc :w"], "a": 1, "hint": "Write Out.", "why": "Ctrl+O writes out the file, Enter accepts the name."}, {"lv": "e", "q": "In vim, which key starts typing text before the cursor?", "o": ["i", "x", "q", "d"], "a": 0, "hint": "Insert.", "why": "i enters Insert mode."}, {"lv": "e", "q": "How do you quit vim without saving?", "o": [":wq", ":q!", "Ctrl+X", "exit"], "a": 1, "hint": "Force quit.", "why": ":q! quits and discards changes."}, {"lv": "e", "q": "What does ^X mean in the nano shortcut list?", "o": ["The X key twice", "Ctrl+X", "Shift+X", "Alt+X"], "a": 1, "hint": "The hat is Ctrl.", "why": "^ stands for the Ctrl key, M- for Alt."}, {"lv": "m", "q": "In vim Normal mode, what does dd do?", "o": ["Duplicates a line", "Deletes (cuts) the current line", "Moves down", "Saves"], "a": 1, "hint": "Delete line.", "why": "dd deletes the line into the register, p pastes it."}, {"lv": "m", "q": "You typed :wq but the text \":wq\" appeared in your file. What happened?", "o": ["vim is broken", "You were still in Insert mode, press Esc first", "The file is read only", "You need sudo"], "a": 1, "hint": "Modes.", "why": "Commands work only after Esc returns you to Normal mode."}, {"lv": "m", "q": "Which variable do programs such as crontab -e check to choose your editor?", "o": ["SHELL", "EDITOR (after VISUAL)", "TERM", "PATH"], "a": 1, "hint": "Editor variable.", "why": "Programs check VISUAL, then EDITOR."}, {"lv": "m", "q": "Which vim command replaces every \"http\" with \"https\" in the whole file?", "o": ["/http/https", ":%s/http/https/g", ":r http https", "cw https"], "a": 1, "hint": "Substitute on every line.", "why": "% means all lines, s substitute, g every match in a line."}, {"lv": "m", "q": "What is the safe way to edit /etc/sudoers?", "o": ["nano /etc/sudoers", "visudo", "echo >> /etc/sudoers", "chmod 777 /etc/sudoers"], "a": 1, "hint": "It checks before saving.", "why": "visudo checks the syntax so a mistake cannot lock you out."}, {"lv": "h", "q": "What does d$ do in vim?", "o": ["Deletes the whole file", "Deletes from the cursor to the end of the line", "Deletes the last line", "Saves and quits"], "a": 1, "hint": "Operator plus motion.", "why": "d is delete, $ is the end of the line."}, {"lv": "h", "q": "vim says a swap file .app.conf.swp exists. What is the most likely cause?", "o": ["The file is a virus", "An earlier vim session on this file crashed or is still open", "The disk is full", "The file is binary"], "a": 1, "hint": "Crash protection.", "why": "vim keeps a swap file while editing and leaves it behind after a crash."}, {"lv": "h", "q": "Why do sysadmins learn vi even if they prefer nano?", "o": ["vi is faster to install", "vi or vim is present on almost every Unix system, even minimal ones", "nano cannot save", "vi has a mouse"], "a": 1, "hint": "Always there.", "why": "vi is part of the POSIX standard, so it is installed on nearly every Unix-like system."}, {"lv": "x", "q": "In vim, what does 3dw do?", "o": ["Deletes 3 lines", "Deletes 3 words", "Moves 3 words", "Copies 3 words"], "a": 1, "hint": "Count, operator, motion.", "why": "A count repeats the operator and motion: three words are deleted."}], "calc": [{"lv": "e", "q": "In vim you press dd on line 4 of a 10 line file. How many lines are left?", "ans": "9", "hint": "One line removed.", "steps": ["Start: 10 lines.", "dd removes 1.", "<span class=\"eq\">10 − 1 = 9<\/span>"]}, {"lv": "e", "q": "You yank one line with yy and press p three times. How many new lines appear?", "ans": "3", "hint": "Each p pastes once.", "steps": ["The register holds 1 line.", "p is pressed 3 times.", "<span class=\"eq\">1 × 3 = 3 new lines<\/span>"]}, {"lv": "m", "q": "A file has 120 lines. You are on line 1. What count do you type before G to land on line 87?", "ans": "87", "hint": "nG goes to line n.", "steps": ["G alone goes to the last line.", "A number before G names the line.", "<span class=\"eq\">87G<\/span>"]}, {"lv": "m", "q": "You run 5dd on line 3 of a 20 line file. How many lines does the file have afterwards?", "ans": "15", "hint": "A count repeats dd.", "steps": ["5dd deletes lines 3 to 7.", "Lines removed: 5.", "<span class=\"eq\">20 − 5 = 15<\/span>"]}, {"lv": "m", "q": "With 5 operators (d c y > <) and 8 motions (w b e $ 0 G gg }), how many operator plus motion pairs are there?", "ans": "40", "hint": "Every operator with every motion.", "steps": ["Operators: 5.", "Motions: 8.", "<span class=\"eq\">5 × 8 = 40 commands<\/span>"]}, {"lv": "h", "q": "You save a 2 MB file over SSH at 250 KB per second upload speed for a remote editor that sends the whole file. About how many seconds does each save take?", "ans": "8", "hint": "Size over speed, 1 MB = 1000 KB here.", "steps": ["Size: 2 MB = 2000 KB.", "Speed: 250 KB per second.", "<span class=\"eq\">2000 ÷ 250 = 8 seconds<\/span>"]}], "assign": [], "must": [["nano", "Type to edit. Ctrl+O and Enter saves, Ctrl+X exits, Ctrl+K cuts a line, Ctrl+U pastes, Ctrl+W searches."], ["vim modes", "Normal for commands, Insert (i a o) for typing, Esc to go back, : for the command line."], ["vim survival", ":w save, :q quit, :wq save and quit, :q! quit without saving. When lost, Esc Esc then :q!."], ["vim editing", "x, dd, yy, p, u, /word, :%s/old/new/g. Operators plus motions: dw, d$, cw. Learn with vimtutor."], ["Editor choice", "Programs use VISUAL then EDITOR. Use visudo for sudoers and sudoedit for root files. &gt;&gt; and here documents edit without an editor."]], "summary": "<p>nano for easy edits, vim with Normal and Insert modes, :wq to save and quit, :q! to escape, EDITOR to choose, and visudo for sudoers.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

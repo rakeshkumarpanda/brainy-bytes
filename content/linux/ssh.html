@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SSH: keys, remote work, tunnels and a safe sshd · Unix and Linux</title>
+<meta name="description" content="How ssh works, host keys and known_hosts, ssh-keygen with Ed25519, passphrases and ssh-agent, ssh-copy-id and authorized_keys, file modes, ~/.ssh/config aliases, scp, sftp and rsync over ssh, local and remote port forwarding, ProxyJump, sshd_config hardening with sshd -t and -T, all run for real with OpenSSH 9.6 in network namespaces.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=admin">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 4: Networking and security</span><span>›</span><span>SSH</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 2 of 3 · Advanced</div>
+    <h1>SSH: keys, remote work, tunnels and a safe sshd</h1>
+    <p class="lead">Log in to other machines with ssh and key pairs, understand host keys and known_hosts, copy files with scp and rsync, reach private services through tunnels and jump hosts, and set up sshd so that password guessing gets nowhere.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">8 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#ssh" data-topic="cheatsheet" data-h="ssh">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#how" data-l="how"><span class="n">1</span><span class="t">How an ssh login works</span></a></li><li><a href="#keys" data-l="keys"><span class="n">2</span><span class="t">Key pairs: ssh-keygen, passphrases and ssh-agent</span></a></li><li><a href="#login" data-l="login"><span class="n">3</span><span class="t">Installing a key and logging in</span></a></li><li><a href="#config" data-l="config"><span class="n">4</span><span class="t">Aliases, file copies and rsync over ssh</span></a></li><li><a href="#tunnels" data-l="tunnels"><span class="n">5</span><span class="t">Port forwarding and jump hosts</span></a></li><li><a href="#server" data-l="server"><span class="n">6</span><span class="t">Securing sshd</span></a></li><li><a href="#practice" data-l="practice"><span class="n">7</span><span class="t">Practice: key login to the file server</span></a></li><li><a href="#levels" data-l="levels"><span class="n">8</span><span class="t">Remote access from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="how" data-l="how" hidden><div class="cv-lno">Lesson 1 of 8</div><h2>How an ssh login works</h2>
+<p><b>SSH</b> (secure shell) gives you a shell, a command or a file copy on another machine over an encrypted connection. The client <code>ssh</code> connects to the server <code>sshd</code> on TCP port 22.</p>
+<div class="walk"><div class="walk-h"><span>One login, in order</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>TCP connection to port 22, then both sides agree on algorithms and run a key exchange. On OpenSSH 9.x the default is a hybrid of sntrup761 and x25519, meant to resist future quantum computers. Everything after this is encrypted.</li><li>The server proves its identity with its <b>host key</b>. The client compares it with <code>~/.ssh/known_hosts</code>. On the first visit it shows the fingerprint and asks.</li><li>The user proves their identity, best with a <b>key pair</b>: the client signs a challenge with the private key, and the server checks it against the public keys in <code>~/.ssh/authorized_keys</code> of the account. A password is the fallback.</li><li>sshd starts a shell or the command you gave, as that user, and pipes its input and output through the encrypted channel.</li></ol></div>
+<div class="viz" data-viz="pk" data-pk="lx-ssh"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>File</th><th>Side</th><th>Holds</th><th>Mode</th></tr></thead><tbody><tr><td><code>~/.ssh/id_ed25519</code></td><td>client</td><td>your private key, never share it</td><td>600</td></tr><tr><td><code>~/.ssh/id_ed25519.pub</code></td><td>client</td><td>your public key, safe to share</td><td>644</td></tr><tr><td><code>~/.ssh/known_hosts</code></td><td>client</td><td>host keys of servers you trust (names hashed on Ubuntu)</td><td>600 or 644</td></tr><tr><td><code>~/.ssh/config</code></td><td>client</td><td>aliases and settings per host</td><td>600</td></tr><tr><td><code>~/.ssh/authorized_keys</code></td><td>server</td><td>public keys allowed to log in as this user</td><td>600, folder 700</td></tr><tr><td><code>/etc/ssh/sshd_config</code></td><td>server</td><td>settings of sshd</td><td>644</td></tr><tr><td><code>/etc/ssh/ssh_host_*_key</code></td><td>server</td><td>the host keys</td><td>600</td></tr></tbody></table></div>
+<div class="vt-talk" hidden>S S H gives you a secure shell on another machine. The client, called s s h, connects to the server program, s s h d, on port twenty two. First the two sides run a key exchange, so everything that follows is encrypted, even your password. Then the server proves who it is with its host key. Your client keeps the host keys of servers you have visited in known hosts, and on the very first visit it shows the fingerprint and asks whether to trust it. If a known server suddenly shows a different key, ssh stops with a loud warning, because someone could be pretending to be that server. Next you prove who you are, best with a key pair. Your private key signs a challenge, and the server checks the signature with your public key in authorized keys. The private key never leaves your computer. Try the animation to see each step, and what you see when a step fails.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="keys" data-l="keys" hidden><div class="cv-lno">Lesson 2 of 8</div><h2>Key pairs: ssh-keygen, passphrases and ssh-agent</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>ssh-keygen -t ed25519 -C COMMENT</code></td><td>Make a new key pair (Ed25519 is short, fast and the modern default)</td><td><code>ssh-keygen -t ed25519 -C "asha@laptop"</code></td></tr><tr><td><code>ssh-keygen -t rsa -b 4096</code></td><td>An RSA key, for old servers that lack Ed25519</td><td><code>ssh-keygen -t rsa -b 4096</code></td></tr><tr><td><code>ssh-keygen -lf FILE</code></td><td>Show the fingerprint of a key</td><td><code>ssh-keygen -lf ~/.ssh/id_ed25519.pub</code></td></tr><tr><td><code>ssh-keygen -p -f FILE</code></td><td>Add or change the passphrase</td><td><code>ssh-keygen -p -f ~/.ssh/id_ed25519</code></td></tr><tr><td><code>eval "$(ssh-agent -s)"</code></td><td>Start an agent that holds unlocked keys for this session</td><td><code>eval "$(ssh-agent -s)"</code></td></tr><tr><td><code>ssh-add, ssh-add -l</code></td><td>Unlock a key into the agent, list loaded keys</td><td><code>ssh-add ~/.ssh/id_ed25519</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Make a key pair and look at it</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ssh-keygen -t ed25519 -N '' -C 'learner@laptop' -f ~/.ssh/id_ed25519</span>
+<span class="lx-o">Created directory '/home/learner/.ssh'.
+Generating public/private ed25519 key pair.
+Your identification has been saved in /home/learner/.ssh/id_ed25519
+Your public key has been saved in /home/learner/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:XOU6vIxXB37QJ/A78Xaqms8Wl+eQvrad0Omvk3IpV/Y learner@laptop
+The key's randomart image is:
++--[ED25519 256]--+
+|            o    |
+|           o +   |
+|          . + = .|
+|       . o o o * |
+|        S + o =o+|
+|         o +.o*+*|
+|        . +  =.@.|
+|         . o+.@.E|
+|          o++*+B+|
++----[SHA256]-----+</span>
+<span class="lx-cmd">ls -l ~/.ssh</span>
+<span class="lx-o">total 8
+-rw------- 1 learner learner 411 Nov 24 05:25 id_ed25519
+-rw-r--r-- 1 learner learner  96 Nov 24 05:25 id_ed25519.pub</span>
+<span class="lx-cmd">cut -c1-60 ~/.ssh/id_ed25519.pub</span>
+<span class="lx-o">ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJTj6PqMlVXU0L4Egt7ILxfC</span>
+<span class="lx-cmd">ssh-keygen -lf ~/.ssh/id_ed25519.pub</span>
+<span class="lx-o">256 SHA256:XOU6vIxXB37QJ/A78Xaqms8Wl+eQvrad0Omvk3IpV/Y learner@laptop (ED25519)</span>
+<span class="lx-cmd">eval "$(ssh-agent -s)"</span>
+<span class="lx-cmd">ssh-add ~/.ssh/id_ed25519</span>
+<span class="lx-cmd">ssh-add -l</span>
+<span class="lx-o">Agent pid 24998
+Identity added: /home/learner/.ssh/id_ed25519 (learner@laptop)
+256 SHA256:XOU6vIxXB37QJ/A78Xaqms8Wl+eQvrad0Omvk3IpV/Y learner@laptop (ED25519)</span>
+<span class="lx-cmd">eval "$(ssh-agent -k)"</span>
+<span class="lx-o">Agent pid 24998 killed</span></pre><div class="lx-note">-N "" sets an empty passphrase so this page can be built without a keyboard. For your own keys, leave -N out and type a passphrase: then a stolen key file is useless without it, and ssh-agent asks for it only once per session. ssh-keygen created ~/.ssh with mode 700 and the private key with mode 600 by itself. The randomart picture is a drawing of the fingerprint, easier for people to compare than a long string.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Never copy your private key to a server or into a chat. Give out only the .pub file. Use one key per device, so you can remove a lost laptop’s key from authorized_keys without touching the others.</div></div>
+<div class="vt-talk" hidden>A key pair has two halves. The private key stays on your computer, readable only by you. The public key, the file ending in dot pub, can be copied anywhere. Ssh keygen dash t ed25519 makes a modern key pair, short and fast. Add a comment with dash capital C so you can recognise it later. Protect the private key with a passphrase, so a stolen file is useless. To avoid typing the passphrase for every login, start ssh agent once per session and unlock the key with ssh add. The fingerprint, shown with ssh keygen dash l f, is a short summary of a key that is easy to compare. Use a separate key for each device, so you can remove one without affecting the others.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="login" data-l="login" hidden><div class="cv-lno">Lesson 3 of 8</div><h2>Installing a key and logging in</h2>
+<div class="lx-run"><div class="lx-rh"><span>An ssh server in one namespace, a client in another</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">for n in web pc; do ip netns add $n; ip -n $n link set lo up; done</span>
+<span class="lx-cmd lx-root">ip link add eth0 netns pc type veth peer name eth0 netns web</span>
+<span class="lx-cmd lx-root">ip -n web addr add 10.0.0.80/24 dev eth0</span>
+<span class="lx-cmd lx-root">ip -n pc addr add 10.0.0.50/24 dev eth0</span>
+<span class="lx-cmd lx-root">ip -n web link set eth0 up</span>
+<span class="lx-cmd lx-root">ip -n pc link set eth0 up</span>
+<span class="lx-cmd lx-root">useradd -m -s /bin/bash deploy</span>
+<span class="lx-cmd lx-root">echo 'deploy:Lab-only-pass-26' | chpasswd</span>
+<span class="lx-cmd lx-root">mkdir -p /srv/sshlab</span>
+<span class="lx-cmd lx-root">ssh-keygen -q -t ed25519 -N '' -f /srv/sshlab/ssh_host_ed25519_key</span>
+<span class="lx-cmd lx-root">printf '%s\n' 'ListenAddress 10.0.0.80' 'HostKey /srv/sshlab/ssh_host_ed25519_key' 'UsePAM yes' 'KbdInteractiveAuthentication no' 'Subsystem sftp /usr/lib/openssh/sftp-server' 'PidFile /srv/sshlab/sshd.pid' &gt; /srv/sshlab/sshd_config</span>
+<span class="lx-cmd lx-root">mkdir -p /run/sshd</span>
+<span class="lx-cmd lx-root">ip netns exec web unshare --uts sh -c 'hostname web1 &amp;&amp; exec /usr/sbin/sshd -f /srv/sshlab/sshd_config'</span>
+<span class="lx-cmd lx-root">ssh-keygen -lf /srv/sshlab/ssh_host_ed25519_key.pub | cut -d' ' -f2</span>
+<span class="lx-o">SHA256:7zR5XxAIYVana1V0SVdJhqmHDj9Wwv3ZaChmw4/gFR4</span>
+<span class="lx-cmd lx-root">pc() { ip netns exec pc sudo -u learner "$@"; }</span>
+<span class="lx-cmd lx-root">pc ssh -o BatchMode=yes deploy@10.0.0.80 true</span>
+<span class="lx-o">Host key verification failed.</span>
+<span class="lx-cmd lx-root">pc ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes deploy@10.0.0.80 true</span>
+<span class="lx-o">Warning: Permanently added '10.0.0.80' (ED25519) to the list of known hosts.
+deploy@10.0.0.80: Permission denied (publickey,password).</span>
+<span class="lx-cmd lx-root">pc sshpass -p 'Lab-only-pass-26' ssh-copy-id deploy@10.0.0.80</span>
+<span class="lx-o">/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/learner/.ssh/id_ed25519.pub"
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'deploy@10.0.0.80'"
+and check to make sure that only the key(s) you wanted were added.</span>
+<span class="lx-cmd lx-root">pc ssh deploy@10.0.0.80 'hostname; whoami; ls -la .ssh'</span>
+<span class="lx-o">web1
+deploy
+total 12
+drwx------ 2 deploy deploy 4096 Nov 24 05:25 .
+drwxr-x--- 4 deploy deploy 4096 Nov 24 05:25 ..
+-rw------- 1 deploy deploy   96 Nov 24 05:25 authorized_keys</span>
+<span class="lx-cmd lx-root">pc ssh deploy@10.0.0.80 'echo "$SSH_CONNECTION"'</span>
+<span class="lx-o">10.0.0.50 38662 10.0.0.80 22</span></pre><div class="lx-note">The first try fails with Host key verification failed, because BatchMode cannot ask the question and the host is unknown. accept-new stores an unknown host key without asking but still refuses a changed one. That login has no key on the server yet and BatchMode forbids passwords, so it ends with Permission denied. ssh-copy-id logs in once with the password and appends your public key to ~/.ssh/authorized_keys on the server. sshpass types the password here only because this page is built without a keyboard. Never put a real password on a command line. After that, login works with the key alone. SSH_CONNECTION shows the client address and port and the server address and port. This box leaves the server running for the next lessons.</div></div>
+<div class="note note-tip"><b>Remember</b><div>If key login fails, check modes first: on the server, the home folder must not be writable by others, ~/.ssh must be 700 and authorized_keys 600, or sshd logs “Authentication refused: bad ownership or modes”. On the client, a private key readable by others is ignored with “UNPROTECTED PRIVATE KEY FILE”. Then try <code>ssh -v</code>, which prints every step.</div></div>
+<div class="vt-talk" hidden>Before you can log in with a key, your public key must be on the server, in the file authorized keys inside the dot s s h folder of the account. Ssh copy id does this for you: it logs in once with the password and appends your key. From then on, s s h logs in with the key, and you can switch password logins off. In the demo, a real s s h server runs in its own network namespace with the host name web one. The very first connection fails because the host is unknown and batch mode cannot ask. Accept new stores the host key, then ssh copy id installs the key, and the next login runs commands as the user deploy without any password. If key login ever fails, check the file modes on both sides first, and use s s h dash v to watch every step.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="config" data-l="config" hidden><div class="cv-lno">Lesson 4 of 8</div><h2>Aliases, file copies and rsync over ssh</h2>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>A host entry in ~/.ssh/config</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>Host web1
+    HostName 10.0.0.80
+    User deploy
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519</pre><div class="lx-note">After this, ssh web1 is enough. For each setting, the first value found wins, so put specific Host blocks before a general Host * block at the end.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>scp FILE HOST:PATH</code></td><td>Copy a file to a server</td><td><code>scp report.pdf web1:/tmp/</code></td></tr><tr><td><code>scp HOST:PATH .</code></td><td>Copy a file from a server</td><td><code>scp web1:/var/log/syslog .</code></td></tr><tr><td><code>scp -r DIR HOST:</code></td><td>Copy a folder</td><td><code>scp -r site web1:</code></td></tr><tr><td><code>rsync -av -e ssh SRC/ HOST:DEST/</code></td><td>Copy only changes, resume big copies</td><td><code>rsync -av --delete site/ web1:/srv/www/</code></td></tr><tr><td><code>sftp HOST</code></td><td>Interactive file transfer (ls, get, put)</td><td><code>sftp web1</code></td></tr><tr><td><code>ssh HOST CMD &lt; FILE</code></td><td>Feed a local file to a remote command</td><td><code>ssh web1 "sudo tee /etc/motd" &lt; motd.txt</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Use an alias, copy files with scp, sync with rsync</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">mkdir -p site</span>
+<span class="lx-cmd lx-root">printf '%s\n' 'Host web1' '    HostName 10.0.0.80' '    User deploy' &gt; .ssh/config</span>
+<span class="lx-cmd lx-root">echo '&lt;h1&gt;Shop&lt;/h1&gt;' &gt; site/index.html</span>
+<span class="lx-cmd lx-root">echo 'body{}' &gt; site/style.css</span>
+<span class="lx-cmd lx-root">chown -R learner: .ssh/config site</span>
+<span class="lx-cmd lx-root">pc() { ip netns exec pc sudo -u learner "$@"; }</span>
+<span class="lx-cmd lx-root">pc ssh web1 hostname</span>
+<span class="lx-o">web1</span>
+<span class="lx-cmd lx-root">pc scp -q site/index.html web1:</span>
+<span class="lx-cmd lx-root">pc ssh web1 ls</span>
+<span class="lx-o">index.html</span>
+<span class="lx-cmd lx-root">pc rsync -a site/ web1:www/</span>
+<span class="lx-cmd lx-root">pc ssh web1 'ls www'</span>
+<span class="lx-o">index.html
+style.css</span>
+<span class="lx-cmd lx-root">echo 'body{color:navy}' &gt; site/style.css</span>
+<span class="lx-cmd lx-root">pc rsync -av site/ web1:www/ | grep -v bytes</span>
+<span class="lx-o">sending incremental file list
+style.css
+
+total size is 31  speedup is 0.14</span>
+<span class="lx-cmd lx-root">pc scp -q web1:www/style.css copy.css</span>
+<span class="lx-cmd lx-root">cat copy.css</span>
+<span class="lx-o">body{color:navy}</span></pre><div class="lx-note">The alias saves typing the address and user every time. scp copies whole files (-q hides its progress bar). rsync compares both sides and sends only files that changed, here just style.css on the second run, which makes it the better tool for repeated copies and big folders. Both use the same ssh login, key and known_hosts. Since OpenSSH 9.0, scp uses the SFTP protocol underneath, so the server needs the Subsystem sftp line that Ubuntu’s sshd_config has. (This box runs in learner’s home folder as root, so chown hands the new files to learner.)</div></div>
+<div class="vt-talk" hidden>Typing user names and addresses gets old quickly, so put them in the file dot s s h slash config. A Host block gives an alias, and below it HostName, User, Port and IdentityFile say how to reach it. Then s s h web one is all you type, and every tool that uses s s h understands the alias too. To copy files, s c p works like c p with a host name and a colon in front of the remote path. Rsync over s s h is smarter: it compares both sides and sends only what changed, so the second run in the demo sends just the one changed file. Sftp gives an interactive file transfer session. All of them use the same keys and known hosts as s s h itself.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="tunnels" data-l="tunnels" hidden><div class="cv-lno">Lesson 5 of 8</div><h2>Port forwarding and jump hosts</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Option</th><th>What it does</th><th>Typical use</th></tr></thead><tbody><tr><td><code>-L 9000:127.0.0.1:8080</code></td><td>local port 9000 leads to port 8080 as seen from the server</td><td>reach a database or admin page that listens only on the server’s localhost</td></tr><tr><td><code>-R 8080:127.0.0.1:3000</code></td><td>port 8080 on the server leads back to port 3000 on your machine</td><td>show a local development site to someone on the server side</td></tr><tr><td><code>-D 1080</code></td><td>a SOCKS proxy through the server</td><td>browse as if you were in the server’s network</td></tr><tr><td><code>-J bastion</code></td><td>connect through a jump host (ProxyJump)</td><td>reach private servers behind one public bastion</td></tr><tr><td><code>-N -f</code></td><td>no remote command, go to the background</td><td>keep a tunnel open without a shell</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Reach a service that listens only on the server’s localhost</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">mkdir -p /srv/sshlab/admin</span>
+<span class="lx-cmd lx-root">echo 'admin page, local only' &gt; /srv/sshlab/admin/index.html</span>
+<span class="lx-cmd lx-root">ip netns exec web python3 -m http.server 8080 --bind 127.0.0.1 --directory /srv/sshlab/admin &gt; /dev/null 2&gt;&amp;1 &amp;</span>
+<span class="lx-cmd lx-root">sleep 1</span>
+<span class="lx-cmd lx-root">pc() { ip netns exec pc sudo -u learner "$@"; }</span>
+<span class="lx-cmd lx-root">pc curl -s --max-time 2 http://10.0.0.80:8080/ || echo "direct: no connection"</span>
+<span class="lx-o">direct: no connection</span>
+<span class="lx-cmd lx-root">pc ssh -f -N -o ExitOnForwardFailure=yes -L 9000:127.0.0.1:8080 web1</span>
+<span class="lx-cmd lx-root">pc curl -s http://127.0.0.1:9000/</span>
+<span class="lx-o">admin page, local only</span>
+<span class="lx-cmd lx-root">pkill -u learner -f 'ssh -f -N'</span>
+<span class="lx-cmd lx-root">kill %1</span></pre><div class="lx-note">The admin page listens on 127.0.0.1 of the server only, so a direct connection from outside fails. The tunnel carries connections to port 9000 on the client through ssh, and on the server they are made to 127.0.0.1:8080. ExitOnForwardFailure makes ssh give up if the tunnel cannot be set up, instead of running without it.</div></div>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>A jump host in ~/.ssh/config</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>Host bastion
+    HostName bastion.example.com
+    User asha
+
+Host db1
+    HostName 10.0.5.20
+    User asha
+    ProxyJump bastion</pre><div class="lx-note">ssh db1 first logs in to bastion and from there opens the connection to 10.0.5.20. Your private key stays on your laptop the whole time, which is safer than copying keys to the bastion or using agent forwarding (-A).</div></div>
+<div class="vt-talk" hidden>S S H can carry other connections inside its encrypted channel. With dash capital L, a port on your own machine leads to a port as seen from the server, which is how admins reach a database or an admin page that listens only on the server’s localhost. In the demo, the admin page cannot be reached directly, but through the tunnel on port nine thousand it answers. Dash capital R works the other way round, and dash capital D makes a S O C K S proxy. Big networks hide their servers behind one public jump host, also called a bastion. With ProxyJump in the config file, s s h hops through it automatically, and your private key never leaves your laptop.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="server" data-l="server" hidden><div class="cv-lno">Lesson 6 of 8</div><h2>Securing sshd</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>sshd_config setting</th><th>Recommended</th><th>Why</th></tr></thead><tbody><tr><td><code>PasswordAuthentication</code></td><td><code>no</code>, once keys work</td><td>stops password guessing completely</td></tr><tr><td><code>PermitRootLogin</code></td><td><code>no</code> (Ubuntu default is <code>prohibit-password</code>)</td><td>log in as yourself and use sudo, which leaves a trail</td></tr><tr><td><code>PubkeyAuthentication</code></td><td><code>yes</code> (default)</td><td>key login</td></tr><tr><td><code>AllowUsers</code>, <code>AllowGroups</code></td><td>only the accounts that need ssh</td><td>a forgotten account cannot be used</td></tr><tr><td><code>MaxAuthTries</code></td><td><code>3</code> to <code>6</code></td><td>fewer guesses per connection</td></tr><tr><td><code>KbdInteractiveAuthentication</code></td><td><code>no</code> unless you use one-time codes</td><td>another password path</td></tr><tr><td><code>X11Forwarding</code></td><td><code>no</code> on servers</td><td>not needed without a desktop</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Change sshd settings without locking yourself out</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Make sure key login works and keep one ssh session open the whole time.</li><li>Put your changes in a file in <code>/etc/ssh/sshd_config.d/</code>, for example <code>50-hardening.conf</code>. The main file includes that folder near the top, and the first value found for a setting wins.</li><li>Test the syntax with <code>sudo sshd -t</code>, and the effective values with <code>sudo sshd -T | grep -i password</code>.</li><li>Reload with <code>sudo systemctl reload ssh</code>. Existing sessions stay open.</li><li>Open a new session from a second terminal before you close the old one.</li></ol></div>
+<div class="lx-run"><div class="lx-rh"><span>Test a config, harden it, and watch password login fail</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">printf '%s\n' 'HostKey /srv/sshlab/ssh_host_ed25519_key' 'PasswordAuthenticaton no' &gt; /srv/sshlab/typo.conf</span>
+<span class="lx-cmd lx-root">/usr/sbin/sshd -t -f /srv/sshlab/typo.conf</span>
+<span class="lx-o">/srv/sshlab/typo.conf: line 2: Bad configuration option: PasswordAuthenticaton
+/srv/sshlab/typo.conf: terminating, 1 bad configuration options</span>
+<span class="lx-cmd lx-root">printf '%s\n' 'PasswordAuthentication no' 'PermitRootLogin no' 'AllowUsers deploy' 'MaxAuthTries 3' &gt;&gt; /srv/sshlab/sshd_config</span>
+<span class="lx-cmd lx-root">/usr/sbin/sshd -t -f /srv/sshlab/sshd_config &amp;&amp; echo syntax ok</span>
+<span class="lx-o">syntax ok</span>
+<span class="lx-cmd lx-root">/usr/sbin/sshd -T -f /srv/sshlab/sshd_config | grep -E '^(passwordauthentication|permitrootlogin|allowusers|maxauthtries|pubkeyauthentication) '</span>
+<span class="lx-o">maxauthtries 3
+permitrootlogin no
+pubkeyauthentication yes
+passwordauthentication no
+allowusers deploy</span>
+<span class="lx-cmd lx-root">kill -HUP "$(cat /srv/sshlab/sshd.pid)"</span>
+<span class="lx-cmd lx-root">sleep 1</span>
+<span class="lx-cmd lx-root">pc() { ip netns exec pc sudo -u learner "$@"; }</span>
+<span class="lx-cmd lx-root">pc ssh -o PubkeyAuthentication=no -o BatchMode=yes deploy@10.0.0.80 true</span>
+<span class="lx-o">deploy@10.0.0.80: Permission denied (publickey).</span>
+<span class="lx-cmd lx-root">pc ssh web1 'echo key login still works'</span>
+<span class="lx-o">key login still works</span>
+<span class="lx-cmd lx-root">kill "$(cat /srv/sshlab/sshd.pid)"</span>
+<span class="lx-cmd lx-root">userdel -r deploy 2&gt;/dev/null</span>
+<span class="lx-cmd lx-root">rm -r /srv/sshlab</span>
+<span class="lx-cmd lx-root">ip -all netns delete</span></pre><div class="lx-note">One letter missing in PasswordAuthentication makes sshd refuse the whole file, which is why you test before you reload. sshd -T prints the settings sshd would really use, in lower case. A HUP signal makes sshd reread its file, which is what systemctl reload ssh does. With passwords off, the server offers only publickey, so a client without a key is turned away at once.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Password guessing robots try every server on the internet within hours of it going online, as the auth.log in chapter 2.2 showed. Keys only, no root login, a short AllowUsers list and a firewall (chapter 4.3) stop nearly all of it. fail2ban can block addresses that keep failing.</div></div>
+<div class="vt-talk" hidden>On the server side, a few settings in s s h d config make a big difference. Once your key works, set PasswordAuthentication to no, so password guessing robots have nothing to guess. Set PermitRootLogin to no, so people log in as themselves and use sudo. AllowUsers limits s s h to the accounts that really need it. Put your changes in a small file in the s s h d config dot d folder, test them with s s h d dash t, which catches typos, and look at the effective values with s s h d dash capital T. Then reload the service, which keeps existing sessions open. Always keep one session open and test a new login before you log out, so a mistake never locks you out of a remote server.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 7 of 8</div><h2>Practice: key login to the file server</h2>
+<p>Set up key login from the practice server to the file server files.shop.lab (192.168.1.20), copy a file there, and switch off password logins on the practice server itself.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;SSH keys, aliases and a safer sshd&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Make an Ed25519 key pair at ~/.ssh/id_ed25519 with the comment learner@brainy and an empty passphrase.&quot;, &quot;hint&quot;: &quot;ssh-keygen -t ed25519 -C \&quot;learner@brainy\&quot; -N \&quot;\&quot; -f ~/.ssh/id_ed25519&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;~/.ssh/id_ed25519.pub&quot;}]}, {&quot;t&quot;: &quot;Show the fingerprint of your public key.&quot;, &quot;hint&quot;: &quot;ssh-keygen -lf ~/.ssh/id_ed25519.pub&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^256 SHA256:\\S+ learner@brainy \\(ED25519\\)&quot;}]}, {&quot;t&quot;: &quot;Write ~/.ssh/config with a Host fs whose HostName is files.shop.lab.&quot;, &quot;hint&quot;: &quot;printf \&quot;Host fs\\n    HostName files.shop.lab\\n\&quot; &gt; ~/.ssh/config&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;~/.ssh/config&quot;, &quot;HostName files.shop.lab&quot;]}]}, {&quot;t&quot;: &quot;Install your public key on fs.&quot;, &quot;hint&quot;: &quot;ssh-copy-id fs&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Number of key\\(s\\) added: 1&quot;}]}, {&quot;t&quot;: &quot;Run hostname on fs.&quot;, &quot;hint&quot;: &quot;ssh fs hostname&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^files$&quot;}]}, {&quot;t&quot;: &quot;Copy notes.txt from your home folder to your home folder on fs.&quot;, &quot;hint&quot;: &quot;scp notes.txt fs:&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;100%&quot;}]}, {&quot;t&quot;: &quot;List your home folder on fs.&quot;, &quot;hint&quot;: &quot;ssh fs ls&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;notes.txt&quot;}]}, {&quot;t&quot;: &quot;In /etc/ssh/sshd_config, turn the line #PasswordAuthentication yes into PasswordAuthentication no.&quot;, &quot;hint&quot;: &quot;sudo sed -i &#x27;s/^#PasswordAuthentication yes/PasswordAuthentication no/&#x27; /etc/ssh/sshd_config&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;/etc/ssh/sshd_config&quot;, &quot;\nPasswordAuthentication no&quot;]}]}, {&quot;t&quot;: &quot;Test the sshd configuration.&quot;, &quot;hint&quot;: &quot;sudo sshd -t&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;sshd\\s+-t&quot;}, {&quot;code&quot;: 0}]}, {&quot;t&quot;: &quot;Reload the ssh service.&quot;, &quot;hint&quot;: &quot;sudo systemctl reload ssh&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;reload\\s+ssh&quot;}, {&quot;code&quot;: 0}]}]}"></div>
+<div class="vt-talk" hidden>Now set up key login yourself. Make an ed25519 key pair with a comment, and look at its fingerprint. Write a small config file with the alias f s for the file server. Install your public key there with ssh copy id, and log in with the key to run hostname. Copy the notes file with s c p and list your home folder on the server to see it arrived. Finally, harden the practice server itself: switch password logins off in s s h d config, test the file with s s h d dash t, and reload the service.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 8 of 8</div><h2>Remote access from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>ssh lets you use another computer’s command line safely over the network. A key pair is like a lock and a key: the public half goes on the server, the private half stays with you.</p></div><div class="ld-p" data-ld="college" hidden><p>Use Ed25519 keys with passphrases and ssh-agent, one key per device, aliases in ~/.ssh/config, rsync over ssh for copies, tunnels for private services, and sshd with keys only, no root login and an AllowUsers list. Check host key fingerprints on the first visit.</p></div><div class="ld-p" data-ld="masters" hidden><p>Teams use SSH certificates (ssh-keygen -s with a certificate authority) so servers trust one CA instead of many authorized_keys files, short-lived certificates from tools such as HashiCorp Vault or step-ca, hardware keys (FIDO2, ed25519-sk), bastion hosts with session recording, and configuration management (Ansible works over ssh) to keep hundreds of servers in step.</p></div><div class="ld-p" data-ld="research" hidden><p>Research looks at post-quantum key exchange (OpenSSH made sntrup761x25519 the default in 9.0 and added ML-KEM later), formal analysis of the SSH protocol, and attacks such as Terrapin (2023), which tampered with the handshake sequence numbers and led to the strict key exchange extension. Internet-wide scans study weak and shared host keys.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the laptop that was stolen</div><p>A developer’s laptop was stolen from a car. Because the team used one key per device with a passphrase, the admin removed just that public key from authorized_keys on all servers with a short Ansible run, and nobody else had to change anything. A team that had copied one shared private key to everyone would have had to replace it everywhere at once. The team later moved to short-lived SSH certificates, which expire by themselves after a day.</p></div>
+<div class="vt-talk" hidden>Here is how remote access grows with experience. At school you learn that s s h opens a safe command line on another computer, and that a key pair works like a lock and key. Professionals use modern keys with passphrases, one per device, aliases, rsync and tunnels, and servers that accept keys only. Teams with many servers use S S H certificates signed by their own authority, short lived certificates, hardware security keys and bastion hosts. Researchers make the protocol ready for quantum computers and analyse it for flaws, such as the Terrapin attack, which led to a stricter handshake.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./networking.html" data-topic="networking"><small>Previous topic</small><b>Networking</b></a><a class="next" href="./firewall-hardening.html" data-topic="firewall"><small>Next topic</small><b>Firewall</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "ssh", "topic": "ssh", "subject": "linux", "title": "SSH: keys, remote work, tunnels and a safe sshd", "codes": {}, "quiz": [{"lv": "e", "q": "Which port does sshd listen on by default?", "o": ["21", "22", "23", "443"], "a": 1, "hint": "Two twos.", "why": "22."}, {"lv": "e", "q": "Which half of a key pair may you give to a server?", "o": ["The private key", "The public key (.pub)", "Both", "Neither"], "a": 1, "hint": "Public.", "why": "The private key never leaves your machine."}, {"lv": "e", "q": "Which command makes a new key pair?", "o": ["ssh-add", "ssh-keygen", "ssh-copy-id", "sshd"], "a": 1, "hint": "Key generator.", "why": "ssh-keygen -t ed25519."}, {"lv": "e", "q": "Which command copies a file to a server over ssh?", "o": ["cp", "scp", "mv", "ftp"], "a": 1, "hint": "Secure copy.", "why": "scp file host:path."}, {"lv": "m", "q": "Where does the server look for public keys that may log in as deploy?", "o": ["/etc/ssh/keys", "/home/deploy/.ssh/authorized_keys", "/home/deploy/.ssh/known_hosts", "/etc/passwd"], "a": 1, "hint": "Authorized.", "why": "One key per line."}, {"lv": "m", "q": "What does ~/.ssh/known_hosts protect you from?", "o": ["Viruses", "Connecting to a server that pretends to be the one you know", "Lost passwords", "Slow networks"], "a": 1, "hint": "Host keys.", "why": "A changed key stops the login."}, {"lv": "m", "q": "What mode should a private key file have?", "o": ["644", "600", "755", "777"], "a": 1, "hint": "Owner only.", "why": "ssh ignores keys others can read."}, {"lv": "m", "q": "Which command checks sshd_config for errors?", "o": ["sshd -t", "ssh -t", "systemctl check ssh", "sshd --lint"], "a": 0, "hint": "Test.", "why": "sshd -T prints the effective settings."}, {"lv": "m", "q": "What does ssh-agent do?", "o": ["Logs every login", "Holds unlocked keys so you type the passphrase once per session", "Scans for open ports", "Copies keys to servers"], "a": 1, "hint": "Agent.", "why": "Load keys with ssh-add."}, {"lv": "h", "q": "A service listens only on 127.0.0.1:5432 of a server. How can you reach it from your laptop?", "o": ["It is impossible", "ssh -L 5432:127.0.0.1:5432 server", "scp", "ssh -D 5432"], "a": 1, "hint": "Local forward.", "why": "Then connect to 127.0.0.1:5432 on the laptop."}, {"lv": "h", "q": "ssh shows REMOTE HOST IDENTIFICATION HAS CHANGED. What should you do first?", "o": ["Delete known_hosts", "Check the new fingerprint with the server’s admin before removing the old line", "Use -o StrictHostKeyChecking=no", "Reinstall ssh"], "a": 1, "hint": "Verify.", "why": "Only then ssh-keygen -R host."}, {"lv": "h", "q": "Why put sshd changes in /etc/ssh/sshd_config.d/ instead of editing the main file?", "o": ["It is faster", "Package updates keep your file, and the include sits near the top so it wins", "sshd reads only that folder", "It disables the main file"], "a": 1, "hint": "First value wins.", "why": "Updates may replace the main file."}, {"lv": "h", "q": "Why is ProxyJump safer than copying your key to the bastion?", "o": ["It is faster", "The private key stays on your laptop", "It disables passwords", "It hides your IP"], "a": 1, "hint": "Key stays home.", "why": "The second connection is tunnelled through the first."}, {"lv": "x", "q": "Why do teams with many servers move to SSH certificates?", "o": ["They are shorter", "Servers trust one CA, and certificates can expire by themselves", "They need no private key", "They work without sshd"], "a": 1, "hint": "One trust anchor.", "why": "No authorized_keys sprawl."}], "calc": [{"lv": "e", "q": "An Ed25519 public key is 256 bits. How many bytes is that?", "ans": "32", "hint": "Divide by 8.", "steps": ["8 bits are 1 byte.", "256 ÷ 8.", "<span class=\"eq\">32 bytes<\/span>"]}, {"lv": "e", "q": "MaxAuthTries is 3. A robot opens 40 connections. How many password guesses can it make at most?", "ans": "120", "hint": "Tries per connection.", "steps": ["3 guesses per connection.", "40 connections.", "<span class=\"eq\">3 × 40 = 120<\/span>"]}, {"lv": "m", "q": "A team of 12 people with 2 devices each uses one key per device. How many public keys does each server need?", "ans": "24", "hint": "Keys per person.", "steps": ["Each device has its own key.", "12 × 2.", "<span class=\"eq\">24 keys<\/span>"]}, {"lv": "m", "q": "An SHA256 fingerprint has 256 bits. In base64, each character holds 6 bits. How many characters does it need, rounded up?", "ans": "43", "hint": "Divide and round up.", "steps": ["256 ÷ 6 = 42.67.", "Round up.", "<span class=\"eq\">43 characters<\/span>"]}, {"lv": "h", "q": "rsync sends only changed files. A site has 2000 files of 50 KB, and 30 changed. How many KB does the second run send, ignoring overhead?", "ans": "1500", "hint": "Only the changed ones.", "steps": ["30 files changed.", "30 × 50 KB.", "<span class=\"eq\">1500 KB<\/span>"]}, {"lv": "h", "q": "scp copies 2 GB at 40 MB/s. About how many seconds does it take (1 GB = 1000 MB)?", "ans": "50", "hint": "Size over speed.", "steps": ["2000 MB.", "2000 ÷ 40.", "<span class=\"eq\">50 s<\/span>"]}, {"lv": "x", "q": "A brute force robot tries 10 passwords per second, all day. How many guesses is that in one day?", "ans": "864000", "hint": "Seconds in a day.", "steps": ["A day has 86400 seconds.", "× 10.", "<span class=\"eq\">864000 guesses<\/span>"]}], "assign": [], "must": [["The login", "Key exchange, then the host key checked against known_hosts, then user authentication with a key from authorized_keys, then the session. A changed host key stops the login."], ["Keys", "ssh-keygen -t ed25519 -C, a passphrase, ssh-agent and ssh-add. Private key 600, ~/.ssh 700, authorized_keys 600. One key per device."], ["Daily use", "ssh-copy-id HOST, ssh HOST CMD, aliases in ~/.ssh/config, scp, sftp and rsync over ssh, ssh -v for debugging."], ["Tunnels", "-L local:host:port, -R, -D, -N -f, ProxyJump (-J) through a bastion."], ["sshd", "PasswordAuthentication no, PermitRootLogin no, AllowUsers, a file in sshd_config.d, sshd -t and -T, systemctl reload ssh, keep a session open."]], "summary": "<p>ssh encrypts the connection, checks the server’s host key against known_hosts and logs you in with a key whose public half sits in authorized_keys. ~/.ssh/config holds aliases, scp and rsync copy files, -L and ProxyJump reach private machines, and sshd with keys only, no root login and a tested config keeps robots out.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

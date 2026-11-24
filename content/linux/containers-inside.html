@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Containers under the hood: namespaces, cgroups, layers and capabilities · Unix and Linux</title>
+<meta name="description" content="Containers as processes, the eight namespaces, /proc/PID/ns, unshare and nsenter, a busybox container by hand, overlayfs layers and whiteouts, cgroups v2 and a real pids limit, systemd slices and limits, capabilities with getcap, setcap and capsh, seccomp, rootless containers, and how docker, containerd and runc work together.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=advanced">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=advanced" target="_top">Unix and Linux</a><span>›</span><span>Internals and Advanced</span><span>›</span><span>Step 3: Containers and performance</span><span>›</span><span>Containers inside</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 1 of 3 · Expert</div>
+    <h1>Containers under the hood: namespaces, cgroups, layers and capabilities</h1>
+    <p class="lead">See that a container is just a process: build one by hand with unshare and chroot, join image layers with overlayfs, limit it with cgroups, and take away root’s powers with capabilities, seccomp and user namespaces.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">7 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#containers-inside" data-topic="cheatsheet" data-h="containers-inside">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#what" data-l="what"><span class="n">1</span><span class="t">A container is a process with its own view</span></a></li><li><a href="#handmade" data-l="handmade"><span class="n">2</span><span class="t">A container by hand: unshare, chroot and /proc/PID/ns</span></a></li><li><a href="#layers" data-l="layers"><span class="n">3</span><span class="t">Images and overlayfs</span></a></li><li><a href="#cgroups" data-l="cgroups"><span class="n">4</span><span class="t">cgroups: limits for CPU, memory and processes</span></a></li><li><a href="#caps" data-l="caps"><span class="n">5</span><span class="t">Capabilities, seccomp and rootless containers</span></a></li><li><a href="#practice" data-l="practice"><span class="n">6</span><span class="t">Practice: namespaces, cgroups and capabilities</span></a></li><li><a href="#levels" data-l="levels"><span class="n">7</span><span class="t">Containers from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="what" data-l="what" hidden><div class="cv-lno">Lesson 1 of 7</div><h2>A container is a process with its own view</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Building block</th><th>What it gives the container</th><th>Chapter</th></tr></thead><tbody><tr><td>namespaces</td><td>its own view: PIDs, network, host name, mounts, users, IPC</td><td>this one</td></tr><tr><td>a root file system</td><td>the image: its own /bin, /etc and libraries, often as overlayfs layers</td><td>this one</td></tr><tr><td>cgroups</td><td>limits and accounting for CPU, memory, PIDs and I/O</td><td>this one and 2.2</td></tr><tr><td>capabilities</td><td>only some of root’s powers, even for root inside</td><td>this one</td></tr><tr><td>seccomp</td><td>a filter of allowed system calls</td><td>1.1</td></tr><tr><td>LSM (AppArmor, SELinux)</td><td>rules for which files and actions are allowed</td><td>admin 4.3</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Namespace</th><th>Flag</th><th>Isolates</th></tr></thead><tbody><tr><td>mnt</td><td><code>--mount</code></td><td>the list of mounts</td></tr><tr><td>uts</td><td><code>--uts</code></td><td>host name and domain name</td></tr><tr><td>ipc</td><td><code>--ipc</code></td><td>System V IPC and POSIX message queues</td></tr><tr><td>pid</td><td><code>--pid</code></td><td>process ids, the inside starts at 1</td></tr><tr><td>net</td><td><code>--net</code></td><td>interfaces, addresses, routes, firewall, ports</td></tr><tr><td>user</td><td><code>--user</code></td><td>user and group ids: root inside can be an unprivileged user outside</td></tr><tr><td>cgroup</td><td><code>--cgroup</code></td><td>the view of the cgroup tree</td></tr><tr><td>time</td><td><code>--time</code></td><td>the boot and monotonic clocks (Linux 5.6)</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-ns"></div>
+<div class="note note-warn"><b>Common mistake</b><div>Containers share the host’s kernel. A container cannot run a different kernel, a kernel bug can be a way out of every container, and a container built for x86-64 does not run on ARM. Virtual machines each run their own kernel, which is stronger isolation at a higher cost.</div></div>
+<div class="vt-talk" hidden>A container is not a small virtual machine. It is an ordinary Linux process that the kernel shows a different view of the system. Namespaces give it its own process ids, its own network, its own host name and its own list of mounts. A root file system from an image gives it its own programs and libraries. Cgroups limit how much C P U and memory it may use, capabilities take away most of root’s powers, and seccomp blocks dangerous system calls. Choose namespaces in the animation and see what the process inside sees. Remember that all containers on a machine share one kernel.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="handmade" data-l="handmade" hidden><div class="cv-lno">Lesson 2 of 7</div><h2>A container by hand: unshare, chroot and /proc/PID/ns</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>ls -l /proc/PID/ns</code></td><td>The namespaces of a process, as links with an inode number</td><td><code>ls -l /proc/$$/ns</code></td></tr><tr><td><code>lsns</code></td><td>All namespaces on the system and their first process</td><td><code>sudo lsns -t net</code></td></tr><tr><td><code>unshare FLAGS CMD</code></td><td>Run a command in new namespaces</td><td><code>sudo unshare --uts --pid --fork --mount-proc bash</code></td></tr><tr><td><code>nsenter -t PID FLAGS CMD</code></td><td>Run a command inside the namespaces of a running process</td><td><code>sudo nsenter -t 4242 --net ip addr</code></td></tr><tr><td><code>chroot DIR CMD</code></td><td>Run a command with DIR as its root folder</td><td><code>sudo chroot rootfs /bin/sh</code></td></tr><tr><td><code>docker inspect -f "{{.State.Pid}}" NAME</code></td><td>The host PID of a container, to use with nsenter</td><td><code>sudo nsenter -t $(docker inspect -f "{{.State.Pid}}" web) --net ss -tln</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Build a tiny container from busybox</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">mkdir -p rootfs/bin rootfs/proc</span>
+<span class="lx-cmd lx-root">cp /bin/busybox rootfs/bin/</span>
+<span class="lx-cmd lx-root">chroot rootfs /bin/busybox --install -s /bin</span>
+<span class="lx-cmd lx-root">ls rootfs/bin | wc -l</span>
+<span class="lx-o">272</span>
+<span class="lx-cmd lx-root">readlink /proc/self/ns/uts</span>
+<span class="lx-o">uts:[4026531838]</span>
+<span class="lx-cmd lx-root">readlink /proc/self/ns/pid</span>
+<span class="lx-o">pid:[4026531836]</span>
+<span class="lx-cmd lx-root">printf '%s\n' 'mount -t proc proc /proc' 'hostname box' 'echo "hostname: $(hostname)"' 'readlink /proc/self/ns/uts' 'readlink /proc/self/ns/pid' 'ps' 'ip link' 'ls /' &gt; rootfs/init.sh</span>
+<span class="lx-cmd lx-root">cat rootfs/init.sh</span>
+<span class="lx-o">mount -t proc proc /proc
+hostname box
+echo "hostname: $(hostname)"
+readlink /proc/self/ns/uts
+readlink /proc/self/ns/pid
+ps
+ip link
+ls /</span>
+<span class="lx-cmd lx-root">unshare --mount --uts --ipc --net --pid --fork chroot rootfs /bin/sh /init.sh</span>
+<span class="lx-o">hostname: box
+uts:[4026532265]
+pid:[4026532267]
+PID   USER     COMMAND
+    1 0        /bin/sh /init.sh
+    7 0        {ps} /bin/sh /init.sh
+1: lo: &lt;LOOPBACK&gt; mtu 65536 qdisc noop qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+bin
+init.sh
+proc</span>
+<span class="lx-cmd lx-root">hostname | grep -c box</span>
+<span class="lx-o">0</span></pre><div class="lx-note">busybox is one static program that acts as sh, ps, ls, ip and hundreds more, so one file makes a working root file system. Inside, the namespace links show different inode numbers than outside, which proves they are new namespaces. The shell is PID 1, ps lists only the two processes of the container, ip link shows only lo, switched off, and ls / shows only bin, proc and the script. The host name box exists only inside: the last line counts 0 matches outside. Real runtimes do the same steps, use pivot_root instead of chroot so the old root cannot be reached, and add cgroups, capabilities and seccomp.</div></div>
+<div class="vt-talk" hidden>You can build a container with two commands. Unshare starts a program in new namespaces, and chroot gives it a new root folder. In the demo, busybox, a single program that acts as hundreds of commands, fills a tiny root file system. Inside the container the shell is process one, ps sees only two processes, the network has only an unused loopback, and the root folder has only bin and proc. The host name box exists only inside. The links in slash proc slash P I D slash n s identify each namespace by an inode number, so you can compare them inside and outside. Nsenter does the opposite of unshare: it joins the namespaces of a running process, which is how you debug a container with the host’s tools.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="layers" data-l="layers" hidden><div class="cv-lno">Lesson 3 of 7</div><h2>Images and overlayfs</h2>
+<p>A container image is a stack of read-only <b>layers</b>, each a set of file changes, for example the base system, then the installed packages, then your app. When a container starts, <b>overlayfs</b> joins the layers into one tree and puts a thin writable layer on top.</p>
+<div class="lx-run"><div class="lx-rh"><span>Join two folders with overlayfs, change, delete and add files</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">mkdir lower upper work merged</span>
+<span class="lx-cmd lx-root">echo base &gt; lower/a.txt</span>
+<span class="lx-cmd lx-root">echo keep &gt; lower/b.txt</span>
+<span class="lx-cmd lx-root">mount -t overlay overlay -o lowerdir=lower,upperdir=upper,workdir=work merged</span>
+<span class="lx-cmd lx-root">echo changed &gt; merged/a.txt</span>
+<span class="lx-cmd lx-root">rm merged/b.txt</span>
+<span class="lx-cmd lx-root">echo new &gt; merged/c.txt</span>
+<span class="lx-cmd lx-root">ls merged</span>
+<span class="lx-o">a.txt
+c.txt</span>
+<span class="lx-cmd lx-root">cat lower/a.txt</span>
+<span class="lx-o">base</span>
+<span class="lx-cmd lx-root">ls -l upper</span>
+<span class="lx-o">total 8
+-rw-r--r-- 1 root root    8 Nov 24 05:26 a.txt
+c--------- 2 root root 0, 0 Nov 24 05:26 b.txt
+-rw-r--r-- 1 root root    4 Nov 24 05:26 c.txt</span>
+<span class="lx-cmd lx-root">umount merged</span></pre><div class="lx-note">merged shows the joined view. Changing a.txt copies it up into upper first (copy up), so the lower layer still says base. Deleting b.txt cannot touch the read-only lower layer, so overlayfs puts a <b>whiteout</b> in upper: a character device with the numbers 0, 0, which hides the lower file. The new c.txt exists only in upper. Docker’s overlay2 driver keeps image layers as lower folders and each container’s changes as its upper folder, which is why docker diff can list them.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Image practice</th><th>Why</th></tr></thead><tbody><tr><td>put rarely changing steps first in the Dockerfile</td><td>layers are cached and shared, so a change rebuilds only the layers after it</td></tr><tr><td>delete temporary files in the same RUN step</td><td>a file deleted in a later layer still takes space in the earlier one, hidden by a whiteout</td></tr><tr><td>use small base images (alpine, distroless, ubuntu minimal)</td><td>fewer files to download and fewer packages with security holes</td></tr><tr><td>keep data in volumes, not in the writable layer</td><td>the writable layer disappears with the container</td></tr></tbody></table></div>
+<div class="vt-talk" hidden>A container image is a stack of read only layers, each holding the files that one build step added or changed. Overlay f s joins them into one tree and adds a writable layer on top for the running container. In the demo, changing a file copies it up into the upper layer first, so the lower layer stays untouched. Deleting a file that lives in a lower layer leaves a whiteout, a special device file that hides it. That is why a file deleted in a later build step still makes the image bigger. Put steps that rarely change first, and clean up in the same step that made the mess.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="cgroups" data-l="cgroups" hidden><div class="cv-lno">Lesson 4 of 7</div><h2>cgroups: limits for CPU, memory and processes</h2>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>cgroup v2 on Ubuntu 24.04</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>/sys/fs/cgroup/                    one tree, all controllers
+├── system.slice/                  services
+│   ├── ssh.service/
+│   └── docker-4f2c….scope/        a container
+│       ├── cgroup.procs           PIDs in this group
+│       ├── memory.max             hard memory limit
+│       ├── memory.current         memory in use now
+│       ├── cpu.max                "50000 100000" = half a CPU
+│       ├── pids.max               the most processes
+│       └── memory.events          oom_kill counter
+└── user.slice/                    login sessions</pre><div class="lx-note">Every process belongs to exactly one cgroup, shown in /proc/PID/cgroup as 0::/path. systemd makes a cgroup per service, per login session and per container scope. cgroup v1, still found on older systems and in some containers, has one tree per controller (/sys/fs/cgroup/memory, /sys/fs/cgroup/pids) with other file names.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Stop a runaway with a pids limit of 5</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">mkdir /sys/fs/cgroup/pids/demo</span>
+<span class="lx-cmd lx-root">echo 5 &gt; /sys/fs/cgroup/pids/demo/pids.max</span>
+<span class="lx-cmd lx-root">bash -c 'echo $$ &gt; /sys/fs/cgroup/pids/demo/cgroup.procs
+for i in 1 2 3 4 5 6; do sleep 2 &amp; done
+wait' 2&gt;&amp;1 | sort | uniq -c</span>
+<span class="lx-o">      2 bash: fork: retry: Resource temporarily unavailable</span>
+<span class="lx-cmd lx-root">cat /sys/fs/cgroup/pids/demo/pids.max</span>
+<span class="lx-o">5</span>
+<span class="lx-cmd lx-root">sleep 2</span>
+<span class="lx-cmd lx-root">rmdir /sys/fs/cgroup/pids/demo</span></pre><div class="lx-note">The bash and its first four sleeps fill the limit of 5. Every further fork fails with “Resource temporarily unavailable” (EAGAIN), bash retries, and the last sleeps start only when earlier ones end. A fork bomb inside such a group cannot take the machine down. This build container has the older v1 layout, so the folder is /sys/fs/cgroup/pids. On Ubuntu 24.04 the same file pids.max sits in the group’s folder in the one v2 tree.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>systemd-cgls</code></td><td>The cgroup tree with the processes in it</td><td><code>systemd-cgls -u ssh.service</code></td></tr><tr><td><code>systemd-cgtop</code></td><td>CPU, memory and I/O per cgroup, like top</td><td><code>systemd-cgtop -m</code></td></tr><tr><td><code>systemd-run --scope -p MemoryMax=500M -p CPUQuota=50% CMD</code></td><td>Run one command in its own limited cgroup</td><td><code>sudo systemd-run --scope -p MemoryMax=500M ./import.sh</code></td></tr><tr><td><code>systemctl set-property UNIT KEY=VAL</code></td><td>Change limits of a running service (and keep them)</td><td><code>sudo systemctl set-property nginx.service CPUQuota=200%</code></td></tr><tr><td><code>docker run --memory 512m --cpus 1.5 --pids-limit 100</code></td><td>The same limits for one container</td><td><code>docker run --memory 512m --cpus 1.5 nginx</code></td></tr></tbody></table></div>
+<div class="vt-talk" hidden>Cgroups, short for control groups, put processes into groups and limit what each group may use: C P U time, memory, the number of processes and disk I O. On Ubuntu twenty four point zero four there is one tree under slash sys slash f s slash cgroup, and systemd makes a group for every service, every login and every container. Files such as memory dot max, c p u dot max and p i d s dot max hold the limits. In the demo, a group with a limit of five processes stops a burst of forks with resource temporarily unavailable. That is how one container cannot eat all the memory or start a fork bomb that freezes the host.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="caps" data-l="caps" hidden><div class="cv-lno">Lesson 5 of 7</div><h2>Capabilities, seccomp and rootless containers</h2>
+<p>Linux splits root’s power into about 40 <b>capabilities</b>, such as CAP_NET_BIND_SERVICE (use ports below 1024), CAP_NET_RAW (raw sockets, ping), CAP_CHOWN or CAP_SYS_ADMIN (mounts and many other things). A process has sets of them, shown in /proc/PID/status as hex masks, and a program file can carry some (file capabilities).</p>
+<div class="lx-run"><div class="lx-rh"><span>Give one program one capability instead of root</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">getcap /usr/bin/ping</span>
+<span class="lx-o">/usr/bin/ping cap_net_raw=ep</span>
+<span class="lx-cmd lx-root">capsh --decode=0000000000000400</span>
+<span class="lx-o">0x0000000000000400=cap_net_bind_service</span>
+<span class="lx-cmd lx-root">ip netns add lab</span>
+<span class="lx-cmd lx-root">ip -n lab link set lo up</span>
+<span class="lx-cmd lx-root">cp /usr/bin/python3.12 /usr/local/bin/pyweb</span>
+<span class="lx-cmd lx-root">ip netns exec lab sudo -u learner python3 -c 'import socket; socket.socket().bind(("127.0.0.1", 80))' 2&gt;&amp;1 | tail -n 1</span>
+<span class="lx-o">PermissionError: [Errno 13] Permission denied</span>
+<span class="lx-cmd lx-root">setcap cap_net_bind_service=+ep /usr/local/bin/pyweb</span>
+<span class="lx-cmd lx-root">getcap /usr/local/bin/pyweb</span>
+<span class="lx-o">/usr/local/bin/pyweb cap_net_bind_service=ep</span>
+<span class="lx-cmd lx-root">ip netns exec lab sudo -u learner /usr/local/bin/pyweb -c 'import socket; socket.socket().bind(("127.0.0.1", 80)); print("bound to port 80")'</span>
+<span class="lx-o">bound to port 80</span>
+<span class="lx-cmd lx-root">sudo -u learner grep CapEff /proc/self/status</span>
+<span class="lx-o">CapEff:	0000000000000000</span>
+<span class="lx-cmd lx-root">rm /usr/local/bin/pyweb</span>
+<span class="lx-cmd lx-root">ip netns delete lab</span></pre><div class="lx-note">ping on Ubuntu 24.04 carries cap_net_raw instead of being SUID root. capsh --decode turns a hex mask into names. As learner, Python may not bind port 80 (PermissionError), but a copy of the Python program with the file capability cap_net_bind_service may, with no other root power. (The test runs in a network namespace so it touches no real port 80.) A normal user’s effective set is all zeros. A root shell on a normal host shows 000001ffffffffff, all 41 bits set, while a container usually gets a much smaller set because the runtime drops the dangerous ones.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Option</th><th>Effect</th></tr></thead><tbody><tr><td><code>--cap-drop ALL --cap-add NET_BIND_SERVICE</code></td><td>start from no capabilities and add only what is needed</td></tr><tr><td><code>--security-opt no-new-privileges</code></td><td>SUID programs and file capabilities cannot raise privileges inside</td></tr><tr><td><code>--read-only</code></td><td>the container’s root file system cannot be changed</td></tr><tr><td><code>--user 1000:1000</code></td><td>run the process as a normal user, not root</td></tr><tr><td>the default seccomp profile</td><td>Docker and Podman block about 40 to 50 risky system calls, such as kexec_load and add_key</td></tr><tr><td><code>--privileged</code></td><td>turns all of this off: avoid it</td></tr><tr><td>rootless Podman or Docker</td><td>a user namespace maps root inside to your own user outside, using /etc/subuid and /etc/subgid</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Who does what when you type docker run nginx</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The <b>docker</b> client sends the request to the <b>dockerd</b> daemon over /run/docker.sock (anyone who can write that socket is effectively root).</li><li>dockerd asks <b>containerd</b> to pull the image layers and prepare an overlayfs snapshot.</li><li>containerd starts a shim, which calls <b>runc</b> with an OCI bundle: a config.json with namespaces, cgroups, capabilities, seccomp, mounts, plus the root file system.</li><li>runc makes the namespaces and cgroup, switches root with pivot_root, drops capabilities, loads seccomp and finally runs execve on nginx, which becomes PID 1 of the container. runc then exits.</li><li>Podman does the same without a daemon, and Kubernetes talks to containerd or CRI-O through the CRI interface.</li></ol></div>
+<div class="vt-talk" hidden>Root on Linux is really a bundle of about forty capabilities, such as binding to ports below one thousand twenty four, or using raw sockets. A program can get just one of them instead of full root. On Ubuntu, ping carries the raw socket capability instead of running as root. In the demo, a copy of Python gets the capability to bind low ports, and then the normal user learner can listen on port eighty, with no other powers. Containers use this to drop most of root’s powers even for root inside, add a seccomp filter on system calls, and with user namespaces, root inside a rootless container is just your own user outside. Avoid the privileged flag, which switches all of this off.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 6 of 7</div><h2>Practice: namespaces, cgroups and capabilities</h2>
+<p>Read the namespaces, cgroups and capabilities of processes on the practice server.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Container building blocks&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;List the namespace links of your shell.&quot;, &quot;hint&quot;: &quot;ls -l /proc/$$/ns&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;uts -&gt; uts:\\[&quot;}]}, {&quot;t&quot;: &quot;Show the network namespace of your shell with readlink.&quot;, &quot;hint&quot;: &quot;readlink /proc/$$/ns/net&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^net:\\[\\d+\\]$&quot;}]}, {&quot;t&quot;: &quot;Show which cgroup your shell is in.&quot;, &quot;hint&quot;: &quot;cat /proc/$$/cgroup&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^0::/user\\.slice/&quot;}]}, {&quot;t&quot;: &quot;Show the cgroup of sshd, PID 412.&quot;, &quot;hint&quot;: &quot;cat /proc/412/cgroup&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;system.slice/ssh.service&quot;}]}, {&quot;t&quot;: &quot;Show the effective capabilities of a normal process.&quot;, &quot;hint&quot;: &quot;grep CapEff /proc/self/status&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;CapEff:\\s+0000000000000000&quot;}]}, {&quot;t&quot;: &quot;Show them for a root process.&quot;, &quot;hint&quot;: &quot;sudo grep CapEff /proc/self/status&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;CapEff:\\s+000001ffffffffff&quot;}]}, {&quot;t&quot;: &quot;Decode the mask 0000000000000400.&quot;, &quot;hint&quot;: &quot;capsh --decode=0000000000000400&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;cap_net_bind_service&quot;}]}, {&quot;t&quot;: &quot;Show the file capabilities of ping.&quot;, &quot;hint&quot;: &quot;getcap /usr/bin/ping&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;cap_net_raw=ep&quot;}]}, {&quot;t&quot;: &quot;Copy cat to /usr/local/bin/webcat with sudo.&quot;, &quot;hint&quot;: &quot;sudo cp /usr/bin/cat /usr/local/bin/webcat&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;/usr/local/bin/webcat&quot;}]}, {&quot;t&quot;: &quot;Give webcat the capability cap_net_bind_service=+ep.&quot;, &quot;hint&quot;: &quot;sudo setcap cap_net_bind_service=+ep /usr/local/bin/webcat&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;setcap\\s+cap_net_bind_service&quot;}]}, {&quot;t&quot;: &quot;Check it with getcap.&quot;, &quot;hint&quot;: &quot;getcap /usr/local/bin/webcat&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;cap_net_bind_service=ep&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now read the building blocks of containers on the practice server. List the namespace links of your shell and read one with readlink. Show the cgroup of your shell, which sits in the user slice, and of the s s h daemon, which has its own service group. Compare the effective capabilities of a normal process and a root process, and decode one mask with capsh. Look at the capability of ping, then give a copy of cat the capability to bind low ports, and check it with getcap.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 7 of 7</div><h2>Containers from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A container is a program packed with everything it needs, which runs in its own little room on the computer: it sees only its own files, its own network and its own processes, while sharing the computer’s kernel.</p></div><div class="ld-p" data-ld="college" hidden><p>Explain namespaces, cgroups, capabilities, seccomp and overlayfs, read /proc/PID/ns and cgroup, use unshare and nsenter to debug, set limits for containers and services, drop capabilities, run as a normal user, and avoid --privileged and a writable docker.sock.</p></div><div class="ld-p" data-ld="masters" hidden><p>Platform teams run Kubernetes with resource requests and limits, Pod Security Standards, network policies, rootless and read-only containers, image scanning and signing (Trivy, cosign, SBOMs), and stronger isolation where needed with gVisor (a user space kernel), Kata Containers or Firecracker micro VMs.</p></div><div class="ld-p" data-ld="research" hidden><p>Research studies container escapes and kernel attack surface, eBPF based security and observability (Cilium, Falco, Tetragon), WebAssembly as a lighter sandbox, confidential containers in encrypted VMs (AMD SEV, Intel TDX), and the cost of isolation for serverless platforms that start thousands of sandboxes per second.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the container that could read the host</div><p>A team ran a monitoring container with --privileged and the host’s / mounted inside, because “it needed access”. A bug in the tool let an attacker run commands, and with all capabilities and the host files they read SSH keys from the host. In the clean-up, the team listed what the tool really needed: read access to /proc and one capability (CAP_SYS_PTRACE). They ran it with --cap-drop ALL --cap-add SYS_PTRACE, a read-only root file system and no host mounts, and added a policy that rejects privileged containers.</p></div>
+<div class="vt-talk" hidden>Here is how understanding containers grows. At school you learn that a container is a packed program in its own little room, sharing the computer’s kernel. Professionals know the building blocks, namespaces, cgroups, capabilities, seccomp and overlay layers, and use them to debug and to lock containers down. Platform teams run Kubernetes with limits, security policies, signed images and, where needed, stronger sandboxes such as g Visor or micro virtual machines. Researchers look for container escapes, build security tools with e B P F, and explore WebAssembly and confidential computing as new kinds of sandboxes.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./memory.html" data-topic="memory"><small>Previous topic</small><b>Memory</b></a><a class="next" href="./performance.html" data-topic="performance"><small>Next topic</small><b>Performance</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "containers-inside", "topic": "containers-inside", "subject": "linux", "title": "Containers under the hood: namespaces, cgroups, layers and capabilities", "codes": {}, "quiz": [{"lv": "e", "q": "What does a container share with its host?", "o": ["Nothing", "The kernel", "Its root file system", "Its process ids"], "a": 1, "hint": "One kernel.", "why": "Virtual machines have their own."}, {"lv": "e", "q": "Which kernel feature gives a container its own process ids?", "o": ["cgroups", "the PID namespace", "seccomp", "overlayfs"], "a": 1, "hint": "Namespaces isolate views.", "why": "The first process inside is PID 1."}, {"lv": "e", "q": "Which feature limits how much memory a container may use?", "o": ["namespaces", "cgroups", "chroot", "capabilities"], "a": 1, "hint": "Control groups.", "why": "memory.max."}, {"lv": "e", "q": "Which command runs a program in new namespaces?", "o": ["nsenter", "unshare", "chroot", "lsns"], "a": 1, "hint": "Un-share.", "why": "nsenter joins existing ones."}, {"lv": "m", "q": "Where can you see the namespaces of a process?", "o": ["/etc/namespaces", "/proc/PID/ns", "/sys/ns", "lsblk"], "a": 1, "hint": "Links in /proc.", "why": "Equal inode numbers mean the same namespace."}, {"lv": "m", "q": "What does overlayfs put in the upper layer when you delete a file of a lower layer?", "o": ["Nothing", "A whiteout (a 0, 0 character device)", "A copy of the file", "A symbolic link"], "a": 1, "hint": "Hide, not delete.", "why": "The lower layer is read only."}, {"lv": "m", "q": "Why does a file deleted in a later Dockerfile step still make the image bigger?", "o": ["A Docker bug", "The earlier layer still contains it, the later one only hides it", "Compression", "The cache"], "a": 1, "hint": "Layers.", "why": "Clean up in the same RUN step."}, {"lv": "m", "q": "What does CAP_NET_BIND_SERVICE allow?", "o": ["Raw sockets", "Binding to ports below 1024", "Changing the firewall", "Mounting"], "a": 1, "hint": "Low ports.", "why": "Without full root."}, {"lv": "m", "q": "A container with pids.max 100 tries to start process 101. What happens?", "o": ["The host crashes", "fork fails with Resource temporarily unavailable", "The oldest process is killed", "Nothing"], "a": 1, "hint": "EAGAIN.", "why": "Fork bombs stay contained."}, {"lv": "h", "q": "Which program finally creates the namespaces and starts the container process for Docker?", "o": ["dockerd", "runc", "the docker client", "systemd"], "a": 1, "hint": "The OCI runtime.", "why": "Called through containerd and a shim."}, {"lv": "h", "q": "Why is write access to /run/docker.sock as good as root?", "o": ["It is not", "You can start a privileged container with the host’s / mounted", "It holds passwords", "It runs as root by itself"], "a": 1, "hint": "The daemon obeys.", "why": "Treat the docker group like sudo."}, {"lv": "h", "q": "What does a user namespace give rootless containers?", "o": ["More speed", "Root inside maps to an unprivileged user outside", "A new kernel", "No network"], "a": 1, "hint": "Mapped ids.", "why": "/etc/subuid and subgid."}, {"lv": "h", "q": "How do you run the host’s ss inside a container’s network namespace?", "o": ["docker exec ss", "nsenter -t PID --net ss -tln", "chroot", "unshare --net"], "a": 1, "hint": "Join, do not create.", "why": "PID from docker inspect."}, {"lv": "x", "q": "Why do some platforms use gVisor or Firecracker instead of plain containers?", "o": ["Speed only", "They do not share the host kernel directly, which reduces the kernel attack surface", "They need no images", "They are older"], "a": 1, "hint": "Stronger isolation.", "why": "For untrusted code."}], "calc": [{"lv": "e", "q": "cpu.max is \"50000 100000\". What share of one CPU may the group use, in percent?", "ans": "50", "hint": "Quota over period.", "steps": ["50000 ÷ 100000 = 0.5.", "× 100.", "<span class=\"eq\">50 %<\/span>"]}, {"lv": "e", "q": "A host runs 12 containers with a 512 MiB memory limit each. How many MiB could they use together at most?", "ans": "6144", "hint": "Multiply.", "steps": ["12 × 512.", "Limits, not current use.", "<span class=\"eq\">6144 MiB<\/span>"]}, {"lv": "m", "q": "cpu.max \"150000 100000\" allows how many CPUs worth of time?", "ans": "1.5", "hint": "Quota over period.", "steps": ["150000 ÷ 100000.", "More than 1 means several CPUs.", "<span class=\"eq\">1.5 CPUs<\/span>"]}, {"lv": "m", "q": "The capability mask 0x400 has which bit set? (count from 0)", "ans": "10", "hint": "Powers of 2.", "steps": ["0x400 = 1024.", "1024 = 2 to the power 10.", "<span class=\"eq\">bit 10, CAP_NET_BIND_SERVICE<\/span>"]}, {"lv": "h", "q": "An image has layers of 80, 120 and 15 MB. Five containers run from it and each writes 4 MB. How many MB of disk do they use together?", "ans": "235", "hint": "Layers are shared.", "steps": ["Image layers once: 80 + 120 + 15 = 215.", "Writable layers: 5 × 4 = 20.", "<span class=\"eq\">215 + 20 = 235 MB<\/span>"]}, {"lv": "h", "q": "A fork bomb doubles its processes every second, starting at 1. pids.max is 512. After how many seconds does it hit the limit?", "ans": "9", "hint": "Powers of 2.", "steps": ["2 to the power 9 = 512.", "After 9 doublings.", "<span class=\"eq\">9 s<\/span>"]}, {"lv": "x", "q": "A full capability mask covers capabilities 0 to 40. How many capabilities is that?", "ans": "41", "hint": "Count both ends.", "steps": ["0 to 40 inclusive.", "40 − 0 + 1.", "<span class=\"eq\">41 capabilities<\/span>"]}], "assign": [], "must": [["What a container is", "A process with namespaces, a root file system, cgroup limits, fewer capabilities and a seccomp filter, sharing the host kernel."], ["Namespaces", "mnt, uts, ipc, pid, net, user, cgroup, time. /proc/PID/ns links, unshare to create, nsenter to join, lsns to list."], ["Images", "Read-only layers joined by overlayfs with a writable upper layer. Copy up on change, whiteouts for deletes."], ["cgroups", "One v2 tree in /sys/fs/cgroup on Ubuntu 24.04, memory.max, cpu.max, pids.max, /proc/PID/cgroup, systemd-cgls, systemd-cgtop, systemd-run -p."], ["Least privilege", "Capabilities (getcap, setcap, capsh --decode), --cap-drop ALL, no-new-privileges, non-root user, rootless with user namespaces, never --privileged. Docker: dockerd, containerd, runc."]], "summary": "<p>A container is a normal process that namespaces give its own view, an image gives its own files through overlayfs layers, cgroups limit, and dropped capabilities and seccomp restrict. unshare and chroot build one by hand, nsenter joins one, and runc does the same steps for Docker, Podman and Kubernetes. All containers share the host kernel.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

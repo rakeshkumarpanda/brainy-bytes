@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quoting and expansions · Unix and Linux</title>
+<meta name="description" content="Backslash, single, double and ANSI-C quoting, the order of expansions from the bash manual, brace and tilde expansion, word splitting with IFS, pathname expansion, quote removal, parameter expansion operators for defaults, prefixes, suffixes, replacement, slices and case, command substitution, arithmetic expansion and process substitution.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=scripting">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=scripting" target="_top">Unix and Linux</a><span>›</span><span>Shell Scripting</span><span>›</span><span>Step 1: Writing scripts</span><span>›</span><span>Expansions</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 2 of 2 · Intermediate</div>
+    <h1>Quoting and expansions</h1>
+    <p class="lead">See exactly what bash does to a command line before it runs: four kinds of quoting, the fixed order of expansions, parameter expansion to cut and change values, command, arithmetic and process substitution, and IFS.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#expansions" data-topic="cheatsheet" data-h="expansions">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#quotes" data-l="quotes"><span class="n">1</span><span class="t">Four ways to quote</span></a></li><li><a href="#order" data-l="order"><span class="n">2</span><span class="t">The order of expansions</span></a></li><li><a href="#params" data-l="params"><span class="n">3</span><span class="t">Parameter expansion: editing a value without sed</span></a></li><li><a href="#subst" data-l="subst"><span class="n">4</span><span class="t">Command, arithmetic and process substitution, and IFS</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Expansions from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="quotes" data-l="quotes" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Four ways to quote</h2>
+<p>Many characters mean something special to bash: a space separates words, <code>$</code> starts a variable, <code>*</code> matches file names, <code>|</code> starts a pipe. <b>Quoting</b> switches that meaning off, so the character is just text.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Quoting</th><th>What it protects</th><th>Example</th><th>Gives</th></tr></thead><tbody><tr><td><code>\x</code> backslash</td><td>the one next character</td><td><code>echo \$5</code></td><td>$5</td></tr><tr><td><code>'...'</code> single quotes</td><td>everything inside, no exceptions</td><td><code>echo '$HOME *'</code></td><td>$HOME *</td></tr><tr><td><code>"..."</code> double quotes</td><td>spaces and wildcards, but $, backquote and backslash still work</td><td><code>echo "$HOME *"</code></td><td>/home/learner *</td></tr><tr><td><code>$'...'</code> ANSI-C quotes</td><td>like single quotes, but backslash codes become characters</td><td><code>echo $'a\tb'</code></td><td>a, a tab, b</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Quoting, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">name=Asha</span>
+<span class="lx-cmd">echo Hello    $name    "and    $name"    'and $name'</span>
+<span class="lx-o">Hello Asha and    Asha and $name</span>
+<span class="lx-cmd">echo "Price: \$5, home: $HOME"</span>
+<span class="lx-o">Price: $5, home: /home/learner</span>
+<span class="lx-cmd">echo 'It'"'"'s here'</span>
+<span class="lx-o">It's here</span>
+<span class="lx-cmd">echo $'tab:\there' $'two\nlines'</span>
+<span class="lx-o">tab:	here two
+lines</span>
+<span class="lx-cmd">file="My Report.txt"</span>
+<span class="lx-cmd">touch "$file"</span>
+<span class="lx-cmd">ls -l "$file"</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 0 Nov 24 05:25 My Report.txt</span>
+<span class="lx-cmd">ls $file</span>
+<span class="lx-o">ls: cannot access 'My': No such file or directory
+ls: cannot access 'Report.txt': No such file or directory</span></pre><div class="lx-note">Unquoted, the runs of spaces collapse because each space just separates words. Double quotes kept the spaces and expanded $name, single quotes kept $name as text. A single quote cannot appear inside single quotes, so the fourth line closes them, adds a double quoted one and opens them again. Without quotes, the file name became two arguments, My and Report.txt.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Rule of thumb: put double quotes around every $variable and $(command), unless you really want the result split into words. Use single quotes for text that must stay exactly as typed, such as awk and sed programs.</div></div>
+<div class="vt-talk" hidden>Bash gives many characters a special job. A space separates words, a dollar sign starts a variable, and a star matches file names. Quoting turns those jobs off. A backslash protects just the next character. Single quotes protect everything between them, so nothing inside changes at all. Double quotes are the everyday choice: they keep spaces and stars as plain text, but they still let dollar signs work, so variables and command substitutions are filled in. The fourth kind, dollar followed by single quotes, works like single quotes but understands codes such as backslash n for a new line and backslash t for a tab. The most common bug in shell scripts is a missing pair of double quotes around a variable. A file name with a space then becomes two separate arguments, as the last line of the example shows. So the safe habit is simple: always write double quotes around dollar variables.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="order" data-l="order" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>The order of expansions</h2>
+<p>After splitting a line into words, bash <b>expands</b> them before running the command. The manual fixes the order. Knowing it explains many surprises.</p>
+<div class="walk"><div class="walk-h"><span>What bash does to every command line</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li><b>Brace expansion</b>: {a,b} and {1..3} make several words. Pure text, nothing is looked up yet.</li><li><b>Tilde expansion</b>: ~ at the start of a word becomes a home folder.</li><li><b>Parameter, arithmetic and command substitution</b> (and process substitution), from left to right: $name, ${...}, $((...)), $(...), <(...).</li><li><b>Word splitting</b>: unquoted results of the previous step are split at the characters in $IFS (space, tab and newline by default).</li><li><b>Pathname expansion</b>: unquoted words with * ? or [ ] become the matching file names.</li><li><b>Quote removal</b>: the quote characters that are left are removed. The command starts with what remains.</li></ol></div>
+<div class="viz" data-viz="pk" data-pk="lx-expand"></div>
+<div class="lx-run"><div class="lx-rh"><span>The order explains these results</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">n=3</span>
+<span class="lx-cmd">echo {1..$n}</span>
+<span class="lx-o">{1..3}</span>
+<span class="lx-cmd">seq -s ' ' 1 $n</span>
+<span class="lx-o">1 2 3</span>
+<span class="lx-cmd">echo ~ "~" ~root</span>
+<span class="lx-o">/home/learner ~ /root</span>
+<span class="lx-cmd">pattern='*.txt'</span>
+<span class="lx-cmd">echo $pattern</span>
+<span class="lx-o">fruits.txt notes.txt poem.txt</span>
+<span class="lx-cmd">echo "$pattern"</span>
+<span class="lx-o">*.txt</span>
+<span class="lx-cmd">empty=''</span>
+<span class="lx-cmd">printf '[%s]' $empty x "$empty"; echo</span>
+<span class="lx-o">[x][]</span></pre><div class="lx-note">Braces run before variables, so {1..$n} saw the text $n and was left alone. seq does the counting instead. Quoted, ~ stays a plain tilde. The pattern stored in a variable is globbed only when unquoted. The unquoted empty variable vanished completely, the quoted one stayed as an empty argument.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Globbing happens after variables are expanded, so a file name inside a variable can turn into a list of other files. That is why rm $f is dangerous and rm -- "$f" is safe.</div></div>
+<div class="vt-talk" hidden>Every command line goes through a fixed series of expansions before the command starts, and the bash manual gives the exact order. First comes brace expansion, which is pure text work: a comma list or a range inside braces becomes several words. Second is tilde expansion, where a tilde at the start of a word becomes your home folder. Third, from left to right, bash fills in variables, arithmetic, and the output of commands. Fourth, the results of step three that were not inside double quotes are split into separate words at spaces, tabs and new lines. Fifth, any unquoted word that still has a star, a question mark or square brackets is replaced by matching file names. Last of all, the quote characters themselves are removed. The order explains real puzzles. For example, brace ranges cannot use a variable, because the braces are handled before the variable has a value. Try the animation with your own lines and watch each stage change the words.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="params" data-l="params" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Parameter expansion: editing a value without sed</h2>
+<p>Inside <code>${...}</code> bash can do much more than read a variable. It can give a default, cut a prefix or suffix, replace text, take a slice or change case. It is fast because no extra program starts.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>${#v}</code></td><td>Length of the value in characters</td><td><code>echo ${#name}</code></td></tr><tr><td><code>${v:-word}</code></td><td>v, or word when v is unset or empty</td><td><code>port=${PORT:-8080}</code></td></tr><tr><td><code>${v:=word}</code></td><td>Like :- and also assigns word to v</td><td><code>: ${LOG:=/tmp/app.log}</code></td></tr><tr><td><code>${v:?message}</code></td><td>Stop with an error when v is unset or empty</td><td><code>cd "${DIR:?DIR is not set}"</code></td></tr><tr><td><code>${v:+word}</code></td><td>word only when v is set and not empty</td><td><code>echo ${debug:+-v}</code></td></tr><tr><td><code>${v#pat} ${v##pat}</code></td><td>Remove the shortest or longest match from the start</td><td><code>echo ${path##*/}</code></td></tr><tr><td><code>${v%pat} ${v%%pat}</code></td><td>Remove the shortest or longest match from the end</td><td><code>echo ${file%.*}</code></td></tr><tr><td><code>${v/old/new} ${v//old/new}</code></td><td>Replace the first match, or every match</td><td><code>echo ${s// /_}</code></td></tr><tr><td><code>${v:start:len}</code></td><td>A slice, counting from 0. A negative start counts from the end</td><td><code>echo ${d:0:4}</code></td></tr><tr><td><code>${v^^} ${v,,} ${v^}</code></td><td>Upper case, lower case, capital first letter</td><td><code>echo ${name^^}</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Taking a path apart</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">path=/home/learner/photos/trip.2026.jpg</span>
+<span class="lx-cmd">echo "${#path} characters"</span>
+<span class="lx-o">34 characters</span>
+<span class="lx-cmd">echo "file name: ${path##*/}"</span>
+<span class="lx-o">file name: trip.2026.jpg</span>
+<span class="lx-cmd">echo "folder:    ${path%/*}"</span>
+<span class="lx-o">folder:    /home/learner/photos</span>
+<span class="lx-cmd">echo "no ext:    ${path%.*}"</span>
+<span class="lx-o">no ext:    /home/learner/photos/trip.2026</span>
+<span class="lx-cmd">echo "short cut: ${path%%.*}"</span>
+<span class="lx-o">short cut: /home/learner/photos/trip</span>
+<span class="lx-cmd">echo "extension: ${path##*.}"</span>
+<span class="lx-o">extension: jpg</span>
+<span class="lx-cmd">name=asha</span>
+<span class="lx-cmd">echo "${name^} ${name^^} ${name:0:3}"</span>
+<span class="lx-o">Asha ASHA ash</span>
+<span class="lx-cmd">title="report for the year"</span>
+<span class="lx-cmd">echo "${title// /_}"</span>
+<span class="lx-o">report_for_the_year</span>
+<span class="lx-cmd">echo "port ${PORT:-8080}, debug flag [${DEBUG:+-v}]"</span>
+<span class="lx-o">port 8080, debug flag []</span>
+<span class="lx-cmd">for f in notes.txt poem.txt; do echo mv "$f" "${f%.txt}.md"; done</span>
+<span class="lx-o">mv notes.txt notes.md
+mv poem.txt poem.md</span></pre><div class="lx-note">One # or % removes the shortest match, two remove the longest. ${path%%.*} stopped at the first dot. PORT and DEBUG are not set, so :- gave the default and :+ gave nothing. The loop only prints the mv commands, a safe way to preview a bulk rename.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Cut and change values&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Set the variable &lt;code&gt;file&lt;/code&gt; to &lt;code&gt;report.final.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;file=report.final.txt&quot;, &quot;check&quot;: [{&quot;env&quot;: [&quot;file&quot;, &quot;report.final.txt&quot;]}]}, {&quot;t&quot;: &quot;Print the value of file without its last extension.&quot;, &quot;hint&quot;: &quot;echo ${file%.*}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;%&quot;}, {&quot;out&quot;: &quot;^report.final$&quot;}]}, {&quot;t&quot;: &quot;Print only the extension of file.&quot;, &quot;hint&quot;: &quot;echo ${file##*.}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;##&quot;}, {&quot;out&quot;: &quot;^txt$&quot;}]}, {&quot;t&quot;: &quot;Print the length of the value of file.&quot;, &quot;hint&quot;: &quot;echo ${#file}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\$\\{#file\\}&quot;}, {&quot;out&quot;: &quot;^16$&quot;}]}, {&quot;t&quot;: &quot;Print the value of file in capital letters.&quot;, &quot;hint&quot;: &quot;echo ${file^^}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\^\\^&quot;}, {&quot;out&quot;: &quot;^REPORT.FINAL.TXT$&quot;}]}, {&quot;t&quot;: &quot;The variable town is not set. Print its value with Pune as the default.&quot;, &quot;hint&quot;: &quot;echo ${town:-Pune}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;:-&quot;}, {&quot;out&quot;: &quot;^Pune$&quot;}]}, {&quot;t&quot;: &quot;Print the value of file with every dot replaced by an underscore.&quot;, &quot;hint&quot;: &quot;echo ${file//./_}&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;//&quot;}, {&quot;out&quot;: &quot;^report_final_txt$&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Parameter expansion lets you edit the value of a variable right inside the dollar and braces, without starting sed or cut. Dollar brace hash name gives the length. A colon and a dash gives a default when the variable is empty, which is the standard way to read optional settings such as a port number. A colon and a question mark stops the script with a clear message when a required variable is missing. The hash and percent forms cut a pattern from the start or the end of the value. One hash or one percent removes the shortest possible match, and two remove the longest. That gives you the file name, the folder or the extension of a path in a single step. A slash replaces text, and two slashes replace every match. Finally, two carets make the value upper case and two commas make it lower case. Because no new program starts, these are much faster than sed inside a loop that runs thousands of times.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="subst" data-l="subst" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Command, arithmetic and process substitution, and IFS</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>$(command)</code></td><td>The output of the command, with trailing newlines removed</td><td><code>today=$(date +%F)</code></td></tr><tr><td><code>`command`</code></td><td>The old form of $( ). It is hard to nest, so prefer $( )</td><td><code>echo `whoami`</code></td></tr><tr><td><code>$((expression))</code></td><td>Whole number arithmetic: + - * / % **</td><td><code>echo $((7 / 2))</code></td></tr><tr><td><code>&lt;(command)</code></td><td>Process substitution: the output as a file name to read</td><td><code>diff &lt;(sort a) &lt;(sort b)</code></td></tr><tr><td><code>IFS=: read -r a b</code></td><td>Split one line at colons into variables</td><td><code>IFS=: read -r user pw uid &lt;&lt;&lt; "$line"</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Substitutions, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">echo "I am $(whoami) in $(pwd)"</span>
+<span class="lx-o">I am learner in /home/learner</span>
+<span class="lx-cmd">count=$(ls | wc -l)</span>
+<span class="lx-cmd">echo "$count entries here"</span>
+<span class="lx-o">9 entries here</span>
+<span class="lx-cmd">echo "outer $(echo "inner $(echo deepest)")"</span>
+<span class="lx-o">outer inner deepest</span>
+<span class="lx-cmd">echo $((7 / 2)) $((7 % 2)) $((2 ** 10)) $(( (3 + 4) * 2 ))</span>
+<span class="lx-o">3 1 1024 14</span>
+<span class="lx-cmd">diff &lt;(head -3 fruits.txt) &lt;(sort fruits.txt | head -3)</span>
+<span class="lx-o">1d0
+&lt; mango
+3c2,3
+&lt; banana
+---
+&gt; apple
+&gt; apple</span>
+<span class="lx-cmd">echo &lt;(true)</span>
+<span class="lx-o">/dev/fd/63</span>
+<span class="lx-cmd">line="root:x:0:0:root:/root:/bin/bash"</span>
+<span class="lx-cmd">IFS=: read -r user pw uid gid rest &lt;&lt;&lt; "$line"</span>
+<span class="lx-cmd">echo "$user has uid $uid and shell ${rest##*:}"</span>
+<span class="lx-o">root has uid 0 and shell /bin/bash</span>
+<span class="lx-cmd">list="a,b,,c"</span>
+<span class="lx-cmd">IFS=,</span>
+<span class="lx-cmd">for x in $list; do echo "[$x]"; done</span>
+<span class="lx-o">[a]
+[b]
+[]
+[c]</span>
+<span class="lx-cmd">unset IFS</span>
+<span class="lx-cmd">lines="$(printf 'x\n\n\n')"</span>
+<span class="lx-cmd">echo "[$lines]"</span>
+<span class="lx-o">[x]</span></pre><div class="lx-note">$( ) nests without escaping. Arithmetic is whole numbers only, so 7 / 2 is 3. diff read two command outputs as if they were files, and echo shows the name bash gave such a file. With IFS set to a comma, splitting kept the empty field between the two commas. Command substitution removed all three trailing newlines.</div></div>
+<div class="note note-tip"><b>Remember</b><div>$((...)) has no fractions. For decimals use awk, for example awk "BEGIN { print 7 / 2 }", or bc.</div></div>
+<div class="vt-talk" hidden>Command substitution, written as a dollar and parentheses around a command, runs that command and puts its output into the line. It is how a script stores the date, the number of files, or any result, in a variable. The old form with backquotes does the same thing, but it is awkward to nest, so modern scripts use the dollar and parentheses form. Trailing new lines are removed from the output. Arithmetic expansion, with a dollar and double parentheses, does whole number maths: plus, minus, times, divide, the remainder with percent, and powers with two stars. There are no fractions, so seven divided by two gives three. Process substitution, a less than sign and parentheses, runs a command and hands its output to another command as if it were a file. That is perfect for comparing two command outputs with diff. Finally, IFS, the internal field separator, decides where word splitting and read cut a line. Set it to a colon to read a line of the password file, and unset it again afterwards to return to the normal spaces, tabs and new lines.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Expansions from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Before a command runs, bash replaces parts of the line: braces, ~, $variables, $(commands) and wildcards. Quotes decide what may be replaced. Double quotes around variables keep values with spaces in one piece.</p></div><div class="ld-p" data-ld="college" hidden><p>The order is fixed: brace, tilde, then parameter, arithmetic and command substitution from left to right, then word splitting with IFS, pathname expansion and quote removal. Only results that were not in double quotes are split and globbed, which is why "$var" is safe and $var is not.</p></div><div class="ld-p" data-ld="masters" hidden><p>Word splitting treats IFS white space and other IFS characters differently: runs of white space count as one separator and are trimmed at the ends, while each other character such as a colon ends a field, so a::b gives an empty field. Command substitution runs in a subshell, so variables set inside it are lost. set -f turns pathname expansion off, and shopt -s nullglob makes a pattern with no match disappear instead of staying as text.</p></div><div class="ld-p" data-ld="research" hidden><p>The POSIX standard defines these steps in its Shell Command Language chapter, and the Smoosh project (Greenberg and Blatt, POPL 2020) turned them into an executable formal model that was tested against real shells. It found places where shells disagree with the standard and with each other. Static analysers such as ShellCheck flag unquoted expansions (warning SC2086) because word splitting and globbing of data is a frequent source of bugs and security holes.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the file with a space</div><p>A nightly cleanup script ran <code>rm $old</code> on a file called <code>backup 2026.tar</code>. Word splitting turned it into two arguments, backup and 2026.tar, and the script deleted an unrelated file called backup. The fix was one pair of quotes: <code>rm -- "$old"</code>. The team added ShellCheck to their CI so the same mistake is caught before a merge.</p></div>
+<div class="vt-talk" hidden>Here is the deeper picture. The bash manual and the POSIX standard both describe the same pipeline of expansions, and the only words that are split and globbed are the ones produced by unquoted expansions. Splitting follows IFS. Spaces, tabs and new lines in IFS are grouped and trimmed, while any other character, such as a colon, ends a field each time it appears, so two colons in a row give an empty field. Command substitution runs in a subshell, so it cannot change variables in your script. Two options change globbing: set dash f turns it off, and the nullglob option makes a pattern with no match vanish. Researchers built a formal model of all these rules, called Smoosh, and tested it against real shells, finding cases where the shells disagree. In practice, the lesson from all this work is the same as on day one: quote your variables, and let ShellCheck remind you when you forget.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./first-scripts.html" data-topic="first-scripts"><small>Previous topic</small><b>First scripts</b></a><a class="next" href="./conditions.html" data-topic="conditions"><small>Next topic</small><b>Decisions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "expansions", "topic": "expansions", "subject": "linux", "title": "Quoting and expansions", "codes": {}, "quiz": [{"lv": "e", "q": "What does echo '$HOME' print?", "o": ["/home/learner", "$HOME", "HOME", "nothing"], "a": 1, "hint": "Single quotes.", "why": "Nothing is expanded inside single quotes."}, {"lv": "e", "q": "What does echo \"$HOME\" print?", "o": ["/home/learner", "$HOME", "\"$HOME\"", "HOME"], "a": 0, "hint": "Double quotes.", "why": "Variables are expanded inside double quotes."}, {"lv": "e", "q": "Which quoting keeps a file name with a space as one argument and still expands the variable?", "o": ["None", "\"$file\"", "'$file'", "$file"], "a": 1, "hint": "Quote variables.", "why": "Double quotes keep spaces and expand $file."}, {"lv": "e", "q": "What does $(whoami) do inside a command?", "o": ["Prints the word whoami", "Puts the output of whoami into the line", "Runs whoami in the background", "Nothing"], "a": 1, "hint": "Command substitution.", "why": "The output replaces the $( )."}, {"lv": "m", "q": "n=3. What does echo {1..$n} print?", "o": ["1 2 3", "{1..3}", "1..3", "an error"], "a": 1, "hint": "Braces come first.", "why": "Brace expansion runs before $n is expanded, so the braces are left alone."}, {"lv": "m", "q": "path=/a/b/c.tar.gz. What is ${path##*/}?", "o": ["/a/b", "c.tar.gz", "c", "gz"], "a": 1, "hint": "Longest from the start.", "why": "##*/ removes everything up to the last slash."}, {"lv": "m", "q": "file=c.tar.gz. What is ${file%.*}?", "o": ["c", "c.tar", "gz", "tar.gz"], "a": 1, "hint": "Shortest from the end.", "why": "% removes the shortest match, .gz."}, {"lv": "m", "q": "What does echo $((7 / 2)) print?", "o": ["3.5", "3", "4", "an error"], "a": 1, "hint": "Whole numbers.", "why": "Shell arithmetic drops the fraction."}, {"lv": "m", "q": "Which operator stops a script with a message when a variable is empty?", "o": ["${v:-msg}", "${v:+msg}", "${v:?msg}", "${v:=msg}"], "a": 2, "hint": "Question mark.", "why": ":? prints the message and stops."}, {"lv": "h", "q": "Which step happens last of these?", "o": ["Word splitting", "Pathname expansion", "Brace expansion", "Parameter expansion"], "a": 1, "hint": "Wildcards late.", "why": "Pathname expansion comes after word splitting."}, {"lv": "h", "q": "IFS=: and line=\"a::b\". How many words does $line give when unquoted?", "o": ["2", "3", "1", "4"], "a": 1, "hint": "Each colon ends a field.", "why": "a, an empty field and b."}, {"lv": "h", "q": "What does diff <(sort a) <(sort b) give diff as arguments?", "o": ["The sorted text", "Two file names such as /dev/fd/63 and /dev/fd/62", "The words sort a and sort b", "Nothing"], "a": 1, "hint": "Process substitution.", "why": "Each <( ) becomes a file name to read from."}, {"lv": "x", "q": "Why is count set inside $(count=5) lost afterwards?", "o": ["It is a syntax error", "Command substitution runs in a subshell", "count is read only", "It is not lost"], "a": 1, "hint": "Child process.", "why": "Changes inside a subshell do not reach the parent."}], "calc": [{"lv": "e", "q": "name=Asha. What is ${#name}?", "ans": "4", "hint": "Count the characters.", "steps": ["A, s, h, a.", "Four characters.", "<span class=\"eq\">4<\/span>"]}, {"lv": "e", "q": "What does $((2 ** 10)) give?", "ans": "1024", "hint": "Power.", "steps": ["** is a power.", "2 to the power 10.", "<span class=\"eq\">2^10 = 1024<\/span>"]}, {"lv": "m", "q": "What does $(( (3 + 4) * 2 - 5 % 3 )) give?", "ans": "12", "hint": "Brackets, then *, then %, then −.", "steps": ["3 + 4 = 7.", "7 × 2 = 14 and 5 % 3 = 2.", "<span class=\"eq\">14 − 2 = 12<\/span>"]}, {"lv": "m", "q": "d=2026-11-23. Using ${d:5:2}, which number is the month?", "ans": "11", "hint": "Start at 5, take 2.", "steps": ["Characters 0 to 3 are 2026, 4 is a dash.", "Characters 5 and 6 are 11.", "<span class=\"eq\">11<\/span>"]}, {"lv": "m", "q": "echo {a,b}{1,2,3} prints how many words?", "ans": "6", "hint": "Every pair.", "steps": ["2 choices in the first braces.", "3 choices in the second.", "<span class=\"eq\">2 × 3 = 6<\/span>"]}, {"lv": "h", "q": "IFS=, and list=\"x,,y,\". How many fields does unquoted $list give?", "ans": "3", "hint": "A final comma adds no empty field.", "steps": ["x, then an empty field between the two commas.", "Then y. The last comma only ends y.", "<span class=\"eq\">3 fields<\/span>"]}], "assign": [], "must": [["Quoting", "Single quotes keep everything literal, double quotes keep spaces and wildcards but expand $ and $( ), a backslash protects one character, $'...' understands codes like a tab."], ["Order", "Brace, tilde, then parameter, arithmetic and command substitution, then word splitting, pathname expansion and quote removal."], ["Quote variables", "Write \"$var\" and \"$(cmd)\". Unquoted results are split at IFS and globbed, so spaces and * in data break the command."], ["Parameter expansion", "${#v} length, ${v:-d} default, ${v:?msg} required, ${v#p} ${v##p} cut from the start, ${v%p} ${v%%p} cut from the end, ${v//a/b} replace, ${v:s:n} slice, ${v^^} ${v,,} case."], ["Substitution", "$(cmd) output (trailing newlines removed), $((expr)) whole number maths, <(cmd) output as a file name, IFS sets where splitting and read cut."]], "summary": "<p>Bash expands a line in a fixed order: braces, tilde, variables and substitutions, word splitting, wildcards and quote removal. Double quotes stop splitting and globbing, and ${...} edits values without extra programs.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

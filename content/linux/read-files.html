@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading and inspecting files · Unix and Linux</title>
+<meta name="description" content="cat, tac, nl and cat -A, less and its keys, head and tail with -n, -n +N, -f and -F, wc, file and magic numbers, stat and the three file times, diff and diff -u, cmp and od, and how tail and diff work inside.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=basics">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=basics" target="_top">Unix and Linux</a><span>›</span><span>Foundations</span><span>›</span><span>Step 2: Files and folders</span><span>›</span><span>Reading files</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 3 of 3 · Beginner</div>
+    <h1>Reading and inspecting files</h1>
+    <p class="lead">Print short files, page through huge ones, grab the first or last lines, watch a live log, and measure and compare files like an engineer on call.</p>
+    <div class="cv-chips"><span class="cv-chip">About 30 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">4 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#read-files" data-topic="cheatsheet" data-h="read-files">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#cat" data-l="cat"><span class="n">1</span><span class="t">Printing a whole file: cat and friends</span></a></li><li><a href="#less" data-l="less"><span class="n">2</span><span class="t">Reading long files page by page: less</span></a></li><li><a href="#headtail" data-l="headtail"><span class="n">3</span><span class="t">The start and the end: head and tail</span></a></li><li><a href="#inspect" data-l="inspect"><span class="n">4</span><span class="t">Measuring and comparing files: wc, file, stat, diff</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Reading files from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="cat" data-l="cat" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Printing a whole file: cat and friends</h2>
+<p><code>cat</code> prints files to the screen. Its name comes from con<b>cat</b>enate, which means joining things end to end. Give it two files and it prints the first one followed by the second one, with nothing in between.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>cat FILE</code></td><td>Print the whole file</td><td><code>cat notes.txt</code></td></tr><tr><td><code>cat A B</code></td><td>Print A, then B, joined</td><td><code>cat notes.txt poem.txt</code></td></tr><tr><td><code>cat -n FILE</code></td><td>Number every line</td><td><code>cat -n poem.txt</code></td></tr><tr><td><code>cat -A FILE</code></td><td>Show hidden characters: $ marks a line end, ^I marks a tab</td><td><code>cat -A notes.txt</code></td></tr><tr><td><code>tac FILE</code></td><td>Print the lines in reverse order, last line first</td><td><code>tac poem.txt</code></td></tr><tr><td><code>nl FILE</code></td><td>Number the lines that are not empty</td><td><code>nl poem.txt</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Reading the starting files</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat notes.txt</span>
+<span class="lx-o">Buy milk
+Call grandma
+Finish the Linux lesson</span>
+<span class="lx-cmd">cat -n poem.txt</span>
+<span class="lx-o">     1	Twinkle twinkle little star
+     2	How I wonder what you are
+     3	Up above the world so high
+     4	Like a diamond in the sky</span>
+<span class="lx-cmd">tac poem.txt</span>
+<span class="lx-o">Like a diamond in the sky
+Up above the world so high
+How I wonder what you are
+Twinkle twinkle little star</span>
+<span class="lx-cmd">cat notes.txt poem.txt</span>
+<span class="lx-o">Buy milk
+Call grandma
+Finish the Linux lesson
+Twinkle twinkle little star
+How I wonder what you are
+Up above the world so high
+Like a diamond in the sky</span></pre></div>
+<div class="lx-run"><div class="lx-rh"><span>Seeing the invisible</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">printf 'one\ttwo\nthree  \n' &gt; odd.txt</span>
+<span class="lx-cmd">cat odd.txt</span>
+<span class="lx-o">one	two
+three  </span>
+<span class="lx-cmd">cat -A odd.txt</span>
+<span class="lx-o">one^Itwo$
+three  $</span></pre><div class="lx-note">The file holds a tab and two spaces at the end of a line. On screen they look the same as ordinary spaces, but cat -A shows the tab as ^I and puts a $ where each line ends, so the two trailing spaces become visible.</div></div>
+<div class="note note-tip"><b>Remember</b><div>cat is fine for short files. For a file with thousands of lines the text flies past and only the end stays on screen. Use less for that, as the next lesson shows.</div></div>
+<div class="vt-talk" hidden>The first command most people learn for reading a file is cat. It sounds like the animal, but it is short for concatenate, which simply means joining things together. Ken Thompson wrote it for the very first version of Unix in 1971, and it has barely changed since. If you give cat one file, it prints that file. If you give it two, it prints them one after the other, which is handy for joining parts of a document. Two small options are worth remembering. Dash n puts a number in front of every line, which helps when someone says the problem is on line forty. Dash capital A shows characters you normally cannot see, such as tabs and spaces at the end of a line. Those invisible characters cause real bugs, for example in configuration files where a tab and a space mean different things.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="less" data-l="less" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Reading long files page by page: less</h2>
+<p><code>less</code> opens a file one screen at a time and lets you move around and search. It reads only what it needs, so it opens a huge log instantly. It never changes the file. The name is a joke on the older pager <code>more</code>, which could only move forwards: less can do more than more.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Key inside less</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>Space or f</code></td><td>Next page</td><td><code>Space</code></td></tr><tr><td><code>b</code></td><td>Back one page</td><td><code>b</code></td></tr><tr><td><code>Down or j, Up or k</code></td><td>One line down or up</td><td><code>j</code></td></tr><tr><td><code>g and G</code></td><td>Jump to the first line, or to the last line</td><td><code>G</code></td></tr><tr><td><code>/word</code></td><td>Search forwards for word</td><td><code>/ERROR</code></td></tr><tr><td><code>?word</code></td><td>Search backwards</td><td><code>?login</code></td></tr><tr><td><code>n and N</code></td><td>Next match, previous match</td><td><code>n</code></td></tr><tr><td><code>F</code></td><td>Follow the end of a growing file, like tail -f (Ctrl+C stops following)</td><td><code>F</code></td></tr><tr><td><code>h</code></td><td>Help screen with every key</td><td><code>h</code></td></tr><tr><td><code>q</code></td><td>Quit and go back to the prompt</td><td><code>q</code></td></tr></tbody></table></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>less FILE</code></td><td>Open a file</td><td><code>less logs/app.log</code></td></tr><tr><td><code>less -N FILE</code></td><td>Show line numbers</td><td><code>less -N poem.txt</code></td></tr><tr><td><code>less -S FILE</code></td><td>Chop long lines instead of wrapping them, scroll sideways with the arrow keys</td><td><code>less -S marks.csv</code></td></tr><tr><td><code>less +G FILE</code></td><td>Open the file at its end</td><td><code>less +G logs/app.log</code></td></tr><tr><td><code>less -i FILE</code></td><td>Searches ignore upper and lower case, unless the search has capitals</td><td><code>less -i logs/app.log</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>A screen of less</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">less /var/log/syslog</span>
+<span class="lx-o">Nov 23 09:00:00 brainy systemd[1]: Started Daily apt download activities.
+Nov 23 09:00:02 brainy CRON[812]: (root) CMD (run-parts /etc/cron.hourly)
+Nov 23 09:00:05 brainy kernel: [  412.118230] usb 1-1: new high-speed USB device
+...
+/var/log/syslog lines 1-40/1832 2%</span></pre><div class="lx-note">The last line shows the file name, which lines are on screen and how far through the file you are. Press q to leave.</div></div>
+<div class="note note-tip"><b>Remember</b><div>When the output of less goes to a pipe or a file instead of a screen, less behaves like cat and copies everything. The man command uses less to show manual pages, so the same keys work there.</div></div>
+<div class="vt-talk" hidden>Imagine a log file with two million lines. cat would pour all of it across your screen in a few seconds, and you would only see the very end. less solves this. It shows one screen, then waits for you. Space goes forward, b goes back, and slash followed by a word searches, which is what you will use most. Press n to jump to the next match and q to quit. The program was written by Mark Nudelman, starting in 1983, because the older pager called more could only move forwards. So less can do more than more, and the joke name stuck. You have already used less without knowing it, because the man command shows manual pages inside it. One more useful key is capital F. It keeps the end of the file on screen and shows new lines as they arrive, which is perfect for watching a server log while you test a web page.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="headtail" data-l="headtail" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>The start and the end: head and tail</h2>
+<p>Often you only need a few lines. <code>head</code> prints the start of a file and <code>tail</code> prints the end. Both show 10 lines unless you say otherwise.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>head -n N</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">first N lines</div><div class="fx-n">head -n 3 logs/app.log shows the oldest three log lines.</div></div><div class="fx fx-key"><div class="fx-h"><span>tail -n N</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">last N lines</div><div class="fx-n">tail -n 2 logs/app.log shows the two newest entries.</div></div><div class="fx"><div class="fx-h"><span>tail -n +N</span></div><div class="fx-b">from line N to the end</div><div class="fx-n">tail -n +2 marks.csv skips the header line of a CSV file.</div></div><div class="fx"><div class="fx-h"><span>tail -f</span></div><div class="fx-b">keep watching</div><div class="fx-n">Prints new lines as they are added, until you press Ctrl+C.</div></div></div>
+<div class="viz" data-viz="pk" data-pk="lx-headtail"></div>
+<div class="lx-run"><div class="lx-rh"><span>head and tail, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">head -n 3 logs/app.log</span>
+<span class="lx-o">2026-11-23 09:00:01 INFO server started on port 8080
+2026-11-23 09:00:05 INFO user asha logged in
+2026-11-23 09:01:12 WARN disk 81% full</span>
+<span class="lx-cmd">tail -n 2 logs/app.log</span>
+<span class="lx-o">2026-11-23 09:04:18 ERROR database timeout after 30s
+2026-11-23 09:05:00 INFO backup finished</span>
+<span class="lx-cmd">tail -n +2 marks.csv</span>
+<span class="lx-o">Asha,maths,91
+Ravi,science,78
+Meera,maths,85
+John,english,67
+Ravi,maths,72
+Asha,science,88</span>
+<span class="lx-cmd">head -c 8 notes.txt; echo</span>
+<span class="lx-o">Buy milk</span>
+<span class="lx-cmd">head -n 2 notes.txt poem.txt</span>
+<span class="lx-o">==&gt; notes.txt &lt;==
+Buy milk
+Call grandma
+
+==&gt; poem.txt &lt;==
+Twinkle twinkle little star
+How I wonder what you are</span></pre><div class="lx-note">With more than one file, head prints a ==> name <== line before each one. head -c counts bytes instead of lines, and the echo only adds the missing line end.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Watching a live log</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">tail -f /var/log/nginx/access.log</span>
+<span class="lx-o">203.0.113.7 - - [23/Nov/2026:09:31:02 +0000] "GET / HTTP/1.1" 200 612 "-" "Mozilla/5.0"
+203.0.113.7 - - [23/Nov/2026:09:31:02 +0000] "GET /style.css HTTP/1.1" 200 1048 "-" "Mozilla/5.0"
+198.51.100.23 - - [23/Nov/2026:09:31:09 +0000] "GET /login HTTP/1.1" 200 2210 "-" "curl/8.5.0"
+^C</span></pre><div class="lx-note">Each time someone opens a page, a new line appears. Ctrl+C stops watching. The addresses come from the ranges reserved for examples.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Logs are often rotated: app.log is renamed to app.log.1 and a new app.log starts. tail -f keeps reading the old renamed file and goes quiet. tail -F follows the name, notices the new file and continues with it.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Read the server log&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Print the whole of &lt;code&gt;notes.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;cat notes.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*cat\\s+notes\\.txt\\s*$&quot;}]}, {&quot;t&quot;: &quot;Show the first 3 lines of &lt;code&gt;logs/app.log&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;head -n 3 logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*head\\s+(-n\\s*3|-3)\\s+logs/app\\.log&quot;}, {&quot;out&quot;: &quot;server started&quot;}]}, {&quot;t&quot;: &quot;Show only the last line of &lt;code&gt;logs/app.log&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;tail -n 1 logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*tail\\s+(-n\\s*1|-1)\\s+logs/app\\.log&quot;}, {&quot;out&quot;: &quot;backup finished&quot;}]}, {&quot;t&quot;: &quot;Print &lt;code&gt;marks.csv&lt;/code&gt; without its header line.&quot;, &quot;hint&quot;: &quot;tail -n +2 marks.csv&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*tail\\s+-n\\s*\\+2\\s+marks\\.csv&quot;}, {&quot;out&quot;: &quot;Asha,maths,91&quot;}]}, {&quot;t&quot;: &quot;Count the lines of &lt;code&gt;fruits.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;wc -l fruits.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*wc\\s+-l\\s+fruits\\.txt&quot;}, {&quot;out&quot;: &quot;8 fruits.txt&quot;}]}, {&quot;t&quot;: &quot;Print &lt;code&gt;poem.txt&lt;/code&gt; with line numbers.&quot;, &quot;hint&quot;: &quot;cat -n poem.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*(cat\\s+-n|nl)\\s+poem\\.txt&quot;}, {&quot;out&quot;: &quot;4\tLike a diamond&quot;}]}, {&quot;t&quot;: &quot;Print &lt;code&gt;poem.txt&lt;/code&gt; upside down, last line first.&quot;, &quot;hint&quot;: &quot;tac poem.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*tac\\s+poem\\.txt&quot;}]}]}"></div>
+<div class="vt-talk" hidden>head and tail are two of the most used commands on any server. head shows the beginning of a file, tail shows the end, and both default to ten lines. The dash n option chooses another number. A trick worth remembering is tail with a plus sign. tail dash n plus two means start at line two and print everything after it, which is the standard way to drop the header row of a spreadsheet file. The most loved option is dash f, for follow. An engineer who is testing a website runs tail dash f on the web server log and watches each visit appear the moment it happens. If something breaks, the error appears right there in the terminal. Use capital F on servers whose logs are rotated each night, because it notices when a fresh log file replaces the old one.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="inspect" data-l="inspect" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Measuring and comparing files: wc, file, stat, diff</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>wc FILE</code></td><td>Count lines, words and bytes</td><td><code>wc logs/app.log</code></td></tr><tr><td><code>wc -l FILE</code></td><td>Count lines only</td><td><code>wc -l fruits.txt</code></td></tr><tr><td><code>file FILE</code></td><td>Guess what kind of data a file holds by reading its first bytes</td><td><code>file scripts/hello.sh</code></td></tr><tr><td><code>stat FILE</code></td><td>Show size, owner, permissions, inode and times</td><td><code>stat notes.txt</code></td></tr><tr><td><code>diff A B</code></td><td>Show the lines that differ between two text files</td><td><code>diff old.txt new.txt</code></td></tr><tr><td><code>cmp A B</code></td><td>Report the first byte where two files differ, works for any file</td><td><code>cmp a.bin b.bin</code></td></tr><tr><td><code>od -c FILE</code></td><td>Dump every byte, with special characters spelled out</td><td><code>od -c notes.txt</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Counting</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">wc logs/app.log</span>
+<span class="lx-o">  7  48 332 logs/app.log</span>
+<span class="lx-cmd">wc -l fruits.txt poem.txt</span>
+<span class="lx-o">  8 fruits.txt
+  4 poem.txt
+ 12 total</span>
+<span class="lx-cmd">wc -w poem.txt</span>
+<span class="lx-o">22 poem.txt</span></pre><div class="lx-note">wc prints lines, then words, then bytes. A word is anything between spaces, tabs or line ends. With several files you also get a total line.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>What is inside, and its details</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">file notes.txt logs scripts/hello.sh latest.log</span>
+<span class="lx-o">notes.txt:        ASCII text
+logs:             directory
+scripts/hello.sh: Bourne-Again shell script, ASCII text executable
+latest.log:       symbolic link to logs/app.log</span>
+<span class="lx-cmd">stat notes.txt</span>
+<span class="lx-o">  File: notes.txt
+  Size: 46        	Blocks: 8          IO Block: 4096   regular file
+Device: 254,0	Inode: 639888      Links: 1
+Access: (0644/-rw-r--r--)  Uid: ( 1000/ learner)   Gid: ( 1000/ learner)
+Access: 2026-11-24 05:25:13.624504610 +0000
+Modify: 2026-11-23 09:30:00.000000000 +0000
+Change: 2026-11-24 05:25:13.619266580 +0000
+ Birth: 2026-11-24 05:25:13.615614758 +0000</span></pre><div class="lx-note">file never trusts the name. It reads the first bytes and compares them with a list of known signatures called magic numbers, for example every PNG image starts with the bytes 89 50 4E 47. stat shows the inode number and three times: Access (last read), Modify (content changed) and Change (details such as permissions changed). The Birth line appears only on file systems that record creation time.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Spotting the difference</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">printf 'milk\neggs\nbread\n' &gt; monday.txt</span>
+<span class="lx-cmd">printf 'milk\nbutter\nbread\njam\n' &gt; tuesday.txt</span>
+<span class="lx-cmd">diff monday.txt tuesday.txt</span>
+<span class="lx-o">2c2
+&lt; eggs
+---
+&gt; butter
+3a4
+&gt; jam</span>
+<span class="lx-cmd">diff -u monday.txt tuesday.txt</span>
+<span class="lx-o">--- monday.txt	2026-11-24 05:25:13.660504612 +0000
++++ tuesday.txt	2026-11-24 05:25:13.660504612 +0000
+@@ -1,3 +1,4 @@
+ milk
+-eggs
++butter
+ bread
++jam</span>
+<span class="lx-cmd">cmp monday.txt tuesday.txt</span>
+<span class="lx-o">monday.txt tuesday.txt differ: byte 6, line 2</span></pre><div class="lx-note">In the normal format, 2c2 means line 2 changed into line 2, and 3a4 means a line was added after line 3. Lines starting with &lt; come from the first file and lines with &gt; from the second. The -u unified format with - and + is what Git and code review tools show.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Every single byte</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">od -c notes.txt | head -n 3</span>
+<span class="lx-o">0000000   B   u   y       m   i   l   k  \n   C   a   l   l       g   r
+0000020   a   n   d   m   a  \n   F   i   n   i   s   h       t   h   e
+0000040       L   i   n   u   x       l   e   s   s   o   n  \n</span></pre><div class="lx-note">od shows that a line end is one byte, written <code>\n</code>. Files from Windows often end lines with two bytes, carriage return then newline (<code>\r\n</code>), which is why some scripts break after a file is copied from Windows.</div></div>
+<div class="vt-talk" hidden>Sometimes you need facts about a file rather than its words. wc counts lines, words and bytes. Engineers use wc dash l all the time, for example to count how many errors happened today or how many users are in a list. The file command answers the question what is this thing. It ignores the name and reads the first few bytes, because most formats begin with a fixed signature, called a magic number. A picture renamed to report dot txt is still reported as a picture. stat prints the details the system keeps about a file, such as owner, size, permissions and times. Finally, diff compares two text files and prints only the lines that changed. The original diff was written for Unix in the early nineteen seventies, and its descendants power every code review today. When you see minus and plus lines in Git, you are looking at diff output.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Reading files from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>cat prints a file, less lets you scroll and search, head shows the start, tail shows the end, wc counts lines and words, and diff shows what changed between two versions.</p></div><div class="ld-p" data-ld="college" hidden><p>These tools read files as streams of bytes divided into lines by the newline character. head and tail select by line or byte count, tail -f polls or watches the file for growth, file identifies formats by magic numbers in magic(5), and diff computes a shortest edit script between two line sequences.</p></div><div class="ld-p" data-ld="masters" hidden><p>cat loops over read() and write() system calls. GNU tail on a seekable file seeks near the end and reads backwards in blocks, so tail -n 5 on a 50 GB log is instant. On Linux tail -f uses inotify to sleep until the file changes. less keeps an index of line positions and reads only the regions it displays. GNU diff uses the O(ND) algorithm published by Eugene Myers in 1986, where D is the number of differences, so similar files are compared quickly.</p></div><div class="ld-p" data-ld="research" hidden><p>Research topics include diff algorithms that produce more readable results (patience and histogram diff in Git), structural diffs that compare syntax trees instead of lines, file type identification with machine learning when magic numbers are missing (Google Magika, 2024), and log analysis at scale, where systems such as the ELK stack index billions of lines that tail could never handle alone.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the 3 a.m. incident</div><p>A shopping site starts failing at night. The on-call engineer logs in and runs <code>tail -n 50 /var/log/app/error.log</code> to see the latest errors, then <code>grep -c timeout</code> on the same file to count them, and finally <code>tail -F</code> to watch whether new errors keep coming after a restart. Every command here is in this chapter or the next one.</p></div>
+<div class="vt-talk" hidden>How does tail show the last five lines of a fifty gigabyte file without reading all fifty gigabytes. GNU tail jumps straight to the end of the file and reads backwards in blocks until it has found enough line endings. That is why it answers instantly. When you follow a file, modern Linux lets tail sleep until the kernel says the file has changed, using a feature called inotify, instead of checking again and again. diff hides clever mathematics too. In 1986 Eugene Myers published an algorithm whose cost depends mostly on how many differences there are, so two nearly identical files are compared very fast. That algorithm still sits inside GNU diff and inside Git. Researchers keep improving the ideas, for example with diffs that understand program structure, and with machine learning models that recognise file types when the usual signatures are missing.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./manage-files.html" data-topic="manage-files"><small>Previous topic</small><b>Files and folders</b></a><a class="next" href="./permissions.html" data-topic="permissions"><small>Next topic</small><b>Permissions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "read-files", "topic": "read-files", "subject": "linux", "title": "Reading and inspecting files", "codes": {}, "quiz": [{"lv": "e", "q": "Which command prints a whole short file to the screen?", "o": ["cat", "head", "cd", "mkdir"], "a": 0, "hint": "Concatenate.", "why": "cat prints whole files."}, {"lv": "e", "q": "How many lines does tail print when you give no number?", "o": ["1", "5", "10", "All of them"], "a": 2, "hint": "Same default as head.", "why": "head and tail both default to 10 lines."}, {"lv": "e", "q": "Which key quits less?", "o": ["x", "q", "Esc", "Ctrl+Q"], "a": 1, "hint": "Q for quit.", "why": "q leaves less and returns to the prompt."}, {"lv": "e", "q": "Which command counts the lines of a file?", "o": ["wc -l", "cat -l", "count", "nl -c"], "a": 0, "hint": "Word count with -l.", "why": "wc -l prints the number of lines."}, {"lv": "m", "q": "You want everything in data.csv except the first header line. Which command?", "o": ["head -n 1 data.csv", "tail -n +2 data.csv", "tail -n 2 data.csv", "cat -n data.csv"], "a": 1, "hint": "Start from line 2.", "why": "tail -n +2 starts at line 2 and prints to the end."}, {"lv": "m", "q": "Inside less, how do you search forwards for the word ERROR?", "o": ["Type /ERROR and press Enter", "Press s then ERROR", "Ctrl+F ERROR", "grep ERROR"], "a": 0, "hint": "Slash searches.", "why": "/ starts a forward search, n jumps to the next match."}, {"lv": "m", "q": "file says holiday.txt is \"JPEG image data\". What does that tell you?", "o": ["file is broken", "The content is a JPEG picture, whatever the name says", "The file is empty", "It is a text file"], "a": 1, "hint": "file reads bytes, not names.", "why": "file checks magic numbers at the start of the content."}, {"lv": "m", "q": "diff prints 3a4 > jam. What happened?", "o": ["Line 3 was deleted", "A line \"jam\" was added after line 3, becoming line 4 of the second file", "Line 4 changed", "The files are equal"], "a": 1, "hint": "a means add.", "why": "In normal diff format, a is add, d is delete and c is change."}, {"lv": "m", "q": "Which command shows tabs as ^I and line ends as $?", "o": ["cat -n", "cat -A", "less -S", "tac"], "a": 1, "hint": "Show All.", "why": "cat -A makes invisible characters visible."}, {"lv": "h", "q": "A log is renamed every night and a new one is started. Which keeps following the new file?", "o": ["tail -f", "tail -F", "less", "head -f"], "a": 1, "hint": "Follow the name.", "why": "tail -F follows the file name and retries when the file is replaced."}, {"lv": "h", "q": "wc -l reports 0 for a file that clearly shows one line of text. Most likely reason?", "o": ["The file is binary", "The only line has no newline character at its end", "wc is broken", "The file is hidden"], "a": 1, "hint": "wc counts newlines.", "why": "wc -l counts newline characters, so a final line without one is not counted."}, {"lv": "h", "q": "Which stat time changes when you run chmod on a file, but not when you only read it?", "o": ["Access", "Modify", "Change", "Birth"], "a": 2, "hint": "Details, not content.", "why": "ctime (Change) records changes to the inode, such as permissions."}, {"lv": "x", "q": "Why is tail -n 5 on a 50 GB log almost instant?", "o": ["It is cached", "It seeks to the end and reads backwards in blocks until it finds 5 newlines", "It reads in parallel", "It only reads the first 5 lines"], "a": 1, "hint": "No need to read the beginning.", "why": "GNU tail seeks near the end of a regular file."}], "calc": [{"lv": "e", "q": "head -n 3 on a file of 20 lines, followed by tail -n 3 on the same file. How many lines are printed in total?", "ans": "6", "hint": "Three from each end.", "steps": ["head gives 3 lines.", "tail gives 3 lines.", "<span class=\"eq\">3 + 3 = 6 lines<\/span>"]}, {"lv": "e", "q": "marks.csv has 7 lines including one header. How many lines does tail -n +2 marks.csv print?", "ans": "6", "hint": "Every line except the first.", "steps": ["Total lines: 7.", "Skip line 1.", "<span class=\"eq\">7 − 1 = 6 lines<\/span>"]}, {"lv": "m", "q": "less shows 40 lines per screen. How many presses of Space take you from the first screen to the screen that shows line 200?", "ans": "4", "hint": "Each press moves 40 lines.", "steps": ["Screen 1 shows lines 1 to 40.", "After k presses you see lines 40k+1 to 40k+40.", "Need 40k+40 ≥ 200, so k ≥ 4.", "<span class=\"eq\">4 presses (lines 161 to 200)<\/span>"]}, {"lv": "m", "q": "A log grows by 12 lines per minute. tail -f has run for 15 minutes. How many new lines has it printed?", "ans": "180", "hint": "Rate times time.", "steps": ["Rate: 12 lines per minute.", "Time: 15 minutes.", "<span class=\"eq\">12 × 15 = 180 lines<\/span>"]}, {"lv": "m", "q": "A text file has 4 lines of 9 characters each, plus a newline after every line. How many bytes does wc -c report?", "ans": "40", "hint": "Count the newlines too.", "steps": ["Characters: 4 × 9 = 36.", "Newlines: 4.", "<span class=\"eq\">36 + 4 = 40 bytes<\/span>"]}, {"lv": "h", "q": "The same file is converted to Windows line ends, where each line ends with a carriage return byte plus the newline byte. How many bytes now?", "ans": "44", "hint": "One extra byte per line.", "steps": ["Before: 40 bytes.", "Each of the 4 lines gains one carriage return byte.", "<span class=\"eq\">40 + 4 = 44 bytes<\/span>"]}], "assign": [], "must": [["cat and less", "cat prints whole files (cat -n numbers lines, cat -A shows hidden characters). less pages through big files: Space, b, /word, n, q."], ["head and tail", "Both default to 10 lines. -n N chooses another number, tail -n +N starts at line N."], ["Follow", "tail -f watches a growing file. tail -F also survives log rotation. Ctrl+C stops."], ["Measure", "wc counts lines, words and bytes. wc -l counts newline characters. file reads magic numbers, not names. stat shows metadata."], ["Compare", "diff shows changed lines (c change, a add, d delete, or - and + with -u). cmp finds the first differing byte."]], "summary": "<p>cat for short files, less for long ones, head and tail for the ends, tail -F for live logs, wc to count, file and stat for facts, and diff to compare.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

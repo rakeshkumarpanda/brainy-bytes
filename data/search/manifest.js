@@ -11,6 +11,7 @@ window.LH_SEARCH_MANIFEST = {
  "git": "a0a405282f",
  "java": "4bcd2c3647",
  "javascript": "fd883ba108",
+ "linux": "c21caff189",
  "machine-learning": "a5cbe57791",
  "manual-testing": "ffb8cadc10",
  "master-claude": "3e72096c00",

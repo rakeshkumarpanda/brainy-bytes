@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course revision: the whole of Unix and Linux in one chapter · Unix and Linux</title>
+<meta name="description" content="A one page map of the course, how Linux is examined (school, LPIC-1, Linux+, RHCSA, LFCS), permission digits, umask, exit codes, cron, CIDR and ports, classic pipelines, troubleshooting full disks, failed services, network and permission problems, a mixed final lab, and where to go next.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=advanced">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=advanced" target="_top">Unix and Linux</a><span>›</span><span>Internals and Advanced</span><span>›</span><span>Step 3: Containers and performance</span><span>›</span><span>Course revision</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 3 of 3 · Expert</div>
+    <h1>Course revision: the whole of Unix and Linux in one chapter</h1>
+    <p class="lead">Bring the five parts together: the commands to know by heart, the numbers that come up in every exam, pipelines read step by step, incidents solved with tools from every chapter, and one last lab across the whole course.</p>
+    <div class="cv-chips"><span class="cv-chip">About 45 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#course-revision" data-topic="cheatsheet" data-h="course-revision">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#map" data-l="map"><span class="n">1</span><span class="t">The whole course on one page</span></a></li><li><a href="#numbers" data-l="numbers"><span class="n">2</span><span class="t">The numbers that come up again and again</span></a></li><li><a href="#pipes" data-l="pipes"><span class="n">3</span><span class="t">Read and build pipelines</span></a></li><li><a href="#incidents" data-l="incidents"><span class="n">4</span><span class="t">Incidents: the whole course at work</span></a></li><li><a href="#practice" data-l="practice"><span class="n">5</span><span class="t">Final practice: one lab across the course</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">Where to go from here</span></a></li></ol>
+    <article class="cv-lesson" id="map" data-l="map" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>The whole course on one page</h2>
+<p>This chapter teaches nothing new. It puts the five parts of the course side by side, drills the numbers and patterns that come up most, and ends with a lab that mixes all of them. Each line names the chapter to go back to.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Part</th><th>Chapters</th><th>Commands to know by heart</th></tr></thead><tbody><tr><td>Foundations</td><td>1.1 to 3.2: what Linux is, the shell, help, the file tree, files, reading files, permissions, editors</td><td><code>pwd ls cd man mkdir cp mv rm cat less head tail chmod chown nano vim</code></td></tr><tr><td>Power tools</td><td>1.1 to 4.2: redirection, pipes, grep, sed, awk, find, archives, processes, variables</td><td><code>&gt; &gt;&gt; 2&gt;&amp;1 | sort uniq wc cut grep -E sed -i awk find xargs tar ps kill jobs export</code></td></tr><tr><td>Scripting</td><td>1.1 to 4.2: first scripts, expansions, decisions, loops, functions, arrays, robust scripts, scheduling</td><td><code>#!/bin/bash $1 "$@" [[ ]] if case for while read local set -euo pipefail trap crontab</code></td></tr><tr><td>Administration</td><td>1.1 to 4.3: users, packages, systemd, logs, disks, LVM and backups, networking, SSH, firewall</td><td><code>sudo useradd apt systemctl journalctl df du lsblk mount lvcreate rsync ip ss ssh ufw</code></td></tr><tr><td>Internals and advanced</td><td>1.1 to 3.3: kernel, processes, files inside, memory, containers, performance</td><td><code>strace /proc stat ln lsof free vmstat unshare setcap iostat pidstat perf</code></td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Exam or path</th><th>Format</th><th>Where this course covers it</th></tr></thead><tbody><tr><td>School and university Unix exams</td><td>Short answers, command output to predict, small scripts on paper</td><td>Foundations, Power tools, Scripting</td></tr><tr><td>LPIC-1 (Linux Professional Institute, exams 101 and 102)</td><td>Multiple choice and fill in the blank</td><td>all parts, with Administration for packages, boot, disks and networking</td></tr><tr><td>CompTIA Linux+</td><td>Multiple choice and performance based questions</td><td>Administration, Scripting, Firewall and Performance</td></tr><tr><td>RHCSA (Red Hat, exam EX200) and LFCS (Linux Foundation)</td><td>Hands-on tasks on live systems, no multiple choice</td><td>every lab, and the practice shell, but on RHEL use dnf and firewalld instead of apt and ufw</td></tr><tr><td>Job interviews for DevOps, SRE and support</td><td>Troubleshooting stories and “what happens when”</td><td>Advanced chapters and the incident lesson here</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Hands-on exams reward speed with man pages, <code>--help</code> and tab completion more than memory. Practise every lab here without looking at the hints.</div></div>
+<div class="vt-talk" hidden>This last chapter teaches nothing new. It brings the whole course together. The five parts are foundations, power tools, scripting, administration, and internals. The table lists the commands to know by heart from each part, and the chapter to go back to when one feels shaky. School and university exams ask you to predict output and write small scripts. L P I C one and Comp T I A Linux plus are mostly multiple choice. R H C S A and L F C S are hands on, on a live system, so practise the labs here without hints and get fast with man pages and tab completion.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="numbers" data-l="numbers" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>The numbers that come up again and again</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Topic</th><th>Rule</th><th>Example</th><th>Chapter</th></tr></thead><tbody><tr><td>Permission bits</td><td>r = 4, w = 2, x = 1, one digit each for user, group, others</td><td><code>chmod 640</code> is rw-r-----</td><td>Foundations 3.1</td></tr><tr><td>umask</td><td>new files start at 666, folders at 777, umask bits are taken away</td><td>umask 027: files 640, folders 750</td><td>Foundations 3.1</td></tr><tr><td>Special bits</td><td>SUID 4, SGID 2, sticky 1, as a fourth digit in front</td><td><code>chmod 1777 /tmp</code>, <code>chmod 2775 shared</code></td><td>Foundations 3.1</td></tr><tr><td>Exit status</td><td>0 is success, 1 to 125 errors, 126 not executable, 127 not found, 128 + n killed by signal n</td><td>SIGKILL (9) gives 137, Ctrl+C (SIGINT, 2) gives 130</td><td>Scripting 2.1, Power 4.1</td></tr><tr><td>cron fields</td><td>minute, hour, day of month, month, day of week</td><td><code>30 2 * * 1-5</code> is 02:30 Monday to Friday</td><td>Scripting 4.2</td></tr><tr><td>File descriptors</td><td>0 stdin, 1 stdout, 2 stderr</td><td><code>cmd &gt; out.log 2&gt;&amp;1</code></td><td>Power 1.1</td></tr><tr><td>CIDR</td><td>a /n network has 2 to the power (32 − n) addresses, minus 2 for hosts</td><td>/24: 256 addresses, 254 hosts</td><td>Admin 4.1</td></tr><tr><td>Ports</td><td>22 SSH, 53 DNS, 80 HTTP, 443 HTTPS, below 1024 need root or CAP_NET_BIND_SERVICE</td><td><code>ss -tln</code></td><td>Admin 4.1, Advanced 3.1</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Check three of the rules on a real shell</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">umask 027</span>
+<span class="lx-cmd">touch report.txt</span>
+<span class="lx-cmd">mkdir private</span>
+<span class="lx-cmd">stat -c '%a %A %n' report.txt private</span>
+<span class="lx-o">640 -rw-r----- report.txt
+750 drwxr-x--- private</span>
+<span class="lx-cmd">printf '%o\n' $(( 0666 &amp; ~0027 ))</span>
+<span class="lx-o">640</span>
+<span class="lx-cmd">sleep 30 &amp;</span>
+<span class="lx-cmd">kill -9 $!</span>
+<span class="lx-cmd">wait $!</span>
+<span class="lx-o">bash: 26803 Killed                  sleep 30</span>
+<span class="lx-cmd">echo "exit status: $?"</span>
+<span class="lx-o">exit status: 137</span>
+<span class="lx-cmd">bash -c 'nosuchcommand' 2&gt;/dev/null</span>
+<span class="lx-cmd">echo "exit status: $?"</span>
+<span class="lx-o">exit status: 127</span></pre><div class="lx-note">With umask 027 a new file gets 640 and a new folder 750, and the shell arithmetic shows the same: 666 with the bits of 027 taken away is 640. A sleep killed with signal 9 reports 128 + 9 = 137, and a command that is not found reports 127.</div></div>
+<div class="walk"><div class="walk-h"><span>Read a permission string in five seconds</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Take <code>-rwxr-x---</code>. The first character is the type: - file, d folder, l link.</li><li>Split the rest into three groups: rwx, r-x, ---.</li><li>Add r 4, w 2, x 1 in each group: 7, 5, 0.</li><li>So it is 750: the owner may do everything, the group may read and run, others nothing.</li><li>An s in the user group means SUID, in the group group SGID, and a t in the last group the sticky bit.</li></ol></div>
+<div class="vt-talk" hidden>Some numbers come back in every exam and on every server. Permission digits add read four, write two and execute one, for user, group and others, so six four zero is read and write for the owner and read for the group. The umask takes bits away from six six six for files and seven seven seven for folders. Exit status zero is success, one hundred twenty seven means command not found, and one hundred twenty eight plus n means killed by signal n, so a kill minus nine gives one hundred thirty seven. The box checks three of these rules on a real shell.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="pipes" data-l="pipes" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Read and build pipelines</h2>
+<p>Exams love a pipeline with a question “what does it print?”. Read it from left to right and write down what each stage hands to the next.</p>
+<div class="lx-run"><div class="lx-rh"><span>Three classic pipelines on the practice files</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">sort fruits.txt | uniq -c | sort -rn | head -n 3</span>
+<span class="lx-o">      3 apple
+      2 mango
+      1 kiwi</span>
+<span class="lx-cmd">awk -F, 'NR &gt; 1 { sum[$2] += $3; n[$2]++ } END { for (s in sum) printf "%s %.1f\n", s, sum[s] / n[s] }' marks.csv | sort</span>
+<span class="lx-o">english 67.0
+maths 82.7
+science 83.0</span>
+<span class="lx-cmd">grep ERROR logs/app.log | cut -d' ' -f2,4-</span>
+<span class="lx-o">09:02:40 payment failed for order 1042
+09:04:18 database timeout after 30s</span>
+<span class="lx-cmd">ls -l | awk 'NR &gt; 1 { total += $5 } END { print total, "bytes in", NR - 1, "entries" }'</span>
+<span class="lx-o">16708 bytes in 9 entries</span></pre><div class="lx-note">First: sort puts equal lines next to each other, uniq -c counts each run, sort -rn puts the biggest count first, head keeps three. Second: awk splits marks.csv at commas, skips the header, adds up the scores and counts per subject, and prints the average. Third: grep keeps the error lines and cut keeps the time and the message. Fourth: awk adds up the size column of ls -l.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Need</th><th>Pattern</th><th>Chapter</th></tr></thead><tbody><tr><td>how often does each value occur</td><td><code>sort | uniq -c | sort -rn</code></td><td>Power 1.2</td></tr><tr><td>sum or average a column</td><td><code>awk '{ s += $3 } END { print s }'</code></td><td>Power 2.3</td></tr><tr><td>change text in many files</td><td><code>grep -rl old . | xargs sed -i 's/old/new/g'</code></td><td>Power 2.2 and 3.1</td></tr><tr><td>find big old files</td><td><code>find /var/log -type f -size +100M -mtime +30</code></td><td>Power 3.1</td></tr><tr><td>save output and errors</td><td><code>./job.sh &gt; job.log 2&gt;&amp;1</code></td><td>Power 1.1</td></tr><tr><td>run a command for each line</td><td><code>while read -r host; do ssh "$host" uptime; done &lt; hosts.txt</code></td><td>Scripting 2.2</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>Filenames with spaces break <code>xargs</code> and unquoted loops. Use <code>find -print0 | xargs -0</code>, and always quote "$var" in scripts.</div></div>
+<div class="vt-talk" hidden>Pipelines are the heart of the shell and a favourite exam question. Read one from left to right and note what each stage passes on. In the first, sort groups equal lines, uniq minus c counts them, sort minus r n puts the biggest count first and head keeps three. The second uses awk to average the scores per subject. The third keeps error lines and cuts out the fields you need, and the fourth adds up a column. The table lists the patterns that solve most daily tasks, and the chapter that teaches each one.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="incidents" data-l="incidents" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Incidents: the whole course at work</h2>
+<p>Real problems do not stay inside one chapter. An admin looks, narrows down, finds the cause, fixes it, and stops it from coming back, using whatever tool fits.</p>
+<div class="viz" data-viz="pk" data-pk="lx-triage"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Symptom</th><th>First commands</th><th>Usual causes</th><th>Chapters</th></tr></thead><tbody><tr><td>No space left on device</td><td><code>df -h</code>, <code>df -i</code>, <code>du -xh --max-depth=1 /</code>, <code>lsof +L1</code></td><td>logs, old kernels or images, deleted files still open, out of inodes</td><td>Admin 2.2 and 3.1, Advanced 2.1</td></tr><tr><td>Service will not start</td><td><code>systemctl status</code>, <code>journalctl -u NAME -n 50</code>, the service’s config test</td><td>port in use, config error, wrong permissions, missing file</td><td>Admin 2.1 and 2.2</td></tr><tr><td>Cannot connect over the network</td><td><code>ip -br addr</code>, <code>ip route</code>, <code>ping</code>, <code>ss -tln</code>, <code>nc -vz</code>, <code>ufw status</code></td><td>nothing listening, firewall, wrong route or DNS</td><td>Admin 4.1 to 4.3</td></tr><tr><td>Permission denied</td><td><code>ls -l</code>, <code>id</code>, <code>namei -l PATH</code>, <code>sudo -l</code></td><td>missing x on a parent folder, wrong owner, not in the group yet (log in again)</td><td>Foundations 3.1, Admin 1.1</td></tr><tr><td>Server is slow</td><td><code>uptime</code>, <code>vmstat 1</code>, <code>top</code>, <code>iostat -xz 1</code>, <code>free -m</code></td><td>CPU hog, swapping, a saturated disk</td><td>Advanced 2.2 and 3.2</td></tr><tr><td>Script works by hand, fails in cron</td><td><code>grep CRON /var/log/syslog</code>, the job’s log, <code>env -i</code> test</td><td>PATH, missing variables, relative paths</td><td>Scripting 4.2</td></tr></tbody></table></div>
+<div class="scene"><div class="scene-h">Real world scenario: the full disk at midnight</div><p>A monitoring alert said the root file system was at 100 %. <code>df -h</code> confirmed it, but <code>du</code> found only 20 GB of the 40 GB. <code>sudo lsof +L1</code> showed a 19 GB debug log that someone had deleted while the app still wrote to it. Restarting the app gave the space back. The team then added a logrotate rule with copytruncate, a disk alert at 80 %, and a note in the runbook. Three chapters (disks, files inside, logs) solved one incident.</p></div>
+<div class="vt-talk" hidden>Real problems cross chapters. In the animation, pick a problem and see the commands an admin would use, with the chapter each comes from. For a full disk, look with d f, find the big folder with d u, and remember that a deleted file still open keeps its space. For a service that will not start, read systemctl status and the journal. For network trouble, go from the bottom up: address, route, port, firewall. For permission denied, check every folder on the path. Fix the cause, then make sure it cannot happen again.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Final practice: one lab across the course</h2>
+<p>Twelve tasks, one from each corner of the course. Try each without the hint first.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;The whole course&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Show the folder you are in.&quot;, &quot;hint&quot;: &quot;pwd&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^/home/learner$&quot;}]}, {&quot;t&quot;: &quot;Count the lines of fruits.txt that contain apple.&quot;, &quot;hint&quot;: &quot;grep -c apple fruits.txt&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^3$&quot;}]}, {&quot;t&quot;: &quot;Print each fruit with its count, most common first.&quot;, &quot;hint&quot;: &quot;sort fruits.txt | uniq -c | sort -rn&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^\\s+3 apple&quot;}]}, {&quot;t&quot;: &quot;Add up the scores (column 3) of marks.csv, skipping the header, with awk.&quot;, &quot;hint&quot;: &quot;awk -F, &#x27;NR &gt; 1 { s += $3 } END { print s }&#x27; marks.csv&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^481$&quot;}]}, {&quot;t&quot;: &quot;Show only the ERROR lines of logs/app.log.&quot;, &quot;hint&quot;: &quot;grep ERROR logs/app.log&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;payment failed&quot;}]}, {&quot;t&quot;: &quot;Create the folder projects/site.&quot;, &quot;hint&quot;: &quot;mkdir projects/site&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;/home/learner/projects/site&quot;}]}, {&quot;t&quot;: &quot;Give projects/site the mode 750.&quot;, &quot;hint&quot;: &quot;chmod 750 projects/site&quot;, &quot;check&quot;: [{&quot;mode&quot;: [&quot;projects/site&quot;, &quot;750&quot;]}]}, {&quot;t&quot;: &quot;Pack the logs folder into logs.tar.gz.&quot;, &quot;hint&quot;: &quot;tar czf logs.tar.gz logs&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;/home/learner/logs.tar.gz&quot;}]}, {&quot;t&quot;: &quot;Check whether nginx is running.&quot;, &quot;hint&quot;: &quot;systemctl is-active nginx&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^active$&quot;}]}, {&quot;t&quot;: &quot;List the TCP ports that are listening, as numbers.&quot;, &quot;hint&quot;: &quot;ss -tln&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;:80\\s&quot;}]}, {&quot;t&quot;: &quot;Show how full the root file system is, in human units.&quot;, &quot;hint&quot;: &quot;df -h /&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;/dev/sda1\\s+40G&quot;}]}, {&quot;t&quot;: &quot;Show the run queue and CPU split with vmstat, every second, 2 times.&quot;, &quot;hint&quot;: &quot;vmstat 1 2&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;r\\s+b\\s+swpd&quot;}]}]}"></div>
+<div class="vt-talk" hidden>This last lab mixes the whole course. Find where you are, count and rank lines with grep, sort and uniq, add up a column with awk, and pick out error lines. Make a folder and give it mode seven five zero, then pack the logs into a tar archive. As an admin, check nginx, the listening ports and the free space on the root file system, and finish with vmstat. If any task feels slow, go back to the chapter named in the revision tables.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>Where to go from here</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>You can move around the file tree, make, copy and delete files, read them, set permissions, and string commands together with pipes. That is enough to use any Linux computer, a Raspberry Pi or a phone’s terminal app with confidence.</p></div><div class="ld-p" data-ld="college" hidden><p>You can write robust Bash scripts, schedule them, run a server with users, packages, services, logs, disks, backups, SSH and a firewall, and find out why something fails or is slow. That covers LPIC-1, Linux+ and most of RHCSA and LFCS.</p></div><div class="ld-p" data-ld="masters" hidden><p>Next steps for a job: configuration management with Ansible, containers with Docker and Kubernetes, CI/CD pipelines (the Git and CI/CD subject on this site), monitoring with Prometheus and Grafana, and cloud servers. Practise on a spare VM and break it on purpose.</p></div><div class="ld-p" data-ld="research" hidden><p>For depth: read the kernel source and its documentation, write a small kernel module or an eBPF program, study the C standard library and system calls (Advanced 1.1), and follow LWN.net for kernel development. Research topics include schedulers, file systems, memory tiering, and secure isolation.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the intern who learned by breaking things</div><p>An intern got a spare cloud VM and one rule: break it, then fix it, and write down how. Week one, a <code>chmod -R 700 /</code> on a test copy taught how much depends on permissions. Week two, a full disk and a deleted open file. Week three, a wrong firewall rule that locked out SSH, fixed through the cloud console. After two months the notes were the team’s best runbook, and the intern passed RHCSA.</p></div>
+<div class="vt-talk" hidden>You have reached the end of the course. At school level you can use any Linux computer with confidence. As a professional you can script, run and repair a server, which covers the common certifications. For a job in operations, learn Ansible, containers, Kubernetes, pipelines, monitoring and the cloud, and practise on a spare virtual machine that you break on purpose. For depth, read the kernel source, write an e B P F program, and follow kernel news on L W N. Keep using the practice shell and the labs to stay fast.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./performance.html" data-topic="performance"><small>Previous topic</small><b>Performance</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "course-revision", "topic": "course-revision", "subject": "linux", "title": "Course revision: the whole of Unix and Linux in one chapter", "codes": {}, "quiz": [{"lv": "e", "q": "Which command shows the folder you are in?", "o": ["ls", "pwd", "cd", "where"], "a": 1, "hint": "Print working directory.", "why": "Foundations 1.2."}, {"lv": "e", "q": "What does chmod 640 file give?", "o": ["rw-r-----", "rwxr-----", "rw-rw-r--", "r--r-----"], "a": 0, "hint": "6 = 4 + 2, 4 = r.", "why": "Foundations 3.1."}, {"lv": "e", "q": "Which operator sends output to a file and replaces what was there?", "o": [">>", ">", "|", "<"], "a": 1, "hint": "One arrow.", "why": ">> appends."}, {"lv": "e", "q": "What does the exit status 127 mean in bash?", "o": ["Success", "Command not found", "Killed", "Permission denied"], "a": 1, "hint": "Not found.", "why": "126 is not executable."}, {"lv": "m", "q": "umask is 027. What mode does a new folder get?", "o": ["755", "750", "640", "770"], "a": 1, "hint": "777 minus the bits.", "why": "Files get 640."}, {"lv": "m", "q": "What does <code>sort | uniq -c | sort -rn<\/code> produce?", "o": ["Lines in random order", "Each distinct line with its count, most common first", "Only duplicate lines", "Line numbers"], "a": 1, "hint": "Count runs.", "why": "Power 1.2."}, {"lv": "m", "q": "What does the cron line <code>0 */6 * * *<\/code> mean?", "o": ["Every 6 minutes", "At minute 0 of every 6th hour", "At 06:00 only", "Every 6 days"], "a": 1, "hint": "Minute first.", "why": "Scripting 4.2."}, {"lv": "m", "q": "A script runs fine by hand but fails from cron with “command not found”. The most likely reason?", "o": ["cron is broken", "cron runs with a short PATH", "The disk is full", "The script is too long"], "a": 1, "hint": "Environment.", "why": "Use full paths or set PATH."}, {"lv": "m", "q": "nginx will not start and its log says “Address already in use”. Which command finds the culprit?", "o": ["df -h", "ss -tlnp", "free -m", "lsblk"], "a": 1, "hint": "Ports.", "why": "Admin 4.1."}, {"lv": "h", "q": "df shows 100 % but du finds only half. What is a likely cause?", "o": ["A broken disk", "A deleted file still held open by a process", "Too many folders", "A wrong umask"], "a": 1, "hint": "lsof +L1.", "why": "Advanced 2.1."}, {"lv": "h", "q": "ssh says “Connection timed out” instead of “Connection refused”. What does that suggest?", "o": ["sshd is not running", "Packets are dropped, often by a firewall", "Wrong password", "Wrong key"], "a": 1, "hint": "Refused means a reply came.", "why": "Admin 4.3."}, {"lv": "h", "q": "A container sees PID 1 as its own shell. Which kernel feature does that?", "o": ["cgroups", "the PID namespace", "chroot", "seccomp"], "a": 1, "hint": "Namespaces.", "why": "Advanced 3.1."}, {"lv": "h", "q": "Load average is 9 on a 4 CPU server with id 70 % and wa 25 %. What do you check next?", "o": ["CPU frequency", "The disks, with iostat -xz 1", "The firewall", "The users"], "a": 1, "hint": "D state tasks.", "why": "Advanced 3.2."}, {"lv": "x", "q": "Which exams test Linux skills with hands-on tasks on a live system?", "o": ["LPIC-1 only", "RHCSA and LFCS", "None", "Every exam"], "a": 1, "hint": "Performance based.", "why": "Practise the labs without hints."}], "calc": [{"lv": "e", "q": "What octal mode is <code>rwxr-x---<\/code>?", "ans": "750", "hint": "Add r 4, w 2, x 1 per group.", "steps": ["rwx = 7.", "r-x = 5, --- = 0.", "<span class=\"eq\">750<\/span>"]}, {"lv": "e", "q": "A process killed by SIGKILL (signal 9). What exit status does bash report?", "ans": "137", "hint": "128 + n.", "steps": ["128 + 9.", "Signals add to 128.", "<span class=\"eq\">137<\/span>"]}, {"lv": "m", "q": "umask 077. What mode does a new file get? (start from 666)", "ans": "600", "hint": "Take bits away.", "steps": ["666 with the bits of 077 removed.", "6 stays, 6 and 6 become 0.", "<span class=\"eq\">600<\/span>"]}, {"lv": "m", "q": "How many usable host addresses does a /26 network have?", "ans": "62", "hint": "2 to the power (32 − n), minus 2.", "steps": ["32 − 26 = 6.", "2 to the power 6 = 64.", "<span class=\"eq\">64 − 2 = 62 hosts<\/span>"]}, {"lv": "m", "q": "A cron job runs at <code>*/15<\/code> minutes. How many times does it run in one day?", "ans": "96", "hint": "Per hour times 24.", "steps": ["60 ÷ 15 = 4 per hour.", "4 × 24.", "<span class=\"eq\">96 runs<\/span>"]}, {"lv": "h", "q": "A log grows 300 MB a day on a disk with 12 GB free. In how many days is the disk full?", "ans": "40", "hint": "Divide.", "steps": ["12 GB = 12000 MB.", "12000 ÷ 300.", "<span class=\"eq\">40 days<\/span>"]}, {"lv": "x", "q": "logrotate keeps 7 old logs of 300 MB each, compressed to 10 % of their size, plus the live log of 300 MB. How many MB is that in total?", "ans": "510", "hint": "Old logs compressed.", "steps": ["7 × 300 × 0.1 = 210 MB.", "Plus 300 MB live.", "<span class=\"eq\">510 MB<\/span>"]}], "assign": [], "must": [["Foundations and power tools", "Paths, ls, cd, cp, mv, rm, less, permissions in octal and umask, redirection with 2>&1, pipes with sort, uniq, cut, grep, sed, awk, find, xargs and tar."], ["Scripting", "A shebang, quoted \"$@\", [[ ]] tests, case, for and while read loops, functions with local, set -euo pipefail, trap, exit codes, cron with full paths and flock."], ["Administration", "sudo and groups, apt, systemctl and journalctl, df, du, lsblk, mount and fstab, LVM and rsync backups, ip, ss, ssh with keys, ufw default deny."], ["Internals", "System calls and strace, fork and exec, inodes and links, virtual memory and the OOM killer, namespaces, cgroups and capabilities, the USE method with vmstat and iostat."], ["Troubleshooting", "Look, narrow down, find the cause, fix it, prevent it. Read the log first, go bottom up for networks, check every folder for permissions, and change one thing at a time."]], "summary": "<p>The course runs from the file tree and the shell, through pipes, text tools and scripts, to running a server and seeing inside the kernel. The same few numbers (permission digits, umask, exit codes, cron fields, CIDR) and pipeline patterns come back again and again. Incidents are solved by looking, narrowing down, finding the cause, fixing it and preventing it, with tools from every part.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

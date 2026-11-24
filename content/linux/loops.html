@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loops: for, while and until · Unix and Linux</title>
+<meta name="description" content="for over words, globs, brace ranges and &quot;$@&quot;, the C-style for (( )), nullglob, while and until, while true with break, reading files with while IFS= read -r, splitting fields with IFS, the pipe subshell trap and &lt; &lt;( ), the missing last newline, break and continue with levels, done &gt; file and done | sort, find -print0 with read -d, select menus and loop speed.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=scripting">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=scripting" target="_top">Unix and Linux</a><span>›</span><span>Shell Scripting</span><span>›</span><span>Step 2: Decisions and loops</span><span>›</span><span>Loops</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 2 of 2 · Intermediate</div>
+    <h1>Loops: for, while and until</h1>
+    <p class="lead">Repeat work safely: for over words, files and ranges, the C-style for, while and until, reading files line by line, break and continue, and redirecting a whole loop.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">4 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#loops" data-topic="cheatsheet" data-h="loops">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#for" data-l="for"><span class="n">1</span><span class="t">for loops: one pass per item</span></a></li><li><a href="#while" data-l="while"><span class="n">2</span><span class="t">while and until, and reading files line by line</span></a></li><li><a href="#control" data-l="control"><span class="n">3</span><span class="t">break, continue and whole-loop redirection</span></a></li><li><a href="#levels" data-l="levels"><span class="n">4</span><span class="t">Loops from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="for" data-l="for" hidden><div class="cv-lno">Lesson 1 of 4</div><h2>for loops: one pass per item</h2>
+<p>A <code>for</code> loop runs its body once for every word in a list. bash builds the whole list first, using all the usual expansions, and then sets the loop variable to each word in turn.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>Two kinds of for loop</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>for NAME in WORD1 WORD2 ...; do
+  ...                  # $NAME is each word in turn
+done
+
+for (( INIT; TEST; STEP )); do
+  ...                  # runs while TEST is not 0
+done</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>List</th><th>Gives</th><th>Example</th></tr></thead><tbody><tr><td>plain words</td><td>exactly those words</td><td><code>for c in red green blue</code></td></tr><tr><td>a glob</td><td>the matching file names, sorted</td><td><code>for f in *.csv</code></td></tr><tr><td>braces</td><td>a range or a set</td><td><code>for n in {1..10}</code></td></tr><tr><td><code>"$@"</code></td><td>every argument of the script</td><td><code>for arg in "$@"</code> (or just <code>for arg</code>)</td></tr><tr><td><code>$(command)</code></td><td>the output, split into words</td><td><code>for u in $(cut -d: -f1 /etc/passwd)</code></td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-loop"></div>
+<div class="lx-run"><div class="lx-rh"><span>for loops, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">for city in Pune "New Delhi" Chennai; do
+  echo "visiting $city"
+done</span>
+<span class="lx-o">visiting Pune
+visiting New Delhi
+visiting Chennai</span>
+<span class="lx-cmd">for f in *.txt; do
+  echo "$f has $(wc -l &lt; "$f") lines"
+done</span>
+<span class="lx-o">fruits.txt has 8 lines
+notes.txt has 3 lines
+poem.txt has 4 lines</span>
+<span class="lx-cmd">for n in {1..5}; do printf '%d ' $((n * n)); done; echo</span>
+<span class="lx-o">1 4 9 16 25 </span>
+<span class="lx-cmd">for (( i = 10; i &gt; 0; i -= 4 )); do echo "countdown $i"; done</span>
+<span class="lx-o">countdown 10
+countdown 6
+countdown 2</span>
+<span class="lx-cmd">for f in *.xyz; do echo "found [$f]"; done</span>
+<span class="lx-o">found [*.xyz]</span>
+<span class="lx-cmd">shopt -s nullglob</span>
+<span class="lx-cmd">for f in *.xyz; do echo "found [$f]"; done</span>
+<span class="lx-cmd">echo "after the loop f is still [$f]"</span>
+<span class="lx-o">after the loop f is still [*.xyz]</span></pre><div class="lx-note">The quotes kept New Delhi as one item. *.txt was sorted alphabetically. With no matching file, *.xyz stayed as literal text and the loop ran once with it. After shopt -s nullglob the pattern vanished and the loop did not run at all. The loop variable keeps the last value it had.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Do not loop over $(ls) or $(cat file). File names with spaces are split into pieces. Use a glob for files and while read for lines.</div></div>
+<div class="vt-talk" hidden>A for loop repeats its body once for every item in a list. Bash builds the list first with all the usual expansions, so you can give plain words, a wildcard pattern that becomes file names, a brace range such as one dot dot ten, or dollar at sign in quotes for every argument of the script. Then the loop variable takes each item in turn, and the body between do and done runs once per item. There is also a second form borrowed from the C language, with double parentheses and three parts: a start, a test and a step, which is handy for counting. One surprise: if a pattern such as star dot x y z matches no file, bash keeps the pattern as plain text and the loop runs once with it. The nullglob option fixes that by removing patterns that match nothing. Try the animation with your own list and body to watch every pass.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="while" data-l="while" hidden><div class="cv-lno">Lesson 2 of 4</div><h2>while and until, and reading files line by line</h2>
+<p><code>while</code> repeats as long as its condition command succeeds. <code>until</code> repeats as long as it fails. The most common use of while is reading input one line at a time.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>while CMD; do ...; done</code></td><td>Repeat while CMD exits with 0</td><td><code>while (( n &lt; 5 )); do ...; done</code></td></tr><tr><td><code>until CMD; do ...; done</code></td><td>Repeat until CMD exits with 0</td><td><code>until ping -c1 host; do sleep 5; done</code></td></tr><tr><td><code>while true; do ...; done</code></td><td>Repeat for ever, leave with break</td><td><code>while true; do read -r cmd || break; done</code></td></tr><tr><td><code>while IFS= read -r line; do ...; done &lt; file</code></td><td>One pass per line, the line kept exactly</td><td><code>while IFS= read -r line; do echo "$line"; done &lt; notes.txt</code></td></tr><tr><td><code>while IFS=, read -r a b c; do ...; done &lt; file.csv</code></td><td>Split each line into fields</td><td><code>while IFS=, read -r name subj score; do ...; done &lt; marks.csv</code></td></tr><tr><td><code>while read -r x; do ...; done &lt; &lt;(cmd)</code></td><td>Read the output of a command, in the current shell</td><td><code>while read -r pid; do ...; done &lt; &lt;(pgrep bash)</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>while, until and reading lines</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">n=1</span>
+<span class="lx-cmd">while (( n &lt;= 3 )); do echo "round $n"; (( n++ )); done</span>
+<span class="lx-o">round 1
+round 2
+round 3</span>
+<span class="lx-cmd">until [ -e ready.flag ]; do echo "not ready, creating the flag"; touch ready.flag; done</span>
+<span class="lx-o">not ready, creating the flag</span>
+<span class="lx-cmd">while IFS= read -r line; do
+  echo "line: [$line]"
+done &lt; poem.txt</span>
+<span class="lx-o">line: [Twinkle twinkle little star]
+line: [How I wonder what you are]
+line: [Up above the world so high]
+line: [Like a diamond in the sky]</span>
+<span class="lx-cmd">total=0</span>
+<span class="lx-cmd">while IFS=, read -r name subject score; do
+  [ "$name" = name ] &amp;&amp; continue
+  total=$(( total + score ))
+done &lt; marks.csv</span>
+<span class="lx-cmd">echo "total of all scores: $total"</span>
+<span class="lx-o">total of all scores: 481</span>
+<span class="lx-cmd">count=0</span>
+<span class="lx-cmd">grep a fruits.txt | while read -r f; do (( count++ )); done</span>
+<span class="lx-cmd">echo "after the pipe: count=$count"</span>
+<span class="lx-o">after the pipe: count=0</span>
+<span class="lx-cmd">count=0</span>
+<span class="lx-cmd">while read -r f; do (( count++ )); done &lt; &lt;(grep a fruits.txt)</span>
+<span class="lx-cmd">echo "with &lt; &lt;( ): count=$count"</span>
+<span class="lx-o">with &lt; &lt;( ): count=6</span></pre><div class="lx-note">IFS= keeps leading spaces and -r keeps backslashes, so each line arrives exactly as written. The header line of marks.csv was skipped with continue. After the pipe the count was still 0, because every part of a pipeline runs in its own subshell and its variables are lost. Process substitution kept the loop in the current shell.</div></div>
+<div class="note note-tip"><b>Remember</b><div>The last line of a file without a final newline is still read into the variable, but read returns 1, so the loop skips it. Write while IFS= read -r line || [ -n "$line" ] to keep it.</div></div>
+<div class="vt-talk" hidden>A while loop keeps going as long as its condition command succeeds. Until is the mirror image: it keeps going as long as the command fails, which reads nicely for waiting, such as until the server answers. The most important pattern of all is reading a file line by line. Write while I F S equals nothing, read dash r line, and put the file after done with a less than sign. The empty IFS keeps spaces at the start of the line, and dash r keeps backslashes as they are. To split each line into fields, set IFS to a comma and give read several variable names, which turns a CSV file into variables in one step. One famous trap: if you pipe into a while loop, the loop runs in a subshell, so counters you change inside are lost when it ends. Feed the loop with a less than sign and process substitution instead, and the variables survive.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="control" data-l="control" hidden><div class="cv-lno">Lesson 3 of 4</div><h2>break, continue and whole-loop redirection</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Command</th><th>Effect</th></tr></thead><tbody><tr><td><code>break</code></td><td>leave the loop now, continue after done</td></tr><tr><td><code>continue</code></td><td>skip the rest of this pass, start the next one</td></tr><tr><td><code>break 2</code>, <code>continue 2</code></td><td>act on the loop 2 levels out (for nested loops)</td></tr><tr><td><code>done > file</code></td><td>send the output of every pass into one file, opened once</td></tr><tr><td><code>done | sort</code></td><td>pipe the whole loop output into another command</td></tr><tr><td><code>select x in a b c</code></td><td>print a numbered menu and read a choice into x, until break</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Controlling loops</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">for n in {1..10}; do
+  (( n % 2 )) &amp;&amp; continue
+  (( n &gt; 8 )) &amp;&amp; break
+  echo "even $n"
+done</span>
+<span class="lx-o">even 2
+even 4
+even 6
+even 8</span>
+<span class="lx-cmd">for row in A B C; do
+  for col in 1 2 3; do
+    [ "$col" = 3 ] &amp;&amp; continue 2
+    [ "$row" = C ] &amp;&amp; break 2
+    printf '%s%s ' "$row" "$col"
+  done
+done; echo</span>
+<span class="lx-o">A1 A2 B1 B2 </span>
+<span class="lx-cmd">for f in *.txt; do echo "$(wc -l &lt; "$f") $f"; done | sort -n</span>
+<span class="lx-o">3 notes.txt
+4 poem.txt
+8 fruits.txt</span>
+<span class="lx-cmd">for i in 1 2 3; do echo "entry $i"; done &gt; entries.log</span>
+<span class="lx-cmd">cat entries.log</span>
+<span class="lx-o">entry 1
+entry 2
+entry 3</span>
+<span class="lx-cmd">find . -maxdepth 1 -name '*.txt' -print0 | sort -z | while IFS= read -r -d '' f; do echo "safe: [$f]"; done</span>
+<span class="lx-o">safe: [./fruits.txt]
+safe: [./notes.txt]
+safe: [./poem.txt]</span></pre><div class="lx-note">continue skipped odd numbers and break stopped at 10. continue 2 jumped to the next row before column 3, and break 2 left both loops when row C began. The whole loop output was sorted or written to a file at once. With -print0 and read -d an empty delimiter, every name arrives whole, even one with spaces or a newline.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>A select menu (interactive)</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">PS3="Pick a size: "</span>
+<span class="lx-cmd">select size in small medium large quit; do</span>
+<span class="lx-cmd">  [ "$size" = quit ] &amp;&amp; break</span>
+<span class="lx-cmd">  echo "you chose $size"</span>
+<span class="lx-cmd">done</span>
+<span class="lx-o">1) small
+2) medium
+3) large
+4) quit
+Pick a size: 2
+you chose medium
+Pick a size: 4</span></pre><div class="lx-note">select prints the menu to stderr, shows PS3 as the prompt and reads a number. An invalid number leaves the variable empty.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Loop like a pro&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Print the numbers 1 to 5, each on its own line, with a for loop and a brace range.&quot;, &quot;hint&quot;: &quot;for n in {1..5}; do echo $n; done&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*for\\b.*\\{1\\.\\.5\\}&quot;}, {&quot;out&quot;: &quot;^1$&quot;}, {&quot;out&quot;: &quot;^5$&quot;}]}, {&quot;t&quot;: &quot;With a C-style for loop, print 0 2 4 6 8 on separate lines.&quot;, &quot;hint&quot;: &quot;for ((i=0; i&lt;10; i+=2)); do echo $i; done&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;for\\s*\\(\\(&quot;}, {&quot;out&quot;: &quot;^8$&quot;}]}, {&quot;t&quot;: &quot;Loop over every .txt file and print its name followed by the word file, like notes.txt file.&quot;, &quot;hint&quot;: &quot;for f in *.txt; do echo \&quot;$f file\&quot;; done&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;for\\s+\\w+\\s+in\\s+\\*\\.txt&quot;}, {&quot;out&quot;: &quot;^notes\\.txt file$&quot;}]}, {&quot;t&quot;: &quot;Read poem.txt line by line with while read and print each line in capital letters using ${line^^}.&quot;, &quot;hint&quot;: &quot;while IFS= read -r line; do echo \&quot;${line^^}\&quot;; done &lt; poem.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;while.*read&quot;}, {&quot;out&quot;: &quot;^TWINKLE TWINKLE LITTLE STAR$&quot;}]}, {&quot;t&quot;: &quot;Use while read with IFS=, on marks.csv to print the first field of every line.&quot;, &quot;hint&quot;: &quot;while IFS=, read -r name rest; do echo \&quot;$name\&quot;; done &lt; marks.csv&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;IFS=,&quot;}, {&quot;out&quot;: &quot;^Meera$&quot;}]}, {&quot;t&quot;: &quot;Set n to 1, then use until to double n until it is at least 100, and print the final n.&quot;, &quot;hint&quot;: &quot;n=1; until (( n &gt;= 100 )); do (( n *= 2 )); done; echo $n&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\buntil\\b&quot;}, {&quot;out&quot;: &quot;^128$&quot;}]}, {&quot;t&quot;: &quot;Print the numbers 1 to 10 but stop the loop with break when the number reaches 4, so only 1, 2 and 3 appear.&quot;, &quot;hint&quot;: &quot;for n in {1..10}; do (( n == 4 )) &amp;&amp; break; echo $n; done&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\bbreak\\b&quot;}, {&quot;out&quot;: &quot;^3$&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Two small commands give you full control inside a loop. Break leaves the loop at once and carries on after done. Continue skips the rest of the current pass and jumps to the next one. In nested loops, add a number: break two leaves both loops, and continue two moves straight to the next pass of the outer loop. You can also treat the whole loop as one command. Put a greater than sign and a file name after done, and the output of every pass goes into that file, which is opened only once. Or pipe the whole loop into sort. For file names that may contain spaces or even new lines, the safe pattern is find with dash print zero, read with dash d and an empty delimiter, and an empty IFS. Finally, select builds a numbered menu for interactive scripts and keeps asking until you break out.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 4 of 4</div><h2>Loops from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A loop repeats work. for goes through a list of items, while keeps going while something is true, and until keeps going until it becomes true. break stops a loop and continue skips to the next round.</p></div><div class="ld-p" data-ld="college" hidden><p>The for list is expanded once, before the first pass, so changing a variable inside the loop does not change the list. while runs its condition before every pass. Each part of a pipeline runs in a subshell, so variables set in cmd | while read are lost, while done < file and done < <(cmd) keep the loop in the current shell.</p></div><div class="ld-p" data-ld="masters" hidden><p>Shell loops start a new process for every external command inside them, so a loop over a million lines that calls sed or cut each time is slow. Move the whole job into awk, or use parameter expansion and builtins inside the loop. read is slow too, since it reads one byte at a time from a pipe to avoid reading past the newline. mapfile -t arr < file reads all lines into an array in one step. shopt -s lastpipe (with job control off, as in scripts) runs the last part of a pipeline in the current shell.</p></div><div class="ld-p" data-ld="research" hidden><p>Studies of shell scripts in package repositories and CI pipelines find that loops over unquoted command output and word-split file names are common sources of bugs, which tools such as ShellCheck flag (SC2045 for looping over ls, SC2013 for reading lines with for). Research systems such as PaSh (EuroSys 2021) parallelise data-parallel shell pipelines automatically, and GNU parallel and xargs -P run loop bodies on many cores.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the nightly image resize</div><p>A photo site resizes every new upload at night. The first script was <code>for f in $(ls uploads)</code> and failed on names with spaces. The fixed script uses <code>for f in uploads/*.jpg</code> with nullglob, skips files that already have a thumbnail with <code>[ -e "thumbs/${f##*/}" ] && continue</code>, and logs each pass with <code>done >> resize.log</code>. Later the team replaced the loop body with <code>find uploads -name "*.jpg" -print0 | xargs -0 -P 4</code> to use four cores.</p></div>
+<div class="vt-talk" hidden>Here is what experienced script writers know about loops. The list of a for loop is built only once, before the first pass. While checks its condition before every pass. A pipe into while puts the loop in a subshell, which is why counters vanish, and redirecting a file or process substitution into done avoids it. Speed matters too. Every external command inside a loop starts a new process, so calling sed or cut a million times is slow. It is far faster to hand the whole file to awk, or to use parameter expansion and other builtins inside the loop. To load every line of a file into an array at once, use mapfile. Researchers have built systems such as PaSh that split shell pipelines across many processor cores automatically, and everyday tools such as xargs with dash capital P and GNU parallel let you run the body of a loop on many cores at once.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./conditions.html" data-topic="conditions"><small>Previous topic</small><b>Decisions</b></a><a class="next" href="./functions.html" data-topic="functions"><small>Next topic</small><b>Functions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "loops", "topic": "loops", "subject": "linux", "title": "Loops: for, while and until", "codes": {}, "quiz": [{"lv": "e", "q": "Which word ends the body of a for loop?", "o": ["end", "fi", "done", "esac"], "a": 2, "hint": "do ... done.", "why": "Loops end with done."}, {"lv": "e", "q": "How many times does for x in a b c runs its body?", "o": ["1", "2", "3", "4"], "a": 2, "hint": "One per word.", "why": "Three words, three passes."}, {"lv": "e", "q": "Which loop keeps going while its command fails?", "o": ["while", "until", "for", "select"], "a": 1, "hint": "The opposite of while.", "why": "until repeats while the condition fails."}, {"lv": "e", "q": "Which command skips the rest of the current pass?", "o": ["break", "continue", "exit", "return"], "a": 1, "hint": "Go to the next round.", "why": "continue starts the next pass."}, {"lv": "m", "q": "Which is the safe way to read a file line by line?", "o": ["for line in $(cat f)", "<code>while IFS= read -r line; do ...; done &lt; f<\/code>", "cat f | for line", "read f"], "a": 1, "hint": "while read with IFS= and -r.", "why": "It keeps every line exactly."}, {"lv": "m", "q": "for f in *.pdf runs in a folder with no PDF files. What is $f in the single pass?", "o": ["empty", "*.pdf", "an error", "the folder name"], "a": 1, "hint": "No match, no change.", "why": "An unmatched pattern stays as text unless nullglob is on."}, {"lv": "m", "q": "What does <code>for (( i = 0; i &lt; 3; i++ ))<\/code> print with echo $i in the body?", "o": ["1 2 3", "0 1 2", "0 1 2 3", "3"], "a": 1, "hint": "Starts at 0, stops before 3.", "why": "0, 1 and 2."}, {"lv": "m", "q": "Where do you put the input file for a while read loop?", "o": ["After while", "After read", "After done, with <", "Before for"], "a": 2, "hint": "Redirect the whole loop.", "why": "done < file feeds every read."}, {"lv": "m", "q": "Which ends both an inner and an outer loop at once?", "o": ["break", "break 2", "continue 2", "exit 2"], "a": 1, "hint": "Two levels.", "why": "break 2 leaves two loops."}, {"lv": "h", "q": "<code>count=0; cmd | while read -r x; do (( count++ )); done; echo $count<\/code> prints 0. Why?", "o": ["read failed", "The loop ran in a subshell, so count changed only there", "count is read only", "(( )) does not add"], "a": 1, "hint": "Pipelines.", "why": "Each part of a pipeline is a subshell."}, {"lv": "h", "q": "Why is for f in $(ls) a bad idea?", "o": ["ls is slow", "Names with spaces are split into separate words", "It skips hidden files only", "It is a syntax error"], "a": 1, "hint": "Word splitting.", "why": "Use for f in * instead."}, {"lv": "h", "q": "Which pair handles file names that contain newlines?", "o": ["ls and for", "find -print0 and read -d ''", "cat and while", "echo and cut"], "a": 1, "hint": "The NUL byte.", "why": "NUL cannot appear in a file name."}, {"lv": "x", "q": "Why can a loop calling sed on each of a million lines be slow?", "o": ["sed is single threaded", "Each sed call starts a new process", "Loops have a limit", "bash caches the output"], "a": 1, "hint": "Processes.", "why": "Starting a process each time costs far more than the work."}], "calc": [{"lv": "e", "q": "How many passes does for n in {1..12} make?", "ans": "12", "hint": "Count the range.", "steps": ["The range is 1 to 12.", "Both ends are included.", "<span class=\"eq\">12 passes<\/span>"]}, {"lv": "e", "q": "<code>for (( i = 10; i &gt; 0; i -= 4 ))<\/code>. How many passes?", "ans": "3", "hint": "List the values.", "steps": ["i = 10, then 6, then 2.", "Next would be −2, which fails i > 0.", "<span class=\"eq\">3 passes<\/span>"]}, {"lv": "m", "q": "Two nested loops: the outer runs over 4 items, the inner over 5. How many times does the inner body run?", "ans": "20", "hint": "Every pair.", "steps": ["Each outer pass runs the inner loop fully.", "5 inner passes per outer pass.", "<span class=\"eq\">4 × 5 = 20<\/span>"]}, {"lv": "m", "q": "<code>n=1; until (( n &gt;= 100 )); do (( n *= 3 )); done<\/code>. What is n afterwards?", "ans": "243", "hint": "Powers of 3.", "steps": ["1, 3, 9, 27, 81.", "81 is below 100, so one more time.", "<span class=\"eq\">81 × 3 = 243<\/span>"]}, {"lv": "m", "q": "for n in {1..10}, with continue when n is odd. How many times does the line after continue run?", "ans": "5", "hint": "Even numbers only.", "steps": ["Odd numbers 1, 3, 5, 7, 9 are skipped.", "Even numbers 2, 4, 6, 8, 10 reach the line.", "<span class=\"eq\">5<\/span>"]}, {"lv": "h", "q": "A file has 6 lines and the last one has no final newline. How many passes does a plain while read -r line make?", "ans": "5", "hint": "read returns 1 on the last line.", "steps": ["Lines 1 to 5 end with a newline.", "Line 6 is read, but read returns 1, so the body is skipped.", "<span class=\"eq\">5 passes<\/span>"]}], "assign": [], "must": [["for", "<code>for x in LIST; do ...; done<\/code>. LIST may be words, a glob, a brace range or \"$@\". <code>for (( i=0; i&lt;n; i++ ))<\/code> counts. shopt -s nullglob removes unmatched patterns."], ["while and until", "while CMD repeats while CMD succeeds, until while it fails, while true with break for a loop you leave from the inside."], ["Reading lines", "<code>while IFS= read -r line; do ...; done &lt; file<\/code>. Set IFS=, and give several names to split fields. Use < <(cmd) rather than cmd | while to keep variables."], ["Control", "break leaves the loop, continue skips to the next pass, add a number for nested loops. done > file and done | cmd redirect the whole loop."], ["Safe names", "Loop over globs, never over $(ls). For any name use find -print0 | while IFS= read -r -d '' f."]], "summary": "<p>for walks a list built once before the loop, while and until repeat on a condition, while IFS= read -r reads lines exactly, break and continue steer the loop, and a whole loop can be redirected after done.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

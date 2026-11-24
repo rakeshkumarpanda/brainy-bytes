@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Disks and file systems: partitions, mkfs, mount and fstab · Unix and Linux</title>
+<meta name="description" content="Block device names, lsblk and blkid, loop devices, MBR and GPT, parted and sfdisk, mkfs.ext4, mkfs.xfs and mkfs.vfat, inodes, journals and reserved blocks, tune2fs, mount and umount, busy mounts, findmnt and df, /etc/fstab fields and options, findmnt --verify and mount -a, e2fsck, resize2fs, growpart and xfs_growfs.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=admin">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 3: Storage</span><span>›</span><span>Disks and file systems</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 1 of 2 · Advanced</div>
+    <h1>Disks and file systems: partitions, mkfs, mount and fstab</h1>
+    <p class="lead">Turn an empty disk into usable storage: name disks and partitions, write a GPT table with parted, make ext4, xfs or vfat file systems, mount them, and make them come back after every reboot with /etc/fstab.</p>
+    <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">8 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#disks-filesystems" data-topic="cheatsheet" data-h="disks-filesystems">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#devices" data-l="devices"><span class="n">1</span><span class="t">Disks, partitions and their names</span></a></li><li><a href="#partitions" data-l="partitions"><span class="n">2</span><span class="t">Partition tables: MBR, GPT and parted</span></a></li><li><a href="#mkfs" data-l="mkfs"><span class="n">3</span><span class="t">Making a file system: ext4, xfs and vfat</span></a></li><li><a href="#mount" data-l="mount"><span class="n">4</span><span class="t">Mounting: attaching a file system to the tree</span></a></li><li><a href="#fstab" data-l="fstab"><span class="n">5</span><span class="t">Mounting at boot with /etc/fstab</span></a></li><li><a href="#check" data-l="check"><span class="n">6</span><span class="t">Checking, repairing and growing file systems</span></a></li><li><a href="#practice" data-l="practice"><span class="n">7</span><span class="t">Practice: set up a new data disk in the practice shell</span></a></li><li><a href="#levels" data-l="levels"><span class="n">8</span><span class="t">Storage from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="devices" data-l="devices" hidden><div class="cv-lno">Lesson 1 of 8</div><h2>Disks, partitions and their names</h2>
+<p>Linux shows every disk as a <b>block device</b>, a file in /dev that programs read and write in blocks. A disk is split into <b>partitions</b>, and each partition usually holds one <b>file system</b>, the structure that turns raw blocks into folders and files.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Name</th><th>What it is</th><th>Partitions</th></tr></thead><tbody><tr><td><code>/dev/sda</code>, <code>/dev/sdb</code></td><td>SATA, SAS and USB disks, in the order the kernel finds them</td><td><code>/dev/sda1</code>, <code>/dev/sda2</code></td></tr><tr><td><code>/dev/nvme0n1</code></td><td>NVMe drive 0, namespace 1</td><td><code>/dev/nvme0n1p1</code> (p before the number)</td></tr><tr><td><code>/dev/vda</code>, <code>/dev/xvda</code></td><td>virtual disks in KVM and older Xen clouds</td><td><code>/dev/vda1</code></td></tr><tr><td><code>/dev/mmcblk0</code></td><td>SD cards and eMMC, as on a Raspberry Pi</td><td><code>/dev/mmcblk0p1</code></td></tr><tr><td><code>/dev/loop0</code></td><td>a loop device: a normal file used as if it were a disk</td><td>snap packages and disk images use them</td></tr><tr><td><code>/dev/mapper/NAME</code></td><td>devices made by LVM or disk encryption (chapter 3.2)</td><td></td></tr></tbody></table></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>lsblk</code></td><td>Tree of disks and partitions with size and mount point</td><td><code>lsblk</code></td></tr><tr><td><code>lsblk -f</code></td><td>Add file system type, label, UUID and free space</td><td><code>lsblk -f</code></td></tr><tr><td><code>sudo blkid</code></td><td>Type, LABEL and UUID of every file system</td><td><code>sudo blkid /dev/sdb1</code></td></tr><tr><td><code>ls -l /dev/disk/by-uuid/</code></td><td>Links from stable names to the current device</td><td><code>ls -l /dev/disk/by-id/</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>The disks of the practice server</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">lsblk</span>
+<span class="lx-o">NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sda      8:0  0   40G  0 disk
+└─sda1   8:1  0   40G  0 part /
+sdb     8:16  1 29.8G  0 disk
+└─sdb1  8:17  1 29.8G  0 part
+sdc     8:32  0   20G  0 disk
+sdd     8:48  0   10G  0 disk</span>
+<span class="lx-cmd">lsblk -f</span>
+<span class="lx-o">NAME   FSTYPE FSVER LABEL    UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+sda
+└─sda1 ext4   1.0            b6e1c2a4-77aa-4e0f-9d3b-2f1c8a5e0d71   22.7G    39% /
+sdb
+└─sdb1 vfat   FAT32 USBSTICK 4A1B-2C3D
+sdc
+sdd</span>
+<span class="lx-cmd">sudo blkid /dev/sdb1</span>
+<span class="lx-o">/dev/sdb1: LABEL="USBSTICK" UUID="4A1B-2C3D" BLOCK_SIZE="512" TYPE="vfat" PARTUUID="a1b2c3d4-01"</span></pre><div class="lx-note">The practice server has a 40 GB system disk with one ext4 partition mounted on /, a USB stick (RM 1 means removable) with a FAT32 partition that is not mounted, and two new disks of 20 GB and 10 GB with no partitions at all. You will set up sdc in the practice lab and use sdd for LVM in chapter 3.2.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>A file used as a disk with a loop device</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">truncate -s 1G disk.img</span>
+<span class="lx-cmd lx-root">ls -lh disk.img</span>
+<span class="lx-o">-rw-r--r-- 1 root root 1.0G Nov 24 05:25 disk.img</span>
+<span class="lx-cmd lx-root">du -h disk.img</span>
+<span class="lx-o">0	disk.img</span>
+<span class="lx-cmd lx-root">dev=$(losetup -f --show disk.img)</span>
+<span class="lx-cmd lx-root">echo "$dev"</span>
+<span class="lx-o">/dev/loop0</span>
+<span class="lx-cmd lx-root">lsblk -o NAME,SIZE,TYPE "$dev"</span>
+<span class="lx-o">NAME  SIZE TYPE
+loop0   1G loop</span>
+<span class="lx-cmd lx-root">losetup -d "$dev"</span></pre><div class="lx-note">truncate makes a 1 GB sparse file that uses no space until something is written, which is why du reports 0. losetup -f picks the first free loop device and --show prints its name, which the script keeps in a variable. From then on that device behaves like a 1 GB disk, so you can practise partitioning and formatting without touching a real one. losetup -d detaches it again.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Names like sda and sdb follow the order in which the kernel finds the disks, and that order can change when a disk is added or a USB stick is plugged in. Never rely on them in configuration. Use the UUID or LABEL of the file system, which blkid shows, or the links in /dev/disk/by-uuid and /dev/disk/by-id.</div></div>
+<div class="vt-talk" hidden>Linux treats every disk as a block device, a special file in slash dev. SATA and USB disks are called s d a, s d b and so on. NVMe drives have longer names, such as n v m e zero n one, and their partitions add a p and a number. Virtual machines often show v d a, and SD cards show m m c b l k zero. A disk is divided into partitions, and each partition holds a file system, which organises the raw blocks into folders and files. Lsblk draws the tree of disks and partitions, and lsblk dash f adds the file system type, the label and the U U I D, a unique ID written when the file system was made. Device names can change when you add a disk, so configuration should always use the U U I D or the label instead. A loop device lets a normal file act like a disk, which is perfect for safe practice.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="partitions" data-l="partitions" hidden><div class="cv-lno">Lesson 2 of 8</div><h2>Partition tables: MBR, GPT and parted</h2>
+<p>The first sectors of a disk hold a <b>partition table</b>, a list that says where each partition starts and ends. There are two kinds.</p>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>MBR (msdos)</th><th>GPT</th></tr></thead><tbody><tr><td>Age</td><td>1983, IBM PC</td><td>part of the UEFI standard, around 2000</td></tr><tr><td>Partitions</td><td>4 primary, or 3 plus an extended one that holds logical partitions</td><td>128 by default</td></tr><tr><td>Largest disk</td><td>2 TiB with 512 byte sectors (sector numbers are 32 bit)</td><td>far beyond any real disk (64 bit sector numbers)</td></tr><tr><td>Safety</td><td>one copy at the start of the disk</td><td>a backup copy at the end of the disk, with checksums</td></tr><tr><td>Boots with</td><td>BIOS</td><td>UEFI (needs an EFI System Partition), and BIOS through GRUB</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>parted -s DISK mklabel gpt</code></td><td>Write a new, empty GPT table (erases the old table)</td><td><code>sudo parted -s /dev/sdc mklabel gpt</code></td></tr><tr><td><code>parted -s DISK mkpart NAME TYPE START END</code></td><td>Add a partition. START and END in MiB, GiB or percent</td><td><code>sudo parted -s /dev/sdc mkpart data ext4 1MiB 100%</code></td></tr><tr><td><code>parted DISK print, unit MiB print</code></td><td>Show the table</td><td><code>sudo parted /dev/sdc unit MiB print</code></td></tr><tr><td><code>parted DISK rm N</code></td><td>Delete partition N</td><td><code>sudo parted -s /dev/sdc rm 1</code></td></tr><tr><td><code>sfdisk -l DISK, fdisk -l DISK</code></td><td>List the table in sectors</td><td><code>sudo sfdisk -l /dev/sda</code></td></tr><tr><td><code>gdisk, cfdisk, fdisk</code></td><td>Menu driven editors for the same job</td><td><code>sudo cfdisk /dev/sdc</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Partition a disk image with parted</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">truncate -s 1G disk.img</span>
+<span class="lx-cmd lx-root">parted -s disk.img mklabel gpt mkpart boot fat32 1MiB 257MiB set 1 esp on mkpart root ext4 257MiB 100% 2&gt;/dev/null</span>
+<span class="lx-cmd lx-root">parted -s disk.img unit MiB print</span>
+<span class="lx-o">Model:  (file)
+Disk /tmp/tmp.8ty7K6sNzS/disk.img: 1024MiB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start    End      Size    File system  Name  Flags
+ 1      1.00MiB  257MiB   256MiB               boot  boot, esp
+ 2      257MiB   1023MiB  766MiB               root</span>
+<span class="lx-cmd lx-root">sfdisk -l disk.img | tail -3</span>
+<span class="lx-o">Device      Start     End Sectors  Size Type
+disk.img1    2048  526335  524288  256M EFI System
+disk.img2  526336 2095103 1568768  766M Linux filesystem</span></pre><div class="lx-note">The first partition starts at 1 MiB, which keeps partitions aligned to the internal blocks of SSDs and leaves room for the table itself. The esp flag marks an EFI System Partition. The second partition stops at 1023 MiB, because GPT keeps its backup copy in the last sectors of the disk. sfdisk counts in 512 byte sectors: 2048 sectors are exactly 1 MiB. The type name in mkpart only sets a hint in the table and does not format anything. (2>/dev/null hides a harmless warning, because this container has no udev.)</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>mklabel replaces the whole partition table, and the partitions on the disk are lost with it. Check the device name twice with lsblk before you run it, especially when a USB stick and a data disk have similar sizes.</div></div>
+<div class="vt-talk" hidden>Before a disk can hold files, it needs a partition table, a small list at the start of the disk that says where each partition begins and ends. The old format is called M B R or msdos. It allows only four primary partitions and cannot use more than two tebibytes. The modern format is G P T. It allows one hundred and twenty eight partitions, works with huge disks, and keeps a backup copy at the end of the disk. U E F I computers boot from G P T disks. The tool parted creates the table with mklabel and adds partitions with mkpart, a name, a type hint, a start and an end. Starting the first partition at one mebibyte keeps it aligned for fast S S D access. Be very careful, because mklabel erases the old table. Always check the device name with lsblk first.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="mkfs" data-l="mkfs" hidden><div class="cv-lno">Lesson 3 of 8</div><h2>Making a file system: ext4, xfs and vfat</h2>
+<p>A new partition is just empty blocks. <code>mkfs</code> writes a file system onto it: a superblock with the settings, an inode table where each file gets one <b>inode</b> (its owner, mode, size and block list), the blocks for the data, and on ext4 and xfs a <b>journal</b> that keeps the file system consistent after a crash.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>File system</th><th>Use it for</th><th>Good to know</th></tr></thead><tbody><tr><td>ext4</td><td>the default on Debian and Ubuntu, a safe choice for most disks</td><td>can grow and shrink (shrink only while unmounted). 5 percent of blocks are reserved for root by default</td></tr><tr><td>xfs</td><td>the default on RHEL, Rocky and Fedora Server, large files and big parallel workloads</td><td>can grow while mounted, but can never shrink</td></tr><tr><td>vfat (FAT32)</td><td>USB sticks and the EFI System Partition, readable by every system</td><td>no Linux owners or permissions, and no single file of 4 GiB or more</td></tr><tr><td>exfat</td><td>large USB drives and SD cards shared with Windows and macOS</td><td>no 4 GiB file limit</td></tr><tr><td>btrfs</td><td>snapshots, checksums and compression (default on Fedora Workstation and openSUSE)</td><td>more features, more to learn</td></tr><tr><td>swap</td><td>not a file system: space for memory pages, made with mkswap (chapter 3.2)</td><td></td></tr></tbody></table></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>mkfs.ext4 -L LABEL DEV</code></td><td>ext4 with a label</td><td><code>sudo mkfs.ext4 -L data /dev/sdc1</code></td></tr><tr><td><code>mkfs.xfs -L LABEL DEV</code></td><td>xfs (labels up to 12 characters)</td><td><code>sudo mkfs.xfs -L logs /dev/sdc2</code></td></tr><tr><td><code>mkfs.vfat -F 32 -n LABEL DEV</code></td><td>FAT32 for a USB stick or the EFI partition</td><td><code>sudo mkfs.vfat -F 32 -n USB /dev/sdb1</code></td></tr><tr><td><code>tune2fs -l DEV</code></td><td>Read the settings of an ext file system</td><td><code>sudo tune2fs -l /dev/sdc1 | less</code></td></tr><tr><td><code>tune2fs -L NAME, -m PERCENT</code></td><td>Change the label, change the reserved space</td><td><code>sudo tune2fs -m 1 /dev/sdc1</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>mkfs.ext4 on the practice server’s new 20 GB partition</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">sudo mkfs.ext4 -L data /dev/sdc1</span>
+<span class="lx-o">mke2fs 1.47.0 (5-Feb-2023)
+Creating filesystem with 5242368 4k blocks and 1310720 inodes
+Filesystem UUID: 36cdba49-be45-4fa8-a8bb-106f1ceb90ef
+Superblock backups stored on blocks:
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,
+	4096000
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (32768 blocks): done
+Writing superblocks and filesystem accounting information: done</span></pre><div class="lx-note">These numbers match a real run on a 20 GiB disk image partitioned from 1MiB to 100%. mke2fs makes one inode for every 16 KiB of space, so the number of inodes, and therefore the number of files, is fixed when the file system is made. Copies of the superblock are spread over the disk so e2fsck can repair the file system if the first copy is damaged.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Three file systems on real images</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">truncate -s 512M a.img b.img c.img</span>
+<span class="lx-cmd lx-root">mkfs.ext4 -q -L data a.img</span>
+<span class="lx-cmd lx-root">mkfs.xfs -q -L logs b.img</span>
+<span class="lx-cmd lx-root">mkfs.vfat -F 32 -n USB c.img</span>
+<span class="lx-o">mkfs.fat 4.2 (2021-01-31)</span>
+<span class="lx-cmd lx-root">blkid a.img b.img c.img</span>
+<span class="lx-o">a.img: LABEL="data" UUID="27107ae2-81ea-43c9-ad5c-29277883fc47" BLOCK_SIZE="4096" TYPE="ext4"
+b.img: LABEL="logs" UUID="d5997d5a-223f-42ba-abcc-7cdeca5bd09d" BLOCK_SIZE="512" TYPE="xfs"
+c.img: LABEL_FATBOOT="USB" LABEL="USB" UUID="FC9A-EE9B" BLOCK_SIZE="512" TYPE="vfat"</span>
+<span class="lx-cmd lx-root">tune2fs -l a.img | grep -E '^(Filesystem volume name|Block count|Block size|Inode count|Reserved block count):'</span>
+<span class="lx-o">Filesystem volume name:   data
+Inode count:              32768
+Block count:              131072
+Reserved block count:     6553
+Block size:               4096</span></pre><div class="lx-note">-q keeps mke2fs and mkfs.xfs quiet, and mkfs.fat only prints its version. blkid reads the type, label and new UUID straight from the images (LABEL_FATBOOT is the copy of the label kept in the FAT boot sector). tune2fs shows that 6553 of the 131072 blocks, 5 percent, are reserved for root, so root can still log in and clean up when users fill the disk. On a big data disk, tune2fs -m 1 gives most of that space back.</div></div>
+<div class="vt-talk" hidden>A partition holds nothing until you make a file system on it with mkfs. The file system writes a superblock with its settings, a table of inodes, where every file gets one inode that stores its owner, permissions, size and where its data is, and on modern file systems a journal that keeps everything consistent after a power cut. Ext4 is the default on Ubuntu and a safe choice. X F S is the default on Red Hat systems and is great for large files, but it can never be made smaller. V fat, also called FAT32, works on every computer, which is why USB sticks and the E F I boot partition use it, but it has no Linux permissions and cannot store a file of four gibibytes or more. Give each file system a label with dash capital L, so you can recognise it later. Ext4 reserves five percent of the space for root, which you can change with tune2fs.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="mount" data-l="mount" hidden><div class="cv-lno">Lesson 4 of 8</div><h2>Mounting: attaching a file system to the tree</h2>
+<p>Linux has one tree of folders that starts at /. A file system becomes visible only when it is <b>mounted</b> on a folder, the <b>mount point</b>. From then on every path under that folder leads into the file system. Whatever the folder held before is hidden until the file system is unmounted.</p>
+<div class="viz" data-viz="pk" data-pk="lx-mount"></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>mount DEV DIR</code></td><td>Mount a file system (the type is detected)</td><td><code>sudo mount /dev/sdb1 /mnt/usb</code></td></tr><tr><td><code>mount -o OPTIONS</code></td><td>Mount with options: ro, noexec, nosuid, nodev, noatime</td><td><code>sudo mount -o ro /dev/sdb1 /mnt/usb</code></td></tr><tr><td><code>mount -o remount,rw /</code></td><td>Change the options of a mounted file system</td><td><code>sudo mount -o remount,ro /data</code></td></tr><tr><td><code>umount DIR</code></td><td>Unmount (the command is umount, with no n)</td><td><code>sudo umount /mnt/usb</code></td></tr><tr><td><code>findmnt, findmnt DIR</code></td><td>The mount tree, or one mount</td><td><code>findmnt /</code></td></tr><tr><td><code>df -hT</code></td><td>Size, use and type of every mounted file system</td><td><code>df -hT /mnt/usb</code></td></tr><tr><td><code>fuser -vm DIR, lsof DIR</code></td><td>Which processes keep a mount busy</td><td><code>sudo fuser -vm /mnt/usb</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Mount, use and unmount a file system</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">truncate -s 512M part.img</span>
+<span class="lx-cmd lx-root">mkfs.ext4 -q -L data part.img</span>
+<span class="lx-cmd lx-root">dev=$(losetup -f --show part.img)</span>
+<span class="lx-cmd lx-root">echo "$dev"</span>
+<span class="lx-o">/dev/loop0</span>
+<span class="lx-cmd lx-root">mkdir mnt</span>
+<span class="lx-cmd lx-root">mount "$dev" mnt</span>
+<span class="lx-cmd lx-root">df -hT mnt</span>
+<span class="lx-o">Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/loop0     ext4  488M   24K  452M   1% /tmp/tmp.S665mluvtW/mnt</span>
+<span class="lx-cmd lx-root">findmnt mnt</span>
+<span class="lx-o">TARGET                  SOURCE     FSTYPE OPTIONS
+/tmp/tmp.S665mluvtW/mnt /dev/loop0 ext4   rw,relatime</span>
+<span class="lx-cmd lx-root">echo hello &gt; mnt/a.txt</span>
+<span class="lx-cmd lx-root">ls mnt</span>
+<span class="lx-o">a.txt
+lost+found</span>
+<span class="lx-cmd lx-root">cd mnt &amp;&amp; umount "$OLDPWD/mnt"</span>
+<span class="lx-o">umount: /tmp/tmp.S665mluvtW/mnt: target is busy.</span>
+<span class="lx-cmd lx-root">cd .. &amp;&amp; umount mnt</span>
+<span class="lx-cmd lx-root">ls mnt</span>
+<span class="lx-cmd lx-root">losetup -d "$dev"</span></pre><div class="lx-note">df shows 488M instead of 512M, because the inode tables and the journal take space. lost+found is made by mkfs, and e2fsck puts lost pieces of files there. The first umount fails with target is busy because the shell is still inside the folder. After cd .. it works, and the empty folder is back. The file a.txt is still inside part.img.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Unmount a USB stick before you pull it out. Linux keeps writes in memory for a short while, and umount (or the eject button of a desktop) makes sure they reach the stick.</div></div>
+<div class="vt-talk" hidden>Windows gives each disk a letter, such as D colon. Linux has a single tree that starts at the root, slash, and every other file system is attached to a folder somewhere in it. This is called mounting, and the folder is the mount point. Run sudo mount, the device and the folder, and from then on every path under that folder leads into the device. Anything the folder held before is hidden, not deleted, and comes back after you unmount. Df dash h T shows the size and type of each mounted file system, and findmnt shows the mount tree. To detach a file system, use umount, spelled without the letter n. It fails with target is busy while a program has a file open there or a shell is inside the folder. Fuser dash v m tells you who is using it. Try the animation to watch a folder change when a USB stick is mounted on it.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="fstab" data-l="fstab" hidden><div class="cv-lno">Lesson 5 of 8</div><h2>Mounting at boot with /etc/fstab</h2>
+<p>A mount made by hand is gone after a reboot. Lines in <code>/etc/fstab</code> tell the system what to mount at boot. systemd reads the file and makes a mount unit for each line.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>A line of /etc/fstab</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>UUID=36cdba49-be45-4fa8-a8bb-106f1ceb90ef  /data  ext4  defaults,noatime  0  2
+   (1) what to mount                       (2) where (3) type (4) options (5) dump (6) fsck order</pre><div class="lx-note">Fields are separated by spaces or tabs, and lines starting with # are comments.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Field</th><th>Meaning</th><th>Common values</th></tr></thead><tbody><tr><td>1 fs_spec</td><td>the file system</td><td><code>UUID=...</code>, <code>LABEL=data</code>, <code>/dev/sdc1</code> (avoid), <code>server:/export</code> for NFS</td></tr><tr><td>2 fs_file</td><td>the mount point</td><td><code>/data</code>, or <code>none</code> for swap</td></tr><tr><td>3 fs_vfstype</td><td>the type</td><td><code>ext4</code>, <code>xfs</code>, <code>vfat</code>, <code>swap</code>, <code>nfs</code>, <code>auto</code></td></tr><tr><td>4 fs_mntops</td><td>options, separated by commas</td><td><code>defaults</code> (rw, suid, dev, exec, auto, nouser, async), <code>noatime</code>, <code>ro</code>, <code>nofail</code>, <code>noauto</code>, <code>x-systemd.automount</code></td></tr><tr><td>5 fs_freq</td><td>used by the old dump backup tool</td><td>almost always <code>0</code></td></tr><tr><td>6 fs_passno</td><td>order for fsck at boot</td><td><code>1</code> for /, <code>2</code> for other local file systems, <code>0</code> to skip</td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>Add a disk to /etc/fstab safely</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Find the UUID with <code>sudo blkid /dev/sdc1</code> and create the mount point with <code>sudo mkdir /data</code>.</li><li>Add the line with an editor, or append it with <code>echo "UUID=... /data ext4 defaults 0 2" | sudo tee -a /etc/fstab</code>.</li><li>Check the file with <code>sudo findmnt --verify</code>.</li><li>Run <code>sudo systemctl daemon-reload</code> so systemd reads the new file, then <code>sudo mount -a</code> to mount everything that is not mounted yet.</li><li>Confirm with <code>findmnt /data</code>. Only reboot after these checks pass.</li></ol></div>
+<div class="lx-run"><div class="lx-rh"><span>findmnt --verify finds mistakes before a reboot does</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">truncate -s 64M p.img</span>
+<span class="lx-cmd lx-root">mkfs.ext4 -q -U 11111111-2222-3333-4444-555555555555 p.img</span>
+<span class="lx-cmd lx-root">dev=$(losetup -f --show p.img)</span>
+<span class="lx-cmd lx-root">mkdir -p /srv/data /srv/logs</span>
+<span class="lx-cmd lx-root">printf '%s\n' 'UUID=11111111-2222-3333-4444-555555555555 /srv/data ext4 defaults 0 2' &gt; good.tab</span>
+<span class="lx-cmd lx-root">printf '%s\n' 'UUID=11111111-2222-3333-4444-555555555556 /srv/data ext4 defaults 0 2' "$dev /srv/logs xfs defaults 0 2" &gt; bad.tab</span>
+<span class="lx-cmd lx-root">findmnt --verify --tab-file good.tab</span>
+<span class="lx-o">Success, no errors or warnings detected</span>
+<span class="lx-cmd lx-root">findmnt --verify --tab-file bad.tab 2&gt;&amp;1</span>
+<span class="lx-o">
+0 parse errors, 1 error, 1 warning
+/srv/data
+   [E] unreachable on boot required source: UUID=11111111-2222-3333-4444-555555555556
+/srv/logs
+   [W] xfs does not match with on-disk ext4</span>
+<span class="lx-cmd lx-root">losetup -d "$dev"</span>
+<span class="lx-cmd lx-root">rmdir /srv/data /srv/logs</span></pre><div class="lx-note">--tab-file checks a file other than /etc/fstab, which is handy for testing. One wrong character in the UUID is an error, because the system could not find the disk at boot. Writing xfs for an ext4 file system is a warning. Only the summary line goes to standard error, which is why it may print first here.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>A broken line in /etc/fstab can stop the boot and drop the machine into emergency mode (chapter 2.1). Add <code>nofail</code> for disks that may be missing, such as USB drives and network shares, and always test with findmnt --verify and mount -a before you reboot a server you cannot reach physically.</div></div>
+<div class="vt-talk" hidden>Mounts you make by hand disappear at the next reboot. To mount a file system every time the machine starts, add a line to slash etc slash f s tab. Each line has six fields. The first says what to mount, and the best choice is U U I D equals and the U U I D from blkid, because device names can change. The second is the mount point, the third the type, such as ext4. The fourth holds options separated by commas, and defaults is a good start. Noatime saves writes, and nofail lets the boot go on if the disk is missing. The fifth field is almost always zero, and the sixth sets the order of the file system check at boot: one for the root file system, two for the others, zero to skip. After editing, check the file with findmnt dash dash verify, reload systemd, and run mount dash a. A typo here can stop the next boot, so never skip the check.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="check" data-l="check" hidden><div class="cv-lno">Lesson 6 of 8</div><h2>Checking, repairing and growing file systems</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>fsck DEV, e2fsck -f DEV</code></td><td>Check and repair, only while unmounted</td><td><code>sudo e2fsck -f /dev/sdc1</code></td></tr><tr><td><code>e2fsck -n DEV</code></td><td>Check only, answer no to every repair</td><td><code>sudo e2fsck -fn /dev/sdc1</code></td></tr><tr><td><code>xfs_repair DEV</code></td><td>Check and repair xfs (unmounted)</td><td><code>sudo xfs_repair /dev/sdc2</code></td></tr><tr><td><code>resize2fs DEV [SIZE]</code></td><td>Grow ext4 to fill the partition, or shrink it (unmounted)</td><td><code>sudo resize2fs /dev/sdc1</code></td></tr><tr><td><code>xfs_growfs DIR</code></td><td>Grow a mounted xfs</td><td><code>sudo xfs_growfs /data</code></td></tr><tr><td><code>growpart DISK N</code></td><td>Grow partition N to the end of the disk (cloud-guest-utils)</td><td><code>sudo growpart /dev/vda 1</code></td></tr><tr><td><code>smartctl -a DEV</code></td><td>Health data the disk reports about itself (smartmontools)</td><td><code>sudo smartctl -a /dev/sda</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Check an ext4 image, then make it bigger</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">cd "$(mktemp -d)"</span>
+<span class="lx-cmd lx-root">truncate -s 512M part.img</span>
+<span class="lx-cmd lx-root">mkfs.ext4 -q part.img</span>
+<span class="lx-cmd lx-root">e2fsck -f -n part.img</span>
+<span class="lx-o">e2fsck 1.47.0 (5-Feb-2023)
+Pass 1: Checking inodes, blocks, and sizes
+Pass 2: Checking directory structure
+Pass 3: Checking directory connectivity
+Pass 4: Checking reference counts
+Pass 5: Checking group summary information
+part.img: 11/32768 files (0.0% non-contiguous), 6353/131072 blocks</span>
+<span class="lx-cmd lx-root">truncate -s 1G part.img</span>
+<span class="lx-cmd lx-root">resize2fs part.img</span>
+<span class="lx-o">resize2fs 1.47.0 (5-Feb-2023)
+Resizing the filesystem on part.img to 262144 (4k) blocks.
+The filesystem on part.img is now 262144 (4k) blocks long.</span>
+<span class="lx-cmd lx-root">dumpe2fs -h part.img 2&gt;/dev/null | grep '^Block count'</span>
+<span class="lx-o">Block count:              262144</span></pre><div class="lx-note">e2fsck checks in five passes: inodes and blocks, folders, folder links, reference counts and the group summaries. The last line reports used and total files and blocks. Making the image file larger is like growing a virtual disk in the cloud. resize2fs then grows the file system into the new space, from 131072 to 262144 blocks.</div></div>
+<div class="walk"><div class="walk-h"><span>Grow the root disk of a cloud server</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Increase the volume size in the cloud console.</li><li>Check that the kernel sees the larger disk with <code>lsblk</code>.</li><li>Grow the partition with <code>sudo growpart /dev/vda 1</code>.</li><li>Grow the file system: <code>sudo resize2fs /dev/vda1</code> for ext4 or <code>sudo xfs_growfs /</code> for xfs. Both work while mounted.</li><li>Confirm the new size with <code>df -h /</code>.</li></ol></div>
+<div class="note note-warn"><b>Common mistake</b><div>Never run fsck on a mounted file system: repairs made under a running system can destroy data. e2fsck refuses, and the root file system is checked at boot instead, when fs_passno in /etc/fstab is 1.</div></div>
+<div class="vt-talk" hidden>File systems can be checked and repaired with fsck, which calls the right tool for each type, such as e2fsck for ext4 or x f s repair for X F S. It must only run on a file system that is not mounted, because repairing files while programs use them can destroy data. Dash n checks without changing anything. The boot runs the check for you on file systems whose last field in f s tab is one or two. Disks fill up over time, and in the cloud you can simply make a disk larger. After that, grow the partition with growpart, and then grow the file system, with resize2fs for ext4 or x f s growfs for X F S. Both work while the system is running. Smartctl reads the health counters a disk keeps about itself, which can warn you before it fails.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 7 of 8</div><h2>Practice: set up a new data disk in the practice shell</h2>
+<p>The practice server has a new, empty 20 GB disk, /dev/sdc, and a USB stick. Partition and format the disk, mount it at /mnt/data, and make the mount survive a reboot.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Bring a new disk into service&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;List the disks with their file systems, labels and UUIDs.&quot;, &quot;hint&quot;: &quot;lsblk -f&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;USBSTICK&quot;}]}, {&quot;t&quot;: &quot;Give /dev/sdc a GPT table and one partition named data that fills the disk.&quot;, &quot;hint&quot;: &quot;sudo parted -s /dev/sdc mklabel gpt mkpart data ext4 1MiB 100%&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;parted&quot;}, {&quot;code&quot;: 0}]}, {&quot;t&quot;: &quot;Show the partitions of /dev/sdc with lsblk.&quot;, &quot;hint&quot;: &quot;lsblk /dev/sdc&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;sdc1&quot;}]}, {&quot;t&quot;: &quot;Make an ext4 file system with the label data on /dev/sdc1.&quot;, &quot;hint&quot;: &quot;sudo mkfs.ext4 -L data /dev/sdc1&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Creating filesystem with 5242368 4k blocks&quot;}]}, {&quot;t&quot;: &quot;Create the folder /mnt/data and mount /dev/sdc1 on it.&quot;, &quot;hint&quot;: &quot;sudo mkdir /mnt/data &amp;&amp; sudo mount /dev/sdc1 /mnt/data&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;/mnt/data&quot;}, {&quot;code&quot;: 0}]}, {&quot;t&quot;: &quot;Show the size and free space of /mnt/data in readable units.&quot;, &quot;hint&quot;: &quot;df -h /mnt/data&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;/dev/sdc1\\s+20G&quot;}]}, {&quot;t&quot;: &quot;Add a line to /etc/fstab that mounts LABEL=data on /mnt/data as ext4 with defaults and fsck order 2.&quot;, &quot;hint&quot;: &quot;echo \&quot;LABEL=data /mnt/data ext4 defaults 0 2\&quot; | sudo tee -a /etc/fstab&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;/etc/fstab&quot;, &quot;LABEL=data /mnt/data ext4&quot;]}]}, {&quot;t&quot;: &quot;Check /etc/fstab for mistakes.&quot;, &quot;hint&quot;: &quot;sudo findmnt --verify&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Success, no errors&quot;}]}, {&quot;t&quot;: &quot;Unmount /mnt/data, then mount everything in /etc/fstab again.&quot;, &quot;hint&quot;: &quot;sudo umount /mnt/data &amp;&amp; sudo mount -a&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;mount\\s+-a&quot;}, {&quot;code&quot;: 0}]}, {&quot;t&quot;: &quot;Check that /mnt/data came back from /etc/fstab.&quot;, &quot;hint&quot;: &quot;findmnt /mnt/data&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;/dev/sdc1\\s+ext4&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Time to do the job an admin does whenever a new disk arrives. First look at the disks with lsblk dash f, and find the empty one, s d c. Give it a G P T table and one partition that fills the disk, using parted. Check the new partition with lsblk, then make an ext4 file system on it with the label data. Create the mount point and mount it, and check the free space with df. To make the mount permanent, add a line to f s tab that uses the label, verify the file with findmnt, then unmount and run mount dash a, which mounts everything listed in f s tab. If findmnt shows the disk again, the next reboot will mount it too.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 8 of 8</div><h2>Storage from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>A disk is split into partitions, each with a file system, and Linux shows them all in one tree starting at /. lsblk shows the disks, df -h shows the free space, and a USB stick must be unmounted before you pull it out.</p></div><div class="ld-p" data-ld="college" hidden><p>Partition with GPT, use ext4 or xfs, mount by UUID in /etc/fstab with nofail for optional disks, and test with findmnt --verify. Watch free space and inodes, and grow cloud disks with growpart and resize2fs or xfs_growfs. Put data that grows, such as /var/lib/postgresql or /var/log, on its own file system so it cannot fill /.</p></div><div class="ld-p" data-ld="masters" hidden><p>LVM and RAID make storage flexible and safe (chapter 3.2). Mount options such as noexec, nosuid and nodev harden /tmp and removable media. Network file systems (NFS, SMB) and systemd automount join storage from other machines. Cloud block storage (EBS, Persistent Disk), object storage (S3) and Kubernetes persistent volumes build on the same ideas.</p></div><div class="ld-p" data-ld="research" hidden><p>Research looks at how file systems survive crashes and how fast they run on new hardware: journaling and copy on write designs (ext4, xfs, btrfs, ZFS), log-structured file systems for flash (F2FS), and testing tools that crash file systems on purpose to find bugs. Studies of disk failures in large data centres, such as the drive statistics Backblaze publishes, show why every serious setup has redundancy and backups.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the server that would not boot after a new disk</div><p>An admin added a data disk, wrote <code>/dev/sdb1 /data ext4 defaults 0 2</code> into /etc/fstab and rebooted. A USB stick was also plugged in, the kernel named the data disk sdc instead, and the boot stopped in emergency mode because /dev/sdb1 was the stick, with a vfat file system. The fix was a line with <code>UUID=</code> from blkid and the nofail option, a check with <code>findmnt --verify</code>, and a team rule to test every fstab change with <code>mount -a</code> before a reboot.</p></div>
+<div class="vt-talk" hidden>Here is how storage work grows with experience. Beginners learn that disks hold partitions with file systems, all joined in one tree, and that lsblk and df show what is there. Professionals partition with G P T, mount by U U I D, add nofail for disks that may be missing, test every change to f s tab, and keep fast growing data on its own file system so the root disk never fills up. Larger systems use L V M and RAID for flexible and safe storage, harden mounts with options like noexec, and use network and cloud storage. Researchers study how file systems survive crashes and run on flash memory, and large studies of failing disks remind everyone that backups are never optional.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./logs-health.html" data-topic="logs-health"><small>Previous topic</small><b>Logs and health</b></a><a class="next" href="./lvm-raid-backup.html" data-topic="lvm-raid-backup"><small>Next topic</small><b>LVM, RAID and backups</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "disks-filesystems", "topic": "disks-filesystems", "subject": "linux", "title": "Disks and file systems: partitions, mkfs, mount and fstab", "codes": {}, "quiz": [{"lv": "e", "q": "Which command shows disks and partitions as a tree?", "o": ["ls /dev", "lsblk", "df", "mount"], "a": 1, "hint": "List block devices.", "why": "lsblk."}, {"lv": "e", "q": "What is the second partition of the first SATA disk called?", "o": ["/dev/sda2", "/dev/sdb2", "/dev/hd2", "/dev/sda-2"], "a": 0, "hint": "Disk letter, then number.", "why": "/dev/sda2."}, {"lv": "e", "q": "Which command makes a file system?", "o": ["mkdir", "mkfs", "fdisk", "mount"], "a": 1, "hint": "Make file system.", "why": "mkfs, for example mkfs.ext4."}, {"lv": "e", "q": "How is the command to unmount spelled?", "o": ["unmount", "umount", "dismount", "mount -u"], "a": 1, "hint": "No n.", "why": "umount."}, {"lv": "m", "q": "Why use UUID= instead of /dev/sdb1 in /etc/fstab?", "o": ["It is shorter", "Device names can change when disks are added, the UUID stays the same", "UUIDs mount faster", "fstab needs it"], "a": 1, "hint": "Stable name.", "why": "The UUID belongs to the file system."}, {"lv": "m", "q": "umount says target is busy. What is the usual cause?", "o": ["The disk is broken", "A process has a file open there or a shell is inside the folder", "The file system is full", "You forgot -f"], "a": 1, "hint": "Who uses it.", "why": "Find it with fuser -vm or lsof."}, {"lv": "m", "q": "A folder had files before a disk was mounted on it. What happens to them?", "o": ["They are deleted", "They are hidden until umount", "They move to the disk", "They move to lost+found"], "a": 1, "hint": "Covered.", "why": "They come back after umount."}, {"lv": "m", "q": "What does the sixth field of an fstab line set?", "o": ["The dump backup", "The order of the file system check at boot", "The owner", "The mount options"], "a": 1, "hint": "fs_passno.", "why": "1 for /, 2 for others, 0 to skip."}, {"lv": "m", "q": "Which file system can grow but never shrink?", "o": ["ext4", "xfs", "vfat", "btrfs"], "a": 1, "hint": "Red Hat default.", "why": "xfs."}, {"lv": "h", "q": "What limits an MBR partition table to 2 TiB with 512 byte sectors?", "o": ["The BIOS clock", "Sector numbers are 32 bit", "Only 4 partitions", "The boot code size"], "a": 1, "hint": "2 to the 32 sectors.", "why": "2^32 × 512 bytes = 2 TiB."}, {"lv": "h", "q": "df shows free space but new files fail with No space left on device. What ran out?", "o": ["RAM", "Inodes, fixed when mkfs ran", "The journal", "Swap"], "a": 1, "hint": "One per file.", "why": "Check with df -i."}, {"lv": "h", "q": "Which option lets the boot continue when a disk in fstab is missing?", "o": ["noauto", "nofail", "defaults", "noatime"], "a": 1, "hint": "No failure.", "why": "nofail."}, {"lv": "h", "q": "Why must e2fsck not repair a mounted file system?", "o": ["It is too slow", "Changes under a running system can destroy data", "It needs the network", "It only reads xfs"], "a": 1, "hint": "Two writers.", "why": "Unmount first, or check at boot."}, {"lv": "x", "q": "Why should the first partition start at 1 MiB?", "o": ["GPT needs exactly 1 MiB", "It keeps partitions aligned to SSD and RAID blocks and leaves room for the table", "It makes the disk faster to boot", "parted refuses anything else"], "a": 1, "hint": "Alignment.", "why": "2048 sectors of 512 bytes."}], "calc": [{"lv": "e", "q": "A disk sold as 1 TB holds 10¹² bytes. How many GiB (2³⁰ bytes) is that, rounded down?", "ans": "931", "hint": "Divide by 1073741824.", "steps": ["10¹² ÷ 1073741824.", "= 931.3.", "<span class=\"eq\">931 GiB<\/span>"]}, {"lv": "e", "q": "A partition starts at sector 2048 and a sector is 512 bytes. At which byte does it start?", "ans": "1048576", "hint": "Multiply.", "steps": ["2048 × 512.", "That is 1 MiB.", "<span class=\"eq\">1048576<\/span>"]}, {"lv": "m", "q": "An MBR table stores sector numbers in 32 bits. With 512 byte sectors, how many TiB can it address?", "ans": "2", "hint": "Two to the 32 times 512.", "steps": ["2³² = 4294967296 sectors.", "× 512 = 2199023255552 bytes.", "<span class=\"eq\">2199023255552 ÷ 2⁴⁰ = 2 TiB<\/span>"]}, {"lv": "m", "q": "An ext4 file system has 131072 blocks and reserves 5 percent for root. How many blocks are reserved, rounded down?", "ans": "6553", "hint": "Five percent.", "steps": ["131072 × 0.05.", "= 6553.6.", "<span class=\"eq\">6553 blocks<\/span>"]}, {"lv": "h", "q": "mke2fs makes one inode per 16384 bytes. How many inodes does a 20 GiB (21474836480 byte) file system get?", "ans": "1310720", "hint": "Divide.", "steps": ["21474836480 ÷ 16384.", "Every file needs one inode.", "<span class=\"eq\">1310720 inodes<\/span>"]}, {"lv": "h", "q": "tune2fs shows 262144 blocks of 4096 bytes. How many MiB is the file system?", "ans": "1024", "hint": "Blocks times size.", "steps": ["262144 × 4096 = 1073741824 bytes.", "÷ 1048576.", "<span class=\"eq\">1024 MiB<\/span>"]}, {"lv": "x", "q": "A GPT table has 128 entries of 128 bytes each. How many 512 byte sectors does the entry array use?", "ans": "32", "hint": "Bytes, then sectors.", "steps": ["128 × 128 = 16384 bytes.", "16384 ÷ 512.", "<span class=\"eq\">32 sectors<\/span>"]}], "assign": [], "must": [["Names", "Disks are /dev/sda, /dev/nvme0n1, /dev/vda, with partitions sda1 or nvme0n1p1. lsblk -f and blkid show types, labels and UUIDs."], ["Partitions", "GPT for new disks (MBR stops at 2 TiB and 4 primaries). parted mklabel gpt, mkpart NAME TYPE 1MiB 100%, print. mklabel erases the table."], ["File systems", "mkfs.ext4 -L, mkfs.xfs, mkfs.vfat -F 32. Inodes are fixed at mkfs, ext4 reserves 5 percent for root, xfs cannot shrink."], ["Mounting", "mount DEV DIR hides what DIR held. umount fails while busy (fuser -vm). df -hT and findmnt show mounts."], ["fstab", "UUID or LABEL, mount point, type, options (defaults, noatime, nofail), 0, fsck order. findmnt --verify, daemon-reload and mount -a before any reboot."]], "summary": "<p>Disks appear as block devices, split into partitions by a GPT or MBR table. mkfs writes a file system with a fixed number of inodes, mount attaches it to a folder of the single tree, and /etc/fstab, checked with findmnt --verify, mounts it by UUID or LABEL at every boot. e2fsck checks unmounted file systems, and growpart with resize2fs or xfs_growfs grows them.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

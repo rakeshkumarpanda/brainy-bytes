@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Users, groups and permissions · Unix and Linux</title>
+<meta name="description" content="Owner, group and others, rwx on files and folders, octal and symbolic modes, the kernel permission check, chmod, chown and chgrp, umask, setuid on passwd, setgid team folders, the sticky bit on /tmp, capabilities, ACLs and mandatory access control.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=basics">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=basics" target="_top">Unix and Linux</a><span>›</span><span>Foundations</span><span>›</span><span>Step 3: Permissions and editing</span><span>›</span><span>Permissions</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 3 · Topic 1 of 2 · Beginner</div>
+    <h1>Users, groups and permissions</h1>
+    <p class="lead">Read the nine letters of ls -l, understand exactly how the kernel decides who may open a file, change permissions and owners safely, and meet umask, setuid, setgid and the sticky bit.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">7 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#permissions" data-topic="cheatsheet" data-h="permissions">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#who" data-l="who"><span class="n">1</span><span class="t">Users, groups and the ls -l mode string</span></a></li><li><a href="#decide" data-l="decide"><span class="n">2</span><span class="t">How the kernel decides</span></a></li><li><a href="#chmod" data-l="chmod"><span class="n">3</span><span class="t">Changing permissions: chmod, chown, chgrp</span></a></li><li><a href="#special" data-l="special"><span class="n">4</span><span class="t">umask and the special bits</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Permissions from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="who" data-l="who" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Users, groups and the ls -l mode string</h2>
+<p>Linux was built for many people sharing one computer, so every file has an <b>owner</b> (a user) and a <b>group</b>. Every person who is not the owner and not in the group counts as <b>others</b>. For each of these three classes the file stores three switches: <b>r</b> read, <b>w</b> write, <b>x</b> execute.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>-rw-r--r--</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">the mode string</div><div class="fx-n">First character is the type (- file, d folder, l link). Then three groups of three: owner, group, others.</div></div><div class="fx"><div class="fx-h"><span>r = 4, w = 2, x = 1</span></div><div class="fx-b">the numbers</div><div class="fx-n">Add the switches of one class to get one digit. rw- is 4 + 2 = 6.</div></div><div class="fx fx-key"><div class="fx-h"><span>644</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">the same mode in numbers</div><div class="fx-n">Owner rw (6), group r (4), others r (4). The usual mode of a text file.</div></div></div>
+<div class="lx-run"><div class="lx-rh"><span>Who am I, and who owns what</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">id</span>
+<span class="lx-o">uid=1000(learner) gid=1000(learner) groups=1000(learner),27(sudo)</span>
+<span class="lx-cmd">ls -l notes.txt scripts/hello.sh</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner  46 Nov 23 09:30 notes.txt
+-rw-r--r-- 1 learner learner 105 Nov 23 09:30 scripts/hello.sh</span>
+<span class="lx-cmd">ls -ld logs</span>
+<span class="lx-o">drwxr-xr-x 2 learner learner 4096 Nov 23 09:30 logs</span>
+<span class="lx-cmd">ls -l /etc/passwd /etc/shadow /usr/bin/passwd</span>
+<span class="lx-o">-rw-r--r-- 1 root root    3602 Nov 24 05:20 /etc/passwd
+-rw-r----- 1 root shadow  1492 Nov 24 05:20 /etc/shadow
+-rwsr-xr-x 1 root root   64152 May 30  2024 /usr/bin/passwd</span></pre><div class="lx-note">learner owns its files, and /etc/shadow, which holds the password hashes, can be read only by root and the shadow group. The s in /usr/bin/passwd is the setuid bit, explained later in this chapter.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Letter</th><th>On a file</th><th>On a folder</th></tr></thead><tbody><tr><td>r</td><td>Read the content (cat, less, cp from it)</td><td>List the names inside (ls)</td></tr><tr><td>w</td><td>Change the content</td><td>Create, delete and rename entries inside (needs x too)</td></tr><tr><td>x</td><td>Run it as a program</td><td>Enter it (cd) and reach anything inside by name</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Deleting a file is a change to the folder, not to the file. So whether you may delete notes.txt depends on the w and x of its folder, not on the mode of notes.txt.</div></div>
+<div class="vt-talk" hidden>Linux comes from Unix, and Unix was designed in the nineteen seventies for many people sharing one big computer at a university or company. So from day one, every file needed an answer to the question who may do what with this. The answer is small and clever. Each file has one owner and one group, and everybody else is called others. For each of those three, there are three switches: read, write and execute. When you run ls dash l, you see them as letters, for example r w dash, r dash dash, r dash dash. People also write the same thing as numbers, where read counts four, write counts two and execute counts one. Add them up and you get one digit per class, so the common text file mode is six four four. Once you can read these nine letters, a large part of Linux administration stops being mysterious.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="decide" data-l="decide" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>How the kernel decides</h2>
+<p>When a program tries to open a file, the kernel checks only <b>one</b> class, chosen in this order:</p>
+<div class="walk"><div class="walk-h"><span>The permission check</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>If you are root, reading and writing are allowed. Executing a file still needs at least one x bit somewhere in its mode.</li><li>If you are the owner of the file, only the owner bits count, even if the group or others bits would give you more.</li><li>Otherwise, if you are a member of the file’s group, only the group bits count.</li><li>Otherwise the others bits count.</li><li>To reach the file at all, you also need x on every folder in its path, from / down.</li></ol></div>
+<div class="viz" data-viz="pk" data-pk="lx-access"></div>
+<div class="note note-tip"><b>Remember</b><div>Because only one class is checked, a file with mode 604 (rw- --- r--) can be read by strangers but not by members of its group. Unusual, but legal.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Folders need x to enter</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">mkdir vault</span>
+<span class="lx-cmd">echo secret &gt; vault/key.txt</span>
+<span class="lx-cmd">chmod 600 vault</span>
+<span class="lx-cmd">ls vault</span>
+<span class="lx-o">key.txt</span>
+<span class="lx-cmd">cat vault/key.txt</span>
+<span class="lx-o">cat: vault/key.txt: Permission denied</span>
+<span class="lx-cmd">cd vault</span>
+<span class="lx-o">bash: cd: vault: Permission denied</span>
+<span class="lx-cmd">chmod 700 vault</span>
+<span class="lx-cmd">cat vault/key.txt</span>
+<span class="lx-o">secret</span></pre><div class="lx-note">With r but no x, ls can read the names in the folder, but nothing inside can be opened and cd is refused. Putting x back fixes both.</div></div>
+<div class="vt-talk" hidden>Here is the rule the kernel follows every time a program opens a file. First, is this the root user. Root may read and write anything. Second, is this person the owner of the file. If yes, the kernel looks at the owner switches and stops there. Third, is this person a member of the file group. If yes, it looks at the group switches and stops. Otherwise it uses the switches for others. Only one class is ever checked, so the owner cannot borrow rights from the group. There is one more condition that surprises people. To open a file, you need the execute switch on every folder on the way to it. On a folder, execute really means may pass through. That is how a home folder with mode seven five zero keeps other people out, even if a file inside is readable by everyone.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="chmod" data-l="chmod" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Changing permissions: chmod, chown, chgrp</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>chmod 755 FILE</code></td><td>Set the whole mode with numbers</td><td><code>chmod 755 deploy.sh</code></td></tr><tr><td><code>chmod u+x FILE</code></td><td>Add execute for the owner (u user, g group, o others, a all)</td><td><code>chmod u+x hello.sh</code></td></tr><tr><td><code>chmod go-w FILE</code></td><td>Remove write from group and others</td><td><code>chmod go-w report.txt</code></td></tr><tr><td><code>chmod u=rw,go= FILE</code></td><td>Set exactly, = with nothing after it removes everything</td><td><code>chmod u=rw,go= key.pem</code></td></tr><tr><td><code>chmod -R g+rX DIR</code></td><td>Recursive. Capital X adds x only to folders and files that already have some x</td><td><code>chmod -R g+rX shared</code></td></tr><tr><td><code>chown USER FILE</code></td><td>Change the owner (root only)</td><td><code>sudo chown asha report.txt</code></td></tr><tr><td><code>chown USER:GROUP FILE</code></td><td>Change owner and group together</td><td><code>sudo chown www-data:www-data site</code></td></tr><tr><td><code>chgrp GROUP FILE</code></td><td>Change the group, to one you belong to</td><td><code>chgrp sudo notes.txt</code></td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-chmod"></div>
+<div class="lx-run"><div class="lx-rh"><span>Making a script runnable</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls -l scripts/hello.sh</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 105 Nov 23 09:30 scripts/hello.sh</span>
+<span class="lx-cmd">./scripts/hello.sh</span>
+<span class="lx-o">bash: ./scripts/hello.sh: Permission denied</span>
+<span class="lx-cmd">chmod u+x scripts/hello.sh</span>
+<span class="lx-cmd">ls -l scripts/hello.sh</span>
+<span class="lx-o">-rwxr--r-- 1 learner learner 105 Nov 23 09:30 scripts/hello.sh</span>
+<span class="lx-cmd">./scripts/hello.sh Asha</span>
+<span class="lx-o">Hello, Asha!</span>
+<span class="lx-cmd">chmod 600 notes.txt</span>
+<span class="lx-cmd">chmod go-rx logs</span>
+<span class="lx-cmd">ls -l notes.txt</span>
+<span class="lx-o">-rw------- 1 learner learner 46 Nov 23 09:30 notes.txt</span>
+<span class="lx-cmd">ls -ld logs</span>
+<span class="lx-o">drwx------ 2 learner learner 4096 Nov 23 09:30 logs</span></pre><div class="lx-note">Permission denied until the owner gets x. After chmod the file shows rwx and runs.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Owners change only with root</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">touch report.txt</span>
+<span class="lx-cmd">chown root report.txt</span>
+<span class="lx-o">chown: changing ownership of 'report.txt': Operation not permitted</span>
+<span class="lx-cmd">chgrp sudo report.txt</span>
+<span class="lx-cmd">ls -l report.txt</span>
+<span class="lx-o">-rw-r--r-- 1 learner sudo 0 Nov 24 05:25 report.txt</span></pre><div class="lx-note">A normal user may not give a file away, so chown fails. chgrp works because learner is a member of the group sudo and owns the file.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>As root</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">touch /home/learner/report.txt</span>
+<span class="lx-cmd lx-root">chown root:root /home/learner/report.txt</span>
+<span class="lx-cmd lx-root">ls -l /home/learner/report.txt</span>
+<span class="lx-o">-rw-r--r-- 1 root root 0 Nov 24 05:25 /home/learner/report.txt</span>
+<span class="lx-cmd lx-root">stat -c '%a %A %U:%G %n' /home/learner/report.txt</span>
+<span class="lx-o">644 -rw-r--r-- root:root /home/learner/report.txt</span></pre><div class="lx-note">The prompt ends in # because this box runs as root. stat -c prints chosen fields: %a the mode in numbers, %A as letters, %U and %G the owner and group names.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Mode</th><th>Letters</th><th>Typical use</th></tr></thead><tbody><tr><td>644</td><td>rw-r--r--</td><td>Ordinary files, web pages, configuration that is not secret</td></tr><tr><td>600</td><td>rw-------</td><td>Secrets: SSH private keys, files with passwords</td></tr><tr><td>755</td><td>rwxr-xr-x</td><td>Programs and scripts, ordinary folders</td></tr><tr><td>700</td><td>rwx------</td><td>Private folders such as ~/.ssh</td></tr><tr><td>750</td><td>rwxr-x---</td><td>Folders shared with one team</td></tr><tr><td>777</td><td>rwxrwxrwx</td><td>Almost never right: anyone may change or replace it</td></tr></tbody></table></div>
+<div class="note note-warn"><b>Common mistake</b><div>chmod 777 to make an error go away is a classic mistake. It lets every user and every hacked service on the machine change the file. Find which user needs access and give only that.</div></div>
+<div class="vt-talk" hidden>The command that changes permissions is chmod, short for change mode. You can use it in two ways. With numbers, you give the whole mode at once, such as seven five five for a script. With letters, you describe a change. u plus x means give the owner execute. g o minus w means take write away from group and others. The letter form is safer when you only want to change one thing, because it leaves the other bits alone. Ownership is changed with chown, and only root may give a file to someone else. Otherwise anybody could hand a huge file to a colleague and fill up their disk quota. A useful habit for secrets: SSH refuses to use a private key that other people can read, so key files should be six hundred. When something says permission denied, resist the temptation to type chmod seven seven seven. Work out which user needs which right, and give exactly that.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="special" data-l="special" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>umask and the special bits</h2>
+<p>New files do not start with random permissions. The program asks for 666 for a file (rw for everyone) or 777 for a folder, and the kernel switches off every bit that is set in your <b>umask</b>. The common umask 022 switches off w for group and others, so files come out as 644 and folders as 755. Some distributions use 002 for normal users, which keeps group write.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>mode = request AND NOT umask</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">umask removes bits</div><div class="fx-n">666 with umask 022 gives 644. 777 with umask 077 gives 700.</div></div><div class="fx"><div class="fx-h"><span>4000 setuid</span></div><div class="fx-b">run as the file owner</div><div class="fx-n">/usr/bin/passwd is rwsr-xr-x and owned by root, so it can write /etc/shadow for you.</div></div><div class="fx"><div class="fx-h"><span>2000 setgid</span></div><div class="fx-b">group of the file or folder</div><div class="fx-n">On a folder, new files inherit the folder’s group. Perfect for team folders.</div></div><div class="fx"><div class="fx-h"><span>1000 sticky</span></div><div class="fx-b">only owners delete</div><div class="fx-n">/tmp is drwxrwxrwt: everyone may create files, but only the owner of a file may delete or rename it.</div></div></div>
+<div class="lx-run"><div class="lx-rh"><span>umask in action</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">umask</span>
+<span class="lx-o">0022</span>
+<span class="lx-cmd">touch a.txt</span>
+<span class="lx-cmd">mkdir d1</span>
+<span class="lx-cmd">umask 077</span>
+<span class="lx-cmd">touch b.txt</span>
+<span class="lx-cmd">mkdir d2</span>
+<span class="lx-cmd">ls -ld a.txt d1 b.txt d2</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner    0 Nov 24 05:25 a.txt
+-rw------- 1 learner learner    0 Nov 24 05:25 b.txt
+drwxr-xr-x 2 learner learner 4096 Nov 24 05:25 d1
+drwx------ 2 learner learner 4096 Nov 24 05:25 d2</span></pre><div class="lx-note">The umask change lasts only for this shell. Put umask 077 in ~/.bashrc to keep it.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>The special bits you meet every day</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls -ld /tmp /usr/bin/passwd</span>
+<span class="lx-o">drwxrwxrwt 620 root root 28672 Nov 24 05:25 /tmp
+-rwsr-xr-x   1 root root 64152 May 30  2024 /usr/bin/passwd</span>
+<span class="lx-cmd">mkdir team</span>
+<span class="lx-cmd">chmod 2775 team</span>
+<span class="lx-cmd">chmod +t team</span>
+<span class="lx-cmd">ls -ld team</span>
+<span class="lx-o">drwxrwsr-t 2 learner learner 4096 Nov 24 05:25 team</span>
+<span class="lx-cmd">stat -c '%a %n' team /tmp</span>
+<span class="lx-o">3775 team
+1777 /tmp</span></pre><div class="lx-note">In ls -l the special bits replace the x position: s for setuid or setgid, t for sticky. A capital S or T means the special bit is set but the x under it is not.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Linux ignores setuid and setgid on scripts that start with #!. Only compiled programs can use them, because a script could be swapped or tricked between the moment the kernel reads it and the moment the interpreter does.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Lock down and open up&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Make &lt;code&gt;scripts/hello.sh&lt;/code&gt; executable for its owner.&quot;, &quot;hint&quot;: &quot;chmod u+x scripts/hello.sh&quot;, &quot;check&quot;: [{&quot;mode&quot;: [&quot;scripts/hello.sh&quot;, &quot;744&quot;]}]}, {&quot;t&quot;: &quot;Run it with the name Asha.&quot;, &quot;hint&quot;: &quot;./scripts/hello.sh Asha&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;Hello, Asha!&quot;}]}, {&quot;t&quot;: &quot;Make &lt;code&gt;notes.txt&lt;/code&gt; readable and writable only by you, with numbers.&quot;, &quot;hint&quot;: &quot;chmod 600 notes.txt&quot;, &quot;check&quot;: [{&quot;mode&quot;: [&quot;notes.txt&quot;, &quot;600&quot;]}]}, {&quot;t&quot;: &quot;Give &lt;code&gt;poem.txt&lt;/code&gt; the mode rw-r----- using letters.&quot;, &quot;hint&quot;: &quot;chmod u=rw,g=r,o= poem.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*chmod\\s+[ugoa=+,rwx-]+\\s+poem\\.txt&quot;}, {&quot;mode&quot;: [&quot;poem.txt&quot;, &quot;640&quot;]}]}, {&quot;t&quot;: &quot;Set your umask to 077.&quot;, &quot;hint&quot;: &quot;umask 077&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*umask\\s+0?077\\s*$&quot;}]}, {&quot;t&quot;: &quot;Make a folder &lt;code&gt;private&lt;/code&gt; and check it is rwx------.&quot;, &quot;hint&quot;: &quot;mkdir private&quot;, &quot;check&quot;: [{&quot;mode&quot;: [&quot;private&quot;, &quot;700&quot;]}]}, {&quot;t&quot;: &quot;Make a folder &lt;code&gt;team&lt;/code&gt; and give it mode 2770 (setgid plus rwx for owner and group).&quot;, &quot;hint&quot;: &quot;mkdir team; chmod 2770 team&quot;, &quot;check&quot;: [{&quot;mode&quot;: [&quot;team&quot;, &quot;2770&quot;]}]}, {&quot;t&quot;: &quot;Try to read &lt;code&gt;/home/asha/diary.txt&lt;/code&gt; and see the kernel refuse.&quot;, &quot;hint&quot;: &quot;cat /home/asha/diary.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;diary\\.txt&quot;}, {&quot;out&quot;: &quot;Permission denied&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Two last pieces complete the picture. The first is umask. When a program creates a file, it usually asks for read and write for everyone, and the umask removes some of those bits. With the common umask of zero two two, write is removed for group and others, so new files come out as six four four. The second piece is three special bits. Setuid makes a program run with the rights of its owner. That is how the passwd program, owned by root, can update the protected password file for an ordinary user. Dennis Ritchie invented this idea, and Bell Labs received a patent for it in 1979, then placed it in the public domain. Setgid on a folder makes new files inherit the folder group, which keeps team folders tidy. The sticky bit on a shared folder like slash tmp lets everyone create files, but only the owner may delete them.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Permissions from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Every file has an owner, a group and others, and for each of them read, write and execute switches. chmod changes the switches, chown changes the owner, and root can do almost anything. Keep secrets at 600 and never use 777.</p></div><div class="ld-p" data-ld="college" hidden><p>Unix discretionary access control stores 12 mode bits in the inode: 9 rwx bits plus setuid, setgid and sticky. Access is checked against the effective user and group IDs of the process, using exactly one class. umask filters the mode requested in open() and mkdir(). Directory x is search permission.</p></div><div class="ld-p" data-ld="masters" hidden><p>Modern Linux splits root into about 40 capabilities (capabilities(7)), so a web server can get only CAP_NET_BIND_SERVICE to use port 80. POSIX ACLs (getfacl, setfacl, shown as a + after the mode) give rights to extra users and groups. Mandatory access control in SELinux and AppArmor adds rules that even the owner cannot override, and setuid binaries are a classic source of privilege escalation bugs, so distributions keep their number small.</p></div><div class="ld-p" data-ld="research" hidden><p>Research compares discretionary, mandatory and role based models (Bell and LaPadula 1973 for secrecy, Biba 1977 for integrity), studies capability systems such as Capsicum in FreeBSD, and measures how often real systems are misconfigured. Container isolation builds on these ideas with user namespaces, where uid 0 inside a container maps to an unprivileged user outside, a topic in the advanced section.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the leaked key</div><p>A developer copies a cloud SSH key to a shared server and gets <code>WARNING: UNPROTECTED PRIVATE KEY FILE!</code> followed by a refusal to use the key. ssh is right: the file was 644, readable by every user on the machine. <code>chmod 600 ~/.ssh/id_ed25519</code> fixes it, and <code>chmod 700 ~/.ssh</code> protects the folder.</p></div>
+<div class="vt-talk" hidden>The nine switches you learned are the base of a much bigger security story. The full mode has twelve bits, including the three special ones, and they live inside the file inode. On modern Linux, the all powerful root user is actually split into about forty separate capabilities, so a web server can be given only the right to open port eighty and nothing else. When nine switches are not enough, access control lists let you give rights to extra people, and you can spot them by a plus sign after the mode in ls dash l. On top of that, security modules like SELinux on Red Hat systems and AppArmor on Ubuntu add rules that even a file owner cannot break. Researchers have studied these models since the nineteen seventies, and the same ideas now protect every container running in the cloud.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./read-files.html" data-topic="read-files"><small>Previous topic</small><b>Reading files</b></a><a class="next" href="./editors.html" data-topic="editors"><small>Next topic</small><b>nano and vim</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "permissions", "topic": "permissions", "subject": "linux", "title": "Users, groups and permissions", "codes": {}, "quiz": [{"lv": "e", "q": "In -rwxr-xr--, what may \"others\" do?", "o": ["Read, write and execute", "Read and execute", "Read only", "Nothing"], "a": 2, "hint": "Last three letters.", "why": "The last group r-- belongs to others: read only."}, {"lv": "e", "q": "What number stands for rw-?", "o": ["4", "5", "6", "7"], "a": 2, "hint": "r 4 plus w 2.", "why": "4 + 2 = 6."}, {"lv": "e", "q": "Which command makes deploy.sh runnable by its owner?", "o": ["chmod u+x deploy.sh", "chown x deploy.sh", "run deploy.sh", "chmod 444 deploy.sh"], "a": 0, "hint": "u plus x.", "why": "chmod u+x adds execute for the owner."}, {"lv": "e", "q": "What is the mode 755 in letters?", "o": ["rwxr-xr-x", "rwxrwxrwx", "rw-r--r--", "rwx------"], "a": 0, "hint": "7 5 5.", "why": "7 rwx, 5 r-x, 5 r-x."}, {"lv": "m", "q": "Which mode should an SSH private key have?", "o": ["644", "600", "755", "777"], "a": 1, "hint": "Only you.", "why": "600 lets only the owner read and write it, and ssh refuses keys others can read."}, {"lv": "m", "q": "A folder has r but not x for you. What happens?", "o": ["You can cd into it", "You can list names, but cannot enter it or open files inside", "You can delete it", "Nothing changes"], "a": 1, "hint": "x is search.", "why": "r lists names, x is needed to pass through."}, {"lv": "m", "q": "You may delete a file you do not own if ...", "o": ["The file is 666", "You have w and x on its folder and the folder is not sticky", "You are in its group", "Never"], "a": 1, "hint": "Deleting changes the folder.", "why": "Removing a name needs write and search permission on the folder."}, {"lv": "m", "q": "With umask 027, what mode does a new file get?", "o": ["640", "750", "644", "600"], "a": 0, "hint": "666 minus bits 027.", "why": "666 with 027 removed is 640."}, {"lv": "m", "q": "Why does /usr/bin/passwd have an s in its mode?", "o": ["It is a script", "setuid: it runs as its owner root, so it can update /etc/shadow", "It is sticky", "It is a link"], "a": 1, "hint": "Set user ID.", "why": "setuid makes the program run with the owner’s rights."}, {"lv": "h", "q": "A file is ---rwx--- owned by you and in your group. Can you read it?", "o": ["Yes, through the group bits", "No, as owner only the owner bits count", "Yes, always", "Only with sudo"], "a": 1, "hint": "Only one class is checked.", "why": "The owner class is chosen first and its bits are all off."}, {"lv": "h", "q": "What does chmod -R g+rX shared do?", "o": ["Adds read and execute to everything", "Adds read to everything and execute only to folders and files that already have some x", "Removes execute", "Changes the owner"], "a": 1, "hint": "Capital X.", "why": "X adds search to folders without making every file executable."}, {"lv": "h", "q": "ls -ld team shows drwxrws---. What does the s mean?", "o": ["setuid", "setgid: new files inside get the folder’s group", "sticky", "socket"], "a": 1, "hint": "s in the group position.", "why": "s in the group x position is the setgid bit."}, {"lv": "x", "q": "Which kernel feature lets a program bind port 80 without being fully root?", "o": ["setgid", "The capability CAP_NET_BIND_SERVICE", "umask", "The sticky bit"], "a": 1, "hint": "Root split into pieces.", "why": "capabilities(7) divides root privileges into units."}], "calc": [{"lv": "e", "q": "What is the octal digit for r-x?", "ans": "5", "hint": "Add the values.", "steps": ["r = 4.", "x = 1.", "<span class=\"eq\">4 + 1 = 5<\/span>"]}, {"lv": "e", "q": "Write rwxr-x--- as a three digit number.", "ans": "750", "hint": "One digit per class.", "steps": ["rwx = 4 + 2 + 1 = 7.", "r-x = 4 + 1 = 5.", "--- = 0.", "<span class=\"eq\">750<\/span>"]}, {"lv": "m", "q": "A new folder is made with umask 027. What mode does it get?", "ans": "750", "hint": "Folders start from 777.", "steps": ["Start: 777 (rwxrwxrwx).", "Remove 027: group loses w, others lose rwx.", "<span class=\"eq\">777 with 027 removed = 750<\/span>"]}, {"lv": "m", "q": "A file has mode 640. You run chmod g+w,o+r. What is the new mode as a number?", "ans": "664", "hint": "Add the bits.", "steps": ["Group: 4 + 2 = 6.", "Others: 0 + 4 = 4.", "<span class=\"eq\">6 6 4, so 664<\/span>"]}, {"lv": "m", "q": "How many different nine bit permission patterns (rwx for three classes) are possible?", "ans": "512", "hint": "Each bit is on or off.", "steps": ["9 bits.", "Each has 2 states.", "<span class=\"eq\">2⁹ = 512<\/span>"]}, {"lv": "h", "q": "Write the full four digit mode of /tmp, which ls shows as drwxrwxrwt.", "ans": "1777", "hint": "The t is the sticky bit.", "steps": ["rwx rwx rwx = 777.", "t in the last place means sticky, value 1000, with x set.", "<span class=\"eq\">1000 + 777 = 1777<\/span>"]}], "assign": [], "must": [["Mode string", "Type, then owner, group and others, each rwx. r 4, w 2, x 1. 644 files, 755 programs and folders, 600 secrets."], ["One class", "The kernel uses only the first class that matches: root, owner, group, others. You also need x on every folder in the path."], ["chmod", "Numbers set everything (chmod 750). Letters change parts (u+x, go-w, u=rw). -R for trees, X for folders only."], ["Ownership", "chown needs root. chgrp works for groups you belong to. Deleting needs w and x on the folder."], ["umask and special bits", "umask removes bits from new files (022 gives 644 and 755). setuid 4000, setgid 2000, sticky 1000 as on /tmp."]], "summary": "<p>Owner, group, others, each rwx. The kernel checks one class. chmod with numbers or letters, chown as root, umask for new files, and the special bits s and t.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

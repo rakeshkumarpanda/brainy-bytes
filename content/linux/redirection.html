@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Streams and redirection · Unix and Linux</title>
+<meta name="description" content="stdin, stdout and stderr, file descriptors 0, 1 and 2, &gt; and &gt;&gt;, 2&gt; and 2&gt;&amp;1 and why their order matters, &amp;&gt;, noclobber, &lt; input, here documents and here strings, /dev/null, tee and sudo tee, and how the shell uses dup2 inside.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=power">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=power" target="_top">Unix and Linux</a><span>›</span><span>Shell Power Tools</span><span>›</span><span>Step 1: Streams and pipes</span><span>›</span><span>Redirection</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 1 of 2 · Intermediate</div>
+    <h1>Streams and redirection</h1>
+    <p class="lead">Learn the three streams every program has, send output and errors to files, feed files and text into commands, and use tee to watch and save at the same time.</p>
+    <div class="cv-chips"><span class="cv-chip">About 40 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#redirection" data-topic="cheatsheet" data-h="redirection">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#streams" data-l="streams"><span class="n">1</span><span class="t">Three streams for every command</span></a></li><li><a href="#output" data-l="output"><span class="n">2</span><span class="t">Sending output to files: &gt; and &gt;&gt;</span></a></li><li><a href="#input" data-l="input"><span class="n">3</span><span class="t">Feeding input: &lt;, here documents and here strings</span></a></li><li><a href="#tee" data-l="tee"><span class="n">4</span><span class="t">Seeing and saving at the same time: tee</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Redirection from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="streams" data-l="streams" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Three streams for every command</h2>
+<p>Every program on Linux starts with three open channels, called <b>standard streams</b>. Each has a number, its <b>file descriptor</b>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Number</th><th>Name</th><th>Normally connected to</th><th>Used for</th></tr></thead><tbody><tr><td>0</td><td>stdin (standard input)</td><td>the keyboard</td><td>Data the program reads</td></tr><tr><td>1</td><td>stdout (standard output)</td><td>the terminal</td><td>Normal results</td></tr><tr><td>2</td><td>stderr (standard error)</td><td>the terminal</td><td>Error messages and warnings</td></tr></tbody></table></div>
+<p>Results and errors both appear on your screen, so they look the same. But they travel on separate streams, and the shell can send each one somewhere else. This is called <b>redirection</b>, and the shell sets it up before the command starts. The command itself does not know where its output goes.</p>
+<div class="lx-run"><div class="lx-rh"><span>One command, two streams</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls notes.txt nothere</span>
+<span class="lx-o">ls: cannot access 'nothere': No such file or directory
+notes.txt</span>
+<span class="lx-cmd">ls notes.txt nothere &gt; /dev/null</span>
+<span class="lx-o">ls: cannot access 'nothere': No such file or directory</span>
+<span class="lx-cmd">ls notes.txt nothere 2&gt; /dev/null</span>
+<span class="lx-o">notes.txt</span></pre><div class="lx-note">The first line shows both streams. In the second, stdout goes to /dev/null, a special file that swallows everything, so only the error is left. In the third, the error is thrown away and only the result is left.</div></div>
+<div class="note note-tip"><b>Remember</b><div>/dev/null is a real file in the tree, a character device. Writing to it always succeeds and the data disappears. Reading from it gives end of file at once.</div></div>
+<div class="vt-talk" hidden>Every program on Linux is born with three open channels. Channel zero is standard input, where it reads data, normally from your keyboard. Channel one is standard output, for normal results, and channel two is standard error, for complaints and warnings. Both of those go to your terminal, which is why they look the same on screen. Keeping errors on a separate channel was a clever early Unix decision. It means you can save the useful results of a command in a file while the error messages still appear in front of you, or the other way round. The numbers zero, one and two are called file descriptors. You will see them again and again in shell commands, in programming and in system internals, so it is worth remembering them now.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="output" data-l="output" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Sending output to files: &gt; and &gt;&gt;</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>cmd &gt; FILE</code></td><td>stdout to FILE. FILE is created, or emptied first if it exists</td><td><code>ls &gt; list.txt</code></td></tr><tr><td><code>cmd &gt;&gt; FILE</code></td><td>stdout added to the end of FILE</td><td><code>date &gt;&gt; log.txt</code></td></tr><tr><td><code>cmd 2&gt; FILE</code></td><td>stderr to FILE</td><td><code>find / -name x 2&gt; errors.txt</code></td></tr><tr><td><code>cmd 2&gt;&gt; FILE</code></td><td>stderr added to the end of FILE</td><td><code>backup.sh 2&gt;&gt; errors.log</code></td></tr><tr><td><code>cmd &gt; FILE 2&gt;&amp;1</code></td><td>stdout to FILE, then stderr to the same place</td><td><code>backup.sh &gt; all.log 2&gt;&amp;1</code></td></tr><tr><td><code>cmd &amp;&gt; FILE</code></td><td>Bash shortcut for both streams to FILE</td><td><code>make &amp;&gt; build.log</code></td></tr><tr><td><code>set -o noclobber</code></td><td>Make > refuse to overwrite an existing file (>| forces it)</td><td><code>set -o noclobber</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Saving and adding</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls &gt; list.txt</span>
+<span class="lx-cmd">cat list.txt</span>
+<span class="lx-o">fruits.txt
+latest.log
+list.txt
+logs
+marks.csv
+notes.txt
+photos
+poem.txt
+projects
+scripts</span>
+<span class="lx-cmd">echo "first" &gt; diary.txt</span>
+<span class="lx-cmd">echo "second" &gt;&gt; diary.txt</span>
+<span class="lx-cmd">cat diary.txt</span>
+<span class="lx-o">first
+second</span>
+<span class="lx-cmd">echo "oops" &gt; diary.txt</span>
+<span class="lx-cmd">cat diary.txt</span>
+<span class="lx-o">oops</span></pre><div class="lx-note">list.txt appears in its own listing, because the shell creates the file before ls starts. The last &gt; replaced the whole diary with one line.</div></div>
+<div class="viz" data-viz="pk" data-pk="lx-redirect"></div>
+<div class="lx-run"><div class="lx-rh"><span>The order of 2&gt;&amp;1 matters</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls notes.txt nothere &gt; out1.txt 2&gt;&amp;1</span>
+<span class="lx-cmd">cat out1.txt</span>
+<span class="lx-o">ls: cannot access 'nothere': No such file or directory
+notes.txt</span>
+<span class="lx-cmd">ls notes.txt nothere 2&gt;&amp;1 &gt; out2.txt</span>
+<span class="lx-o">ls: cannot access 'nothere': No such file or directory</span>
+<span class="lx-cmd">cat out2.txt</span>
+<span class="lx-o">notes.txt</span></pre><div class="lx-note">Redirections are read from left to right. 2&gt;&amp;1 means: make stream 2 go where stream 1 goes right now. In the first command, stream 1 already points at out1.txt, so both end up there. In the second, stream 1 still points at the terminal when 2&gt;&amp;1 is read, so the error stays on screen.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>A safety catch</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">set -o noclobber</span>
+<span class="lx-cmd">echo "new" &gt; notes.txt</span>
+<span class="lx-o">bash: notes.txt: cannot overwrite existing file</span>
+<span class="lx-cmd">echo "forced" &gt;| diary.txt</span>
+<span class="lx-cmd">cat diary.txt</span>
+<span class="lx-o">forced</span></pre><div class="lx-note">With noclobber on, &gt; refuses to replace an existing file. &gt;| overrides the catch on purpose.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>A classic accident: sort data.txt &gt; data.txt leaves an empty file. The shell empties data.txt before sort starts reading it. Write to a new name and rename it afterwards.</div></div>
+<div class="vt-talk" hidden>The arrow is one of the most useful symbols in the shell. A single arrow pointing right sends the output of a command into a file. Two arrows add the output to the end of a file instead, which is how log files grow line by line. Be careful with the single arrow. The shell empties the file before the command even starts, so a command that reads and writes the same file destroys it. To catch error messages, put the number two in front of the arrow. The trickiest pattern is two arrow ampersand one, which means send errors to the same place as normal output. Order matters here. The shell reads redirections from left to right, and two arrow ampersand one copies wherever output points at that moment. So write the file redirection first, and two arrow ampersand one after it. Engineers write this in cron jobs every day.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="input" data-l="input" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Feeding input: &lt;, here documents and here strings</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>cmd &lt; FILE</code></td><td>stdin reads from FILE instead of the keyboard</td><td><code>wc -l &lt; fruits.txt</code></td></tr><tr><td><code>cmd &lt;&lt; 'END' ... END</code></td><td>Here document: the lines up to END become stdin</td><td><code>cat &lt;&lt; 'END'</code></td></tr><tr><td><code>cmd &lt;&lt; END ... END</code></td><td>Same, but $variables and $(commands) inside are expanded</td><td><code>cat &lt;&lt; END</code></td></tr><tr><td><code>cmd &lt;&lt;&lt; "text"</code></td><td>Here string (bash): one piece of text plus a newline becomes stdin</td><td><code>tr a-z A-Z &lt;&lt;&lt; "hi"</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Reading from a file and from text</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">wc -l fruits.txt</span>
+<span class="lx-o">8 fruits.txt</span>
+<span class="lx-cmd">wc -l &lt; fruits.txt</span>
+<span class="lx-o">8</span>
+<span class="lx-cmd">sort &lt; fruits.txt &gt; sorted.txt</span>
+<span class="lx-cmd">head -n 3 sorted.txt</span>
+<span class="lx-o">apple
+apple
+apple</span>
+<span class="lx-cmd">tr a-z A-Z &lt;&lt;&lt; "shout this"</span>
+<span class="lx-o">SHOUT THIS</span>
+<span class="lx-cmd">cat &lt;&lt; END
+Hello $USER, today is a good day.
+Your home is $HOME.
+END</span>
+<span class="lx-o">Hello learner, today is a good day.
+Your home is /home/learner.</span>
+<span class="lx-cmd">cat &lt;&lt; 'END'
+Quoted: $USER stays as it is.
+END</span>
+<span class="lx-o">Quoted: $USER stays as it is.</span></pre><div class="lx-note">wc prints the file name only when it opened the file itself. With &lt; the shell opens the file, and wc only sees a stream. With a quoted end word the here document is taken literally.</div></div>
+<div class="note note-tip"><b>Remember</b><div>A here document is the usual way for a script to write a whole configuration file in one go. Use &lt;&lt;- (with a dash) to let the closing word and the lines be indented with tab characters.</div></div>
+<div class="vt-talk" hidden>Input can be redirected too. An arrow pointing left makes a command read from a file instead of the keyboard. Many commands can open files themselves, so the difference seems small, but it teaches an important idea: with the arrow, the shell opens the file and the command only sees a stream of data. A here document goes one step further. You write two left arrows and an end word, then several lines of text, then the end word again on its own line. Everything in between becomes the input. Scripts use this constantly to write configuration files or long messages. If you put the end word in quotes, the text is taken exactly as written. Without quotes, the shell fills in variables such as dollar USER. Bash also has a short form with three arrows, called a here string, for a single line of input.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="tee" data-l="tee" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Seeing and saving at the same time: tee</h2>
+<p><code>tee</code> reads stdin and writes it both to the screen and to one or more files, like a T shaped pipe fitting that splits water two ways. It is the tool to use when you want to watch output and keep a copy.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>cmd | tee FILE</code></td><td>Show the output and save it to FILE</td><td><code>ls -l | tee listing.txt</code></td></tr><tr><td><code>cmd | tee -a FILE</code></td><td>Show it and add it to the end of FILE</td><td><code>date | tee -a runs.log</code></td></tr><tr><td><code>cmd | sudo tee FILE</code></td><td>Write a root owned file, because sudo echo x > file does not work</td><td><code>echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>tee in action</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls logs | tee folder.txt</span>
+<span class="lx-o">app.log
+old.log</span>
+<span class="lx-cmd">cat folder.txt</span>
+<span class="lx-o">app.log
+old.log</span>
+<span class="lx-cmd">date -u -d '2026-11-23 10:00' | tee -a runs.log</span>
+<span class="lx-o">Mon Nov 23 10:00:00 UTC 2026</span>
+<span class="lx-cmd">date -u -d '2026-11-23 11:00' | tee -a runs.log</span>
+<span class="lx-o">Mon Nov 23 11:00:00 UTC 2026</span>
+<span class="lx-cmd">wc -l runs.log</span>
+<span class="lx-o">2 runs.log</span></pre><div class="lx-note">The | symbol connects commands, the subject of the next chapter. tee prints what it receives and also writes it to the file.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>sudo echo hi &gt; /etc/motd fails with Permission denied, because the redirection is done by your own shell before sudo runs. echo hi | sudo tee /etc/motd works, because tee runs as root and opens the file itself.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Steer the streams&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Save the listing of your home folder (&lt;code&gt;ls&lt;/code&gt;) into &lt;code&gt;list.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;ls &gt; list.txt&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;list.txt&quot;, &quot;notes.txt&quot;]}]}, {&quot;t&quot;: &quot;Add the line &lt;code&gt;done&lt;/code&gt; to the end of &lt;code&gt;list.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;echo done &gt;&gt; list.txt&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;list.txt&quot;, &quot;done&quot;]}, {&quot;has&quot;: [&quot;list.txt&quot;, &quot;notes.txt&quot;]}]}, {&quot;t&quot;: &quot;Run &lt;code&gt;ls notes.txt nothere&lt;/code&gt; and send only the error message into &lt;code&gt;err.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;ls notes.txt nothere 2&gt; err.txt&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;err.txt&quot;, &quot;nothere&quot;]}, {&quot;out&quot;: &quot;^notes\\.txt$&quot;}]}, {&quot;t&quot;: &quot;Run the same ls but throw the error away into /dev/null.&quot;, &quot;hint&quot;: &quot;ls notes.txt nothere 2&gt; /dev/null&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;2&gt;\\s*/dev/null&quot;}, {&quot;out&quot;: &quot;^notes\\.txt$&quot;}]}, {&quot;t&quot;: &quot;Run it again and send both streams into &lt;code&gt;all.txt&lt;/code&gt;, writing 2&amp;gt;&amp;amp;1 after the file.&quot;, &quot;hint&quot;: &quot;ls notes.txt nothere &gt; all.txt 2&gt;&amp;1&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;&gt;\\s*all\\.txt\\s+2&gt;&amp;1&quot;}, {&quot;has&quot;: [&quot;all.txt&quot;, &quot;nothere&quot;]}, {&quot;has&quot;: [&quot;all.txt&quot;, &quot;notes.txt&quot;]}]}, {&quot;t&quot;: &quot;Count the lines of &lt;code&gt;fruits.txt&lt;/code&gt; by feeding the file to &lt;code&gt;wc -l&lt;/code&gt; with &amp;lt;.&quot;, &quot;hint&quot;: &quot;wc -l &lt; fruits.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;wc\\s+-l\\s*&lt;\\s*fruits\\.txt&quot;}, {&quot;out&quot;: &quot;^8$&quot;}]}, {&quot;t&quot;: &quot;Show the words of &lt;code&gt;poem.txt&lt;/code&gt; in capitals and keep a copy in &lt;code&gt;loud.txt&lt;/code&gt; using tee.&quot;, &quot;hint&quot;: &quot;tr a-z A-Z &lt; poem.txt | tee loud.txt&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;loud.txt&quot;, &quot;TWINKLE&quot;]}, {&quot;out&quot;: &quot;TWINKLE&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Sometimes you want to see output and save it at the same time. That is the job of tee, named after the T shaped fitting plumbers use to split a pipe in two directions. Whatever flows into tee comes out on the screen and also lands in a file. With dash a, it adds to the file instead of replacing it. tee also solves a puzzle that confuses many beginners. Typing sudo echo something into a protected file fails with permission denied, even though sudo is there. The reason is that the arrow is handled by your own shell, before sudo starts, and your shell is not root. Piping into sudo tee works, because then tee runs as root and opens the file itself. You will see this pattern in many official installation guides.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Redirection from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Commands read from stdin and write results to stdout and errors to stderr. &gt; saves output in a file, &gt;&gt; adds to it, 2&gt; catches errors, &lt; reads from a file and tee shows and saves at the same time.</p></div><div class="ld-p" data-ld="college" hidden><p>The shell performs redirections before executing the command, processing them left to right. n&gt;&amp;m duplicates descriptor m onto n. Here documents and here strings supply stdin from the script itself. /dev/null discards writes.</p></div><div class="ld-p" data-ld="masters" hidden><p>Inside, the shell forks, then in the child calls open() for each file and dup2() to place it on descriptor 0, 1 or 2, and finally execve() the program, which inherits the descriptor table. That is why programs need no code for redirection. 2&gt;&amp;1 is literally dup2(1, 2). Bash creates here documents as temporary files or pipes. stdout to a terminal is line buffered by the C library, but block buffered to a file or pipe, which explains why output order can change when redirected.</p></div><div class="ld-p" data-ld="research" hidden><p>The idea that every resource looks like a file descriptor ("everything is a file") was pushed further by Plan 9 from Bell Labs, and today appears in Linux as /proc and /sys, eventfd, timerfd and signalfd. Research on capability systems such as Capsicum treats file descriptors as unforgeable access tokens, so a sandboxed program can use only the descriptors it was given.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the nightly backup</div><p>A cron job runs <code>/usr/local/bin/backup.sh &gt;&gt; /var/log/backup.log 2&gt;&amp;1</code> at 02:00. Normal progress and errors both land in one growing log. With <code>2&gt;&amp;1 &gt;&gt; file</code> in the wrong order, errors would go to the cron daemon instead, which mails them to root, and nobody reads that mail box.</p></div>
+<div class="vt-talk" hidden>Inside the computer, redirection is beautifully simple. When you run a command, the shell first makes a copy of itself. In that copy it opens the file you named and moves it into slot one, or slot two, of the file descriptor table, using a system call named dup two. Then it replaces itself with the program you asked for. The program inherits the table and simply writes to slot one, never knowing that slot one is now a file. That is why every program supports redirection for free. The same thinking, that everything should look like a file, was taken further by the Plan 9 system at Bell Labs, and Linux borrowed parts of it in slash proc and slash sys. Researchers working on sandboxes even treat file descriptors as keys: a program can only touch what it has been handed.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><span></span><a class="next" href="./pipes-filters.html" data-topic="pipes-filters"><small>Next topic</small><b>Pipes and filters</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "redirection", "topic": "redirection", "subject": "linux", "title": "Streams and redirection", "codes": {}, "quiz": [{"lv": "e", "q": "Which file descriptor number is standard error?", "o": ["0", "1", "2", "3"], "a": 2, "hint": "0 in, 1 out, 2 errors.", "why": "stderr is descriptor 2."}, {"lv": "e", "q": "What does ls > list.txt do if list.txt already exists?", "o": ["Adds to the end", "Replaces its content", "Refuses", "Asks first"], "a": 1, "hint": "Single arrow.", "why": "> empties the file and writes the new output."}, {"lv": "e", "q": "Which operator adds output to the end of a file?", "o": [">", ">>", "<", "|"], "a": 1, "hint": "Two arrows.", "why": ">> appends."}, {"lv": "e", "q": "Where does data written to /dev/null go?", "o": ["To the screen", "Nowhere, it is thrown away", "To a log file", "To the trash folder"], "a": 1, "hint": "The bit bucket.", "why": "/dev/null discards everything written to it."}, {"lv": "m", "q": "You want only the error messages of a command in errors.txt. Which form?", "o": ["cmd > errors.txt", "cmd 2> errors.txt", "cmd < errors.txt", "cmd | errors.txt"], "a": 1, "hint": "Number 2.", "why": "2> redirects stderr only."}, {"lv": "m", "q": "Which sends both stdout and stderr to all.log?", "o": ["cmd 2>&1 > all.log", "cmd > all.log 2>&1", "cmd 2> all.log", "cmd >> 2 all.log"], "a": 1, "hint": "File first, then copy.", "why": "Left to right: stdout to the file, then stderr to where stdout points."}, {"lv": "m", "q": "Why does sort data.txt > data.txt leave data.txt empty?", "o": ["sort has a bug", "The shell empties data.txt before sort reads it", "The disk is full", "Because of noclobber"], "a": 1, "hint": "Redirection happens first.", "why": "The file is truncated when the shell sets up the redirection."}, {"lv": "m", "q": "In cat << 'END' ... END, what happens to $USER in the text?", "o": ["It becomes your user name", "It stays as the literal text $USER", "It causes an error", "It is removed"], "a": 1, "hint": "Quoted end word.", "why": "Quoting the end word disables expansion inside the here document."}, {"lv": "m", "q": "echo hi | sudo tee /etc/motd works but sudo echo hi > /etc/motd fails. Why?", "o": ["tee is faster", "The redirection is done by your own shell, not by sudo", "echo cannot run as root", "/etc/motd is special"], "a": 1, "hint": "Who opens the file.", "why": "Your unprivileged shell opens the file for >, while tee runs as root."}, {"lv": "h", "q": "ls notes.txt nothere 2>&1 > out.txt. Where does the error message go?", "o": ["out.txt", "The terminal", "/dev/null", "Nowhere"], "a": 1, "hint": "Copy at that moment.", "why": "When 2>&1 is read, stdout still points at the terminal."}, {"lv": "h", "q": "wc -l < fruits.txt prints only 8, without the file name. Why?", "o": ["wc is broken", "The shell opened the file, so wc only sees a stream with no name", "Because of -l", "The file is empty"], "a": 1, "hint": "Who opened it.", "why": "With < the command reads stdin and never learns the file name."}, {"lv": "h", "q": "What does set -o noclobber change?", "o": ["> refuses to overwrite existing files", ">> stops working", "Errors are hidden", "Pipes are disabled"], "a": 0, "hint": "No clobbering.", "why": "With noclobber, > fails on an existing file and >| forces it."}, {"lv": "x", "q": "Which system call does the shell use to make 2>&1 happen?", "o": ["open", "dup2(1, 2)", "pipe", "kill"], "a": 1, "hint": "Duplicate a descriptor.", "why": "dup2 copies descriptor 1 onto descriptor 2."}], "calc": [{"lv": "e", "q": "You run echo a > f, then echo b >> f, then echo c >> f. How many lines does f have?", "ans": "3", "hint": "One write, then two appends.", "steps": ["> writes 1 line.", "Each >> adds 1 line.", "<span class=\"eq\">1 + 2 = 3 lines<\/span>"]}, {"lv": "e", "q": "You run echo a >> f, echo b >> f, then echo c > f. How many lines are left?", "ans": "1", "hint": "The last > replaces everything.", "steps": ["After two appends: 2 lines.", "> empties the file and writes 1 line.", "<span class=\"eq\">1 line<\/span>"]}, {"lv": "m", "q": "A cron job appends 6 lines to a log every hour. How many lines after one full day?", "ans": "144", "hint": "Lines per hour times hours.", "steps": ["Lines per run: 6.", "Runs per day: 24.", "<span class=\"eq\">6 × 24 = 144 lines<\/span>"]}, {"lv": "m", "q": "A command prints 40 lines, 7 of them on stderr. You run it with 2> /dev/null. How many lines appear on screen?", "ans": "33", "hint": "Only stdout is left.", "steps": ["Total: 40.", "Errors thrown away: 7.", "<span class=\"eq\">40 − 7 = 33 lines<\/span>"]}, {"lv": "m", "q": "A log line is about 120 bytes and 5000 lines are appended every day. About how many megabytes does the log grow per 30 day month (1 MB = 1,000,000 bytes)?", "ans": "18", "hint": "Bytes per day, times days.", "steps": ["Per day: 120 × 5000 = 600,000 bytes.", "Per month: 600,000 × 30 = 18,000,000 bytes.", "<span class=\"eq\">18 MB<\/span>"]}, {"lv": "h", "q": "A program writes 3 lines to stdout and 2 to stderr. You run prog > a.txt 2>&1 | wc -l. What number does wc print?", "ans": "0", "hint": "Nothing is left for the pipe.", "steps": ["Both streams go to a.txt.", "The pipe receives nothing.", "<span class=\"eq\">wc -l prints 0<\/span>"]}], "assign": [], "must": [["Streams", "0 stdin (keyboard), 1 stdout (results), 2 stderr (errors). Both outputs show on the terminal until redirected."], ["Output", "> replaces, >> appends, 2> catches errors, &> or > f 2>&1 catches both. The file is emptied before the command runs."], ["Order", "Redirections run left to right. 2>&1 copies where stdout points at that moment, so write it after > file."], ["Input", "< file feeds a file, << END is a here document (quote END to stop expansion), <<< is a here string."], ["tee and /dev/null", "tee shows and saves (tee -a appends, sudo tee writes root files). /dev/null throws output away."]], "summary": "<p>Three streams: 0 in, 1 out, 2 errors. &gt; replaces, &gt;&gt; appends, 2&gt;&amp;1 after the file joins errors, &lt; and here documents feed input, tee shows and saves.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

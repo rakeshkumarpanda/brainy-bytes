@@ -1,0 +1,115 @@
+/* ===== Unix and Linux subject: practice shell, terminal boxes and the extra playful layers (assets/linux.css) ===== */
+:root{
+  --lx-bg:#101a2b; --lx-ink:#e6edf7; --lx-dim:#8ea3bf; --lx-user:#7ee2a8; --lx-path:#8ab4ff; --lx-dir:#6fa8ff; --lx-exe:#7ee2a8; --lx-link:#5fd7e8;
+  --lx-win:#ffd66b; --lx-head:#1b2940; --lx-line:#2b3d5c;
+}
+.lx-term{margin:18px 0; border-radius:22px; overflow:hidden; border:1.5px solid var(--line); background:var(--surface); box-shadow:0 6px 22px rgba(10,30,60,.08)}
+.lx-head{display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:10px 14px; background:var(--lx-head); color:#fff}
+.lx-head b{font:800 15px var(--font)}
+.lx-sub{font-size:12.5px; color:#b9c8de; flex:1 1 220px}
+.lx-dots{display:flex; gap:6px}
+.lx-dots i{width:11px; height:11px; border-radius:50%; background:#ff6b6b}
+.lx-dots i:nth-child(2){background:#ffd166} .lx-dots i:nth-child(3){background:#5ee08e}
+.lx-btns{display:flex; gap:6px; margin-left:auto}
+.lx-btns button{font:800 12.5px var(--font); padding:6px 12px; border-radius:999px; border:1.5px solid #3c5378; background:#22345300; color:#fff; cursor:pointer; transition:transform .3s, border-radius .3s}
+.lx-btns button:hover{border-color:#8ab4ff; transform:scale(1.04)}
+.lx-main{display:flex; min-height:240px; background:var(--lx-bg)}
+.lx-screen{flex:1; min-width:0; max-height:420px; overflow:auto; padding:12px 14px 10px; font:500 13.5px/1.55 var(--font-mono, "JetBrains Mono", monospace); color:var(--lx-ink); cursor:text}
+.lx-out div{white-space:pre-wrap; word-break:break-word}
+.lx-line{display:flex; align-items:baseline; gap:0}
+.lx-ps{white-space:pre; flex:none}
+.lx-in{flex:1; min-width:40px; background:transparent; border:0; outline:none; color:var(--lx-ink); font:inherit; caret-color:var(--lx-win); padding:0}
+.lx-u{color:var(--lx-user); font-weight:700} .lx-p{color:var(--lx-path); font-weight:700}
+.lx-d{color:var(--lx-dir); font-weight:700} .lx-x{color:var(--lx-exe); font-weight:700} .lx-l{color:var(--lx-link); font-weight:700}
+.lx-dim{color:var(--lx-dim)} .lx-dim code{color:var(--lx-win); background:none}
+.lx-win{color:var(--lx-win); font-weight:700}
+.lx-side{flex:0 0 220px; max-height:420px; overflow:auto; border-left:1px solid var(--lx-line); padding:10px 12px; color:var(--lx-ink); font:600 12.5px/1.6 var(--font)}
+.lx-side[hidden]{display:none}
+.lx-tree-h{font-weight:800; color:var(--lx-dim); margin-bottom:4px}
+.lx-side ul{list-style:none; margin:0; padding-left:14px}
+.lx-side .lx-tree-r{padding-left:0}
+.lx-side li.here > span{background:#2b4a7a; border-radius:6px; padding:0 5px}
+.lx-ms{padding:12px 14px 6px; background:var(--surface)}
+.lx-ms-h{display:flex; align-items:center; gap:10px; margin-bottom:6px}
+.lx-ms-h b{font:800 15px var(--font)}
+.lx-score{font:800 12px var(--font); padding:3px 10px; border-radius:999px; background:var(--accent-soft); color:var(--accent-deep)}
+.lx-ms ol{margin:0; padding:0; list-style:none; counter-reset:m}
+.lx-ms li{counter-increment:m; display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; padding:8px 10px; margin:6px 0; border-radius:16px; border:1.5px solid var(--line); background:var(--surface2); transition:background .35s, border-radius .4s}
+.lx-ms li::before{content:counter(m); flex:none; width:24px; height:24px; display:grid; place-items:center; border-radius:50%; background:var(--accent-soft); color:var(--accent-deep); font:800 12px var(--font)}
+.lx-ms li.ok{background:var(--pk-yes, #9ff0c6); border-color:var(--pk-yes-line, #109060); border-radius:10px}
+.lx-ms li.ok::before{content:"✓"; background:var(--pk-yes-line, #109060); color:#fff}
+.lx-tick{display:none}
+.lx-t{flex:1 1 240px; font-size:14.5px}
+.lx-hint{font:800 12px var(--font); padding:4px 12px; border-radius:999px; border:1.5px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer}
+.lx-hv{flex:1 1 100%; cursor:pointer; font-size:13px; padding:5px 10px; border-radius:10px}
+.lx-hv::after{content:"  (click to put it in the terminal)"; font-family:var(--font); font-size:11.5px; color:var(--ink2)}
+.lx-keys{padding:6px 14px 12px; font-size:12.5px; color:var(--ink2); background:var(--surface)}
+@media (max-width:640px){ .lx-side{display:none !important} .lx-screen{font-size:12.5px} .lx-sub{flex-basis:100%} }
+
+/* terminal boxes in lessons (lxkit.run): commands that were run for real while the page was built */
+.lx-run{margin:14px 0; border-radius:18px; overflow:hidden; border:1.5px solid var(--line)}
+.lx-run .lx-rh{display:flex; align-items:center; gap:10px; padding:7px 12px; background:var(--lx-head); color:#fff; font:800 13px var(--font)}
+.lx-run .lx-rh .lx-real{margin-left:auto; font:700 11px var(--font); color:#b9c8de}
+.lx-run .lx-rh button{font:800 11.5px var(--font); padding:3px 10px; border-radius:999px; border:1.5px solid #3c5378; background:transparent; color:#fff; cursor:pointer}
+.lx-run pre{margin:0; padding:10px 14px; background:var(--lx-bg); color:var(--lx-ink); font:500 13px/1.55 var(--font-mono, "JetBrains Mono", monospace); white-space:pre-wrap; word-break:break-word; border:0; border-radius:0}
+.lx-run .lx-cmd{color:#fff; font-weight:700}
+.lx-run .lx-cmd::before{content:"$ "; color:var(--lx-user)}
+.lx-run .lx-root::before{content:"# "; color:#ff8f8f}
+.lx-run .lx-cmt{color:var(--lx-dim)}
+.lx-run .lx-o{color:#cdd8e8}
+.lx-run .lx-note{padding:6px 14px 8px; font-size:13px; background:var(--surface2); color:var(--ink2)}
+
+/* extra playful layers used by the Linux animations (assets/lxwidgets.js) */
+.pk-fs{font:700 13.5px/1.7 var(--font-mono); margin:0; padding:0; list-style:none}
+.pk-fs ul{list-style:none; margin:0; padding-left:22px; border-left:2px dashed var(--box-line)}
+.pk-fs li > span{display:inline-block; padding:1px 10px; border-radius:12px; border:2px solid transparent; transition:background .3s, border-radius .45s var(--pk-spring), transform .45s var(--pk-spring)}
+.pk-fs li > span.look{background:var(--pk-look); border-color:var(--pk-look-line); border-radius:50px; transform:translateX(6px) scale(1.05)}
+.pk-fs li > span.yes{background:var(--pk-yes); border-color:var(--pk-yes-line); animation:pk-pop .7s var(--pk-spring)}
+.pk-fs li > span.no{background:var(--pk-no); border-color:var(--pk-no-line); animation:pk-nope .45s ease}
+.pk-fs li > span.cur{background:var(--pk-cur); border-color:var(--pk-cur-line)}
+.pk-fs li > span.mv{background:var(--pk-mv); border-color:var(--pk-mv-line)}
+.pk-fs li > span.done{opacity:.45}
+.pk-fs small{font:700 11px var(--font); color:var(--accent-deep); margin-left:6px}
+.pk-term{background:var(--lx-bg); color:var(--lx-ink); border-radius:16px; padding:10px 14px; font:500 13px/1.55 var(--font-mono); white-space:pre-wrap; word-break:break-word}
+.pk-term .c{color:#fff; font-weight:700} .pk-term .c::before{content:"$ "; color:var(--lx-user)}
+.pk-term .e{color:#ff9aa8} .pk-term .h{background:#3a4f20; border-radius:4px; padding:0 3px; color:#f4ffcf}
+.pk-flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+.pk-box{min-width:84px; padding:9px 12px; border-radius:18px; border:2px solid var(--box-line); background:var(--box); color:var(--box-ink); font:800 13px var(--font-mono); text-align:center; transition:all .45s var(--pk-spring)}
+.pk-box small{display:block; font:700 10.5px var(--font); color:var(--ink2); margin-top:2px}
+.pk-box.look{background:var(--pk-look); border-color:var(--pk-look-line); border-radius:50px; transform:translateY(-4px) scale(1.06)}
+.pk-box.yes{background:var(--pk-yes); border-color:var(--pk-yes-line); animation:pk-pop .7s var(--pk-spring)}
+.pk-box.no{background:var(--pk-no); border-color:var(--pk-no-line)}
+.pk-box.cur{background:var(--pk-cur); border-color:var(--pk-cur-line)}
+.pk-box.mv{background:var(--pk-mv); border-color:var(--pk-mv-line); border-radius:8px 22px}
+.pk-box.done{opacity:.45}
+.pk-arr{font:800 18px var(--font); color:var(--ink2)}
+.pk-arr.look{color:var(--pk-look-line); animation:pk-bob 1s ease-in-out infinite}
+.pk-arr.yes{color:var(--pk-yes-line)}
+.pk-perm{display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end}
+.pk-pg{display:flex; flex-direction:column; align-items:center; gap:3px}
+.pk-pg > span{font:800 11px var(--font); color:var(--ink2)}
+.pk-pg .pk-row{gap:4px}
+.pk-pg .pk-cell{min-width:36px; height:38px; font-size:15px}
+.pk-pv{font:800 12px var(--font-mono); color:var(--accent-deep)}
+/* the vim buffer of lx-vim */
+.pk-buf{background:var(--lx-bg); color:var(--lx-ink); border-radius:16px; padding:10px 0 0; font:500 14px/1.6 var(--font-mono); overflow-x:auto}
+.pk-buf>div{padding:0 14px; white-space:pre} .pk-buf>div.on{background:rgba(255,255,255,.06)}
+.pk-buf i{display:inline-block; width:2.2em; color:#7f8a99; font-style:normal}
+.pk-buf .cur{background:#f4ffcf; color:#1b1f24; border-radius:2px} .pk-buf .ins{box-shadow:inset 2px 0 0 #f4ffcf}
+.pk-bufbar{display:flex; gap:18px; margin-top:8px; padding:6px 14px!important; background:rgba(255,255,255,.1); border-radius:0 0 16px 16px; font-size:12px}
+.pk-bufbar b{color:#ffd28a}
+/* choice buttons of the playful animations */
+.vz .vz-seg button{border:1.5px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 12px; font:inherit; font-size:13.5px; font-weight:800; cursor:pointer}
+.vz .vz-seg button.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.vz .vz-seg button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+/* the stream table of lx-redirect */
+.pk-fds{display:flex; flex-direction:column; gap:8px}
+.pk-fdcmd{font:700 14px/1.4 var(--font-mono); background:var(--lx-bg); color:#fff; border-radius:12px; padding:8px 12px; overflow-x:auto; white-space:pre}
+.pk-fd{display:grid; grid-template-columns:34px 64px 24px 1fr; align-items:center; gap:6px; padding:6px 10px; border:1.5px solid var(--line); border-radius:12px; background:var(--surface); transition:background .3s, border-color .3s}
+.pk-fd b{font:800 18px var(--font-mono); text-align:center} .pk-fd span{font-weight:700; color:var(--ink2)} .pk-fd i{font-style:normal; color:var(--ink2)}
+.pk-fd em{font-style:normal; font:700 14px var(--font-mono); overflow-wrap:anywhere}
+.pk-fd.look{border-color:var(--accent); background:var(--accent-soft)}
+/* lines with matches of lx-regex */
+.pk-match{background:var(--lx-bg); color:var(--lx-ink); border-radius:16px; padding:10px 14px; font:500 13px/1.6 var(--font-mono); overflow-x:auto}
+.pk-match>div{white-space:pre; padding:0 4px; border-radius:6px} .pk-match>div.no{opacity:.45} .pk-match>div.yes{background:rgba(126,226,168,.08)}
+.pk-match mark{background:#ffd28a; color:#1b1f24; border-radius:3px; padding:0 1px}

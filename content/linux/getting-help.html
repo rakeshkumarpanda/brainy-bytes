@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting help: man, --help and friends · Unix and Linux</title>
+<meta name="description" content="man pages and the less pager, SYNOPSIS notation, manual sections 1 to 8, man -k and apropos, whatis, --help and --version, the help builtin, info and tldr, reading common error messages and a routine for getting unstuck.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=basics">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=basics" target="_top">Unix and Linux</a><span>›</span><span>Foundations</span><span>›</span><span>Step 1: Meet Unix and Linux</span><span>›</span><span>Getting help</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 3 of 3 · Beginner</div>
+    <h1>Getting help: man, --help and friends</h1>
+    <p class="lead">Learn to answer your own questions: read manual pages, use their sections, search the manual, get quick help from --help and help, and turn error messages into fixes.</p>
+    <div class="cv-chips"><span class="cv-chip">About 25 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">3 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">11 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#getting-help" data-topic="cheatsheet" data-h="getting-help">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#man" data-l="man"><span class="n">1</span><span class="t">The manual: man pages</span></a></li><li><a href="#sections" data-l="sections"><span class="n">2</span><span class="t">Manual sections and searching the manual</span></a></li><li><a href="#quick" data-l="quick"><span class="n">3</span><span class="t">Quick help: --help, help, info and tldr</span></a></li><li><a href="#practice" data-l="practice"><span class="n">4</span><span class="t">Getting unstuck, step by step</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Documentation from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="man" data-l="man" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>The manual: man pages</h2>
+<p>Every Linux system carries its own manual. Type <code>man</code> followed by a command name and you get its <b>manual page</b>: what it does, every option, examples and related commands. It works without internet, and it describes the exact version installed on that machine.</p>
+<div class="lx-run"><div class="lx-rh"><span>Open the manual page of ls</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">man ls</span>
+<span class="lx-o">LS(1)                         User Commands                         LS(1)
+
+NAME
+       ls - list directory contents
+
+SYNOPSIS
+       ls [OPTION]... [FILE]...
+
+DESCRIPTION
+       List  information  about  the FILEs (the current directory by default).
+       Sort entries alphabetically if none of -cftuvSUX nor --sort is specified.
+
+       -a, --all
+              do not ignore entries starting with .</span></pre><div class="lx-note">This build machine has no manual pages installed, so this is how the top of the page looks on Ubuntu 24.04. The (1) means section 1, user commands.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Key inside man</th><th>What it does</th></tr></thead><tbody><tr><td>Space or Page Down</td><td>Next screen</td></tr><tr><td>b or Page Up</td><td>Previous screen</td></tr><tr><td>/word then Enter</td><td>Search forward for word</td></tr><tr><td>n and N</td><td>Next and previous match</td></tr><tr><td>g and G</td><td>Top and bottom of the page</td></tr><tr><td>h</td><td>Help on all keys</td></tr><tr><td>q</td><td>Quit, back to the prompt</td></tr></tbody></table></div>
+<p>The page is shown by a <b>pager</b>, usually <code>less</code>, which is why the keys are the same as in less.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Heading</th><th>What you find there</th></tr></thead><tbody><tr><td>NAME</td><td>The command and a one line description</td></tr><tr><td>SYNOPSIS</td><td>How to call it. [ ] means optional, ... means can repeat, so ls [OPTION]... [FILE]... means zero or more options then zero or more files</td></tr><tr><td>DESCRIPTION</td><td>What it does and every option</td></tr><tr><td>EXIT STATUS</td><td>The numbers it returns, 0 for success</td></tr><tr><td>EXAMPLES</td><td>Ready to copy uses (not every page has them)</td></tr><tr><td>SEE ALSO</td><td>Related pages, for example cp(1) and dir_colors(5)</td></tr></tbody></table></div>
+<div class="vt-talk" hidden>The Unix manual is older than most of the commands in it. The first edition of the Unix Programmer’s Manual was written by Ken Thompson and Dennis Ritchie in November 1971, and it already had a page for every command, with a name, a synopsis and a description, exactly the layout you still see today. When Unix spread to universities, the manual came on the same tape, so every machine carried its own documentation. That habit is very useful. A web page might describe a newer or older version of a command, but the man page on the machine describes exactly the version installed there. Engineers who work on servers without internet access depend on it. Learn four keys and you can read any page: Space to go down, slash to search, n for the next match, and q to quit.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="sections" data-l="sections" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Manual sections and searching the manual</h2>
+<p>The manual is split into numbered <b>sections</b>, because the same name can mean different things. passwd is a command you run, and it is also a file format.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Section</th><th>Contains</th><th>Example</th></tr></thead><tbody><tr><td>1</td><td>User commands</td><td>ls(1), passwd(1)</td></tr><tr><td>2</td><td>System calls, the kernel’s services</td><td>open(2), fork(2)</td></tr><tr><td>3</td><td>Library functions, mostly C</td><td>printf(3)</td></tr><tr><td>4</td><td>Special files, usually in /dev</td><td>null(4)</td></tr><tr><td>5</td><td>File formats and configuration files</td><td>passwd(5), crontab(5)</td></tr><tr><td>6</td><td>Games</td><td>fortune(6)</td></tr><tr><td>7</td><td>Overviews and conventions</td><td>man-pages(7), signal(7), regex(7)</td></tr><tr><td>8</td><td>System administration commands, usually for root</td><td>mount(8), useradd(8)</td></tr></tbody></table></div>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>A page from one section</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>man 5 passwd</code></div><div class="fx-n">Without the number, man shows the first section that has the page, here passwd(1), the command.</div></div><div class="fx fx-key"><div class="fx-h"><span>Search page descriptions</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b"><code>man -k word</code> = <code>apropos word</code></div><div class="fx-n">Lists every page whose NAME line contains the word, with its section.</div></div><div class="fx"><div class="fx-h"><span>One line summary</span></div><div class="fx-b"><code>whatis ls</code> = <code>man -f ls</code></div><div class="fx-n">Prints only the NAME line.</div></div></div>
+<div class="lx-run"><div class="lx-rh"><span>Find commands when you do not know their name</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">apropos "copy files"</span>
+<span class="lx-o">cp (1)               - copy files and directories
+cpio (1)             - copy files to and from archives
+install (1)          - copy files and set attributes
+rsync (1)            - a fast, versatile, remote (and local) file-copying tool</span></pre><div class="lx-note">apropos searches a small database that is rebuilt by mandb, usually every day. On a fresh system run sudo mandb once if apropos finds nothing.</div></div>
+<div class="note note-exam"><b>In the exam</b><div>When people write ls(1) or crontab(5) in a book or chat, the number is the manual section. Read crontab(5) as: run man 5 crontab.</div></div>
+<div class="vt-talk" hidden>The idea of numbered sections comes straight from the printed Unix manuals of the 1970s, which were real books with chapters. Chapter one held the commands, chapter two the system calls, chapter three the library functions, and so on. When the manual moved onto the computer, the numbers stayed. They are still useful, because one word can name different things. For example, passwd is a command that changes your password, and it is also the file slash etc slash passwd, which lists the users. man passwd shows the command, man 5 passwd shows the file format. The other great trick is searching. If you remember what you want to do but not the name of the command, apropos looks through the one line descriptions of every page. Typing apropos copy shows cp, rsync and other tools you may never have heard of.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="quick" data-l="quick" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Quick help: --help, help, info and tldr</h2>
+<p>A full manual page is long. Often you only need a reminder.</p>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>COMMAND --help</code></td><td>Prints a short summary of the options straight into the terminal. Almost every GNU program has it.</td><td><code>ls --help | head</code></td></tr><tr><td><code>help BUILTIN</code></td><td>Help for commands built into bash, which have no man page of their own</td><td><code>help cd</code></td></tr><tr><td><code>COMMAND --version</code></td><td>Shows which version you have, useful before you read a web page about it</td><td><code>ls --version</code></td></tr><tr><td><code>info COMMAND</code></td><td>The GNU manual, longer and with chapters and links. Move with Tab and Enter, q quits</td><td><code>info coreutils</code></td></tr><tr><td><code>tldr COMMAND</code></td><td>Community written short examples (install the tldr client first)</td><td><code>tldr tar</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Quick help, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls --help | head -n 4</span>
+<span class="lx-o">Usage: ls [OPTION]... [FILE]...
+List information about the FILEs (the current directory by default).
+Sort entries alphabetically if none of -cftuvSUX nor --sort is specified.</span>
+<span class="lx-cmd">help cd | head -n 3</span>
+<span class="lx-o">cd: cd [-L|[-P [-e]] [-@]] [dir]
+    Change the shell working directory.
+    </span>
+<span class="lx-cmd">ls --version | head -n 1</span>
+<span class="lx-o">ls (GNU coreutils) 9.4</span></pre><div class="lx-note">The GNU coding standards ask every GNU program to support --help and --version, which is why they work almost everywhere on Linux.</div></div>
+<div class="note note-tip"><b>Remember</b><div>help only knows shell builtins (cd, echo, export, type, history). For a builtin, man cd usually opens the long bash manual instead, so try help first.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Options that work on Linux may not work on macOS, because macOS uses BSD versions of many tools. When an example from the web fails, check --version and the local man page.</div></div>
+<div class="vt-talk" hidden>Here is a habit used by experienced engineers. Before typing a command they have not used for a while, they run it with dash dash help and pipe it into head, to see the first few lines of options. It takes two seconds and avoids guesses. The dash dash help and dash dash version options are a promise from the GNU coding standards, written in the 1990s by the Free Software Foundation, so nearly every Linux tool supports them. The help command is different. It explains commands that live inside bash itself, like cd and history. In 2013 a group of volunteers started the tldr pages project, short for too long, did not read, which gives a few practical examples for each command instead of the full manual. It is popular with beginners. A good order to remember is help or dash dash help first, then man, then the web.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Getting unstuck, step by step</h2>
+<p>Here is a routine that solves most "how do I" moments, in order.</p>
+<div class="walk"><div class="walk-h"><span>From stuck to solved</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Do you know the command name? If not, run <code>apropos word</code> with a word that describes the job.</li><li>Need a reminder of one option? Run <code>COMMAND --help | less</code> or <code>help COMMAND</code> for a builtin.</li><li>Need the full story? Run <code>man COMMAND</code>, press / and type the option or word you need.</li><li>Got an error message? Read it slowly. Linux errors usually name the file and the reason, for example "No such file or directory" or "Permission denied".</li><li>Still stuck? Search the web with the exact error text in quotes and the name of your distribution, and check that the answer matches your version.</li></ol></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Common error</th><th>What it means</th><th>First thing to try</th></tr></thead><tbody><tr><td>command not found</td><td>The program is not installed, misspelled, or not in PATH</td><td>Check spelling, then type, then install the package</td></tr><tr><td>No such file or directory</td><td>The path is wrong</td><td>pwd and ls to see where you are, Tab to complete the name</td></tr><tr><td>Permission denied</td><td>You lack the right to read, write or run it</td><td>ls -l to see the permissions, sudo only if it is a system file you mean to change</td></tr><tr><td>Is a directory</td><td>You gave a folder to a command that wants a file</td><td>Use ls for folders, or the -r option where it exists</td></tr><tr><td>Usage: ...</td><td>The options or arguments are wrong</td><td>Read the usage line, it is a short SYNOPSIS</td></tr></tbody></table></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Find help without leaving the terminal&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Read the short manual of &lt;code&gt;ls&lt;/code&gt; with man.&quot;, &quot;hint&quot;: &quot;man ls&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*man\\s+ls&quot;}]}, {&quot;t&quot;: &quot;Read the manual of &lt;code&gt;man&lt;/code&gt; itself to see the section numbers.&quot;, &quot;hint&quot;: &quot;man man&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*man\\s+man&quot;}, {&quot;out&quot;: &quot;Sections&quot;}]}, {&quot;t&quot;: &quot;Ask the shell what kind of command &lt;code&gt;history&lt;/code&gt; is.&quot;, &quot;hint&quot;: &quot;type history&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;type\\s+history&quot;}, {&quot;out&quot;: &quot;builtin&quot;}]}, {&quot;t&quot;: &quot;Make an error on purpose: list a folder that does not exist, &lt;code&gt;nofolder&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;ls nofolder&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;No such file or directory&quot;}]}, {&quot;t&quot;: &quot;Run a command that is not installed in the practice shell, &lt;code&gt;banana&lt;/code&gt;, and read the error.&quot;, &quot;hint&quot;: &quot;banana&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;command not found&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Every expert gets stuck. The difference is that they have a routine for getting unstuck. The most important step is the cheapest one: read the error message. Linux error messages are short but precise. No such file or directory almost always means a typo or the wrong folder, and permission denied means the file exists but you are not allowed to touch it. Many beginners skip the message and paste the whole problem into a search engine. Try the manual first. The answers there match your exact version, and you will learn options you did not know about. When you do search the web, put the exact error text in quotation marks and add the name of your distribution, for example Ubuntu 24.04. And check the date of the answer, because a command explained in 2012 may have changed since then.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Documentation from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Linux has a book of instructions built in. Type man and the name of a command, and it tells you how to use it. Press q to close the book.</p></div><div class="ld-p" data-ld="college" hidden><p>Manual pages are grouped into sections (1 commands, 2 system calls, 3 library calls, 5 file formats, 8 admin commands). man -k searches descriptions. Builtins are explained by help, GNU programs answer --help and --version, and info holds longer GNU manuals.</p></div><div class="ld-p" data-ld="masters" hidden><p>Man pages are written in the roff typesetting language with the man or mdoc macros and rendered by groff or mandoc. mandb indexes them for whatis and apropos. The Linux man-pages project documents the kernel and glibc interfaces in sections 2, 3, 4, 5 and 7, and is the reference for system programmers alongside POSIX.</p></div><div class="ld-p" data-ld="research" hidden><p>Research on documentation includes studies of how developers search for help, automatic generation of examples from manuals, checking that documentation matches code behaviour, and using language models to explain commands. Projects such as explainshell map each word of a command line to the matching part of its man page.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: a job interview</div><p>An interviewer asks how you would find the option that makes cp keep file times. A strong answer is not a guess: "I would run man cp and search for time with /time, which shows --preserve, or check cp --help." Showing how you find answers is valued as much as remembering them.</p></div>
+<div class="vt-talk" hidden>Man pages are written in a very old typesetting language called roff, which dates back to the early 1970s and was one of the first programs used at Bell Labs. In fact, the Unix team got money for a new computer partly by promising to build a system for preparing patent documents, and roff was part of that work. Today the Linux man pages project, led for many years by Michael Kerrisk, documents the system calls and library functions of Linux, and programmers around the world rely on it. At the research end, people study how developers search for help, and tools like explainshell take a whole command line and show which part of the manual explains each word. Whatever level you reach, the skill stays the same. Good engineers know how to find a reliable answer quickly, and the manual on the machine is the most reliable place to start.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./terminal-and-shell.html" data-topic="terminal-and-shell"><small>Previous topic</small><b>Terminal and shell</b></a><a class="next" href="./file-tree.html" data-topic="file-tree"><small>Next topic</small><b>The file tree</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "getting-help", "topic": "getting-help", "subject": "linux", "title": "Getting help: man, --help and friends", "codes": {}, "quiz": [{"lv": "e", "q": "Which command shows the manual page of cp?", "o": ["help cp", "man cp", "cp man", "info --cp"], "a": 1, "hint": "Three letters for manual.", "why": "man cp opens the manual page."}, {"lv": "e", "q": "Which key leaves a man page?", "o": ["Esc", "q", "Ctrl X", "Enter"], "a": 1, "hint": "Quit.", "why": "The pager less quits with q."}, {"lv": "e", "q": "How do you search for the word size inside a man page?", "o": ["Type /size and press Enter", "Type search size", "Press F3", "Type ?size?"], "a": 0, "hint": "Slash searches forward.", "why": "In less, /word searches forward and n goes to the next match."}, {"lv": "e", "q": "Which gives help for the bash builtin cd?", "o": ["man cd only", "help cd", "cd --manual", "whatis cd only"], "a": 1, "hint": "Builtins have their own help.", "why": "help explains shell builtins."}, {"lv": "m", "q": "Which manual section holds file formats such as /etc/passwd?", "o": ["1", "2", "5", "8"], "a": 2, "hint": "Configuration files.", "why": "Section 5 is file formats. man 5 passwd explains the file."}, {"lv": "m", "q": "You forgot the name of a command that compresses files. What do you run?", "o": ["man compress-files", "apropos compress", "help compress", "which compress"], "a": 1, "hint": "Search descriptions.", "why": "apropos (man -k) searches the NAME lines of all pages."}, {"lv": "m", "q": "In the synopsis ls [OPTION]... [FILE]..., what do the brackets mean?", "o": ["Required", "Optional", "Type the brackets", "Comments"], "a": 1, "hint": "You can run plain ls.", "why": "[ ] means optional and ... means it can repeat."}, {"lv": "m", "q": "mount(8) in a document tells you that mount is", "o": ["a library call", "an administration command, usually for root", "a game", "a file format"], "a": 1, "hint": "Section 8.", "why": "Section 8 holds system administration commands."}, {"lv": "m", "q": "An example from a web page fails with \"illegal option\" on your Mac. Most likely reason?", "o": ["Your Mac is broken", "macOS uses BSD versions of the tool with different options", "You need root", "The file is missing"], "a": 1, "hint": "GNU versus BSD.", "why": "Check the local man page, the BSD tool may spell the option differently."}, {"lv": "h", "q": "apropos finds nothing on a brand new server. What helps?", "o": ["Reinstall Linux", "Run sudo mandb to build the index", "Use help instead", "Reboot twice"], "a": 1, "hint": "apropos reads a database.", "why": "mandb builds the index that whatis and apropos read."}, {"lv": "x", "q": "Which manual section documents fork and open as the kernel provides them?", "o": ["1", "2", "3", "7"], "a": 1, "hint": "System calls.", "why": "Section 2 is system calls. Section 3 has the C library wrappers like fopen."}], "calc": [{"lv": "e", "q": "A man page is 480 lines long and your terminal shows 24 lines per screen. How many presses of Space take you from the first screen to the last? (The first screen is already shown.)", "ans": "19", "hint": "Count screens, then subtract the one already shown.", "steps": ["Screens: 480 ÷ 24 = 20.", "You already see screen 1.", "<span class=\"eq\">20 − 1 = 19 presses<\/span>"]}, {"lv": "e", "q": "There are 8 standard manual sections. passwd has pages in sections 1 and 5. How many sections have no passwd page?", "ans": "6", "hint": "Total minus the ones that have it.", "steps": ["Sections in all: 8.", "With passwd: 2.", "<span class=\"eq\">8 − 2 = 6<\/span>"]}, {"lv": "m", "q": "Reading the full manual takes 6 minutes, --help takes 1 minute. You look up 25 options this week, and 20 of them are answered by --help alone. If you try --help first and open man only when needed, how many minutes do you spend?", "ans": "55", "hint": "Every lookup pays for --help, five also pay for man.", "steps": ["--help for all 25: 25 × 1 = 25 minutes.", "man for the 5 that needed it: 5 × 6 = 30 minutes.", "<span class=\"eq\">25 + 30 = 55 minutes (instead of 150 with man every time)<\/span>"]}, {"lv": "m", "q": "apropos copy returns 12 pages. 7 are in section 1, 2 in section 3, the rest in section 8. How many are admin commands?", "ans": "3", "hint": "The rest.", "steps": ["Section 1 and 3 together: 7 + 2 = 9.", "Total: 12.", "<span class=\"eq\">12 − 9 = 3 in section 8<\/span>"]}, {"lv": "m", "q": "A man page search /size finds 9 matches. You are on match 1. How many presses of n reach the last match?", "ans": "8", "hint": "Each n moves one match.", "steps": ["Matches: 9.", "Start at 1.", "<span class=\"eq\">9 − 1 = 8 presses<\/span>"]}, {"lv": "h", "q": "The first Unix manual was dated November 1971. How many years before the Linux announcement in August 1991 is that, in whole years?", "ans": "19", "hint": "Count from November 1971 to August 1991.", "steps": ["November 1971 to November 1990 is 19 years.", "November 1990 to August 1991 is 9 more months, less than a year.", "<span class=\"eq\">19 whole years<\/span>"]}], "assign": [], "must": [["man", "man COMMAND opens the manual. Space next, b back, /word search, n next match, q quit."], ["Sections", "1 commands, 2 system calls, 3 library, 5 file formats, 7 overviews, 8 admin. man 5 passwd picks a section."], ["Searching", "apropos word (man -k) finds pages by description, whatis gives one line. mandb builds the index."], ["Quick help", "COMMAND --help for options, help BUILTIN for bash builtins, --version before trusting a web answer."], ["Read errors", "command not found, No such file or directory, Permission denied and Is a directory each point to a clear first step."]], "summary": "<p>man COMMAND for the full manual, COMMAND --help or help BUILTIN for a reminder, apropos to find a command by what it does, and always read the error message first.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

@@ -384,3 +384,4 @@ html.md3 body.subj .md-brand small{display:none}
 .cj-card .md-fsb{top:14px; right:12px}
 .cj-card.md-fsel:fullscreen > .cj-host{zoom:1}
 html.md3ch .cv-wrap{max-width:1320px; padding-left:clamp(12px,2.4vw,28px); padding-right:clamp(12px,2.4vw,28px)}
+html.md3ch .cv-wrap > .cv-tabs{margin-left:calc(-1 * clamp(12px,2.4vw,28px)); margin-right:calc(-1 * clamp(12px,2.4vw,28px))}

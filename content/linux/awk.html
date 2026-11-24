@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>awk: columns, patterns and reports · Unix and Linux</title>
+<meta name="description" content="Records and fields, $0 $1 $NF, NR and NF, -F, pattern action rules, BEGIN and END, comparisons and regex patterns, ranges, sums, averages and maximums, associative arrays, printf formats, if and loops, next, -v and -f, OFS, built in text functions, mawk, gawk and the one true awk.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=power">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=power" target="_top">Unix and Linux</a><span>›</span><span>Shell Power Tools</span><span>›</span><span>Step 2: Searching and editing text</span><span>›</span><span>awk</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 3 of 3 · Intermediate</div>
+    <h1>awk: columns, patterns and reports</h1>
+    <p class="lead">Use awk to pick columns, filter rows with conditions, add up numbers, count per group and print neat reports, from one line commands to small programs in a file.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">4 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#awk" data-topic="cheatsheet" data-h="awk">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#model" data-l="model"><span class="n">1</span><span class="t">Lines, fields and the pattern { action } idea</span></a></li><li><a href="#patterns" data-l="patterns"><span class="n">2</span><span class="t">Choosing lines: patterns, BEGIN and END</span></a></li><li><a href="#calc" data-l="calc"><span class="n">3</span><span class="t">Calculating: sums, averages, counts and printf</span></a></li><li><a href="#programs" data-l="programs"><span class="n">4</span><span class="t">Real programs: if, loops, functions and options</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">awk from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="model" data-l="model" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>Lines, fields and the pattern { action } idea</h2>
+<p><code>awk</code> is a small programming language made for text in columns. It reads its input one <b>record</b> (normally one line) at a time and splits it into <b>fields</b>. Then it runs your program, which is a list of <code>pattern { action }</code> rules.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>$0</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">the whole line</div><div class="fx-n">$1 is the first field, $2 the second, $NF the last one.</div></div><div class="fx"><div class="fx-h"><span>NR and NF</span></div><div class="fx-b">counters</div><div class="fx-n">NR is the number of the current line (record), NF the number of fields in it.</div></div><div class="fx fx-key"><div class="fx-h"><span>-F,</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">field separator</div><div class="fx-n">Default: runs of spaces and tabs. -F, splits at commas, -F: at colons.</div></div><div class="fx"><div class="fx-h"><span>pattern { action }</span></div><div class="fx-b">a rule</div><div class="fx-n">If the pattern is true for a line, the action runs. No pattern: every line. No action: print the line.</div></div></div>
+<div class="viz" data-viz="pk" data-pk="lx-awk"></div>
+<div class="lx-run"><div class="lx-rh"><span>Picking columns</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">awk '{print $1}' logs/app.log | head -n 3</span>
+<span class="lx-o">2026-11-23
+2026-11-23
+2026-11-23</span>
+<span class="lx-cmd">awk '{print $3, $4}' logs/app.log | head -n 3</span>
+<span class="lx-o">INFO server
+INFO user
+WARN disk</span>
+<span class="lx-cmd">awk -F, '{print $1, $3}' marks.csv</span>
+<span class="lx-o">name score
+Asha 91
+Ravi 78
+Meera 85
+John 67
+Ravi 72
+Asha 88</span>
+<span class="lx-cmd">awk -F: '{print $1, $7}' /etc/passwd | head -n 3</span>
+<span class="lx-o">root /bin/bash
+daemon /usr/sbin/nologin
+bin /usr/sbin/nologin</span>
+<span class="lx-cmd">awk '{print NR, NF, $NF}' poem.txt</span>
+<span class="lx-o">1 4 star
+2 6 are
+3 6 high
+4 6 sky</span></pre><div class="lx-note">The comma in print puts a space (the output separator) between values. Without the comma, values are glued together.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Unlike cut, awk treats several spaces in a row as one separator, so it handles the columns of ps, df or ls -l output without trouble.</div></div>
+<div class="vt-talk" hidden>awk is named after its three authors, Alfred Aho, Peter Weinberger and Brian Kernighan, who wrote it at Bell Labs in 1977. It is a complete little programming language, but you can start using it in seconds. awk reads text one line at a time, splits each line into fields, and calls them dollar one, dollar two and so on, with dollar zero for the whole line. So awk with print dollar one prints the first column of anything. A program is a list of rules. Each rule is a pattern followed by an action in curly braces. If the pattern is true for a line, the action runs. Leave out the pattern and the action runs on every line. Leave out the action and awk simply prints the matching lines. Unlike cut, awk treats several spaces in a row as a single separator, which is exactly what the output of commands like ps and df needs.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="patterns" data-l="patterns" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Choosing lines: patterns, BEGIN and END</h2>
+<div class="tw"><table class="cvt "><thead><tr><th>Pattern</th><th>Selects</th><th>Example</th></tr></thead><tbody><tr><td><code>$3 &gt;= 80</code></td><td>lines where field 3 is 80 or more</td><td><code>awk -F, '$3 &gt;= 80' marks.csv</code></td></tr><tr><td><code>/ERROR/</code></td><td>lines matching a regular expression</td><td><code>awk '/ERROR/' app.log</code></td></tr><tr><td><code>$2 ~ /^ma/</code></td><td>field 2 matches a regex (!~ for does not)</td><td><code>awk -F, '$2 ~ /^ma/'</code></td></tr><tr><td><code>NR &gt; 1</code></td><td>every line except the first</td><td>skip a header line</td></tr><tr><td><code>NR==2, NR==4</code></td><td>a range from line 2 to line 4</td><td><code>awk 'NR==2, NR==4'</code></td></tr><tr><td><code>a &amp;&amp; b</code>, <code>a || b</code>, <code>!a</code></td><td>combine patterns</td><td><code>awk '$3 &gt; 70 &amp;&amp; $2 == "maths"'</code></td></tr><tr><td><code>BEGIN</code></td><td>runs once before the first line</td><td>print a heading, set FS</td></tr><tr><td><code>END</code></td><td>runs once after the last line</td><td>print totals</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Patterns at work</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">awk -F, '$3 &gt;= 85' marks.csv</span>
+<span class="lx-o">name,subject,score
+Asha,maths,91
+Meera,maths,85
+Asha,science,88</span>
+<span class="lx-cmd">awk '/ERROR/ {print $2, $4, $5}' logs/app.log</span>
+<span class="lx-o">09:02:40 payment failed
+09:04:18 database timeout</span>
+<span class="lx-cmd">awk -F, '$2 == "maths" {print $1}' marks.csv</span>
+<span class="lx-o">Asha
+Meera
+Ravi</span>
+<span class="lx-cmd">awk -F: '$3 == 0 {print $1, "has user ID 0"}' /etc/passwd</span>
+<span class="lx-o">root has user ID 0</span>
+<span class="lx-cmd">awk 'NR==2, NR==3' poem.txt</span>
+<span class="lx-o">How I wonder what you are
+Up above the world so high</span>
+<span class="lx-cmd">awk 'BEGIN {print "Report"} {n++} END {print n, "lines"}' notes.txt</span>
+<span class="lx-o">Report
+3 lines</span></pre><div class="lx-note">$3 == 0 compares the user ID field with 0, the superuser.</div></div>
+<div class="note note-tip"><b>Remember</b><div>awk compares two values as numbers when both look like numbers (fields count as "looks like a number" when their text is numeric), and as text otherwise. So $3 >= 80 compares scores numerically, while $1 == "Asha" compares text.</div></div>
+<div class="vt-talk" hidden>Patterns decide which lines an action runs on. The most useful ones are comparisons, such as dollar three greater or equal to eighty, which keeps only the rows with high scores. A regular expression between slashes keeps lines that match, just like grep, and the tilde operator tests a single field against a regex. NR greater than one is the classic way to skip a header line. Two special patterns run outside the normal loop. BEGIN runs once before any input is read, which is the place to print a heading or set options. END runs once after the last line, which is where totals and averages are printed. With these few pieces you can already answer most questions about a log file or a spreadsheet export.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="calc" data-l="calc" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Calculating: sums, averages, counts and printf</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>{ s += $3 } END { print s }</code></td><td>Total of a column</td><td><code>awk -F, 'NR&gt;1 {s+=$3} END {print s}' marks.csv</code></td></tr><tr><td><code>END { print s / n }</code></td><td>Average: total divided by count</td><td><code>awk -F, 'NR&gt;1 {s+=$3; n++} END {print s/n}'</code></td></tr><tr><td><code>$3 &gt; max { max = $3 }</code></td><td>Largest value</td><td><code>awk -F, 'NR&gt;1 &amp;&amp; $3&gt;max {max=$3} END {print max}'</code></td></tr><tr><td><code>{ c[$2]++ }</code></td><td>Count per group with an array</td><td><code>awk -F, 'NR&gt;1 {c[$2]++} END {for (k in c) print k, c[k]}'</code></td></tr><tr><td><code>{ s[$1] += $3 }</code></td><td>Total per group</td><td><code>awk -F, 'NR&gt;1 {s[$1]+=$3} END {for (k in s) print k, s[k]}'</code></td></tr><tr><td><code>printf "%-8s %5.1f\n", a, b</code></td><td>Formatted output: width, decimals, alignment</td><td><code>awk '{printf "%-10s %3d\n", $1, NR}'</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Numbers from marks.csv</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">awk -F, 'NR &gt; 1 {sum += $3} END {print "total", sum}' marks.csv</span>
+<span class="lx-o">total 481</span>
+<span class="lx-cmd">awk -F, 'NR &gt; 1 {sum += $3; n++} END {print "average", sum / n}' marks.csv</span>
+<span class="lx-o">average 80.1667</span>
+<span class="lx-cmd">awk -F, 'NR &gt; 1 &amp;&amp; $3 &gt; max {max = $3; who = $1} END {print "best", who, max}' marks.csv</span>
+<span class="lx-o">best Asha 91</span>
+<span class="lx-cmd">awk -F, 'NR &gt; 1 {count[$2]++} END {for (s in count) print s, count[s]}' marks.csv | sort</span>
+<span class="lx-o">english 1
+maths 3
+science 2</span>
+<span class="lx-cmd">awk -F, 'NR &gt; 1 {total[$1] += $3} END {for (p in total) printf "%-6s %4d\n", p, total[p]}' marks.csv | sort</span>
+<span class="lx-o">Asha    179
+John     67
+Meera    85
+Ravi    150</span></pre><div class="lx-note">Variables start as 0 (or empty text), so sum += $3 needs no setup. An array such as count[$2] uses text as the index. The order of for (k in array) is not fixed, which is why the output goes through sort.</div></div>
+<details class="deep"><summary>Going deeper: printf formats in one table</summary><div class="deep-b"><p><code>%s</code> text, <code>%d</code> whole number, <code>%f</code> decimal (<code>%.2f</code> two decimals), <code>%e</code> scientific, <code>%x</code> hexadecimal, <code>%c</code> one character, <code>%%</code> a percent sign. A number after % sets the width, <code>-</code> aligns left, <code>0</code> pads with zeros: <code>%-10s</code>, <code>%05d</code>, <code>%8.2f</code>. printf never adds a newline by itself, so end the format with <code>\n</code>.</p></div></details>
+<div class="vt-talk" hidden>awk really shines when you need numbers from text. Variables start at zero automatically, so adding up a column is one short rule: for every line, add dollar three to sum, and in the END block print it. Divide by the number of lines and you have an average. Keep the largest value seen so far and you have a maximum. The most powerful feature is the associative array. An array in awk can use any text as its index, so count of dollar two plus plus counts how many rows each subject has, in a single pass over the file. This is the same idea as a group by in SQL or a pivot table in a spreadsheet. For neat reports, printf lets you set widths and decimal places, for example percent minus ten s for a left aligned name and percent five point one f for a number with one decimal.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="programs" data-l="programs" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Real programs: if, loops, functions and options</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>if (c) a; else b</code></td><td>Choose between two actions</td><td><code>awk -F, 'NR&gt;1 {if ($3&gt;=80) print $1, "A"; else print $1, "B"}'</code></td></tr><tr><td><code>for (i = 1; i &lt;= NF; i++)</code></td><td>Loop over the fields of a line</td><td><code>awk '{for (i=NF; i&gt;0; i--) printf "%s ", $i; print ""}'</code></td></tr><tr><td><code>while (c) { ... }</code></td><td>Loop while a condition holds</td><td><code>awk 'BEGIN {x=1; while (x&lt;100) x*=2; print x}'</code></td></tr><tr><td><code>next</code></td><td>Stop working on this line, go to the next one</td><td><code>awk 'NR==1 {next} {print}'</code></td></tr><tr><td><code>-v name=value</code></td><td>Pass a shell value into awk</td><td><code>awk -v min=80 -F, '$3&gt;=min' marks.csv</code></td></tr><tr><td><code>-f prog.awk</code></td><td>Read the program from a file</td><td><code>awk -F, -f report.awk marks.csv</code></td></tr><tr><td><code>$1 = $1; OFS</code></td><td>Rebuild the line with a new output separator</td><td><code>awk -F, -v OFS='\t' '{$1=$1; print}'</code></td></tr><tr><td><code>function f(x) { ... }</code></td><td>Your own functions</td><td><code>awk 'function sq(x) {return x*x} {print sq($1)}'</code></td></tr><tr><td><code>length, substr, index, split, sub, gsub, toupper, tolower, sprintf</code></td><td>Built in functions for text</td><td><code>awk '{print toupper(substr($1,1,1)) substr($1,2)}'</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>A small report program</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; report.awk &lt;&lt; 'END'
+BEGIN { FS = ","; print "Name    Subject  Score Grade" }
+NR == 1 { next }
+{
+    grade = ($3 &gt;= 85) ? "A" : ($3 &gt;= 70) ? "B" : "C"
+    printf "%-7s %-8s %5d %s\n", $1, $2, $3, grade
+    total += $3
+}
+END { printf "Average score: %.1f\n", total / (NR - 1) }
+END</span>
+<span class="lx-cmd">awk -f report.awk marks.csv</span>
+<span class="lx-o">Name    Subject  Score Grade
+Asha    maths       91 A
+Ravi    science     78 B
+Meera   maths       85 A
+John    english     67 C
+Ravi    maths       72 B
+Asha    science     88 A
+Average score: 80.2</span>
+<span class="lx-cmd">awk -v min=80 -F, 'NR &gt; 1 &amp;&amp; $3 &gt;= min {print $1, $3}' marks.csv</span>
+<span class="lx-o">Asha 91
+Meera 85
+Asha 88</span>
+<span class="lx-cmd">awk -F, -v OFS=' | ' '{$1 = $1; print}' marks.csv | head -n 3</span>
+<span class="lx-o">name | subject | score
+Asha | maths | 91
+Ravi | science | 78</span>
+<span class="lx-cmd">awk '{gsub(/a/, "4"); print}' notes.txt</span>
+<span class="lx-o">Buy milk
+C4ll gr4ndm4
+Finish the Linux lesson</span></pre><div class="lx-note">cond ? x : y picks x when cond is true. Assigning a field ($1 = $1) makes awk rebuild the line with OFS. gsub replaces every match in the line, like sed s///g.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Ubuntu and Debian install mawk as awk, many other distributions use GNU awk (gawk), and macOS uses the original "one true awk". Everything in this chapter works in all of them. gawk adds extras such as asort(), strftime() and --csv for quoted CSV fields.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Reports with awk&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Print only the first field (the date) of every line of &lt;code&gt;logs/app.log&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;awk &#x27;{print $1}&#x27; logs/app.log&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;awk&quot;}, {&quot;out&quot;: &quot;^2026-11-23\\n2026-11-23&quot;}]}, {&quot;t&quot;: &quot;Print the name and score (fields 1 and 3) of &lt;code&gt;marks.csv&lt;/code&gt;, comma separated input.&quot;, &quot;hint&quot;: &quot;awk -F, &#x27;{print $1, $3}&#x27; marks.csv&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;awk\\s+-F&quot;}, {&quot;out&quot;: &quot;^name score\\nAsha 91&quot;}]}, {&quot;t&quot;: &quot;Show the rows of &lt;code&gt;marks.csv&lt;/code&gt; with a score below 75.&quot;, &quot;hint&quot;: &quot;awk -F, &#x27;$3 &lt; 75&#x27; marks.csv&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;awk&quot;}, {&quot;out&quot;: &quot;^John,english,67\\nRavi,maths,72$&quot;}]}, {&quot;t&quot;: &quot;Print the total of all scores (skip the header).&quot;, &quot;hint&quot;: &quot;awk -F, &#x27;NR &gt; 1 {s += $3} END {print s}&#x27; marks.csv&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;awk&quot;}, {&quot;out&quot;: &quot;^481$&quot;}]}, {&quot;t&quot;: &quot;Print how many marks each student has, one line per student, sorted.&quot;, &quot;hint&quot;: &quot;awk -F, &#x27;NR &gt; 1 {c[$1]++} END {for (n in c) print n, c[n]}&#x27; marks.csv | sort&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;awk.*\\[&quot;}, {&quot;out&quot;: &quot;^Asha 2\\nJohn 1\\nMeera 1\\nRavi 2$&quot;}]}, {&quot;t&quot;: &quot;Print the number of words in each line of &lt;code&gt;poem.txt&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;awk &#x27;{print NF}&#x27; poem.txt&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;NF&quot;}, {&quot;out&quot;: &quot;^4\\n6\\n6\\n6$&quot;}]}, {&quot;t&quot;: &quot;Print the user names of /etc/passwd whose user ID (field 3) is 1000 or more.&quot;, &quot;hint&quot;: &quot;awk -F: &#x27;$3 &gt;= 1000 {print $1}&#x27; /etc/passwd&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;awk\\s+-F\\s*:&quot;}, {&quot;out&quot;: &quot;^asha\\nlearner$&quot;}]}]}"></div>
+<div class="vt-talk" hidden>As your tasks grow, awk grows with you. It has if and else, while and for loops, its own functions, and built in functions for text such as length, substr, split and gsub. Longer programs are best kept in a file and run with dash f, so they can be read, tested and stored in version control. Use dash v to pass a value from the shell into awk, rather than gluing shell variables into the program text, because that is safer and easier to read. One detail can surprise you: assigning to a field, even dollar one equals dollar one, makes awk rebuild the whole line using the output separator OFS, which is a neat way to turn commas into tabs. Different systems ship different awk programs, mawk on Ubuntu, GNU awk on many others, and the original version on macOS, but everything in this chapter works in all of them.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>awk from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>awk splits each line into numbered columns. print $1 shows the first column, a pattern such as $3 &gt; 50 chooses lines, END prints totals at the end, and arrays count things per group.</p></div><div class="ld-p" data-ld="college" hidden><p>An awk program is a sequence of pattern action pairs applied to each record. Fields split by FS, variables are untyped (string or number by context), arrays are associative, and BEGIN and END run outside the input loop. Comparisons are numeric when both sides are numeric strings.</p></div><div class="ld-p" data-ld="masters" hidden><p>Implementations compile the program to an internal tree or byte code. mawk (Mike Brennan) is known for speed, gawk adds network sockets, profiling, namespaces and arbitrary precision with -M. Splitting records is the hot path, so fast implementations avoid creating fields that the program never reads. For very large files awk is often limited by disk speed, not by the CPU.</p></div><div class="ld-p" data-ld="research" hidden><p>awk inspired Perl (Larry Wall, 1987) and the idea of "little languages" described by Jon Bentley in 1986. The second edition of The AWK Programming Language (2023) added UTF-8 and CSV support to the one true awk. Data tools such as Miller, xsv and DuckDB command line queries continue the idea of querying text tables directly, now with typed columns and SQL.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the disk alert</div><p>A monitoring alert says a disk is almost full. The engineer runs <code>df -P | awk 'NR&gt;1 &amp;&amp; $5+0 &gt; 80 {print $6, $5}'</code> to list every file system above 80 percent use, then <code>du -sk /var/log/* | sort -n | tail -n 5</code> to find the biggest logs. $5+0 turns "85%" into the number 85.</p></div>
+<div class="vt-talk" hidden>awk turned out to be far more influential than its authors expected. Larry Wall created Perl in 1987 partly to go beyond what awk and sed could do, and Jon Bentley used awk as the main example when he wrote about little languages, small special purpose languages that solve one kind of problem very well. Inside, every awk reads the program, turns it into an internal form and then runs it once per line. The mawk version used on Ubuntu is known for its speed, while GNU awk adds features such as network connections and arbitrary precision numbers. Remarkably, the original authors were still improving it decades later. The second edition of their book, published in 2023, added proper support for UTF-8 text and CSV files. Modern tools such as Miller and DuckDB continue the same idea of asking questions directly of text tables.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./sed.html" data-topic="sed"><small>Previous topic</small><b>sed</b></a><a class="next" href="./find-files.html" data-topic="find-files"><small>Next topic</small><b>find and xargs</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "awk", "topic": "awk", "subject": "linux", "title": "awk: columns, patterns and reports", "codes": {}, "quiz": [{"lv": "e", "q": "What does awk '{print $1}' file print?", "o": ["The first line", "The first field of every line", "The whole file", "The number of lines"], "a": 1, "hint": "Fields.", "why": "$1 is the first field of each line."}, {"lv": "e", "q": "Which variable holds the number of the current line?", "o": ["NF", "NR", "FS", "$0"], "a": 1, "hint": "Number of Record.", "why": "NR counts records read so far."}, {"lv": "e", "q": "Which option tells awk that fields are separated by commas?", "o": ["-d,", "-F,", "-t,", "-s,"], "a": 1, "hint": "Field separator.", "why": "-F sets FS."}, {"lv": "e", "q": "What is $NF?", "o": ["The number of fields", "The last field of the line", "The first field", "The file name"], "a": 1, "hint": "Field number NF.", "why": "NF is the field count, so $NF is the last field."}, {"lv": "m", "q": "What does awk -F, '$3 >= 80' marks.csv print?", "o": ["Only field 3", "Whole lines where field 3 is 80 or more", "The number 80", "Nothing, an action is missing"], "a": 1, "hint": "No action means print.", "why": "A pattern without an action prints the matching line."}, {"lv": "m", "q": "Where do you print a total after all lines are read?", "o": ["In BEGIN", "In END", "In the first rule", "With NR==1"], "a": 1, "hint": "After the last line.", "why": "END runs once after all input."}, {"lv": "m", "q": "How do you skip the header line of a CSV in awk?", "o": ["NR > 1", "NF > 1", "$1 != 1", "BEGIN"], "a": 0, "hint": "Line numbers.", "why": "NR > 1 is true for every line except the first."}, {"lv": "m", "q": "What does awk -F, 'NR>1 {c[$2]++} END {for (k in c) print k, c[k]}' do?", "o": ["Sums field 2", "Counts how many lines have each value of field 2", "Prints field 2", "Sorts the file"], "a": 1, "hint": "Arrays with text keys.", "why": "c[$2]++ increases a counter per distinct value."}, {"lv": "m", "q": "Why is cut -d' ' poor for ps output, while awk works?", "o": ["cut is slower", "cut treats each space as a separator, awk treats runs of spaces as one", "awk knows ps", "cut cannot read pipes"], "a": 1, "hint": "Several spaces.", "why": "awk splits on runs of blanks by default."}, {"lv": "h", "q": "What does printf print with the format %-6s|%4.1f followed by a newline, for the values ab and 3.14159?", "o": ["ab    | 3.1", "ab|3.14", "    ab|3.1", "ab | 3.14159"], "a": 0, "hint": "Left align 6, width 4, one decimal.", "why": "%-6s pads \"ab\" to 6 on the right, %4.1f gives \" 3.1\"."}, {"lv": "h", "q": "Why should you pass shell values with awk -v rather than inside the program text?", "o": ["It is faster", "It avoids quoting problems and code injection when the value contains special characters", "awk cannot read the shell", "It is required"], "a": 1, "hint": "Clean separation.", "why": "-v passes data as data, not as program text."}, {"lv": "h", "q": "In what order does for (k in arr) visit the keys?", "o": ["Sorted", "Insertion order", "Unspecified, it depends on the awk version", "Reverse"], "a": 2, "hint": "Not defined by POSIX.", "why": "Pipe the output through sort when order matters."}, {"lv": "x", "q": "In awk, '10' < '9' with both from fields compares how?", "o": ["As text, so true", "As numbers, so false, because both look numeric", "It is an error", "Randomly"], "a": 1, "hint": "Strnum values.", "why": "Field values that look like numbers compare numerically."}], "calc": [{"lv": "e", "q": "The scores after the header in marks.csv are 91, 78, 85, 67, 72, 88. What does a sum of $3 print?", "ans": "481", "hint": "Add them.", "steps": ["91 + 78 = 169.", "169 + 85 + 67 = 321.", "<span class=\"eq\">321 + 72 + 88 = 481<\/span>"]}, {"lv": "e", "q": "A line \"Like a diamond in the sky\" has how many fields with the default separator?", "ans": "6", "hint": "Count the words.", "steps": ["Words: Like, a, diamond, in, the, sky.", "Each word is one field.", "<span class=\"eq\">NF = 6<\/span>"]}, {"lv": "m", "q": "Average of the six scores 91, 78, 85, 67, 72, 88, rounded to one decimal, times 10 (so 80.2 becomes 802).", "ans": "802", "hint": "Total over count.", "steps": ["Total: 481.", "Count: 6.", "Average: 481 ÷ 6 = 80.17, rounded 80.2.", "<span class=\"eq\">80.2 × 10 = 802<\/span>"]}, {"lv": "m", "q": "/etc/passwd lines have 7 fields. awk -F: '{n += NF} END {print n}' on a file of 30 lines prints?", "ans": "210", "hint": "Fields per line times lines.", "steps": ["Fields per line: 7.", "Lines: 30.", "<span class=\"eq\">7 × 30 = 210<\/span>"]}, {"lv": "m", "q": "Ravi has scores 78 and 72. What does total[$1] += $3 hold for Ravi at the end?", "ans": "150", "hint": "Add his rows.", "steps": ["First row: 78.", "Second row: 72.", "<span class=\"eq\">78 + 72 = 150<\/span>"]}, {"lv": "h", "q": "df shows Use% values 85%, 40%, 92% and 81%. How many lines does awk '$5+0 > 80' keep (ignore the header)?", "ans": "3", "hint": "$5+0 turns 85% into 85.", "steps": ["Values: 85, 40, 92, 81.", "Above 80: 85, 92 and 81.", "<span class=\"eq\">3 lines<\/span>"]}], "assign": [], "must": [["Fields", "$0 whole line, $1 first field, $NF last, NF field count, NR line number. -F, or -F: change the separator."], ["Rules", "pattern { action }. No pattern: every line. No action: print. BEGIN before input, END after it."], ["Patterns", "Comparisons ($3 >= 80), regex (/ERROR/, $2 ~ /x/), NR > 1 to skip a header, ranges NR==2,NR==4, && || !."], ["Numbers", "Variables start at 0. Sum in a rule, print in END. Arrays with text keys count or total per group."], ["Programs", "printf for neat columns, if and loops, -v to pass values, -f for program files, $1=$1 with OFS to rebuild lines."]], "summary": "<p>awk splits lines into fields and runs pattern { action } rules. Use -F for separators, NR &gt; 1 to skip headers, END for totals, arrays to group, printf for reports.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

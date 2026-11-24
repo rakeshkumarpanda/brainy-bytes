@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scheduled jobs: cron, at and systemd timers · Unix and Linux</title>
+<meta name="description" content="The five crontab fields with lists, ranges, steps, names and @ shortcuts, the either rule for day fields, crontab -e, -l, -r and FILE, the cron environment with SHELL, PATH and MAILTO, the % rule and logging, /etc/crontab and /etc/cron.d with the user field, run-parts and its name rules, anacron, at, atq, atrm and batch, and systemd timers with OnCalendar, Persistent, RandomizedDelaySec, list-timers and systemd-analyze calendar.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=scripting">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=scripting" target="_top">Unix and Linux</a><span>›</span><span>Shell Scripting</span><span>›</span><span>Step 4: Robust and scheduled scripts</span><span>›</span><span>Scheduled jobs</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 4 · Topic 2 of 2 · Advanced</div>
+    <h1>Scheduled jobs: cron, at and systemd timers</h1>
+    <p class="lead">Run scripts on a schedule with cron and read every crontab field, avoid the traps of the cron environment, use the system cron folders and anacron, queue one-off jobs with at, and write systemd timers checked with systemd-analyze.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">7 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">15 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#scheduling" data-topic="cheatsheet" data-h="scheduling">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#fields" data-l="fields"><span class="n">1</span><span class="t">cron: a schedule in five fields</span></a></li><li><a href="#crontab" data-l="crontab"><span class="n">2</span><span class="t">Managing your crontab and the cron environment</span></a></li><li><a href="#system" data-l="system"><span class="n">3</span><span class="t">System crontabs, cron.daily and anacron</span></a></li><li><a href="#at" data-l="at"><span class="n">4</span><span class="t">Run once later: at, atq, atrm and batch</span></a></li><li><a href="#timers" data-l="timers"><span class="n">5</span><span class="t">systemd timers: the modern scheduler</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">Scheduled jobs from school to research</span></a></li><li><a href="#practice" data-l="practice"><span class="n">7</span><span class="t">Practice: schedule jobs in the practice shell</span></a></li></ol>
+    <article class="cv-lesson" id="fields" data-l="fields" hidden><div class="cv-lno">Lesson 1 of 7</div><h2>cron: a schedule in five fields</h2>
+<p>cron is a background service (a daemon) that starts commands at fixed times. Each user has a list of jobs called a <b>crontab</b>. Every line of it holds five time fields and then the command to run.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>One crontab line</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>minute  hour  day-of-month  month  day-of-week  command
+  30     2         *          *         *      /home/learner/backup.sh</pre><div class="lx-note">The job starts whenever the clock matches all five fields. A star means any value.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Field</th><th>Allowed values</th><th>Example</th><th>Meaning of the example</th></tr></thead><tbody><tr><td>minute</td><td>0 to 59</td><td><code>30</code></td><td>at minute 30</td></tr><tr><td>hour</td><td>0 to 23</td><td><code>9-17</code></td><td>every hour from 9 to 17</td></tr><tr><td>day of month</td><td>1 to 31</td><td><code>1,15</code></td><td>on the 1st and the 15th</td></tr><tr><td>month</td><td>1 to 12, or jan to dec</td><td><code>*/3</code></td><td>every third month: 1, 4, 7, 10</td></tr><tr><td>day of week</td><td>0 to 7 (0 and 7 are both Sunday), or sun to sat</td><td><code>1-5</code></td><td>Monday to Friday</td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Symbol</th><th>Meaning</th><th>Example</th></tr></thead><tbody><tr><td><code>*</code></td><td>every value</td><td><code>* * * * *</code> runs every minute</td></tr><tr><td><code>,</code></td><td>a list</td><td><code>0 8,20 * * *</code> runs at 08:00 and 20:00</td></tr><tr><td><code>-</code></td><td>a range</td><td><code>0 9-17 * * *</code> runs on the hour from 09:00 to 17:00</td></tr><tr><td><code>/</code></td><td>a step inside a range or *</td><td><code>*/15 * * * *</code> runs at minutes 0, 15, 30 and 45</td></tr><tr><td><code>@daily</code> and friends</td><td>shortcuts: @yearly, @monthly, @weekly, @daily, @hourly</td><td><code>@daily</code> is <code>0 0 * * *</code></td></tr><tr><td><code>@reboot</code></td><td>once, when the cron daemon starts</td><td>start a helper after every boot</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-cron"></div>
+<div class="note note-warn"><b>Common mistake</b><div>When both day of month and day of week are restricted, cron runs the job when either one matches. <code>0 0 13 * 5</code> runs on every 13th and on every Friday, not only on Friday the 13th.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Names work for months and days, such as mon or jan, in any case. Debian cron says in crontab(5) that ranges and lists of names are not allowed, while cronie on Fedora and RHEL accepts them. Numbers such as 1-5 work everywhere.</div></div>
+<div class="vt-talk" hidden>Many jobs on a server must happen on their own at fixed times, such as a nightly backup, a weekly report, or cleaning old log files every hour. The cron service handles this. It wakes up every minute and checks a list of jobs called a crontab. Each line has five time fields and then a command. The fields are the minute, the hour, the day of the month, the month, and the day of the week. A star means any value. So thirty, two, star, star, star means at two thirty every night. You can list values with commas, give ranges with a dash, and use a slash for steps, so star slash fifteen in the minute field means every fifteen minutes. There are shortcuts too, such as at daily and at hourly. One rule surprises many people. When you set both the day of the month and the day of the week, cron runs the job when either one matches. Type your own schedules into the animation and Pip will list the next times the job would run.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="crontab" data-l="crontab" hidden><div class="cv-lno">Lesson 2 of 7</div><h2>Managing your crontab and the cron environment</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>crontab -e</code></td><td>Edit your crontab in your editor ($VISUAL or $EDITOR). cron checks the lines when you save</td><td><code>EDITOR=nano crontab -e</code></td></tr><tr><td><code>crontab -l</code></td><td>List your crontab</td><td><code>crontab -l &gt; crontab.backup</code></td></tr><tr><td><code>crontab FILE</code></td><td>Replace your crontab with the lines in FILE</td><td><code>crontab jobs.cron</code></td></tr><tr><td><code>crontab -</code></td><td>Replace it with lines read from standard input</td><td><code>(crontab -l; echo "@daily ~/tidy.sh") | crontab -</code></td></tr><tr><td><code>crontab -r</code></td><td>Remove your whole crontab, without asking</td><td><code>crontab -l &gt; old.cron &amp;&amp; crontab -r</code></td></tr><tr><td><code>sudo crontab -u NAME -l</code></td><td>Root can list or edit the crontab of another user</td><td><code>sudo crontab -u www-data -l</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Installing and listing a crontab (cron is not installed in the build container, so this output comes from the practice shell, which follows Debian cron)</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat jobs.cron</span>
+<span class="lx-o"># m h dom mon dow command
+MAILTO=""
+30 2 * * * /home/learner/backup.sh &gt;&gt; /home/learner/backup.log 2&gt;&amp;1
+*/10 * * * * /usr/bin/flock -n /tmp/sync.lock /home/learner/sync.sh</span>
+<span class="lx-cmd">crontab jobs.cron</span>
+<span class="lx-cmd">crontab -l</span>
+<span class="lx-o"># m h dom mon dow command
+MAILTO=""
+30 2 * * * /home/learner/backup.sh &gt;&gt; /home/learner/backup.log 2&gt;&amp;1
+*/10 * * * * /usr/bin/flock -n /tmp/sync.lock /home/learner/sync.sh</span>
+<span class="lx-cmd">echo "61 * * * * /home/learner/report.sh" | crontab -</span>
+<span class="lx-o">"-":1: bad minute
+errors in crontab file, can't install.</span>
+<span class="lx-cmd">crontab -r</span>
+<span class="lx-cmd">crontab -l</span>
+<span class="lx-o">no crontab for learner</span></pre><div class="lx-note">crontab printed nothing when the install worked. Minute 61 is out of range, so cron refused the whole new file and kept the old crontab. crontab -r removed everything at once, so save a copy with crontab -l first.</div></div>
+<p>A job does not run in your login shell. cron starts it with a very small environment, and this is the most common reason a script works in the terminal but fails from cron.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Setting</th><th>Value cron gives a job</th><th>What to do</th></tr></thead><tbody><tr><td>SHELL</td><td><code>/bin/sh</code>, not bash</td><td>put <code>#!/bin/bash</code> in scripts, or set <code>SHELL=/bin/bash</code> at the top of the crontab</td></tr><tr><td>PATH</td><td><code>/usr/bin:/bin</code></td><td>use full paths such as <code>/usr/local/bin/node</code>, or set PATH at the top of the crontab</td></tr><tr><td>HOME, LOGNAME</td><td>taken from /etc/passwd</td><td>no .bashrc or .profile is read, so aliases and exported variables are missing</td></tr><tr><td>Working folder</td><td>your home folder</td><td>use full paths, or <code>cd /srv/app || exit 1</code> first</td></tr><tr><td>MAILTO</td><td>output is mailed to the owner of the crontab</td><td><code>MAILTO=""</code> turns mail off, so redirect output to a log file instead</td></tr><tr><td>The % sign</td><td>turned into a new line, and the text after the first % becomes standard input</td><td>write <code>date +\%F</code> in a crontab line, or move the command into a script</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>The same command with and without your login environment</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">mkdir -p bin</span>
+<span class="lx-cmd">printf '#!/bin/sh\necho "hello from my own tool"\n' &gt; bin/hello</span>
+<span class="lx-cmd">chmod +x bin/hello</span>
+<span class="lx-cmd">PATH="$HOME/bin:$PATH" hello</span>
+<span class="lx-o">hello from my own tool</span>
+<span class="lx-cmd">env -i HOME="$HOME" PATH=/usr/bin:/bin SHELL=/bin/sh sh -c 'echo "PATH is $PATH"; hello; echo "status $?"'</span>
+<span class="lx-o">PATH is /usr/bin:/bin
+sh: 1: hello: not found
+status 127</span>
+<span class="lx-cmd">env -i HOME="$HOME" PATH=/usr/bin:/bin sh -c '"$HOME/bin/hello"'</span>
+<span class="lx-o">hello from my own tool</span>
+<span class="lx-cmd">date +%F</span>
+<span class="lx-o">2026-11-24</span>
+<span class="lx-cmd">printf '%s\n' 'date +%F &gt;&gt; /home/learner/dates.log' 'date +\%F &gt;&gt; /home/learner/dates.log'</span>
+<span class="lx-o">date +%F &gt;&gt; /home/learner/dates.log
+date +\%F &gt;&gt; /home/learner/dates.log</span></pre><div class="lx-note">env -i started a shell with nothing but the variables given, the way cron does. The tool in your own bin folder was not found until the full path was used. The last two lines show the wrong and the right way to write a percent sign in a crontab line.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Always redirect output in a cron line, for example <code>>> /var/log/myjob.log 2>&1</code>. Without it the output is mailed, and on a server without mail it is lost, so you never see the error.</div></div>
+<div class="vt-talk" hidden>You manage your own crontab with the crontab command. Crontab dash e opens it in your editor, and cron checks every line when you save. Crontab dash l lists it, and crontab followed by a file name replaces it with the lines in that file. Be careful with crontab dash r, which deletes the whole crontab at once without asking, so keep a copy with crontab dash l first. The biggest surprise for beginners is the environment. A cron job does not run in your login shell. It runs with slash bin slash sh, a short PATH of only slash usr slash bin and slash bin, and none of your aliases or settings from dot bash r c. So use full paths, start scripts with a bash shebang, and always send the output to a log file with two greater than signs and two greater than ampersand one. One more trap: a percent sign in a crontab line means a new line, so write it with a backslash in front, or move the command into a script.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="system" data-l="system" hidden><div class="cv-lno">Lesson 3 of 7</div><h2>System crontabs, cron.daily and anacron</h2>
+<p>Besides the personal crontabs, the system has its own. These files have an extra <b>user</b> field after the five time fields, which says which account runs the command.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Place</th><th>Who edits it</th><th>Format</th></tr></thead><tbody><tr><td><code>crontab -e</code> (stored in /var/spool/cron)</td><td>each user, with the crontab command only</td><td>five fields, then the command</td></tr><tr><td><code>/etc/crontab</code></td><td>root, with a normal editor</td><td>five fields, a user name, then the command</td></tr><tr><td><code>/etc/cron.d/NAME</code></td><td>packages and root</td><td>like /etc/crontab, one file per package</td></tr><tr><td><code>/etc/cron.hourly</code>, <code>cron.daily</code>, <code>cron.weekly</code>, <code>cron.monthly</code></td><td>root, by dropping in executable scripts</td><td>whole scripts, run by run-parts</td></tr><tr><td><code>/etc/cron.allow</code>, <code>/etc/cron.deny</code></td><td>root</td><td>user names allowed or denied to use crontab</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Real system crontab files and run-parts</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat /etc/cron.d/e2scrub_all</span>
+<span class="lx-o">30 3 * * 0 root test -e /run/systemd/system || SERVICE_MODE=1 /usr/lib/x86_64-linux-gnu/e2fsprogs/e2scrub_all_cron
+10 3 * * * root test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r</span>
+<span class="lx-cmd">mkdir -p daily</span>
+<span class="lx-cmd">printf '#!/bin/sh\necho "rotating logs"\n' &gt; daily/10-logs</span>
+<span class="lx-cmd">printf '#!/bin/sh\necho "cleaning caches"\n' &gt; daily/20-cache</span>
+<span class="lx-cmd">cp daily/10-logs daily/backup.sh</span>
+<span class="lx-cmd">cp daily/10-logs daily/30-old~</span>
+<span class="lx-cmd">chmod +x daily/*</span>
+<span class="lx-cmd">ls daily</span>
+<span class="lx-o">10-logs
+20-cache
+30-old~
+backup.sh</span>
+<span class="lx-cmd">run-parts --test daily</span>
+<span class="lx-o">daily/10-logs
+daily/20-cache</span>
+<span class="lx-cmd">run-parts --report daily</span>
+<span class="lx-o">daily/10-logs:
+rotating logs
+daily/20-cache:
+cleaning caches</span></pre><div class="lx-note">The package file in /etc/cron.d names root as the user before the command. run-parts runs the scripts of a folder in name order. Debian run-parts only accepts names made of letters, digits, dashes and underscores, so backup.sh and 30-old~ were skipped. A dot in the name is the classic reason a script in /etc/cron.daily never runs.</div></div>
+<p>On Debian and Ubuntu, /etc/crontab starts the cron.hourly folder at minute 17 of every hour and the daily, weekly and monthly folders at 06:25, 06:47 and 06:52, unless anacron is installed, which then takes over the last three.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>An anacron line in /etc/anacrontab</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>period-in-days  delay-in-minutes  job-name      command
+      1               5           cron.daily    run-parts --report /etc/cron.daily
+      7              10           cron.weekly   run-parts --report /etc/cron.weekly</pre><div class="lx-note">anacron remembers the last run of each job in /var/spool/anacron. If the computer was off at the planned time, the job runs soon after the next start, after the delay.</div></div>
+<div class="vt-talk" hidden>Besides each user’s own crontab, Linux has system wide schedules. The file slash etc slash crontab and the files in slash etc slash cron dot d look like normal crontab lines with one extra field after the five time fields, the name of the user who runs the command. Packages drop their jobs into cron dot d, as you saw with a real file from this computer. Simpler still are the folders cron dot hourly, cron dot daily, cron dot weekly and cron dot monthly. You put an executable script there and a tool called run parts runs every script in the folder in name order. Watch out for file names, because on Debian run parts skips names with a dot, so a script called backup dot s h is silently ignored. Cron assumes the computer is always on. Anacron is for laptops and desktops that are often switched off. It remembers when each daily, weekly or monthly job last ran, and runs it soon after the next start if a run was missed.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="at" data-l="at" hidden><div class="cv-lno">Lesson 4 of 7</div><h2>Run once later: at, atq, atrm and batch</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>at TIME</code></td><td>Read commands from standard input and run them once at TIME</td><td><code>echo "./report.sh" | at 23:00</code></td></tr><tr><td><code>at -f FILE TIME</code></td><td>Take the commands from a file</td><td><code>at -f deploy.sh now + 2 hours</code></td></tr><tr><td><code>atq (or at -l)</code></td><td>List your waiting jobs</td><td><code>atq</code></td></tr><tr><td><code>atrm N (or at -r N)</code></td><td>Remove job number N</td><td><code>atrm 4</code></td></tr><tr><td><code>at -c N</code></td><td>Show the full script of job N, including the saved environment</td><td><code>at -c 4 | tail -3</code></td></tr><tr><td><code>batch</code></td><td>Run the commands when the system load is low (below 1.5 by default)</td><td><code>echo "make all" | batch</code></td></tr></tbody></table></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Time format</th><th>Means</th></tr></thead><tbody><tr><td><code>now + 10 minutes</code></td><td>in 10 minutes. Units: minutes, hours, days, weeks</td></tr><tr><td><code>16:30</code> or <code>4:30pm</code></td><td>the next 16:30, today or tomorrow</td></tr><tr><td><code>noon</code>, <code>midnight</code>, <code>teatime</code></td><td>12:00, 00:00 and 16:00</td></tr><tr><td><code>9am tomorrow</code></td><td>tomorrow at 09:00</td></tr><tr><td><code>10:00 2026-12-24</code></td><td>a full date. at(1) lists more forms</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Queueing, listing and removing jobs (at is not installed in the build container, so this output comes from the practice shell, which follows the at package)</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">echo "uptime &gt;&gt; /home/learner/load.log" | at now + 5 minutes</span>
+<span class="lx-o">warning: commands will be executed using /bin/sh
+job 1 at Mon Nov 23 09:35:00 2026</span>
+<span class="lx-cmd">at -f nightly.sh teatime tomorrow</span>
+<span class="lx-o">warning: commands will be executed using /bin/sh
+job 2 at Tue Nov 24 16:00:00 2026</span>
+<span class="lx-cmd">atq</span>
+<span class="lx-o">1	Mon Nov 23 09:35:00 2026 a learner
+2	Tue Nov 24 16:00:00 2026 a learner</span>
+<span class="lx-cmd">atrm 1</span>
+<span class="lx-cmd">atq</span>
+<span class="lx-o">2	Tue Nov 24 16:00:00 2026 a learner</span></pre><div class="lx-note">at always runs the job with /bin/sh. Each job gets a number, and the letter a in atq is the queue. batch jobs go to queue b.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Unlike cron, at keeps the working folder, the umask and almost all environment variables from the moment you queued the job. Output is mailed to you, so redirect it to a file when the system has no mail.</div></div>
+<div class="vt-talk" hidden>Cron is for jobs that repeat. For a job that should run only once, later, use at. You type at and a time, such as at now plus ten minutes, at four thirty p m, or at nine a m tomorrow, and give it the commands on standard input, for example with echo and a pipe, or from a file with dash f. At answers with a job number. A t q lists the waiting jobs and a t r m with a number removes one. The command batch is similar, but instead of a time it waits until the system is not busy, which suits heavy work such as a big compile. A nice detail is that at remembers your current folder and your environment variables from the moment you queued the job, so it behaves much more like your terminal than cron does.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="timers" data-l="timers" hidden><div class="cv-lno">Lesson 5 of 7</div><h2>systemd timers: the modern scheduler</h2>
+<p>On systems that use systemd, a <b>timer</b> unit can start a <b>service</b> unit on a schedule. It takes two small files instead of one line, but gives you logs, missed-run catch up, random delays and dependencies.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>backup.service and backup.timer in /etc/systemd/system</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmt"># backup.service: what to run</span>
+[Unit]
+Description=Nightly backup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/backup.sh
+
+<span class="lx-cmt"># backup.timer: when to run it</span>
+[Unit]
+Description=Run the nightly backup
+
+[Timer]
+OnCalendar=*-*-* 02:30:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target</pre><div class="lx-note">The timer starts the service with the same name. Persistent=true runs a missed job at the next boot, as anacron does. RandomizedDelaySec spreads the start over up to 10 minutes, so many servers do not all start at once.</div></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Timer setting</th><th>Meaning</th></tr></thead><tbody><tr><td><code>OnCalendar=Mon..Fri 09:00</code></td><td>calendar times, written as weekday year-month-day hour:minute:second</td></tr><tr><td><code>OnCalendar=daily</code></td><td>shortcuts: minutely, hourly, daily, weekly, monthly, yearly, quarterly</td></tr><tr><td><code>OnBootSec=5min</code></td><td>5 minutes after the computer starts</td></tr><tr><td><code>OnUnitActiveSec=1h</code></td><td>1 hour after the service last started, so it repeats</td></tr><tr><td><code>Persistent=true</code></td><td>catch up a run that was missed while the computer was off</td></tr><tr><td><code>AccuracySec=1s</code></td><td>how exact the start time must be. The default is 1 minute</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Check calendar expressions before you use them (real systemd-analyze, counting from Monday 23 November 2026, 09:30 UTC)</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">systemd-analyze calendar --base-time='2026-11-23 09:30:00 UTC' --iterations=3 'Mon..Fri 09:00' | grep -v 'From now'</span>
+<span class="lx-o">  Original form: Mon..Fri 09:00
+Normalized form: Mon..Fri *-*-* 09:00:00
+    Next elapse: Tue 2026-11-24 09:00:00 UTC
+   Iteration #2: Wed 2026-11-25 09:00:00 UTC
+   Iteration #3: Thu 2026-11-26 09:00:00 UTC</span>
+<span class="lx-cmd">systemd-analyze calendar --base-time='2026-11-23 09:30:00 UTC' --iterations=3 '*:0/15' weekly | grep -v 'From now'</span>
+<span class="lx-o">  Original form: *:0/15
+Normalized form: *-*-* *:00/15:00
+    Next elapse: Mon 2026-11-23 09:45:00 UTC
+   Iteration #2: Mon 2026-11-23 10:00:00 UTC
+   Iteration #3: Mon 2026-11-23 10:15:00 UTC
+
+  Original form: weekly
+Normalized form: Mon *-*-* 00:00:00
+    Next elapse: Mon 2026-11-30 00:00:00 UTC
+   Iteration #2: Mon 2026-12-07 00:00:00 UTC
+   Iteration #3: Mon 2026-12-14 00:00:00 UTC</span>
+<span class="lx-cmd">systemd-analyze calendar --base-time='2026-11-23 09:30:00 UTC' --iterations=3 'Sat *-*-1..7 03:00' | grep -v 'From now'</span>
+<span class="lx-o">  Original form: Sat *-*-1..7 03:00
+Normalized form: Sat *-*-01..07 03:00:00
+    Next elapse: Sat 2026-12-05 03:00:00 UTC
+   Iteration #2: Sat 2027-01-02 03:00:00 UTC
+   Iteration #3: Sat 2027-02-06 03:00:00 UTC</span></pre><div class="lx-note">systemd-analyze shows the normalized form and the next start times, so you can test a schedule safely. The last one means the first Saturday of every month, which is hard to write in cron because of the either rule for day fields.</div></div>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>sudo systemctl daemon-reload</code></td><td>Read new or changed unit files</td><td><code>sudo systemctl daemon-reload</code></td></tr><tr><td><code>sudo systemctl enable --now NAME.timer</code></td><td>Start the timer now and at every boot</td><td><code>sudo systemctl enable --now backup.timer</code></td></tr><tr><td><code>systemctl list-timers</code></td><td>All timers with their next and last run</td><td><code>systemctl list-timers --all</code></td></tr><tr><td><code>journalctl -u NAME.service</code></td><td>The output and logs of every run</td><td><code>journalctl -u backup.service --since today</code></td></tr><tr><td><code>sudo systemctl start NAME.service</code></td><td>Run the job once by hand, to test it</td><td><code>sudo systemctl start backup.service</code></td></tr><tr><td><code>systemctl --user ...</code></td><td>Timers for your own account, in ~/.config/systemd/user</td><td><code>systemctl --user enable --now notes.timer</code></td></tr></tbody></table></div>
+<div class="vt-talk" hidden>Most modern Linux systems use systemd, and systemd has its own scheduler called timers. Instead of one crontab line you write two small files. A service file says what to run, and a timer file with the same name says when. The when is written with OnCalendar, for example Monday to Friday at nine o’clock, or simply daily. Timers have useful extras. Persistent equals true runs a job that was missed while the computer was off. RandomizedDelaySec adds a small random wait so a thousand servers do not all hit the backup server at the same second. Every run is logged, so journalctl dash u with the service name shows exactly what happened. Before you trust a schedule, test it with systemd analyze calendar, which prints the next times it would fire. Then reload systemd, enable the timer, and check it with systemctl list timers.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 7</div><h2>Scheduled jobs from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>cron runs jobs again and again at fixed times, written as five fields: minute, hour, day of month, month and day of week. at runs a job once, later. Always use full paths and send the output to a log file.</p></div><div class="ld-p" data-ld="college" hidden><p>Prefer one script per job, with set -euo pipefail, a lock with flock -n so runs never overlap, and output redirected with <code>>> log 2>&1</code>. Remember the small environment, the % rule, the either rule for day fields, and that crontab -r removes everything. anacron or Persistent=true catches runs missed while the machine was off.</p></div><div class="ld-p" data-ld="masters" hidden><p>cron uses the local time zone of the system, so a job set inside the hour that summer time skips or repeats needs care. cron(8) explains how your cron handles such clock changes, and many teams keep servers on UTC to avoid the question. systemd timers add RandomizedDelaySec against the thundering herd, where many machines start the same job at the same moment, and AccuracySec lets systemd group wake ups to save power. Monitoring a job means checking that it ran, not only that it did not fail, for example with a heartbeat that the last step sends.</p></div><div class="ld-p" data-ld="research" hidden><p>Distributed schedulers such as Kubernetes CronJobs keep the cron syntax but add a concurrency policy (Allow, Forbid or Replace) and a deadline for late starts. Workflow engines such as Apache Airflow describe jobs as graphs with dependencies, retries and backfills of missed intervals. Research on large clusters, such as Google’s Borg papers, studies how batch jobs with flexible start times fill the gaps left by services that must answer at once.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the report that ran at the wrong time</div><p>A team scheduled <code>0 0 1-7 * 1</code>, hoping for a report on the first Monday of each month. It ran on the 1st to the 7th of every month and on every Monday, because cron runs the job when either day field matches. The fix keeps <code>0 0 * * 1</code> and adds <code>[ "$(date +\%d)" -le 07 ] || exit 0</code> at the start, or moves the job to a timer with <code>OnCalendar=Mon *-*-1..7 00:00</code>, which systemd-analyze confirms before it goes live.</p></div>
+<div class="vt-talk" hidden>Here is the bigger picture on scheduled jobs. A good scheduled job is a small script that stops on errors, takes a lock with flock so two copies never overlap, and writes everything to a log. Cron works in the local time zone, so a job planned inside the hour that changes for summer time needs care, which is one reason many teams run servers on U T C. When thousands of machines run the same job, a random delay spreads the load, and systemd timers have this built in. Checking that a job succeeded is not enough. You also need an alert when it did not run at all, which is often done with a heartbeat message from the last step. At large scale, Kubernetes CronJobs keep the familiar cron syntax and add rules for overlapping runs, and workflow tools such as Apache Airflow handle dependencies between jobs, retries and catching up on missed runs.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 7 of 7</div><h2>Practice: schedule jobs in the practice shell</h2>
+<p>The practice shell below has its own crontab and at commands. They check your lines the way Debian cron does and keep the jobs, but nothing really runs at the chosen time.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Schedule a backup and a one-off reminder&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Write a crontab line into the file jobs.cron that runs $HOME/backup.sh every day at 02:30.&quot;, &quot;hint&quot;: &quot;echo \&quot;30 2 * * * $HOME/backup.sh\&quot; &gt; jobs.cron&quot;, &quot;check&quot;: [{&quot;has&quot;: [&quot;jobs.cron&quot;, &quot;30 2 * * * &quot;]}]}, {&quot;t&quot;: &quot;Install jobs.cron as your crontab.&quot;, &quot;hint&quot;: &quot;crontab jobs.cron&quot;, &quot;check&quot;: [{&quot;exists&quot;: &quot;/var/spool/cron/crontabs/learner&quot;}]}, {&quot;t&quot;: &quot;List your crontab to check it.&quot;, &quot;hint&quot;: &quot;crontab -l&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;crontab\\s+-l&quot;}, {&quot;out&quot;: &quot;30 2&quot;}]}, {&quot;t&quot;: &quot;Try to install a line with minute 75 from standard input, and read the error.&quot;, &quot;hint&quot;: &quot;echo \&quot;75 * * * * date\&quot; | crontab -&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;bad minute&quot;}]}, {&quot;t&quot;: &quot;Queue the command date to run once in 10 minutes with at.&quot;, &quot;hint&quot;: &quot;echo date | at now + 10 minutes&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\bat\\s+now\\s*\\+\\s*10\\s*min&quot;}]}, {&quot;t&quot;: &quot;List the waiting at jobs.&quot;, &quot;hint&quot;: &quot;atq&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*(atq|at\\s+-l)\\b&quot;}, {&quot;out&quot;: &quot;learner&quot;}]}, {&quot;t&quot;: &quot;Remove job 1 from the queue.&quot;, &quot;hint&quot;: &quot;atrm 1&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*(atrm|at\\s+-[rd])\\s+1\\b&quot;}]}, {&quot;t&quot;: &quot;Remove your whole crontab.&quot;, &quot;hint&quot;: &quot;crontab -r&quot;, &quot;check&quot;: [{&quot;gone&quot;: &quot;/var/spool/cron/crontabs/learner&quot;}, {&quot;cmd&quot;: &quot;crontab\\s+-r&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Now it is your turn. The practice shell has its own crontab and at commands that check your lines exactly like Debian cron, although nothing really runs later. First write a crontab line into a file with echo, install it with crontab and the file name, and list it with crontab dash l. Then try a broken line on purpose and read the error, so you know what it looks like. After that, queue a one off job with at, list the queue with a t q, and remove the job with a t r m. Finally, remove the whole crontab with crontab dash r.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./robust-scripts.html" data-topic="robust-scripts"><small>Previous topic</small><b>Robust scripts</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "scheduling", "topic": "scheduling", "subject": "linux", "title": "Scheduled jobs: cron, at and systemd timers", "codes": {}, "quiz": [{"lv": "e", "q": "Which field comes first in a crontab line?", "o": ["hour", "minute", "day of week", "month"], "a": 1, "hint": "Smallest unit first.", "why": "minute hour day-of-month month day-of-week."}, {"lv": "e", "q": "What does <code>30 2 * * *<\/code> mean?", "o": ["Every 30 minutes", "At 02:30 every day", "On 30 February", "At 30:02"], "a": 1, "hint": "Minute 30, hour 2.", "why": "Every day at 02:30."}, {"lv": "e", "q": "Which command lists your crontab?", "o": ["crontab -e", "crontab -l", "crontab -r", "cron -list"], "a": 1, "hint": "l for list.", "why": "crontab -l prints it."}, {"lv": "e", "q": "Which command runs a job only once, later?", "o": ["cron", "at", "watch", "sleep"], "a": 1, "hint": "At a time.", "why": "at queues a one-off job."}, {"lv": "m", "q": "What does <code>*/15<\/code> in the minute field mean?", "o": ["Minute 15 only", "Minutes 0, 15, 30 and 45", "Every 15 hours", "15 times a minute"], "a": 1, "hint": "A step.", "why": "Steps through 0 to 59 by 15."}, {"lv": "m", "q": "Which day-of-week values mean Sunday?", "o": ["1 only", "0 and 7", "6 and 7", "7 only"], "a": 1, "hint": "Two values.", "why": "Both 0 and 7 are Sunday."}, {"lv": "m", "q": "A script works in the terminal but not from cron, with \"command not found\". The likely cause?", "o": ["cron is broken", "cron uses a short PATH of /usr/bin:/bin", "The script is too long", "cron needs sudo"], "a": 1, "hint": "The environment.", "why": "Use full paths or set PATH."}, {"lv": "m", "q": "Why can <code>date +%F<\/code> break inside a crontab line?", "o": ["date is not allowed", "cron turns % into a new line", "cron has no date", "F is a bad option"], "a": 1, "hint": "Percent is special.", "why": "Write a backslash before %, or use a script."}, {"lv": "m", "q": "What extra field do /etc/crontab and /etc/cron.d files have?", "o": ["A password", "The user that runs the command", "The year", "A priority"], "a": 1, "hint": "Whose job.", "why": "A user name after the five time fields."}, {"lv": "m", "q": "Why might /etc/cron.daily/backup.sh never run on Debian?", "o": ["Daily is too often", "run-parts skips names that contain a dot", "It must be in cron.d", "It needs a .cron ending"], "a": 1, "hint": "The name.", "why": "Only letters, digits, - and _ are accepted."}, {"lv": "h", "q": "What does <code>0 0 13 * 5<\/code> do?", "o": ["Runs only on Friday the 13th", "Runs on every 13th and on every Friday", "Never runs", "Runs on 5 March"], "a": 1, "hint": "Two day fields.", "why": "cron uses either one when both are set."}, {"lv": "h", "q": "Which tool catches up jobs missed while a laptop was switched off?", "o": ["atq", "anacron", "crontab -r", "run-parts"], "a": 1, "hint": "Not always on.", "why": "anacron remembers the last runs."}, {"lv": "h", "q": "In a systemd timer, what does Persistent=true do?", "o": ["Keeps the service running", "Runs a missed start at the next boot", "Makes the timer survive deletion", "Turns off logging"], "a": 1, "hint": "Missed runs.", "why": "It catches up after downtime."}, {"lv": "h", "q": "Which command shows the next times an OnCalendar expression fires?", "o": ["systemctl cat", "systemd-analyze calendar", "journalctl -u", "crontab -l"], "a": 1, "hint": "Analyze.", "why": "systemd-analyze calendar EXPR."}, {"lv": "x", "q": "Which line stops two runs of a cron job from overlapping?", "o": ["<code>*/5 * * * * nice ./sync.sh<\/code>", "<code>*/5 * * * * flock -n /tmp/sync.lock ./sync.sh<\/code>", "<code>*/5 * * * * ./sync.sh &amp;<\/code>", "<code>*/5 * * * * at now ./sync.sh<\/code>"], "a": 1, "hint": "A lock.", "why": "flock -n exits if the lock is taken."}], "calc": [{"lv": "e", "q": "How many times a day does <code>0 * * * *<\/code> run?", "ans": "24", "hint": "Minute 0 of every hour.", "steps": ["It runs once an hour.", "There are 24 hours.", "<span class=\"eq\">24<\/span>"]}, {"lv": "e", "q": "How many times an hour does <code>*/10 * * * *<\/code> run?", "ans": "6", "hint": "Minutes 0, 10, 20, 30, 40, 50.", "steps": ["Count the steps from 0 to 59.", "0, 10, 20, 30, 40, 50.", "<span class=\"eq\">6<\/span>"]}, {"lv": "m", "q": "How many times a day does <code>*/15 9-17 * * *<\/code> run?", "ans": "36", "hint": "9 hours, 4 times each.", "steps": ["Hours 9 to 17 are 9 hours.", "Each hour has minutes 0, 15, 30, 45.", "<span class=\"eq\">9 × 4 = 36<\/span>"]}, {"lv": "m", "q": "How many times a week does <code>0 8,20 * * 1-5<\/code> run?", "ans": "10", "hint": "Twice a day, five days.", "steps": ["8:00 and 20:00 is 2 a day.", "Monday to Friday is 5 days.", "<span class=\"eq\">2 × 5 = 10<\/span>"]}, {"lv": "h", "q": "In a 30-day month starting on a Monday, how many days does <code>0 0 1-7 * 1<\/code> run?", "ans": "11", "hint": "Either rule.", "steps": ["Days 1 to 7 give 7 days.", "Mondays are 1, 8, 15, 22 and 29, and day 1 is counted already, so 4 more.", "<span class=\"eq\">7 + 4 = 11<\/span>"]}, {"lv": "h", "q": "A timer has RandomizedDelaySec=10min and OnCalendar=02:30. What is the latest start, in minutes after 02:00?", "ans": "40", "hint": "Up to 10 minutes late.", "steps": ["The planned start is 02:30.", "The delay adds up to 10 minutes.", "<span class=\"eq\">30 + 10 = 40<\/span>"]}], "assign": [], "must": [["Five fields", "minute hour day-of-month month day-of-week, then the command. * any, , list, - range, / step, @daily and @reboot shortcuts."], ["Either rule", "When both day of month and day of week are set, cron runs the job when either matches."], ["crontab", "crontab -e edits, -l lists, FILE installs, -r removes everything without asking. A bad line refuses the whole file."], ["Environment", "SHELL=/bin/sh, PATH=/usr/bin:/bin, no .bashrc. Use full paths, redirect output to a log, escape % in crontab lines."], ["Other schedulers", "at, atq and atrm for one-off jobs, anacron for machines that are switched off, systemd timers with OnCalendar and Persistent=true."]], "summary": "<p>A crontab line has five time fields and a command, and day fields use the either rule. cron gives jobs a small environment, so use full paths and log the output. System cron folders run through run-parts, anacron catches missed runs, at runs a job once, and systemd timers add logs and catch up, tested with systemd-analyze calendar.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decisions: if, test and case · Unix and Linux</title>
+<meta name="description" content="if, then, elif, else and fi, exit status as the condition, ! to negate, &amp;&amp; and || chains and their trap, test and [ ] with file, string and number operators and the argument-count rules, quoting inside [ ], [[ ]] with patterns, =~ and BASH_REMATCH, (( )) arithmetic conditions, octal numbers, and case with patterns, choices and the three kinds of arm ending.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=scripting">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=scripting" target="_top">Unix and Linux</a><span>›</span><span>Shell Scripting</span><span>›</span><span>Step 2: Decisions and loops</span><span>›</span><span>Decisions</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 1 of 2 · Intermediate</div>
+    <h1>Decisions: if, test and case</h1>
+    <p class="lead">Make scripts decide: if with any command as the condition, test and [ ] for files, text and numbers, the safer [[ ]] and (( )), and case for choosing by pattern.</p>
+    <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">2 animations</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#conditions" data-topic="cheatsheet" data-h="conditions">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#if" data-l="if"><span class="n">1</span><span class="t">if, elif and else: decisions by exit status</span></a></li><li><a href="#test" data-l="test"><span class="n">2</span><span class="t">test and [ ]: files, strings and numbers</span></a></li><li><a href="#dbl" data-l="dbl"><span class="n">3</span><span class="t">The bash way: [[ ]] and (( ))</span></a></li><li><a href="#case" data-l="case"><span class="n">4</span><span class="t">case: choose by pattern</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">Decisions from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="if" data-l="if" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>if, elif and else: decisions by exit status</h2>
+<p><code>if</code> runs a command and looks only at its <b>exit status</b>. Status 0 means true and runs the <code>then</code> part. Anything else tries the next <code>elif</code>, then <code>else</code>. The block ends with <code>fi</code>, which is if backwards.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>if, elif and else</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>if COMMAND; then
+  ...            # runs when COMMAND exits with 0
+elif OTHER; then
+  ...            # runs when COMMAND failed and OTHER succeeded
+else
+  ...            # runs when everything above failed
+fi</pre></div>
+<div class="lx-run"><div class="lx-rh"><span>Any command can be the condition</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">if grep -q apple fruits.txt; then
+  echo "we have apples"
+fi</span>
+<span class="lx-o">we have apples</span>
+<span class="lx-cmd">if ! grep -q pear fruits.txt; then
+  echo "no pears today"
+fi</span>
+<span class="lx-o">no pears today</span>
+<span class="lx-cmd">if mkdir reports 2&gt;/dev/null; then
+  echo "made reports"
+else
+  echo "reports already exists"
+fi</span>
+<span class="lx-o">made reports</span>
+<span class="lx-cmd">mkdir reports 2&gt;/dev/null &amp;&amp; echo "made it" || echo "could not make it"</span>
+<span class="lx-o">could not make it</span>
+<span class="lx-cmd">count=$(grep -c apple fruits.txt)</span>
+<span class="lx-cmd">if [ "$count" -ge 3 ]; then
+  echo "plenty: $count"
+elif [ "$count" -ge 1 ]; then
+  echo "a few: $count"
+else
+  echo "none"
+fi</span>
+<span class="lx-o">plenty: 3</span></pre><div class="lx-note">grep -q gives only a status, which is perfect for if. ! turns success into failure and back. The second mkdir failed because the folder now exists. The fruit list has the word apple on 3 lines, so the first branch ran.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>a && b || c is not a full if. If b itself fails, c runs too. Use a real if when the middle command can fail.</div></div>
+<div class="vt-talk" hidden>The if statement in bash works differently from most languages. It does not test a true or false value. It runs a command and looks at the exit status. Zero means success, so the then part runs. Any other status moves on to the next elif, and finally to else. The block always ends with the word fi, which is if spelled backwards. Because any command can be the condition, you can write if grep dash q apple fruits dot t x t, and the block runs only when the word is found. An exclamation mark in front reverses the result. You will often see the short form with double ampersand and double bar. It reads well, but it has a trap: if the middle command fails, the last one runs as well. So use a proper if whenever the middle command might fail.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="test" data-l="test" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>test and [ ]: files, strings and numbers</h2>
+<p>The command <code>test</code>, also written <code>[ ... ]</code>, checks one condition and exits with 0 for true or 1 for false. Because <code>[</code> is a command, it needs a space after it and a space before the final <code>]</code>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Group</th><th>Operator</th><th>True when</th></tr></thead><tbody><tr><td>Files</td><td><code>-e f</code>, <code>-f f</code>, <code>-d f</code>, <code>-L f</code></td><td>f exists, is a regular file, is a folder, is a symbolic link</td></tr><tr><td>Files</td><td><code>-r f</code>, <code>-w f</code>, <code>-x f</code>, <code>-s f</code></td><td>you may read, write or run f, f is not empty</td></tr><tr><td>Files</td><td><code>a -nt b</code>, <code>a -ot b</code></td><td>a is newer than b, older than b</td></tr><tr><td>Strings</td><td><code>-z s</code>, <code>-n s</code></td><td>s is empty, s is not empty</td></tr><tr><td>Strings</td><td><code>a = b</code>, <code>a != b</code></td><td>the texts are equal, not equal</td></tr><tr><td>Numbers</td><td><code>-eq -ne -lt -le -gt -ge</code></td><td>equal, not equal, less, less or equal, greater, greater or equal</td></tr><tr><td>Combine</td><td><code>! expr</code>, <code>[ a ] && [ b ]</code>, <code>[ a ] || [ b ]</code></td><td>not, and, or (prefer && and || between two tests to -a and -o)</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-test"></div>
+<div class="lx-run"><div class="lx-rh"><span>Tests, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">[ -f notes.txt ] &amp;&amp; echo "notes.txt is a file"</span>
+<span class="lx-o">notes.txt is a file</span>
+<span class="lx-cmd">[ -d logs ] &amp;&amp; echo "logs is a folder"</span>
+<span class="lx-o">logs is a folder</span>
+<span class="lx-cmd">[ -x notes.txt ] || echo "notes.txt is not executable"</span>
+<span class="lx-o">notes.txt is not executable</span>
+<span class="lx-cmd">n=12</span>
+<span class="lx-cmd">[ "$n" -gt 10 ]; echo "12 &gt; 10: status $?"</span>
+<span class="lx-o">12 &gt; 10: status 0</span>
+<span class="lx-cmd">[ "$n" -lt 10 ]; echo "12 &lt; 10: status $?"</span>
+<span class="lx-o">12 &lt; 10: status 1</span>
+<span class="lx-cmd">[ "10" = "10.0" ]; echo "string 10 = 10.0: status $?"</span>
+<span class="lx-o">string 10 = 10.0: status 1</span>
+<span class="lx-cmd">[ 10 -eq 10 ]; echo "number 10 -eq 10: status $?"</span>
+<span class="lx-o">number 10 -eq 10: status 0</span>
+<span class="lx-cmd">empty=""</span>
+<span class="lx-cmd">[ -z "$empty" ] &amp;&amp; echo "empty is empty"</span>
+<span class="lx-o">empty is empty</span>
+<span class="lx-cmd">[ $empty = yes ]</span>
+<span class="lx-o">bash: [: =: unary operator expected</span>
+<span class="lx-cmd">[ "$empty" = yes ]; echo "quoted: status $?"</span>
+<span class="lx-o">quoted: status 1</span>
+<span class="lx-cmd">[ "$n" -gt 10 ] &amp;&amp; [ "$n" -lt 20 ] &amp;&amp; echo "between 10 and 20"</span>
+<span class="lx-o">between 10 and 20</span>
+<span class="lx-cmd">[ abc -eq 1 ]</span>
+<span class="lx-o">bash: [: abc: integer expression expected</span></pre><div class="lx-note">= compares text, so 10 and 10.0 differ, while -eq compares numbers. The unquoted empty variable vanished, so test saw only = yes and complained. With quotes it worked and simply returned 1. Status 2 means test itself could not understand the question.</div></div>
+<div class="note note-warn"><b>Common mistake</b><div>Write [ "$x" = y ], always with quotes. Use = and != for text, -eq and -lt for whole numbers. [ 9 > 10 ] is not a comparison at all: it redirects output into a file called 10.</div></div>
+<div class="vt-talk" hidden>The test command checks a single condition. You can write it as the word test, but almost everyone uses the square bracket form. The opening bracket is actually the name of a command, so the spaces around it are required, just like spaces between any command and its arguments. There are three families of checks. File checks such as dash f for a regular file, dash d for a folder and dash x for executable. String checks: dash z for empty, dash n for not empty, and equals and not equals. Number checks use letters: dash e q for equal, dash l t for less than and dash g t for greater than. Mixing them up is a classic bug, because equals compares text, so ten and ten point zero are different. Because the bracket is a normal command, its arguments go through word splitting first. An empty variable without quotes simply disappears, and test then sees the wrong number of arguments. The animation shows exactly how that happens. The cure is always the same: put double quotes around every variable inside single brackets.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="dbl" data-l="dbl" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>The bash way: [[ ]] and (( ))</h2>
+<p>bash adds two safer forms. <code>[[ ... ]]</code> is a <b>keyword</b>, not a command, so there is no word splitting and no globbing inside it. It also understands patterns, regular expressions and <code>&&</code> and <code>||</code>. <code>(( ... ))</code> evaluates whole number arithmetic with C-like operators and is true when the result is not 0.</p>
+<div class="tw"><table class="cvt "><thead><tr><th></th><th>[ ] (test)</th><th>[[ ]]</th><th>(( ))</th></tr></thead><tbody><tr><td>What it is</td><td>a command, POSIX</td><td>a bash keyword</td><td>a bash keyword</td></tr><tr><td>Empty unquoted variable</td><td>breaks the test</td><td>safe</td><td>counts as 0</td></tr><tr><td>Text</td><td><code>=</code> <code>!=</code></td><td><code>==</code> <code>!=</code> with patterns, <code><</code> <code>></code> sort order</td><td>not for text</td></tr><tr><td>Regular expressions</td><td>no</td><td><code>=~</code>, groups in BASH_REMATCH</td><td>no</td></tr><tr><td>Numbers</td><td><code>-lt -gt ...</code></td><td><code>-lt -gt ...</code></td><td><code>< > <= >= == !=</code>, <code>+ - * / % **</code></td></tr><tr><td>And, or</td><td>two tests with && ||</td><td><code>&&</code> <code>||</code> inside</td><td><code>&&</code> <code>||</code> inside</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Patterns, regular expressions and arithmetic</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">empty=""</span>
+<span class="lx-cmd">[[ $empty = yes ]]; echo "empty with [[ ]]: status $?"</span>
+<span class="lx-o">empty with [[ ]]: status 1</span>
+<span class="lx-cmd">file="holiday photo.JPG"</span>
+<span class="lx-cmd">[[ $file == *.jpg ]] &amp;&amp; echo "lower-case jpg" || echo "not *.jpg"</span>
+<span class="lx-o">not *.jpg</span>
+<span class="lx-cmd">[[ ${file,,} == *.jpg ]] &amp;&amp; echo "a jpg in any case"</span>
+<span class="lx-o">a jpg in any case</span>
+<span class="lx-cmd">[[ $file == "*.JPG" ]] || echo "a quoted pattern is plain text"</span>
+<span class="lx-o">a quoted pattern is plain text</span>
+<span class="lx-cmd">date="2026-11-23"</span>
+<span class="lx-cmd">if [[ $date =~ ^([0-9]{4})-([0-9]{2})-([0-9]{2})$ ]]; then
+  echo "year ${BASH_REMATCH[1]}, month ${BASH_REMATCH[2]}, day ${BASH_REMATCH[3]}"
+fi</span>
+<span class="lx-o">year 2026, month 11, day 23</span>
+<span class="lx-cmd">[[ apple &lt; banana ]] &amp;&amp; echo "apple sorts before banana"</span>
+<span class="lx-o">apple sorts before banana</span>
+<span class="lx-cmd">n=17</span>
+<span class="lx-cmd">(( n &gt; 10 &amp;&amp; n % 2 == 1 )) &amp;&amp; echo "$n is big and odd"</span>
+<span class="lx-o">17 is big and odd</span>
+<span class="lx-cmd">(( n % 2 == 0 )); echo "is 17 even: status $?"</span>
+<span class="lx-o">is 17 even: status 1</span>
+<span class="lx-cmd">(( count = n * 2 )); echo "count=$count"</span>
+<span class="lx-o">count=34</span>
+<span class="lx-cmd">(( 0 )); echo "(( 0 )) gives status $?"</span>
+<span class="lx-o">(( 0 )) gives status 1</span></pre><div class="lx-note">Inside [[ ]] the empty variable caused no error. Patterns after == are case sensitive, so the lower-cased copy ${file,,} matched. Quoting the right side turns the pattern into plain text. BASH_REMATCH holds the whole match at index 0 and each bracket group after it. (( )) can also assign, and a result of 0 means false.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Use [[ ]] and (( )) in bash scripts. Use [ ] only when the script must run under plain sh (#!/bin/sh), because dash has no [[ ]].</div></div>
+<div class="vt-talk" hidden>Bash gives you two better tools for conditions. Double square brackets are a keyword that the shell understands directly, so it does not split variables or expand stars inside. That makes empty and spaced values safe, even without quotes. Inside double brackets, double equals compares with a pattern, so star dot j p g matches any file ending in dot j p g. Equals tilde matches a regular expression, and every bracket group you capture lands in an array called BASH REMATCH. You can also join tests with double ampersand and double bar inside the brackets. For numbers, double parentheses let you write maths the way you learned it at school, with greater than, less than, and the percent sign for the remainder. The result counts as true when it is not zero. One caution: these are bash features, so a script that starts with hash bang slash bin slash s h cannot use them.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="case" data-l="case" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>case: choose by pattern</h2>
+<p>When one value can take many forms, <code>case</code> is clearer than a long elif chain. bash tries the patterns from top to bottom and runs the first arm that matches.</p>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>case</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>case "$answer" in
+  y|yes|Y)  echo "go on" ;;
+  n*|N*)    echo "stop" ;;
+  "")       echo "no answer" ;;
+  *)        echo "please answer y or n" ;;
+esac</pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Arm ending</th><th>Effect</th></tr></thead><tbody><tr><td><code>;;</code></td><td>stop after this arm (the normal case)</td></tr><tr><td><code>;&</code></td><td>also run the next arm without testing its pattern (bash 4 and later)</td></tr><tr><td><code>;;&</code></td><td>keep testing the following patterns and run any that match (bash 4 and later)</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-case"></div>
+<div class="lx-run"><div class="lx-rh"><span>case in a small service script</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">cat &gt; svc.sh &lt;&lt;'EOF'
+#!/bin/bash
+case "$1" in
+  start)        echo "starting the service" ;;
+  stop)         echo "stopping the service" ;;
+  restart)      echo "stopping"; echo "starting" ;;
+  status|st)    echo "running" ;;
+  *)            echo "usage: $0 {start|stop|restart|status}" &gt;&amp;2; exit 2 ;;
+esac
+EOF</span>
+<span class="lx-cmd">bash svc.sh start</span>
+<span class="lx-o">starting the service</span>
+<span class="lx-cmd">bash svc.sh st</span>
+<span class="lx-o">running</span>
+<span class="lx-cmd">bash svc.sh reload; echo "status $?"</span>
+<span class="lx-o">usage: svc.sh {start|stop|restart|status}
+status 2</span>
+<span class="lx-cmd">for f in a.jpg b.TXT c.tar.gz notes; do
+  case $f in
+    *.jpg|*.png)   echo "$f: image" ;;
+    *.[tT][xX][tT]) echo "$f: text" ;;
+    *.tar.*)       echo "$f: archive" ;;
+    *)             echo "$f: unknown" ;;
+  esac
+done</span>
+<span class="lx-o">a.jpg: image
+b.TXT: text
+c.tar.gz: archive
+notes: unknown</span>
+<span class="lx-cmd">case abc in a*) echo "starts with a" ;;&amp; *c) echo "ends with c" ;; esac</span>
+<span class="lx-o">starts with a
+ends with c</span></pre><div class="lx-note">The script picks one arm by its first argument, and the catch-all *) prints a usage message to stderr with status 2. With <code>;;&amp;</code> the second pattern was tested too, so both lines printed.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Make decisions&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Set the variable n to 15.&quot;, &quot;hint&quot;: &quot;n=15&quot;, &quot;check&quot;: [{&quot;env&quot;: [&quot;n&quot;, &quot;15&quot;]}]}, {&quot;t&quot;: &quot;With [ ] and -gt, print yes only when n is greater than 10.&quot;, &quot;hint&quot;: &quot;[ \&quot;$n\&quot; -gt 10 ] &amp;&amp; echo yes&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\[\\s.*-gt&quot;}, {&quot;out&quot;: &quot;^yes$&quot;}]}, {&quot;t&quot;: &quot;Print found only when notes.txt is a regular file.&quot;, &quot;hint&quot;: &quot;[ -f notes.txt ] &amp;&amp; echo found&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;-f\\s+notes\\.txt&quot;}, {&quot;out&quot;: &quot;^found$&quot;}]}, {&quot;t&quot;: &quot;In one line, set file to photo.jpg and use [[ ]] with the pattern *.jpg to print image.&quot;, &quot;hint&quot;: &quot;file=photo.jpg; [[ $file == *.jpg ]] &amp;&amp; echo image&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\[\\[&quot;}, {&quot;out&quot;: &quot;^image$&quot;}]}, {&quot;t&quot;: &quot;With (( )) and the remainder operator, print odd when n is odd.&quot;, &quot;hint&quot;: &quot;(( n % 2 )) &amp;&amp; echo odd&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;\\(\\(.*%&quot;}, {&quot;out&quot;: &quot;^odd$&quot;}]}, {&quot;t&quot;: &quot;Write an if with elif and else that prints big when n is over 20, medium when it is over 10, and small otherwise.&quot;, &quot;hint&quot;: &quot;if (( n &gt; 20 )); then echo big; elif (( n &gt; 10 )); then echo medium; else echo small; fi&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*if\\b.*\\belif\\b.*\\belse\\b&quot;}, {&quot;out&quot;: &quot;^medium$&quot;}]}, {&quot;t&quot;: &quot;Use case on $n so that two-digit numbers starting with 1 print teen and everything else prints other.&quot;, &quot;hint&quot;: &quot;case $n in 1?) echo teen ;; *) echo other ;; esac&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*case\\b&quot;}, {&quot;out&quot;: &quot;^teen$&quot;}]}]}"></div>
+<div class="vt-talk" hidden>The case statement chooses between many possibilities by pattern. You give it one value, then a list of arms. Each arm starts with a pattern and a closing parenthesis, followed by the commands, and ends with two semicolons. Bash tests the patterns from the top and runs only the first arm that matches, so put specific patterns first and the catch all star last. A vertical bar lets one arm accept several patterns, such as y or yes. The patterns are the same wildcards you use for file names, so star dot j p g matches every JPEG name. That makes case the natural choice for service scripts that accept start, stop and restart, and for sorting files by type. Two less common endings exist: semicolon ampersand runs the next arm as well, and two semicolons with an ampersand keeps testing the remaining patterns.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>Decisions from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>if runs a command and checks whether it worked. [ ] asks a question about a file, some text or a number. case picks one action from a list of patterns. fi and esac close the blocks.</p></div><div class="ld-p" data-ld="college" hidden><p>The condition of if, while and until is a list of commands, and only the status of the last one counts. test decides by the number of arguments it receives, which is why unquoted empty variables break it. [[ ]] and (( )) are parsed by bash itself, so their contents are not split or globbed.</p></div><div class="ld-p" data-ld="masters" hidden><p>Inside [[ ]], quoting the right side of == or =~ makes it literal text, so keep a regular expression in a variable, re="^[0-9]+$", and write [[ $x =~ $re ]]. The bash option nocasematch makes [[ ]] and case ignore letter case. A number in (( )) with a leading 0 is octal, so (( 08 )) is an error, while 10#08 forces base 10. errexit (set -e) ignores failures inside if conditions and in all but the last command of && and || lists.</p></div><div class="ld-p" data-ld="research" hidden><p>The POSIX test rules by argument count were written to make test predictable, but parsing operators and operands from the same words stays ambiguous, for example in [ "$a" = -n ]. Research on shell semantics such as Smoosh and studies of real-world scripts report condition errors and quoting mistakes among the most common bugs, and linters such as ShellCheck include dedicated checks (SC2070, SC2071, SC2086) for them.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the deployment gate</div><p>A release script must stop when the disk is nearly full or when the branch is not main. It uses <code>[[ $(git branch --show-current) == main ]] || { echo "deploy only from main" >&2; exit 1; }</code> and <code>(( usage < 90 ))</code> on the percentage that df reports. A case statement maps the first argument to staging or production, with a usage message in the *) arm. Every rule is a single readable line, and a wrong value stops the deploy before anything changes.</p></div>
+<div class="vt-talk" hidden>Here is the expert view of decisions. The condition of if is really a list of commands, and only the status of the last one matters. The test command decides what to do by counting its arguments, which explains every unary operator expected message you will ever see. Double brackets and double parentheses are read by bash itself, so their contents are never split or globbed. A few traps remain. If you quote the right side of a regular expression match, it becomes plain text, so store the expression in a variable instead. Numbers with a leading zero are octal inside double parentheses, so eight with a leading zero is an error unless you write ten hash before it. And the set dash e option ignores failures inside conditions, which surprises many people. Linters such as ShellCheck carry dedicated warnings for these mistakes, because studies of real scripts find them again and again.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./expansions.html" data-topic="expansions"><small>Previous topic</small><b>Expansions</b></a><a class="next" href="./loops.html" data-topic="loops"><small>Next topic</small><b>Loops</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "conditions", "topic": "conditions", "subject": "linux", "title": "Decisions: if, test and case", "codes": {}, "quiz": [{"lv": "e", "q": "Which word closes an if block?", "o": ["end", "done", "fi", "esac"], "a": 2, "hint": "if backwards.", "why": "if ... fi."}, {"lv": "e", "q": "What does if look at to decide?", "o": ["The output of the command", "The exit status of the command", "The length of the line", "The current folder"], "a": 1, "hint": "Status 0 is true.", "why": "if checks the exit status."}, {"lv": "e", "q": "Which test is true when notes.txt is a folder?", "o": ["[ -f notes.txt ]", "[ -d notes.txt ]", "[ -x notes.txt ]", "[ -z notes.txt ]"], "a": 1, "hint": "d for directory.", "why": "-d tests for a folder."}, {"lv": "e", "q": "Why is [-f notes.txt] wrong?", "o": ["-f does not exist", "[ needs spaces around it because it is a command name", "notes.txt needs quotes", "It is correct"], "a": 1, "hint": "Spaces.", "why": "[ is a command and must be its own word."}, {"lv": "m", "q": "Which compares two whole numbers?", "o": ["[ \"$a\" = \"$b\" ]", "[ \"$a\" -eq \"$b\" ]", "[ \"$a\" == \"$b\" ]", "[ \"$a\" -n \"$b\" ]"], "a": 1, "hint": "Letters for numbers.", "why": "-eq compares numbers."}, {"lv": "m", "q": "x is empty. What does [ $x = yes ] print?", "o": ["nothing, status 1", "an error: unary operator expected", "yes", "status 0"], "a": 1, "hint": "The variable vanished.", "why": "test sees only = and yes."}, {"lv": "m", "q": "Which test matches every name ending in .log?", "o": ["[ $f = *.log ]", "[[ $f == *.log ]]", "[[ $f == \"*.log\" ]]", "(( f == *.log ))"], "a": 1, "hint": "Unquoted pattern in [[ ]].", "why": "== in [[ ]] matches a pattern."}, {"lv": "m", "q": "After [[ 2026-11 =~ ^([0-9]+)-([0-9]+)$ ]], what is ${BASH_REMATCH[2]}?", "o": ["2026", "11", "2026-11", "empty"], "a": 1, "hint": "Second group.", "why": "Index 2 is the second bracket group."}, {"lv": "m", "q": "In case, which pattern catches every other value?", "o": ["else)", "default)", "*)", "?)"], "a": 2, "hint": "A star matches anything.", "why": "*) is the catch-all arm."}, {"lv": "h", "q": "a && b || c. When does c run?", "o": ["Only when a fails", "When a fails or when b fails", "Never", "Always"], "a": 1, "hint": "Not a real if.", "why": "c runs after any failure of the && part."}, {"lv": "h", "q": "What does [ 9 > 10 ] do?", "o": ["Compares 9 and 10", "Runs [ 9 ] and writes its output to a file called 10", "Gives a syntax error", "Compares text"], "a": 1, "hint": "Redirection.", "why": "> is a redirection outside [[ ]]."}, {"lv": "h", "q": "Which arm ending tests the next patterns too?", "o": ["<code>;;<\/code>", "<code>;&amp;<\/code>", "<code>;;&amp;<\/code>", "<code>&amp;&amp;<\/code>"], "a": 2, "hint": "bash 4.", "why": "<code>;;&amp;<\/code> keeps testing."}, {"lv": "x", "q": "Why does (( 08 + 1 )) fail?", "o": ["08 is too big", "A leading 0 means octal, and 8 is not an octal digit", "(( )) cannot add", "Spaces are wrong"], "a": 1, "hint": "Base 8.", "why": "Use 10#08 to force base 10."}], "calc": [{"lv": "e", "q": "n=7. What status does [ \"$n\" -gt 5 ] give?", "ans": "0", "hint": "True gives 0.", "steps": ["7 > 5 is true.", "True means status 0.", "<span class=\"eq\">0<\/span>"]}, {"lv": "e", "q": "n=7. What status does (( n % 2 == 0 )) give?", "ans": "1", "hint": "Is 7 even?", "steps": ["7 % 2 = 1.", "1 == 0 is false.", "<span class=\"eq\">false gives status 1<\/span>"]}, {"lv": "m", "q": "n=17. What does (( n * 2 - 4 )) compute, and is it true?", "ans": "30", "hint": "Times first.", "steps": ["17 × 2 = 34.", "34 − 4 = 30.", "<span class=\"eq\">30, not zero, so true<\/span>"]}, {"lv": "m", "q": "x is empty. How many arguments does [ $x = yes ] give the [ command, counting the final ]?", "ans": "3", "hint": "The empty variable vanishes.", "steps": ["Words after [: $x, =, yes, ].", "$x is empty and unquoted, so it disappears.", "<span class=\"eq\">=, yes and ] are 3<\/span>"]}, {"lv": "m", "q": "A case has 5 arms and the value matches arms 2 and 4. How many arms run when every arm ends with <code>;;<\/code>?", "ans": "1", "hint": "First match only.", "steps": ["Arm 2 matches first.", "<code>;;<\/code> stops the case.", "<span class=\"eq\">1 arm<\/span>"]}, {"lv": "h", "q": "What is 10#010 + 010 in (( ))?", "ans": "18", "hint": "One is base 10, one is octal.", "steps": ["10#010 is ten.", "010 is octal, which is 8.", "<span class=\"eq\">10 + 8 = 18<\/span>"]}], "assign": [], "must": [["if", "<code>if CMD; then ...; elif CMD; then ...; else ...; fi<\/code>. The condition is a command, status 0 is true, ! reverses it."], ["test and [ ]", "Spaces inside the brackets. Files -e -f -d -r -w -x -s, text = != -z -n, numbers -eq -ne -lt -le -gt -ge. Quote every variable."], ["[[ ]]", "No splitting or globbing inside. == with an unquoted pattern, =~ with a regular expression and BASH_REMATCH, && and || inside."], ["(( ))", "Whole number maths with < > == % and friends. True when the result is not 0. A leading 0 means octal."], ["case", "<code>case \"$v\" in pat1|pat2) ... ;; *) ... ;; esac<\/code>. First match wins. <code>;&amp;<\/code> falls through, <code>;;&amp;<\/code> keeps testing."]], "summary": "<p>if runs a command and checks its exit status. [ ] tests files, text and numbers but needs quoted variables, [[ ]] adds patterns and regular expressions safely, (( )) does maths, and case picks the first matching pattern.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

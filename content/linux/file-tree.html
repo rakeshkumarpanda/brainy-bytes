@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The file tree and paths · Unix and Linux</title>
+<meta name="description" content="The single directory tree and mounting, the Filesystem Hierarchy Standard (/etc, /home, /var, /usr, /tmp, /dev, /proc), merged /usr, absolute and relative paths, . .. ~ and cd -, pwd, cd, ls options, reading ls -l and hidden dotfiles.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=basics">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=basics" target="_top">Unix and Linux</a><span>›</span><span>Foundations</span><span>›</span><span>Step 2: Files and folders</span><span>›</span><span>The file tree</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 2 · Topic 1 of 3 · Beginner</div>
+    <h1>The file tree and paths</h1>
+    <p class="lead">See how Linux puts every file in one tree that starts at /, what each standard folder is for, how absolute and relative paths work, and how to move around and look with pwd, cd and ls.</p>
+    <div class="cv-chips"><span class="cv-chip">About 35 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">3 command cards</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">13 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#file-tree" data-topic="cheatsheet" data-h="file-tree">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#onetree" data-l="onetree"><span class="n">1</span><span class="t">One tree for everything</span></a></li><li><a href="#fhs" data-l="fhs"><span class="n">2</span><span class="t">What lives where: the standard folders</span></a></li><li><a href="#paths" data-l="paths"><span class="n">3</span><span class="t">Absolute and relative paths, . .. and ~</span></a></li><li><a href="#ls" data-l="ls"><span class="n">4</span><span class="t">Seeing what is there: ls in depth</span></a></li><li><a href="#levels" data-l="levels"><span class="n">5</span><span class="t">The file tree from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="onetree" data-l="onetree" hidden><div class="cv-lno">Lesson 1 of 5</div><h2>One tree for everything</h2>
+<p>Windows gives every disk its own letter: C:, D:, E:. Linux does it differently. There is <b>one single tree</b> of folders, and it starts at the top folder called the <b>root</b>, written as a single slash <code>/</code>. Every file on every disk, USB stick and network share appears somewhere inside that tree. A USB stick does not get a letter, it gets a folder, for example /media/learner/USB.</p>
+<p>Linux people say <b>directory</b> where Windows says folder. They are the same thing. Paths use a forward slash <code>/</code> between names, never a backslash.</p>
+<div class="lx-run"><div class="lx-rh"><span>The top of the tree on a typical Ubuntu machine</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls /</span>
+<span class="lx-o">bin   dev  home  lib64  mnt  proc  run   srv  tmp  var
+boot  etc  lib   media  opt  root  sbin  sys  usr</span></pre><div class="lx-note">Your list may have a few more names, such as snap or lost+found. The build machine of this page is a container with extra folders, so this is a typical desktop listing.</div></div>
+<div class="viz" data-viz="pk" data-pk="lx-path"></div>
+<div class="note note-warn"><b>Common mistake</b><div>The word root means two different things. / is the root directory, the top of the tree. root is also the name of the administrator user, whose home folder is /root. Context tells you which one is meant.</div></div>
+<div class="vt-talk" hidden>Unix chose a single tree in the early 1970s, and the idea turned out to be powerful. Every disk, every USB stick and even special things like running programs appear as folders somewhere in one tree that starts at slash. When you plug in a USB stick, Linux attaches its files at a folder such as slash media, and this is called mounting. A program never needs to know which physical disk a file is on. It only needs the path. That is why a big company can move its data to a bigger disk, or to a network storage box, without changing a single program, only the place where the disk is attached. Windows took a different path from MS-DOS, giving each disk its own letter. Neither is wrong, but on Linux you will always think in one tree, and every path you write starts from slash or from where you stand.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="fhs" data-l="fhs" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>What lives where: the standard folders</h2>
+<p>Linux distributions agree on what each top folder is for. The rules are written in the <b>Filesystem Hierarchy Standard</b> (FHS), version 3.0 from 2015. Once you know them, you can find your way around any Linux machine.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Folder</th><th>What it holds</th><th>Example</th></tr></thead><tbody><tr><td>/</td><td>The root, the top of everything</td><td></td></tr><tr><td>/home</td><td>One folder per person for their own files</td><td>/home/learner/notes.txt</td></tr><tr><td>/root</td><td>Home folder of the root user</td><td></td></tr><tr><td>/etc</td><td>System wide settings, as plain text files</td><td>/etc/hostname, /etc/passwd</td></tr><tr><td>/usr/bin</td><td>Programs for everyone. /bin is now a link to it on most distributions</td><td>/usr/bin/ls</td></tr><tr><td>/usr/sbin</td><td>Programs for system administration</td><td>/usr/sbin/useradd</td></tr><tr><td>/usr/lib, /lib</td><td>Libraries the programs share</td><td>libc.so.6</td></tr><tr><td>/usr/local</td><td>Software you install yourself, outside the package manager</td><td>/usr/local/bin/mytool</td></tr><tr><td>/opt</td><td>Big add-on packages from outside companies</td><td>/opt/google/chrome</td></tr><tr><td>/var</td><td>Data that changes while the system runs</td><td>/var/log/syslog, /var/www</td></tr><tr><td>/var/log</td><td>Log files</td><td>/var/log/auth.log</td></tr><tr><td>/tmp</td><td>Temporary files, often wiped at reboot, writable by everyone</td><td></td></tr><tr><td>/boot</td><td>The kernel and the files needed to start the computer</td><td>/boot/vmlinuz</td></tr><tr><td>/dev</td><td>Device files: disks, terminals, /dev/null</td><td>/dev/sda</td></tr><tr><td>/proc and /sys</td><td>Pretend files made by the kernel that show live information</td><td>/proc/cpuinfo</td></tr><tr><td>/mnt and /media</td><td>Places to attach other disks, by hand or automatically</td><td>/media/learner/USB</td></tr><tr><td>/run</td><td>Runtime data since the last boot, such as process id files</td><td>/run/sshd.pid</td></tr><tr><td>/srv</td><td>Data served by this machine, for example a website</td><td>/srv/www</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Look at some of them for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls -ld /bin /sbin /lib</span>
+<span class="lx-o">lrwxrwxrwx 1 root root 7 Apr 22  2024 /bin -&gt; usr/bin
+lrwxrwxrwx 1 root root 7 Apr 22  2024 /lib -&gt; usr/lib
+lrwxrwxrwx 1 root root 8 Apr 22  2024 /sbin -&gt; usr/sbin</span>
+<span class="lx-cmd">ls /etc | head -n 5</span>
+<span class="lx-o">ImageMagick-6
+PackageKit
+X11
+adduser.conf
+alternatives</span>
+<span class="lx-cmd">cat /etc/hostname</span>
+<span class="lx-o">vm</span>
+<span class="lx-cmd">head -n 2 /proc/cpuinfo</span>
+<span class="lx-o">processor	: 0
+vendor_id	: GenuineIntel</span></pre><div class="lx-note">On Ubuntu 24.04, /bin, /sbin and /lib are symbolic links into /usr (the "merged /usr" layout). /proc/cpuinfo is not on any disk: the kernel writes it when you read it.</div></div>
+<div class="note note-tip"><b>Remember</b><div>A quick memory aid: /etc for settings, /var for things that vary, /usr for installed programs, /home for people, /tmp for throw away files, /dev for devices.</div></div>
+<details class="deep"><summary>Going deeper: Why /bin and /usr/bin both exist</summary><div class="deep-b"><p>In early Unix the first disk was small, so the programs needed to start the system lived in /bin and everything else went on a second disk mounted at /usr. That reason disappeared long ago. Fedora (2012), Debian 12 (2023) and Ubuntu now keep everything in /usr and make /bin, /sbin and /lib links to it, so old scripts that call /bin/sh still work.</p></div></details>
+<div class="vt-talk" hidden>The folder names of Linux look strange at first, but each one has a story. The name etc comes from the early Unix manuals, where it held miscellaneous files, and today it holds almost every setting of the system as readable text. var means variable, for data that changes while the system runs, like log files and databases. The split between slash bin and slash usr slash bin is a famous accident of history. In 1971 the first disk of the Unix computer at Bell Labs filled up, so Ken Thompson and Dennis Ritchie moved part of the system onto a second disk mounted at slash usr. Fifty years later the reason is gone, and modern distributions such as Fedora, Debian and Ubuntu have merged them back together, keeping links so old scripts still work. The Filesystem Hierarchy Standard writes all of this down so every distribution looks familiar.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="paths" data-l="paths" hidden><div class="cv-lno">Lesson 3 of 5</div><h2>Absolute and relative paths, . .. and ~</h2>
+<p>A <b>path</b> tells the system how to reach a file. There are two kinds.</p>
+<div class="fx-grid"><div class="fx fx-key"><div class="fx-h"><span>Absolute path</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">starts with <code>/</code></div><div class="fx-n">The full route from the root. It means the same thing wherever you are: /home/learner/logs/app.log.</div></div><div class="fx fx-key"><div class="fx-h"><span>Relative path</span><span class="fx-tag">Exam favourite</span></div><div class="fx-b">does not start with <code>/</code></div><div class="fx-n">A route from the folder you are in now. From /home/learner, logs/app.log means /home/learner/logs/app.log.</div></div><div class="fx"><div class="fx-h"><span>Special names</span></div><div class="fx-b"><code>.</code> this folder, <code>..</code> the parent, <code>~</code> your home, <code>-</code> the previous folder (only for cd)</div><div class="fx-n">They can be mixed into any path: ../asha, ~/logs, ./script.sh.</div></div></div>
+<div class="walk"><div class="walk-h"><span>Work out where logs/../scripts/./hello.sh points, starting in /home/learner</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Start: /home/learner (the path does not start with /, so it is relative).</li><li>logs: go into /home/learner/logs.</li><li>..: go up to the parent, back to /home/learner.</li><li>scripts: go into /home/learner/scripts.</li><li>.: stay where you are.</li><li><span class="eq">hello.sh: the file /home/learner/scripts/hello.sh</span></li></ol></div>
+<div class="lx-run"><div class="lx-rh"><span>Paths in action</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">pwd</span>
+<span class="lx-o">/home/learner</span>
+<span class="lx-cmd">cd logs</span>
+<span class="lx-cmd">pwd</span>
+<span class="lx-o">/home/learner/logs</span>
+<span class="lx-cmd">cd ..</span>
+<span class="lx-cmd">pwd</span>
+<span class="lx-o">/home/learner</span>
+<span class="lx-cmd">cd /etc</span>
+<span class="lx-cmd">pwd</span>
+<span class="lx-o">/etc</span>
+<span class="lx-cmd">cd ~</span>
+<span class="lx-cmd">pwd</span>
+<span class="lx-o">/home/learner</span>
+<span class="lx-cmd">cd -</span>
+<span class="lx-o">/etc</span>
+<span class="lx-cmd">cd</span>
+<span class="lx-cmd">pwd</span>
+<span class="lx-o">/home/learner</span></pre><div class="lx-note">cd - goes back to the previous folder and prints it. cd with nothing goes home.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Every folder contains . and .., even the root. In / the parent .. points back to / itself, so cd .. at the top stays at the top.</div></div>
+<div class="vt-talk" hidden>Paths are like directions to a house. An absolute path is like a full postal address: country, city, street and house number. It works from anywhere in the world. A relative path is like telling a neighbour, two doors down on the left. It is shorter, but only makes sense from where you are standing. On Linux, an absolute path always starts with a slash, and a relative path never does. There are a few handy shortcuts. A single dot means here, two dots mean one folder up, and the tilde means your home folder. The tilde shortcut comes from an old terminal called the Lear Siegler ADM-3A from 1976, whose Home key also had a tilde printed on it. Bill Joy used that terminal while writing software at Berkeley, so the tilde came to mean home. Many programmers still type cd tilde every day without knowing that story.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="ls" data-l="ls" hidden><div class="cv-lno">Lesson 4 of 5</div><h2>Seeing what is there: ls in depth</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>ls</code></td><td>Names in the current folder</td><td><code>ls</code></td></tr><tr><td><code>ls -l</code></td><td>Long listing: type and permissions, links, owner, group, size, time, name</td><td><code>ls -l logs</code></td></tr><tr><td><code>ls -a</code></td><td>Also show hidden names, the ones starting with a dot, plus . and ..</td><td><code>ls -a</code></td></tr><tr><td><code>ls -A</code></td><td>Hidden names too, but without . and ..</td><td><code>ls -A</code></td></tr><tr><td><code>ls -h</code></td><td>With -l, sizes like 4.0K instead of 4096</td><td><code>ls -lh</code></td></tr><tr><td><code>ls -t</code></td><td>Newest first. Add -r to reverse any order</td><td><code>ls -ltr</code></td></tr><tr><td><code>ls -S</code></td><td>Biggest first</td><td><code>ls -lS</code></td></tr><tr><td><code>ls -R</code></td><td>Go into every subfolder too</td><td><code>ls -R projects</code></td></tr><tr><td><code>ls -d</code></td><td>Show the folder itself, not its contents</td><td><code>ls -ld /tmp</code></td></tr><tr><td><code>ls -F</code></td><td>Add a mark: / for folders, * for programs, @ for links</td><td><code>ls -F</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Read a long listing</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls -l</span>
+<span class="lx-o">total 32
+-rw-r--r-- 1 learner learner   49 Nov 23 09:30 fruits.txt
+lrwxrwxrwx 1 learner learner   12 Nov 23 09:30 latest.log -&gt; logs/app.log
+drwxr-xr-x 2 learner learner 4096 Nov 23 09:30 logs
+-rw-r--r-- 1 learner learner  110 Nov 23 09:30 marks.csv
+-rw-r--r-- 1 learner learner   46 Nov 23 09:30 notes.txt
+drwxr-xr-x 2 learner learner 4096 Nov 23 09:30 photos
+-rw-r--r-- 1 learner learner  107 Nov 23 09:30 poem.txt
+drwxr-xr-x 2 learner learner 4096 Nov 23 09:30 projects
+drwxr-xr-x 2 learner learner 4096 Nov 23 09:30 scripts</span>
+<span class="lx-cmd">ls -A</span>
+<span class="lx-o">.bashrc
+fruits.txt
+latest.log
+logs
+marks.csv
+notes.txt
+photos
+poem.txt
+projects
+scripts</span>
+<span class="lx-cmd">ls -F</span>
+<span class="lx-o">fruits.txt
+latest.log@
+logs/
+marks.csv
+notes.txt
+photos/
+poem.txt
+projects/
+scripts/</span></pre></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Column in ls -l</th><th>Example</th><th>Meaning</th></tr></thead><tbody><tr><td>1. Type and permissions</td><td><code>drwxr-xr-x</code></td><td>First letter: - file, d directory, l symbolic link, c and b devices. Then nine permission letters (chapter 3.1).</td></tr><tr><td>2. Links</td><td><code>2</code></td><td>How many names point to this item (chapter on inodes)</td></tr><tr><td>3. Owner</td><td><code>learner</code></td><td>The user who owns it</td></tr><tr><td>4. Group</td><td><code>learner</code></td><td>The group that owns it</td></tr><tr><td>5. Size</td><td><code>332</code></td><td>Bytes. A directory shows the space for its list of names, often 4096</td></tr><tr><td>6. Time</td><td><code>Nov 23 09:30</code></td><td>Last time the content was changed. Older than six months shows the year instead of the time</td></tr><tr><td>7. Name</td><td><code>latest.log -&gt; logs/app.log</code></td><td>For a link, also where it points</td></tr></tbody></table></div>
+<div class="note note-tip"><b>Remember</b><div>Files whose names start with a dot are <b>hidden</b>. It is only a naming habit, not a security feature: ls -a shows them. Settings files like .bashrc are hidden so they do not clutter your home folder.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Walk the tree&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Show the full path of where you are.&quot;, &quot;hint&quot;: &quot;pwd&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^/home/learner$&quot;}]}, {&quot;t&quot;: &quot;Go into the &lt;code&gt;logs&lt;/code&gt; folder.&quot;, &quot;hint&quot;: &quot;cd logs&quot;, &quot;check&quot;: [{&quot;cwd&quot;: &quot;/home/learner/logs&quot;}]}, {&quot;t&quot;: &quot;Go back up to the parent folder with &lt;code&gt;..&lt;/code&gt;&quot;, &quot;hint&quot;: &quot;cd ..&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;cd\\s+\\.\\.&quot;}, {&quot;cwd&quot;: &quot;/home/learner&quot;}]}, {&quot;t&quot;: &quot;Jump to &lt;code&gt;/etc&lt;/code&gt; with an absolute path.&quot;, &quot;hint&quot;: &quot;cd /etc&quot;, &quot;check&quot;: [{&quot;cwd&quot;: &quot;/etc&quot;}]}, {&quot;t&quot;: &quot;List /etc in long form.&quot;, &quot;hint&quot;: &quot;ls -l&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;ls\\s+-\\w*l&quot;}, {&quot;out&quot;: &quot;passwd&quot;}]}, {&quot;t&quot;: &quot;Go home with the tilde.&quot;, &quot;hint&quot;: &quot;cd ~&quot;, &quot;check&quot;: [{&quot;cwd&quot;: &quot;/home/learner&quot;}]}, {&quot;t&quot;: &quot;Show hidden files in your home folder.&quot;, &quot;hint&quot;: &quot;ls -a&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;ls\\s+-\\w*[aA]&quot;}, {&quot;out&quot;: &quot;\\.bashrc&quot;}]}, {&quot;t&quot;: &quot;List the scripts folder without going into it, using a relative path.&quot;, &quot;hint&quot;: &quot;ls -l scripts&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;ls\\b.*scripts&quot;}, {&quot;out&quot;: &quot;hello.sh&quot;}]}]}"></div>
+<div class="vt-talk" hidden>The ls command is probably the most typed command in the history of Unix. Its name is short for list, and it was in the very first edition of Unix in 1971. The long listing with dash l packs a lot into one line: what kind of thing it is, who may use it, who owns it, how big it is and when it last changed. Learn to read that line slowly once, and you will read it in a glance forever. Hidden files have a funny origin. In early Unix, ls was written to skip the dot and dot dot entries, and the quick way to do that was to skip every name starting with a dot. People then noticed they could hide their settings files by starting their names with a dot, and the habit stuck. It was a small bug that became a feature, and it is why your home folder has files like dot bashrc that you never see unless you ask.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 5 of 5</div><h2>The file tree from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>All the files in Linux live in one big upside down tree. The top is called root and written /. Folders hold files and other folders. A path is the list of folder names you walk through to reach a file.</p></div><div class="ld-p" data-ld="college" hidden><p>Linux presents a single hierarchical namespace rooted at /. Other filesystems are mounted onto directories. The FHS assigns roles to top level directories. Paths are absolute or relative to the process working directory, and the kernel resolves them component by component.</p></div><div class="ld-p" data-ld="masters" hidden><p>Path resolution (namei) walks each component through the dentry cache, checks execute permission on every directory crossed, follows symbolic links (up to 40 in a path), and crosses mount points. Each process has its own current directory and root directory, which chroot and mount namespaces change, so two processes can see different trees.</p></div><div class="ld-p" data-ld="research" hidden><p>Current work includes per process views of the tree in containers (mount namespaces, overlay filesystems), safer path lookup with openat2() and its RESOLVE_ flags (Linux 5.6, 2020) against symlink race attacks, and union and network filesystems. Older research systems such as Plan 9 from Bell Labs pushed the one tree idea further, with every resource as a file in a per process namespace.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: a web server</div><p>On a Linux web server, the website files usually live in /var/www, the settings of the web server in /etc/nginx, its logs in /var/log/nginx, and the program itself in /usr/sbin/nginx. An engineer who has never seen that server can still find everything in a minute, because every machine follows the same layout.</p></div>
+<div class="vt-talk" hidden>The one tree idea has been pushed very far. In the late 1980s the same Bell Labs team that created Unix built a research system called Plan 9, where every resource, even the network and the windows on the screen, was a file in a tree, and every program could have its own private view of that tree. Linux borrowed some of those ideas. Today, when you start a container with Docker, the container gets its own private file tree through a kernel feature called mount namespaces, so it sees a slash that is really just a folder on the host. Security researchers also study path tricks, where an attacker swaps a folder for a link at just the right moment, and in 2020 Linux added a safer way to open paths called openat2. All of this still rests on the simple idea you learned here: one tree, starting at slash.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><a class="prev" href="./getting-help.html" data-topic="getting-help"><small>Previous topic</small><b>Getting help</b></a><a class="next" href="./manage-files.html" data-topic="manage-files"><small>Next topic</small><b>Files and folders</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "file-tree", "topic": "file-tree", "subject": "linux", "title": "The file tree and paths", "codes": {}, "quiz": [{"lv": "e", "q": "What is the top folder of the Linux file tree called?", "o": ["C:", "The root, written /", "home", "top"], "a": 1, "hint": "One slash.", "why": "Everything starts at /, the root directory."}, {"lv": "e", "q": "Which folder holds your own files?", "o": ["/etc", "/home/your-name", "/usr", "/bin"], "a": 1, "hint": "One folder per person.", "why": "Each user has a home folder under /home. ~ is a short way to write it."}, {"lv": "e", "q": "Which command prints the folder you are in?", "o": ["cd", "pwd", "ls", "where"], "a": 1, "hint": "Print working directory.", "why": "pwd prints the absolute path of the current folder."}, {"lv": "e", "q": "Which ls option shows hidden files?", "o": ["-l", "-a", "-h", "-t"], "a": 1, "hint": "All.", "why": "-a shows names that start with a dot."}, {"lv": "m", "q": "You are in /home/learner/logs. Where does cd .. take you?", "o": ["/", "/home", "/home/learner", "/home/learner/logs/.."], "a": 2, "hint": "Up one level.", "why": ".. is the parent of the current folder."}, {"lv": "m", "q": "Which path is absolute?", "o": ["logs/app.log", "./notes.txt", "/etc/hostname", "../asha"], "a": 2, "hint": "It starts with something special.", "why": "Only paths that start with / are absolute."}, {"lv": "m", "q": "Where should system wide settings files live?", "o": ["/var", "/etc", "/tmp", "/opt"], "a": 1, "hint": "Text settings.", "why": "/etc holds configuration such as /etc/hosts and /etc/passwd."}, {"lv": "m", "q": "Where do log files usually go?", "o": ["/etc/log", "/var/log", "/usr/log", "/home/log"], "a": 1, "hint": "Data that varies.", "why": "/var/log holds logs written while the system runs."}, {"lv": "m", "q": "What does cd - do?", "o": ["Goes to /", "Goes back to the previous folder", "Goes home", "Deletes the folder"], "a": 1, "hint": "Like a back button.", "why": "cd - switches to $OLDPWD and prints it."}, {"lv": "m", "q": "In ls -l, the first character is d. What is the item?", "o": ["A device", "A directory", "A deleted file", "A document"], "a": 1, "hint": "- is a file, l is a link.", "why": "d marks a directory."}, {"lv": "h", "q": "You are in /etc. What is the absolute path of ../home/./learner/../asha?", "o": ["/home/asha", "/etc/home/asha", "/home/learner/asha", "/asha"], "a": 0, "hint": "Resolve one name at a time.", "why": "/etc then .. gives /, home gives /home, . stays, learner then .. return to /home, asha gives /home/asha."}, {"lv": "h", "q": "Why is /proc/cpuinfo not stored on any disk?", "o": ["It is in memory cache", "The kernel creates its contents at the moment you read it", "It is a link to the disk", "It is deleted at boot"], "a": 1, "hint": "proc is a pretend filesystem.", "why": "/proc is a virtual filesystem filled by the kernel on demand."}, {"lv": "x", "q": "Two processes print different contents for ls /. What kernel feature most likely explains it?", "o": ["Different shells", "Mount namespaces or chroot give them different root trees", "A broken disk", "Different terminals"], "a": 1, "hint": "Containers.", "why": "Each process can have its own root directory and mount namespace."}], "calc": [{"lv": "e", "q": "How many folders do you go through to reach /home/learner/logs/app.log from the root, not counting / itself and not counting the file?", "ans": "3", "hint": "Count the names between slashes, except the last.", "steps": ["Names: home, learner, logs, app.log.", "app.log is the file.", "<span class=\"eq\">folders: home, learner, logs = 3<\/span>"]}, {"lv": "e", "q": "You are in /home/learner/logs. How many times must you run cd .. to reach /?", "ans": "3", "hint": "One level per cd ..", "steps": ["/home/learner/logs to /home/learner.", "/home/learner to /home.", "<span class=\"eq\">/home to /: 3 times<\/span>"]}, {"lv": "m", "q": "ls -l shows a size of 4096 for a directory. How many kilobytes (KiB) is that?", "ans": "4", "hint": "1 KiB = 1,024 bytes.", "steps": ["Size in bytes: 4,096.", "One KiB is 1,024 bytes.", "<span class=\"eq\">4,096 ÷ 1,024 = 4 KiB, which ls -lh shows as 4.0K<\/span>"]}, {"lv": "m", "q": "From /home/learner/logs, a relative path to /home/asha needs how many .. steps before the name asha?", "ans": "2", "hint": "Climb to the common parent.", "steps": ["Common parent of the two paths: /home.", "From logs: up to learner (1), up to home (2).", "<span class=\"eq\">../../asha uses 2 .. steps<\/span>"]}, {"lv": "m", "q": "The absolute path /home/learner/projects is 23 characters long. The relative path from /home/learner is projects. How many characters do you save?", "ans": "15", "hint": "Count both.", "steps": ["Absolute: 23 characters.", "Relative: projects has 8 characters.", "<span class=\"eq\">23 − 8 = 15<\/span>"]}, {"lv": "h", "q": "The kernel follows at most 40 symbolic links while resolving one path. A chain of links each pointing to the next is 41 long. How many links too many is that?", "ans": "1", "hint": "Compare with the limit.", "steps": ["Limit: 40.", "Chain: 41.", "<span class=\"eq\">41 − 40 = 1 too many, so the kernel gives \"Too many levels of symbolic links\" (ELOOP)<\/span>"]}], "assign": [], "must": [["One tree", "Everything hangs from / (the root). Disks are mounted onto folders, there are no drive letters."], ["FHS", "/etc settings, /home people, /var changing data and /var/log logs, /usr programs, /tmp temporary, /dev devices, /proc live kernel info."], ["Paths", "Absolute starts with /. Relative starts from pwd. . here, .. parent, ~ home, cd - previous folder."], ["ls", "-l long, -a hidden, -h human sizes, -t newest first, -r reverse, -R recursive, -d the folder itself."], ["Hidden files", "A name starting with a dot is hidden from plain ls. It is a convention, not security."]], "summary": "<p>One tree from /. Know the standard folders. Absolute paths start with /, relative ones start where you are. pwd tells you where, cd moves you, ls shows what is there.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

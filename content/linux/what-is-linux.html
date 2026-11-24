@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meet Unix and Linux · Unix and Linux</title>
+<meta name="description" content="What an operating system is, the history of Unix, GNU and Linux, POSIX and the UNIX trademark, kernel space and user space, system calls, distributions and package families, WSL and other ways to practise, and the Unix philosophy.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=basics">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=basics" target="_top">Unix and Linux</a><span>›</span><span>Foundations</span><span>›</span><span>Step 1: Meet Unix and Linux</span><span>›</span><span>Meet Unix and Linux</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 1 of 3 · Beginner</div>
+    <h1>Meet Unix and Linux</h1>
+    <p class="lead">Find out what an operating system does, how Unix was born at Bell Labs and Linux in a student's bedroom, how the kernel, shell and tools fit together, and where you can start typing commands today.</p>
+    <div class="cv-chips"><span class="cv-chip">About 35 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">3 animations</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#what-is-linux" data-topic="cheatsheet" data-h="what-is-linux">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#os" data-l="os"><span class="n">1</span><span class="t">What an operating system does</span></a></li><li><a href="#story" data-l="story"><span class="n">2</span><span class="t">The story of Unix and Linux</span></a></li><li><a href="#layers" data-l="layers"><span class="n">3</span><span class="t">Kernel, shell and tools: the layers of Linux</span></a></li><li><a href="#distros" data-l="distros"><span class="n">4</span><span class="t">Distributions: many flavours, one kernel</span></a></li><li><a href="#practice" data-l="practice"><span class="n">5</span><span class="t">Where you can practise, and your first commands</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">The Unix way of thinking, from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="os" data-l="os" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>What an operating system does</h2>
+<p>A computer is a box of parts: a processor that does sums very fast, memory that remembers things for a short time, a disk that keeps files when the power is off, a screen, a keyboard and a network card. None of these parts knows how to share itself between the apps you run.</p>
+<p>The <b>operating system</b> is the program that manages all of those parts for you. When your music app and your browser both want the processor, it gives each one a turn many times a second. When an app wants to save a file, it decides where on the disk the bytes go. When two people use the same computer, it keeps their files apart.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Part of the computer</th><th>What the operating system does with it</th><th>An everyday example</th></tr></thead><tbody><tr><td>Processor (CPU)</td><td>Gives every running program a short turn, thousands of times a second</td><td>Music keeps playing while you type a message</td></tr><tr><td>Memory (RAM)</td><td>Gives each program its own space and stops programs reading each other</td><td>A crashed game does not break your browser</td></tr><tr><td>Disk</td><td>Organises bytes into files and folders</td><td>Your photos are still there after a restart</td></tr><tr><td>Devices</td><td>Talks to the keyboard, screen, printer and network card through drivers</td><td>A new mouse works as soon as you plug it in</td></tr><tr><td>Users</td><td>Checks who you are and what you may touch</td><td>Your brother cannot read your files on a shared laptop</td></tr></tbody></table></div>
+<p>Windows, macOS, Android, iOS and Linux are all operating systems. This subject is about the Unix family, which includes Linux and macOS, and about Linux most of all, because it is the one you will meet on servers, in the cloud, in phones and in almost every company that writes software.</p>
+<div class="scene"><div class="scene-h">Real world scenario: your phone</div><p>If you have an Android phone, you already use Linux every day. Android is built on the Linux kernel. When you open a camera app, the Linux kernel is the part that talks to the camera chip and hands the picture to the app.</p></div>
+<div class="vt-talk" hidden>Every time you switch on a computer, a phone or even a smart television, a hidden program wakes up first and takes charge of everything. That program is the operating system. In the 1950s there was no such thing. People booked a computer for an hour, loaded their own program on punched cards, and nobody else could use the machine until they were finished. Operating systems were invented so that many programs, and later many people, could share one expensive machine fairly. Today the same idea runs in your pocket. Your phone has music, maps and messages running at once, and the operating system shares out the processor, the memory and the battery between them, many times every second. In this subject we study the operating system family called Unix, and its most famous member, Linux, which runs most of the servers behind the websites you use.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="story" data-l="story" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>The story of Unix and Linux</h2>
+<p>Unix was born in <b>1969</b> at Bell Labs, the research lab of the American phone company AT&amp;T. Ken Thompson and Dennis Ritchie wanted a simple, friendly system for programmers, and they built it on a spare PDP-7 computer. In <b>1973</b> they rewrote Unix in a new language Ritchie had made, called <b>C</b>. That was a big idea: an operating system written in a high level language could be moved to a new kind of computer by recompiling it, instead of writing it again.</p>
+<p>Universities got copies, and the University of California, Berkeley, built its own version called <b>BSD</b>. Companies made their own Unix too, so in <b>1988</b> the IEEE published the first <b>POSIX</b> standard, a list of what every Unix-like system must offer, so that programs work on all of them.</p>
+<p>In <b>1983</b> Richard Stallman announced the <b>GNU</b> project to build a completely free Unix-like system. By 1991 GNU had a compiler, a shell and most tools, but no finished kernel. On <b>25 August 1991</b> a 21 year old student in Helsinki, <b>Linus Torvalds</b>, posted that he was making a free operating system kernel "just a hobby, won't be big and professional like gnu". He released Linux 0.01 in September 1991, and in 1992 he put it under the GNU General Public License. GNU tools plus the Linux kernel made a complete free system.</p>
+<div class="viz" data-viz="pk" data-pk="lx-timeline"></div>
+<div class="tw"><table class="cvt "><thead><tr><th>Name</th><th>What it is</th></tr></thead><tbody><tr><td>UNIX (in capitals)</td><td>A trademark of The Open Group. Only systems that pass its tests (the Single UNIX Specification) may use the name. macOS is one of them.</td></tr><tr><td>Unix-like</td><td>Any system that behaves like Unix, certified or not. Linux and FreeBSD are Unix-like.</td></tr><tr><td>POSIX</td><td>The IEEE standard (IEEE 1003.1) for the commands, shell and C functions a Unix-like system offers. A POSIX shell script runs on Linux, macOS and BSD.</td></tr><tr><td>Linux</td><td>Strictly, only the kernel that Linus Torvalds started. In daily speech, the whole system built on it.</td></tr><tr><td>GNU/Linux</td><td>The name the Free Software Foundation prefers for the whole system, because most of the tools come from GNU.</td></tr></tbody></table></div>
+<div class="note note-exam"><b>In the exam</b><div>Linux is not Unix code. Linus wrote the kernel from scratch. It is called Unix-like because it follows the same ideas and the POSIX standard.</div></div>
+<div class="vt-talk" hidden>Here is a story about a spare computer. In 1969, at Bell Labs in New Jersey, Ken Thompson found an old PDP-7 machine that nobody was using and wrote a small operating system on it, partly so he could play a space travel game he had written. That system became Unix. A few years later he and Dennis Ritchie rewrote it in the C language, which meant Unix could be copied to new computers easily, and it spread to universities all over the world. Twenty two years after that, in August 1991, a student called Linus Torvalds in Finland wrote a short message to an online group saying he was building a free kernel as a hobby. He expected a few friends to try it. Today Linux runs every one of the five hundred fastest supercomputers on Earth, most cloud servers, and billions of Android phones. A hobby project grew into one of the largest team efforts in history, with thousands of people adding code every year.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="layers" data-l="layers" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>Kernel, shell and tools: the layers of Linux</h2>
+<p>Linux is built in layers, and each layer only talks to the one below it.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Layer</th><th>What it is</th><th>Examples</th></tr></thead><tbody><tr><td>Hardware</td><td>The real parts</td><td>CPU, memory, disk, network card</td></tr><tr><td><b>Kernel</b></td><td>The core program that controls the hardware. It starts first, never stops, and is the only part allowed to touch devices directly</td><td>The Linux kernel, with its drivers</td></tr><tr><td>System libraries</td><td>Ready made functions programs call to ask the kernel for help</td><td>glibc, the GNU C library, or musl on Alpine</td></tr><tr><td><b>Shell</b> and tools</td><td>The programs you type commands into, and the small commands themselves</td><td>bash, zsh, ls, cp, grep from GNU coreutils and friends</td></tr><tr><td>Applications</td><td>Everything else</td><td>Browsers, databases, web servers, games</td></tr></tbody></table></div>
+<p>The kernel runs in a protected mode of the processor called <b>kernel space</b>. Your programs run in <b>user space</b>. A user program that wants to read a file cannot read the disk itself. It asks the kernel with a <b>system call</b>, and the kernel checks that you are allowed, does the work and hands back the result. This is why one broken program cannot crash the whole computer.</p>
+<div class="viz" data-viz="pk" data-pk="lx-layers"></div>
+<div class="lx-run"><div class="lx-rh"><span>Ask an Ubuntu 24.04 machine about itself</span><span class="lx-real">Typical output, yours will differ</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">uname -s</span>
+<span class="lx-o">Linux</span>
+<span class="lx-cmd">uname -r</span>
+<span class="lx-o">6.8.0-31-generic</span>
+<span class="lx-cmd">head -3 /etc/os-release</span>
+<span class="lx-o">PRETTY_NAME="Ubuntu 24.04 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"</span></pre><div class="lx-note">uname -s prints the kernel name and uname -r its version: 6.8.0-31-generic is the kernel Ubuntu 24.04 first shipped with, and updates raise the last numbers. /etc/os-release names the distribution, the layer of tools around the kernel. Your own machine prints its own versions.</div></div>
+<details class="deep"><summary>Going deeper: Why a kernel version looks like 6.8.0</summary><div class="deep-b"><p>Linux versions are written major.minor.patch, for example 6.8.0. Since Linux 3.0 in 2011 the first number has no special meaning: Linus moves it up when the second number grows large. A new minor version comes out about every nine or ten weeks. Distributions add their own suffix, so Ubuntu shows something like 6.8.0-45-generic.</p></div></details>
+<div class="vt-talk" hidden>Think about ordering food in a restaurant. You do not walk into the kitchen and use the stove yourself. You tell the waiter, the waiter tells the kitchen, and the food comes back to your table. Linux works in the same safe way. A program never touches the disk or the network card directly. It asks the kernel through a system call, and the kernel checks the request first. This idea, called protected mode, arrived in ordinary personal computers with the Intel 80386 processor in 1985, and Linus Torvalds wrote the first Linux kernel for exactly that processor. Because of these layers, a program that crashes only hurts itself, and the rest of the system keeps working. When you learn the commands in this subject, remember that every one of them is just a small program in user space, asking the kernel for help.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="distros" data-l="distros" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Distributions: many flavours, one kernel</h2>
+<p>Nobody installs only a kernel. A <b>distribution</b> (distro) is a complete package: the Linux kernel, the GNU tools, a package manager to install software, a desktop if you want one, and a team that tests and updates it all. They all run the same commands you learn here, with small differences in how software is installed.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Distribution</th><th>Family and package tool</th><th>Release style</th><th>Good for</th></tr></thead><tbody><tr><td>Ubuntu</td><td>Debian family, apt and .deb files</td><td>A new version every six months, a Long Term Support (LTS) version every two years with five years of standard support</td><td>Beginners, cloud servers, desktops</td></tr><tr><td>Debian</td><td>apt and .deb</td><td>Stable releases about every two years</td><td>Servers that must never surprise you</td></tr><tr><td>Fedora</td><td>Red Hat family, dnf and .rpm files</td><td>About every six months, new software early</td><td>Developers who want the latest tools</td></tr><tr><td>Red Hat Enterprise Linux (RHEL), Rocky, AlmaLinux</td><td>dnf and .rpm</td><td>Major versions supported for ten years</td><td>Companies, banks, government</td></tr><tr><td>Arch Linux</td><td>pacman</td><td>Rolling: always updating, no big versions</td><td>People who want to build and understand every piece</td></tr><tr><td>Alpine Linux</td><td>apk, musl C library</td><td>Small fixed releases</td><td>Containers, because a base image is only a few megabytes</td></tr></tbody></table></div>
+<div class="viz" data-viz="pk" data-pk="lx-distro"></div>
+<div class="note note-tip"><b>Remember</b><div>An Ubuntu version number is the year and month of its release. 24.04 means April 2024. LTS versions come out in April of even years: 20.04, 22.04, 24.04.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Learn the commands, not the distribution. ls, grep and chmod work the same everywhere. Only the package tool (apt, dnf, pacman, apk) changes between families.</div></div>
+<div class="vt-talk" hidden>When Linux was young, installing it meant downloading the kernel and dozens of tools separately and putting them together by hand, which only experts could do. In 1993 two of the oldest distributions still alive today appeared. Slackware came first in July, and Debian followed in August, started by a student called Ian Murdock. A distribution does all the putting together for you. In 2004 a company called Canonical released Ubuntu, based on Debian, with the goal of making Linux easy for everyone, and it became very popular. Today there are hundreds of distributions, but most belong to a few families. If you use Ubuntu at home and your company uses Red Hat Enterprise Linux, nearly everything you type is the same. Only the way you install software changes, apt on one and dnf on the other.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Where you can practise, and your first commands</h2>
+<p>You do not need a new computer to learn Linux. Pick any of these.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>You have</th><th>How to get a Linux shell</th></tr></thead><tbody><tr><td>Windows 10 or 11</td><td>Open PowerShell as administrator and run <code>wsl --install</code>. It installs the Windows Subsystem for Linux with Ubuntu. After a restart, open Ubuntu from the Start menu.</td></tr><tr><td>macOS</td><td>Open the Terminal app. macOS is a certified UNIX and its default shell has been zsh since macOS Catalina (10.15). Most commands here work, but macOS uses BSD versions of tools, so a few options differ from GNU Linux.</td></tr><tr><td>Any computer</td><td>Install VirtualBox or another virtual machine app and run Ubuntu inside it. Nothing on your real system changes.</td></tr><tr><td>A browser only</td><td>The practice shell on every page of this subject. It is a pretend Linux inside the page, made for learning, so it is safe to try anything.</td></tr><tr><td>A Raspberry Pi or an old laptop</td><td>Install Raspberry Pi OS or Ubuntu on it and learn on real hardware.</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Your first five commands, run for real</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">whoami</span>
+<span class="lx-o">learner</span>
+<span class="lx-cmd">pwd</span>
+<span class="lx-o">/home/learner</span>
+<span class="lx-cmd">ls</span>
+<span class="lx-o">fruits.txt
+latest.log
+logs
+marks.csv
+notes.txt
+photos
+poem.txt
+projects
+scripts</span>
+<span class="lx-cmd">date -u -d '2026-11-23 09:30'</span>
+<span class="lx-o">Mon Nov 23 09:30:00 UTC 2026</span>
+<span class="lx-cmd">echo "Hello, Linux"</span>
+<span class="lx-o">Hello, Linux</span></pre><div class="lx-note">whoami prints your user name, pwd the folder you are in, ls the files in it. date prints a date (here a fixed one, so the page always shows the same text). echo prints whatever you give it.</div></div>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Your first visit&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Find out who you are logged in as.&quot;, &quot;hint&quot;: &quot;whoami&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*whoami&quot;}, {&quot;out&quot;: &quot;learner&quot;}]}, {&quot;t&quot;: &quot;Print the folder you are standing in.&quot;, &quot;hint&quot;: &quot;pwd&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*pwd&quot;}, {&quot;out&quot;: &quot;^/home/learner$&quot;}]}, {&quot;t&quot;: &quot;List the files in this folder.&quot;, &quot;hint&quot;: &quot;ls&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*ls\\b&quot;}, {&quot;out&quot;: &quot;notes.txt&quot;}]}, {&quot;t&quot;: &quot;Ask the kernel its name and version with all details.&quot;, &quot;hint&quot;: &quot;uname -a&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;uname\\s+-a&quot;}]}, {&quot;t&quot;: &quot;Read the file that names the distribution: &lt;code&gt;/etc/os-release&lt;/code&gt;.&quot;, &quot;hint&quot;: &quot;cat /etc/os-release&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;cat\\s+/etc/os-release&quot;}, {&quot;out&quot;: &quot;Practice Linux&quot;}]}, {&quot;t&quot;: &quot;Make the computer greet you with echo.&quot;, &quot;hint&quot;: &quot;echo \&quot;Hello, Linux\&quot;&quot;, &quot;check&quot;: [{&quot;cmd&quot;: &quot;^\\s*echo\\s+\\S&quot;}]}]}"></div>
+<div class="note note-warn"><b>Common mistake</b><div>Commands are case sensitive. <code>ls</code> works, <code>LS</code> gives "command not found". File names are case sensitive too: notes.txt and Notes.txt are two different files.</div></div>
+<div class="vt-talk" hidden>There is a famous saying among people who learn Linux. You do not learn it by reading, you learn it by typing. When the Windows Subsystem for Linux arrived in 2016, millions of Windows users suddenly had a real Linux shell one command away, and it became one of the most common ways students start. Many cloud companies also give a free small Linux server for learning. On this page you have the practice shell, a pretend Linux computer that lives inside the page. It has a user called learner, a home folder with a few files, and a list of missions. Try the missions now. Nothing you type there can harm your real computer, so be curious. Type a command, read what comes back, and if something looks strange, that is exactly the moment you learn the most.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>The Unix way of thinking, from school to research</h2>
+<p>Unix came with a way of building software that people still follow. Doug McIlroy, who invented Unix pipes, summed it up like this (as quoted by Peter Salus in 1994): <b>write programs that do one thing and do it well, write programs to work together, and write programs to handle text streams, because that is a universal interface.</b></p>
+<div class="tw"><table class="cvt "><thead><tr><th>Unix idea</th><th>What it means</th><th>Where you will see it</th></tr></thead><tbody><tr><td>Small tools</td><td>Each command does one job, for example sort only sorts</td><td>ls, sort, wc, grep</td></tr><tr><td>Pipes join tools</td><td>The output of one command becomes the input of the next</td><td><code>sort fruits.txt | uniq -c</code></td></tr><tr><td>Text everywhere</td><td>Settings, logs and data are plain text you can read and edit</td><td>/etc/passwd, /var/log, CSV files</td></tr><tr><td>Everything is a file</td><td>Devices, processes and even kernel settings appear as files</td><td>/dev/null, /proc/cpuinfo</td></tr><tr><td>Silence is golden</td><td>A command that works prints nothing extra</td><td>cp and mkdir print nothing when they succeed</td></tr></tbody></table></div>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>Linux is the boss program inside a computer. It shares the computer between all the apps, keeps everyone’s files safe, and lets you give orders by typing short words like ls (show my files) into a black window called a terminal.</p></div><div class="ld-p" data-ld="college" hidden><p>Linux is a free, open source, Unix-like operating system kernel. Together with GNU tools and a package manager it forms a distribution. Users work through a shell, which runs small single purpose programs that can be combined with pipes, following the Unix philosophy and the POSIX standard.</p></div><div class="ld-p" data-ld="masters" hidden><p>Linux is a monolithic kernel with loadable modules. Processes in user space reach kernel services through system calls, with memory protection by virtual memory and privilege rings. Its interfaces follow POSIX and the Single UNIX Specification closely, so software is portable across Unix-like systems. Distributions differ in libc (glibc, musl), init system, packaging and release model.</p></div><div class="ld-p" data-ld="research" hidden><p>Open problems include safer kernel code (the Rust for Linux effort, merged as experimental in Linux 6.1 in December 2022), real time behaviour (PREEMPT_RT was merged into the main kernel in Linux 6.12 in 2024), eBPF programs that run safely inside the kernel, scaling to thousands of cores, and studies of the kernel development process itself, one of the largest collaborations in software.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: a website you used today</div><p>When you watched a video or searched the web today, your request almost certainly landed on Linux servers. Most of them have no screen at all. Engineers manage them only through a shell over the network, using exactly the commands this subject teaches.</p></div>
+<div class="vt-talk" hidden>In 1978 the Bell System Technical Journal printed a special issue about Unix, and in it Doug McIlroy wrote down rules for building programs the Unix way. The best known summary is very short: do one thing well, work together, and use text. These rules explain why Linux feels the way it does. Instead of one giant program that does everything, you get hundreds of small commands, and you join them like building blocks. For example, one command lists files, a second one counts lines, and together they count your files. This idea has lasted more than fifty years and still shapes modern software, from small command line tools to the way big cloud systems are split into small services. As you go through this subject, notice how often a hard job becomes easy when you join two or three small tools.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><span></span><a class="next" href="./terminal-and-shell.html" data-topic="terminal-and-shell"><small>Next topic</small><b>Terminal and shell</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "what-is-linux", "topic": "what-is-linux", "subject": "linux", "title": "Meet Unix and Linux", "codes": {}, "quiz": [{"lv": "e", "q": "What is the main job of an operating system?", "o": ["Drawing pictures", "Managing the hardware and sharing it between programs and users", "Browsing the web", "Writing programs for you"], "a": 1, "hint": "It is the manager of the computer.", "why": "It shares the CPU, memory, disk and devices, and keeps users and programs apart."}, {"lv": "e", "q": "Who started writing Linux, and in which year?", "o": ["Ken Thompson in 1969", "Linus Torvalds in 1991", "Richard Stallman in 1983", "Dennis Ritchie in 1973"], "a": 1, "hint": "A student in Helsinki.", "why": "Linus Torvalds announced his hobby kernel on 25 August 1991."}, {"lv": "e", "q": "Where was Unix created?", "o": ["Microsoft", "Bell Labs at AT&T", "Apple", "The University of Helsinki"], "a": 1, "hint": "A phone company research lab.", "why": "Ken Thompson and Dennis Ritchie created Unix at Bell Labs in 1969."}, {"lv": "e", "q": "Which of these uses the Linux kernel?", "o": ["Android", "iOS", "Windows 11", "MS-DOS"], "a": 0, "hint": "Phones.", "why": "Android is built on the Linux kernel. iOS is built on Apple's own Darwin system."}, {"lv": "m", "q": "Why was rewriting Unix in C in 1973 so important?", "o": ["C is faster than machine code", "The system could be moved to other computers by recompiling it", "C was the only language", "It made Unix free"], "a": 1, "hint": "Portability.", "why": "Written in a high level language, Unix could be ported instead of rewritten for every machine."}, {"lv": "m", "q": "What is a Linux distribution?", "o": ["Another name for the kernel", "The kernel plus tools, a package manager and updates, tested together", "A paid version of Linux", "A kind of virus"], "a": 1, "hint": "A complete package.", "why": "Ubuntu, Fedora and Debian all ship the Linux kernel with GNU tools, package managers and their own choices."}, {"lv": "m", "q": "A program wants to read a file. How does it get the data?", "o": ["It reads the disk directly", "It makes a system call and the kernel reads the disk", "It asks the shell", "It asks the BIOS"], "a": 1, "hint": "Only one layer may touch the hardware.", "why": "Programs in user space ask the kernel through system calls such as read."}, {"lv": "m", "q": "Which standard describes the shell and commands common to Unix-like systems?", "o": ["ISO 9001", "POSIX (IEEE 1003.1)", "HTML5", "TCP/IP"], "a": 1, "hint": "IEEE published it in 1988.", "why": "POSIX lets the same scripts and C programs work across Linux, BSD and macOS."}, {"lv": "m", "q": "You typed LS and got \"command not found\". Why?", "o": ["ls is not installed", "Linux commands are case sensitive", "You need sudo", "The terminal is broken"], "a": 1, "hint": "Capital letters matter.", "why": "The command is ls in lower case. LS is a different name that does not exist."}, {"lv": "h", "q": "What does Ubuntu 22.04 tell you?", "o": ["Version 22, patch 4", "Released in April 2022, and it is an LTS because it came in April of an even year", "Released on 22 April", "The 22nd build of version 4"], "a": 1, "hint": "Year and month.", "why": "Ubuntu numbers are YY.MM. LTS releases come every April of an even year."}, {"lv": "h", "q": "Which name may only be used by systems certified by The Open Group?", "o": ["Linux", "UNIX", "POSIX", "GNU"], "a": 1, "hint": "A trademark.", "why": "UNIX is a trademark. Certified systems such as macOS may use it. Linux is Unix-like."}, {"lv": "h", "q": "A shell script uses only POSIX features. Where will it most likely run unchanged?", "o": ["Only on Ubuntu", "On Linux, macOS and the BSDs", "Only on Windows", "Only on the computer that wrote it"], "a": 1, "hint": "That is the point of a standard.", "why": "POSIX scripts are portable across Unix-like systems."}, {"lv": "x", "q": "Which statement about Linux and GNU is accurate?", "o": ["Linux contains Bell Labs Unix code", "The Linux kernel plus GNU tools make a complete free system, which is why some call it GNU/Linux", "GNU is a Linux distribution", "GNU was started after Linux"], "a": 1, "hint": "Dates: GNU 1983, Linux 1991.", "why": "GNU provided the compiler, shell and tools, and Linux provided the missing kernel."}, {"lv": "x", "q": "Since Linux 3.0, what does a jump in the first version number (for example 5.19 to 6.0) mean?", "o": ["A complete rewrite", "Nothing special, the minor number had grown large", "A new license", "That old programs stop working"], "a": 1, "hint": "Linus said the numbers are just numbers.", "why": "Linux does not break user space between versions. The major number moves when the minor number gets big."}], "calc": [{"lv": "e", "q": "Unix was started in 1969 and Linux in 1991. How many years apart is that?", "ans": "22", "hint": "Subtract the years.", "steps": ["Linux year: 1991.", "Unix year: 1969.", "<span class=\"eq\">1991 − 1969 = 22 years<\/span>"]}, {"lv": "e", "q": "Ubuntu ships an LTS every two years. 24.04 is an LTS. Which year does the next LTS come out? Give the year, for example 2030.", "ans": "2026", "hint": "Add two years.", "steps": ["The LTS of 24.04 came out in 2024.", "The next one is two years later.", "<span class=\"eq\">2024 + 2 = 2026, called 26.04<\/span>"]}, {"lv": "e", "q": "Ubuntu 24.04 LTS has five years of standard support from April 2024. In which year does it end? ", "ans": "2029", "hint": "Add five years.", "steps": ["Release: April 2024.", "Support: five years.", "<span class=\"eq\">2024 + 5 = 2029<\/span>"]}, {"lv": "m", "q": "Unix time counts seconds from 1 January 1970 00:00 UTC. How many seconds are in one day?", "ans": "86400", "hint": "Hours times minutes times seconds.", "steps": ["One day has 24 hours.", "One hour has 60 minutes of 60 seconds each: 3,600 seconds.", "<span class=\"eq\">24 × 3,600 = 86,400 seconds<\/span>"]}, {"lv": "m", "q": "Old systems stored Unix time in a signed 32 bit number. The biggest value is 2³¹ − 1. What is that number?", "ans": "2147483647", "hint": "2 to the power 31 is 2,147,483,648.", "steps": ["A signed 32 bit number keeps one bit for the sign, so 31 bits hold the value.", "2³¹ = 2,147,483,648.", "<span class=\"eq\">2³¹ − 1 = 2,147,483,647 seconds<\/span>"]}, {"lv": "h", "q": "How many whole days after 1 January 1970 does a signed 32 bit time run out? Divide 2,147,483,647 seconds by 86,400 and drop the fraction.", "ans": "24855", "hint": "Whole days only.", "steps": ["Seconds available: 2,147,483,647.", "Seconds per day: 86,400.", "<span class=\"eq\">2,147,483,647 ÷ 86,400 = 24,855.13<\/span>", "So the counter runs out 24,855 days later, on 19 January 2038 at 03:14:07 UTC. This is the Year 2038 problem. Modern Linux uses 64 bit time."]}, {"lv": "h", "q": "A new Linux minor version comes out about every 9 weeks. About how many releases is that per year? Round down.", "ans": "5", "hint": "52 weeks in a year.", "steps": ["A year has 52 weeks.", "One release every 9 weeks.", "<span class=\"eq\">52 ÷ 9 = 5.8, so about 5 full release cycles a year<\/span>"]}], "assign": [], "must": [["Operating system", "The manager of the computer: it shares the CPU, memory, disk and devices between programs and users."], ["Unix and Linux", "Unix: Bell Labs, 1969, rewritten in C in 1973. Linux: a free Unix-like kernel by Linus Torvalds, 1991, licensed under the GPL."], ["Layers", "Hardware, kernel (kernel space), libraries, shell and tools, apps (user space). Programs ask the kernel for help with system calls."], ["Distributions", "Kernel plus GNU tools plus a package manager. Debian family uses apt, Red Hat family uses dnf. Commands are the same everywhere."], ["Standards and names", "POSIX (IEEE 1003.1) keeps Unix-like systems compatible. UNIX is a trademark for certified systems such as macOS."], ["Case matters", "Commands and file names are case sensitive: ls is not LS, notes.txt is not Notes.txt."]], "summary": "<p>Linux is a free Unix-like kernel. With GNU tools and a package manager it becomes a distribution. Programs live in user space and ask the kernel for help with system calls. The same commands work on every distribution.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>

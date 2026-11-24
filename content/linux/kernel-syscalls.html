@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The kernel and system calls: strace, /proc, /sys and modules · Unix and Linux</title>
+<meta name="description" content="What the kernel manages, user space and kernel space, system calls and libc wrappers, errno, strace with -e, -f, -c and -o, ltrace, /proc per process and system wide, /proc/sys, /sys, kernel releases, lsmod, modinfo, modprobe, modprobe.d and the kernel log, with real strace runs on Ubuntu 24.04.">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="../../assets/learn.css">
+<link rel="stylesheet" href="../../assets/cv.css">
+<link rel="stylesheet" href="../../assets/viz.css">
+<link rel="stylesheet" href="../../assets/playkit.css">
+<link rel="stylesheet" href="../../assets/linux.css">
+
+<!-- md3 --><link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..500,0..1,0&icon_names=account_tree,arrow_back,arrow_forward,auto_stories,bug_report,casino,check_circle,chevron_right,close,code,computer,dark_mode,dns,emoji_events,expand_more,fullscreen,fullscreen_exit,history,home,light_mode,lightbulb,list,menu,menu_open,open_in_new,play_arrow,psychology,quiz,school,search,shield,task_alt,timer,travel_explore&display=block" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/md3.css"><!-- /md3 -->
+</head>
+<body class="cvp lxp" data-fxh="Command sheet">
+<header class="cv-top"><a class="cv-brand" href="../../index.html">Brainy Bytes</a><a class="cv-home" href="../../subject.html?s=linux&amp;p=advanced">Unix and Linux learning path</a><span class="grow"></span><button type="button" class="cv-theme" id="cvTheme">Dark mode</button></header>
+<div class="cv-wrap">
+  <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=advanced" target="_top">Unix and Linux</a><span>›</span><span>Internals and Advanced</span><span>›</span><span>Step 1: Kernel and processes</span><span>›</span><span>Kernel and system calls</span></div>
+  <header class="cv-hero">
+    <div class="cv-kicker">Step 1 · Topic 1 of 2 · Expert</div>
+    <h1>The kernel and system calls: strace, /proc, /sys and modules</h1>
+    <p class="lead">See how every program depends on the kernel: what crosses the border between user space and kernel space, how to watch it with strace, how the kernel shows its state in /proc and /sys, and how modules add drivers while it runs.</p>
+    <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#kernel-syscalls" data-topic="cheatsheet" data-h="kernel-syscalls">This chapter on the cheatsheet</a></div>
+  </header>
+  <nav class="cv-tabs" role="tablist" aria-label="Parts of this chapter"><button type="button" class="cv-tab" role="tab" data-tab="learn">Learn</button><button type="button" class="cv-tab" role="tab" data-tab="formulas">Commands</button><button type="button" class="cv-tab" role="tab" data-tab="problems">Worked problems</button><button type="button" class="cv-tab" role="tab" data-tab="quiz">Quiz</button><button type="button" class="cv-tab" role="tab" data-tab="summary">Summary</button></nav>
+  <section class="cv-pane" data-pane="learn" role="tabpanel">
+    <ol class="cv-stepper" aria-label="Lessons"><li><a href="#layers" data-l="layers"><span class="n">1</span><span class="t">User space, kernel space and the system call</span></a></li><li><a href="#strace" data-l="strace"><span class="n">2</span><span class="t">Watching system calls with strace</span></a></li><li><a href="#proc" data-l="proc"><span class="n">3</span><span class="t">/proc and /sys: the kernel as files</span></a></li><li><a href="#modules" data-l="modules"><span class="n">4</span><span class="t">Kernel versions, modules and the kernel log</span></a></li><li><a href="#practice" data-l="practice"><span class="n">5</span><span class="t">Practice: explore the kernel through /proc</span></a></li><li><a href="#levels" data-l="levels"><span class="n">6</span><span class="t">The kernel from school to research</span></a></li></ol>
+    <article class="cv-lesson" id="layers" data-l="layers" hidden><div class="cv-lno">Lesson 1 of 6</div><h2>User space, kernel space and the system call</h2>
+<p>The <b>kernel</b> is the one program that runs with full control of the hardware. Everything else, from bash to a web browser, runs in <b>user space</b> with limited rights. When a program needs anything the kernel controls, it makes a <b>system call</b>.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>The kernel manages</th><th>What that means</th><th>System calls you meet</th></tr></thead><tbody><tr><td>processes</td><td>starts and stops programs and shares the CPUs between them</td><td><code>fork</code>, <code>execve</code>, <code>wait4</code>, <code>exit_group</code>, <code>kill</code></td></tr><tr><td>memory</td><td>gives each process its own address space</td><td><code>mmap</code>, <code>brk</code>, <code>munmap</code></td></tr><tr><td>files</td><td>one tree of names over many file systems (the VFS)</td><td><code>openat</code>, <code>read</code>, <code>write</code>, <code>close</code>, <code>stat</code></td></tr><tr><td>devices</td><td>drivers for disks, network cards, keyboards</td><td><code>ioctl</code>, plus read and write on device files</td></tr><tr><td>networking</td><td>TCP/IP, sockets, the firewall</td><td><code>socket</code>, <code>connect</code>, <code>accept</code>, <code>sendto</code></td></tr><tr><td>security</td><td>users, permissions, capabilities, namespaces</td><td><code>setuid</code>, <code>capset</code>, <code>unshare</code></td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>What happens in one call such as read()</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>The program calls <code>read(fd, buf, n)</code>, a normal C function in the C library (glibc on Ubuntu).</li><li>glibc puts the system call number and the arguments in CPU registers and runs the <code>syscall</code> instruction. The CPU switches to kernel mode.</li><li>The kernel checks the arguments (is fd open, may this process write to buf), does the work, and puts the result in a register.</li><li>The CPU returns to user mode. On error the kernel returns a negative number, and glibc turns it into -1 plus a code in the variable <code>errno</code>.</li></ol></div>
+<div class="viz" data-viz="pk" data-pk="lx-syscall"></div>
+<div class="vt-talk" hidden>The kernel is the heart of the operating system, and the only program with full control of the hardware. All other programs run in user space with limited rights, so they cannot touch the disk, the network or the screen directly. Instead they ask the kernel with a system call, such as open, read, write or fork. The C library wraps each system call in a normal function, and a special C P U instruction switches into the kernel and back. If something goes wrong, the call returns minus one and sets an error code called errno, for example E N O E N T for a missing file. Pick a command in the animation and follow its system calls one by one. Every line is real strace output.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="strace" data-l="strace" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Watching system calls with strace</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>strace CMD</code></td><td>Print every system call of a command, with arguments and results</td><td><code>strace ls</code></td></tr><tr><td><code>strace -e trace=SET CMD</code></td><td>Only some calls: a list, or groups such as file, network, process, memory</td><td><code>strace -e trace=openat,read cat notes.txt</code></td></tr><tr><td><code>strace -f CMD</code></td><td>Follow child processes too</td><td><code>strace -f bash script.sh</code></td></tr><tr><td><code>strace -c CMD</code></td><td>Count calls and time instead of printing them</td><td><code>strace -c ls</code></td></tr><tr><td><code>strace -o FILE CMD</code></td><td>Write the trace to a file, so it does not mix with the output</td><td><code>strace -o trace.txt make</code></td></tr><tr><td><code>strace -p PID</code></td><td>Attach to a running process (needs root or the same user)</td><td><code>sudo strace -p 905</code></td></tr><tr><td><code>ltrace CMD</code></td><td>Library calls instead of system calls</td><td><code>ltrace -e strlen echo hi</code></td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Read a file, fail on a missing one, and count the calls</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">echo hello &gt; hello.txt</span>
+<span class="lx-cmd">strace -e trace=openat,read,write,close -o t1.txt cat hello.txt</span>
+<span class="lx-o">hello</span>
+<span class="lx-cmd">sed -n '/hello.txt/,$p' t1.txt</span>
+<span class="lx-o">openat(AT_FDCWD, "hello.txt", O_RDONLY) = 3
+read(3, "hello\n", 131072)              = 6
+write(1, "hello\n", 6)                  = 6
+read(3, "", 131072)                     = 0
+close(3)                                = 0
+close(1)                                = 0
+close(2)                                = 0
++++ exited with 0 +++</span>
+<span class="lx-cmd">strace -o t2.txt cat missing.txt</span>
+<span class="lx-o">cat: missing.txt: No such file or directory</span>
+<span class="lx-cmd">grep -e missing -e 'write(2' -e exit_group t2.txt</span>
+<span class="lx-o">execve("/usr/bin/cat", ["cat", "missing.txt"], 0x7ffcf64967a8 /* 13 vars */) = 0
+openat(AT_FDCWD, "missing.txt", O_RDONLY) = -1 ENOENT (No such file or directory)
+write(2, "cat: ", 5)                    = 5
+write(2, "missing.txt", 11)             = 11
+write(2, ": No such file or directory", 27) = 27
+write(2, "\n", 1)                       = 1
+exit_group(1)                           = ?</span>
+<span class="lx-cmd">strace -c -o t3.txt ls &gt; /dev/null</span>
+<span class="lx-cmd">sort -k4 -n -r t3.txt | head -n 6</span>
+<span class="lx-o">100.00    0.001409           9       144        19 total
+ 21.43    0.000302           8        34        13 openat
+ 20.58    0.000290           9        30           mmap
+ 13.84    0.000195           8        23           close
+ 12.63    0.000178           8        22           fstat
+  4.26    0.000060           8         7           read</span></pre><div class="lx-note">The first trace shows the lines that matter: openat returns file descriptor 3, read copies the 6 bytes, write sends them to descriptor 1, and a read that returns 0 means end of file. (sed starts the listing at hello.txt and hides the loader opening libc and the locale files before it.) For a missing file, openat returns -1 with ENOENT, and cat writes the familiar message to descriptor 2 before exit_group(1). strace -c counts every call. Most of them happen before ls does any real work: the loader maps libc into memory (mmap), and the C library opens the locale files, which is where the failed openat calls come from.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>Find the config file a script is looking for</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">printf '%s\n' 'cfg=$HOME/.config/shop/app.conf' '[ -r "$cfg" ] &amp;&amp; . "$cfg"' 'cat /etc/shop.conf 2&gt;/dev/null || echo "no config found"' &gt; app.sh</span>
+<span class="lx-cmd">bash app.sh</span>
+<span class="lx-o">no config found</span>
+<span class="lx-cmd">strace -f -e trace=file -o t.txt bash app.sh</span>
+<span class="lx-o">no config found</span>
+<span class="lx-cmd">grep shop t.txt | sed 's/^[0-9]* *//'</span>
+<span class="lx-o">faccessat2(AT_FDCWD, "/home/learner/.config/shop/app.conf", R_OK, AT_EACCESS) = -1 ENOENT (No such file or directory)
+execve("/usr/bin/cat", ["cat", "/etc/shop.conf"], 0x5652fb292a10 /* 13 vars */) = 0
+openat(AT_FDCWD, "/etc/shop.conf", O_RDONLY) = -1 ENOENT (No such file or directory)</span></pre><div class="lx-note">The script only says “no config found”. trace=file shows every call that takes a file name, and -f follows the cat child. The two ENOENT lines name the exact paths it tried, ~/.config/shop/app.conf and /etc/shop.conf. This trick works for any program that does not say where it looks: a missing library, a plugin folder or a certificate file. (sed removes the process id that -f puts in front of each line.)</div></div>
+<div class="lx-run"><div class="lx-rh"><span>errno numbers and their messages</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">python3 -c 'import errno, os
+for n in (1, 2, 13, 17, 28): print(n, errno.errorcode[n], os.strerror(n))'</span>
+<span class="lx-o">1 EPERM Operation not permitted
+2 ENOENT No such file or directory
+13 EACCES Permission denied
+17 EEXIST File exists
+28 ENOSPC No space left on device</span></pre><div class="lx-note">These are the codes behind messages you see every day. EPERM and EACCES both mean “not allowed”: EPERM for actions only privileged processes may do, EACCES for missing file permissions. The full list is in man 3 errno, and the numbers are the same in every language.</div></div>
+<div class="note note-tip"><b>Remember</b><div>strace slows a program down a lot, because the kernel stops it at every call. Use it to find out what a program does, not to measure how fast it is. On production servers, <code>perf trace</code> or eBPF tools such as <code>opensnoop</code> from bpfcc-tools watch the same calls with much less cost.</div></div>
+<div class="vt-talk" hidden>Strace shows every system call a program makes, with its arguments and its result. That makes it one of the best debugging tools on Linux, because programs cannot hide what they ask the kernel. With dash e trace, you pick which calls to see, for example only file calls. Dash f follows child processes, dash c counts the calls, and dash o writes the trace to a file. In the demo, a script only says no config found. Strace shows the two exact paths it looked for, both ending in E N O E N T, no such file. That is how admins find missing config files, libraries and certificates in minutes instead of hours.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="proc" data-l="proc" hidden><div class="cv-lno">Lesson 3 of 6</div><h2>/proc and /sys: the kernel as files</h2>
+<p>The kernel shows its own state as files. <code>/proc</code> (procfs) has a folder for every process and many system-wide files. <code>/sys</code> (sysfs) has the devices, drivers and kernel objects. The files take no disk space: the kernel writes their content at the moment you read them.</p>
+<div class="tw"><table class="cvt "><thead><tr><th>Path</th><th>What it shows</th></tr></thead><tbody><tr><td><code>/proc/PID/status</code></td><td>name, state, parent, user ids, memory, capabilities of a process</td></tr><tr><td><code>/proc/PID/cmdline</code>, <code>environ</code></td><td>the command line and the environment, separated by NUL bytes</td></tr><tr><td><code>/proc/PID/fd/</code></td><td>one link per open file descriptor</td></tr><tr><td><code>/proc/PID/cwd</code>, <code>exe</code></td><td>links to the current folder and the program file</td></tr><tr><td><code>/proc/self</code></td><td>a link to the folder of whoever reads it</td></tr><tr><td><code>/proc/meminfo</code>, <code>loadavg</code>, <code>uptime</code></td><td>memory, load average, seconds since boot (free, uptime and top read these)</td></tr><tr><td><code>/proc/cmdline</code></td><td>the kernel command line from the boot loader</td></tr><tr><td><code>/proc/sys/</code></td><td>kernel settings, the same as sysctl names with dots instead of slashes</td></tr><tr><td><code>/sys/class/net/</code>, <code>/sys/block/</code></td><td>network interfaces and block devices with their properties</td></tr></tbody></table></div>
+<div class="lx-run"><div class="lx-rh"><span>Look at a process from the inside</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">grep -E '^(Name|State|Pid|PPid|Uid)' /proc/self/status</span>
+<span class="lx-o">Name:	grep
+State:	R (running)
+Pid:	26075
+PPid:	26074
+Uid:	1000	1000	1000	1000</span>
+<span class="lx-cmd">ls -l /proc/self/fd 9&gt;&amp;- | awk 'NR &gt; 1 {print $1, $9, $10, $11}'</span>
+<span class="lx-o">lr-x------ 0 -&gt; /dev/null
+l-wx------ 1 -&gt; pipe:[1173992]
+l-wx------ 2 -&gt; pipe:[1173989]
+lr-x------ 3 -&gt; /proc/26076/fd</span>
+<span class="lx-cmd">readlink /proc/self/exe</span>
+<span class="lx-o">/usr/bin/readlink</span>
+<span class="lx-cmd">sleep 30 &amp;</span>
+<span class="lx-cmd">xargs -0 echo &lt; /proc/$!/cmdline</span>
+<span class="lx-o">sleep 30</span>
+<span class="lx-cmd">ls /proc/$! | head -n 8</span>
+<span class="lx-o">arch_status
+attr
+autogroup
+auxv
+cgroup
+clear_refs
+cmdline
+comm</span>
+<span class="lx-cmd">kill $!</span>
+<span class="lx-cmd">cat /proc/sys/kernel/pid_max</span>
+<span class="lx-o">32768</span>
+<span class="lx-cmd">cat /proc/sys/kernel/ostype</span>
+<span class="lx-o">Linux</span></pre><div class="lx-note">/proc/self is a different folder for every reader. When grep reads it, the status is grep’s own: its name, state R (running), its process id and its parent, the shell. ls shows its own open descriptors: 0, 1 and 2, plus 3 for the folder it is reading. Here 0, 1 and 2 are a socket and pipes, because this page is built by a program, not in a terminal. In a terminal all three point to /dev/pts/N. cmdline separates the words with NUL bytes, which xargs -0 reads. pid_max is the highest process id before numbers start again from the bottom. The build container uses the kernel default 32768, while Ubuntu 24.04 raises it to 4194304 at boot with /usr/lib/sysctl.d/50-pid-max.conf.</div></div>
+<div class="lx-run"><div class="lx-rh"><span>/sys inside a small network namespace</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd lx-root">ip netns add lab</span>
+<span class="lx-cmd lx-root">ip -n lab link add veth0 type veth peer name veth1</span>
+<span class="lx-cmd lx-root">ip netns exec lab ls /sys/class/net</span>
+<span class="lx-o">lo
+veth0
+veth1</span>
+<span class="lx-cmd lx-root">ip netns exec lab cat /sys/class/net/veth0/mtu</span>
+<span class="lx-o">1500</span>
+<span class="lx-cmd lx-root">ip netns exec lab cat /sys/class/net/veth0/operstate</span>
+<span class="lx-o">down</span>
+<span class="lx-cmd lx-root">ip -n lab link set veth0 up</span>
+<span class="lx-cmd lx-root">ip -n lab link set veth1 up</span>
+<span class="lx-cmd lx-root">ip netns exec lab cat /sys/class/net/veth0/operstate</span>
+<span class="lx-o">up</span>
+<span class="lx-cmd lx-root">ip netns delete lab</span></pre><div class="lx-note">Every interface has a folder in /sys/class/net with one small file per property, which is where ip and other tools read them. The box uses a network namespace so you see only its own interfaces, lo and a veth pair (ip netns exec mounts a matching /sys). operstate changes from down to up when both ends of the pair are up.</div></div>
+<div class="vt-talk" hidden>The kernel publishes its state as files, so you can read it with cat. Slash proc has a folder for every running process, named after its process id. Inside are the status, the command line, the open file descriptors and links to the program and its current folder. Slash proc slash self always points to the process that reads it. Slash proc also holds system wide files such as meminfo and loadavg, which is where free, uptime and top get their numbers, and slash proc slash sys holds the kernel settings that sysctl changes. Slash sys describes devices and drivers, for example one folder per network interface with its M T U and its state. None of these files exist on a disk: the kernel writes their content at the moment you read them.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="modules" data-l="modules" hidden><div class="cv-lno">Lesson 4 of 6</div><h2>Kernel versions, modules and the kernel log</h2>
+<div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>uname -r, uname -a</code></td><td>Kernel release, and everything uname knows</td><td><code>uname -r</code></td></tr><tr><td><code>lsmod</code></td><td>Loaded modules, their size and who uses them (reads /proc/modules)</td><td><code>lsmod | head</code></td></tr><tr><td><code>modinfo NAME</code></td><td>File, description, license, parameters of a module</td><td><code>modinfo ext4</code></td></tr><tr><td><code>modprobe NAME, modprobe -r NAME</code></td><td>Load a module with the modules it needs, or remove it</td><td><code>sudo modprobe wireguard</code></td></tr><tr><td><code>/etc/modules-load.d/*.conf</code></td><td>Modules to load at every boot, one name per line</td><td><code>echo wireguard | sudo tee /etc/modules-load.d/wg.conf</code></td></tr><tr><td><code>/etc/modprobe.d/*.conf</code></td><td>Options and blacklists for modules</td><td><code>blacklist pcspkr</code></td></tr><tr><td><code>dmesg, journalctl -k</code></td><td>The kernel ring buffer: drivers, disks, out of memory kills</td><td><code>sudo dmesg -T | tail</code></td></tr><tr><td><code>cat /proc/cmdline</code></td><td>Boot options the kernel got from GRUB</td><td><code>cat /proc/cmdline</code></td></tr></tbody></table></div>
+<div class="walk"><div class="walk-h"><span>How Linux grows without a reboot</span><span class="walk-ctl"><button type="button" class="wk-next">Show next step</button><button type="button" class="wk-all">Show all</button><button type="button" class="wk-reset">Reset</button></span></div><ol class="walk-l"><li>Linux is a <b>monolithic</b> kernel: drivers and file systems run inside the kernel, in kernel space. To keep the kernel small, most of them are built as <b>loadable modules</b>, files ending in <code>.ko</code> (or .ko.zst, compressed) under <code>/lib/modules/$(uname -r)/</code>.</li><li>When the system finds new hardware, udev asks the kernel to load the matching module. modprobe looks the name up in <code>modules.dep</code> and loads the modules it depends on first.</li><li>Settings for a module go in a file in /etc/modprobe.d/, such as <code>options kvm_intel nested=1</code>. A <code>blacklist NAME</code> line stops automatic loading.</li><li>The kernel package (linux-image on Ubuntu) brings the kernel and its modules for one release. Old releases stay installed until apt autoremove, so you can boot an older one from the GRUB menu if a new one fails.</li></ol></div>
+<div class="lx-run lx-shape"><div class="lx-rh"><span>Ubuntu kernel release names</span><span class="lx-real">The general form</span><button type="button" class="lx-copy">Copy</button></div><pre>6.8.0-48-generic
+│ │ │  │   └── flavour: generic, lowlatency, aws, azure, ...
+│ │ │  └────── Ubuntu’s build number of this release
+│ │ └───────── patch level from kernel.org (0 here)
+│ └─────────── minor version
+└───────────── major version</pre><div class="lx-note">Ubuntu 24.04 LTS started with the 6.8 kernel and later offers newer ones through the HWE (hardware enablement) packages. A reboot is needed to run a new kernel, and /var/run/reboot-required says so after an update.</div></div>
+<div class="note note-tip"><b>Remember</b><div>Kernel messages are key in a crisis: “Out of memory: Killed process”, I/O errors from a failing disk, a driver that crashed. dmesg shows them since boot. On Ubuntu reading it needs sudo (kernel.dmesg_restrict = 1). journalctl -k -b -1 shows the kernel messages of the boot before, which helps after a crash.</div></div>
+<div class="vt-talk" hidden>Linux is a monolithic kernel, which means drivers and file systems run inside the kernel itself. To stay small, most of them are loadable modules, files ending in dot k o that the kernel loads when it needs them. Lsmod lists the loaded modules, modinfo describes one, and modprobe loads a module together with the modules it depends on. Files in slash etc slash modprobe dot d give options or blacklist a module, and files in modules load dot d load modules at every boot. Uname dash r shows the kernel release you are running, and the kernel log, read with dmesg or journalctl dash k, shows what drivers and disks have been doing, including out of memory kills.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 5 of 6</div><h2>Practice: explore the kernel through /proc</h2>
+<p>Use /proc to answer questions about the practice server and about your own shell.</p>
+<div class="lx-term" data-lab="{&quot;title&quot;: &quot;Kernel facts from /proc&quot;, &quot;missions&quot;: [{&quot;t&quot;: &quot;Print the kernel release.&quot;, &quot;hint&quot;: &quot;uname -r&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^6\\.8\\.0&quot;}]}, {&quot;t&quot;: &quot;Show the kernel version line from /proc.&quot;, &quot;hint&quot;: &quot;cat /proc/version&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^Linux version&quot;}]}, {&quot;t&quot;: &quot;Show the boot options the kernel got.&quot;, &quot;hint&quot;: &quot;cat /proc/cmdline&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;root=UUID=&quot;}]}, {&quot;t&quot;: &quot;Count the CPUs.&quot;, &quot;hint&quot;: &quot;nproc&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^\\d+$&quot;}]}, {&quot;t&quot;: &quot;Show the line MemTotal of /proc/meminfo.&quot;, &quot;hint&quot;: &quot;grep MemTotal /proc/meminfo&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^MemTotal:\\s+\\d+ kB&quot;}]}, {&quot;t&quot;: &quot;Show the load averages.&quot;, &quot;hint&quot;: &quot;cat /proc/loadavg&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^\\d+\\.\\d\\d \\d+\\.\\d\\d \\d+\\.\\d\\d&quot;}]}, {&quot;t&quot;: &quot;Print the process id of your shell.&quot;, &quot;hint&quot;: &quot;echo $$&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^\\d+$&quot;}]}, {&quot;t&quot;: &quot;Show the lines Name, State and PPid of /proc/self/status.&quot;, &quot;hint&quot;: &quot;grep -E &#x27;^(Name|State|PPid)&#x27; /proc/self/status&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;PPid:\\s+\\d+&quot;}]}, {&quot;t&quot;: &quot;List the open file descriptors of your shell with ls -l.&quot;, &quot;hint&quot;: &quot;ls -l /proc/$$/fd&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;255 -&gt; /dev/pts/0&quot;}]}, {&quot;t&quot;: &quot;Print the program file behind /proc/self/exe.&quot;, &quot;hint&quot;: &quot;readlink /proc/self/exe&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;readlink$&quot;}]}, {&quot;t&quot;: &quot;Show the highest possible process id.&quot;, &quot;hint&quot;: &quot;cat /proc/sys/kernel/pid_max&quot;, &quot;check&quot;: [{&quot;out&quot;: &quot;^\\d+$&quot;}]}]}"></div>
+<div class="vt-talk" hidden>Time to explore the kernel yourself. Print the kernel release and the version line, and the boot options the kernel received. Count the C P Us, find the total memory in meminfo and read the load averages. Then look at processes: print the process id of your shell, read the status of slash proc slash self, and list the open file descriptors of your shell, including two five five, which bash keeps for itself. Finally, see which program reads slash proc slash self slash exe, and how high process ids can go.</div>
+<nav class="cv-lnav"></nav></article><article class="cv-lesson" id="levels" data-l="levels" hidden><div class="cv-lno">Lesson 6 of 6</div><h2>The kernel from school to research</h2>
+<div class="ladder"><div class="ld-h">One idea, four depths</div><div class="ld-tabs" role="tablist"><button type="button" class="ld-t on" data-ld="school">School</button><button type="button" class="ld-t" data-ld="college">College</button><button type="button" class="ld-t" data-ld="masters">Masters</button><button type="button" class="ld-t" data-ld="research">Research</button></div><div class="ld-p" data-ld="school"><p>The kernel is the boss of the computer: it decides which program runs, keeps programs from touching each other’s memory, and talks to the hardware. Programs ask it for help with system calls.</p></div><div class="ld-p" data-ld="college" hidden><p>Use strace to see what programs ask for, read process and system state in /proc, devices in /sys, settings with sysctl, and manage modules with modprobe. Read the kernel log after crashes and keep at least one older kernel installed.</p></div><div class="ld-p" data-ld="masters" hidden><p>Kernel and platform teams build their own kernels with extra patches, tune scheduler and memory settings, use live patching (Canonical Livepatch, kpatch) to fix security holes without a reboot, and observe production with perf and eBPF tools such as bpftrace. Container platforms rely on namespaces, cgroups and seccomp filters that limit which system calls a program may make.</p></div><div class="ld-p" data-ld="research" hidden><p>Research looks at new kernel designs (microkernels such as seL4, which is formally verified, unikernels and library operating systems), Rust in the Linux kernel (merged in 6.1), io_uring, which queues system calls in shared memory to avoid the cost of crossing into the kernel, and the security of the user and kernel border after attacks such as Meltdown and Spectre.</p></div></div>
+<div class="scene"><div class="scene-h">Real world scenario: the program that hung at start-up</div><p>After a move to new servers, an in-house reporting tool hung for exactly 30 seconds every time it started, and then worked. Its logs showed nothing. An admin ran it under <code>strace -f -tt -e trace=network</code> and saw a connect() to an old licence server address that no longer existed, which waited until the timeout. The address came from a forgotten line in /etc/hosts. Fixing that line made the tool start in under a second.</p></div>
+<div class="vt-talk" hidden>Here is how understanding the kernel grows. At school you learn that the kernel is the boss of the computer, and that programs ask it for help. Professionals use strace, slash proc, slash sys, sysctl and the kernel log every week to find out why something fails. Platform teams patch kernels while they run, observe production servers with e B P F, and limit which system calls containers may make. Researchers design verified microkernels, bring the Rust language into Linux, and invent faster ways to cross the border between programs and the kernel, such as io uring.</div>
+<nav class="cv-lnav"></nav></article>
+  </section>
+  <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
+  <nav class="cv-pager"><span></span><a class="next" href="./process-lifecycle.html" data-topic="process-lifecycle"><small>Next topic</small><b>Process life cycle</b></a></nav>
+</div>
+<script type="application/json" id="cvdata">{"slug": "kernel-syscalls", "topic": "kernel-syscalls", "subject": "linux", "title": "The kernel and system calls: strace, /proc, /sys and modules", "codes": {}, "quiz": [{"lv": "e", "q": "Which program has full control of the hardware?", "o": ["bash", "The kernel", "systemd", "The BIOS"], "a": 1, "hint": "The core.", "why": "Everything else runs in user space."}, {"lv": "e", "q": "How does a program ask the kernel to open a file?", "o": ["It writes to the disk itself", "With a system call such as openat", "Through /etc/fstab", "With sudo"], "a": 1, "hint": "Ask the kernel.", "why": "libc wraps it in open()."}, {"lv": "e", "q": "Which tool prints the system calls of a command?", "o": ["top", "strace", "grep", "lsmod"], "a": 1, "hint": "System call trace.", "why": "strace CMD."}, {"lv": "e", "q": "Where does Linux show a folder for every running process?", "o": ["/var/run", "/proc", "/sys", "/tmp"], "a": 1, "hint": "Processes.", "why": "Named after the process id."}, {"lv": "m", "q": "A system call fails. What does the C library function usually return?", "o": ["0", "-1, with the reason in errno", "NULL always", "It exits the program"], "a": 1, "hint": "Minus one.", "why": "errno holds a code such as ENOENT."}, {"lv": "m", "q": "What does ENOENT mean?", "o": ["Permission denied", "No such file or directory", "Disk full", "File exists"], "a": 1, "hint": "No entry.", "why": "errno 2."}, {"lv": "m", "q": "Which strace option also follows child processes?", "o": ["-c", "-f", "-o", "-p"], "a": 1, "hint": "Fork.", "why": "Needed for scripts."}, {"lv": "m", "q": "What is /proc/self?", "o": ["The root folder", "A link to the /proc folder of the process that reads it", "The kernel itself", "The first process"], "a": 1, "hint": "Whoever reads it.", "why": "So cat /proc/self/status shows cat."}, {"lv": "m", "q": "Which command loads a module with the modules it depends on?", "o": ["insmod", "modprobe", "lsmod", "modinfo"], "a": 1, "hint": "Probe.", "why": "It reads modules.dep."}, {"lv": "h", "q": "Why do the files in /proc show size 0 in ls -l?", "o": ["They are empty", "The kernel makes their content at the moment you read them", "They are broken links", "Only root can see the size"], "a": 1, "hint": "Virtual.", "why": "No disk space is used."}, {"lv": "h", "q": "What is the difference between EPERM and EACCES?", "o": ["None", "EPERM: only a privileged process may do it, EACCES: file permissions forbid it", "EPERM is for networks", "EACCES means the file is missing"], "a": 1, "hint": "Privilege or permission.", "why": "errno 1 and 13."}, {"lv": "h", "q": "How do you stop a module from loading automatically?", "o": ["Delete it", "A blacklist line in a file in /etc/modprobe.d/", "chmod 000 on it", "Remove it from /proc/modules"], "a": 1, "hint": "Blacklist.", "why": "modprobe -r removes it now."}, {"lv": "h", "q": "Why does strace -c ls show many mmap calls?", "o": ["ls is slow", "The loader maps libc and other libraries into memory before main() runs", "ls reads every file", "mmap is how ls prints"], "a": 1, "hint": "Before main.", "why": "mprotect follows."}, {"lv": "x", "q": "What does io_uring change about system calls?", "o": ["Nothing", "Requests go through rings in shared memory, so many I/O operations need few or no border crossings", "It removes the kernel", "It only works for networking"], "a": 1, "hint": "Shared rings.", "why": "Less cost per operation."}], "calc": [{"lv": "e", "q": "strace -c counted 17 mmap, 8 close and 7 fstat calls. How many is that together?", "ans": "32", "hint": "Add them.", "steps": ["17 + 8 = 25.", "25 + 7.", "<span class=\"eq\">32 calls<\/span>"]}, {"lv": "e", "q": "A program has file descriptors 0, 1 and 2 open and opens two files. Which number does the second file get?", "ans": "4", "hint": "Lowest free number.", "steps": ["The first file gets 3.", "The second gets the next free one.", "<span class=\"eq\">fd 4<\/span>"]}, {"lv": "m", "q": "A system call costs about 100 ns. A program makes 2 million of them. How many milliseconds is that?", "ans": "200", "hint": "Multiply, then convert.", "steps": ["2 000 000 × 100 ns = 200 000 000 ns.", "1 ms = 1 000 000 ns.", "<span class=\"eq\">200 ms<\/span>"]}, {"lv": "m", "q": "read() asks for 131072 bytes at a time. How many reads does cat need for a 1 MiB file, not counting the last empty read?", "ans": "8", "hint": "Divide.", "steps": ["1 MiB = 1048576 bytes.", "1048576 ÷ 131072.", "<span class=\"eq\">8 reads<\/span>"]}, {"lv": "h", "q": "/proc/uptime shows 268860 seconds. How many whole days is that?", "ans": "3", "hint": "Seconds per day.", "steps": ["A day has 86400 seconds.", "268860 ÷ 86400 = 3.1.", "<span class=\"eq\">3 days<\/span>"]}, {"lv": "h", "q": "MemTotal is 8048304 kB and MemAvailable is 5563880 kB. What percent is available, rounded?", "ans": "69", "hint": "Divide and times 100.", "steps": ["5563880 ÷ 8048304 = 0.691.", "× 100.", "<span class=\"eq\">69 %<\/span>"]}, {"lv": "x", "q": "strace makes a program 40 times slower. Normally it runs in 0.5 s. How long under strace?", "ans": "20", "hint": "Multiply.", "steps": ["0.5 s × 40.", "That is why strace is not for timing.", "<span class=\"eq\">20 s<\/span>"]}], "assign": [], "must": [["Two worlds", "The kernel runs in kernel mode with full control. Programs run in user space and ask with system calls, wrapped by libc. Errors return -1 with errno (ENOENT, EACCES, EPERM)."], ["strace", "strace -e trace=file|network|process, -f for children, -c to count, -o FILE, -p PID. Look for -1 ENOENT to find missing files."], ["/proc", "/proc/PID/status, cmdline, environ, fd/, cwd, exe. /proc/self. meminfo, loadavg, uptime, cmdline. /proc/sys equals sysctl."], ["/sys", "Devices and drivers as small files, for example /sys/class/net/IFACE/mtu and operstate."], ["Modules", "uname -r, lsmod, modinfo, modprobe and modprobe -r, /etc/modprobe.d (options, blacklist), /etc/modules-load.d, dmesg and journalctl -k."]], "summary": "<p>Programs run in user space and get everything from the kernel through system calls, which libc wraps and which return -1 and an errno on failure. strace shows those calls and quickly reveals missing files. The kernel shows processes and settings in /proc, devices in /sys, and loads drivers as modules with modprobe.<\/p>"}</script>
+<script type="application/json" id="cvtrace">{}</script>
+<script type="text/plain" id="cvtracer">"""Run one Python program and record it line by line for the "Line by line" viewer on the Python pages.
+
+The same file runs in two places:
+  at build time:  python3.14 pytrace.py main.py [stdin file]  ->  prints the recording as JSON
+  in the browser: assets/pyplay.js loads this source into Pyodide and calls record(source, stdin_text)
+
+A recording is {"steps": [...], "tail": text, "err": traceback text or null, "cut": bool}. Each step is
+{"l": line, "ev": "line" | "call" | "return", "s": call stack labels, "d": {name: repr or null}, "o": new output}.
+s, d and o appear only when something changed, to keep pages small. "tail" is output printed after the last step.
+"""
+import io
+import json
+import linecache
+import sys
+import traceback
+import types
+
+FILE = 'main.py'
+MAX_STEPS = 600
+
+
+def fmt(v, depth=0):
+    try:
+        if isinstance(v, (types.ModuleType, types.FunctionType, type, types.BuiltinFunctionType)):
+            return '<' + type(v).__name__ + ' ' + getattr(v, '__name__', '?') + '>'
+        r = repr(v)
+    except Exception as e:  # a broken __repr__ must not stop the recording
+        r = '<' + type(v).__name__ + ' (repr failed: ' + type(e).__name__ + ')>'
+    return r if len(r) <= 90 else r[:87] + '...'
+
+
+def visible(name, v):
+    if name.startswith('__') or name in ('_record_',):
+        return False
+    return not issubclass(type(v), types.ModuleType)   # type(), because isinstance() wakes lazy objects such as Django settings
+
+
+def record(src, stdin_text=''):
+    steps, out = [], io.StringIO()
+    state = {'vars': {}, 'stack': None, 'olen': 0, 'cut': False}
+
+    def label(f):
+        return 'module' if f.f_code.co_name == '<module>' else f.f_code.co_name + '()'
+
+    def snap(frame, event):
+        if len(steps) >= MAX_STEPS:
+            state['cut'] = True
+            raise KeyboardInterrupt
+        frames, f = [], frame
+        while f is not None:
+            if f.f_code.co_filename == FILE:
+                frames.append(f)
+            f = f.f_back
+        frames.reverse()
+        st = {'l': frame.f_lineno, 'ev': event}
+        stack = [label(f) for f in frames]
+        if stack != state['stack']:
+            st['s'] = stack
+            state['stack'] = stack
+        cur = {}
+        for k, v in list(frames[0].f_globals.items()):
+            if visible(k, v):
+                cur['G.' + k] = fmt(v)
+        top = frames[-1]
+        if top.f_code.co_name != '<module>':
+            for k, v in list(top.f_locals.items()):
+                if visible(k, v):
+                    cur['L.' + k] = fmt(v)
+        d = {k: v for k, v in cur.items() if state['vars'].get(k) != v}
+        for k in state['vars']:
+            if k not in cur:
+                d[k] = None
+        if d:
+            st['d'] = d
+        state['vars'] = cur
+        o = out.getvalue()
+        if len(o) > state['olen']:
+            st['o'] = o[state['olen']:]
+            state['olen'] = len(o)
+        steps.append(st)
+
+    def tracer(frame, event, arg):
+        if frame.f_code.co_filename != FILE:
+            return None
+        if event in ('line', 'call', 'return') and not (event == 'call' and frame.f_code.co_name == '<module>'):
+            snap(frame, event)
+        return tracer
+
+    err = None
+    real_out, real_in = sys.stdout, sys.stdin
+    sys.stdout, sys.stdin = out, io.StringIO(stdin_text)
+    # Tracebacks read source lines through linecache, so give it the program text.
+    linecache.cache[FILE] = (len(src), None, src.splitlines(True), FILE)
+    try:
+        code = compile(src, FILE, 'exec')
+        sys.settrace(tracer)
+        try:
+            # A real __main__ module, so pickle, doctest and unittest can find what the program defines.
+            main = types.ModuleType('__main__')
+            saved_main = sys.modules.get('__main__')
+            sys.modules['__main__'] = main
+            try:
+                exec(code, main.__dict__)
+            finally:
+                sys.modules['__main__'] = saved_main
+        finally:
+            sys.settrace(None)
+    except KeyboardInterrupt:
+        pass
+    except SystemExit:
+        pass
+    except BaseException as e:
+        tb = e.__traceback__
+        while tb is not None and tb.tb_frame.f_code.co_filename != FILE:
+            tb = tb.tb_next
+        err = ''.join(traceback.format_exception(type(e), e, tb)).rstrip()
+    finally:
+        sys.stdout, sys.stdin = real_out, real_in
+    o = out.getvalue()
+    return {'steps': steps, 'tail': o[state['olen']:], 'err': err, 'cut': state['cut']}
+
+
+if __name__ == '__main__':
+    source = open(sys.argv[1], encoding='utf-8').read()
+    given = open(sys.argv[2], encoding='utf-8').read() if len(sys.argv) > 2 else ''
+    print(json.dumps(record(source, given), ensure_ascii=False))
+</script>
+<script src="../../assets/fun.js"></script>
+<script src="../../assets/learn.js"></script>
+<script src="../../assets/pyplay.js"></script>
+<script src="../../assets/cvviz.js"></script>
+<script src="../../assets/viz.js"></script>
+<script src="../../assets/playkit.js"></script>
+<script src="../../assets/lxshell.js"></script>
+<script src="../../assets/lxwidgets.js"></script>
+<script src="../../assets/voiceteach.js"></script>
+<script src="../../assets/cv.js"></script>
+
+<!-- md3 --><script src="../../assets/md3chapter.js"></script><!-- /md3 -->
+</body>
+</html>
