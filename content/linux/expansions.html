@@ -46,7 +46,7 @@ lines</span>
 <span class="lx-cmd">file="My Report.txt"</span>
 <span class="lx-cmd">touch "$file"</span>
 <span class="lx-cmd">ls -l "$file"</span>
-<span class="lx-o">-rw-r--r-- 1 learner learner 0 Nov 23 18:26 My Report.txt</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 0 Nov 24 05:25 My Report.txt</span>
 <span class="lx-cmd">ls $file</span>
 <span class="lx-o">ls: cannot access 'My': No such file or directory
 ls: cannot access 'Report.txt': No such file or directory</span></pre><div class="lx-note">Unquoted, the runs of spaces collapse because each space just separates words. Double quotes kept the spaces and expanded $name, single quotes kept $name as text. A single quote cannot appear inside single quotes, so the fourth line closes them, adds a double quoted one and opens them again. Without quotes, the file name became two arguments, My and Report.txt.</div></div>

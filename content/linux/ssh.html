@@ -22,7 +22,7 @@
 <div class="cv-wrap">
   <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 4: Networking and security</span><span>›</span><span>SSH</span></div>
   <header class="cv-hero">
-    <div class="cv-kicker">Step 4 · Topic 2 of 2 · Advanced</div>
+    <div class="cv-kicker">Step 4 · Topic 2 of 3 · Advanced</div>
     <h1>SSH: keys, remote work, tunnels and a safe sshd</h1>
     <p class="lead">Log in to other machines with ssh and key pairs, understand host keys and known_hosts, copy files with scp and rsync, reach private services through tunnels and jump hosts, and set up sshd so that password guessing gets nowhere.</p>
     <div class="cv-chips"><span class="cv-chip">About 60 min</span><span class="cv-chip">8 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#ssh" data-topic="cheatsheet" data-h="ssh">This chapter on the cheatsheet</a></div>
@@ -44,35 +44,35 @@ Generating public/private ed25519 key pair.
 Your identification has been saved in /home/learner/.ssh/id_ed25519
 Your public key has been saved in /home/learner/.ssh/id_ed25519.pub
 The key fingerprint is:
-SHA256:50+x0i+HUQLiv1scxV895qTLt9vCtDS1qIZg8+Ec6PA learner@laptop
+SHA256:XOU6vIxXB37QJ/A78Xaqms8Wl+eQvrad0Omvk3IpV/Y learner@laptop
 The key's randomart image is:
 +--[ED25519 256]--+
-|                 |
-|        . .  .  .|
-|       . . .  o+o|
-|        .   ..*.+|
-|        S.. o+.oo|
-|     . = =.oo==. |
-|      = * *.BO + |
-|       E =.Bo.* o|
-|          o..o.+o|
+|            o    |
+|           o +   |
+|          . + = .|
+|       . o o o * |
+|        S + o =o+|
+|         o +.o*+*|
+|        . +  =.@.|
+|         . o+.@.E|
+|          o++*+B+|
 +----[SHA256]-----+</span>
 <span class="lx-cmd">ls -l ~/.ssh</span>
 <span class="lx-o">total 8
--rw------- 1 learner learner 411 Nov 23 23:52 id_ed25519
--rw-r--r-- 1 learner learner  96 Nov 23 23:52 id_ed25519.pub</span>
+-rw------- 1 learner learner 411 Nov 24 05:25 id_ed25519
+-rw-r--r-- 1 learner learner  96 Nov 24 05:25 id_ed25519.pub</span>
 <span class="lx-cmd">cut -c1-60 ~/.ssh/id_ed25519.pub</span>
-<span class="lx-o">ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOHZOQxWiGdakmsxWE6ln8Nd</span>
+<span class="lx-o">ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJTj6PqMlVXU0L4Egt7ILxfC</span>
 <span class="lx-cmd">ssh-keygen -lf ~/.ssh/id_ed25519.pub</span>
-<span class="lx-o">256 SHA256:50+x0i+HUQLiv1scxV895qTLt9vCtDS1qIZg8+Ec6PA learner@laptop (ED25519)</span>
+<span class="lx-o">256 SHA256:XOU6vIxXB37QJ/A78Xaqms8Wl+eQvrad0Omvk3IpV/Y learner@laptop (ED25519)</span>
 <span class="lx-cmd">eval "$(ssh-agent -s)"</span>
 <span class="lx-cmd">ssh-add ~/.ssh/id_ed25519</span>
 <span class="lx-cmd">ssh-add -l</span>
-<span class="lx-o">Agent pid 19932
+<span class="lx-o">Agent pid 24998
 Identity added: /home/learner/.ssh/id_ed25519 (learner@laptop)
-256 SHA256:50+x0i+HUQLiv1scxV895qTLt9vCtDS1qIZg8+Ec6PA learner@laptop (ED25519)</span>
+256 SHA256:XOU6vIxXB37QJ/A78Xaqms8Wl+eQvrad0Omvk3IpV/Y learner@laptop (ED25519)</span>
 <span class="lx-cmd">eval "$(ssh-agent -k)"</span>
-<span class="lx-o">Agent pid 19932 killed</span></pre><div class="lx-note">-N "" sets an empty passphrase so this page can be built without a keyboard. For your own keys, leave -N out and type a passphrase: then a stolen key file is useless without it, and ssh-agent asks for it only once per session. ssh-keygen created ~/.ssh with mode 700 and the private key with mode 600 by itself. The randomart picture is a drawing of the fingerprint, easier for people to compare than a long string.</div></div>
+<span class="lx-o">Agent pid 24998 killed</span></pre><div class="lx-note">-N "" sets an empty passphrase so this page can be built without a keyboard. For your own keys, leave -N out and type a passphrase: then a stolen key file is useless without it, and ssh-agent asks for it only once per session. ssh-keygen created ~/.ssh with mode 700 and the private key with mode 600 by itself. The randomart picture is a drawing of the fingerprint, easier for people to compare than a long string.</div></div>
 <div class="note note-warn"><b>Common mistake</b><div>Never copy your private key to a server or into a chat. Give out only the .pub file. Use one key per device, so you can remove a lost laptop’s key from authorized_keys without touching the others.</div></div>
 <div class="vt-talk" hidden>A key pair has two halves. The private key stays on your computer, readable only by you. The public key, the file ending in dot pub, can be copied anywhere. Ssh keygen dash t ed25519 makes a modern key pair, short and fast. Add a comment with dash capital C so you can recognise it later. Protect the private key with a passphrase, so a stolen file is useless. To avoid typing the passphrase for every login, start ssh agent once per session and unlock the key with ssh add. The fingerprint, shown with ssh keygen dash l f, is a short summary of a key that is easy to compare. Use a separate key for each device, so you can remove one without affecting the others.</div>
 <nav class="cv-lnav"></nav></article><article class="cv-lesson" id="login" data-l="login" hidden><div class="cv-lno">Lesson 3 of 8</div><h2>Installing a key and logging in</h2>
@@ -90,7 +90,7 @@ Identity added: /home/learner/.ssh/id_ed25519 (learner@laptop)
 <span class="lx-cmd lx-root">mkdir -p /run/sshd</span>
 <span class="lx-cmd lx-root">ip netns exec web unshare --uts sh -c 'hostname web1 &amp;&amp; exec /usr/sbin/sshd -f /srv/sshlab/sshd_config'</span>
 <span class="lx-cmd lx-root">ssh-keygen -lf /srv/sshlab/ssh_host_ed25519_key.pub | cut -d' ' -f2</span>
-<span class="lx-o">SHA256:Rcs9MOmWHlfj9ddWYGnQ/PF21PD2B+7KP6URxhQCM6g</span>
+<span class="lx-o">SHA256:7zR5XxAIYVana1V0SVdJhqmHDj9Wwv3ZaChmw4/gFR4</span>
 <span class="lx-cmd lx-root">pc() { ip netns exec pc sudo -u learner "$@"; }</span>
 <span class="lx-cmd lx-root">pc ssh -o BatchMode=yes deploy@10.0.0.80 true</span>
 <span class="lx-o">Host key verification failed.</span>
@@ -110,11 +110,11 @@ and check to make sure that only the key(s) you wanted were added.</span>
 <span class="lx-o">web1
 deploy
 total 12
-drwx------ 2 deploy deploy 4096 Nov 23 23:52 .
-drwxr-x--- 4 deploy deploy 4096 Nov 23 23:52 ..
--rw------- 1 deploy deploy   96 Nov 23 23:52 authorized_keys</span>
+drwx------ 2 deploy deploy 4096 Nov 24 05:25 .
+drwxr-x--- 4 deploy deploy 4096 Nov 24 05:25 ..
+-rw------- 1 deploy deploy   96 Nov 24 05:25 authorized_keys</span>
 <span class="lx-cmd lx-root">pc ssh deploy@10.0.0.80 'echo "$SSH_CONNECTION"'</span>
-<span class="lx-o">10.0.0.50 41412 10.0.0.80 22</span></pre><div class="lx-note">The first try fails with Host key verification failed, because BatchMode cannot ask the question and the host is unknown. accept-new stores an unknown host key without asking but still refuses a changed one. That login has no key on the server yet and BatchMode forbids passwords, so it ends with Permission denied. ssh-copy-id logs in once with the password and appends your public key to ~/.ssh/authorized_keys on the server. sshpass types the password here only because this page is built without a keyboard. Never put a real password on a command line. After that, login works with the key alone. SSH_CONNECTION shows the client address and port and the server address and port. This box leaves the server running for the next lessons.</div></div>
+<span class="lx-o">10.0.0.50 38662 10.0.0.80 22</span></pre><div class="lx-note">The first try fails with Host key verification failed, because BatchMode cannot ask the question and the host is unknown. accept-new stores an unknown host key without asking but still refuses a changed one. That login has no key on the server yet and BatchMode forbids passwords, so it ends with Permission denied. ssh-copy-id logs in once with the password and appends your public key to ~/.ssh/authorized_keys on the server. sshpass types the password here only because this page is built without a keyboard. Never put a real password on a command line. After that, login works with the key alone. SSH_CONNECTION shows the client address and port and the server address and port. This box leaves the server running for the next lessons.</div></div>
 <div class="note note-tip"><b>Remember</b><div>If key login fails, check modes first: on the server, the home folder must not be writable by others, ~/.ssh must be 700 and authorized_keys 600, or sshd logs “Authentication refused: bad ownership or modes”. On the client, a private key readable by others is ignored with “UNPROTECTED PRIVATE KEY FILE”. Then try <code>ssh -v</code>, which prints every step.</div></div>
 <div class="vt-talk" hidden>Before you can log in with a key, your public key must be on the server, in the file authorized keys inside the dot s s h folder of the account. Ssh copy id does this for you: it logs in once with the password and appends your key. From then on, s s h logs in with the key, and you can switch password logins off. In the demo, a real s s h server runs in its own network namespace with the host name web one. The very first connection fails because the host is unknown and batch mode cannot ask. Accept new stores the host key, then ssh copy id installs the key, and the next login runs commands as the user deploy without any password. If key login ever fails, check the file modes on both sides first, and use s s h dash v to watch every step.</div>
 <nav class="cv-lnav"></nav></article><article class="cv-lesson" id="config" data-l="config" hidden><div class="cv-lno">Lesson 4 of 8</div><h2>Aliases, file copies and rsync over ssh</h2>
@@ -212,7 +212,7 @@ allowusers deploy</span>
 <nav class="cv-lnav"></nav></article>
   </section>
   <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
-  <nav class="cv-pager"><a class="prev" href="./networking.html" data-topic="networking"><small>Previous topic</small><b>Networking</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+  <nav class="cv-pager"><a class="prev" href="./networking.html" data-topic="networking"><small>Previous topic</small><b>Networking</b></a><a class="next" href="./firewall-hardening.html" data-topic="firewall"><small>Next topic</small><b>Firewall</b></a></nav>
 </div>
 <script type="application/json" id="cvdata">{"slug": "ssh", "topic": "ssh", "subject": "linux", "title": "SSH: keys, remote work, tunnels and a safe sshd", "codes": {}, "quiz": [{"lv": "e", "q": "Which port does sshd listen on by default?", "o": ["21", "22", "23", "443"], "a": 1, "hint": "Two twos.", "why": "22."}, {"lv": "e", "q": "Which half of a key pair may you give to a server?", "o": ["The private key", "The public key (.pub)", "Both", "Neither"], "a": 1, "hint": "Public.", "why": "The private key never leaves your machine."}, {"lv": "e", "q": "Which command makes a new key pair?", "o": ["ssh-add", "ssh-keygen", "ssh-copy-id", "sshd"], "a": 1, "hint": "Key generator.", "why": "ssh-keygen -t ed25519."}, {"lv": "e", "q": "Which command copies a file to a server over ssh?", "o": ["cp", "scp", "mv", "ftp"], "a": 1, "hint": "Secure copy.", "why": "scp file host:path."}, {"lv": "m", "q": "Where does the server look for public keys that may log in as deploy?", "o": ["/etc/ssh/keys", "/home/deploy/.ssh/authorized_keys", "/home/deploy/.ssh/known_hosts", "/etc/passwd"], "a": 1, "hint": "Authorized.", "why": "One key per line."}, {"lv": "m", "q": "What does ~/.ssh/known_hosts protect you from?", "o": ["Viruses", "Connecting to a server that pretends to be the one you know", "Lost passwords", "Slow networks"], "a": 1, "hint": "Host keys.", "why": "A changed key stops the login."}, {"lv": "m", "q": "What mode should a private key file have?", "o": ["644", "600", "755", "777"], "a": 1, "hint": "Owner only.", "why": "ssh ignores keys others can read."}, {"lv": "m", "q": "Which command checks sshd_config for errors?", "o": ["sshd -t", "ssh -t", "systemctl check ssh", "sshd --lint"], "a": 0, "hint": "Test.", "why": "sshd -T prints the effective settings."}, {"lv": "m", "q": "What does ssh-agent do?", "o": ["Logs every login", "Holds unlocked keys so you type the passphrase once per session", "Scans for open ports", "Copies keys to servers"], "a": 1, "hint": "Agent.", "why": "Load keys with ssh-add."}, {"lv": "h", "q": "A service listens only on 127.0.0.1:5432 of a server. How can you reach it from your laptop?", "o": ["It is impossible", "ssh -L 5432:127.0.0.1:5432 server", "scp", "ssh -D 5432"], "a": 1, "hint": "Local forward.", "why": "Then connect to 127.0.0.1:5432 on the laptop."}, {"lv": "h", "q": "ssh shows REMOTE HOST IDENTIFICATION HAS CHANGED. What should you do first?", "o": ["Delete known_hosts", "Check the new fingerprint with the server’s admin before removing the old line", "Use -o StrictHostKeyChecking=no", "Reinstall ssh"], "a": 1, "hint": "Verify.", "why": "Only then ssh-keygen -R host."}, {"lv": "h", "q": "Why put sshd changes in /etc/ssh/sshd_config.d/ instead of editing the main file?", "o": ["It is faster", "Package updates keep your file, and the include sits near the top so it wins", "sshd reads only that folder", "It disables the main file"], "a": 1, "hint": "First value wins.", "why": "Updates may replace the main file."}, {"lv": "h", "q": "Why is ProxyJump safer than copying your key to the bastion?", "o": ["It is faster", "The private key stays on your laptop", "It disables passwords", "It hides your IP"], "a": 1, "hint": "Key stays home.", "why": "The second connection is tunnelled through the first."}, {"lv": "x", "q": "Why do teams with many servers move to SSH certificates?", "o": ["They are shorter", "Servers trust one CA, and certificates can expire by themselves", "They need no private key", "They work without sshd"], "a": 1, "hint": "One trust anchor.", "why": "No authorized_keys sprawl."}], "calc": [{"lv": "e", "q": "An Ed25519 public key is 256 bits. How many bytes is that?", "ans": "32", "hint": "Divide by 8.", "steps": ["8 bits are 1 byte.", "256 ÷ 8.", "<span class=\"eq\">32 bytes<\/span>"]}, {"lv": "e", "q": "MaxAuthTries is 3. A robot opens 40 connections. How many password guesses can it make at most?", "ans": "120", "hint": "Tries per connection.", "steps": ["3 guesses per connection.", "40 connections.", "<span class=\"eq\">3 × 40 = 120<\/span>"]}, {"lv": "m", "q": "A team of 12 people with 2 devices each uses one key per device. How many public keys does each server need?", "ans": "24", "hint": "Keys per person.", "steps": ["Each device has its own key.", "12 × 2.", "<span class=\"eq\">24 keys<\/span>"]}, {"lv": "m", "q": "An SHA256 fingerprint has 256 bits. In base64, each character holds 6 bits. How many characters does it need, rounded up?", "ans": "43", "hint": "Divide and round up.", "steps": ["256 ÷ 6 = 42.67.", "Round up.", "<span class=\"eq\">43 characters<\/span>"]}, {"lv": "h", "q": "rsync sends only changed files. A site has 2000 files of 50 KB, and 30 changed. How many KB does the second run send, ignoring overhead?", "ans": "1500", "hint": "Only the changed ones.", "steps": ["30 files changed.", "30 × 50 KB.", "<span class=\"eq\">1500 KB<\/span>"]}, {"lv": "h", "q": "scp copies 2 GB at 40 MB/s. About how many seconds does it take (1 GB = 1000 MB)?", "ans": "50", "hint": "Size over speed.", "steps": ["2000 MB.", "2000 ÷ 40.", "<span class=\"eq\">50 s<\/span>"]}, {"lv": "x", "q": "A brute force robot tries 10 passwords per second, all day. How many guesses is that in one day?", "ans": "864000", "hint": "Seconds in a day.", "steps": ["A day has 86400 seconds.", "× 10.", "<span class=\"eq\">864000 guesses<\/span>"]}], "assign": [], "must": [["The login", "Key exchange, then the host key checked against known_hosts, then user authentication with a key from authorized_keys, then the session. A changed host key stops the login."], ["Keys", "ssh-keygen -t ed25519 -C, a passphrase, ssh-agent and ssh-add. Private key 600, ~/.ssh 700, authorized_keys 600. One key per device."], ["Daily use", "ssh-copy-id HOST, ssh HOST CMD, aliases in ~/.ssh/config, scp, sftp and rsync over ssh, ssh -v for debugging."], ["Tunnels", "-L local:host:port, -R, -D, -N -f, ProxyJump (-J) through a bastion."], ["sshd", "PasswordAuthentication no, PermitRootLogin no, AllowUsers, a file in sshd_config.d, sshd -t and -T, systemctl reload ssh, keep a session open."]], "summary": "<p>ssh encrypts the connection, checks the server’s host key against known_hosts and logs you in with a key whose public half sits in authorized_keys. ~/.ssh/config holds aliases, scp and rsync copy files, -L and ProxyJump reach private machines, and sshd with keys only, no root login and a tested config keeps robots out.<\/p>"}</script>
 <script type="application/json" id="cvtrace">{}</script>

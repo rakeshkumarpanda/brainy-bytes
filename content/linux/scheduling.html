@@ -73,7 +73,7 @@ status 127</span>
 <span class="lx-cmd">env -i HOME="$HOME" PATH=/usr/bin:/bin sh -c '"$HOME/bin/hello"'</span>
 <span class="lx-o">hello from my own tool</span>
 <span class="lx-cmd">date +%F</span>
-<span class="lx-o">2026-11-23</span>
+<span class="lx-o">2026-11-24</span>
 <span class="lx-cmd">printf '%s\n' 'date +%F &gt;&gt; /home/learner/dates.log' 'date +\%F &gt;&gt; /home/learner/dates.log'</span>
 <span class="lx-o">date +%F &gt;&gt; /home/learner/dates.log
 date +\%F &gt;&gt; /home/learner/dates.log</span></pre><div class="lx-note">env -i started a shell with nothing but the variables given, the way cron does. The tool in your own bin folder was not found until the full path was used. The last two lines show the wrong and the right way to write a percent sign in a crontab line.</div></div>

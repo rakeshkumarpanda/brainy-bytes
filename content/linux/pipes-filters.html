@@ -55,7 +55,7 @@ cherry
 kiwi
 mango</span>
 <span class="lx-cmd">ls /usr/bin | wc -l</span>
-<span class="lx-o">1160</span></pre><div class="lx-note">ls /usr/bin | wc -l counts the programs in /usr/bin of the machine that built this page, so your number will differ.</div></div>
+<span class="lx-o">1249</span></pre><div class="lx-note">ls /usr/bin | wc -l counts the programs in /usr/bin of the machine that built this page, so your number will differ.</div></div>
 <div class="viz" data-viz="pk" data-pk="lx-pipe"></div>
 <div class="note note-tip"><b>Remember</b><div>A command that reads a file name never needs cat in front of it: sort fruits.txt does the same as cat fruits.txt | sort with one process less. cat is still handy to start a long pipeline in a readable way.</div></div>
 <div class="vt-talk" hidden>The pipe is the single most famous idea in Unix. The vertical bar takes the output of one command and feeds it directly into the next one, with no file in between. Doug McIlroy at Bell Labs pushed for this for years, and Ken Thompson added pipes to Unix in 1973, reportedly in a single night. Overnight, the small tools that already existed could be combined into new ones. McIlroy later summed up the Unix way of thinking: write programs that do one thing and do it well, and write programs that work together. A pipeline is exactly that. ls lists, head keeps the first lines, sort sorts, wc counts. None of them knows about the others, yet together they answer questions nobody planned for. Notice that error messages are not sent down the pipe. They still go to your screen, so you see problems while the data keeps flowing.</div>

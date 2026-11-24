@@ -22,7 +22,7 @@
 <div class="cv-wrap">
   <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 1: Users and software</span><span>›</span><span>Users and sudo</span></div>
   <header class="cv-hero">
-    <div class="cv-kicker">Step 1 · Topic 1 of 1 · Intermediate</div>
+    <div class="cv-kicker">Step 1 · Topic 1 of 2 · Intermediate</div>
     <h1>Users, groups and sudo</h1>
     <p class="lead">Read the account files field by field, create, change and remove users and groups, set and lock passwords, and give exactly the right amount of root power with sudo and visudo.</p>
     <div class="cv-chips"><span class="cv-chip">About 50 min</span><span class="cv-chip">5 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">6 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#users-sudo" data-topic="cheatsheet" data-h="users-sudo">This chapter on the cheatsheet</a></div>
@@ -43,9 +43,9 @@ learner:x:1000:1000::/home/learner:/bin/bash</span>
 <span class="lx-cmd">id -nG learner</span>
 <span class="lx-o">learner sudo</span>
 <span class="lx-cmd">ls -l /etc/passwd /etc/shadow /etc/group</span>
-<span class="lx-o">-rw-r--r-- 1 root root    983 Nov 23 22:44 /etc/group
--rw-r--r-- 1 root root   3378 Nov 23 22:44 /etc/passwd
--rw-r----- 1 root shadow 1408 Nov 23 22:44 /etc/shadow</span>
+<span class="lx-o">-rw-r--r-- 1 root root   1071 Nov 24 05:20 /etc/group
+-rw-r--r-- 1 root root   3602 Nov 24 05:20 /etc/passwd
+-rw-r----- 1 root shadow 1492 Nov 24 05:20 /etc/shadow</span>
 <span class="lx-cmd">cat /etc/shadow</span>
 <span class="lx-o">cat: /etc/shadow: Permission denied</span>
 <span class="lx-cmd">grep -E '^(UID_MIN|UID_MAX|PASS_MAX_DAYS|ENCRYPT_METHOD)' /etc/login.defs</span>
@@ -62,8 +62,8 @@ ENCRYPT_METHOD SHA512</span></pre><div class="lx-note">getent reads the account 
 <span class="lx-o">dev1:x:1002:1002:Dev One:/home/dev1:/bin/bash</span>
 <span class="lx-cmd lx-root">ls -la /home/dev1</span>
 <span class="lx-o">total 20
-drwxr-x--- 2 dev1 dev1 4096 Nov 23 22:44 .
-drwxr-xr-x 7 root root 4096 Nov 23 22:44 ..
+drwxr-x--- 2 dev1 dev1 4096 Nov 24 05:25 .
+drwxr-xr-x 7 root root 4096 Nov 24 05:25 ..
 -rw-r--r-- 1 dev1 dev1  220 Mar 31  2024 .bash_logout
 -rw-r--r-- 1 dev1 dev1 3771 Mar 31  2024 .bashrc
 -rw-r--r-- 1 dev1 dev1  807 Mar 31  2024 .profile</span>
@@ -72,19 +72,19 @@ drwxr-xr-x 7 root root 4096 Nov 23 22:44 ..
 <span class="lx-cmd lx-root">id dev1</span>
 <span class="lx-o">uid=1002(dev1) gid=1002(dev1) groups=1002(dev1),27(sudo),1003(web)</span>
 <span class="lx-cmd lx-root">passwd -S dev1</span>
-<span class="lx-o">dev1 L 2026-11-23 0 99999 7 -1</span>
+<span class="lx-o">dev1 L 2026-11-24 0 99999 7 -1</span>
 <span class="lx-cmd lx-root">echo 'dev1:Garden.Tree.42' | chpasswd</span>
 <span class="lx-cmd lx-root">passwd -S dev1</span>
-<span class="lx-o">dev1 P 2026-11-23 0 99999 7 -1</span>
+<span class="lx-o">dev1 P 2026-11-24 0 99999 7 -1</span>
 <span class="lx-cmd lx-root">chage -M 90 dev1</span>
 <span class="lx-cmd lx-root">chage -l dev1 | head -4</span>
-<span class="lx-o">Last password change					: Nov 23, 2026
-Password expires					: Feb 21, 2027
+<span class="lx-o">Last password change					: Nov 24, 2026
+Password expires					: Feb 22, 2027
 Password inactive					: never
 Account expires						: never</span>
 <span class="lx-cmd lx-root">usermod -L dev1</span>
 <span class="lx-cmd lx-root">passwd -S dev1</span>
-<span class="lx-o">dev1 L 2026-11-23 0 90 7 -1</span>
+<span class="lx-o">dev1 L 2026-11-24 0 90 7 -1</span>
 <span class="lx-cmd lx-root">sudo -u dev1 bash -c 'whoami; cd; pwd'</span>
 <span class="lx-o">dev1
 /home/dev1</span>
@@ -137,7 +137,7 @@ learner ALL=(root) NOPASSWD /usr/bin/systemctl
 <nav class="cv-lnav"></nav></article>
   </section>
   <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
-  <nav class="cv-pager"><span></span><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+  <nav class="cv-pager"><span></span><a class="next" href="./packages.html" data-topic="packages"><small>Next topic</small><b>Packages</b></a></nav>
 </div>
 <script type="application/json" id="cvdata">{"slug": "users-sudo", "topic": "users-sudo", "subject": "linux", "title": "Users, groups and sudo", "codes": {}, "quiz": [{"lv": "e", "q": "Which file lists the accounts and is readable by everyone?", "o": ["/etc/shadow", "/etc/passwd", "/etc/sudoers", "/etc/users"], "a": 1, "hint": "Despite the name.", "why": "/etc/passwd has no hashes any more."}, {"lv": "e", "q": "Which UID does root have?", "o": ["1", "0", "1000", "65534"], "a": 1, "hint": "The first number.", "why": "UID 0 is root."}, {"lv": "e", "q": "Which command runs one command as root?", "o": ["su", "sudo", "root", "admin"], "a": 1, "hint": "Superuser do.", "why": "sudo CMD."}, {"lv": "e", "q": "Where are the password hashes kept?", "o": ["/etc/passwd", "/etc/shadow", "/etc/group", "/home"], "a": 1, "hint": "Hidden.", "why": "Only root can read /etc/shadow."}, {"lv": "m", "q": "Which command adds dev1 to docker without removing other groups?", "o": ["usermod -G docker dev1", "usermod -aG docker dev1", "groupadd docker dev1", "useradd -G docker dev1"], "a": 1, "hint": "Append.", "why": "-a keeps the existing groups."}, {"lv": "m", "q": "What does an x in the second field of /etc/passwd mean?", "o": ["No password", "The hash is in /etc/shadow", "The account is locked", "Root only"], "a": 1, "hint": "Look elsewhere.", "why": "x points to /etc/shadow."}, {"lv": "m", "q": "Which password does sudo ask for by default?", "o": ["The root password", "Your own password", "No password", "The group password"], "a": 1, "hint": "Yours.", "why": "sudo checks your own password."}, {"lv": "m", "q": "How should you edit /etc/sudoers?", "o": ["nano /etc/sudoers", "sudo visudo", "echo >> /etc/sudoers", "chmod 777 first"], "a": 1, "hint": "Checked editing.", "why": "visudo checks the syntax before saving."}, {"lv": "m", "q": "passwd -S prints <code>dev1 L ...<\/code>. What does L mean?", "o": ["Logged in", "Locked password", "Local account", "Long password"], "a": 1, "hint": "Locked.", "why": "L is locked, P has a password, NP none."}, {"lv": "m", "q": "What does a % in front of a name in sudoers mean?", "o": ["A comment", "A group", "A percentage", "A host"], "a": 1, "hint": "Many users.", "why": "%sudo means the group sudo."}, {"lv": "h", "q": "Why is <code>dev1 ALL=(root) /usr/bin/vim<\/code> dangerous?", "o": ["vim is slow", "vim can start a shell, which then runs as root", "vim cannot read files", "It is not dangerous"], "a": 1, "hint": "Escapes.", "why": ":!bash inside vim gives a root shell."}, {"lv": "h", "q": "Which shell stops anyone logging in to a service account?", "o": ["/bin/bash", "/usr/sbin/nologin", "/bin/sh", "/etc/shells"], "a": 1, "hint": "No login.", "why": "nologin prints a message and exits."}, {"lv": "h", "q": "A user was added to a group, but id in their open terminal does not show it. Why?", "o": ["usermod failed", "Group lists are read at login, so they must log in again", "Groups need a reboot", "id is cached for a day"], "a": 1, "hint": "Next login.", "why": "Log out and in, or run newgrp."}, {"lv": "x", "q": "Which file decides whether getent reads accounts from files or LDAP?", "o": ["/etc/pam.d/common-auth", "/etc/nsswitch.conf", "/etc/login.defs", "/etc/sudoers"], "a": 1, "hint": "Name service.", "why": "nsswitch.conf lists the sources."}], "calc": [{"lv": "e", "q": "How many colon-separated fields does a line of /etc/passwd have?", "ans": "7", "hint": "Count them.", "steps": ["name, password, UID, GID", "comment, home, shell", "<span class=\"eq\">4 + 3 = 7<\/span>"]}, {"lv": "e", "q": "Debian gives people UIDs from 1000. Accounts 1000, 1001 and 1002 exist. Which UID does useradd pick next?", "ans": "1003", "hint": "One more than the highest.", "steps": ["The highest UID in the range is 1002.", "useradd takes the next free number.", "<span class=\"eq\">1002 + 1 = 1003<\/span>"]}, {"lv": "m", "q": "A password was last changed on shadow day 20780, with a maximum age of 90. On which shadow day does it expire?", "ans": "20870", "hint": "Add the days.", "steps": ["Expiry is last change plus maximum age.", "20780 + 90.", "<span class=\"eq\">20870<\/span>"]}, {"lv": "m", "q": "sudo remembers your password for 15 minutes by default. You ran sudo at 10:00 and again at 10:09. Until what minute past 10 is it remembered now?", "ans": "24", "hint": "Each use restarts the timer.", "steps": ["The timer restarts at 10:09.", "9 + 15.", "<span class=\"eq\">10:24<\/span>"]}, {"lv": "h", "q": "/etc/shadow has mode 640, owner root, group shadow. How many of the classes owner, group and others may read it?", "ans": "2", "hint": "6 and 4 can read.", "steps": ["Owner 6 is rw, group 4 is r.", "Others 0 is nothing.", "<span class=\"eq\">2 classes<\/span>"]}, {"lv": "h", "q": "A shadow line has 9 fields and a passwd line 7. How many fields do the two lines of one account have together?", "ans": "16", "hint": "Add them.", "steps": ["passwd has 7.", "shadow has 9.", "<span class=\"eq\">7 + 9 = 16<\/span>"]}], "assign": [], "must": [["Account files", "/etc/passwd (7 fields, readable), /etc/shadow (hashes and ageing, root only), /etc/group. getent reads them."], ["UIDs", "0 is root, 1 to 999 system accounts, 1000 and up people. The kernel checks numbers, not names."], ["Managing users", "useradd -m -s /bin/bash, passwd or chpasswd, usermod -aG (never -G alone), chage, userdel -r."], ["sudo", "sudo CMD, sudo -i, sudo -u NAME, sudo -l. Edit rules only with visudo, keep them narrow in /etc/sudoers.d."], ["Logs", "sudo and logins go to /var/log/auth.log on Debian and Ubuntu, /var/log/secure on RHEL, and to the journal."]], "summary": "<p>Accounts live in /etc/passwd, /etc/shadow and /etc/group, and the kernel only sees UIDs and GIDs. useradd, usermod -aG, passwd, chage and userdel manage them as root. sudo runs single commands as root, with narrow rules written through visudo and every use logged.<\/p>"}</script>
 <script type="application/json" id="cvtrace">{}</script>

@@ -22,7 +22,7 @@
 <div class="cv-wrap">
   <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=advanced" target="_top">Unix and Linux</a><span>›</span><span>Internals and Advanced</span><span>›</span><span>Step 2: Files and memory inside</span><span>›</span><span>Files inside</span></div>
   <header class="cv-hero">
-    <div class="cv-kicker">Step 2 · Topic 1 of 1 · Expert</div>
+    <div class="cv-kicker">Step 2 · Topic 1 of 2 · Expert</div>
     <h1>Files inside: inodes, links, open descriptors and the page cache</h1>
     <p class="lead">Learn what a file really is to the kernel: a name in a folder that points to an inode, hard and symbolic links, descriptors that keep deleted files alive, and the page cache that makes writes fast but needs fsync to be safe.</p>
     <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#files-inside" data-topic="cheatsheet" data-h="files-inside">This chapter on the cheatsheet</a></div>
@@ -39,15 +39,15 @@
 <span class="lx-cmd">ln -s notes.txt link</span>
 <span class="lx-cmd">mkfifo pipe</span>
 <span class="lx-cmd">ls -lid notes.txt box link pipe</span>
-<span class="lx-o">713924 drwxr-xr-x 2 learner learner 4096 Nov 24 04:48 box
-640934 lrwxrwxrwx 1 learner learner    9 Nov 24 04:48 link -&gt; notes.txt
-639888 -rw-r--r-- 1 learner learner    9 Nov 24 04:48 notes.txt
-640935 prw-r--r-- 1 learner learner    0 Nov 24 04:48 pipe</span>
+<span class="lx-o">729119 drwxr-xr-x 2 learner learner 4096 Nov 24 05:26 box
+640877 lrwxrwxrwx 1 learner learner    9 Nov 24 05:26 link -&gt; notes.txt
+639888 -rw-r--r-- 1 learner learner    9 Nov 24 05:26 notes.txt
+640878 prw-r--r-- 1 learner learner    0 Nov 24 05:26 pipe</span>
 <span class="lx-cmd">stat -c '%n: inode %i, %h links, %F' notes.txt box link pipe /dev/null</span>
 <span class="lx-o">notes.txt: inode 639888, 1 links, regular file
-box: inode 713924, 2 links, directory
-link: inode 640934, 1 links, symbolic link
-pipe: inode 640935, 1 links, fifo
+box: inode 729119, 2 links, directory
+link: inode 640877, 1 links, symbolic link
+pipe: inode 640878, 1 links, fifo
 /dev/null: inode 3, 1 links, character special file</span>
 <span class="lx-cmd">ls -id / /home .</span>
 <span class="lx-o">640011 .
@@ -68,11 +68,11 @@ pipe: inode 640935, 1 links, fifo
 /dev/loop0       60M   24K   56M   1% /mnt/tiny</span>
 <span class="lx-cmd lx-root">umount /mnt/tiny</span>
 <span class="lx-cmd lx-root">debugfs -R 'ls -l /' disk.img 2&gt; /dev/null | head -n 5</span>
-<span class="lx-o">      2   40755 (2)      0      0    4096 24-Nov-2026 04:48 .
-      2   40755 (2)      0      0    4096 24-Nov-2026 04:48 ..
-     11   40700 (2)      0      0   16384 24-Nov-2026 04:48 lost+found
-     12  100644 (1)      0      0       0 24-Nov-2026 04:48 f1
-     13  100644 (1)      0      0       0 24-Nov-2026 04:48 f2</span></pre><div class="lx-note">mkfs.ext4 -N 64 makes a file system with only 64 inodes. The first 11 are reserved (2 is the root folder, 11 is lost+found), so touch fails at the 54th file with “No space left on device”, although df -h shows 56M free. df -i shows 100 % of inodes used. Real servers hit this with millions of tiny files, such as session files or a mail queue. debugfs reads the image directly and shows the inode number, the mode in octal (40755 is a folder, 100644 a regular file) and the link count of each entry.</div></div>
+<span class="lx-o">      2   40755 (2)      0      0    4096 24-Nov-2026 05:26 .
+      2   40755 (2)      0      0    4096 24-Nov-2026 05:26 ..
+     11   40700 (2)      0      0   16384 24-Nov-2026 05:26 lost+found
+     12  100644 (1)      0      0       0 24-Nov-2026 05:26 f1
+     13  100644 (1)      0      0       0 24-Nov-2026 05:26 f2</span></pre><div class="lx-note">mkfs.ext4 -N 64 makes a file system with only 64 inodes. The first 11 are reserved (2 is the root folder, 11 is lost+found), so touch fails at the 54th file with “No space left on device”, although df -h shows 56M free. df -i shows 100 % of inodes used. Real servers hit this with millions of tiny files, such as session files or a mail queue. debugfs reads the image directly and shows the inode number, the mode in octal (40755 is a folder, 100644 a regular file) and the link count of each entry.</div></div>
 <div class="vt-talk" hidden>A file on Linux is more than its name. The name is only an entry in a folder, and it points to an inode, a numbered record that holds everything else: the type, the owner, the permissions, the size, the times, and where the data is stored. The inode also counts how many names point to it. You can see inode numbers with ls dash i and stat. Every file system has a fixed number of inodes, set when it is made. In the demo, a tiny file system runs out of inodes after fifty three files, while the disk is still almost empty, and touch reports no space left on device. Df dash i shows the inode usage, and it is the first thing to check when that error appears on a disk with free space.</div>
 <nav class="cv-lnav"></nav></article><article class="cv-lesson" id="links" data-l="links" hidden><div class="cv-lno">Lesson 2 of 6</div><h2>Hard links and symbolic links</h2>
 <div class="tw"><table class="cvt "><thead><tr><th></th><th>Hard link (ln)</th><th>Symbolic link (ln -s)</th></tr></thead><tbody><tr><td>What it is</td><td>a second name for the same inode</td><td>a small file that holds a path</td></tr><tr><td>Inode</td><td>the same number</td><td>its own inode, type l</td></tr><tr><td>Link count</td><td>goes up by one</td><td>does not change</td></tr><tr><td>Target removed</td><td>the data stays while any name is left</td><td>the link dangles and opening it fails</td></tr><tr><td>Across file systems</td><td>no (Invalid cross-device link)</td><td>yes</td></tr><tr><td>To folders</td><td>no</td><td>yes</td></tr><tr><td>Typical use</td><td>snapshots that share unchanged files (rsync --link-dest), package tools</td><td>versions (python3 → python3.12), /etc/alternatives, config in a repo</td></tr></tbody></table></div>
@@ -80,9 +80,9 @@ pipe: inode 640935, 1 links, fifo
 <span class="lx-cmd">ln notes.txt copy</span>
 <span class="lx-cmd">ln -s notes.txt link</span>
 <span class="lx-cmd">ls -li notes.txt copy link</span>
-<span class="lx-o">639888 -rw-r--r-- 2 learner learner 13 Nov 24 04:48 copy
-640934 lrwxrwxrwx 1 learner learner  9 Nov 24 04:48 link -&gt; notes.txt
-639888 -rw-r--r-- 2 learner learner 13 Nov 24 04:48 notes.txt</span>
+<span class="lx-o">639888 -rw-r--r-- 2 learner learner 13 Nov 24 05:26 copy
+640877 lrwxrwxrwx 1 learner learner  9 Nov 24 05:26 link -&gt; notes.txt
+639888 -rw-r--r-- 2 learner learner 13 Nov 24 05:26 notes.txt</span>
 <span class="lx-cmd">echo 'Water plants' &gt;&gt; copy</span>
 <span class="lx-cmd">cat notes.txt</span>
 <span class="lx-o">Call grandma
@@ -107,15 +107,15 @@ Water plants</span>
 <div class="lx-run"><div class="lx-rh"><span>A file deleted while a program still writes it</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">python3 -c 'import time; f = open("big.log", "w"); f.write("x" * 5000000); f.flush(); time.sleep(20)' &amp;</span>
 <span class="lx-cmd">sleep 1</span>
 <span class="lx-cmd">ls -l big.log</span>
-<span class="lx-o">-rw-r--r-- 1 learner learner 5000000 Nov 24 04:48 big.log</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 5000000 Nov 24 05:26 big.log</span>
 <span class="lx-cmd">rm big.log</span>
 <span class="lx-cmd">ls -l /proc/$!/fd | grep big</span>
-<span class="lx-o">l-wx------ 1 learner learner 64 Nov 24 04:48 3 -&gt; /home/learner/big.log (deleted)</span>
+<span class="lx-o">l-wx------ 1 learner learner 64 Nov 24 05:26 3 -&gt; /home/learner/big.log (deleted)</span>
 <span class="lx-cmd">lsof -p $! 2&gt; /dev/null | grep deleted</span>
-<span class="lx-o">python3 3086 learner    3w   REG  254,0  5000000 640934 /home/learner/big.log (deleted)</span>
+<span class="lx-o">python3 26419 learner    3w   REG  254,0  5000000  640877 /home/learner/big.log (deleted)</span>
 <span class="lx-cmd">cp /proc/$!/fd/3 rescued.log</span>
 <span class="lx-cmd">ls -l rescued.log</span>
-<span class="lx-o">-rw-r--r-- 1 learner learner 5000000 Nov 24 04:48 rescued.log</span>
+<span class="lx-o">-rw-r--r-- 1 learner learner 5000000 Nov 24 05:26 rescued.log</span>
 <span class="lx-cmd">kill $!</span></pre><div class="lx-note">After rm the name is gone, but the Python process still has the file open on descriptor 3, so the 5 MB stay on the disk and df does not go down. /proc/PID/fd shows the link with “(deleted)”, and lsof shows the same with the size and the inode number. Copying from /proc/PID/fd/3 rescues the content, which has saved many deleted databases and logs. On a server, <code>sudo lsof +L1</code> lists every open file whose link count is 0.</div></div>
 <div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>lsof -p PID</code></td><td>Every file, socket and pipe a process has open</td><td><code>sudo lsof -p 905</code></td></tr><tr><td><code>lsof FILE, fuser -v FILE</code></td><td>Who has this file open (why umount says busy)</td><td><code>sudo lsof /var/log/syslog</code></td></tr><tr><td><code>lsof +L1</code></td><td>Open files that were deleted (link count 0)</td><td><code>sudo lsof +L1</code></td></tr><tr><td><code>lsof -i :PORT</code></td><td>Who uses a network port</td><td><code>sudo lsof -i :80</code></td></tr><tr><td><code>: &gt; FILE</code></td><td>Empty a file in place, without deleting it, so writers keep working</td><td><code>sudo sh -c ": &gt; /var/log/huge.log"</code></td></tr><tr><td><code>ulimit -n</code></td><td>The most descriptors one process may open</td><td><code>ulimit -n</code></td></tr></tbody></table></div>
 <div class="note note-tip"><b>Remember</b><div>“Too many open files” (EMFILE) means a process hit its descriptor limit, often 1024. Check <code>ls /proc/PID/fd | wc -l</code> to see whether it leaks descriptors, and raise the limit in the service with LimitNOFILE= only if the program really needs that many.</div></div>
@@ -139,7 +139,7 @@ fsync(the folder)              the new name is on the disk</pre><div class="lx-n
 <nav class="cv-lnav"></nav></article>
   </section>
   <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
-  <nav class="cv-pager"><a class="prev" href="./process-lifecycle.html" data-topic="process-lifecycle"><small>Previous topic</small><b>Process life cycle</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+  <nav class="cv-pager"><a class="prev" href="./process-lifecycle.html" data-topic="process-lifecycle"><small>Previous topic</small><b>Process life cycle</b></a><a class="next" href="./memory.html" data-topic="memory"><small>Next topic</small><b>Memory</b></a></nav>
 </div>
 <script type="application/json" id="cvdata">{"slug": "files-inside", "topic": "files-inside", "subject": "linux", "title": "Files inside: inodes, links, open descriptors and the page cache", "codes": {}, "quiz": [{"lv": "e", "q": "Where is a file’s name stored?", "o": ["In the inode", "In the folder that contains it", "In the data blocks", "In /etc/files"], "a": 1, "hint": "Folder entries.", "why": "The inode has everything else."}, {"lv": "e", "q": "Which command shows inode numbers?", "o": ["ls -i", "ls -n", "df -h", "du"], "a": 0, "hint": "i for inode.", "why": "stat shows it too."}, {"lv": "e", "q": "What does ln -s make?", "o": ["A hard link", "A symbolic link", "A copy", "A folder"], "a": 1, "hint": "s for symbolic.", "why": "It stores a path."}, {"lv": "e", "q": "What does the first letter p in ls -l mean?", "o": ["A program", "A named pipe (FIFO)", "Protected", "A partition"], "a": 1, "hint": "Pipe.", "why": "Made with mkfifo."}, {"lv": "m", "q": "You delete one of two hard links to a file. What happens to the data?", "o": ["It is deleted", "It stays, because one name still points to the inode", "It is moved to the trash", "It becomes read only"], "a": 1, "hint": "Link count.", "why": "Freed only at 0."}, {"lv": "m", "q": "The target of a symbolic link is deleted. What happens?", "o": ["The link is deleted too", "The link dangles and opening it fails", "The link keeps the data", "The target comes back"], "a": 1, "hint": "It stores a path.", "why": "find -xtype l finds them."}, {"lv": "m", "q": "touch says “No space left on device” but df -h shows free space. What do you check next?", "o": ["free -h", "df -i", "top", "lsblk"], "a": 1, "hint": "Inodes.", "why": "Too many small files."}, {"lv": "m", "q": "Why does ln fail with “Invalid cross-device link”?", "o": ["No permission", "Hard links cannot span file systems", "The file is open", "The disk is full"], "a": 1, "hint": "Inodes are per file system.", "why": "Use ln -s instead."}, {"lv": "m", "q": "Why does deleting a big log not free space?", "o": ["rm is slow", "A process still has the file open", "The trash keeps it", "df is cached"], "a": 1, "hint": "Open descriptors.", "why": "lsof +L1 shows it."}, {"lv": "h", "q": "How do you empty a log that a service still writes, without restarting it?", "o": ["rm the file", ": > file", "mv file /tmp", "chmod 000 file"], "a": 1, "hint": "Truncate in place.", "why": "Same inode, size 0."}, {"lv": "h", "q": "What do two descriptors share after dup2 or fork?", "o": ["Nothing", "One open file description, including the offset", "Only the name", "Only the inode number"], "a": 1, "hint": "Shared offset.", "why": "Appends do not overwrite each other."}, {"lv": "h", "q": "A program writes a file and the power fails 5 seconds later. Why may the file be missing?", "o": ["Disks are slow", "The data was still dirty in the page cache, and the program did not call fsync", "The VFS lost it", "The inode table is full"], "a": 1, "hint": "Write-back.", "why": "fsync forces it to disk."}, {"lv": "h", "q": "Why do editors write to a temp file and then rename it?", "o": ["To save memory", "rename is atomic, so readers never see a half written file", "To keep a backup", "rename is faster than write"], "a": 1, "hint": "Atomic switch.", "why": "fsync before rename."}, {"lv": "x", "q": "Why can a new folder have link count 2?", "o": ["A bug", "Its name in the parent and its own . entry both point to its inode", "It has two files", "ext4 counts twice"], "a": 1, "hint": ". and the name.", "why": "Each subfolder adds one for .."}], "calc": [{"lv": "e", "q": "A file has 3 hard links. You delete 2 of them. What is the link count now?", "ans": "1", "hint": "Subtract.", "steps": ["3 names.", "3 − 2.", "<span class=\"eq\">1 link<\/span>"]}, {"lv": "e", "q": "A folder contains 4 subfolders. What is its link count?", "ans": "6", "hint": "2 plus one per subfolder.", "steps": ["2 for its name and .", "4 subfolders add one .. each.", "<span class=\"eq\">2 + 4 = 6<\/span>"]}, {"lv": "m", "q": "mke2fs makes one inode per 16 KiB. How many inodes does a 64 GiB file system get?", "ans": "4194304", "hint": "Divide the sizes.", "steps": ["64 GiB = 67108864 KiB.", "67108864 ÷ 16.", "<span class=\"eq\">4194304 inodes<\/span>"]}, {"lv": "m", "q": "Each inode on ext4 is 256 bytes. How many KiB does a table of 4096 inodes use?", "ans": "1024", "hint": "Multiply, then divide by 1024.", "steps": ["4096 × 256 = 1048576 bytes.", "÷ 1024.", "<span class=\"eq\">1024 KiB<\/span>"]}, {"lv": "h", "q": "A mail server stores 2 million messages, one file each. The file system has 1310720 inodes. How many messages are too many?", "ans": "689280", "hint": "Subtract.", "steps": ["2000000 messages.", "1310720 inodes, ignoring the reserved ones.", "<span class=\"eq\">2000000 − 1310720 = 689280<\/span>"]}, {"lv": "h", "q": "A deleted log is still open and grows by 30 MB per minute. How many GB does it fill in 10 hours (1 GB = 1000 MB)?", "ans": "18", "hint": "Minutes in 10 hours.", "steps": ["600 minutes.", "600 × 30 MB = 18000 MB.", "<span class=\"eq\">18 GB<\/span>"]}, {"lv": "x", "q": "Dirty pages are written after 30 s at the latest. A program writes 20 MB per second and never calls fsync. At most how many MB can a power cut lose?", "ans": "600", "hint": "Rate times delay.", "steps": ["Up to 30 s of writes.", "20 MB × 30.", "<span class=\"eq\">600 MB<\/span>"]}], "assign": [], "must": [["Inodes", "Name in the folder, everything else in the inode (type, owner, mode, size, times, link count, blocks). ls -i, stat, df -i. Running out of inodes gives No space left on device."], ["File types", "- regular, d folder, l symlink, p FIFO, c and b devices, s socket."], ["Links", "ln: same inode, count +1, one file system, no folders. ln -s: own inode with a path, can dangle. readlink -f, find -samefile, find -xtype l."], ["Open files", "Descriptors in /proc/PID/fd, data freed only when no name and no open descriptor are left. lsof +L1, : > file to empty in place."], ["Page cache", "write lands in RAM as dirty pages, written back within about 30 s. fsync and sync force it. Safe write: temp file, fsync, rename."]], "summary": "<p>A folder maps names to inode numbers, and the inode holds the rest of the file. Hard links add names to one inode, symbolic links store a path and can dangle. The kernel frees data only when no name and no open descriptor remain, so lsof +L1 finds space held by deleted files. Writes go to the page cache first, and fsync plus rename makes them safe.<\/p>"}</script>
 <script type="application/json" id="cvtrace">{}</script>

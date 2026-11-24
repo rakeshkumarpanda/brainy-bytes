@@ -56,7 +56,9 @@ logs/old.log</span>
 <span class="lx-cmd">find /etc -maxdepth 1 -name 'host*' | sort</span>
 <span class="lx-o">/etc/host.conf
 /etc/hostname
-/etc/hosts</span></pre><div class="lx-note">find visits entries in the order the file system stores them, which is not alphabetical, so these lines pipe the result through sort. -empty finds the empty projects folder.</div></div>
+/etc/hosts
+/etc/hosts.allow
+/etc/hosts.deny</span></pre><div class="lx-note">find visits entries in the order the file system stores them, which is not alphabetical, so these lines pipe the result through sort. -empty finds the empty projects folder.</div></div>
 <div class="note note-warn"><b>Common mistake</b><div>Always quote the pattern: find . -name "*.txt". Without quotes the shell expands *.txt in the current folder first, and find then searches for those exact names only.</div></div>
 <div class="vt-talk" hidden>find is the tool for questions like where did I save that file, which logs are older than a month, or what is eating my disk. You tell it where to start and what to look for, and it walks through every folder underneath, checking each entry. Tests can look at the name with dash name, at the kind of entry with dash type, at the size with dash size and at the age with dash m time. Units matter: dash size plus one hundred M means bigger than one hundred mebibytes, and dash m time plus thirty means changed more than thirty days ago. Always put the name pattern in quotes. Otherwise the shell expands the star before find even starts, and you get confusing results. find has been part of Unix since the nineteen seventies, and the GNU version on Linux adds many extra tests.</div>
 <nav class="cv-lnav"></nav></article><article class="cv-lesson" id="combine" data-l="combine" hidden><div class="cv-lno">Lesson 2 of 5</div><h2>Combining tests: and, or, not, prune</h2>

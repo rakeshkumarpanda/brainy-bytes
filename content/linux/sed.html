@@ -75,7 +75,7 @@ Finish the Linux lesson</span>
 &gt; Up above the world so high
 &gt; Like a diamond in the sky</span>
 <span class="lx-cmd">sed 's|/home/|/srv/|' /etc/passwd | tail -n 1</span>
-<span class="lx-o">learner:x:1000:1000::/srv/learner:/bin/bash</span>
+<span class="lx-o">dnsmasq:x:996:65534:dnsmasq:/var/lib/misc:/usr/sbin/nologin</span>
 <span class="lx-cmd">sed -E 's/([0-9]{4})-([0-9]{2})-([0-9]{2})/\3.\2.\1/' logs/app.log | head -n 2</span>
 <span class="lx-o">23.11.2026 09:00:01 INFO server started on port 8080
 23.11.2026 09:00:05 INFO user asha logged in</span></pre><div class="lx-note">Without g only the first match on each line changes. The last command reorders the date into day.month.year using three capture groups.</div></div>

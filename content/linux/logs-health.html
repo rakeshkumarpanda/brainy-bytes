@@ -38,30 +38,30 @@
 <div class="lx-run"><div class="lx-rh"><span>Text logs on a real Ubuntu system</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">ls /var/log | head -12</span>
 <span class="lx-o">README
 alternatives.log
+apparmor
 apt
+audit
 bootstrap.log
 btmp
 dpkg.log
+fail2ban.log
 faillog
 fontconfig.log
-journal
-lastlog
-postgresql
-private</span>
+journal</span>
 <span class="lx-cmd">ls -l /var/log/apt/</span>
-<span class="lx-o">total 368
--rw-r--r-- 1 root root  32444 Nov 23 23:04 eipp.log.xz
--rw-r--r-- 1 root root  66550 Nov 23 23:04 history.log
--rw-r----- 1 root adm  268745 Nov 23 23:04 term.log</span>
+<span class="lx-o">total 608
+-rw-r--r-- 1 root root  35136 Nov 24 05:25 eipp.log.xz
+-rw-r--r-- 1 root root 103672 Nov 24 05:25 history.log
+-rw-r----- 1 root adm  469961 Nov 24 05:25 term.log</span>
 <span class="lx-cmd">grep ' install ' /var/log/dpkg.log | tail -3</span>
-<span class="lx-o">2026-11-23 23:03:59 install libtext-charwidth-perl:amd64 &lt;none&gt; 0.04-11build3
-2026-11-23 23:03:59 install cowsay:all &lt;none&gt; 3.03+dfsg2-8
-2026-11-23 23:04:04 install figlet:amd64 2.2.5-3 2.2.5-3</span>
+<span class="lx-o">2026-11-24 05:25:20 install libtext-charwidth-perl:amd64 &lt;none&gt; 0.04-11build3
+2026-11-24 05:25:20 install cowsay:all &lt;none&gt; 3.03+dfsg2-8
+2026-11-24 05:25:25 install figlet:amd64 2.2.5-3 2.2.5-3</span>
 <span class="lx-cmd">grep -A3 '^Start-Date' /var/log/apt/history.log | tail -4</span>
-<span class="lx-o">Start-Date: 2026-11-23  23:04:03
+<span class="lx-o">Start-Date: 2026-11-24  05:25:24
 Commandline: apt-get autoremove -y -q
 Remove: libtext-charwidth-perl:amd64 (0.04-11build3)
-End-Date: 2026-11-23  23:04:03</span></pre><div class="lx-note">Not every program writes here: this container has no rsyslog, so there is no syslog or auth.log file, and the journal holds those messages instead. term.log belongs to the group adm, the usual group for reading logs. dpkg.log and history.log show exactly what changed and when, which is the first place to look after an update breaks something.</div></div>
+End-Date: 2026-11-24  05:25:24</span></pre><div class="lx-note">Not every program writes here: this container has no rsyslog, so there is no syslog or auth.log file, and the journal holds those messages instead. term.log belongs to the group adm, the usual group for reading logs. dpkg.log and history.log show exactly what changed and when, which is the first place to look after an update breaks something.</div></div>
 <div class="vt-talk" hidden>When something goes wrong on a Linux machine, the logs tell you what happened. Today most systems keep two kinds. The systemd journal collects messages from every service, the kernel and many programs, and stores them with extra facts such as the unit name and the priority. You read it with journalctl. Many systems also run rsyslog, which copies messages into plain text files in slash var slash log, such as syslog for general messages and auth dot log for logins, ssh and sudo. Package tools keep their own history in dpkg dot log and apt slash history dot log. Every message has a priority from zero, emergency, to seven, debug, and errors are priority three. Many log files can only be read by root or by members of the group adm. Try the animation to see how a few filters turn a wall of log lines into the handful that explain a problem.</div>
 <nav class="cv-lnav"></nav></article><article class="cv-lesson" id="journalctl" data-l="journalctl" hidden><div class="cv-lno">Lesson 2 of 7</div><h2>Searching the journal with journalctl</h2>
 <div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>journalctl -u NAME</code></td><td>Messages of one unit</td><td><code>journalctl -u nginx</code></td></tr><tr><td><code>journalctl -p err</code></td><td>Priority err and worse</td><td><code>journalctl -p err -b</code></td></tr><tr><td><code>journalctl -b, -b -1</code></td><td>This boot, the previous boot (needs a persistent journal)</td><td><code>journalctl -b -1 -p warning</code></td></tr><tr><td><code>journalctl --since, --until</code></td><td>A time window: today, yesterday, "2026-11-23 09:00", "2 hours ago"</td><td><code>journalctl --since "1 hour ago"</code></td></tr><tr><td><code>journalctl -f</code></td><td>Follow new messages as they come, like tail -f</td><td><code>journalctl -fu nginx</code></td></tr><tr><td><code>journalctl -k</code></td><td>Kernel messages only</td><td><code>journalctl -k -b</code></td></tr><tr><td><code>journalctl -g PATTERN</code></td><td>Messages that match a regular expression</td><td><code>journalctl -u ssh -g "Failed password"</code></td></tr><tr><td><code>journalctl _COMM=NAME, -t TAG</code></td><td>By program name, by syslog tag</td><td><code>journalctl _COMM=sudo</code></td></tr><tr><td><code>journalctl -o json-pretty</code></td><td>Show every stored field of each entry</td><td><code>journalctl -u ssh -n 1 -o json-pretty</code></td></tr><tr><td><code>journalctl --disk-usage, --vacuum-size=500M</code></td><td>Space used, and shrink it</td><td><code>sudo journalctl --vacuum-time=30d</code></td></tr></tbody></table></div>
@@ -136,10 +136,10 @@ EOF</span>
 <span class="lx-cmd lx-root">printf '%s/app.log {\n    daily\n    rotate 3\n    compress\n    delaycompress\n    missingok\n    notifempty\n    create 0640 root adm\n}\n' "$PWD" &gt; app.conf</span>
 <span class="lx-cmd lx-root">logrotate -d -f -s state app.conf 2&gt;&amp;1 | grep -E '^(rotating log|  log needs)'</span>
 <span class="lx-o">  log needs rotating
-rotating log /tmp/tmp.6NpJfKddnD/app.log, log-&gt;rotateCount is 3</span>
+rotating log /tmp/tmp.YkFjp6Pqha/app.log, log-&gt;rotateCount is 3</span>
 <span class="lx-cmd lx-root">logrotate -s state -f app.conf &amp;&amp; ls -l app.log*</span>
-<span class="lx-o">-rw-r----- 1 root adm   0 Nov 23 23:04 app.log
--rw-r--r-- 1 root root 14 Nov 23 23:04 app.log.1</span>
+<span class="lx-o">-rw-r----- 1 root adm   0 Nov 24 05:25 app.log
+-rw-r--r-- 1 root root 14 Nov 24 05:25 app.log.1</span>
 <span class="lx-cmd lx-root">echo "line 3" &gt;&gt; app.log</span>
 <span class="lx-cmd lx-root">logrotate -s state -f app.conf &amp;&amp; ls app.log*</span>
 <span class="lx-o">app.log
@@ -149,25 +149,25 @@ app.log.2.gz</span></pre><div class="lx-note">-d is a dry run that only explains
 <nav class="cv-lnav"></nav></article><article class="cv-lesson" id="health" data-l="health" hidden><div class="cv-lno">Lesson 5 of 7</div><h2>Quick health checks: load, memory, disk and the kernel</h2>
 <div class="tw"><table class="cvt lx-ct"><thead><tr><th>Command</th><th>What it does</th><th>Example</th></tr></thead><tbody><tr><td><code>uptime</code></td><td>Time since boot and the load average over 1, 5 and 15 minutes</td><td><code>uptime</code></td></tr><tr><td><code>nproc</code></td><td>Number of CPUs. Compare it with the load</td><td><code>nproc</code></td></tr><tr><td><code>free -h</code></td><td>Memory and swap. Read the available column, not free</td><td><code>free -h</code></td></tr><tr><td><code>df -h, df -i</code></td><td>Free space and free inodes per file system</td><td><code>df -h /var</code></td></tr><tr><td><code>du -sh PATH, du -h --max-depth=1</code></td><td>What uses the space</td><td><code>sudo du -h --max-depth=1 /var | sort -h</code></td></tr><tr><td><code>vmstat 1 5</code></td><td>Every second: running and blocked processes, swap, I/O, CPU</td><td><code>vmstat 1 5</code></td></tr><tr><td><code>sudo dmesg -T</code></td><td>Kernel ring buffer with readable times: disk errors, USB, out of memory</td><td><code>sudo dmesg -T | tail</code></td></tr></tbody></table></div>
 <div class="lx-run"><div class="lx-rh"><span>A one minute health check</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">uptime</span>
-<span class="lx-o"> 23:04:06 up 22 min,  0 user,  load average: 0.69, 0.35, 0.19</span>
+<span class="lx-o"> 05:25:27 up  1:23,  0 user,  load average: 0.84, 0.39, 0.30</span>
 <span class="lx-cmd">nproc</span>
 <span class="lx-o">4</span>
 <span class="lx-cmd">cat /proc/loadavg</span>
-<span class="lx-o">0.69 0.35 0.19 1/146 15310</span>
+<span class="lx-o">0.84 0.39 0.30 1/147 24339</span>
 <span class="lx-cmd">free -h</span>
 <span class="lx-o">               total        used        free      shared  buff/cache   available
-Mem:            15Gi       749Mi        14Gi        12Mi       617Mi        14Gi
+Mem:            15Gi       752Mi        14Gi        12Mi       468Mi        14Gi
 Swap:             0B          0B          0B</span>
 <span class="lx-cmd">df -h / | tail -1</span>
-<span class="lx-o">/dev/vda        252G  9.4G   60G  14% /</span>
+<span class="lx-o">/dev/vda        252G   28G   41G  41% /</span>
 <span class="lx-cmd">df -i / | tail -1</span>
-<span class="lx-o">/dev/vda       16777216 220169 16557047    2% /</span>
+<span class="lx-o">/dev/vda       16777216 230481 16546735    2% /</span>
 <span class="lx-cmd">vmstat 1 3</span>
 <span class="lx-o">procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
  r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
- 0  0      0 15306396  25732 606764    0    0   375   283  545    1  4  1 95  0  0  0
- 0  0      0 15319668  25732 606764    0    0     0     0  172  166  0  0 100  0  0  0
- 0  0      0 15334056  25732 606764    0    0     0     0  121  110  0  0 100  0  0  0</span></pre><div class="lx-note">A load average below the number of CPUs means the CPUs keep up. In free, buff/cache is memory the kernel lends to the file cache and gives back when programs need it, so available is the number that matters. df -i counts inodes, since a disk can be full of tiny files while it still has free bytes. In vmstat the first line is an average since boot, the next ones are live, and wa is time spent waiting for disks.</div></div>
+ 0  0      0 15463552   7976 471948    0    0   371  6508 2126    9  3  1 95  0  0  0
+ 0  0      0 15469116   7980 472188    0    0     8     0  364  466  0  0 100  0  0  0
+ 0  0      0 15477492   7980 472196    0    0     0     8  138  147  0  0 100  0  0  0</span></pre><div class="lx-note">A load average below the number of CPUs means the CPUs keep up. In free, buff/cache is memory the kernel lends to the file cache and gives back when programs need it, so available is the number that matters. df -i counts inodes, since a disk can be full of tiny files while it still has free bytes. In vmstat the first line is an average since boot, the next ones are live, and wa is time spent waiting for disks.</div></div>
 <div class="note note-warn"><b>Common mistake</b><div>When memory runs out, the kernel’s OOM killer stops a process to save the system. The journal then has a line like “Out of memory: Killed process 2261 (java)”. Find it with <code>sudo journalctl -k -g "out of memory"</code> or <code>sudo dmesg -T | grep -i oom</code>.</div></div>
 <div class="vt-talk" hidden>Before you dig into logs, a quick health check often points to the problem. Uptime shows the load average, the number of processes that want a CPU, averaged over one, five and fifteen minutes. Compare it with nproc, the number of CPUs. A load of four on a four CPU machine means fully busy. Free dash h shows memory, and the available column is what counts, because Linux uses spare memory as a file cache and gives it back when needed. Df dash h shows free disk space, and df dash i shows free inodes, which can run out when there are millions of tiny files. Vmstat prints a line every second with processes, memory, input and output, and CPU use. And dmesg shows kernel messages, such as disk errors or the out of memory killer, which stops a program when memory runs out.</div>
 <nav class="cv-lnav"></nav></article><article class="cv-lesson" id="practice" data-l="practice" hidden><div class="cv-lno">Lesson 6 of 7</div><h2>Practice: investigate an incident in the practice shell</h2>
@@ -181,7 +181,7 @@ Swap:             0B          0B          0B</span>
 <nav class="cv-lnav"></nav></article>
   </section>
   <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
-  <nav class="cv-pager"><a class="prev" href="./boot-systemd.html" data-topic="boot-systemd"><small>Previous topic</small><b>Boot and systemd</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+  <nav class="cv-pager"><a class="prev" href="./boot-systemd.html" data-topic="boot-systemd"><small>Previous topic</small><b>Boot and systemd</b></a><a class="next" href="./disks-filesystems.html" data-topic="disks-filesystems"><small>Next topic</small><b>Disks and file systems</b></a></nav>
 </div>
 <script type="application/json" id="cvdata">{"slug": "logs-health", "topic": "logs-health", "subject": "linux", "title": "Logs and health checks: journalctl, /var/log and logrotate", "codes": {}, "quiz": [{"lv": "e", "q": "Which command reads the systemd journal?", "o": ["syslog", "journalctl", "logread", "cat /var/journal"], "a": 1, "hint": "Journal control.", "why": "journalctl."}, {"lv": "e", "q": "Where are most text log files kept?", "o": ["/etc/log", "/var/log", "/tmp/log", "/usr/log"], "a": 1, "hint": "Variable data.", "why": "/var/log."}, {"lv": "e", "q": "Which log file holds ssh logins and sudo use on Ubuntu?", "o": ["/var/log/dpkg.log", "/var/log/auth.log", "/var/log/kern.log", "/var/log/boot.log"], "a": 1, "hint": "Authentication.", "why": "auth.log, or secure on RHEL."}, {"lv": "e", "q": "Which command shows free memory in readable units?", "o": ["df -h", "free -h", "du -h", "mem -h"], "a": 1, "hint": "Free.", "why": "free -h."}, {"lv": "m", "q": "Which option shows only the messages of one service?", "o": ["journalctl -p", "journalctl -u NAME", "journalctl -k", "journalctl -b"], "a": 1, "hint": "Unit.", "why": "-u selects a unit."}, {"lv": "m", "q": "journalctl -p err shows which priorities?", "o": ["Only err", "err and everything more serious", "Everything except err", "Only warnings"], "a": 1, "hint": "And worse.", "why": "err, crit, alert, emerg."}, {"lv": "m", "q": "Which command follows new journal lines as they arrive?", "o": ["journalctl -f", "journalctl -r", "journalctl -n", "journalctl -o"], "a": 0, "hint": "Follow.", "why": "-f follows."}, {"lv": "m", "q": "What does logrotate do with a log that is due?", "o": ["Deletes it", "Renames it, starts a new one, compresses and removes old copies", "Emails it", "Encrypts it"], "a": 1, "hint": "Rotate.", "why": "The old copies are numbered and limited."}, {"lv": "m", "q": "In free -h, which column tells how much memory programs can still get?", "o": ["free", "available", "shared", "total"], "a": 1, "hint": "Available.", "why": "The cache is given back on demand."}, {"lv": "h", "q": "The load average is 8.0 on a machine with 4 CPUs. What does it mean?", "o": ["The machine is idle", "Twice as much work wants CPU time as the CPUs can do", "8 users are logged in", "Memory is full"], "a": 1, "hint": "Compare with nproc.", "why": "Load above the CPU count means waiting."}, {"lv": "h", "q": "df -h shows free space, but writing a file fails with No space left on device. What should you check?", "o": ["free -h", "df -i for inodes", "uptime", "nproc"], "a": 1, "hint": "Many tiny files.", "why": "Inodes can run out first."}, {"lv": "h", "q": "Why add postrotate with a reload to a logrotate rule?", "o": ["To compress faster", "So the program reopens its log instead of writing to the renamed file", "To send mail", "It is required syntax"], "a": 1, "hint": "Open file.", "why": "The program keeps the old file open otherwise."}, {"lv": "h", "q": "journalctl -b -1 says there is no such boot. What is the likely reason?", "o": ["The disk is broken", "The journal is kept only in memory", "You need -u", "The kernel is old"], "a": 1, "hint": "Persistent storage.", "why": "Create /var/log/journal or set Storage=persistent."}, {"lv": "x", "q": "Why ship logs to another machine?", "o": ["To save disk space only", "So an attacker who gains root cannot erase the evidence", "journalctl needs it", "It makes logs faster"], "a": 1, "hint": "Tamper.", "why": "Remote copies survive a compromise."}], "calc": [{"lv": "e", "q": "Priorities go from 0 (emerg) to 7 (debug). How many levels does journalctl -p err show?", "ans": "4", "hint": "err and more serious.", "steps": ["err is 3.", "Levels 0, 1, 2 and 3.", "<span class=\"eq\">4 levels<\/span>"]}, {"lv": "e", "q": "logrotate keeps rotate 7 old files plus the current one. How many files exist at most?", "ans": "8", "hint": "Add the current one.", "steps": ["7 old files.", "Plus app.log itself.", "<span class=\"eq\">7 + 1 = 8<\/span>"]}, {"lv": "m", "q": "Failed logins: 7 from one address, 3 from another, 2 from a third. What percent came from the busiest address, rounded?", "ans": "58", "hint": "Part of the total.", "steps": ["The total is 12.", "7 ÷ 12 = 0.583.", "<span class=\"eq\">58 %<\/span>"]}, {"lv": "m", "q": "A load average of 3.0 on 4 CPUs. What percent of CPU capacity is wanted?", "ans": "75", "hint": "Load divided by CPUs.", "steps": ["3 ÷ 4.", "Times 100.", "<span class=\"eq\">75 %<\/span>"]}, {"lv": "h", "q": "A log grows 2 GB a day, rotated daily with rotate 7 and compression that shrinks old files to 10 percent. About how many GB does it use in total?", "ans": "3.4", "hint": "One plain, seven compressed.", "steps": ["The current file is up to 2 GB.", "Seven old files at 0.2 GB are 1.4 GB.", "<span class=\"eq\">2 + 1.4 = 3.4 GB<\/span>"]}, {"lv": "h", "q": "A disk has 16777216 inodes and 16557104 are free. How many are used?", "ans": "220112", "hint": "Subtract.", "steps": ["Total minus free.", "16777216 − 16557104.", "<span class=\"eq\">220112<\/span>"]}], "assign": [], "must": [["Two log systems", "The journal (journalctl) and text files in /var/log (syslog, auth.log, kern.log, dpkg.log). Many need sudo or the adm group."], ["journalctl filters", "-u unit, -p err, -b boot, --since and --until, -g pattern, -k kernel, -f follow, _COMM=name."], ["Text logs", "grep, awk, sort, uniq -c and sort -rn answer most questions. zgrep for rotated files, logger to write your own lines."], ["logrotate", "Rules in /etc/logrotate.d: daily or size, rotate N, compress, postrotate reload. Test with -d, force with -f."], ["Health", "uptime and nproc for load, free -h available, df -h and df -i, du for big folders, vmstat, dmesg for the kernel and OOM kills."]], "summary": "<p>The journal, read with journalctl and its filters, and the text files in /var/log record what the system does. grep, awk and uniq turn text logs into answers, logrotate keeps them small, and uptime, free, df, vmstat and dmesg give a quick picture of load, memory, disk and kernel trouble.<\/p>"}</script>
 <script type="application/json" id="cvtrace">{}</script>

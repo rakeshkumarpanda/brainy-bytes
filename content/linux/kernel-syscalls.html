@@ -22,7 +22,7 @@
 <div class="cv-wrap">
   <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=advanced" target="_top">Unix and Linux</a><span>›</span><span>Internals and Advanced</span><span>›</span><span>Step 1: Kernel and processes</span><span>›</span><span>Kernel and system calls</span></div>
   <header class="cv-hero">
-    <div class="cv-kicker">Step 1 · Topic 1 of 1 · Expert</div>
+    <div class="cv-kicker">Step 1 · Topic 1 of 2 · Expert</div>
     <h1>The kernel and system calls: strace, /proc, /sys and modules</h1>
     <p class="lead">See how every program depends on the kernel: what crosses the border between user space and kernel space, how to watch it with strace, how the kernel shows its state in /proc and /sys, and how modules add drivers while it runs.</p>
     <div class="cv-chips"><span class="cv-chip">About 55 min</span><span class="cv-chip">6 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#kernel-syscalls" data-topic="cheatsheet" data-h="kernel-syscalls">This chapter on the cheatsheet</a></div>
@@ -53,7 +53,7 @@ close(2)                                = 0
 <span class="lx-cmd">strace -o t2.txt cat missing.txt</span>
 <span class="lx-o">cat: missing.txt: No such file or directory</span>
 <span class="lx-cmd">grep -e missing -e 'write(2' -e exit_group t2.txt</span>
-<span class="lx-o">execve("/usr/bin/cat", ["cat", "missing.txt"], 0x7ffd3e4decd8 /* 13 vars */) = 0
+<span class="lx-o">execve("/usr/bin/cat", ["cat", "missing.txt"], 0x7ffcf64967a8 /* 13 vars */) = 0
 openat(AT_FDCWD, "missing.txt", O_RDONLY) = -1 ENOENT (No such file or directory)
 write(2, "cat: ", 5)                    = 5
 write(2, "missing.txt", 11)             = 11
@@ -62,12 +62,12 @@ write(2, "\n", 1)                       = 1
 exit_group(1)                           = ?</span>
 <span class="lx-cmd">strace -c -o t3.txt ls &gt; /dev/null</span>
 <span class="lx-cmd">sort -k4 -n -r t3.txt | head -n 6</span>
-<span class="lx-o">100.00    0.000966           6       144        19 total
- 27.12    0.000262           7        34        13 openat
- 14.49    0.000140           4        30           mmap
- 15.94    0.000154           6        23           close
- 15.32    0.000148           6        22           fstat
-  4.55    0.000044           6         7           read</span></pre><div class="lx-note">The first trace shows the lines that matter: openat returns file descriptor 3, read copies the 6 bytes, write sends them to descriptor 1, and a read that returns 0 means end of file. (sed starts the listing at hello.txt and hides the loader opening libc and the locale files before it.) For a missing file, openat returns -1 with ENOENT, and cat writes the familiar message to descriptor 2 before exit_group(1). strace -c counts every call. Most of them happen before ls does any real work: the loader maps libc into memory (mmap), and the C library opens the locale files, which is where the failed openat calls come from.</div></div>
+<span class="lx-o">100.00    0.001409           9       144        19 total
+ 21.43    0.000302           8        34        13 openat
+ 20.58    0.000290           9        30           mmap
+ 13.84    0.000195           8        23           close
+ 12.63    0.000178           8        22           fstat
+  4.26    0.000060           8         7           read</span></pre><div class="lx-note">The first trace shows the lines that matter: openat returns file descriptor 3, read copies the 6 bytes, write sends them to descriptor 1, and a read that returns 0 means end of file. (sed starts the listing at hello.txt and hides the loader opening libc and the locale files before it.) For a missing file, openat returns -1 with ENOENT, and cat writes the familiar message to descriptor 2 before exit_group(1). strace -c counts every call. Most of them happen before ls does any real work: the loader maps libc into memory (mmap), and the C library opens the locale files, which is where the failed openat calls come from.</div></div>
 <div class="lx-run"><div class="lx-rh"><span>Find the config file a script is looking for</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">printf '%s\n' 'cfg=$HOME/.config/shop/app.conf' '[ -r "$cfg" ] &amp;&amp; . "$cfg"' 'cat /etc/shop.conf 2&gt;/dev/null || echo "no config found"' &gt; app.sh</span>
 <span class="lx-cmd">bash app.sh</span>
 <span class="lx-o">no config found</span>
@@ -75,7 +75,7 @@ exit_group(1)                           = ?</span>
 <span class="lx-o">no config found</span>
 <span class="lx-cmd">grep shop t.txt | sed 's/^[0-9]* *//'</span>
 <span class="lx-o">faccessat2(AT_FDCWD, "/home/learner/.config/shop/app.conf", R_OK, AT_EACCESS) = -1 ENOENT (No such file or directory)
-execve("/usr/bin/cat", ["cat", "/etc/shop.conf"], 0x55d34c2bda10 /* 13 vars */) = 0
+execve("/usr/bin/cat", ["cat", "/etc/shop.conf"], 0x5652fb292a10 /* 13 vars */) = 0
 openat(AT_FDCWD, "/etc/shop.conf", O_RDONLY) = -1 ENOENT (No such file or directory)</span></pre><div class="lx-note">The script only says “no config found”. trace=file shows every call that takes a file name, and -f follows the cat child. The two ENOENT lines name the exact paths it tried, ~/.config/shop/app.conf and /etc/shop.conf. This trick works for any program that does not say where it looks: a missing library, a plugin folder or a certificate file. (sed removes the process id that -f puts in front of each line.)</div></div>
 <div class="lx-run"><div class="lx-rh"><span>errno numbers and their messages</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">python3 -c 'import errno, os
 for n in (1, 2, 13, 17, 28): print(n, errno.errorcode[n], os.strerror(n))'</span>
@@ -92,14 +92,14 @@ for n in (1, 2, 13, 17, 28): print(n, errno.errorcode[n], os.strerror(n))'</span
 <div class="lx-run"><div class="lx-rh"><span>Look at a process from the inside</span><span class="lx-real">Run for real on Linux while this page was built</span><button type="button" class="lx-copy">Copy</button></div><pre><span class="lx-cmd">grep -E '^(Name|State|Pid|PPid|Uid)' /proc/self/status</span>
 <span class="lx-o">Name:	grep
 State:	R (running)
-Pid:	4757
-PPid:	4756
+Pid:	26075
+PPid:	26074
 Uid:	1000	1000	1000	1000</span>
 <span class="lx-cmd">ls -l /proc/self/fd 9&gt;&amp;- | awk 'NR &gt; 1 {print $1, $9, $10, $11}'</span>
-<span class="lx-o">lrwx------ 0 -&gt; socket:[478962]
-l-wx------ 1 -&gt; pipe:[516869]
-l-wx------ 2 -&gt; pipe:[518309]
-lr-x------ 3 -&gt; /proc/4758/fd</span>
+<span class="lx-o">lr-x------ 0 -&gt; /dev/null
+l-wx------ 1 -&gt; pipe:[1173992]
+l-wx------ 2 -&gt; pipe:[1173989]
+lr-x------ 3 -&gt; /proc/26076/fd</span>
 <span class="lx-cmd">readlink /proc/self/exe</span>
 <span class="lx-o">/usr/bin/readlink</span>
 <span class="lx-cmd">sleep 30 &amp;</span>
@@ -157,7 +157,7 @@ veth1</span>
 <nav class="cv-lnav"></nav></article>
   </section>
   <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
-  <nav class="cv-pager"><span></span><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+  <nav class="cv-pager"><span></span><a class="next" href="./process-lifecycle.html" data-topic="process-lifecycle"><small>Next topic</small><b>Process life cycle</b></a></nav>
 </div>
 <script type="application/json" id="cvdata">{"slug": "kernel-syscalls", "topic": "kernel-syscalls", "subject": "linux", "title": "The kernel and system calls: strace, /proc, /sys and modules", "codes": {}, "quiz": [{"lv": "e", "q": "Which program has full control of the hardware?", "o": ["bash", "The kernel", "systemd", "The BIOS"], "a": 1, "hint": "The core.", "why": "Everything else runs in user space."}, {"lv": "e", "q": "How does a program ask the kernel to open a file?", "o": ["It writes to the disk itself", "With a system call such as openat", "Through /etc/fstab", "With sudo"], "a": 1, "hint": "Ask the kernel.", "why": "libc wraps it in open()."}, {"lv": "e", "q": "Which tool prints the system calls of a command?", "o": ["top", "strace", "grep", "lsmod"], "a": 1, "hint": "System call trace.", "why": "strace CMD."}, {"lv": "e", "q": "Where does Linux show a folder for every running process?", "o": ["/var/run", "/proc", "/sys", "/tmp"], "a": 1, "hint": "Processes.", "why": "Named after the process id."}, {"lv": "m", "q": "A system call fails. What does the C library function usually return?", "o": ["0", "-1, with the reason in errno", "NULL always", "It exits the program"], "a": 1, "hint": "Minus one.", "why": "errno holds a code such as ENOENT."}, {"lv": "m", "q": "What does ENOENT mean?", "o": ["Permission denied", "No such file or directory", "Disk full", "File exists"], "a": 1, "hint": "No entry.", "why": "errno 2."}, {"lv": "m", "q": "Which strace option also follows child processes?", "o": ["-c", "-f", "-o", "-p"], "a": 1, "hint": "Fork.", "why": "Needed for scripts."}, {"lv": "m", "q": "What is /proc/self?", "o": ["The root folder", "A link to the /proc folder of the process that reads it", "The kernel itself", "The first process"], "a": 1, "hint": "Whoever reads it.", "why": "So cat /proc/self/status shows cat."}, {"lv": "m", "q": "Which command loads a module with the modules it depends on?", "o": ["insmod", "modprobe", "lsmod", "modinfo"], "a": 1, "hint": "Probe.", "why": "It reads modules.dep."}, {"lv": "h", "q": "Why do the files in /proc show size 0 in ls -l?", "o": ["They are empty", "The kernel makes their content at the moment you read them", "They are broken links", "Only root can see the size"], "a": 1, "hint": "Virtual.", "why": "No disk space is used."}, {"lv": "h", "q": "What is the difference between EPERM and EACCES?", "o": ["None", "EPERM: only a privileged process may do it, EACCES: file permissions forbid it", "EPERM is for networks", "EACCES means the file is missing"], "a": 1, "hint": "Privilege or permission.", "why": "errno 1 and 13."}, {"lv": "h", "q": "How do you stop a module from loading automatically?", "o": ["Delete it", "A blacklist line in a file in /etc/modprobe.d/", "chmod 000 on it", "Remove it from /proc/modules"], "a": 1, "hint": "Blacklist.", "why": "modprobe -r removes it now."}, {"lv": "h", "q": "Why does strace -c ls show many mmap calls?", "o": ["ls is slow", "The loader maps libc and other libraries into memory before main() runs", "ls reads every file", "mmap is how ls prints"], "a": 1, "hint": "Before main.", "why": "mprotect follows."}, {"lv": "x", "q": "What does io_uring change about system calls?", "o": ["Nothing", "Requests go through rings in shared memory, so many I/O operations need few or no border crossings", "It removes the kernel", "It only works for networking"], "a": 1, "hint": "Shared rings.", "why": "Less cost per operation."}], "calc": [{"lv": "e", "q": "strace -c counted 17 mmap, 8 close and 7 fstat calls. How many is that together?", "ans": "32", "hint": "Add them.", "steps": ["17 + 8 = 25.", "25 + 7.", "<span class=\"eq\">32 calls<\/span>"]}, {"lv": "e", "q": "A program has file descriptors 0, 1 and 2 open and opens two files. Which number does the second file get?", "ans": "4", "hint": "Lowest free number.", "steps": ["The first file gets 3.", "The second gets the next free one.", "<span class=\"eq\">fd 4<\/span>"]}, {"lv": "m", "q": "A system call costs about 100 ns. A program makes 2 million of them. How many milliseconds is that?", "ans": "200", "hint": "Multiply, then convert.", "steps": ["2 000 000 × 100 ns = 200 000 000 ns.", "1 ms = 1 000 000 ns.", "<span class=\"eq\">200 ms<\/span>"]}, {"lv": "m", "q": "read() asks for 131072 bytes at a time. How many reads does cat need for a 1 MiB file, not counting the last empty read?", "ans": "8", "hint": "Divide.", "steps": ["1 MiB = 1048576 bytes.", "1048576 ÷ 131072.", "<span class=\"eq\">8 reads<\/span>"]}, {"lv": "h", "q": "/proc/uptime shows 268860 seconds. How many whole days is that?", "ans": "3", "hint": "Seconds per day.", "steps": ["A day has 86400 seconds.", "268860 ÷ 86400 = 3.1.", "<span class=\"eq\">3 days<\/span>"]}, {"lv": "h", "q": "MemTotal is 8048304 kB and MemAvailable is 5563880 kB. What percent is available, rounded?", "ans": "69", "hint": "Divide and times 100.", "steps": ["5563880 ÷ 8048304 = 0.691.", "× 100.", "<span class=\"eq\">69 %<\/span>"]}, {"lv": "x", "q": "strace makes a program 40 times slower. Normally it runs in 0.5 s. How long under strace?", "ans": "20", "hint": "Multiply.", "steps": ["0.5 s × 40.", "That is why strace is not for timing.", "<span class=\"eq\">20 s<\/span>"]}], "assign": [], "must": [["Two worlds", "The kernel runs in kernel mode with full control. Programs run in user space and ask with system calls, wrapped by libc. Errors return -1 with errno (ENOENT, EACCES, EPERM)."], ["strace", "strace -e trace=file|network|process, -f for children, -c to count, -o FILE, -p PID. Look for -1 ENOENT to find missing files."], ["/proc", "/proc/PID/status, cmdline, environ, fd/, cwd, exe. /proc/self. meminfo, loadavg, uptime, cmdline. /proc/sys equals sysctl."], ["/sys", "Devices and drivers as small files, for example /sys/class/net/IFACE/mtu and operstate."], ["Modules", "uname -r, lsmod, modinfo, modprobe and modprobe -r, /etc/modprobe.d (options, blacklist), /etc/modules-load.d, dmesg and journalctl -k."]], "summary": "<p>Programs run in user space and get everything from the kernel through system calls, which libc wraps and which return -1 and an errno on failure. strace shows those calls and quickly reveals missing files. The kernel shows processes and settings in /proc, devices in /sys, and loads drivers as modules with modprobe.<\/p>"}</script>
 <script type="application/json" id="cvtrace">{}</script>

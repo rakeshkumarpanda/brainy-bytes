@@ -22,7 +22,7 @@
 <div class="cv-wrap">
   <div class="cv-crumb"><a class="home-link" href="../../subject.html?s=linux&amp;p=admin" target="_top">Unix and Linux</a><span>›</span><span>System Administration</span><span>›</span><span>Step 4: Networking and security</span><span>›</span><span>Networking</span></div>
   <header class="cv-hero">
-    <div class="cv-kicker">Step 4 · Topic 1 of 1 · Advanced</div>
+    <div class="cv-kicker">Step 4 · Topic 1 of 3 · Advanced</div>
     <h1>Networking: addresses, routes, DNS and sockets</h1>
     <p class="lead">Read and change addresses and routes with ip, understand how a router and DNS move a request from a name to a server, find listening services with ss, test them with curl and nc, troubleshoot from the bottom up, and keep settings with netplan.</p>
     <div class="cv-chips"><span class="cv-chip">About 65 min</span><span class="cv-chip">9 lessons</span><span class="cv-chip">1 animation</span><span class="cv-chip">7 worked problems</span><span class="cv-chip">14 quiz questions</span><a class="cv-chip cv-sheet" href="./cheatsheet.html#networking" data-topic="cheatsheet" data-h="networking">This chapter on the cheatsheet</a></div>
@@ -57,7 +57,7 @@ search .</span></pre><div class="lx-note">enp0s3 is the network card. Modern nam
 <span class="lx-cmd lx-root">pc() { ip netns exec pc "$@"; }</span>
 <span class="lx-cmd lx-root">pc ip -br link</span>
 <span class="lx-o">lo               DOWN           00:00:00:00:00:00 &lt;LOOPBACK&gt; 
-eth0@if2         DOWN           2a:c9:2c:8f:45:41 &lt;BROADCAST,MULTICAST&gt; </span>
+eth0@if2         DOWN           06:29:d0:70:ac:0c &lt;BROADCAST,MULTICAST&gt; </span>
 <span class="lx-cmd lx-root">pc ip addr add 192.168.50.10/24 dev eth0</span>
 <span class="lx-cmd lx-root">pc ip link set eth0 up</span>
 <span class="lx-cmd lx-root">ip -n web addr add 192.168.50.20/24 dev eth0</span>
@@ -69,14 +69,14 @@ eth0@if2         UP             192.168.50.10/24 </span>
 <span class="lx-o">192.168.50.0/24 dev eth0 proto kernel scope link src 192.168.50.10 </span>
 <span class="lx-cmd lx-root">pc ping -c 2 192.168.50.20</span>
 <span class="lx-o">PING 192.168.50.20 (192.168.50.20) 56(84) bytes of data.
-64 bytes from 192.168.50.20: icmp_seq=1 ttl=64 time=0.042 ms
-64 bytes from 192.168.50.20: icmp_seq=2 ttl=64 time=0.026 ms
+64 bytes from 192.168.50.20: icmp_seq=1 ttl=64 time=0.030 ms
+64 bytes from 192.168.50.20: icmp_seq=2 ttl=64 time=0.034 ms
 
 --- 192.168.50.20 ping statistics ---
-2 packets transmitted, 2 received, 0% packet loss, time 1023ms
-rtt min/avg/max/mdev = 0.026/0.034/0.042/0.008 ms</span>
+2 packets transmitted, 2 received, 0% packet loss, time 1020ms
+rtt min/avg/max/mdev = 0.030/0.032/0.034/0.002 ms</span>
 <span class="lx-cmd lx-root">pc ip neigh</span>
-<span class="lx-o">192.168.50.20 dev eth0 lladdr 8e:27:26:70:97:a3 REACHABLE </span>
+<span class="lx-o">192.168.50.20 dev eth0 lladdr 1e:ea:7e:aa:60:64 REACHABLE </span>
 <span class="lx-cmd lx-root">pc ping -c 1 -W 1 10.9.9.9</span>
 <span class="lx-o">ping: connect: Network is unreachable</span>
 <span class="lx-cmd lx-root">ip -all netns delete</span></pre><div class="lx-note">A network namespace is a separate network stack inside one Linux kernel, the same feature that gives every container its own network. A veth pair is a virtual cable. ip netns exec runs a command inside a namespace, and the little function pc saves typing. Before ip link set up the interface is DOWN and has no address, and eth0@if2 means the other end of the cable is interface number 2 in the other namespace. Setting the address also adds the route for 192.168.50.0/24, so the other side can be reached directly, and ARP fills the neighbour table with its MAC address. There is no default route, so 10.9.9.9 is unreachable.</div></div>
@@ -100,18 +100,18 @@ rtt min/avg/max/mdev = 0.026/0.034/0.042/0.008 ms</span>
 <span class="lx-o">net.ipv4.ip_forward = 1</span>
 <span class="lx-cmd lx-root">ip netns exec pc ping -c 2 10.0.0.80</span>
 <span class="lx-o">PING 10.0.0.80 (10.0.0.80) 56(84) bytes of data.
-64 bytes from 10.0.0.80: icmp_seq=1 ttl=63 time=0.030 ms
-64 bytes from 10.0.0.80: icmp_seq=2 ttl=63 time=0.023 ms
+64 bytes from 10.0.0.80: icmp_seq=1 ttl=63 time=0.045 ms
+64 bytes from 10.0.0.80: icmp_seq=2 ttl=63 time=0.043 ms
 
 --- 10.0.0.80 ping statistics ---
-2 packets transmitted, 2 received, 0% packet loss, time 1001ms
-rtt min/avg/max/mdev = 0.023/0.026/0.030/0.003 ms</span>
+2 packets transmitted, 2 received, 0% packet loss, time 1029ms
+rtt min/avg/max/mdev = 0.043/0.044/0.045/0.001 ms</span>
 <span class="lx-cmd lx-root">ip netns exec pc ip route get 10.0.0.80</span>
 <span class="lx-o">10.0.0.80 via 192.168.1.1 dev eth0 src 192.168.1.50 uid 0 
     cache </span>
 <span class="lx-cmd lx-root">ip netns exec pc traceroute -n -q 1 -w 1 10.0.0.80</span>
 <span class="lx-o">traceroute to 10.0.0.80 (10.0.0.80), 30 hops max, 60 byte packets
- 1  192.168.1.1  0.020 ms
+ 1  192.168.1.1  0.019 ms
  2  10.0.0.80  0.007 ms</span>
 <span class="lx-cmd lx-root">ip -all netns delete</span></pre><div class="lx-note">Without a default route the first ping fails at once with Network is unreachable, because pc has no route for 10.0.0.0/24. After the default routes, the router must also be allowed to forward: net.ipv4.ip_forward is 0 by default, so a normal Linux machine never passes packets on. The ttl of 63 shows that one router took one off the starting value of 64. traceroute lists every hop on the way.</div></div>
 <div class="tw"><table class="cvt "><thead><tr><th>ping says</th><th>Meaning</th><th>Look at</th></tr></thead><tbody><tr><td><code>Network is unreachable</code></td><td>no route at all, often no default route</td><td><code>ip route</code></td></tr><tr><td><code>Destination Host Unreachable</code></td><td>the target is in the local subnet but nobody answers ARP</td><td>is it on, cable, address, <code>ip neigh</code></td></tr><tr><td>no replies, 100% packet loss</td><td>packets leave but nothing comes back</td><td>the gateway, a firewall dropping ICMP, the route back</td></tr><tr><td><code>Name or service not known</code></td><td>the name does not exist in DNS or /etc/hosts</td><td>spelling, <code>dig NAME</code></td></tr><tr><td><code>Temporary failure in name resolution</code></td><td>no DNS server could be asked</td><td><code>resolvectl status</code>, network up</td></tr></tbody></table></div>
@@ -136,7 +136,7 @@ rtt min/avg/max/mdev = 0.023/0.026/0.030/0.003 ms</span>
 <span class="lx-cmd lx-root">ip netns exec pc dig +short MX shop.lab</span>
 <span class="lx-o">10 mail.shop.lab.</span>
 <span class="lx-cmd lx-root">ip netns exec pc dig wwww.shop.lab | grep -E 'status|SERVER'</span>
-<span class="lx-o">;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NXDOMAIN, id: 54953
+<span class="lx-o">;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NXDOMAIN, id: 33971
 ;; SERVER: 192.168.1.1#53(192.168.1.1) (UDP)</span>
 <span class="lx-cmd lx-root">ip netns exec pc getent hosts mail.shop.lab</span>
 <span class="lx-o">198.51.100.25   mail.shop.lab</span>
@@ -238,7 +238,7 @@ LISTEN 0      511             [::]:80           [::]:*    users:(("nginx",pid=90
 <nav class="cv-lnav"></nav></article>
   </section>
   <section class="cv-pane" data-pane="formulas" role="tabpanel" hidden></section><section class="cv-pane" data-pane="problems" role="tabpanel" hidden></section><section class="cv-pane" data-pane="quiz" role="tabpanel" hidden></section><section class="cv-pane" data-pane="summary" role="tabpanel" hidden></section>
-  <nav class="cv-pager"><a class="prev" href="./lvm-raid-backup.html" data-topic="lvm-raid-backup"><small>Previous topic</small><b>LVM, RAID and backups</b></a><a class="next" href="./interview-questions.html" data-topic="interview-questions"><small>Next</small><b>Interview Questions</b></a></nav>
+  <nav class="cv-pager"><a class="prev" href="./lvm-raid-backup.html" data-topic="lvm-raid-backup"><small>Previous topic</small><b>LVM, RAID and backups</b></a><a class="next" href="./ssh.html" data-topic="ssh"><small>Next topic</small><b>SSH</b></a></nav>
 </div>
 <script type="application/json" id="cvdata">{"slug": "networking", "topic": "networking", "subject": "linux", "title": "Networking: addresses, routes, DNS and sockets", "codes": {}, "quiz": [{"lv": "e", "q": "Which command shows the IP addresses of a Linux machine?", "o": ["ifconfig only", "ip addr", "route", "ping"], "a": 1, "hint": "The ip tool.", "why": "ip addr, or ip -br addr for short."}, {"lv": "e", "q": "What does a default gateway do?", "o": ["Stores names", "Receives every packet for addresses outside the subnet", "Gives out passwords", "Blocks attacks"], "a": 1, "hint": "The router.", "why": "It forwards traffic to other networks."}, {"lv": "e", "q": "What does DNS do?", "o": ["Encrypts traffic", "Turns names into IP addresses", "Assigns MAC addresses", "Speeds up disks"], "a": 1, "hint": "Names.", "why": "Domain Name System."}, {"lv": "e", "q": "Which port does ssh use by default?", "o": ["21", "22", "80", "443"], "a": 1, "hint": "Two twos.", "why": "22."}, {"lv": "m", "q": "How many addresses does a /24 network hold?", "o": ["24", "254", "256", "1024"], "a": 2, "hint": "32 − 24 = 8 bits.", "why": "2⁸ = 256, of which 254 are usable for hosts."}, {"lv": "m", "q": "ping says Network is unreachable. What is missing first of all?", "o": ["DNS", "A route, often the default route", "The web server", "A MAC address"], "a": 1, "hint": "No path.", "why": "Check ip route."}, {"lv": "m", "q": "Which file is checked before DNS on most Linux systems?", "o": ["/etc/resolv.conf", "/etc/hosts", "/etc/hostname", "/etc/networks"], "a": 1, "hint": "Fixed names.", "why": "The order is set in /etc/nsswitch.conf."}, {"lv": "m", "q": "Which command lists listening TCP ports with their programs?", "o": ["ss -tlnp", "ip route", "dig", "ping -l"], "a": 0, "hint": "Socket statistics.", "why": "Use sudo to see all programs."}, {"lv": "m", "q": "A database listens on 0.0.0.0:5432 but should be local only. What should it listen on?", "o": ["0.0.0.0", "127.0.0.1", "192.168.1.255", "::"], "a": 1, "hint": "Loopback.", "why": "Then only this machine can connect."}, {"lv": "h", "q": "dig finds no answer for a name, but getent hosts and ping work. Why?", "o": ["DNS is down", "The name is in /etc/hosts, which dig does not read", "ping uses a cache", "getent is broken"], "a": 1, "hint": "Different paths.", "why": "dig asks DNS only."}, {"lv": "h", "q": "A Linux router has both interfaces up, yet nothing passes between the networks. Which setting is likely off?", "o": ["net.ipv4.ip_forward", "vm.swappiness", "kernel.hostname", "net.ipv4.tcp_syncookies"], "a": 0, "hint": "Forwarding.", "why": "It is 0 by default."}, {"lv": "h", "q": "nc to a port answers Connection refused at once. What does that tell you?", "o": ["A firewall dropped the packet", "The host answered, but no program listens on that port", "DNS failed", "The cable is broken"], "a": 1, "hint": "A reset came back.", "why": "A silent drop would time out instead."}, {"lv": "h", "q": "Why use netplan try instead of netplan apply over ssh?", "o": ["It is faster", "It rolls back by itself if you lose the connection and cannot confirm", "apply needs a reboot", "try checks spelling only"], "a": 1, "hint": "Safety net.", "why": "The old settings return after 120 seconds."}, {"lv": "x", "q": "Which route wins for 10.1.2.3 when the table has 10.0.0.0/8, 10.1.0.0/16 and default?", "o": ["default", "10.0.0.0/8", "10.1.0.0/16", "the first one listed"], "a": 2, "hint": "Most specific.", "why": "The longest matching prefix wins."}], "calc": [{"lv": "e", "q": "A /24 network: how many host addresses are usable, leaving out the network and broadcast addresses?", "ans": "254", "hint": "Two to the eight, minus two.", "steps": ["32 − 24 = 8 host bits.", "2⁸ = 256.", "<span class=\"eq\">256 − 2 = 254<\/span>"]}, {"lv": "e", "q": "ping replies took 11.3, 11.6 and 11.9 ms. What is the average in ms?", "ans": "11.6", "hint": "Add and divide.", "steps": ["11.3 + 11.6 + 11.9 = 34.8.", "Divide by 3.", "<span class=\"eq\">11.6 ms<\/span>"]}, {"lv": "m", "q": "How many usable host addresses does a /26 network have?", "ans": "62", "hint": "Six host bits.", "steps": ["32 − 26 = 6.", "2⁶ = 64.", "<span class=\"eq\">64 − 2 = 62<\/span>"]}, {"lv": "m", "q": "Write the subnet mask of a /20 as the value of its third byte.", "ans": "240", "hint": "Bits 17 to 20 are on.", "steps": ["A /20 has 16 bits in the first two bytes.", "The third byte has 4 bits on: 11110000.", "<span class=\"eq\">128 + 64 + 32 + 16 = 240<\/span>"]}, {"lv": "h", "q": "A packet starts with TTL 64 and arrives with TTL 61. How many routers did it pass?", "ans": "3", "hint": "Each router subtracts one.", "steps": ["64 − 61.", "Every hop lowers the TTL by 1.", "<span class=\"eq\">3 routers<\/span>"]}, {"lv": "h", "q": "A 10 MB file goes over a 100 Mbit/s link. About how many seconds does it take at full speed (1 byte = 8 bits)?", "ans": "0.8", "hint": "Bytes to bits.", "steps": ["10 MB = 80 Mbit.", "80 ÷ 100.", "<span class=\"eq\">0.8 s<\/span>"]}, {"lv": "x", "q": "How many /24 networks fit into 10.0.0.0/16?", "ans": "256", "hint": "Difference of prefixes.", "steps": ["24 − 16 = 8 extra bits.", "Each bit doubles the count.", "<span class=\"eq\">2⁸ = 256<\/span>"]}], "assign": [], "must": [["Basics", "Address with prefix (192.168.1.50/24), default gateway, DNS server, ports (22, 53, 80, 443), TCP and UDP. Private ranges 10/8, 172.16/12, 192.168/16."], ["ip", "ip -br addr, ip -br link, ip route, ip route get, ip neigh. ip addr add, ip link set up, ip route add default via GW last only until reboot."], ["Names", "/etc/hosts first, then DNS through systemd-resolved at 127.0.0.53. getent hosts resolves like programs, dig asks DNS only. A, AAAA, CNAME, MX, NS, TXT, PTR."], ["Sockets", "sudo ss -tlnp shows listeners and programs. 0.0.0.0 is every address, 127.0.0.1 is local only. curl -I and -v, nc -zv HOST PORT."], ["Method", "Bottom up: interface, gateway, outside address, DNS, port, application, then tcpdump. Permanent settings in netplan (netplan try) or nmcli."]], "summary": "<p>Each machine needs an address with a prefix, a default gateway, a DNS server and services listening on ports. ip shows and changes them until reboot, netplan or nmcli keep them. Names go through /etc/hosts and then DNS. ss shows listeners, curl and nc test them, and problems are found layer by layer from the interface up to the application, with tcpdump as the last resort.<\/p>"}</script>
 <script type="application/json" id="cvtrace">{}</script>
