@@ -11054,6 +11054,22 @@ function lxAdvModules() {
         { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
         { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
         { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
+      ] },
+      { id: "course-revision", title: "Course revision: the whole of Unix and Linux in one chapter", emoji: "3.3", page: "content/linux/course-revision.html",
+        summary: "Course map, key numbers, pipelines, incidents, final lab, next steps.",
+        keywords: ["revision", "exam", "LPIC-1", "RHCSA", "LFCS", "Linux+", "permissions", "umask", "exit status", "pipelines", "troubleshooting", "final lab"],
+        minutes: 45, counts: {"lessons": 6, "problems": 7, "quiz": 14, "assign": 0},
+        added: "2026-11-24",
+        sections: [
+        { id: "map", title: "The whole course on one page", emoji: "", group: "Lesson", keywords: ["revision", "course summary", "Linux exam", "LPIC-1", "CompTIA Linux+", "RHCSA", "EX200", "LFCS", "hands-on exam", "interview preparation", "commands to know"] },
+        { id: "numbers", title: "The numbers that come up again and again", emoji: "", group: "Lesson", keywords: ["chmod octal", "permission digits", "umask 027", "SUID SGID sticky", "exit status 137", "exit status 127", "128 + n", "cron fields", "file descriptors", "CIDR hosts", "well known ports", "read permission string"] },
+        { id: "pipes", title: "Read and build pipelines", emoji: "", group: "Lesson", keywords: ["pipeline", "sort uniq -c", "awk average", "awk sum", "grep cut", "xargs sed", "find size mtime", "while read", "print0", "quote variables", "predict output"] },
+        { id: "incidents", title: "Incidents: the whole course at work", emoji: "", group: "Lesson", keywords: ["troubleshooting", "incident", "no space left on device", "df -i", "lsof +L1", "service will not start", "address already in use", "connection refused", "connection timed out", "permission denied", "namei", "cron PATH", "runbook"] },
+        { id: "practice", title: "Final practice: one lab across the course", emoji: "", group: "Lesson", keywords: ["final lab", "mixed practice", "revision lab", "grep -c", "uniq -c", "awk sum", "chmod 750", "tar czf", "systemctl is-active", "ss -tln", "df -h", "vmstat"] },
+        { id: "levels", title: "Where to go from here", emoji: "", group: "Lesson", keywords: ["next steps", "Ansible", "Docker", "Kubernetes", "CI/CD", "Prometheus", "Grafana", "cloud", "kernel module", "eBPF program", "LWN", "homelab", "break and fix"] },
+        { id: 'formulas', title: 'Commands', emoji: '', group: 'Check yourself' },
+        { id: 'problems', title: 'Worked problems', emoji: '', group: 'Check yourself' },
+        { id: 'quiz', title: 'Quiz', emoji: '', group: 'Check yourself' }
       ] }
     ] }
   ];

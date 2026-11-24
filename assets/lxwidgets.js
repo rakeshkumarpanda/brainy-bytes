@@ -1531,6 +1531,47 @@
     }
   }));
 
+  /* adv 3.3 revision: one incident, the commands of the whole course in the order an admin would use them */
+  def('lx-triage', el => W(el, {
+    title: 'Solve an incident with the whole course',
+    sub: 'Pick a problem on a server. Pip works through it with commands from every part of the course and names the chapter each one comes from.',
+    inputs: [{ k: 'case', label: 'Problem', type: 'seg', val: 'full', opts: [['full', 'disk is full'], ['down', 'website down'], ['ssh', 'cannot log in by SSH'], ['slow', 'server is slow']] }],
+    random: () => ({ case: ['full', 'down', 'ssh', 'slow'][Math.floor(Math.random() * 4)] }),
+    frames: v => {
+      const C = {
+        full: [
+          ['Writes fail with “No space left on device”. First see which file system is full.', 'df -h', '/dev/sda1  40G  40G  0  100% /', 'Admin 3.1'],
+          ['Find the biggest folder, staying on this file system with -x.', 'sudo du -xh --max-depth=1 / | sort -h | tail -3', '2.1G /usr, 31G /var, 34G /', 'Power 1.2 and 3.1'],
+          ['Look deeper: the journal and old logs.', 'sudo du -sh /var/log/* | sort -h | tail -2', '6.0G /var/log/journal, 24G /var/log/app', 'Foundations 2.1'],
+          ['A file deleted while a program still has it open keeps its space. lsof finds it.', 'sudo lsof +L1', 'java 2261 ... /var/log/app/debug.log (deleted)', 'Advanced 2.1'],
+          ['Free the space: shrink the journal, restart the program that holds the deleted file, and add a logrotate rule so it does not happen again.', 'sudo journalctl --vacuum-size=500M', 'Vacuuming done, freed 5.5G', 'Admin 2.2']],
+        down: [
+          ['The website does not answer. Is the service running?', 'systemctl status nginx', 'Active: failed (Result: exit-code)', 'Admin 2.1'],
+          ['Read why it failed in its log.', 'journalctl -u nginx -n 20', 'bind() to 0.0.0.0:80 failed (98: Address already in use)', 'Admin 2.2'],
+          ['Find who holds port 80.', "sudo ss -tlnp 'sport = :80'", 'LISTEN 0.0.0.0:80 users:(("apache2",pid=930))', 'Admin 4.1'],
+          ['Stop and disable the other server, test the nginx configuration, start nginx.', 'sudo systemctl disable --now apache2 && sudo nginx -t && sudo systemctl start nginx', 'syntax is ok, test is successful', 'Admin 1.2 and 2.1'],
+          ['Check from the outside.', 'curl -I http://localhost', 'HTTP/1.1 200 OK', 'Admin 4.1']],
+        ssh: [
+          ['ssh from your laptop fails. Read the client’s debug output first.', 'ssh -v ops@203.0.113.10', 'connect to host 203.0.113.10 port 22: Connection timed out', 'Admin 4.2'],
+          ['Timed out means packets are dropped on the way, refused would mean nothing listens. Test the port.', 'nc -vz -w 3 203.0.113.10 22', 'timed out', 'Admin 4.1'],
+          ['On the server console: is sshd listening?', 'ss -tln | grep :22', 'LISTEN 0.0.0.0:22', 'Admin 4.1'],
+          ['Then the firewall.', 'sudo ufw status numbered', 'Status: active, no rule for 22/tcp', 'Admin 4.3'],
+          ['Allow SSH again and check the log for the next login.', 'sudo ufw allow OpenSSH && journalctl -u ssh -f', 'Accepted publickey for ops', 'Admin 4.2 and 4.3']],
+        slow: [
+          ['Users say the server is slow. Load first, and compare with the CPU count.', 'uptime; nproc', 'load average: 7.9, 6.2, 3.1 on 2 CPUs', 'Advanced 3.2'],
+          ['Split the time: user, system, iowait, and the run queue.', 'vmstat 1 5', 'r 8, us 97, wa 0', 'Advanced 3.2'],
+          ['Which process?', 'ps -eo pid,comm,%cpu --sort=-%cpu | head -3', '3311 report.sh 190.0', 'Power 4.1'],
+          ['It is a cron job running twice at once. Look at its schedule.', 'crontab -l -u reports', '*/5 * * * * /opt/report.sh', 'Scripting 4.2'],
+          ['Lower its priority now and stop the overlap in the script with flock.', 'sudo renice 19 -p 3311', '3311 (process ID) old priority 0, new priority 19', 'Power 4.1 and Scripting 4.2']]
+      }[v.case];
+      const fr = [{ msg: 'An incident is solved with commands from every part of the course: look, narrow down, find the cause, fix it, and stop it from coming back.', mood: 'think', layers: [{ t: 'flow', label: 'Steps', items: C.map((c, i) => ['step ' + (i + 1), c[3], 'ghost']), plain: true }] }];
+      C.forEach((c, i) => fr.push({ msg: c[0], mood: i === C.length - 1 ? 'happy' : i ? 'look' : 'wow', fx: i === C.length - 1 ? 'burst' : undefined, layers: [
+        { t: 'flow', label: 'Steps', items: C.map((x, j) => ['step ' + (j + 1), x[3], j < i ? 'yes' : j === i ? 'cur' : 'ghost']), plain: true },
+        { t: 'term', label: 'Command and the key line of its output', lines: [['c', c[1]], ['o', c[2]]] }] }));
+      return fr;
+    }
+  }));
+
   /* power 1.1 redirection: the file descriptor table, left to right */
   def('lx-redirect', el => W(el, {
     title: 'Where does each stream go',
