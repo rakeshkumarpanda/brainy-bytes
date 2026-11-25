@@ -6,6 +6,22 @@ body.pg{min-height:100vh; background:var(--md-surface); color:var(--md-on-surfac
 .pg-head h1{font-size:clamp(24px,3vw,32px); margin:4px 0 4px; font-weight:700}
 .pg-head p{margin:0 0 12px; color:var(--md-on-surface-variant); max-width:900px; line-height:1.5}
 
+.pg-crumbs{display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:13.5px; font-weight:600; color:var(--md-on-surface-variant); margin:0 0 6px}
+.pg-crumbs a{color:var(--md-primary); text-decoration:none; padding:2px 4px; border-radius:6px}
+.pg-crumbs a:hover{text-decoration:underline}
+.pg-crumbs a:focus-visible{outline:3px solid var(--md-primary); outline-offset:1px}
+html.embedded .pg-crumbs{display:none}
+
+/* embed mode (?embed=1): the playground inside the side panel of a lesson. One column, no page header or help */
+html.pg-embed .pg-head, html.pg-embed .pg-help, html.pg-embed .pg-note{display:none}
+html.pg-embed .pg-wrap{padding:10px 10px 24px; max-width:none}
+html.pg-embed .pg-bar{padding:8px 10px; gap:8px 10px}
+html.pg-embed .pg-btns{margin-left:0}
+html.pg-embed .pg-btn{padding:7px 12px}
+html.pg-embed .pg-main{grid-template-columns:minmax(0,1fr); gap:10px; margin-top:8px}
+html.pg-embed .pg-editor{height:46vh; min-height:240px}
+html.pg-embed .pg-field select{max-width:180px}
+
 /* toolbar */
 .pg-bar{display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center; padding:10px 12px; border-radius:var(--md-shape-l,16px);
   background:var(--md-sc-low); border:1px solid var(--md-outline-variant); position:sticky; top:0; z-index:5}

@@ -15,6 +15,9 @@
      the older chapter pages laid out by assets/pathskin.js (section.jsec lessons, .viz players from assets/viz.js)
    It uses the speech voices already installed in the browser. Nothing is sent anywhere.
    Its look is injected from here, so a page needs only this one script tag. ===== */
+/* the side by side Code Playground on lessons that teach code (assets/playside.js decides where it shows) */
+(() => { const me = document.currentScript; if (!me || !me.src || window.__playSideLoad) return; window.__playSideLoad = true;
+  const s = document.createElement('script'); s.src = new URL('playside.js', me.src).href; s.defer = true; document.head.appendChild(s); })();
 (() => {
   const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
   if (!synth || window.__voiceTeach) return;

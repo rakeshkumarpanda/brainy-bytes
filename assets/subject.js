@@ -39,6 +39,8 @@
     main.innerHTML = `<div class="empty"><div><div class="em">🧭</div><h2>We could not find that subject</h2><p>The link may be old. Head back to the home page and pick a subject from the dashboard.</p><a class="ibtn primary" href="index.html">🏠 Go home</a></div></div>`;
     return;
   }
+  /* a tool subject (direct) is the tool itself, so an old link or a search result goes straight to it */
+  if (subj.direct) { location.replace(subj.direct); return; }
   LH.showWarnings(cat, main);
   document.documentElement.style.setProperty('--c', subj.color || 'var(--accent)');
   const live = subj.liveTopics;
