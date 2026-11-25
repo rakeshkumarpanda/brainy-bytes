@@ -1,0 +1,122 @@
+/* ===== Code Playground page. Colours come from md3.css (--md-*), so light and dark follow the site. ===== */
+html.md3ch, html.md3ch body{margin:0}
+body.pg{min-height:100vh; background:var(--md-surface); color:var(--md-on-surface); font-family:var(--md-font)}
+.pg *{box-sizing:border-box}
+.pg-wrap{max-width:1500px; margin:0 auto; padding:16px 16px 40px}
+.pg-head h1{font-size:clamp(24px,3vw,32px); margin:4px 0 4px; font-weight:700}
+.pg-head p{margin:0 0 12px; color:var(--md-on-surface-variant); max-width:900px; line-height:1.5}
+
+/* toolbar */
+.pg-bar{display:flex; flex-wrap:wrap; gap:10px 12px; align-items:center; padding:10px 12px; border-radius:var(--md-shape-l,16px);
+  background:var(--md-sc-low); border:1px solid var(--md-outline-variant); position:sticky; top:0; z-index:5}
+.pg-field{display:flex; align-items:center; gap:6px; font-weight:600; font-size:14px}
+.pg-field select{font:inherit; font-weight:600; padding:7px 10px; border-radius:10px; border:1px solid var(--md-outline-variant);
+  background:var(--md-sc-lowest); color:var(--md-on-surface); max-width:260px}
+.pg-sw{display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; font-size:14px; user-select:none}
+.pg-sw input{position:absolute; opacity:0; width:1px; height:1px}
+.pg-sw .tr{width:42px; height:24px; border-radius:12px; background:var(--md-sc-highest); border:2px solid var(--md-outline); position:relative; transition:background .15s}
+.pg-sw .tr::after{content:""; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:var(--md-outline); transition:transform .15s, background .15s}
+.pg-sw input:checked + .tr{background:var(--md-primary); border-color:var(--md-primary)}
+.pg-sw input:checked + .tr::after{transform:translateX(18px); background:var(--md-on-primary)}
+.pg-sw input:focus-visible + .tr{outline:3px solid var(--md-primary); outline-offset:2px}
+.pg-sw .st{min-width:24px; color:var(--md-on-surface-variant)}
+.pg-btns{display:flex; flex-wrap:wrap; gap:8px; margin-left:auto}
+.pg-btn{font:inherit; font-weight:700; font-size:14px; border-radius:999px; padding:8px 16px; cursor:pointer; border:1px solid var(--md-outline-variant);
+  background:var(--md-sc-lowest); color:var(--md-on-surface); display:inline-flex; align-items:center; gap:6px; line-height:1.2}
+.pg-btn:hover{background:var(--md-sc-high)}
+.pg-btn.pri{background:var(--md-primary); color:var(--md-on-primary); border-color:var(--md-primary)}
+.pg-btn.pri:hover{filter:brightness(1.08)}
+.pg-btn.ton{background:var(--md-secondary-container); color:var(--md-on-secondary-container); border-color:transparent}
+.pg-btn:disabled{opacity:.45; cursor:default; filter:none}
+.pg-btn:focus-visible, .pg-field select:focus-visible{outline:3px solid var(--md-primary); outline-offset:2px}
+.pg-note{margin:10px 2px 0; font-size:13.5px; color:var(--md-on-surface-variant); line-height:1.45}
+.pg-note b{color:var(--md-on-surface)}
+.pg-status{margin:6px 2px 0; font-size:13.5px; min-height:19px; color:var(--md-primary); font-weight:600}
+.pg-status.err{color:var(--md-error)}
+
+/* two columns: editor and panels */
+.pg-main{display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:14px; margin-top:12px; align-items:start}
+.pg-edcard, .pg-box, .pg-steps{background:var(--md-sc-lowest); border:1px solid var(--md-outline-variant); border-radius:var(--md-shape-l,16px); overflow:hidden}
+.pg-edhead, .pg-box > h2, .pg-steps > h2{display:flex; align-items:center; gap:8px; margin:0; padding:9px 14px; font-size:14.5px; font-weight:700;
+  background:var(--md-sc-low); border-bottom:1px solid var(--md-outline-variant)}
+.pg-edhead .sp{flex:1}
+.pg-edhead .ro{font-weight:600; font-size:12.5px; color:var(--md-on-tertiary-container); background:var(--md-tertiary-container); padding:2px 10px; border-radius:999px}
+.pg-editor{height:min(70vh,640px); min-height:360px}
+.pg-editor textarea{width:100%; height:100%; border:0; resize:none; padding:12px; font:14px/1.5 var(--md-mono); background:var(--md-sc-lowest); color:var(--md-on-surface); tab-size:4}
+.pg-side{display:flex; flex-direction:column; gap:14px; min-width:0}
+.pg-box textarea{display:block; width:100%; min-height:72px; max-height:200px; resize:vertical; border:0; padding:10px 14px; font:14px/1.45 var(--md-mono);
+  background:var(--md-sc-lowest); color:var(--md-on-surface)}
+.pg-box textarea:focus-visible{outline:3px solid var(--md-primary); outline-offset:-3px}
+.pg-box .hint{margin:0; padding:6px 14px 10px; font-size:12.5px; color:var(--md-on-surface-variant); border-top:1px dashed var(--md-outline-variant)}
+.pg-out{margin:0; padding:10px 14px; min-height:120px; max-height:min(46vh,420px); overflow:auto; font:14px/1.45 var(--md-mono); white-space:pre-wrap; word-break:break-word}
+.pg-out .e{color:var(--md-error)}
+.pg-out mark{background:var(--md-tertiary-container); color:var(--md-on-tertiary-container); border-radius:3px}
+.pg-out .none{color:var(--md-on-surface-variant); font-family:var(--md-font); font-style:italic}
+.pg-tips{display:flex; flex-direction:column; gap:8px; padding:0 14px 12px}
+.pg-tips:empty{display:none}
+.pg-tip{font-size:13.5px; line-height:1.45; padding:8px 12px; border-radius:12px; background:var(--md-warn-container,#fff3cd); color:var(--md-on-warn-container,#4a3700)}
+.pg-tip.bad{background:var(--md-error-container); color:var(--md-on-error-container)}
+
+/* step by step */
+.pg-steps[hidden]{display:none}
+.pg-steps .vz-ctl{display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:10px 12px 4px}
+.pg-steps .vz-ctl button{font:inherit; font-size:13.5px; font-weight:700; border-radius:999px; padding:6px 12px; cursor:pointer;
+  border:1px solid var(--md-outline-variant); background:var(--md-sc-lowest); color:var(--md-on-surface)}
+.pg-steps .vz-ctl button:hover{background:var(--md-sc-high)}
+.pg-steps .vz-ctl button.vz-play{background:var(--md-primary); color:var(--md-on-primary); border-color:var(--md-primary); min-width:76px}
+.pg-steps .vz-ctl button:disabled{opacity:.4; cursor:default}
+.pg-steps .vz-ctl button:focus-visible, .pg-steps input[type=range]:focus-visible{outline:3px solid var(--md-primary); outline-offset:2px}
+.pg-steps .vz-cnt{margin-left:auto; font-size:13px; font-weight:700; color:var(--md-on-surface-variant); white-space:nowrap}
+.pg-steps input[type=range]{display:block; width:calc(100% - 24px); margin:6px 12px 2px; accent-color:var(--md-primary)}
+.pg-steps .vz-msg{margin:8px 12px 10px; padding:10px 12px; border-radius:12px; background:var(--md-primary-container); color:var(--md-on-primary-container);
+  font-size:14.5px; line-height:1.5; min-height:46px}
+.pg-steps .vz-msg code{font-family:var(--md-mono); font-size:13px; background:color-mix(in srgb,var(--md-on-primary-container) 10%,transparent); padding:0 4px; border-radius:4px}
+.pg-frames{display:flex; flex-direction:column; gap:8px; padding:0 12px 12px; max-height:min(48vh,440px); overflow:auto}
+.pg-frame{border:1px solid var(--md-outline-variant); border-radius:12px; overflow:hidden}
+.pg-frame.top{border-color:var(--md-primary); box-shadow:0 0 0 1px var(--md-primary)}
+.pg-frame h3{margin:0; padding:6px 10px; font-size:13px; font-weight:700; background:var(--md-sc-low); display:flex; gap:8px; align-items:center}
+.pg-frame h3 small{font-weight:600; color:var(--md-on-surface-variant)}
+.pg-frame table{width:100%; border-collapse:collapse; font:13px/1.4 var(--md-mono); table-layout:fixed}
+.pg-frame td{padding:4px 10px; border-top:1px solid var(--md-outline-variant); vertical-align:top; overflow-wrap:anywhere}
+.pg-frame td:first-child{width:34%; font-weight:700}
+.pg-frame tr.chg td{background:color-mix(in srgb,var(--md-tertiary-container) 70%,transparent)}
+.pg-frame tr.new td{background:color-mix(in srgb,var(--md-secondary-container) 70%,transparent)}
+.pg-frame tr.tdz td:last-child{color:var(--md-on-surface-variant); font-style:italic; font-family:var(--md-font)}
+.pg-frame .tag{font:700 10.5px var(--md-font); text-transform:uppercase; letter-spacing:.4px; padding:1px 6px; border-radius:999px; margin-left:6px;
+  background:var(--md-tertiary); color:var(--md-on-tertiary,#fff)}
+.pg-frame .empty{padding:6px 10px; font-size:13px; color:var(--md-on-surface-variant); font-style:italic}
+.pg-legend{display:flex; flex-wrap:wrap; gap:6px 14px; padding:0 12px 10px; font-size:12.5px; color:var(--md-on-surface-variant)}
+.pg-legend i{display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:-2px; margin-right:4px}
+
+/* editor line marks while stepping */
+.pg-line-cur{background:color-mix(in srgb,var(--md-primary) 22%,transparent)}
+.pg-line-prev{background:color-mix(in srgb,var(--md-tertiary) 12%,transparent)}
+.pg-line-err{background:color-mix(in srgb,var(--md-error) 22%,transparent)}
+.pg-glyph-cur::before{content:"\25B6"; color:var(--md-primary); font-size:12px; padding-left:4px}
+.pg-glyph-err::before{content:"\25CF"; color:var(--md-error); font-size:12px; padding-left:4px}
+
+/* help */
+.pg-help{margin-top:16px; background:var(--md-sc-lowest); border:1px solid var(--md-outline-variant); border-radius:var(--md-shape-l,16px); padding:4px 16px}
+.pg-help summary{cursor:pointer; font-weight:700; padding:10px 0; font-size:15.5px}
+.pg-help summary:focus-visible{outline:3px solid var(--md-primary); outline-offset:2px; border-radius:6px}
+.pg-help h3{font-size:15px; margin:14px 0 4px}
+.pg-help p, .pg-help li{line-height:1.55; font-size:14.5px}
+.pg-help kbd{font:12.5px var(--md-mono); padding:1px 6px; border-radius:6px; border:1px solid var(--md-outline-variant); background:var(--md-sc-low)}
+.pg-help table{border-collapse:collapse; font-size:14px; margin:6px 0 12px; width:100%}
+.pg-help td, .pg-help th{border:1px solid var(--md-outline-variant); padding:6px 10px; text-align:left; vertical-align:top}
+.pg-help th{background:var(--md-sc-low)}
+
+@media (max-width:980px){
+  .pg-main{grid-template-columns:minmax(0,1fr)}
+  .pg-editor{height:52vh; min-height:300px}
+  .pg-btns{margin-left:0}
+}
+@media (max-width:560px){
+  .pg-wrap{padding:12px 12px 32px}
+  .pg-bar{position:static; padding:10px}
+  .pg-field{flex:1 1 100%}
+  .pg-field select{flex:1; max-width:none}
+  .pg-btn{padding:8px 12px}
+  .pg-steps .vz-cnt{margin-left:0; flex-basis:100%}
+}
+@media (prefers-reduced-motion: reduce){ .pg-sw .tr, .pg-sw .tr::after{transition:none} }

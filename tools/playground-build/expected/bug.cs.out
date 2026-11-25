@@ -1,0 +1,5 @@
+Mon
+Tue
+Wed
+Unhandled exception. System.IndexOutOfRangeException: Index was outside the bounds of the array.
+   at Program.Main() in Program.cs:line 10
