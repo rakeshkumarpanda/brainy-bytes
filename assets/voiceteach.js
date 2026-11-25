@@ -279,7 +279,7 @@ button.vt-vb.on::before{content:"\\1F50A  "}
   const pm = decodeURIComponent(location.pathname).match(/\/content\/([^/]+)\/([^/]+)\.html$/);
   const pageKey = pm ? pm[1] + '/' + pm[2] : '';
   function loadTalks() {
-    if (!pageKey || !here || document.querySelector('.vt-talk')) return;
+    if (!pageKey || !here || document.querySelector('.vt-talk') || !document.querySelector(LESSONS)) return; /* a page without lessons has no talks */
     const s = document.createElement('script');
     s.src = new URL('../data/talk/' + pageKey + '.js', here).href;
     s.async = true;

@@ -94,6 +94,9 @@ window.CATALOG = {
         { id: 'security', title: 'Cybersecurity', icon: 'shield', color: '#00695c',
           blurb: 'Cryptography, networks, application security and security operations, from the basics to expert level.',
           subjects: ['cyber-security'] },
+        { id: 'tools', title: 'Coding Tools', icon: 'terminal', color: '#2e7d32',
+          blurb: 'Write and run code right here in seven languages, and watch it run one line at a time.',
+          subjects: ['code-playground'] },
         { id: 'systems', title: 'Systems and DevOps', icon: 'dns', color: '#e65100',
           blurb: 'Unix and Linux from your first command to the kernel, version control and CI/CD pipelines with Git, and parallel programming on the GPU with CUDA.',
           subjects: ['linux', 'git', 'cuda'] }
@@ -102,6 +105,25 @@ window.CATALOG = {
   ],
 
   subjects: [
+    {
+      id: 'code-playground',
+      title: 'Code Playground',
+      emoji: '🧑‍💻',
+      color: '#2e7d32',
+      blurb: 'An online editor for Java, Python, C, C++, JavaScript, TypeScript and C#. Run the whole program or step through it line by line.',
+      intro: 'Pick a language, turn autosuggest on or off, and write a program. Run all runs it at once. Step line by line runs it once and lets you move forward and back through every line, with each function call and its variables on show, so you can see exactly how the program works and where it goes wrong.',
+      tags: ['Java', 'Python', 'C', 'C++', 'JavaScript', 'TypeScript', 'C#', 'Debugger'],
+      layout: 'path',
+      modules: asPath('code-playground', [{
+        id: 'playground', title: 'Write and run code', blurb: 'One editor for seven languages, with autosuggest you can turn on or off, Run all, and Step line by line.',
+        topics: [{
+          id: 'code-playground', title: 'Code Playground', page: 'content/code-playground/code-playground.html',
+          summary: 'Write Java, Python, C, C++, JavaScript, TypeScript or C#. Run the whole program, or step through it one line at a time and watch every variable change.',
+          keywords: ['online compiler', 'online editor', 'IDE', 'run code', 'step through code', 'debugger', 'line by line', 'autosuggest', 'autocomplete'],
+          added: '2026-11-25'
+        }]
+      }], ['All levels'])
+    },
     {
       id: 'dsa',
       title: 'Data Structures & Algorithms',
