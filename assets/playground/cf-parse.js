@@ -173,7 +173,7 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
           const big = BigInt(text);
           if (big > 2147483647n) kind = 'long';
         }
-        toks.push({ t: 'num', v: text, kind, line: start });
+        toks.push({ t: 'num', v: text, kind, line: start, dec: lang === 'cs' && s.includes('m') });
         i = j; continue;
       }
       if (/[A-Za-z_$À-￿]/.test(c) && !(c === '$' && lang === 'cs')) {
@@ -405,6 +405,8 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
         else if (prim[name] && !(lang === 'java' && name === 'var' && !(peek().t === 'id'))) t = { n: prim[name], box: /^[A-Z]/.test(name) && lang === 'java' && name !== 'String' && name !== 'Object' };
         else if (typeParams.some(s => s.has(name))) t = { n: 'dyn', tp: name };
         else t = { n: name };
+        if (t.box) t.jn = name;
+        if (name === 'decimal' && lang === 'cs') t.dec = true;
         if (at('<')) {
           const save = p;
           p++;
@@ -762,7 +764,7 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
     function primary() {
       const t = next();
       const line = t.line;
-      if (t.t === 'num') return { k: 'lit', num: t.v, kind: t.kind, line };
+      if (t.t === 'num') return t.dec ? { k: 'lit', num: t.v, kind: t.kind, line, dec: true } : { k: 'lit', num: t.v, kind: t.kind, line };
       if (t.t === 'str') return { k: 'lit', v: t.v, ty: { n: 'string' }, cstr: lang === 'c' || lang === 'cpp', line };
       if (t.t === 'chr') return { k: 'lit', v: t.v, ty: { n: 'char' }, line };
       if (t.t === 'istr') {
@@ -956,7 +958,7 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
           const s = stmt(); s.label = label; return s;
         }
         /* local functions (C# and Java compact files are handled at the top level) */
-        if (lang === 'cs' && looksLocalFunc()) { const m = member(null, {}); return { k: 'localfn', m, line }; }
+        if (lang === 'cs' && looksLocalFunc()) { const n = funcs.length; member(null, mods()); const m = funcs.length > n ? funcs.pop() : null; return m ? { k: 'localfn', m, line } : { k: 'empty', line }; }
       }
       if (looksDecl()) {
         const m = mods();
@@ -968,6 +970,8 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
         }
         const d = declRest(ty, line);
         if (m.const && lang !== 'cs') d.konst = true;
+        if (m.final) d.final = true;
+        if (m.const) d.isConst = true;
         if (m.static) d.isStatic = true;
         expect(';', 'after the declaration');
         return d;
@@ -1201,7 +1205,7 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
         const m = mods();
         if (['class', 'struct', 'interface', 'enum', 'record'].includes(peek().v) && peek(1).t === 'id' && !(at('(', 2) === false && at(';', 2) && false)) {
           if (lang === 'cpp' || lang === 'c') { if (peek(2).v === '{' || peek(2).v === ':' || peek(2).v === ';') { const nc = classDecl(); nc.isStatic = true; c.nested.push(nc); continue; } }
-          else { const nc = classDecl(); nc.isStatic = !!m.static || lang === 'cs' || nc.kind !== 'class'; c.nested.push(nc); continue; }
+          else { const nc = classDecl(); nc.mods = m; nc.isStatic = !!m.static || lang === 'cs' || nc.kind !== 'class'; c.nested.push(nc); continue; }
         }
         if (lang === 'cs' && at('event')) { p++; }
         if (lang === 'cs' && at('operator', 1)) { while (!at('{') && !at('=>')) p++; if (at('{')) block(); else { while (!at(';')) p++; p++; } continue; }
@@ -1365,12 +1369,12 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
         p++;
         let init = null;
         if (at('=')) { p++; init = at('{') ? arrayInit() : expr(); expect(';'); }
-        c.fields.push({ ty: ret, id: name, init, static: !!m.static, line, prop, konst: !!m.const });
+        c.fields.push({ ty: ret, id: name, init, static: !!m.static, line, prop, konst: !!m.const, mods: m });
         return;
       }
       if (lang === 'cs' && at('=>') && c) { /* expression bodied property */
         p++; const e = expr(); expect(';');
-        c.fields.push({ ty: ret, id: name, static: !!m.static, line, prop: { name, get: { k: 'block', body: [{ k: 'ret', e, line }], line } } });
+        c.fields.push({ ty: ret, id: name, static: !!m.static, line, prop: { name, get: { k: 'block', body: [{ k: 'ret', e, line }], line } }, mods: m });
         return;
       }
       /* a field (or a C global variable) */
@@ -1378,7 +1382,7 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
       const d = declRest(ret, line, true);
       expect(';', 'after the field');
       d.vars.forEach(v => {
-        const f = { ty: v.ty, id: v.id, init: v.init, ctor: v.ctor, static: !!m.static || (lang === 'cs' && !!m.const) || (c && c.kind === 'interface'), line: v.line || line, konst: !!m.const || !!m.final };
+        const f = { ty: v.ty, id: v.id, init: v.init, ctor: v.ctor, static: !!m.static || (lang === 'cs' && !!m.const) || (c && c.kind === 'interface'), line: v.line || line, konst: !!m.const || !!m.final, mods: m };
         if (c) c.fields.push(f); else globals.push({ k: 'decl', ty: v.ty, vars: [v], line, konst: f.konst });
       });
     }
@@ -1412,7 +1416,7 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
         /* C: struct Point p1;  is a declaration, not a type */
         if ((lang === 'c' || lang === 'cpp') && peek(1).t === 'id' && peek(2).t === 'id') { p = save; member(null, mods()); continue; }
         if ((lang === 'c' || lang === 'cpp') && peek(1).t === 'id' && at('*', 2)) { p = save; member(null, mods()); continue; }
-        classes.push(classDecl());
+        { const cd = classDecl(); cd.mods = m; classes.push(cd); }
         continue;
       }
       if (lang === 'java' && at('@') && at('interface', 1)) { p++; classes.push(classDecl()); continue; }
@@ -1429,6 +1433,7 @@ var CF = (typeof self !== 'undefined' ? self : globalThis).CF || {};
       p = save;
       member(null, mods());
     }
+    localClasses.forEach(c => { c.local = true; });
     classes.push(...localClasses);
     /* attach C++ out of class definitions */
     const allClasses = [];

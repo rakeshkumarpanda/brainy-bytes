@@ -13,7 +13,7 @@ check() { # file stdin
     cpp) lang=cpp; g++ -w -std=c++17 -o $d/a $f && (printf "%b" "$in" | $d/a > $d/real 2>&1);;
     cs) lang=cs; exp=${f%.cs}.out; [ -f $exp ] || exp=$H/expected/$(basename $f).out; cp $exp $d/real;;
   esac
-  node $H/run.js $f $lang "$(printf "%b" "$in")" > $d/mine 2>/dev/null
+  CHECK_DEBUG=1 node $H/run.js $f $lang "$(printf "%b" "$in")" > $d/mine 2>$d/err; [ -s $d/err ] && grep -v NOTES $d/err | head -3
   if diff -q $d/real $d/mine >/dev/null; then echo "PASS $(basename $f)"; else echo "DIFF $(basename $f)"; diff $d/real $d/mine | head -8; fi
 }
 for f in $H/examples/{java,c,cpp,cs}/*; do check $f 'Asha\n12\n'; done

@@ -9,7 +9,7 @@ const ACORN_URL = 'https://cdn.jsdelivr.net/npm/acorn@8.14.0/dist/acorn.js';
 let loaded = '';
 function load(kind) {
   if (loaded === kind) return;
-  if (kind === 'cf') importScripts('cf-parse.js', 'cf-run.js', 'cf-expr.js', 'cf-lib.js');
+  if (kind === 'cf') importScripts('cf-parse.js', 'cf-run.js', 'cf-expr.js', 'cf-lib.js', 'cf-check.js');
   else importScripts(ACORN_URL, 'js-trace.js');
   loaded = kind;
 }

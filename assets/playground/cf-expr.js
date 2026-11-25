@@ -22,7 +22,7 @@
         const b = big();
         if ((lang === 'java' || lang === 'cs') && !/^0[xbo]/i.test(t) && b > 2147483647n) {
           if (lang === 'cs' && b <= 9223372036854775807n) { n.kind = 'long'; v = b; n.ty = TY.long; n.$v = v; return v; }
-          throw new CF.CompileError(lang === 'java' ? `integer number too large: ${t}. Add L at the end to make it a long` : `Integral constant is too large`, n.line);
+          throw new CF.CompileError(lang === 'java' ? 'integer number too large' : `Integral constant is too large`, n.line);
         }
         if (lang === 'cs' && /^0[xb]/i.test(t) && b > 2147483647n) { n.kind = b > 4294967295n ? 'long' : 'uint'; v = n.kind === 'long' ? b : Number(b); n.ty = TY[n.kind]; n.$v = v; return v; }
         v = Number(BigInt.asIntN(32, b)); n.ty = TY.int; break;
