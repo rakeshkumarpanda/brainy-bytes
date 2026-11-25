@@ -1138,7 +1138,9 @@
       if (init.k === 'arr' && !init.coll) {
         if (isArrTy(ty) || (this.lang !== 'cs' && this.lang !== 'java' && !CF.LIB.isLibType(ty.n) && !this.classes.get(ty.n))) return this.arrayFrom(init, ty, env);
         /* C++ brace lists: vector<int> v = {1, 2, 3};  Point p = {1, 2}; */
-        const vals = init.items.map(x => x.k === 'arr' ? this.evInit(x, (ty.args && ty.args[0]) || TY.dyn, env) : this.ev(x, env));
+        /* map<string, int> m = {{"Ann", 9}}: each inner list is a key and value pair */
+        const isMap = /^(map|unordered_map|multimap)$/.test(ty.n);
+        const vals = init.items.map(x => x.k === 'arr' ? (isMap ? this.ev(x, env) : this.evInit(x, (ty.args && ty.args[0]) || TY.dyn, env)) : this.ev(x, env));
         const ci = this.classes.get(ty.n);
         if (ci) return this.construct(ci, vals, init.items.map(x => x.ty), init.items, init.line, ty);
         return CF.LIB.make(this, ty, [], [], null, vals, init.items.map(x => x.ty));
@@ -1193,7 +1195,8 @@
         case 'block': return this.execBlock(s, env);
         case 'empty': return undefined;
         case 'localfn': {
-          const fn = new Fn({ params: s.m.params, body: s.m.body, closure: env, ret: s.m.ret, name: s.m.name, fname: s.m.name, line: s.m.line });
+          const fr = this.frame();
+          const fn = new Fn({ params: s.m.params, body: s.m.body, closure: env, ret: s.m.ret, name: s.m.name, fname: s.m.name, line: s.m.line, self: fr && fr.self, cls: fr && fr.cls });
           env.v.set(s.m.name, new Box(fn, TY.dyn));
           return undefined;
         }
@@ -1528,7 +1531,9 @@
     let I;
     try {
       const prog = CF.parse(src, lang);
+      const warn = CF.check ? CF.check(prog, lang, src) : [];
       I = new Interp(prog, lang, opts);
+      if (warn.length) I.notes.push(...warn);
       if (opts.trace) I.trace = [];
       try {
         const rv = I.main();
@@ -1541,7 +1546,7 @@
       }
       res.out = I.out; res.trace = I.trace; res.notes = I.notes;
     } catch (e) {
-      if (e instanceof CF.CompileError) { res.compile = { msg: e.message, line: e.line }; if (I) { res.out = I.out; res.trace = I.trace; } }
+      if (e instanceof CF.CompileError) { res.compile = { msg: e.message, line: e.line, hint: e.hint || (CF.hintFor ? CF.hintFor(lang, e.message) : null) }; if (I) { res.out = I.out; res.trace = I.trace; } }
       else { res.error = { msg: 'The playground itself tripped: ' + (e && e.message), line: I ? I.lastLine : 0, internal: true }; if (I) { res.out = I.out; res.trace = I.trace; } }
     }
     return res;

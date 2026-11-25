@@ -359,13 +359,14 @@
       case 'java': return `Main.java:${c.line}: error: ${c.msg}`;
       case 'c': return `main.c:${c.line}: error: ${c.msg}`;
       case 'cpp': return `main.cpp:${c.line}: error: ${c.msg}`;
-      case 'cs': return `Program.cs(${c.line}): error: ${c.msg}`;
+      case 'cs': { const m = /^(CS\d{4}): ([\s\S]*)$/.exec(c.msg); return m ? `Program.cs(${c.line}): error ${m[1]}: ${m[2]}` : `Program.cs(${c.line}): error: ${c.msg}`; }
       case 'js': return `${c.msg}\n    at line ${c.line}`;
       default: return `Line ${c.line}: ${c.msg}`;
     }
   }
   function friendlyCompile(L, c) {
-    return `The ${LANGS[L].name} checker found a mistake on line ${c.line} before the program could start. The red mark in the editor shows the line. Fix it and press Run again.`;
+    const base = `The ${LANGS[L].name} checker found a mistake on line ${c.line} before the program could start, so no line has run yet. The red mark in the editor shows the line.`;
+    return c.hint ? `${base} ${c.hint}` : `${base} Fix it and press Run again.`;
   }
   function friendlyError(L, e) {
     const m = e.msg || '';
