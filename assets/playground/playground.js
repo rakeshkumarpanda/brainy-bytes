@@ -138,7 +138,7 @@
     for (const k of ORDER) models[k] = monaco.editor.createModel(startCode(k), LANGS[k].mon, monaco.Uri.parse('file:///' + LANGS[k].file));
     editor = monaco.editor.create(el.ed, Object.assign({
       model: models[lang], theme: isDark() ? 'vs-dark' : 'vs', automaticLayout: true, fontSize: 14, fontFamily: '"JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace',
-      minimap: { enabled: false }, scrollBeyondLastLine: false, glyphMargin: true, tabSize: 4, renderLineHighlight: 'line', padding: { top: 8 },
+      minimap: { enabled: false }, scrollbar: { alwaysConsumeMouseWheel: false }, /* the page scrolls when the editor has nothing more to scroll */ scrollBeyondLastLine: false, glyphMargin: true, tabSize: 4, renderLineHighlight: 'line', padding: { top: 8 },
       readOnlyMessage: { value: 'The program is being shown step by step. Press Edit code to change it.' }, fixedOverflowWidgets: true, ariaLabel: 'Code editor'
     }, suggestOptions(suggestOn)));
     offKey = editor.createContextKey('pgSuggestOff', !suggestOn);
