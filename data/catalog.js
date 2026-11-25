@@ -114,6 +114,8 @@ window.CATALOG = {
       intro: 'Pick a language, turn autosuggest on or off, and write a program. Run all runs it at once. Step line by line runs it once and lets you move forward and back through every line, with each function call and its variables on show, so you can see exactly how the program works and where it goes wrong.',
       tags: ['Java', 'Python', 'C', 'C++', 'JavaScript', 'TypeScript', 'C#', 'Debugger'],
       layout: 'path',
+      /* direct: the Coding Tools tile and this subject's card open the playground itself, with no chapter tile in between */
+      direct: 'content/code-playground/code-playground.html',
       modules: asPath('code-playground', [{
         id: 'playground', title: 'Write and run code', blurb: 'One editor for seven languages, with autosuggest you can turn on or off, Run all, and Step line by line.',
         topics: [{

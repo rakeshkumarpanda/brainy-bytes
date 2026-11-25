@@ -39,6 +39,12 @@
     steps: $('#pgSteps'), msg: $('#pgMsg'), frames: $('#pgFrames'), range: $('#pgRange'), cnt: $('#pgCnt'), play: $('#pgPlay'), edit: $('#pgEdit')
   };
   let lang = LANGS[store.get('pg-lang')] ? store.get('pg-lang') : 'java';
+  /* embed mode: the side panel on lesson pages opens this page as ?embed=1&lang=java and may send code with
+     postMessage({ pg: 'load', lang, code }). The page answers { pg: 'ready' } once the editor is up */
+  const QS = new URLSearchParams(location.search);
+  const EMBED = QS.has('embed');
+  if (EMBED) document.documentElement.classList.add('pg-embed');
+  if (LANGS[QS.get('lang')]) lang = QS.get('lang');
   let suggestOn = store.get('pg-suggest') !== '0';
   let monaco = null, editor = null, plain = null;
   const models = {};
@@ -696,5 +702,25 @@
   /* Monaco cancels its own pending work when the model changes, and reports that as an unhandled "Canceled" */
   window.addEventListener('unhandledrejection', e => { if (e.reason && (e.reason.name === 'Canceled' || e.reason.message === 'Canceled')) e.preventDefault(); });
   window.addEventListener('error', e => { if (e.message && /\bCanceled\b/.test(e.message)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
-  startEditor();
+  /* code sent from a lesson: it replaces what is in the editor for that language. Ctrl+Z brings the old code back */
+  let pending = null, ready = false;
+  function loadSent(d) {
+    if (d.lang && LANGS[d.lang] && d.lang !== lang) { switchLang(d.lang); el.lang.value = d.lang; }
+    endSteps(); clearMarkers();
+    setCode(d.code);
+    el.out.innerHTML = '<span class="none">Press Run all or Step line by line to see what the program prints.</span>';
+    el.tips.innerHTML = '';
+    status(d.note || 'The code from the lesson is in the editor. Press Run all, or Step line by line.');
+    if (editor) editor.focus();
+  }
+  window.addEventListener('message', e => {
+    const d = e.data || {};
+    if (d.pg !== 'load' || typeof d.code !== 'string' || e.origin !== location.origin) return;
+    if (ready) loadSent(d); else pending = d;
+  });
+  startEditor().then(() => {
+    ready = true;
+    if (pending) { loadSent(pending); pending = null; }
+    if (EMBED && window.parent !== window) { try { parent.postMessage({ pg: 'ready' }, location.origin === 'null' ? '*' : location.origin); } catch (e) { /* no parent */ } }
+  });
 })();

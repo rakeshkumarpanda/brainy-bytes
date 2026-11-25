@@ -1,4 +1,7 @@
 /* ===== Shared fun layer: scroll progress bar, reveal on scroll, rocket back-to-top, confetti, theme sync with the portal ===== */
+/* the side by side Code Playground on lessons that teach code (assets/playside.js decides where it shows) */
+(() => { const me = document.currentScript; if (!me || !me.src || window.__playSideLoad) return; window.__playSideLoad = true;
+  const s = document.createElement('script'); s.src = new URL('playside.js', me.src).href; s.defer = true; document.head.appendChild(s); })();
 const FUN = (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();

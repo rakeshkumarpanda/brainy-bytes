@@ -11,6 +11,9 @@
    The existing sections are moved, never copied, so every animation, quiz and runnable example keeps its state.
    The script tag may carry data-kicker (for example "Step 2 · Topic 1 of 3 · Beginner") and data-sheet (the link
    to this chapter on the subject cheatsheet). tools/path-build/build.py writes both. */
+/* the side by side Code Playground on lessons that teach code (assets/playside.js decides where it shows) */
+(() => { const me = document.currentScript; if (!me || !me.src || window.__playSideLoad) return; window.__playSideLoad = true;
+  const s = document.createElement('script'); s.src = new URL('playside.js', me.src).href; s.defer = true; document.head.appendChild(s); })();
 (() => {
   const me = document.currentScript;
   const $ = (s, r = document) => r.querySelector(s);

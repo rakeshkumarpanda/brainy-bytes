@@ -106,7 +106,9 @@
       <div class="md-tiles">${d.categories.map(c => {
         const n = counts(c.items);
         const done = c.items.reduce((a, s) => a + PROGRESS.stats(s.topics).done, 0);
-        return `<a class="md-tile" href="${LH.categoryUrl(c)}" style="--c:${esc(c.color || 'var(--md-primary)')}">
+        /* a category whose only subject is a tool (direct) opens that tool at once */
+        const href = c.items.length === 1 && c.items[0].direct ? c.items[0].direct : LH.categoryUrl(c);
+        return `<a class="md-tile" href="${esc(href)}" style="--c:${esc(c.color || 'var(--md-primary)')}">
           <span class="ic">${icon(c.icon || 'list', 'fill')}</span>
           <h3>${esc(c.title)}</h3>
           <p>${esc(c.blurb || '')}</p>
@@ -138,7 +140,7 @@
       ${s.tags && s.tags.length ? `<div class="tags">${s.tags.slice(0, 4).map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
       <div class="md-meter"><i data-w="${pct}"></i></div>
       <div class="foot"><span>${status}</span>${prog.done ? `<span class="md-done">${icon('task_alt')}${prog.done} done</span>` : ''}<span class="open">Open${icon('arrow_forward')}</span></div>`;
-    return `<a class="md-card" href="${LH.subjectUrl(s)}" style="--c:${esc(s.color || 'var(--md-primary)')}">${inner}</a>`;
+    return `<a class="md-card" href="${esc(s.direct || LH.subjectUrl(s))}" style="--c:${esc(s.color || 'var(--md-primary)')}">${inner}</a>`;
   }
 
   /* ---------- routing ---------- */
@@ -146,6 +148,7 @@
     const [dId, cId] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
     const d = cat.domains.find(x => x.id === dId);
     const c = d && d.categories.find(x => x.id === cId);
+    if (c && c.items.length === 1 && c.items[0].direct) { location.replace(c.items[0].direct); return; }
     if (c) categoryView(c);
     else if (d) domainView(d);
     else landing();
